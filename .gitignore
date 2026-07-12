@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+
+# Test output files
+*.docx
+*.pptx
+*.xlsx
+*.pdf
+*.png
+!chart.png
+test_*.md
+test_output/
+
+# IDE / tool metadata
+.codebase-memory/
+.serena/
