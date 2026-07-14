@@ -7,7 +7,7 @@ documents. Conventions follow GB/T 9704-style government/corporate formatting:
 - Headings H1:   SimHei, 16pt, centered, bold
 - Headings H2-3: SimHei, 15pt, bold
 - Latin text:    Times New Roman
-- Line spacing:  1.5 lines
+- Line spacing:  1.5 lines, expressed through Word's line-spacing rule
 
 Each style is a dict of properties recognised by WriterComposer.ensure_styles().
 """
@@ -31,34 +31,37 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "name": "Title",
         "type": "paragraph",
         "font_name": HEADING_FONT,
+        "font_name_ascii": HEADING_FONT,
         "font_size": 22,
         "bold": True,
         "align": 1,
         "space_before": 0,
         "space_after": 12,
-        "line_spacing": 1.5,
+        "line_spacing_rule": "one_and_half",
     },
 
     "Author": {
         "name": "Author",
         "type": "paragraph",
         "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
         "font_size": 14,
         "align": 1,
-        "color": "#333333",
+        "color": "#000000",
         "space_after": 4,
-        "line_spacing": 1.5,
+        "line_spacing_rule": "one_and_half",
     },
 
     "Date": {
         "name": "Date",
         "type": "paragraph",
         "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
         "font_size": 14,
         "align": 1,
-        "color": "#333333",
+        "color": "#000000",
         "space_after": 24,
-        "line_spacing": 1.5,
+        "line_spacing_rule": "one_and_half",
     },
 
     # Body text - FangSong 12pt justified indent 2 chars
@@ -67,12 +70,13 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "type": "paragraph",
         "based_on": "Normal",
         "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
         "font_size": 12,
         "align": 3,
         "indent_first": 24,
-        "line_spacing": 1.5,
-        "space_before": 5,
-        "space_after": 5,
+        "line_spacing_rule": "one_and_half",
+        "space_before": 0,
+        "space_after": 0,
     },
 
     "FirstParagraph": {
@@ -80,6 +84,9 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "type": "paragraph",
         "based_on": "Body Text",
         "indent_first": 24,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing_rule": "one_and_half",
     },
 
     "Compact": {
@@ -88,7 +95,7 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "based_on": "Body Text",
         "space_after": 0,
         "space_before": 0,
-        "line_spacing": 1.0,
+        "line_spacing_rule": "single",
         "indent_first": 0,
     },
 
@@ -96,10 +103,11 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "name": "Source Code",
         "type": "paragraph",
         "font_name": MONO_FONT,
+        "font_name_ascii": MONO_FONT,
         "font_size": 9,
         "left_indent": 36,
         "indent_first": 0,
-        "line_spacing": 1.0,
+        "line_spacing_rule": "single",
         "space_after": 0,
         "space_before": 0,
         "shading": "#F5F5F5",
@@ -111,12 +119,12 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "based_on": "Body Text",
         "font_size": 11,
         "italic": False,
-        "color": "#444444",
+        "color": "#000000",
         "left_indent": 48,
         "indent_first": 0,
         "left_border": True,
         "border_color": "#999999",
-        "line_spacing": 1.5,
+        "line_spacing_rule": "one_and_half",
         "space_after": 8,
     },
 
@@ -124,10 +132,11 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "name": "Image Caption",
         "type": "paragraph",
         "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
         "font_size": 9,
         "italic": False,
         "align": 1,
-        "color": "#666666",
+        "color": "#000000",
         "space_before": 4,
         "space_after": 12,
     },
@@ -136,10 +145,11 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "name": "Table Caption",
         "type": "paragraph",
         "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
         "font_size": 9,
         "bold": True,
         "align": 1,
-        "color": "#444444",
+        "color": "#000000",
         "space_before": 12,
         "space_after": 4,
     },
@@ -150,8 +160,38 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "based_on": "Body Text",
         "indent_first": 0,
         "left_indent": 24,
-        "line_spacing": 1.5,
+        "line_spacing_rule": "one_and_half",
         "space_after": 3,
+    },
+
+    # Compact table text: no inherited body spacing inside cells.
+    "TableBody": {
+        "name": "Table Body",
+        "type": "paragraph",
+        "based_on": "Normal",
+        "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
+        "font_size": 10,
+        "align": 0,
+        "indent_first": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "line_spacing_rule": "single",
+        "space_before": 0,
+        "space_after": 0,
+    },
+
+    "TableHeader": {
+        "name": "Table Header",
+        "type": "paragraph",
+        "based_on": "Table Body",
+        "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
+        "font_size": 10,
+        "bold": True,
+        "line_spacing_rule": "single",
+        "space_before": 0,
+        "space_after": 0,
     },
 }
 
@@ -162,12 +202,13 @@ CHAR_STYLES: Dict[str, Dict[str, Any]] = {
         "name": "Verbatim Char",
         "type": "character",
         "font_name": MONO_FONT,
+        "font_name_ascii": MONO_FONT,
         "font_size": 9,
     },
     "Hyperlink": {
         "name": "Hyperlink",
         "type": "character",
-        "color": "#0000FF",
+        "color": "#000000",
         "underline": True,
     },
     "Strikeout": {
@@ -180,12 +221,12 @@ CHAR_STYLES: Dict[str, Dict[str, Any]] = {
 
 # Heading style properties (used by add_heading_level / writer_renderer)
 HEADING_STYLE_MAP: Dict[int, Dict[str, Any]] = {
-    1: {"font_name": HEADING_FONT, "font_size": 16, "bold": True, "align": 1, "space_before": 16, "space_after": 5, "line_spacing": 1.5},
-    2: {"font_name": HEADING_FONT, "font_size": 15, "bold": True, "align": 3, "space_before": 14, "space_after": 5, "line_spacing": 1.5},
-    3: {"font_name": HEADING_FONT, "font_size": 15, "bold": True, "align": 3, "space_before": 12, "space_after": 5, "line_spacing": 1.5},
-    4: {"font_name": HEADING_FONT, "font_size": 14, "bold": True, "align": 3, "space_before": 10, "space_after": 5, "line_spacing": 1.5},
-    5: {"font_name": HEADING_FONT, "font_size": 14, "bold": True, "align": 3, "space_before": 8, "space_after": 5, "line_spacing": 1.5},
-    6: {"font_name": HEADING_FONT, "font_size": 12, "bold": True, "align": 3, "space_before": 6, "space_after": 5, "line_spacing": 1.5},
+    1: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 16, "bold": True, "align": 1, "space_before": 16, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
+    2: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 15, "bold": True, "align": 0, "space_before": 14, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
+    3: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 15, "bold": True, "align": 0, "space_before": 12, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
+    4: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 14, "bold": True, "align": 0, "space_before": 10, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
+    5: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 14, "bold": True, "align": 0, "space_before": 8, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
+    6: {"font_name": HEADING_FONT, "font_name_ascii": HEADING_FONT, "font_size": 12, "bold": True, "align": 0, "space_before": 6, "space_after": 5, "line_spacing_rule": "single", "keep_with_next": True},
 }
 
 

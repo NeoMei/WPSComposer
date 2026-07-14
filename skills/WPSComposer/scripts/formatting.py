@@ -158,6 +158,12 @@ def apply_font(font, patch):
                 ok = safe_set(color_obj, "RGB", hex_to_rgb_long(value))
             else:
                 ok = safe_set(font, "Color", hex_to_rgb_long(value))
+        elif key == "name":
+            results = [safe_set(font, "Name", value)]
+            for attr in ("NameFarEast", "NameAscii", "NameOther", "NameBi"):
+                if safe_get(font, attr) is not None:
+                    results.append(safe_set(font, attr, value))
+            ok = all(results)
         elif key in mapping:
             ok = safe_set(font, mapping[key], value)
         else:

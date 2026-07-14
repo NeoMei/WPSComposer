@@ -7,6 +7,7 @@ merged tables, TOC, and auto-populated fields.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from ._dispatch import (
     _abs, FMT_DOCX, FMT_PDF_FROM_DOC, FMT_DOC, FMT_DOCM, FMT_DOTX,
@@ -32,6 +33,87 @@ from .formatting import (
     safe_get,
     safe_set,
 )
+
+
+# ===========================================================================
+
+_LINE_SPACING_RULES = {
+    "single": 0,
+    "one_and_half": 1,
+    "double": 2,
+    "at_least": 3,
+    "exact": 4,
+    "multiple": 5,
+}
+
+
+def _visual_text_width(value):
+    """Estimate display width with CJK characters counted as two columns."""
+    lines = str(value or "").splitlines() or [""]
+    return max(
+        sum(2 if unicodedata.east_asian_width(ch) in "WFA" else 1 for ch in line)
+        for line in lines
+    )
+
+
+def _content_column_widths(data, cols, available_width):
+    """Return content-aware column widths in points.
+
+    A 75th-percentile sample prevents one unusually long cell from consuming
+    the whole table.  Bounds keep identifier columns usable while allowing a
+    narrative column to take most of the width.
+    """
+    if cols <= 0:
+        return []
+
+    representatives = []
+    for col in range(cols):
+        samples = [
+            _visual_text_width(row[col])
+            for row in data
+            if col < len(row) and str(row[col]).strip()
+        ]
+        if not samples:
+            representatives.append(4.0)
+            continue
+        header = samples[0] * 1.15
+        samples.sort()
+        q75 = samples[round((len(samples) - 1) * 0.75)]
+        representatives.append(max(4.0, min(80.0, max(header, q75))))
+
+    weights = [value ** 0.7 for value in representatives]
+    minimum = {1: 1.0, 2: 0.24, 3: 0.15, 4: 0.11, 5: 0.085}.get(
+        cols, min(0.08, 0.6 / cols)
+    )
+    maximum = 0.72 if cols == 2 else 0.65
+    ratios = [0.0] * cols
+    active = set(range(cols))
+    remaining = 1.0
+
+    while active:
+        total_weight = sum(weights[index] for index in active) or len(active)
+        trial = {
+            index: remaining * weights[index] / total_weight
+            for index in active
+        }
+        constrained = False
+        for index in list(active):
+            if trial[index] < minimum:
+                ratios[index] = minimum
+            elif trial[index] > maximum:
+                ratios[index] = maximum
+            else:
+                continue
+            remaining -= ratios[index]
+            active.remove(index)
+            constrained = True
+        if not constrained:
+            for index in active:
+                ratios[index] = trial[index]
+            break
+
+    total = sum(ratios) or 1.0
+    return [available_width * ratio / total for ratio in ratios]
 
 
 # ===========================================================================
@@ -80,6 +162,15 @@ class WriterComposer(BaseComposer):
         for key, props in styles_dict.items():
             self._ensure_one_style(key, props)
 
+    def ensure_heading_styles(self, styles_by_level):
+        """Configure built-in Heading 1-6 styles from one source of truth."""
+        for level, props in styles_by_level.items():
+            try:
+                style = self._doc.Styles(-(int(level) + 1))
+            except Exception:
+                continue
+            self._configure_style(style, props, is_char=False)
+
     def _ensure_one_style(self, key, props):
         """Create or update a single named style."""
         name = props.get("name", key)
@@ -93,9 +184,51 @@ class WriterComposer(BaseComposer):
                 style = doc.Styles.Add(name, 2 if is_char else 1)
             except Exception:
                 return
+        self._configure_style(style, props, is_char=is_char)
+
+    def _set_font_family(self, font, east_asia, ascii_name=None):
+        """Set every Word font slot so Chinese/Latin runs cannot fall back."""
+        if not east_asia:
+            return
+        ascii_name = ascii_name or east_asia
+        safe_set(font, "Name", east_asia)
+        safe_set(font, "NameFarEast", east_asia)
+        safe_set(font, "NameAscii", ascii_name)
+        safe_set(font, "NameOther", ascii_name)
+        safe_set(font, "NameBi", ascii_name)
+
+    def _set_line_spacing(self, paragraph_format, value=None, rule=None):
+        """Apply semantic Word line spacing without confusing lines and points."""
+        if rule is None:
+            if value is not None:
+                safe_set(paragraph_format, "LineSpacing", value)
+            return
+        code = _LINE_SPACING_RULES.get(rule, rule)
+        safe_set(paragraph_format, "LineSpacingRule", code)
+        if code in (3, 4) and value is not None:
+            safe_set(paragraph_format, "LineSpacing", value)
+        elif code == 5 and value is not None:
+            try:
+                points = self._app.LinesToPoints(float(value))
+            except Exception:
+                points = float(value) * 12.0
+            safe_set(paragraph_format, "LineSpacing", points)
+
+    def _configure_style(self, style, props, is_char=False):
+        """Apply a style definition, including base style and CJK font slots."""
+        if props.get("based_on"):
+            try:
+                style.BaseStyle = self._doc.Styles(props["based_on"])
+            except Exception:
+                try:
+                    style.BaseStyle = props["based_on"]
+                except Exception:
+                    pass
         try:
             if props.get("font_name"):
-                style.Font.Name = props["font_name"]
+                self._set_font_family(
+                    style.Font, props["font_name"], props.get("font_name_ascii")
+                )
             if props.get("font_size") is not None:
                 style.Font.Size = props["font_size"]
             if props.get("bold") is not None:
@@ -116,12 +249,23 @@ class WriterComposer(BaseComposer):
                     pf.FirstLineIndent = props["indent_first"]
                 if props.get("left_indent") is not None:
                     pf.LeftIndent = props["left_indent"]
-                if props.get("line_spacing") is not None:
-                    pf.LineSpacing = props["line_spacing"]
+                if (props.get("line_spacing") is not None
+                        or props.get("line_spacing_rule") is not None):
+                    self._set_line_spacing(
+                        pf,
+                        props.get("line_spacing"),
+                        props.get("line_spacing_rule"),
+                    )
                 if props.get("space_before") is not None:
                     pf.SpaceBefore = props["space_before"]
                 if props.get("space_after") is not None:
                     pf.SpaceAfter = props["space_after"]
+                if props.get("right_indent") is not None:
+                    pf.RightIndent = props["right_indent"]
+                if props.get("keep_together") is not None:
+                    pf.KeepTogether = props["keep_together"]
+                if props.get("keep_with_next") is not None:
+                    pf.KeepWithNext = props["keep_with_next"]
                 if props.get("shading"):
                     try:
                         style.Shading.BackgroundPatternColor = hex_to_rgb_long(props["shading"])
@@ -140,12 +284,26 @@ class WriterComposer(BaseComposer):
     def add_styled_paragraph(self, text, style_name):
         """Write a paragraph using a named style."""
         s = self.selection
+        self._reset_selection_to_normal()
         try:
             s.Style = self._doc.Styles(style_name)
         except Exception:
             pass
         s.TypeText(text)
         s.TypeParagraph()
+        self._reset_selection_to_normal()
+
+    def _reset_selection_to_normal(self):
+        """Clear carried direct formatting and restore the Normal style."""
+        s = self.selection
+        try:
+            s.ClearFormatting()
+        except Exception:
+            pass
+        try:
+            s.Style = self._doc.Styles(-1)
+        except Exception:
+            pass
 
     # ---- page setup ----
     def set_columns(self, count):
@@ -185,7 +343,8 @@ class WriterComposer(BaseComposer):
 
     # ---- text ----
     def add_heading_level(self, text, level=1, size=None, color=None,
-                          line_spacing=None, space_after=None):
+                          line_spacing=None, space_after=None,
+                          line_spacing_rule=None):
         """Add a heading with proper Word outline level (1-6).
 
         Args:
@@ -193,70 +352,66 @@ class WriterComposer(BaseComposer):
             level: 1-6 (H1-H6).
             size: Font size in points.
             color: #RRGGBB hex or BGR int.
-            line_spacing: Line spacing override (points).
+            line_spacing: Line spacing override. Points unless accompanied by
+                ``line_spacing_rule="multiple"``.
             space_after: Space after paragraph (points).
+            line_spacing_rule: Semantic rule such as ``single``,
+                ``one_and_half``, ``exact``, or ``multiple``.
         """
-        _sizes = {1: 16, 2: 15, 3: 15, 4: 14, 5: 13, 6: 12}
-        _bold  = {1: True, 2: True, 3: True, 4: True, 5: True, 6: True}
-        _align = {1: 1, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3}  # H1=center, rest=justify
-        _fonts = {1: "\u9ed1\u4f53", 2: "\u9ed1\u4f53", 3: "\u9ed1\u4f53",
-                  4: "\u9ed1\u4f53", 5: "\u9ed1\u4f53", 6: "\u9ed1\u4f53"}
+        from .reference_styles import get_heading_style
 
-        fs = size if size is not None else _sizes.get(level, 14)
-        fb = _bold.get(level, True)
-        fa = _align.get(level, 3)
-        ff = _fonts.get(level, "\u9ed1\u4f53")
+        level = min(max(int(level), 1), 6)
+        props = get_heading_style(level)
+        self.ensure_heading_styles({level: props})
         style_idx = -(level + 1)
 
         s = self.selection
-        # Apply built-in heading style first
+        self._reset_selection_to_normal()
         s.Style = self._doc.Styles(style_idx)
-        # Override font properties on the selection (must come after style)
-        s.Font.Size = fs
-        s.Font.Bold = fb
-        s.Font.Name = ff
-        s.Font.NameFarEast = ff
-        s.ParagraphFormat.Alignment = fa
+        # Optional direct overrides remain for backward-compatible low-level use.
+        if size is not None:
+            s.Font.Size = size
         if color is not None:
             s.Font.Color = hex_to_rgb_long(color)
-        if line_spacing is not None:
-            s.ParagraphFormat.LineSpacing = line_spacing
+        if line_spacing is not None or line_spacing_rule is not None:
+            self._set_line_spacing(
+                s.ParagraphFormat, line_spacing, line_spacing_rule
+            )
         if space_after is not None:
             s.ParagraphFormat.SpaceAfter = space_after
         s.TypeText(text)
         s.TypeParagraph()
 
-        # Re-apply font on the just-written paragraph to ensure WPS respects it
+        # Re-apply the style to the completed paragraph so the paragraph mark
+        # cannot retain direct formatting from the following selection.
         try:
             para = s.Paragraphs(1).Previous()
             if para:
-                rng = para.Range
-                rng.Font.Name = ff
-                rng.Font.NameFarEast = ff
-                rng.Font.Size = fs
-                rng.Font.Bold = fb
+                para.Range.Style = self._doc.Styles(style_idx)
+                if size is not None:
+                    para.Range.Font.Size = size
+                if color is not None:
+                    para.Range.Font.Color = hex_to_rgb_long(color)
         except Exception:
             pass
-
-        # Reset to Normal
-        s.Style = self._doc.Styles(-1)
-        s.Font.Size = 12
-        s.Font.Bold = False
-        s.Font.Color = 0
+        self._reset_selection_to_normal()
 
     # Backward-compat aliases
-    def add_heading(self, text, size=16, bold=True, color=None):
+    def add_heading(self, text, size=None, bold=True, color=None):
         return self.add_heading_level(text, level=1, size=size, color=color)
 
-    def add_heading2(self, text, size=14, color=None):
+    def add_heading2(self, text, size=None, color=None):
         return self.add_heading_level(text, level=2, size=size, color=color)
 
     def add_paragraph(self, text, size=None, bold=None, italic=None,
                       color=None, align=None, indent_first=None,
-                      line_spacing=None, space_after=None, font_name=None):
+                      line_spacing=None, space_after=None, font_name=None,
+                      line_spacing_rule=None, font_name_ascii=None,
+                      space_before=None):
         s = self.selection
+        self._reset_selection_to_normal()
         if font_name is not None:
-            s.Font.Name = font_name
+            self._set_font_family(s.Font, font_name, font_name_ascii)
         if size is not None:
             s.Font.Size = size
         if bold is not None:
@@ -269,18 +424,17 @@ class WriterComposer(BaseComposer):
             s.ParagraphFormat.Alignment = align  # 0L,1C,2R,3justify
         if indent_first is not None:
             s.ParagraphFormat.FirstLineIndent = indent_first
-        if line_spacing is not None:
-            s.ParagraphFormat.LineSpacing = line_spacing
+        if line_spacing is not None or line_spacing_rule is not None:
+            self._set_line_spacing(
+                s.ParagraphFormat, line_spacing, line_spacing_rule
+            )
+        if space_before is not None:
+            s.ParagraphFormat.SpaceBefore = space_before
         if space_after is not None:
             s.ParagraphFormat.SpaceAfter = space_after
         s.TypeText(text)
         s.TypeParagraph()
-        # Reset
-        s.Font.Name = ""
-        s.Font.Size = 11
-        s.Font.Bold = False
-        s.Font.Italic = False
-        s.Font.Color = 0
+        self._reset_selection_to_normal()
     def add_centered(self, text, size=24, bold=True, color=None):
         self.add_paragraph(text, size=size, bold=bold, color=color, align=1)
 
@@ -296,23 +450,28 @@ class WriterComposer(BaseComposer):
             glyph: Bullet character (default: \u2022 = \u2022).
             indent: Left indent in points.
         """
+        from .reference_styles import BODY_FONT, LATIN_FONT
+
         s = self.selection
         for it in items:
+            self._reset_selection_to_normal()
+            try:
+                s.Style = self._doc.Styles("List Paragraph")
+            except Exception:
+                pass
             s.ParagraphFormat.LeftIndent = indent
             s.ParagraphFormat.FirstLineIndent = -indent  # hanging indent
-            s.ParagraphFormat.LineSpacing = 1.3
+            self._set_line_spacing(s.ParagraphFormat, rule="one_and_half")
+            s.ParagraphFormat.SpaceBefore = 0
             s.ParagraphFormat.SpaceAfter = 3
-            s.Font.Name = ""
-            s.Font.Size = 11
+            self._set_font_family(s.Font, BODY_FONT, LATIN_FONT)
+            s.Font.Size = 12
             s.Font.Bold = False
-            s.Font.Color = hex_to_rgb_long("#333333")
+            s.Font.Color = 0
             # Bullet glyph + tab + text
             s.TypeText(glyph + "\t" + it)
             s.TypeParagraph()
-        # Reset
-        s.ParagraphFormat.LeftIndent = 0
-        s.ParagraphFormat.FirstLineIndent = 0
-        s.Font.Color = 0
+        self._reset_selection_to_normal()
 
     def add_numbered_list(self, items, indent=24):
         """Add a numbered list using explicit number prefixes.
@@ -321,23 +480,28 @@ class WriterComposer(BaseComposer):
             items: List of text strings.
             indent: Left indent in points.
         """
+        from .reference_styles import BODY_FONT, LATIN_FONT
+
         s = self.selection
         for idx, it in enumerate(items, 1):
+            self._reset_selection_to_normal()
+            try:
+                s.Style = self._doc.Styles("List Paragraph")
+            except Exception:
+                pass
             s.ParagraphFormat.LeftIndent = indent
             s.ParagraphFormat.FirstLineIndent = -indent  # hanging indent
-            s.ParagraphFormat.LineSpacing = 1.3
+            self._set_line_spacing(s.ParagraphFormat, rule="one_and_half")
+            s.ParagraphFormat.SpaceBefore = 0
             s.ParagraphFormat.SpaceAfter = 3
-            s.Font.Name = ""
-            s.Font.Size = 11
+            self._set_font_family(s.Font, BODY_FONT, LATIN_FONT)
+            s.Font.Size = 12
             s.Font.Bold = False
-            s.Font.Color = hex_to_rgb_long("#333333")
+            s.Font.Color = 0
             # Number + dot + tab + text
             s.TypeText(f"{idx}.\t{it}")
             s.TypeParagraph()
-        # Reset
-        s.ParagraphFormat.LeftIndent = 0
-        s.ParagraphFormat.FirstLineIndent = 0
-        s.Font.Color = 0
+        self._reset_selection_to_normal()
 
     # ---- table ----
     def add_table(self, rows, cols, data, shade_header="#4472C4",
@@ -353,17 +517,21 @@ class WriterComposer(BaseComposer):
             shade_header: Header background colour (#RRGGBB).
             header_color: Header text colour.
             font_size: Body font size in points.
-            col_widths: Optional list of column widths in points.
+            col_widths: Optional list of exact column widths in points.
             alignments: Optional list of "left"/"center"/"right" per column.
             banded_rows: Enable alternating row shading.
-            auto_fit: Auto-fit table to page width.
+            auto_fit: Infer content-aware widths that fill the text area when
+                ``col_widths`` is omitted.
             repeat_header: Repeat header row on each page.
             border_color: Grid line colour.
 
         Returns:
             The COM Table object.
         """
+        from .reference_styles import BODY_FONT, LATIN_FONT
+
         s = self.selection
+        self._reset_selection_to_normal()
         tbl = self._doc.Tables.Add(s.Range, rows, cols)
 
         # ---- Cell population ----
@@ -373,14 +541,27 @@ class WriterComposer(BaseComposer):
                     continue
                 cell = tbl.Cell(r + 1, c + 1)
                 cell.Range.Text = str(data[r][c])
+                style_name = "Table Header" if r == 0 else "Table Body"
+                try:
+                    cell.Range.Style = self._doc.Styles(style_name)
+                except Exception:
+                    pass
+                self._set_font_family(cell.Range.Font, BODY_FONT, LATIN_FONT)
                 cell.Range.Font.Size = font_size
+                pf = cell.Range.ParagraphFormat
+                pf.FirstLineIndent = 0
+                pf.LeftIndent = 0
+                pf.RightIndent = 0
+                pf.SpaceBefore = 0
+                pf.SpaceAfter = 0
+                self._set_line_spacing(pf, rule="single")
 
                 # Cell padding
                 try:
-                    cell.TopPadding = 3
-                    cell.BottomPadding = 3
-                    cell.LeftPadding = 6
-                    cell.RightPadding = 6
+                    cell.TopPadding = 1.5
+                    cell.BottomPadding = 1.5
+                    cell.LeftPadding = 4
+                    cell.RightPadding = 4
                 except Exception:
                     pass
 
@@ -393,7 +574,7 @@ class WriterComposer(BaseComposer):
                 if r == 0:
                     # Header row
                     cell.Range.Font.Bold = True
-                    cell.Range.Font.Size = font_size + 1
+                    cell.Range.Font.Size = font_size
                     if header_color:
                         cell.Range.Font.Color = hex_to_rgb_long(header_color)
                     if shade_header:
@@ -414,21 +595,42 @@ class WriterComposer(BaseComposer):
                 if align not in ("left", "center", "right"):
                     continue
                 wd_align = {"left": 0, "center": 1, "right": 2}.get(align, 0)
-                try:
-                    tbl.Columns(c_idx + 1).Select()
-                    s.ParagraphFormat.Alignment = wd_align
-                except Exception:
-                    pass
+                for row_idx in range(1, rows + 1):
+                    try:
+                        tbl.Cell(row_idx, c_idx + 1).Range.ParagraphFormat.Alignment = wd_align
+                    except Exception:
+                        pass
 
         # ---- Column widths ----
-        if col_widths:
-            for c_idx, w in enumerate(col_widths):
-                if c_idx >= cols:
-                    break
+        widths = list(col_widths or [])
+        inferred_widths = False
+        page_setup = self._doc.PageSetup
+        available_width = max(
+            72.0,
+            float(page_setup.PageWidth)
+            - float(page_setup.LeftMargin)
+            - float(page_setup.RightMargin),
+        )
+        if auto_fit and not widths:
+            widths = _content_column_widths(data, cols, available_width)
+            inferred_widths = True
+        if widths:
+            try:
+                tbl.AutoFitBehavior(0)  # wdAutoFitFixed
+                tbl.AllowAutoFit = False
+                if inferred_widths:
+                    tbl.PreferredWidthType = 2  # wdPreferredWidthPoints
+                    tbl.PreferredWidth = available_width
+            except Exception:
+                pass
+            for c_idx, width in enumerate(widths[:cols]):
                 try:
-                    tbl.Columns(c_idx + 1).Width = w
+                    tbl.Columns(c_idx + 1).SetWidth(float(width), 0)
                 except Exception:
-                    pass
+                    try:
+                        tbl.Columns(c_idx + 1).Width = float(width)
+                    except Exception:
+                        pass
 
         # ---- Borders ----
         border_color_rgb = hex_to_rgb_long(border_color)
@@ -443,12 +645,19 @@ class WriterComposer(BaseComposer):
         except Exception:
             pass
 
-        # ---- Auto-fit ----
-        if auto_fit:
-            try:
-                tbl.AutoFitBehavior(2)  # wdAutoFitWindow
-            except Exception:
-                pass
+        # Keep rows compact but never clip wrapped content.
+        try:
+            tbl.Rows.HeightRule = 0  # wdRowHeightAuto
+        except Exception:
+            pass
+        try:
+            tbl.Rows.AllowBreakAcrossPages = False
+        except Exception:
+            for row_index in range(1, rows + 1):
+                try:
+                    tbl.Rows(row_index).AllowBreakAcrossPages = False
+                except Exception:
+                    pass
 
         # ---- Repeat header across pages ----
         if repeat_header and rows > 1:
@@ -459,29 +668,30 @@ class WriterComposer(BaseComposer):
 
         # Move cursor past table
         s.EndKey(6)  # wdStory
-        s.InsertBreak(7)  # wdLineBreak
+        self._reset_selection_to_normal()
+        s.TypeParagraph()
         return tbl
 
     def add_merged_table(self, data, merges=None, shade_header="#4472C4"):
         """data: list of rows (lists). merges: list of (r1,c1,r2,c2) 1-based."""
         rows = len(data)
         cols = max(len(r) for r in data)
-        tbl = self._doc.Tables.Add(self.selection.Range, rows, cols)
-        for r in range(rows):
-            for c in range(len(data[r])):
-                cell = tbl.Cell(r + 1, c + 1)
-                cell.Range.Text = str(data[r][c])
-                cell.Range.Font.Size = 10
-                if r == 0:
-                    cell.Range.Font.Bold = True
-                    cell.Shading.BackgroundPatternColor = hex_to_rgb_long(shade_header)
+        normalized = [list(row) + [""] * (cols - len(row)) for row in data]
+        tbl = self.add_table(
+            rows,
+            cols,
+            normalized,
+            shade_header=shade_header,
+            font_size=10,
+            banded_rows=False,
+            auto_fit=True,
+        )
         if merges:
             for r1, c1, r2, c2 in merges:
                 try:
                     tbl.Cell(r1, c1).Merge(tbl.Cell(r2, c2))
                 except Exception:
                     pass
-        self.selection.EndKey(6)
         return tbl
 
     # ---- shapes ----
@@ -509,16 +719,80 @@ class WriterComposer(BaseComposer):
         return self._doc.Shapes.AddTextEffect(preset, text, "Arial", 36,
                                                False, False, left, top)
 
-    def add_image(self, path, width=None, height=None, wrap=0):
+    def add_image(self, path, width=None, height=None, wrap=0, *,
+                  max_width=None, max_height=None, inline=True,
+                  preserve_aspect=True, alt=None):
+        """Insert an image and optionally constrain it without distortion.
+
+        Inline images are the default because they remain in the text flow
+        across WPS Writer, Microsoft Word and PDF export.  ``width`` and
+        ``height`` are target sizes in points; ``max_width``/``max_height``
+        only scale down oversized images.
+        """
         p = _abs(path)
+        if inline:
+            shape = self._doc.InlineShapes.AddPicture(
+                p, False, True, self.selection.Range
+            )
+            try:
+                shape.LockAspectRatio = -1 if preserve_aspect else 0
+            except Exception:
+                pass
+
+            natural_width = float(shape.Width)
+            natural_height = float(shape.Height)
+            if width is not None and height is not None:
+                if preserve_aspect and natural_width and natural_height:
+                    scale = min(width / natural_width, height / natural_height)
+                    shape.Width = natural_width * scale
+                    shape.Height = natural_height * scale
+                else:
+                    shape.Width = width
+                    shape.Height = height
+            elif width is not None:
+                shape.Width = width
+            elif height is not None:
+                shape.Height = height
+
+            current_width = float(shape.Width)
+            current_height = float(shape.Height)
+            scales = [1.0]
+            if max_width and current_width > max_width:
+                scales.append(max_width / current_width)
+            if max_height and current_height > max_height:
+                scales.append(max_height / current_height)
+            scale = min(scales)
+            if scale < 1.0:
+                shape.Width = current_width * scale
+                shape.Height = current_height * scale
+
+            if alt:
+                try:
+                    shape.AlternativeText = alt
+                except Exception:
+                    pass
+            try:
+                end = shape.Range.End
+                self.selection.SetRange(end, end)
+            except Exception:
+                pass
+            return shape
+
         if width and height:
-            shape = self._doc.Shapes.AddPicture(p, False, True, 0, 0, width, height)
+            shape = self._doc.Shapes.AddPicture(
+                p, False, True, 0, 0, width, height
+            )
         else:
             shape = self._doc.Shapes.AddPicture(p, False, True)
         try:
             shape.WrapFormat.Type = wrap
         except Exception:
             pass
+        if alt:
+            try:
+                shape.AlternativeText = alt
+            except Exception:
+                pass
         return shape
 
     def add_page_break(self):

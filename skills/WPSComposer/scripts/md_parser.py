@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 import os
 from typing import List, Optional
+from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 
 from .document_model import (
     StructuredDocument, Section, Span, Paragraph,
@@ -25,7 +27,10 @@ _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 _ITALIC_RE = re.compile(r"\*(.+?)\*")
 _LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-_IMAGE_RE = re.compile(r"!\[^([^\]]*)\]\(([^)]+)\)")
+_IMAGE_RE = re.compile(
+    r"!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))"
+    r"(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)"
+)
 
 # Extended syntax
 _HR_RE = re.compile(r"^(?:-{3,}|\*{3,}|_{3,})\s*$")
@@ -126,21 +131,41 @@ def _is_table_row(line: str) -> bool:
 
 
 def _parse_table_row(line: str) -> List[str]:
-    return [c.strip() for c in line.strip().strip("|").split("|")]
+    # Table cells are currently rendered as plain strings.  Preserve the
+    # visible text while removing Markdown control markers such as ``**``
+    # and backticks so they never leak into formal Writer output.
+    return [
+        "".join(span.text for span in _parse_inline(cell.strip()))
+        for cell in line.strip().strip("|").split("|")
+    ]
 
 
 def _is_separator_row(line: str) -> bool:
     return bool(_TABLE_SEP_RE.match(line.strip()))
 
 
-def _extract_image_refs(text: str) -> List[ImageBlock]:
+def _image_match_path(match: re.Match) -> str:
+    return (match.group(2) or match.group(3) or "").strip()
+
+
+def _resolve_image_path(path: str, base_dir: str = "") -> str:
+    """Resolve a Markdown image target to a renderer-ready path."""
+    path = unquote(path.strip())
+    parsed = urlparse(path)
+    if parsed.scheme in ("http", "https", "data"):
+        return path
+    if parsed.scheme == "file":
+        return os.path.abspath(url2pathname(parsed.path))
+    if os.path.isabs(path):
+        return os.path.normpath(path)
+    return os.path.abspath(os.path.join(base_dir or os.curdir, path))
+
+
+def _extract_image_refs(text: str, base_dir: str = "") -> List[ImageBlock]:
     """Extract inline image references from text."""
     images = []
     for m in _IMAGE_RE.finditer(text):
-        path = m.group(2)
-        if not path.startswith(("http://", "https://", "/")):
-            # Relative path — resolve later
-            pass
+        path = _resolve_image_path(_image_match_path(m), base_dir)
         images.append(ImageBlock(path=path, alt=m.group(1)))
     return images
 
@@ -226,6 +251,20 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
             heading = hm.group(2).strip()
             current_section = Section(level=level, heading=heading)
             sections.append(current_section)
+            i += 1
+            continue
+
+        # Standalone image.  Resolve relative paths while the Markdown file's
+        # directory is still available; renderers should not depend on cwd.
+        image_match = _IMAGE_RE.fullmatch(line.strip())
+        if image_match:
+            _ensure_section(current_section, sections)
+            current_section.elements.append(ImageBlock(
+                path=_resolve_image_path(
+                    _image_match_path(image_match), base_dir
+                ),
+                alt=image_match.group(1).strip(),
+            ))
             i += 1
             continue
 
@@ -348,6 +387,8 @@ def _is_block_start(line: str) -> bool:
     s = line.strip()
     if not s:
         return False
+    if _IMAGE_RE.fullmatch(s):
+        return True
     for prefix in _BLOCK_STARTS:
         if s.startswith(prefix):
             return True

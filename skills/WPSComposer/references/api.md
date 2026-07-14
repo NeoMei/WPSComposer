@@ -97,9 +97,9 @@ by `PdfComposer`; PDF does not expose editable WPS layout elements.
 ### Text
 | Method | Args | Notes |
 |---|---|---|
-| `add_heading(text, size=16, bold=True, color=None)` | str,int,bool,color | Heading1 style |
-| `add_heading2(text, size=14, color=None)` | str,int,color | Heading2 style |
-| `add_paragraph(text, size,bold,italic,color,align,indent_first,line_spacing)` | str,... | align: 0L,1C,2R,3justify |
+| `add_heading(text, size=None, bold=True, color=None)` | str,int,bool,color | Heading 1 style; default size comes from the centralized heading map |
+| `add_heading2(text, size=None, color=None)` | str,int,color | Heading 2 style; default size comes from the centralized heading map |
+| `add_paragraph(text, size,bold,italic,color,align,indent_first,line_spacing,line_spacing_rule,space_before,space_after,font_name,font_name_ascii)` | str,... | align: 0L,1C,2R,3justify; semantic rules include `single`, `one_and_half`, `exact`, `multiple` |
 | `add_centered(text, size=24, bold=True, color=None)` | str,... | centered paragraph |
 | `add_bullet_list(items)` | list[str] | bullet style |
 | `add_numbered_list(items)` | list[str] | numbered style |
@@ -107,7 +107,7 @@ by `PdfComposer`; PDF does not expose editable WPS layout elements.
 ### Tables
 | Method | Args | Notes |
 |---|---|---|
-| `add_table(rows,cols,data,shade_header,header_color,grid,font_size,col_widths)` | ... | styled table w/ colored header |
+| `add_table(rows,cols,data,shade_header,header_color,font_size,col_widths,alignments,auto_fit)` | ... | styled table; `auto_fit=True` uses content-aware column widths, while explicit `col_widths` remain point values |
 | `add_merged_table(data, merges, shade_header)` | list, list[(r1,c1,r2,c2)] | merged cells |
 
 ### Shapes & images
@@ -115,7 +115,7 @@ by `PdfComposer`; PDF does not expose editable WPS layout elements.
 |---|---|---|
 | `add_floating_textbox(text,left,top,width,height,wrap,fill_color,font_size,bold)` | ... | floating box w/ fill |
 | `add_wordart(text,left=200,top=400,preset=0)` | str,... | WordArt |
-| `add_image(path, width=None, height=None, wrap=0)` | str,... | inline/floating image |
+| `add_image(path, width=None, height=None, wrap=0, *, max_width=None, max_height=None, inline=True, preserve_aspect=True, alt=None)` | str,... | inline by default; proportional fit within optional bounds |
 | `add_page_break()` | | page break |
 | `add_horizontal_line()` | | horizontal rule |
 | `insert_toc(title="Table of Contents")` | str | auto TOC (levels 1-3) |
