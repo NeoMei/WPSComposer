@@ -9,6 +9,7 @@ import shutil
 import socket
 import stat
 import subprocess
+import sys
 import tempfile
 import time
 from dataclasses import dataclass
@@ -233,6 +234,7 @@ class ProbeRuntime:
         self._processes: list[subprocess.Popen] = []
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
+        self.registration_restored = True
 
     def __enter__(self) -> "ProbeRuntime":
         self._preflight()
@@ -272,7 +274,12 @@ class ProbeRuntime:
         self._snapshot = RegistrationSnapshot.capture(
             self.publish_xml, recovery
         )
-        print(f"WPS registration recovery: {recovery}", flush=True)
+        self.registration_restored = False
+        print(
+            f"WPS registration recovery: {recovery}",
+            file=sys.stderr,
+            flush=True,
+        )
         try:
             for component, config in COMPONENT_CONFIG.items():
                 log_path = self.runtime_dir / f"wpsjs-{component}.log"
@@ -347,9 +354,9 @@ class ProbeRuntime:
 
     def restore_registration(self) -> None:
         if self._snapshot is not None:
-            snapshot = self._snapshot
+            self._snapshot.restore()
             self._snapshot = None
-            snapshot.restore()
+            self.registration_restored = True
 
     def close(self) -> None:
         try:
