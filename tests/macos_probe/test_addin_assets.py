@@ -24,3 +24,14 @@ def test_bridge_client_has_no_dynamic_code_execution():
     assert "/v1/result" in source
     assert "eval(" not in source
     assert "new Function" not in source
+
+
+def test_writer_uses_wps_save_and_pdf_export():
+    source = (ROOT / "writer.js").read_text()
+    assert "Application.Documents.Add" in source
+    assert "Tables.Add" in source
+    assert "InlineShapes.AddPicture" in source
+    assert "SaveAs2(outputPath, 12)" in source
+    assert "ExportAsFixedFormat(outputPath, 17" in source
+    assert '"smoke_docx"' in source
+    assert '"smoke_pdf"' in source
