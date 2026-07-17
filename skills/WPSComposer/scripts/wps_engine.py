@@ -147,6 +147,22 @@ __all__ = [
     "hex_to_rgb_long",
     "resolve_color",
     "resolve_color_long",
+    # High-level generation API
+    "generate",
+    "list_formats",
+    "list_available_presets",
+    # Document model and parser
+    "StructuredDocument",
+    "Section",
+    "Paragraph",
+    "Span",
+    "ListBlock",
+    "TableBlock",
+    "CodeBlock",
+    "ImageBlock",
+    "BlockQuote",
+    "parse",
+    "parse_file",
     # Existing/current document API
     "open_document",
     "attach_active",

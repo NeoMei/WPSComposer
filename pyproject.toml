@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wps-composer"
+version = "0.2.0"
+description = "WPS-backed rich document composition for Codex"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+
+[project.optional-dependencies]
+windows = ["pywin32>=306; platform_system == 'Windows'"]
+pdf = ["pypdf>=4", "pdfplumber>=0.11", "reportlab>=4"]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["skills*"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["."]
