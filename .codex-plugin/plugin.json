@@ -1,6 +1,9 @@
 {
-  "name": "WPSComposer",
+  "name": "wps-composer",
   "version": "0.2.0",
-  "description": "Agent-friendly WPS document inspection and fine-grained formatting for existing or new Writer, Spreadsheet, and Presentation files via COM automation.",
-  "skills": ["skills/WPSComposer"]
+  "description": "Agent-friendly WPS document inspection and rich document composition for Writer, Spreadsheet, Presentation, and PDF workflows.",
+  "license": "MIT",
+  "repository": "https://github.com/NeoMei/WPSComposer",
+  "keywords": ["wps", "documents", "docx", "pptx", "xlsx", "pdf"],
+  "skills": "./skills/"
 }
