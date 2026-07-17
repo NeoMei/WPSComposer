@@ -45,3 +45,13 @@ def test_presentation_uses_wps_shapes_and_save():
     assert "Shapes.AddTable" in source
     assert "SaveAs(outputPath, 24)" in source
     assert '"smoke_pptx"' in source
+
+
+def test_spreadsheet_uses_wps_cells_chart_and_save():
+    source = (ROOT / "spreadsheet.js").read_text()
+    assert "Application.Workbooks.Add" in source
+    assert '.Formula = "=B2*C2"' in source
+    assert "ChartObjects().Add" in source
+    assert "SetSourceData" in source
+    assert "SaveAs(outputPath, 51)" in source
+    assert '"smoke_xlsx"' in source
