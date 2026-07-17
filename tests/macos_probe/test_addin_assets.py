@@ -35,3 +35,13 @@ def test_writer_uses_wps_save_and_pdf_export():
     assert "ExportAsFixedFormat(outputPath, 17" in source
     assert '"smoke_docx"' in source
     assert '"smoke_pdf"' in source
+
+
+def test_presentation_uses_wps_shapes_and_save():
+    source = (ROOT / "presentation.js").read_text()
+    assert "Application.Presentations.Add" in source
+    assert "Shapes.AddTextbox" in source
+    assert "Shapes.AddPicture" in source
+    assert "Shapes.AddTable" in source
+    assert "SaveAs(outputPath, 24)" in source
+    assert '"smoke_pptx"' in source
