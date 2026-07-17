@@ -3,6 +3,9 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .venv/
+macos/wps-jsapi-probe/node_modules/
+macos/wps-jsapi-probe/.runtime/
+build/macos-phase0/
 venv/
 .worktrees/
 .venv/

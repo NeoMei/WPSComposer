@@ -555,6 +555,9 @@ git commit -m "Add authenticated macOS probe bridge"
   "devDependencies": {
     "wps-jsapi-declare": "2.2.0",
     "wpsjs": "2.2.3"
+  },
+  "overrides": {
+    "tmp": "0.2.7"
   }
 }
 ```
@@ -566,10 +569,11 @@ Run:
 ```bash
 cd macos/wps-jsapi-probe
 PATH=/Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm install --package-lock-only
+PATH=/Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm ci
 npm ls --depth=0
 ```
 
-Expected: `wpsjs@2.2.3` and `wps-jsapi-declare@2.2.0`, with no dependency resolution error. Do not commit `node_modules`.
+Expected: `wpsjs@2.2.3`, `wps-jsapi-declare@2.2.0`, and the reviewed `tmp@0.2.7` security override, with no dependency resolution error. Do not commit `node_modules`. Run `npm audit --json > audit.json` inside the gitignored per-run evidence directory and record findings in `docs/macos-phase0.md`; do not apply an unreviewed `npm audit fix` to the official WPS toolchain.
 
 - [ ] **Step 3: Write failing runtime tests**
 

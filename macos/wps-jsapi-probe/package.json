@@ -1,0 +1,13 @@
+{
+  "name": "wpscomposer-macos-jsapi-probe",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Phase 0 Mac WPS JSAPI feasibility probe",
+  "devDependencies": {
+    "wps-jsapi-declare": "2.2.0",
+    "wpsjs": "2.2.3"
+  },
+  "overrides": {
+    "tmp": "0.2.7"
+  }
+}
