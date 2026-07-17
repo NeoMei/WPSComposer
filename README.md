@@ -15,7 +15,7 @@ WPSComposer 的做法是直接驱动 WPS Office（或 MS Office）的 COM 接口
 - 合并/底纹/边框表格、自动生成目录和页码字段
 - 公式、冻结窗格、条件格式、图表
 - 16:9 幻灯片、标题版式、演讲者备注
-- 四种设计预设（学术、商务、咨询、政企方案）快速切换风格
+- 五种设计预设（`academic`、`consultant`、`business`、`tech`、`proposal`）快速切换风格
 
 **编辑已有文档**（对话式精排）：
 - 打开已有文件或直接接管 WPS 中正在编辑的文档
@@ -41,7 +41,7 @@ StructuredDocument（结构化文档模型）
 Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
   │  通过 COM 接口驱动 WPS Office
   ▼
-DOCX / PPTX / XLSX + PDF
+用户请求的单一产物：DOCX / PPTX / XLSX / PDF
 ```
 
 排版规范（`reference_styles.py`）默认遵循中文公文/政企方案标准：
@@ -53,30 +53,33 @@ DOCX / PPTX / XLSX + PDF
 
 ### 安装
 
-```powershell
+```bash
 # 克隆仓库
 git clone https://github.com/NeoMei/WPSComposer.git
 
-# 发布到 Codex 插件目录
+# 安装到 Codex 个人插件 marketplace
 cd WPSComposer
-pwsh ./install.ps1            # 首次安装
-pwsh ./install.ps1 -Force     # 覆盖更新
+python3 install.py            # 首次安装
+python3 install.py --force    # 覆盖更新
 ```
 
-安装后，在 Codex 中引用 `$WPSComposer` 即可自动加载。
+Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
+`./install.sh`。安装后重启 ChatGPT/Codex Desktop，在 Plugins 目录中安装或启用
+`wps-composer`，然后在 Codex 中引用 `$WPSComposer`。
 
 ### 运行时要求
 
-- Windows 系统
-- WPS Office（文字/表格/演示）或 MS Office（Word/Excel/PowerPoint，自动回退）
-- Python 运行时包含 `pywin32`；PDF 编辑还需 `pypdf` + `pdfplumber`
+- Python 3.9 或更高版本。
+- Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
+- Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
+- PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 
 ## 用法
 
 ### 一行生成文档
 
 ```python
-from orchestrator import generate
+from skills.WPSComposer import generate
 
 generate("报告.md", format="docx", preset="academic")    # 学术风格 DOCX
 generate("演示.md", format="pptx", preset="business")     # 商务风格 PPTX
@@ -87,7 +90,7 @@ generate("报告.md", format="pdf",  preset="consultant")   # 咨询风格 PDF
 ### 编辑已有文档（对话式精排）
 
 ```python
-from wps_engine import inspect, edit, attach_active
+from skills.WPSComposer import inspect, edit, attach_active
 
 # 打开已有文件，查看结构化内容和格式
 tree = inspect("报告.docx")
@@ -121,7 +124,7 @@ edit(
 ### PDF 编辑
 
 ```python
-from wps_engine import PdfComposer
+from skills.WPSComposer import PdfComposer
 
 PdfComposer.merge(["a.pdf", "b.pdf"], "合并.pdf")
 PdfComposer.split("输入.pdf", "输出目录/")
@@ -170,7 +173,7 @@ WPSComposer/
 │       ├── md_parser.py             # Markdown 解析器
 │       ├── document_model.py        # 结构化文档模型
 │       ├── reference_styles.py      # 排版规范定义
-│       ├── design_presets.py        # 设计预设（4 套配色+字体）
+│       ├── design_presets.py        # 设计预设（5 套配色+字体）
 │       ├── layout_templates.py      # 幻灯片版式（14 种）
 │       ├── quality_checks.py        # 质量校验
 │       ├── formatting.py            # 格式工具函数
@@ -179,13 +182,15 @@ WPSComposer/
 │           ├── writer_renderer.py
 │           ├── sheet_renderer.py
 │           └── slide_renderer.py
-├── install.ps1                      # 一键发布脚本
+├── install.py                       # 跨平台安装器
+├── install.ps1                     # PowerShell 包装脚本
+├── install.sh                      # macOS/Linux 包装脚本
 └── README.md
 ```
 
 ## 开发调试
 
-在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件，用临时脚本验证排版效果。调试满意后运行 `install.ps1` 发布。建议每次改动同时导出 PDF 做视觉核对。
+在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件，用 pytest 和临时脚本验证。原生 WPS 排版改动可另外导出 PDF 作为开发验证证据，但公开生成接口只返回用户请求的格式。调试满意后运行 `python3 install.py --force` 更新本地插件。
 
 ## License
 

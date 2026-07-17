@@ -14,7 +14,7 @@ OOXML, no guessing about wrapping or page breaks.
 
 The ``generate()`` function is the single entry point for all document generation::
 
-    from orchestrator import generate
+    from skills.WPSComposer import generate
 
     # One line: MD -> beautiful document
     generate("report.md", format="docx", preset="academic")
@@ -33,7 +33,7 @@ For conversational formatting, inspect first and then patch the returned
 element ids. All patches are partial, so omitted properties stay unchanged.
 
 ```python
-from wps_engine import inspect, edit, attach_active
+from skills.WPSComposer import inspect, edit, attach_active
 
 # Existing file -> addressable structure + effective formatting
 tree = inspect("report.docx")
@@ -95,17 +95,15 @@ backward-compatible re-export facade:
 | `slide.py` | SlideComposer | WPS Presentation → pptx |
 | `pdf.py` | PdfComposer | PDF edit (pypdf/pdfplumber, cross-platform) |
 
-All existing `from wps_engine import ...` imports continue to work.
-New code can import directly from the specific modules::
+Use the stable public package for new code::
 
-    from writer import WriterComposer
-    from sheet import SheetComposer
-    from slide import SlideComposer
-    from pdf import PdfComposer
+    from skills.WPSComposer import (
+        WriterComposer, SheetComposer, SlideComposer, PdfComposer,
+    )
 
 ### Usage
 `python
-from wps_engine import WriterComposer, SheetComposer, SlideComposer
+from skills.WPSComposer import WriterComposer, SheetComposer, SlideComposer
 
 with WriterComposer() as w:      # KWps.Application
     w.set_columns(2)
@@ -135,10 +133,10 @@ creates a fresh document; `__exit__` always closes + quits, even on error.
 Three new modules provide design presets, layout templates, and quality checks
 (integrated from the harness-anything project):
 
-`scripts/design_presets.py` — 4 colour+font presets for quick styling:
+`scripts/design_presets.py` — 5 colour+font presets for quick styling:
 ```python
-from design_presets import get_preset, list_presets
-preset = get_preset("academic")       # or: consultant, business, tech
+from skills.WPSComposer.scripts.design_presets import get_preset, list_presets
+preset = get_preset("academic")  # consultant, business, tech, or proposal
 preset.get_color("primary")           # "#1A3C8B"
 preset.get_font("title")              # ("Arial", 40, "#1A3C8B")
 ```
@@ -197,7 +195,7 @@ backed by pypdf + pdfplumber — NOT the WPS PDF COM host (KPDF.Application
 Dispatch blocks headless, so it's unsuitable for automation).
 
 ```python
-from wps_engine import PdfComposer
+from skills.WPSComposer import PdfComposer
 PdfComposer.merge(["a.pdf","b.pdf"], "out.pdf")
 PdfComposer.split("in.pdf", "out_dir")            # one-page PDFs
 PdfComposer.extract_pages("in.pdf", [1,3], "out.pdf")  # keep pages 1 & 3
@@ -208,6 +206,12 @@ print(PdfComposer.extract_text("in.pdf"))           # via pdfplumber
 
 ## Output discipline
 
-Always export a PDF alongside the native format so layout can be visually
-verified (`render_docx.py`-style gate). Deliver only the requested format to the
-user unless they ask for intermediates.
+Generate and deliver only the requested artifact format. During development,
+create PDF evidence separately when a native WPS layout change needs visual
+verification; do not make that PDF an automatic public companion output.
+
+## Installation
+
+The repository-level `install.py` installs this bundle through a Codex personal marketplace.
+Restart ChatGPT/Codex Desktop after installation, then install or
+enable `wps-composer` from the Plugins Directory before invoking `$WPSComposer`.
