@@ -20,7 +20,7 @@ Windows COM backend remains unchanged.
 
 | Item | Value |
 |---|---|
-| Test time | 2026-07-17 21:46 CST (+0800) |
+| Test time | 2026-07-17 21:52 CST (+0800) |
 | macOS | 26.5.2 (25F84) |
 | WPS Office | 12.1.26035 |
 | Node.js | 24.14.0 (Codex bundled runtime) |
@@ -33,12 +33,20 @@ The real probe command was:
 ```bash
 .venv/bin/python -m skills.WPSComposer.scripts.macos_probe \
   --node /Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node \
-  --output-dir build/macos-phase0-save-events \
-  --timeout 45
+  --output-dir build/macos-phase0-after-manual-authorization \
+  --timeout 60
 ```
 
 Primary failure report:
-`build/macos-phase0-save-events/phase0-report.json`.
+`build/macos-phase0-after-manual-authorization/phase0-report.json`.
+
+This control run was performed after the user had completed the visible macOS
+authorization prompts. It still produced and validated PPTX and XLSX while
+Writer failed both saves with the same completion-event timeout. The result
+therefore is not attributed to a prompt being approved too late. Recent TCC
+logs showed an Apple Events denial for the optional Codex Computer Use helper,
+not a WPS Writer file-access denial; that denial affected automated window
+inspection only and was not used by the probe.
 
 Two additional runs isolate and corroborate the result:
 
@@ -53,10 +61,10 @@ All paths above are runtime evidence under the gitignored `build/` directory.
 
 | Format | Actual test path | Size | WPS API | Validation |
 |---|---|---:|---|---|
-| DOCX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-save-events/smoke.docx` | missing | `Document.SaveAs2(path, 12)` | **Failed:** no file and no `FileAfterSave` event within 15 seconds |
-| PPTX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-http-image-clean/smoke.pptx` | 73,006 | `Presentation.SaveAs(path, 24)` | **Passed:** ZIP signature, size, and `ppt/presentation.xml` verified |
-| XLSX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-http-image-clean/smoke.xlsx` | 13,181 | `Workbook.SaveAs(path, 51)` | **Passed:** ZIP signature, size, and `xl/workbook.xml` verified |
-| PDF | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-save-events/smoke.pdf` | missing | `Document.ExportAsFixedFormat(path, 17, ...)` | **Failed:** Writer could not serialize its independent temporary source document; earlier direct export also returned without a PDF file |
+| DOCX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.docx` | missing | `Document.SaveAs2(path, 12)` | **Failed:** no file and no `FileAfterSave` event within 15 seconds |
+| PPTX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pptx` | 73,006 | `Presentation.SaveAs(path, 24)` | **Passed:** ZIP signature, size, and `ppt/presentation.xml` verified |
+| XLSX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.xlsx` | 13,179 | `Workbook.SaveAs(path, 51)` | **Passed:** ZIP signature, size, and `xl/workbook.xml` verified |
+| PDF | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pdf` | missing | `Document.ExportAsFixedFormat(path, 17, ...)` | **Failed:** Writer could not serialize its independent temporary source document; earlier direct export also returned without a PDF file |
 
 The all-four artifact structure check therefore fails by design. Partial files
 are not reported as successful outputs.
@@ -96,7 +104,7 @@ member.
 | Spreadsheet | `spreadsheet.formulas` | native | `Range.Formula` and `FillDown` succeeded |
 | Spreadsheet | `spreadsheet.formatting` | native | Font, fill, borders, and `AutoFit` succeeded |
 | Spreadsheet | `spreadsheet.chart` | native | `ChartObjects.Add` and `SetSourceData` succeeded |
-| Spreadsheet | `spreadsheet.save_xlsx` | native | Format 51 produced a valid 13,181-byte XLSX |
+| Spreadsheet | `spreadsheet.save_xlsx` | native | Format 51 produced a valid 13,179-byte XLSX in the authorization-control run |
 | Spreadsheet | `spreadsheet.template_resolution` | mapped | `Workbooks.Add` used the WPS-native default workbook |
 
 ## Safety and rollback evidence
@@ -108,8 +116,8 @@ The registration path was absent before every real run:
 ABSENT
 ```
 
-It was also absent after success, command failure, timeout, and an interrupted
-run. Probe-created WPS processes were identified as the exact PID difference
+It was also absent after partial artifact generation, command failure, timeout,
+and an interrupted run. Probe-created WPS processes were identified as the exact PID difference
 from the pre-run WPS process snapshot and terminated without touching
 pre-existing instances. Temporary recovery directories were removed only after
 registration verification succeeded.
