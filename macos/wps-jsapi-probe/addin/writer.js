@@ -1,6 +1,7 @@
 (function () {
   "use strict";
 
+  const WRITER_IMAGE_URL = "http://127.0.0.1:3889/fixture.png";
   const capabilities = {};
 
   function record(name, classification, detail) {
@@ -28,6 +29,61 @@
       throw new Error(`${name} must be a non-empty path`);
     }
     return value;
+  }
+
+  function requireImageUrl(params) {
+    if (params.imageUrl !== WRITER_IMAGE_URL) {
+      throw new Error("imageUrl must be the fixed Writer loopback asset");
+    }
+    record("writer.image_source", "mapped", "Served the allowed image through the loopback add-in origin");
+    return params.imageUrl;
+  }
+
+  function waitForFileAfterSave(outputPath, action) {
+    return new Promise(function (resolve, reject) {
+      let settled = false;
+      let timer = null;
+
+      function finish(error) {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        if (timer !== null) {
+          clearTimeout(timer);
+        }
+        try {
+          Application.ApiEvent.RemoveApiEventListener("FileAfterSave");
+        } catch (cleanupError) {
+          if (!error) {
+            error = cleanupError;
+          }
+        }
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+
+      Application.ApiEvent.AddApiEventListener("FileAfterSave", function (
+        document,
+        filePath
+      ) {
+        if (typeof filePath === "string" && filePath !== outputPath) {
+          return;
+        }
+        finish(null);
+      });
+      timer = setTimeout(function () {
+        finish(new Error(`Timed out waiting for WPS to save ${outputPath}`));
+      }, 15000);
+      try {
+        action();
+      } catch (error) {
+        finish(error);
+      }
+    });
   }
 
   function typeParagraph(selection, text, size, bold) {
@@ -63,17 +119,53 @@
 
   function addImage(document, selection, imagePath) {
     selection.SetRange(document.Content.End, document.Content.End);
-    const image = document.InlineShapes.AddPicture(
+    let image = document.InlineShapes.AddPicture(
       imagePath,
       false,
       true,
       selection.Range
     );
+    if (image === null || typeof image === "undefined") {
+      const imageCount = document.InlineShapes.Count;
+      if (imageCount >= 1) {
+        image = document.InlineShapes.Item(imageCount);
+        record("writer.image_return", "mapped", "Recovered the inserted InlineShape from the collection");
+        record("writer.image_api", "native", "Document.InlineShapes.AddPicture");
+      } else {
+        const previousShapeCount = document.Shapes.Count;
+        image = document.Shapes.AddPicture(
+          imagePath,
+          false,
+          true,
+          0,
+          0,
+          72,
+          72,
+          selection.Range
+        );
+        const shapeCount = document.Shapes.Count;
+        if ((image === null || typeof image === "undefined") && shapeCount > previousShapeCount) {
+          image = document.Shapes.Item(shapeCount);
+        }
+        if (image === null || typeof image === "undefined") {
+          throw new Error("Writer image insertion is unsupported by InlineShapes and Shapes");
+        }
+        record("writer.image_return", "mapped", "InlineShapes returned null; Shapes returned the inserted image");
+        record("writer.image_api", "mapped", "Used Document.Shapes.AddPicture fallback");
+      }
+    } else {
+      record("writer.image_return", "native", "InlineShapes.AddPicture returned InlineShape");
+      record("writer.image_api", "native", "Document.InlineShapes.AddPicture");
+    }
     image.Width = 72;
     image.Height = 72;
     selection.SetRange(document.Content.End, document.Content.End);
     selection.TypeParagraph();
-    record("writer.images", "native", "Document.InlineShapes.AddPicture");
+    record(
+      "writer.images",
+      capabilities["writer.image_api"].classification,
+      capabilities["writer.image_api"].detail
+    );
   }
 
   function renderDocument(document, mode, imagePath) {
@@ -115,13 +207,15 @@
     addImage(document, selection, imagePath);
   }
 
-  function saveDocx(params) {
+  async function saveDocx(params) {
     const outputPath = requirePath(params, "outputPath");
-    const imagePath = requirePath(params, "imagePath");
+    const imagePath = requireImageUrl(params);
     const document = Application.Documents.Add();
     try {
       renderDocument(document, "docx", imagePath);
-      document.SaveAs2(outputPath, 12);
+      await waitForFileAfterSave(outputPath, function () {
+        document.SaveAs2(outputPath, 12);
+      });
       record("writer.save_docx", "native", "Document.SaveAs2 format 12");
       return {path: outputPath, capabilities};
     } finally {
@@ -129,13 +223,19 @@
     }
   }
 
-  function savePdf(params) {
+  async function savePdf(params) {
     const outputPath = requirePath(params, "outputPath");
-    const imagePath = requirePath(params, "imagePath");
+    const sourcePath = requirePath(params, "sourcePath");
+    const imagePath = requireImageUrl(params);
     const document = Application.Documents.Add();
     try {
       renderDocument(document, "pdf", imagePath);
-      document.ExportAsFixedFormat(outputPath, 17, false, 0, 0);
+      await waitForFileAfterSave(sourcePath, function () {
+        document.SaveAs2(sourcePath, 12);
+      });
+      await waitForFileAfterSave(outputPath, function () {
+        document.ExportAsFixedFormat(outputPath, 17, false, 0, 0);
+      });
       record(
         "writer.export_pdf",
         "native",

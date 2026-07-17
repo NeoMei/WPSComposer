@@ -19,10 +19,11 @@ PNG_FIXTURE = (
     "/x8AAusB9Y9Zl1sAAAAASUVORK5CYII="
 )
 ORIGINS = {
+    "http://127.0.0.1:3889",
+    "http://127.0.0.1:3890",
     "http://127.0.0.1:3891",
-    "http://127.0.0.1:3892",
-    "http://127.0.0.1:3893",
 }
+WRITER_IMAGE_URL = "http://127.0.0.1:3889/fixture.png"
 OUTPUT_COMMANDS = (
     ("writer", "smoke_docx", "smoke.docx", "docx"),
     ("presentation", "smoke_pptx", "smoke.pptx", "pptx"),
@@ -59,6 +60,21 @@ def validate_artifact(path: Path, format_name: str) -> None:
         raise ArtifactError(
             f"{format_name.upper()} output is too small: {path}"
         )
+
+
+def wait_for_artifact(path: Path, format_name: str, timeout: float) -> None:
+    """Wait for WPS Writer's asynchronous filesystem flush to finish."""
+    if timeout <= 0:
+        raise ValueError("artifact timeout must be positive")
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            validate_artifact(path, format_name)
+            return
+        except ArtifactError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
 
 
 def _failure(
@@ -146,6 +162,9 @@ def _execute_commands(
             capabilities[component].update(reported)
 
     allowed_image = policy.require_allowed(image_path)
+    pdf_source = policy.require_allowed(
+        image_path.parent / "smoke-pdf-source.docx"
+    )
     for component, method, filename, format_name in OUTPUT_COMMANDS:
         output_path = policy.require_allowed(output_dir / filename)
         command = bridge.issue(
@@ -154,6 +173,8 @@ def _execute_commands(
             {
                 "outputPath": str(output_path),
                 "imagePath": str(allowed_image),
+                "imageUrl": WRITER_IMAGE_URL,
+                "sourcePath": str(pdf_source),
             },
         )
         result, failure = _wait_for_result(
@@ -174,7 +195,11 @@ def _execute_commands(
                 raise ArtifactError(
                     f"WPS reported {reported_path}, expected {output_path}"
                 )
-            validate_artifact(output_path, format_name)
+            wait_for_artifact(
+                output_path,
+                format_name,
+                timeout=min(timeout, 10),
+            )
             if format_name == "pdf" and result.value.get("preset") != (
                 "obsidian-reading"
             ):
@@ -226,6 +251,14 @@ def _smoke_spec_hash(addin_dir: Path) -> str:
     return digest.hexdigest()
 
 
+def _publish_writer_image(
+    profiles: dict[str, Path], image_path: Path
+) -> str:
+    writer_profile = profiles["writer"]
+    shutil.copy2(image_path, writer_profile / "fixture.png")
+    return WRITER_IMAGE_URL
+
+
 def _copy_logs(runtime: ProbeRuntime, output_dir: Path) -> dict[str, str]:
     copied: dict[str, str] = {}
     existing = {name: path for name, path in runtime.logs.items() if path.is_file()}
@@ -251,6 +284,35 @@ def _ensure_output_targets_are_new(output_dir: Path) -> None:
         pass
 
 
+def _allocate_runtime_dir() -> tuple[Path, Path]:
+    root = Path(tempfile.mkdtemp(prefix="wpscomposer-phase0-"))
+    return root, root / "runtime"
+
+
+def _wait_for_component_registration(
+    bridge: LoopbackBridge,
+    runtime: ProbeRuntime,
+    timeout: float,
+) -> None:
+    """Retry only WPS components that miss the initial registration window."""
+    expected = set(COMPONENTS)
+    deadline = time.monotonic() + timeout
+    for attempt in range(4):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            bridge.wait_registered(expected, 0)
+            return
+        try:
+            bridge.wait_registered(expected, min(10, remaining))
+            return
+        except TimeoutError:
+            missing = expected - bridge.registered_components()
+            if attempt == 3:
+                raise
+            for component in sorted(missing):
+                runtime.activate_component(component)
+
+
 def run_phase0(
     output_dir: Path,
     node: Optional[str] = None,
@@ -264,7 +326,7 @@ def run_phase0(
     output.mkdir(parents=True, exist_ok=True)
     report_path = output / "phase0-report.json"
     capabilities_path = output / "capabilities.json"
-    runtime_dir = Path(tempfile.mkdtemp(prefix="wpscomposer-phase0-"))
+    runtime_root, runtime_dir = _allocate_runtime_dir()
     repository_root = Path(__file__).resolve().parents[4]
     probe_root = repository_root / "macos/wps-jsapi-probe"
     addin_dir = probe_root / "addin"
@@ -304,12 +366,13 @@ def run_phase0(
                 node_override=node,
             )
             with runtime:
-                runtime.prepare_profiles()
-                runtime.start_servers()
-                runtime.activate_components()
-                bridge.wait_registered(set(COMPONENTS), timeout)
+                profiles = runtime.prepare_profiles()
                 image_path = runtime_dir / "fixture.png"
                 image_path.write_bytes(base64.b64decode(PNG_FIXTURE))
+                _publish_writer_image(profiles, image_path)
+                runtime.start_servers()
+                runtime.activate_components()
+                _wait_for_component_registration(bridge, runtime, timeout)
                 policy = PathPolicy((runtime_dir, output))
                 execution = _execute_commands(
                     bridge, policy, output, image_path, timeout
@@ -334,11 +397,11 @@ def run_phase0(
                 if component in report["logPaths"]:
                     failure["logPath"] = report["logPaths"][component]
             if runtime.registration_restored:
-                shutil.rmtree(runtime_dir, ignore_errors=True)
+                shutil.rmtree(runtime_root, ignore_errors=True)
             else:
                 report["recoveryDirectory"] = str(runtime_dir)
         else:
-            shutil.rmtree(runtime_dir, ignore_errors=True)
+            shutil.rmtree(runtime_root, ignore_errors=True)
 
     unsupported = []
     for component, entries in capabilities.items():

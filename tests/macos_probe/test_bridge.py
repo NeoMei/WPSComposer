@@ -107,6 +107,11 @@ def test_wait_registered_reports_independent_components():
                 f"http://127.0.0.1:{port}",
             )
         bridge.wait_registered({"writer", "presentation", "spreadsheet"}, 2)
+        assert bridge.registered_components() == {
+            "writer",
+            "presentation",
+            "spreadsheet",
+        }
 
 
 def test_completion_is_idempotent_and_cancellation_ignores_late_result():

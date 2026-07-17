@@ -37,6 +37,36 @@ def test_writer_uses_wps_save_and_pdf_export():
     assert '"smoke_pdf"' in source
 
 
+def test_writer_waits_for_wps_file_completion_event_before_close():
+    source = (ROOT / "writer.js").read_text()
+    assert 'AddApiEventListener("FileAfterSave"' in source
+    assert 'RemoveApiEventListener("FileAfterSave")' in source
+    assert "await waitForFileAfterSave(outputPath" in source
+    assert "retainedDocuments" not in source
+
+
+def test_writer_recovers_inserted_image_when_jsapi_returns_null():
+    source = (ROOT / "writer.js").read_text()
+    assert "document.InlineShapes.Count" in source
+    assert "document.InlineShapes.Item(imageCount)" in source
+    assert 'record("writer.image_return", "mapped"' in source
+
+
+def test_writer_maps_image_to_document_shape_when_inline_insert_is_unsupported():
+    source = (ROOT / "writer.js").read_text()
+    assert "document.Shapes.AddPicture" in source
+    assert "document.Shapes.Count" in source
+    assert "document.Shapes.Item(shapeCount)" in source
+    assert 'record("writer.image_api", "mapped"' in source
+
+
+def test_writer_accepts_only_the_fixed_loopback_image_url():
+    source = (ROOT / "writer.js").read_text()
+    assert 'const WRITER_IMAGE_URL = "http://127.0.0.1:3889/fixture.png"' in source
+    assert "params.imageUrl !== WRITER_IMAGE_URL" in source
+    assert 'record("writer.image_source", "mapped"' in source
+
+
 def test_presentation_uses_wps_shapes_and_save():
     source = (ROOT / "presentation.js").read_text()
     assert "Application.Presentations.Add" in source

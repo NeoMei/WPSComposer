@@ -6,6 +6,7 @@ import platform
 import plistlib
 import re
 import shutil
+import signal
 import socket
 import stat
 import subprocess
@@ -24,15 +25,15 @@ PUBLISH_XML = (
     / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml"
 )
 COMPONENT_CONFIG = {
-    "writer": {"addon_type": "wps", "port": 3891, "script": "writer.js"},
+    "writer": {"addon_type": "wps", "port": 3889, "script": "writer.js"},
     "presentation": {
         "addon_type": "wpp",
-        "port": 3892,
+        "port": 3890,
         "script": "presentation.js",
     },
     "spreadsheet": {
         "addon_type": "et",
-        "port": 3893,
+        "port": 3891,
         "script": "spreadsheet.js",
     },
 }
@@ -209,6 +210,34 @@ def _require_free_port(port: int) -> None:
             raise RuntimeError(f"Required add-in port is already in use: {port}") from exc
 
 
+def activation_command(app_path: Path, fixture: Path) -> list[str]:
+    """Launch an isolated WPS instance without disturbing an existing one."""
+    return ["open", "-n", "-a", str(app_path), str(fixture)]
+
+
+def list_wps_pids(app_path: Path) -> set[int]:
+    """Return PIDs whose command is exactly the selected WPS main executable."""
+    executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
+    result = subprocess.run(
+        ["ps", "-axo", "pid=,command="],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    pids: set[int] = set()
+    for raw_line in result.stdout.splitlines():
+        fields = raw_line.strip().split(maxsplit=1)
+        if len(fields) == 2 and fields[1] == executable:
+            pids.add(int(fields[0]))
+    return pids
+
+
+def owned_wps_pids(before: set[int], after: set[int]) -> set[int]:
+    """Identify WPS instances that appeared during this probe run."""
+    return after - before
+
+
 class ProbeRuntime:
     """Owns temporary add-in profiles and the child wpsjs servers."""
 
@@ -230,14 +259,17 @@ class ProbeRuntime:
         self.publish_xml = publish_xml.expanduser().resolve()
         self.wps_app = wps_app.resolve()
         self.profiles: dict[str, Path] = {}
+        self.fixtures: dict[str, Path] = {}
         self.logs: dict[str, Path] = {}
         self._processes: list[subprocess.Popen] = []
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
+        self._wps_pids_before: Optional[set[int]] = None
         self.registration_restored = True
 
     def __enter__(self) -> "ProbeRuntime":
         self._preflight()
+        self._wps_pids_before = list_wps_pids(self.wps_app)
         self.runtime_dir.mkdir(parents=True, exist_ok=False)
         return self
 
@@ -334,29 +366,61 @@ class ProbeRuntime:
         )
 
     def activate_components(self) -> dict[str, Path]:
+        for component in FIXTURE_NAMES:
+            self.activate_component(component)
+        return dict(self.fixtures)
+
+    def activate_component(self, component: str) -> Path:
+        if component not in FIXTURE_NAMES:
+            raise ValueError(f"Unknown component: {component}")
         resource_dir = self.probe_root / "node_modules/wpsjs/src/lib/res"
         fixture_dir = self.runtime_dir / "fixtures"
-        fixture_dir.mkdir(parents=True, exist_ok=False)
-        fixtures: dict[str, Path] = {}
-        for component, name in FIXTURE_NAMES.items():
-            source = resource_dir / name
-            if not source.is_file():
-                raise RuntimeError(f"Official wpsjs fixture is missing: {source}")
-            target = fixture_dir / name
+        fixture_dir.mkdir(parents=True, exist_ok=True)
+        name = FIXTURE_NAMES[component]
+        source = resource_dir / name
+        if not source.is_file():
+            raise RuntimeError(f"Official wpsjs fixture is missing: {source}")
+        target = fixture_dir / name
+        if not target.is_file():
             shutil.copy2(source, target)
-            subprocess.run(
-                ["open", "-a", str(self.wps_app), str(target)],
-                check=True,
-                timeout=15,
-            )
-            fixtures[component] = target
-        return fixtures
+        subprocess.run(
+            activation_command(self.wps_app, target),
+            check=True,
+            timeout=15,
+        )
+        self.fixtures[component] = target
+        return target
 
     def restore_registration(self) -> None:
         if self._snapshot is not None:
             self._snapshot.restore()
             self._snapshot = None
             self.registration_restored = True
+
+    def _terminate_owned_wps(self) -> None:
+        if self._wps_pids_before is None:
+            return
+        before = self._wps_pids_before
+        self._wps_pids_before = None
+        owned = owned_wps_pids(before, list_wps_pids(self.wps_app))
+        for pid in sorted(owned):
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        if not owned:
+            return
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            remaining = owned_wps_pids(before, list_wps_pids(self.wps_app))
+            if not remaining:
+                return
+            time.sleep(0.1)
+        for pid in sorted(remaining):
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
     def close(self) -> None:
         try:
@@ -376,4 +440,7 @@ class ProbeRuntime:
                 stream.close()
             self._log_streams.clear()
         finally:
-            self.restore_registration()
+            try:
+                self._terminate_owned_wps()
+            finally:
+                self.restore_registration()

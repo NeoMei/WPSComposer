@@ -113,6 +113,10 @@ class BridgeState:
         with self._condition:
             return self._last_seen.get(component)
 
+    def registered_components(self) -> set[str]:
+        with self._condition:
+            return set(self._registered)
+
     @staticmethod
     def _require_component(component: str) -> None:
         if component not in COMPONENTS:
@@ -295,3 +299,6 @@ class LoopbackBridge:
 
     def wait_registered(self, expected: set[str], timeout: float) -> None:
         self.state.wait_registered(expected, timeout)
+
+    def registered_components(self) -> set[str]:
+        return self.state.registered_components()
