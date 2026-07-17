@@ -415,12 +415,6 @@ def _parse_table_block(table_lines: List[str], current: Optional[Section], secti
         data = rows[1:] if len(rows) > 1 else []
     _ensure_section(current, sections)
     current.elements.append(TableBlock(headers=headers, rows=data, alignments=alignments))
-
-
-def _is_separator_cell(cell: str) -> bool:
-    return bool(re.match(r"^[\-\s:]+\+?$", cell))
-
-
 def _parse_frontmatter(lines: List[str], doc: StructuredDocument):
     """Parse YAML frontmatter lines into doc.metadata."""
     for line in lines:
