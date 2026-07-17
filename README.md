@@ -71,6 +71,8 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 
 - Python 3.9 或更高版本。
 - Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
+- macOS：WPS JSAPI 后端的 Phase 0 在 WPS 12.1.26035 上判定为
+  **NO-GO**，尚未接入公开 `generate()`。详见 [macOS Phase 0](docs/macos-phase0.md)。
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 
