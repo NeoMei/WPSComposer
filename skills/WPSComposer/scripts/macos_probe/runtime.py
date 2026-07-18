@@ -20,6 +20,10 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 WPS_APP = Path("/Applications/wpsoffice.app")
+WPS_STAGING_ROOT = (
+    Path.home()
+    / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer"
+)
 PUBLISH_XML = (
     Path.home()
     / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml"
@@ -238,6 +242,16 @@ def owned_wps_pids(before: set[int], after: set[int]) -> set[int]:
     return after - before
 
 
+def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
+    """Create one private session inside the WPS application container."""
+    parent = root.expanduser().resolve()
+    parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    os.chmod(parent, 0o700)
+    session = Path(tempfile.mkdtemp(prefix="session-", dir=parent))
+    os.chmod(session, 0o700)
+    return session
+
+
 class ProbeRuntime:
     """Owns temporary add-in profiles and the child wpsjs servers."""
 
@@ -250,6 +264,7 @@ class ProbeRuntime:
         node_override: Optional[str] = None,
         publish_xml: Path = PUBLISH_XML,
         wps_app: Path = WPS_APP,
+        staging_root: Path = WPS_STAGING_ROOT,
     ):
         self.probe_root = probe_root.resolve()
         self.runtime_dir = runtime_dir.resolve()
@@ -258,6 +273,8 @@ class ProbeRuntime:
         self.node_override = node_override
         self.publish_xml = publish_xml.expanduser().resolve()
         self.wps_app = wps_app.resolve()
+        self.staging_root = staging_root.expanduser().resolve()
+        self.staging_dir: Optional[Path] = None
         self.profiles: dict[str, Path] = {}
         self.fixtures: dict[str, Path] = {}
         self.logs: dict[str, Path] = {}
@@ -270,7 +287,12 @@ class ProbeRuntime:
     def __enter__(self) -> "ProbeRuntime":
         self._preflight()
         self._wps_pids_before = list_wps_pids(self.wps_app)
-        self.runtime_dir.mkdir(parents=True, exist_ok=False)
+        try:
+            self.runtime_dir.mkdir(parents=True, exist_ok=False)
+            self.staging_dir = create_staging_session(self.staging_root)
+        except Exception:
+            self.close()
+            raise
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:
@@ -443,4 +465,9 @@ class ProbeRuntime:
             try:
                 self._terminate_owned_wps()
             finally:
-                self.restore_registration()
+                try:
+                    self.restore_registration()
+                finally:
+                    if self.staging_dir is not None:
+                        shutil.rmtree(self.staging_dir, ignore_errors=True)
+                        self.staging_dir = None

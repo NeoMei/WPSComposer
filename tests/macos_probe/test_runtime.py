@@ -1,6 +1,9 @@
 import json
 import signal
+import stat
 from pathlib import Path
+
+import pytest
 
 from skills.WPSComposer.scripts.macos_probe import runtime
 from skills.WPSComposer.scripts.macos_probe.runtime import (
@@ -116,6 +119,68 @@ def test_component_activation_uses_a_fresh_wps_instance(tmp_path: Path):
 
 def test_owned_wps_pids_only_returns_processes_started_after_snapshot():
     assert runtime.owned_wps_pids({101, 102}, {102, 201, 202}) == {201, 202}
+
+
+def test_default_staging_root_is_inside_wps_container():
+    assert str(runtime.WPS_STAGING_ROOT).endswith(
+        "Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer"
+    )
+
+
+def test_create_staging_session_is_private(tmp_path: Path):
+    session = runtime.create_staging_session(tmp_path / "WPSComposer")
+    try:
+        assert session.parent == (tmp_path / "WPSComposer").resolve()
+        assert stat.S_IMODE(session.stat().st_mode) == 0o700
+        assert session.name.startswith("session-")
+    finally:
+        session.rmdir()
+
+
+def test_runtime_removes_staging_session_after_success(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        staging_root=tmp_path / "container" / "WPSComposer",
+    )
+
+    with probe:
+        session = probe.staging_dir
+        assert session is not None
+        (session / "artifact.pdf").write_bytes(b"data")
+
+    assert not session.exists()
+
+
+def test_runtime_removes_staging_session_after_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        staging_root=tmp_path / "container" / "WPSComposer",
+    )
+
+    with pytest.raises(RuntimeError, match="forced failure"):
+        with probe:
+            session = probe.staging_dir
+            assert session is not None
+            (session / "artifact.pdf").write_bytes(b"data")
+            raise RuntimeError("forced failure")
+
+    assert not session.exists()
 
 
 def test_list_wps_pids_only_matches_exact_main_executable(monkeypatch):
