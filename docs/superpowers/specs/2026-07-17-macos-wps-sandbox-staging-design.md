@@ -11,6 +11,40 @@ This design refines the Phase 0 probe and adds public conversion support for
 `doc`, `docx`, `xls`, `xlsx`, `ppt`, and `pptx`. It does not enable the public
 macOS `generate()` backend.
 
+### Installed-Mac acceptance result (2026-07-18)
+
+The two gates have different outcomes on macOS 26.5.2 with WPS 12.1.26035:
+
+- **Office-to-PDF conversion: GO.** Two consecutive runs converted all six
+  suffixes through the typed public backend without a save dialog or new
+  permission interaction. The output directories were
+  `/tmp/wpscomposer-conversion-gate-run-1-20260718` and
+  `/tmp/wpscomposer-conversion-gate-run-2-20260718`.
+- **Public document generation: NO-GO.** The staged Phase 0 run at
+  `/tmp/wpscomposer-phase0-staged-run-1-20260718/phase0-report.json` published
+  valid PPTX and XLSX, but Writer `SaveAs2` still opened the native save path
+  and timed out for DOCX and the temporary DOCX used by standalone PDF
+  generation. No broader permission was requested and public `generate()`
+  remains disabled on macOS.
+
+The conversion outputs were identical in size across both runs:
+
+| Source | Component | PDF bytes | Pages |
+|---|---|---:|---:|
+| `.doc` | Writer | 1,052 | 1 |
+| `.docx` | Writer | 1,051 | 1 |
+| `.xls` | Spreadsheet | 321,446 | 1 |
+| `.xlsx` (two visible worksheets) | Spreadsheet | 199,724 | 2 |
+| `.ppt` | Presentation | 1,212 | 1 |
+| `.pptx` | Presentation | 1,212 | 1 |
+
+The legacy fixtures are valid Compound File Binary documents bundled with WPS
+itself. The modern two-sheet XLSX fixture declares both sheets visible, and
+the resulting two-page PDF proves workbook-level export. Every run restored
+registration, removed its WPS-container session, and left the pre-existing WPS
+process untouched. `MACOS_CONVERSION_ENABLED` is therefore enabled while the
+unrelated macOS generation gate stays closed.
+
 ## Problem
 
 Mac WPS is sandboxed and declares user-selected file access rather than broad

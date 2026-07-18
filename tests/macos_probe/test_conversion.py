@@ -10,6 +10,7 @@ from skills.WPSComposer.scripts.conversion import (
     ConversionError,
     ConversionRequest,
 )
+from skills.WPSComposer.scripts.macos_probe import conversion as mac_conversion
 from skills.WPSComposer.scripts.macos_probe.conversion import convert_macos
 from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
 
@@ -145,10 +146,14 @@ def test_macos_copies_source_and_issues_only_staged_paths(
     assert ("activate_component", component) in calls
 
 
-def test_macos_gate_is_disabled_until_real_acceptance(tmp_path: Path):
+def test_macos_real_conversion_gate_is_enabled():
+    assert mac_conversion.MACOS_CONVERSION_ENABLED is True
+
+
+def test_macos_gate_can_be_explicitly_disabled(tmp_path: Path):
     request = _request(tmp_path, "docx", "writer")
     with pytest.raises(ConversionError) as caught:
-        convert_macos(request)
+        convert_macos(request, enabled=False)
     assert caught.value.code == "MACOS_GATE_NOT_PASSED"
     assert caught.value.backend == "mac-wps-jsapi"
 

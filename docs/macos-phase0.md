@@ -2,8 +2,15 @@
 
 ## Decision
 
-**NO-GO for Phase 1 on the tested WPS version.** Do not route the public
-`generate()` API to the macOS backend.
+**NO-GO for document generation Phase 1 on the tested WPS version.** Do not
+route the public `generate()` API to the macOS backend.
+
+**GO for existing Office-to-PDF conversion.** On 2026-07-18, two consecutive
+installed-Mac runs converted `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
+`.pptx` through the container-staged typed backend. The two-visible-sheet XLSX
+produced a two-page PDF, every output passed `pdfinfo`, registration was
+restored, and no staging session remained. Public `convert_to_pdf()` is enabled
+on macOS; this does not change the generation decision below.
 
 The installed Mac WPS can load authenticated JS add-ins and can serialize the
 Presentation and Spreadsheet smoke files. Writer exposes document creation,
@@ -42,7 +49,7 @@ Primary failure report:
 
 This control run was performed after the user had completed the visible macOS
 authorization prompts. It still produced and validated PPTX and XLSX while
-Writer failed both saves with the same completion-event timeout. The result
+Writer failed both new-document saves with the same completion-event timeout. The result
 therefore is not attributed to a prompt being approved too late. Recent TCC
 logs showed an Apple Events denial for the optional Codex Computer Use helper,
 not a WPS Writer file-access denial; that denial affected automated window
@@ -64,7 +71,7 @@ All paths above are runtime evidence under the gitignored `build/` directory.
 | DOCX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.docx` | missing | `Document.SaveAs2(path, 12)` | **Failed:** no file and no `FileAfterSave` event within 15 seconds |
 | PPTX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pptx` | 73,006 | `Presentation.SaveAs(path, 24)` | **Passed:** ZIP signature, size, and `ppt/presentation.xml` verified |
 | XLSX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.xlsx` | 13,179 | `Workbook.SaveAs(path, 51)` | **Passed:** ZIP signature, size, and `xl/workbook.xml` verified |
-| PDF | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pdf` | missing | `Document.ExportAsFixedFormat(path, 17, ...)` | **Failed:** Writer could not serialize its independent temporary source document; earlier direct export also returned without a PDF file |
+| PDF | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pdf` | missing | `Document.ExportAsFixedFormat(path, 17, ...)` | **Failed for generation:** Writer could not first serialize the independent temporary source document. A later direct export of an existing staged DOC/DOCX succeeded and is the basis of `convert_to_pdf()` support. |
 
 The all-four artifact structure check therefore fails by design. Partial files
 are not reported as successful outputs.

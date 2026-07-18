@@ -26,8 +26,8 @@ METHODS = {
     "presentation": "convert_presentation_pdf",
 }
 
-# This is flipped only after the real, two-run macOS acceptance gate passes.
-MACOS_CONVERSION_ENABLED = False
+# Enabled after two six-format WPS 12.1.26035 acceptance runs on 2026-07-18.
+MACOS_CONVERSION_ENABLED = True
 
 
 def _error(

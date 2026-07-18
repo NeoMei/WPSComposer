@@ -25,6 +25,12 @@ WPSComposer 的做法是直接驱动 WPS Office（或 MS Office）的 COM 接口
 
 **编辑 PDF**（合并/拆分/水印/旋转/提取）。
 
+**Office 转 PDF**（单文件、跨平台）：
+- Word：`.doc`、`.docx`
+- Excel：`.xls`、`.xlsx`，导出全部可见工作表
+- PowerPoint：`.ppt`、`.pptx`
+- Windows 使用 WPS/MS Office COM；macOS 使用 WPS JSAPI 容器暂存后原子发布
+
 ## 原理架构
 
 ```
@@ -71,8 +77,9 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 
 - Python 3.9 或更高版本。
 - Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
-- macOS：WPS JSAPI 后端的 Phase 0 在 WPS 12.1.26035 上判定为
-  **NO-GO**，尚未接入公开 `generate()`。详见 [macOS Phase 0](docs/macos-phase0.md)。
+- macOS：公开 `generate()` 仍为 **NO-GO**，因为 WPS 12.1.26035 的
+  Writer `SaveAs2` 会打开原生保存面板；已有 Office 文件转 PDF 已通过
+  六格式双轮真实门禁并启用。详见 [macOS Phase 0](docs/macos-phase0.md)。
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 
@@ -123,6 +130,30 @@ edit(
 
 可寻址的元素包括：段落、表格、单元格、形状、节、页眉页脚等。目标语法和补丁字段详见 [API 参考](skills/WPSComposer/references/api.md)。
 
+### Word / Excel / PowerPoint 转 PDF
+
+```python
+from skills.WPSComposer import convert_to_pdf
+
+# 默认输出同目录、同文件名的 .pdf
+pdf = convert_to_pdf("季度报告.xlsx")
+
+# 指定输出；只有显式 overwrite=True 才覆盖已有文件
+pdf = convert_to_pdf(
+    "演示稿.pptx",
+    "exports/演示稿.pdf",
+    overwrite=True,
+)
+```
+
+`source` 只接受 `.doc/.docx/.xls/.xlsx/.ppt/.pptx`，大小写不敏感；一次只
+转换一个文件。缺失源文件抛出 `FileNotFoundError`，已有目标默认抛出
+`FileExistsError`，不支持的扩展名抛出 `ValueError`。WPS/Office 运行时错误
+抛出 `ConversionError`，并提供 `code`、`source`、`component`、`backend`
+和 `message` 字段。macOS 上输入和输出都先进入 WPS 私有容器会话，校验后
+再通过目标目录内临时文件、`fsync` 和原子替换发布；不需要完全磁盘访问、
+辅助功能、AppleScript 或屏幕控制权限。
+
 ### PDF 编辑
 
 ```python
@@ -153,6 +184,7 @@ print(PdfComposer.extract_text("输入.pdf"))
 | 自动目录 / 页码字段 | ✅ | — | — |
 | 检查已有文档格式 | ✅ | ✅ | ✅ |
 | 元素级格式补丁 | ✅ | ✅ | ✅ |
+| 转为 PDF（含旧格式） | ✅ DOC/DOCX | ✅ XLS/XLSX（全部可见表） | ✅ PPT/PPTX |
 
 ## 模块结构
 
@@ -165,6 +197,10 @@ WPSComposer/
 │   └── scripts/
 │       ├── wps_engine.py            # 统一入口（re-export facade）
 │       ├── orchestrator.py          # generate() 一行生成
+│       ├── conversion.py            # convert_to_pdf() 跨平台入口
+│       ├── artifact_transport.py     # 校验、fsync、原子发布
+│       ├── windows_conversion.py     # Windows COM 转换后端
+│       ├── macos_probe/              # macOS WPS JSAPI、容器暂存与转换
 │       ├── _dispatch.py             # COM 连接、ProgID 回退链
 │       ├── _colors.py               # 统一颜色模型（hex ↔ BGR）
 │       ├── _base.py                 # BaseComposer 通用生命周期

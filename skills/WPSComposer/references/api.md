@@ -1,5 +1,41 @@
 # WPS Composer API Reference
 
+## Office-to-PDF conversion
+
+```python
+from skills.WPSComposer import ConversionError, convert_to_pdf
+
+result = convert_to_pdf("report.docx")
+result = convert_to_pdf("book.xlsx", "exports/book.pdf", overwrite=True)
+```
+
+```python
+def convert_to_pdf(
+    source: str,
+    output: Optional[str] = None,
+    *,
+    overwrite: bool = False,
+) -> str:
+    ...
+```
+
+Accepted source suffixes are `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
+`.pptx`, matched case-insensitively. The default destination is the source
+sibling with a `.pdf` suffix. Success returns its absolute path. Excel export
+is workbook-level and includes every visible worksheet.
+
+| Condition | Exception |
+|---|---|
+| Source does not exist | `FileNotFoundError` |
+| Unsupported source or non-PDF destination suffix | `ValueError` |
+| Destination exists and `overwrite=False` | `FileExistsError` |
+| WPS/Office, protocol, modal, or validation failure | `ConversionError` |
+
+`ConversionError` exposes `code`, `source`, `component`, `backend`, and
+`message`, plus `to_dict()`. Windows uses WPS/MS Office COM. macOS uses typed
+WPS JSAPI commands with source and output staged in WPS's private application
+container, followed by validated destination-local atomic publication.
+
 ## Color format
 
 All color args accept **either** a `#RRGGBB` hex string (e.g. `"#4472C4"`) **or**
