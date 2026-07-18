@@ -7,13 +7,14 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 
 MAX_PLAN_BYTES = 2_000_000
 MAX_OPERATIONS = 10_000
 MAX_STRING_CHARS = 100_000
 MAX_TABLE_CELLS = 10_000
+MAX_NESTING_DEPTH = 64
 
 ALLOWED_MEDIA_TYPES = frozenset(
     {
@@ -150,10 +151,12 @@ class RecordedGeneration:
 
 
 def _validate_json_value(value: Any) -> None:
-    pending = [value]
+    pending = [(value, 0)]
     seen_containers = set()
     while pending:
-        item = pending.pop()
+        item, depth = pending.pop()
+        if depth > MAX_NESTING_DEPTH:
+            raise OperationPlanError("JSON nesting exceeds 64 levels")
         if isinstance(item, str):
             if len(item) > MAX_STRING_CHARS:
                 raise OperationPlanError("string exceeds 100,000 characters")
@@ -170,18 +173,376 @@ def _validate_json_value(value: Any) -> None:
                 continue
             seen_containers.add(identity)
             if isinstance(item, list):
-                pending.extend(item)
+                pending.extend((nested, depth + 1) for nested in item)
             else:
                 for key, nested in item.items():
                     if not isinstance(key, str):
                         raise OperationPlanError(
                             "operation arguments must be JSON-compatible"
                         )
-                    pending.extend((key, nested))
+                    pending.extend(((key, depth + 1), (nested, depth + 1)))
         else:
             raise OperationPlanError(
                 "operation arguments must be JSON-compatible"
             )
+
+
+ArgumentValidator = Callable[[Any, str], None]
+
+
+@dataclass(frozen=True)
+class _ObjectSchema:
+    required: frozenset[str]
+    fields: Mapping[str, ArgumentValidator]
+
+
+def _schema(
+    required: tuple[str, ...] = (),
+    **fields: ArgumentValidator,
+) -> _ObjectSchema:
+    return _ObjectSchema(frozenset(required), MappingProxyType(dict(fields)))
+
+
+def _invalid(path: str, expected: str) -> None:
+    raise OperationPlanError(f"invalid argument {path}: expected {expected}")
+
+
+def _string(value: Any, path: str) -> None:
+    if not isinstance(value, str):
+        _invalid(path, "string")
+
+
+def _nullable_string(value: Any, path: str) -> None:
+    if value is not None:
+        _string(value, path)
+
+
+def _boolean(value: Any, path: str) -> None:
+    if not isinstance(value, bool):
+        _invalid(path, "boolean")
+
+
+def _integer(value: Any, path: str) -> None:
+    if not isinstance(value, int) or isinstance(value, bool):
+        _invalid(path, "integer")
+
+
+def _number(value: Any, path: str) -> None:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+    ):
+        _invalid(path, "finite number")
+
+
+def _cell(value: Any, path: str) -> None:
+    if value is None or isinstance(value, (str, bool, int)):
+        return
+    if isinstance(value, float) and math.isfinite(value):
+        return
+    _invalid(path, "string, finite number, boolean, or null")
+
+
+def _validate_object(value: Any, path: str, schema: _ObjectSchema) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "object")
+    unknown = set(value) - set(schema.fields)
+    if unknown:
+        names = ", ".join(sorted(unknown))
+        raise OperationPlanError(f"unknown argument in {path}: {names}")
+    missing = schema.required - set(value)
+    if missing:
+        names = ", ".join(sorted(missing))
+        raise OperationPlanError(f"missing required argument in {path}: {names}")
+    for name, item in value.items():
+        schema.fields[name](item, f"{path}.{name}")
+
+
+def _list_of(validator: ArgumentValidator) -> ArgumentValidator:
+    def validate(value: Any, path: str) -> None:
+        if not isinstance(value, list):
+            _invalid(path, "array")
+        for index, item in enumerate(value):
+            validator(item, f"{path}[{index}]")
+
+    return validate
+
+
+_STRING_LIST = _list_of(_string)
+_NUMBER_LIST = _list_of(_number)
+
+_SPAN_SCHEMA = _schema(
+    ("text",),
+    text=_string,
+    bold=_boolean,
+    italic=_boolean,
+    strikethrough=_boolean,
+    code=_boolean,
+    link=_nullable_string,
+    linkTitle=_nullable_string,
+)
+
+
+def _span(value: Any, path: str) -> None:
+    _validate_object(value, path, _SPAN_SCHEMA)
+
+
+_STYLE_SCHEMA = _schema(
+    ("name",),
+    name=_string,
+    type=_string,
+    basedOn=_string,
+    fontName=_string,
+    fontNameAscii=_string,
+    fontSize=_number,
+    bold=_boolean,
+    italic=_boolean,
+    underline=_boolean,
+    strikethrough=_boolean,
+    color=_string,
+    align=_integer,
+    indentFirst=_number,
+    leftIndent=_number,
+    rightIndent=_number,
+    lineSpacing=_number,
+    lineSpacingRule=_string,
+    spaceBefore=_number,
+    spaceAfter=_number,
+    shading=_string,
+    leftBorder=_boolean,
+    borderColor=_string,
+    keepWithNext=_boolean,
+    outlineLevel=_integer,
+)
+
+
+def _style(value: Any, path: str) -> None:
+    _validate_object(value, path, _STYLE_SCHEMA)
+
+
+def _table(value: Any, path: str) -> None:
+    if not isinstance(value, list):
+        _invalid(path, "array of rows")
+    width = None
+    for row_index, row in enumerate(value):
+        if not isinstance(row, list):
+            _invalid(f"{path}[{row_index}]", "array of cells")
+        if width is None:
+            width = len(row)
+        elif len(row) != width:
+            _invalid(path, "rectangular table")
+        for col_index, item in enumerate(row):
+            _cell(item, f"{path}[{row_index}][{col_index}]")
+
+
+_FONT_SCHEMA = _schema(
+    ("family", "size", "color"),
+    family=_string,
+    size=_number,
+    color=_string,
+)
+
+
+def _font(value: Any, path: str) -> None:
+    _validate_object(value, path, _FONT_SCHEMA)
+
+
+_COLORS_SCHEMA = _schema(
+    ("primary", "dark", "background"),
+    primary=_string,
+    secondary=_string,
+    accent=_string,
+    dark=_string,
+    light=_string,
+    background=_string,
+)
+_FONTS_SCHEMA = _schema(
+    ("title", "body"),
+    title=_font,
+    subtitle=_font,
+    body=_font,
+    caption=_font,
+    chinese=_font,
+)
+_SPACING_SCHEMA = _schema(
+    ("margin", "gap", "cardPadding", "lineHeight"),
+    margin=_number,
+    gap=_number,
+    cardPadding=_number,
+    lineHeight=_number,
+)
+_PRESET_SCHEMA = _schema(
+    ("name", "colors", "fonts"),
+    name=_string,
+    colors=lambda value, path: _validate_object(value, path, _COLORS_SCHEMA),
+    fonts=lambda value, path: _validate_object(value, path, _FONTS_SCHEMA),
+    spacing=lambda value, path: _validate_object(value, path, _SPACING_SCHEMA),
+)
+
+
+def _preset(value: Any, path: str) -> None:
+    _validate_object(value, path, _PRESET_SCHEMA)
+
+
+_OPERATION_ARG_SCHEMAS = MappingProxyType(
+    {
+        "writer.reset": _schema(),
+        "writer.configure_page": _schema(
+            ("marginTop", "marginBottom", "marginLeft", "marginRight"),
+            marginTop=_number,
+            marginBottom=_number,
+            marginLeft=_number,
+            marginRight=_number,
+            pageWidth=_number,
+            pageHeight=_number,
+            landscape=_boolean,
+            columns=_integer,
+            header=_string,
+            footer=_string,
+        ),
+        "writer.ensure_styles": _schema(
+            ("styles",), styles=_list_of(_style)
+        ),
+        "writer.add_paragraph": _schema(
+            ("text",),
+            text=_string,
+            style=_string,
+            spans=_list_of(_span),
+            size=_number,
+            bold=_boolean,
+            italic=_boolean,
+            color=_string,
+            align=_integer,
+            indentFirst=_number,
+            lineSpacing=_number,
+            lineSpacingRule=_string,
+            spaceBefore=_number,
+            spaceAfter=_number,
+            fontName=_string,
+            fontNameAscii=_string,
+        ),
+        "writer.add_heading": _schema(
+            ("text", "level"),
+            text=_string,
+            level=_integer,
+            size=_number,
+            bold=_boolean,
+            color=_string,
+            lineSpacing=_number,
+            lineSpacingRule=_string,
+            spaceAfter=_number,
+        ),
+        "writer.add_list": _schema(
+            ("items", "ordered"),
+            items=_STRING_LIST,
+            ordered=_boolean,
+            glyph=_string,
+            indent=_number,
+        ),
+        "writer.add_table": _schema(
+            ("rows", "cols", "data"),
+            rows=_integer,
+            cols=_integer,
+            data=_table,
+            shadeHeader=_string,
+            headerColor=_string,
+            fontSize=_number,
+            columnWidths=_NUMBER_LIST,
+            alignments=_STRING_LIST,
+            bandedRows=_boolean,
+            autoFit=_boolean,
+            repeatHeader=_boolean,
+            borderColor=_string,
+        ),
+        "writer.add_image": _schema(
+            ("imageId",),
+            imageId=_string,
+            width=_number,
+            height=_number,
+            maxWidth=_number,
+            maxHeight=_number,
+            wrap=_integer,
+            inline=_boolean,
+            preserveAspect=_boolean,
+            alt=_nullable_string,
+        ),
+        "writer.add_page_break": _schema(),
+        "writer.add_section": _schema(),
+        "writer.add_horizontal_line": _schema(),
+        "writer.insert_toc": _schema(("title",), title=_string),
+        "writer.set_page_number": _schema(),
+        "writer.update_fields": _schema(),
+        "sheet.reset": _schema(),
+        "sheet.rename": _schema(("index", "name"), index=_integer, name=_string),
+        "sheet.add": _schema(("name",), name=_string),
+        "sheet.select": _schema(("index",), index=_integer),
+        "sheet.write_table": _schema(
+            ("startRow", "startCol", "values"),
+            startRow=_integer,
+            startCol=_integer,
+            values=_table,
+            headerBold=_boolean,
+            headerShade=_string,
+            headerFontColor=_string,
+            fontSize=_number,
+        ),
+        "sheet.set_column_width": _schema(
+            ("column", "width"), column=_string, width=_number
+        ),
+        "sheet.autofit": _schema(),
+        "slide.reset": _schema(),
+        "slide.set_size": _schema(
+            ("width", "height"), width=_number, height=_number
+        ),
+        "slide.apply_preset": _schema(("preset",), preset=_preset),
+        "slide.add_title": _schema(
+            ("title",),
+            title=_string,
+            subtitle=_nullable_string,
+            titleSize=_number,
+            subtitleSize=_number,
+            titleColor=_string,
+        ),
+        "slide.add_section": _schema(("title",), title=_string),
+        "slide.add_bullets": _schema(
+            ("title", "items"),
+            title=_string,
+            items=_STRING_LIST,
+            titleSize=_number,
+            bodySize=_number,
+        ),
+        "slide.add_blank": _schema(),
+        "slide.add_image": _schema(
+            ("slide", "imageId", "left", "top"),
+            slide=_integer,
+            imageId=_string,
+            left=_number,
+            top=_number,
+            width=_number,
+            height=_number,
+        ),
+        "slide.add_table": _schema(
+            ("slide", "rows", "cols", "left", "top", "width", "height", "data"),
+            slide=_integer,
+            rows=_integer,
+            cols=_integer,
+            left=_number,
+            top=_number,
+            width=_number,
+            height=_number,
+            data=_table,
+            headerShade=_string,
+            headerFont=_string,
+            fontSize=_number,
+        ),
+    }
+)
+
+
+def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
+    schema = _OPERATION_ARG_SCHEMAS[op]
+    _validate_object(args, f"{op}.args", schema)
 
 
 def _table_cell_count(args: Mapping[str, Any]) -> int:
@@ -294,5 +655,6 @@ def validate_generation_plan(
             if _table_cell_count(args) > MAX_TABLE_CELLS:
                 raise OperationPlanError("table exceeds 10,000 cells")
         _validate_image_args(op, args)
+        _validate_operation_args(op, args)
         parsed.append(GenerationOperation(op, dict(args)))
     return GenerationPlan(component, tuple(parsed))

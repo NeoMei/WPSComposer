@@ -4,14 +4,209 @@ import pytest
 
 from skills.WPSComposer.scripts.generation_plan import (
     ALLOWED_OPERATIONS,
+    MAX_NESTING_DEPTH,
     MAX_PLAN_BYTES,
     GenerationOperation,
     GenerationPlan,
     GenerationResource,
     OperationPlanError,
     RecordedGeneration,
+    _validate_json_value,
     validate_generation_plan,
 )
+
+
+VALID_OPERATION_ARGS = {
+    "writer.reset": {},
+    "writer.configure_page": {
+        "marginTop": 72,
+        "marginBottom": 72,
+        "marginLeft": 72,
+        "marginRight": 72,
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "landscape": False,
+        "columns": 1,
+        "header": "Quarterly report",
+        "footer": "Confidential",
+    },
+    "writer.ensure_styles": {
+        "styles": [
+            {
+                "name": "Body Text",
+                "type": "paragraph",
+                "basedOn": "Normal",
+                "fontName": "FangSong",
+                "fontNameAscii": "Times New Roman",
+                "fontSize": 12,
+                "bold": False,
+                "italic": False,
+                "color": "#000000",
+                "align": 3,
+                "indentFirst": 24,
+                "leftIndent": 0,
+                "rightIndent": 0,
+                "lineSpacing": 1.5,
+                "lineSpacingRule": "one_and_half",
+                "spaceBefore": 0,
+                "spaceAfter": 0,
+                "shading": "#FFFFFF",
+                "leftBorder": False,
+                "borderColor": "#CCCCCC",
+                "outlineLevel": 1,
+            }
+        ]
+    },
+    "writer.add_paragraph": {
+        "text": "Summary",
+        "style": "Body Text",
+        "spans": [
+            {
+                "text": "Summary",
+                "bold": True,
+                "italic": False,
+                "strikethrough": False,
+                "code": False,
+                "link": "https://example.test",
+            }
+        ],
+        "size": 12,
+        "color": "#000000",
+        "align": 3,
+        "indentFirst": 24,
+        "lineSpacing": 1.5,
+        "lineSpacingRule": "one_and_half",
+        "spaceBefore": 0,
+        "spaceAfter": 0,
+        "fontName": "FangSong",
+        "fontNameAscii": "Times New Roman",
+    },
+    "writer.add_heading": {
+        "text": "Results",
+        "level": 1,
+        "size": 16,
+        "color": "#000000",
+        "lineSpacing": 1.5,
+        "lineSpacingRule": "one_and_half",
+        "spaceAfter": 6,
+    },
+    "writer.add_list": {
+        "items": ["First", "Second"],
+        "ordered": False,
+        "glyph": "•",
+        "indent": 24,
+    },
+    "writer.add_table": {
+        "rows": 2,
+        "cols": 2,
+        "data": [["Item", "Amount"], ["A", 10]],
+        "shadeHeader": "#4472C4",
+        "headerColor": "#FFFFFF",
+        "fontSize": 10,
+        "columnWidths": [120, 80],
+        "alignments": ["left", "right"],
+        "bandedRows": True,
+        "autoFit": True,
+        "repeatHeader": True,
+        "borderColor": "#D0D0D0",
+    },
+    "writer.add_image": {
+        "imageId": "image-1",
+        "width": 400,
+        "height": 300,
+        "maxWidth": 500,
+        "maxHeight": 500,
+        "wrap": 0,
+        "inline": True,
+        "preserveAspect": True,
+        "alt": "Chart",
+    },
+    "writer.add_page_break": {},
+    "writer.add_section": {},
+    "writer.add_horizontal_line": {},
+    "writer.insert_toc": {"title": "Table of Contents"},
+    "writer.set_page_number": {},
+    "writer.update_fields": {},
+    "sheet.reset": {},
+    "sheet.rename": {"index": 1, "name": "Summary"},
+    "sheet.add": {"name": "Details"},
+    "sheet.select": {"index": 1},
+    "sheet.write_table": {
+        "startRow": 1,
+        "startCol": 1,
+        "values": [["Item", "Amount"], ["A", 10]],
+        "headerBold": True,
+        "headerShade": "#4472C4",
+        "headerFontColor": "#FFFFFF",
+        "fontSize": 11,
+    },
+    "sheet.set_column_width": {"column": "A", "width": 15},
+    "sheet.autofit": {},
+    "slide.reset": {},
+    "slide.set_size": {"width": 960, "height": 540},
+    "slide.apply_preset": {
+        "preset": {
+            "name": "business",
+            "colors": {
+                "primary": "#005294",
+                "secondary": "#C82828",
+                "accent": "#2DA050",
+                "dark": "#2D2D30",
+                "light": "#F8F9FA",
+                "background": "#FFFFFF",
+            },
+            "fonts": {
+                "title": {"family": "Arial", "size": 36, "color": "#005294"},
+                "subtitle": {"family": "Arial", "size": 20, "color": "#5A5A5A"},
+                "body": {"family": "Arial", "size": 18, "color": "#2D2D30"},
+                "caption": {"family": "Arial", "size": 14, "color": "#8C8C8C"},
+                "chinese": {"family": "Microsoft YaHei", "size": 18, "color": "#2D2D30"},
+            },
+            "spacing": {
+                "margin": 70,
+                "gap": 22,
+                "cardPadding": 18,
+                "lineHeight": 1.4,
+            },
+        }
+    },
+    "slide.add_title": {
+        "title": "Quarterly results",
+        "subtitle": "FY26 Q4",
+        "titleSize": 40,
+        "subtitleSize": 20,
+        "titleColor": "#005294",
+    },
+    "slide.add_section": {"title": "Results"},
+    "slide.add_bullets": {
+        "title": "Highlights",
+        "items": ["Revenue grew", "Margin expanded"],
+        "titleSize": 32,
+        "bodySize": 18,
+    },
+    "slide.add_blank": {},
+    "slide.add_image": {
+        "slide": 2,
+        "imageId": "image-2",
+        "left": 80,
+        "top": 100,
+        "width": 800,
+        "height": 400,
+    },
+    "slide.add_table": {
+        "slide": 2,
+        "rows": 2,
+        "cols": 2,
+        "left": 60,
+        "top": 120,
+        "width": 840,
+        "height": 380,
+        "data": [["Item", "Amount"], ["A", 10]],
+        "headerShade": "#4472C4",
+        "headerFont": "#FFFFFF",
+        "fontSize": 14,
+    },
+}
 
 
 def test_generation_plan_round_trips_valid_writer_operations():
@@ -89,6 +284,7 @@ def test_allowed_operations_are_a_closed_component_scoped_set():
             "slide.add_table",
         },
     }
+    assert set(VALID_OPERATION_ARGS) == set().union(*ALLOWED_OPERATIONS.values())
 
 
 def test_allowed_operations_cannot_be_widened_at_runtime():
@@ -106,6 +302,143 @@ def test_allowed_operations_cannot_be_widened_at_runtime():
     finally:
         if isinstance(writer_operations, set):
             writer_operations.discard("writer.eval")
+
+
+def _component_for_operation(op):
+    return next(
+        component
+        for component, operations in ALLOWED_OPERATIONS.items()
+        if op in operations
+    )
+
+
+@pytest.mark.parametrize("op", sorted(VALID_OPERATION_ARGS))
+def test_every_allowed_operation_accepts_its_exact_argument_schema(op):
+    component = _component_for_operation(op)
+    raw = {
+        "component": component,
+        "operations": [{"op": op, "args": VALID_OPERATION_ARGS[op]}],
+    }
+    assert validate_generation_plan(raw, component).to_dict() == raw
+
+
+@pytest.mark.parametrize("op", sorted(VALID_OPERATION_ARGS))
+def test_every_allowed_operation_rejects_unknown_arguments(op):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op], javascript="Application.eval('x')")
+    with pytest.raises(OperationPlanError, match="unknown argument"):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )
+
+
+@pytest.mark.parametrize(
+    ("op", "missing"),
+    [
+        ("writer.configure_page", "marginTop"),
+        ("writer.ensure_styles", "styles"),
+        ("writer.add_paragraph", "text"),
+        ("writer.add_heading", "text"),
+        ("writer.add_list", "items"),
+        ("writer.add_table", "data"),
+        ("writer.add_image", "imageId"),
+        ("writer.insert_toc", "title"),
+        ("sheet.rename", "name"),
+        ("sheet.add", "name"),
+        ("sheet.select", "index"),
+        ("sheet.write_table", "values"),
+        ("sheet.set_column_width", "width"),
+        ("slide.set_size", "width"),
+        ("slide.apply_preset", "preset"),
+        ("slide.add_title", "title"),
+        ("slide.add_section", "title"),
+        ("slide.add_bullets", "items"),
+        ("slide.add_image", "imageId"),
+        ("slide.add_table", "data"),
+    ],
+)
+def test_operation_schemas_reject_missing_required_arguments(op, missing):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    del args[missing]
+    with pytest.raises(
+        OperationPlanError, match="missing required argument|requires imageId"
+    ):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )
+
+
+@pytest.mark.parametrize(
+    ("op", "field", "invalid"),
+    [
+        ("writer.configure_page", "columns", True),
+        ("writer.add_paragraph", "text", 7),
+        ("writer.add_heading", "level", 1.5),
+        ("writer.add_list", "items", ["ok", {"text": "escape"}]),
+        ("writer.add_table", "rows", False),
+        ("writer.add_image", "inline", "true"),
+        ("sheet.rename", "index", True),
+        ("sheet.write_table", "startRow", 1.5),
+        ("sheet.set_column_width", "width", "15"),
+        ("slide.set_size", "width", "960"),
+        ("slide.add_title", "titleSize", True),
+        ("slide.add_bullets", "items", [1]),
+        ("slide.add_image", "left", "80"),
+        ("slide.add_table", "rows", 2.5),
+    ],
+)
+def test_operation_schemas_reject_wrong_argument_types(op, field, invalid):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    args[field] = invalid
+    with pytest.raises(OperationPlanError, match="invalid argument"):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )
+
+
+@pytest.mark.parametrize(
+    ("op", "field", "value"),
+    [
+        (
+            "writer.ensure_styles",
+            "styles",
+            [{"name": "Body Text", "propertyPath": "Font.Name"}],
+        ),
+        (
+            "writer.add_paragraph",
+            "spans",
+            [{"text": "unsafe", "javascript": "eval('x')"}],
+        ),
+        (
+            "writer.add_table",
+            "data",
+            [[{"source": "/tmp/private"}]],
+        ),
+        (
+            "slide.apply_preset",
+            "preset",
+            {
+                "name": "unsafe",
+                "colors": {"primary": "#000000", "src": "/tmp/theme"},
+                "fonts": {},
+            },
+        ),
+    ],
+)
+def test_nested_operation_structures_reject_escape_fields(op, field, value):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    args[field] = value
+    with pytest.raises(OperationPlanError, match="unknown|invalid"):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )
 
 
 def test_generation_plan_requires_matching_component():
@@ -196,6 +529,36 @@ def test_generation_plan_normalizes_cyclic_arguments_to_protocol_error():
                 "component": "writer",
                 "operations": [
                     {"op": "writer.add_paragraph", "args": cyclic}
+                ],
+            },
+            "writer",
+        )
+
+
+def _nested_lists(depth):
+    value = "leaf"
+    for _ in range(depth):
+        value = [value]
+    return value
+
+
+def test_json_nesting_depth_accepts_limit_and_rejects_one_over():
+    assert MAX_NESTING_DEPTH == 64
+    _validate_json_value(_nested_lists(MAX_NESTING_DEPTH))
+    with pytest.raises(OperationPlanError, match="nesting exceeds 64"):
+        _validate_json_value(_nested_lists(MAX_NESTING_DEPTH + 1))
+
+
+def test_generation_plan_rejects_deep_acyclic_arguments_without_recursion_error():
+    with pytest.raises(OperationPlanError, match="nesting exceeds 64"):
+        validate_generation_plan(
+            {
+                "component": "writer",
+                "operations": [
+                    {
+                        "op": "writer.add_paragraph",
+                        "args": {"text": "safe", "spans": _nested_lists(500)},
+                    }
                 ],
             },
             "writer",
