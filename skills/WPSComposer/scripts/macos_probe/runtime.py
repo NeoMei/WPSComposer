@@ -395,8 +395,10 @@ class ProbeRuntime:
     def activate_component(self, component: str) -> Path:
         if component not in FIXTURE_NAMES:
             raise ValueError(f"Unknown component: {component}")
+        if self.staging_dir is None:
+            raise RuntimeError("ProbeRuntime must be entered before activation")
         resource_dir = self.probe_root / "node_modules/wpsjs/src/lib/res"
-        fixture_dir = self.runtime_dir / "fixtures"
+        fixture_dir = self.staging_dir / "fixtures"
         fixture_dir.mkdir(parents=True, exist_ok=True)
         name = FIXTURE_NAMES[component]
         source = resource_dir / name

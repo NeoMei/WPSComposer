@@ -128,7 +128,7 @@ def convert_to_pdf(
         result = Path(backend(request)).expanduser().resolve()
         validate_pdf(result)
         return str(result)
-    except ConversionError:
+    except (FileNotFoundError, FileExistsError, ValueError, ConversionError):
         raise
     except Exception as exc:
         raise ConversionError(

@@ -157,3 +157,22 @@ def test_conversion_preserves_backend_conversion_error(
     with pytest.raises(ConversionError) as caught:
         convert_to_pdf(str(source))
     assert caught.value is expected
+
+
+def test_conversion_preserves_public_path_errors_from_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.pptx"
+    source.write_bytes(b"source")
+
+    def raced_backend(request):
+        raise FileExistsError(f"Output already exists: {request.output}")
+
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: ("test-backend", raced_backend),
+    )
+
+    with pytest.raises(FileExistsError, match="Output already exists"):
+        convert_to_pdf(str(source))

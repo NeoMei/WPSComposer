@@ -235,6 +235,8 @@ def test_activate_component_can_retry_one_missing_component(
         "token",
         wps_app=tmp_path / "wpsoffice.app",
     )
+    probe.staging_dir = tmp_path / "container" / "session-1"
+    probe.staging_dir.mkdir(parents=True)
     commands = []
     monkeypatch.setattr(
         runtime.subprocess,
@@ -246,6 +248,7 @@ def test_activate_component_can_retry_one_missing_component(
     second = probe.activate_component("writer")
 
     assert first == second
+    assert first.parent == probe.staging_dir / "fixtures"
     assert first.read_bytes() == b"fixture"
     assert commands == [
         runtime.activation_command(probe.wps_app, first),
