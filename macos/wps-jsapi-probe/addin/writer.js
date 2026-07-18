@@ -511,8 +511,8 @@
         true,
         0,
         0,
-        args.width === undefined ? -1 : args.width,
-        args.height === undefined ? -1 : args.height,
+        -1,
+        -1,
         insertion
       );
       if (shape && shape.WrapFormat) {

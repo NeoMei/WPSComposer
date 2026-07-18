@@ -753,15 +753,34 @@ eval(fs.readFileSync({path}, "utf8"));
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
 
 
-def test_writer_floating_image_uses_document_anchor_and_complete_sizing_semantics():
+@pytest.mark.parametrize(
+    ("preserve_aspect", "maximums", "expected_width", "expected_height"),
+    [
+        (True, {"maxWidth": 150, "maxHeight": 100}, 150, 75),
+        (False, {}, 300, 200),
+    ],
+)
+def test_writer_floating_image_uses_natural_size_before_applying_requested_geometry(
+    preserve_aspect, maximums, expected_width, expected_height
+):
     path = json.dumps(str((ROOT / "writer.js").resolve()))
+    image_args = {
+        "imageId": "image-1",
+        "width": 300,
+        "height": 200,
+        "wrap": 3,
+        "inline": False,
+        "preserveAspect": preserve_aspect,
+        "alt": "Diagram",
+        **maximums,
+    }
     script = f"""
 const assert = require("assert");
 const fs = require("fs");
 global.window = {{}};
 const anchor = {{owner: "staged-document"}};
 const shape = {{
-  Width: 600, Height: 400, WrapFormat: {{}},
+  Width: 600, Height: 300, WrapFormat: {{}},
   Range: {{ParagraphFormat: {{}}}}
 }};
 let pictureArgs = null;
@@ -785,19 +804,16 @@ eval(fs.readFileSync({path}, "utf8"));
       resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
       plan: {{component: "writer", operations: [{{
         op: "writer.add_image",
-        args: {{
-          imageId: "image-1", width: 300, height: 200,
-          maxWidth: 150, maxHeight: 100, wrap: 3,
-          inline: false, preserveAspect: true, alt: "Diagram"
-        }}
+        args: {json.dumps(image_args)}
       }}]}}
     }}
   }});
   assert.equal(pictureArgs.length, 8);
+  assert.equal(pictureArgs[5], -1); assert.equal(pictureArgs[6], -1);
   assert.equal(pictureArgs[7], anchor);
-  assert.equal(shape.LockAspectRatio, -1);
+  assert.equal(shape.LockAspectRatio, {json.dumps(-1 if preserve_aspect else 0)});
   assert.equal(shape.WrapFormat.Type, 3);
-  assert.equal(shape.Width, 150); assert.equal(shape.Height, 100);
+  assert.equal(shape.Width, {expected_width}); assert.equal(shape.Height, {expected_height});
   assert.equal(shape.AlternativeText, "Diagram");
   assert.equal(Application.DisplayAlerts, 7);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
