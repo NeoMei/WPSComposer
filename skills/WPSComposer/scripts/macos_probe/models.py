@@ -15,6 +15,9 @@ METHOD_COMPONENT = {
     "convert_writer_pdf": "writer",
     "convert_workbook_pdf": "spreadsheet",
     "convert_presentation_pdf": "presentation",
+    "generate_writer_document": "writer",
+    "generate_spreadsheet_workbook": "spreadsheet",
+    "generate_presentation_deck": "presentation",
 }
 
 

@@ -21,6 +21,9 @@ def test_methods_are_routed_to_one_component():
         "convert_writer_pdf": "writer",
         "convert_workbook_pdf": "spreadsheet",
         "convert_presentation_pdf": "presentation",
+        "generate_writer_document": "writer",
+        "generate_spreadsheet_workbook": "spreadsheet",
+        "generate_presentation_deck": "presentation",
     }
 
 
@@ -32,6 +35,11 @@ def test_command_rejects_unknown_method():
 def test_command_rejects_wrong_component():
     with pytest.raises(ProtocolError, match="requires presentation"):
         ProbeCommand.create("writer", "smoke_pptx", {})
+
+
+def test_generation_command_is_component_typed():
+    with pytest.raises(ProtocolError, match="requires writer"):
+        ProbeCommand.create("spreadsheet", "generate_writer_document", {})
 
 
 @pytest.mark.parametrize(
