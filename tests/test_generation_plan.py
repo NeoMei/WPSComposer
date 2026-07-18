@@ -6,6 +6,7 @@ from skills.WPSComposer.scripts.generation_plan import (
     ALLOWED_OPERATIONS,
     MAX_NESTING_DEPTH,
     MAX_PLAN_BYTES,
+    MAX_SAFE_NUMBER,
     GenerationOperation,
     GenerationPlan,
     GenerationResource,
@@ -398,6 +399,88 @@ def test_operation_schemas_reject_wrong_argument_types(op, field, invalid):
         validate_generation_plan(
             {"component": component, "operations": [{"op": op, "args": args}]},
             component,
+        )
+
+
+@pytest.mark.parametrize(
+    ("op", "field"),
+    [
+        ("writer.add_paragraph", "size"),
+        ("slide.set_size", "width"),
+        ("slide.add_image", "left"),
+    ],
+)
+@pytest.mark.parametrize("value", [-(2**53 - 1), 2**53 - 1, float(2**53 - 1)])
+def test_numeric_operation_fields_accept_exact_safe_bound(op, field, value):
+    assert MAX_SAFE_NUMBER == 2**53 - 1
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    args[field] = value
+    raw = {"component": component, "operations": [{"op": op, "args": args}]}
+    assert validate_generation_plan(raw, component).to_dict() == raw
+
+
+@pytest.mark.parametrize(
+    ("op", "field"),
+    [
+        ("writer.add_paragraph", "size"),
+        ("slide.set_size", "width"),
+        ("slide.add_image", "left"),
+    ],
+)
+@pytest.mark.parametrize(
+    "value",
+    [-(2**53), 2**53, float(2**53), 10**400],
+)
+def test_numeric_operation_fields_reject_values_outside_safe_range(
+    op, field, value
+):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    args[field] = value
+    with pytest.raises(OperationPlanError, match="safe range"):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )
+
+
+@pytest.mark.parametrize("value", [-(2**53), 2**53, 10**400])
+def test_integer_operation_fields_reject_values_outside_safe_range(value):
+    args = dict(VALID_OPERATION_ARGS["slide.add_image"])
+    args["slide"] = value
+    with pytest.raises(OperationPlanError, match="safe range"):
+        validate_generation_plan(
+            {
+                "component": "presentation",
+                "operations": [{"op": "slide.add_image", "args": args}],
+            },
+            "presentation",
+        )
+
+
+@pytest.mark.parametrize("value", [-(2**53 - 1), 2**53 - 1])
+def test_table_cells_accept_exact_safe_integer_bound(value):
+    args = dict(VALID_OPERATION_ARGS["writer.add_table"])
+    args["data"] = [["Item", "Amount"], ["A", value]]
+    raw = {
+        "component": "writer",
+        "operations": [{"op": "writer.add_table", "args": args}],
+    }
+    assert validate_generation_plan(raw, "writer").to_dict() == raw
+
+
+@pytest.mark.parametrize("value", [-(2**53), 2**53, 10**400])
+def test_table_cells_reject_integers_outside_safe_range(value):
+    args = dict(VALID_OPERATION_ARGS["writer.add_table"])
+    args["data"] = [["Item", "Amount"], ["A", value]]
+    with pytest.raises(OperationPlanError, match="safe range"):
+        validate_generation_plan(
+            {
+                "component": "writer",
+                "operations": [{"op": "writer.add_table", "args": args}],
+            },
+            "writer",
         )
 
 

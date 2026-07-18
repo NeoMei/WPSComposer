@@ -15,6 +15,7 @@ MAX_OPERATIONS = 10_000
 MAX_STRING_CHARS = 100_000
 MAX_TABLE_CELLS = 10_000
 MAX_NESTING_DEPTH = 64
+MAX_SAFE_NUMBER = 2**53 - 1
 
 ALLOWED_MEDIA_TYPES = frozenset(
     {
@@ -225,23 +226,38 @@ def _boolean(value: Any, path: str) -> None:
 def _integer(value: Any, path: str) -> None:
     if not isinstance(value, int) or isinstance(value, bool):
         _invalid(path, "integer")
+    if not -MAX_SAFE_NUMBER <= value <= MAX_SAFE_NUMBER:
+        _invalid(path, "integer in the interoperable safe range")
 
 
 def _number(value: Any, path: str) -> None:
-    if (
-        not isinstance(value, (int, float))
-        or isinstance(value, bool)
-        or not math.isfinite(value)
-    ):
-        _invalid(path, "finite number")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        _invalid(path, "finite number in the interoperable safe range")
+    if isinstance(value, int):
+        if not -MAX_SAFE_NUMBER <= value <= MAX_SAFE_NUMBER:
+            _invalid(path, "number in the interoperable safe range")
+        return
+    if not math.isfinite(value) or abs(value) > MAX_SAFE_NUMBER:
+        _invalid(path, "finite number in the interoperable safe range")
 
 
 def _cell(value: Any, path: str) -> None:
-    if value is None or isinstance(value, (str, bool, int)):
+    if value is None or isinstance(value, (str, bool)):
         return
-    if isinstance(value, float) and math.isfinite(value):
+    if isinstance(value, int):
+        if -MAX_SAFE_NUMBER <= value <= MAX_SAFE_NUMBER:
+            return
+        _invalid(path, "integer in the interoperable safe range")
+    if (
+        isinstance(value, float)
+        and math.isfinite(value)
+        and abs(value) <= MAX_SAFE_NUMBER
+    ):
         return
-    _invalid(path, "string, finite number, boolean, or null")
+    _invalid(
+        path,
+        "string, safe-range finite number, boolean, or null",
+    )
 
 
 def _validate_object(value: Any, path: str, schema: _ObjectSchema) -> None:
