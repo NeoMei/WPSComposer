@@ -386,3 +386,177 @@ class RecordingSheetComposer:
         plan = GenerationPlan("spreadsheet", tuple(self._operations))
         validated = validate_generation_plan(plan.to_dict(), "spreadsheet")
         return RecordedGeneration(validated, ())
+
+
+class RecordingSlideComposer:
+    """Record Slide renderer calls without opening WPS or touching files."""
+
+    def __init__(self):
+        self._operations = []
+        self._resources = []
+        self._resource_ids = {}
+        self._slide_count = 0
+
+    def __enter__(self):
+        self._record("slide.reset")
+        self._slide_count = 0
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+    @property
+    def slide_count(self):
+        return self._slide_count
+
+    def _record(self, op, **args):
+        self._operations.append(GenerationOperation(op, args))
+
+    def set_slide_size(self, width_pt=960, height_pt=540):
+        self._record("slide.set_size", width=width_pt, height=height_pt)
+
+    def apply_design_preset(self, preset):
+        colors = dict(preset.colors)
+        colors["background"] = colors.pop("bg", "#FFFFFF")
+        fonts = {
+            role: {"family": value[0], "size": value[1], "color": value[2]}
+            for role, value in preset.fonts.items()
+        }
+        spacing = {
+            "margin": preset.spacing["margin"],
+            "gap": preset.spacing["gap"],
+            "cardPadding": preset.spacing["card_padding"],
+            "lineHeight": preset.spacing["line_height"],
+        }
+        self._record(
+            "slide.apply_preset",
+            preset={
+                "name": preset.name,
+                "colors": colors,
+                "fonts": fonts,
+                "spacing": spacing,
+            },
+        )
+
+    def add_title_slide(
+        self,
+        title,
+        subtitle="",
+        title_size=40,
+        sub_size=20,
+        title_color=None,
+    ):
+        self._slide_count += 1
+        self._record(
+            "slide.add_title",
+            **_without_none(
+                title=str(title),
+                subtitle=subtitle,
+                titleSize=title_size,
+                subtitleSize=sub_size,
+                titleColor=title_color,
+            ),
+        )
+        return self._slide_count
+
+    def add_section_slide(self, title):
+        self._slide_count += 1
+        self._record("slide.add_section", title=str(title))
+        return self._slide_count
+
+    def add_bullets_slide(self, title, items, title_size=32, body_size=18):
+        self._slide_count += 1
+        self._record(
+            "slide.add_bullets",
+            title=str(title),
+            items=[str(item) for item in items],
+            titleSize=title_size,
+            bodySize=body_size,
+        )
+        return self._slide_count
+
+    def add_blank_slide(self):
+        self._slide_count += 1
+        self._record("slide.add_blank")
+        return None, self._slide_count
+
+    def _image_id(self, path):
+        source_path = Path(path).expanduser().resolve()
+        if source_path in self._resource_ids:
+            return self._resource_ids[source_path]
+        media_types = {
+            ".bmp": "image/bmp",
+            ".gif": "image/gif",
+            ".jpeg": "image/jpeg",
+            ".jpg": "image/jpeg",
+            ".png": "image/png",
+            ".tif": "image/tiff",
+            ".tiff": "image/tiff",
+        }
+        try:
+            media_type = media_types[source_path.suffix.lower()]
+        except KeyError as error:
+            raise OperationPlanError(
+                f"unsupported image resource: {source_path.suffix or '<none>'}"
+            ) from error
+        resource_id = f"image-{len(self._resources) + 1}"
+        self._resources.append(
+            GenerationResource(resource_id, source_path, media_type)
+        )
+        self._resource_ids[source_path] = resource_id
+        return resource_id
+
+    def add_image(
+        self,
+        slide_index,
+        path,
+        left,
+        top,
+        width=None,
+        height=None,
+    ):
+        self._record(
+            "slide.add_image",
+            **_without_none(
+                slide=int(slide_index),
+                imageId=self._image_id(path),
+                left=left,
+                top=top,
+                width=width,
+                height=height,
+            ),
+        )
+
+    def add_table(
+        self,
+        slide_index,
+        rows,
+        cols,
+        left,
+        top,
+        width,
+        height,
+        data,
+        header_shade="#4472C4",
+        header_font="#FFFFFF",
+        font_size=11,
+    ):
+        self._record(
+            "slide.add_table",
+            slide=int(slide_index),
+            rows=int(rows),
+            cols=int(cols),
+            left=left,
+            top=top,
+            width=width,
+            height=height,
+            data=[list(row) for row in data],
+            headerShade=header_shade,
+            headerFont=header_font,
+            fontSize=font_size,
+        )
+
+    def save_pptx(self, path):
+        plan = GenerationPlan("presentation", tuple(self._operations))
+        validated = validate_generation_plan(plan.to_dict(), "presentation")
+        return RecordedGeneration(validated, tuple(self._resources))

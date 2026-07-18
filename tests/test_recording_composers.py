@@ -3,17 +3,20 @@ import importlib.util
 from pathlib import Path
 
 from skills.WPSComposer.scripts import recording_composers
-from skills.WPSComposer.scripts.document_model import Span
 from skills.WPSComposer.scripts.generation_plan import (
     ALLOWED_OPERATIONS,
     validate_generation_plan,
 )
 from skills.WPSComposer.scripts.document_model import (
+    ImageBlock,
+    ListBlock,
     Section,
+    Span,
     StructuredDocument,
     TableBlock,
 )
-from skills.WPSComposer.scripts.renderers import sheet_renderer
+from skills.WPSComposer.scripts.design_presets import PRESETS
+from skills.WPSComposer.scripts.renderers import sheet_renderer, slide_renderer
 
 
 def test_recording_composers_module_exists():
@@ -229,3 +232,76 @@ def test_recording_sheet_renderer_records_multi_table_plan_in_windows_call_order
         "spreadsheet"
     ]
     assert validate_generation_plan(recorded.plan.to_dict(), "spreadsheet") == recorded.plan
+
+
+def test_recording_slide_composer_is_publicly_defined():
+    assert hasattr(recording_composers, "RecordingSlideComposer")
+
+
+def test_recording_slide_renderer_preserves_windows_pacing_and_closed_catalog(
+    tmp_path,
+):
+    image_path = tmp_path / "figure.png"
+    document = StructuredDocument(
+        title="Quarterly review",
+        metadata={"author": "Ada", "date": "2026-07-19"},
+        sections=[
+            Section(level=1, heading="Results"),
+            Section(
+                level=2,
+                heading="Highlights",
+                elements=[
+                    ListBlock(
+                        items=[[Span(f"Point {index}")] for index in range(1, 8)]
+                    ),
+                    TableBlock(["Item", "Amount"], [["A", 10]]),
+                    ImageBlock(path=str(image_path), alt="Chart"),
+                ],
+            ),
+        ],
+    )
+
+    recorded = slide_renderer.render(
+        document,
+        "ignored.pptx",
+        preset=PRESETS["academic"],
+        composer_factory=recording_composers.RecordingSlideComposer,
+    )
+
+    operations = [operation.to_dict() for operation in recorded.plan.operations]
+    assert [operation["op"] for operation in operations] == [
+        "slide.reset",
+        "slide.set_size",
+        "slide.apply_preset",
+        "slide.add_title",
+        "slide.add_section",
+        "slide.add_bullets",
+        "slide.add_bullets",
+        "slide.add_blank",
+        "slide.add_table",
+        "slide.add_blank",
+        "slide.add_image",
+    ]
+    assert operations[3]["args"] == {
+        "title": "Quarterly review",
+        "subtitle": "Ada | 2026-07-19",
+        "titleSize": 40,
+        "subtitleSize": 20,
+    }
+    assert operations[5]["args"]["items"] == [
+        "Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Point 6"
+    ]
+    assert operations[6]["args"] == {
+        "title": "(continued)",
+        "items": ["Point 7"],
+        "titleSize": 24,
+        "bodySize": 18,
+    }
+    assert operations[8]["args"]["slide"] == 5
+    assert operations[10]["args"]["slide"] == 6
+    assert operations[10]["args"]["imageId"] == "image-1"
+    assert recorded.resources[0].source_path == image_path.resolve()
+    assert set(operation["op"] for operation in operations) == ALLOWED_OPERATIONS[
+        "presentation"
+    ]
+    assert validate_generation_plan(recorded.plan.to_dict(), "presentation") == recorded.plan

@@ -1461,3 +1461,401 @@ async function reject(plan) {{
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
     _run_sheet_script(body)
+
+
+SLIDE_OPERATION_NAMES = [
+    "slide.reset",
+    "slide.set_size",
+    "slide.apply_preset",
+    "slide.add_title",
+    "slide.add_section",
+    "slide.add_bullets",
+    "slide.add_blank",
+    "slide.add_image",
+    "slide.add_table",
+]
+
+
+def _run_presentation_script(body: str):
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+{body}
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_presentation_generation_uses_a_literal_complete_operation_dispatch_table():
+    source = (ROOT / "presentation.js").read_text()
+    assert "const slideOperations = {" in source
+    for operation in SLIDE_OPERATION_NAMES:
+        assert json.dumps(operation) + ":" in source
+    dispatch = source.split("const slideOperations = {", 1)[1].split(
+        "const handlers =", 1
+    )[0]
+    assert "eval(" not in dispatch
+    assert "new Function" not in source
+
+
+def test_presentation_generation_executes_all_operations_on_staged_presentation():
+    preset = {
+        "name": "Academic",
+        "colors": {
+            "primary": "#1A3C8B",
+            "secondary": "#E67733",
+            "accent": "#188050",
+            "dark": "#222222",
+            "light": "#F5F8FC",
+            "background": "#FFFFFF",
+        },
+        "fonts": {
+            "title": {"family": "Arial", "size": 40, "color": "#1A3C8B"},
+            "subtitle": {"family": "Arial", "size": 22, "color": "#646464"},
+            "body": {"family": "Arial", "size": 24, "color": "#222222"},
+            "caption": {"family": "Arial", "size": 16, "color": "#808080"},
+            "chinese": {"family": "Microsoft YaHei", "size": 24, "color": "#222222"},
+        },
+        "spacing": {"margin": 80, "gap": 24, "cardPadding": 20, "lineHeight": 1.5},
+    }
+    operations = [
+        {"op": "slide.reset", "args": {}},
+        {"op": "slide.set_size", "args": {"width": 960, "height": 540}},
+        {"op": "slide.apply_preset", "args": {"preset": preset}},
+        {
+            "op": "slide.add_title",
+            "args": {
+                "title": "Quarterly review",
+                "subtitle": "Ada | 2026-07-19",
+                "titleSize": 40,
+                "subtitleSize": 20,
+                "titleColor": "#1A3C8B",
+            },
+        },
+        {"op": "slide.add_section", "args": {"title": "Results"}},
+        {
+            "op": "slide.add_bullets",
+            "args": {"title": "Highlights", "items": ["One", "Two"], "titleSize": 28, "bodySize": 18},
+        },
+        {"op": "slide.add_blank", "args": {}},
+        {
+            "op": "slide.add_image",
+            "args": {"slide": 4, "imageId": "image-1", "left": 80, "top": 100, "width": 800, "height": 400},
+        },
+        {"op": "slide.add_blank", "args": {}},
+        {
+            "op": "slide.add_table",
+            "args": {
+                "slide": 5, "rows": 2, "cols": 2, "left": 60, "top": 120,
+                "width": 840, "height": 380, "data": [["Item", "Amount"], ["A", 10]],
+                "headerShade": "#4472C4", "headerFont": "#FFFFFF", "fontSize": 14,
+            },
+        },
+    ]
+    body = f"""
+const state = {{deleted: 0, textboxes: [], pictures: [], tables: []}};
+function textRange() {{return {{Text: "", Font: {{}}, ParagraphFormat: {{}}}};}}
+function makeSlide(owner) {{
+  const slide = {{owner, FollowMasterBackground: true, Background: {{Fill: {{Solid() {{}}}}}}}};
+  slide.Shapes = {{
+    AddTextbox(orientation, left, top, width, height) {{
+      assert.equal(slide.owner, "staged");
+      const shape = {{kind: "textbox", orientation, left, top, width, height, TextFrame: {{TextRange: textRange()}}}};
+      state.textboxes.push(shape); return shape;
+    }},
+    AddPicture(path, link, save, left, top) {{
+      assert.equal(slide.owner, "staged");
+      const shape = {{kind: "picture", path, link, save, Left: left, Top: top, Width: 1600, Height: 800}};
+      state.pictures.push(shape); return shape;
+    }},
+    AddTable(rows, cols, left, top, width, height) {{
+      assert.equal(slide.owner, "staged");
+      const cells = {{}};
+      const shape = {{kind: "table", rows, cols, left, top, width, height, Table: {{Cell(row, col) {{
+        const key = `${{row}},${{col}}`;
+        if (!cells[key]) cells[key] = {{Shape: {{TextFrame: {{TextRange: textRange()}}, Fill: {{}}}}}};
+        return cells[key];
+      }}}}, cells}};
+      state.tables.push(shape); return shape;
+    }}
+  }};
+  return slide;
+}}
+const slides = [makeSlide("staged"), makeSlide("staged")];
+slides.forEach(function (slide) {{slide.Delete = function () {{slides.splice(slides.indexOf(slide), 1); state.deleted += 1;}};}});
+const collection = {{
+  get Count() {{return slides.length;}},
+  Item(index) {{return slides[index - 1];}},
+  Add(index, layout) {{assert.equal(index, slides.length + 1); const slide = makeSlide("staged"); slides.push(slide); return slide;}}
+}};
+const presentation = {{
+  Slides: collection, PageSetup: {{}}, SlideMaster: {{Background: {{Fill: {{Solid() {{}}}}}}}},
+  saveCalls: 0, closeCalls: 0, Save() {{this.saveCalls += 1;}}, Close() {{this.closeCalls += 1;}}
+}};
+const otherPresentation = {{Slides: [makeSlide("other")]}};
+global.Application = {{DisplayAlerts: 7,
+  get ActivePresentation() {{throw new Error("global presentation access");}},
+  Presentations: {{Open() {{return presentation;}}}}
+}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  const result = await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx",
+    resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: {json.dumps(operations)}}}
+  }}}});
+  assert.equal(result.appliedOperations, 10); assert.equal(presentation.saveCalls, 1);
+  assert.equal(presentation.closeCalls, 1); assert.equal(Application.DisplayAlerts, 7);
+  assert.equal(state.deleted, 2); assert.equal(slides.length, 5);
+  assert.equal(presentation.PageSetup.SlideWidth, 960); assert.equal(presentation.PageSetup.SlideHeight, 540);
+  assert.equal(state.textboxes[0].TextFrame.TextRange.Text, "Quarterly review");
+  assert.equal(state.textboxes[0].TextFrame.TextRange.Font.Name, "Arial");
+  assert.equal(state.textboxes[0].TextFrame.TextRange.Font.Color.RGB, 0x8B3C1A);
+  assert.ok(state.textboxes.some(function (shape) {{return shape.TextFrame.TextRange.Text === "One\\rTwo";}}));
+  assert.equal(state.pictures[0].path, "http://127.0.0.1:3889/resource-image-1.png");
+  assert.equal(state.pictures[0].Width, 800); assert.equal(state.pictures[0].Height, 400);
+  assert.equal(state.pictures[0].Left, 80); assert.equal(state.pictures[0].Top, 100);
+  assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Text, "Item");
+  assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Font.Bold, true);
+  assert.equal(state.tables[0].cells["1,1"].Shape.Fill.ForeColor.RGB, 0xC47244);
+  assert.equal(otherPresentation.Slides.length, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        '{op: "slide.reset", args: {unexpected: true}}',
+        '{op: "slide.set_size", args: {width: 960}}',
+        '{op: "slide.set_size", args: {width: true, height: 540}}',
+        '{op: "slide.apply_preset", args: {preset: {name: "x", colors: {primary: "#000000", dark: "#000000", background: "#FFFFFF"}, fonts: {title: {family: "Arial", size: 40, color: "#000000"}}}}}',
+        '{op: "slide.add_title", args: {title: 7}}',
+        '{op: "slide.add_section", args: {title: "x", rogue: true}}',
+        '{op: "slide.add_bullets", args: {title: "x", items: ["ok", 7]}}',
+        '{op: "slide.add_blank", args: {dynamic: true}}',
+        '{op: "slide.add_image", args: {slide: 1, imageId: "image-1", left: 0, top: 0, source: "/tmp/x"}}',
+        '{op: "slide.add_table", args: {slide: 1, rows: 2, cols: 2, left: 0, top: 0, width: 100, height: 100, data: [["x"]]}}',
+        '{op: "rogue.eval", args: {}}',
+        '{op: "slide.reset", args: {}, handler: "dynamic"}',
+    ],
+)
+def test_presentation_generation_revalidates_closed_schemas_before_open(operation):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: [{operation}]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize("operation_name", ["toString", "constructor", "valueOf"])
+def test_presentation_generation_rejects_prototype_operation_before_open(operation_name):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", plan: {{component: "presentation", operations: [{{op: {json.dumps(operation_name)}, args: {{}}}}]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    "operations",
+    [
+        [{"op": "slide.add_image", "args": {"slide": 1, "imageId": "image-1", "left": 0, "top": 0}}],
+        [
+            {"op": "slide.reset", "args": {}},
+            {"op": "slide.add_title", "args": {"title": "Only"}},
+            {"op": "slide.add_table", "args": {"slide": 2, "rows": 1, "cols": 1, "left": 0, "top": 0, "width": 10, "height": 10, "data": [["x"]]}},
+        ],
+        [
+            {"op": "slide.add_blank", "args": {}},
+            {"op": "slide.reset", "args": {}},
+            {"op": "slide.add_image", "args": {"slide": 1, "imageId": "image-1", "left": 0, "top": 0}},
+        ],
+    ],
+)
+def test_presentation_generation_rejects_out_of_sequence_slide_state_before_open(operations):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: {json.dumps(operations)}}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        '{op: "slide.set_size", args: {width: 0, height: 540}}',
+        '{op: "slide.add_image", args: {slide: 1, imageId: "image-1", left: -1, top: 0}}',
+        '{op: "slide.add_image", args: {slide: 1, imageId: "image-1", left: 300, top: 0, width: 200, height: 20}}',
+        '{op: "slide.add_image", args: {slide: 1, imageId: "image-1", left: 0, top: 0, width: Infinity, height: 20}}',
+        '{op: "slide.add_table", args: {slide: 1, rows: 1, cols: 1, left: 0, top: 150, width: 10, height: 100, data: [["x"]]}}',
+        '{op: "slide.add_title", args: {title: "Too narrow"}}',
+        '{op: "slide.add_bullets", args: {title: "Too short", items: ["x"]}}',
+    ],
+)
+def test_presentation_generation_rejects_unsafe_geometry_before_open(operation):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  const testedOperation = {operation};
+  const resources = testedOperation.op === "slide.add_image"
+    ? {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}} : {{}};
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources,
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.set_size", args: {{width: 100, height: 50}}}},
+      {{op: "slide.add_blank", args: {{}}}}, testedOperation
+    ]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    "resources",
+    [
+        {},
+        {"image-1": "file:///tmp/x.png"},
+        {"image-1": "http://127.0.0.1:3889/a/b.png"},
+        {"image-1": "http://127.0.0.1:3889/x.png", "unused": "http://127.0.0.1:3889/y.png"},
+    ],
+)
+def test_presentation_generation_rejects_missing_or_unsafe_resources_before_open(resources):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources: {json.dumps(resources)},
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 0, top: 0}}}}
+    ]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+def test_presentation_generation_accepts_safe_fractional_geometry():
+    body = f"""
+let slideCount = 0; let openCalls = 0; let stagedSlide = null;
+const picture = {{Width: 1600, Height: 800}};
+const slides = {{
+  get Count() {{return slideCount;}},
+  Add() {{slideCount += 1; stagedSlide = {{Shapes: {{AddPicture() {{return picture;}}}}}}; return stagedSlide;}},
+  Item() {{return stagedSlide;}}
+}};
+const presentation = {{Slides: slides, PageSetup: {{}}, Save() {{}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1; return presentation;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx",
+    resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.set_size", args: {{width: 960.1, height: 540.1}}}},
+      {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 80.25, top: 100.25, width: 800.25, height: 400.25}}}}
+    ]}}
+  }}}});
+  assert.equal(openCalls, 1); assert.equal(picture.Left, 80.25); assert.equal(picture.Top, 100.25);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+def test_presentation_generation_rejects_non_object_resources_before_open():
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources: [],
+    plan: {{component: "presentation", operations: [{{op: "slide.reset", args: {{}}}}]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+def test_presentation_generation_enforces_recursive_utf8_and_collection_limits_before_open():
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+async function reject(plan) {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{stagedPath: "/staged/generated.pptx", plan}}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}}
+(async function () {{
+  await reject({{component: "presentation", operations: [{{op: "slide.add_title", args: {{title: "x".repeat(100001)}}}}]}});
+  let nested = "x"; for (let i = 0; i < 65; i += 1) nested = [nested];
+  await reject({{component: "presentation", operations: [{{op: "slide.add_bullets", args: {{title: "x", items: nested}}}}]}});
+  const wide = "汉".repeat(90000);
+  await reject({{component: "presentation", operations: Array(8).fill(0).map(function () {{return {{op: "slide.add_title", args: {{title: wide}}}};}})}});
+  await reject({{component: "presentation", operations: Array(10001).fill(0).map(function () {{return {{op: "slide.reset", args: {{}}}};}})}});
+  const row = Array(101).fill("x");
+  await reject({{component: "presentation", operations: [{{op: "slide.add_blank", args: {{}}}}, {{op: "slide.add_table", args: {{slide: 1, rows: 100, cols: 101, left: 0, top: 0, width: 100, height: 100, data: Array(100).fill(row)}}}}]}});
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    ("original", "replacement"),
+    [
+        ('"slide.add_blank": addBlankSlide', '"slide.add_blank": null'),
+        (
+            '"slide.add_blank": {required: [], allowed: []}',
+            '"slide.add_blank-missing": {required: [], allowed: []}',
+        ),
+    ],
+)
+def test_presentation_generation_rejects_incomplete_catalog_before_open(original, replacement):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+let source = fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8");
+source = source.replace({json.dumps(original)}, {json.dumps(replacement)});
+eval(source);
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", plan: {{component: "presentation", operations: [{{op: "slide.reset", args: {{}}}}]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)

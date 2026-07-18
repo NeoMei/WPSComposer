@@ -16,9 +16,14 @@ MAX_BULLETS = 6
 MAX_TABLE_ROWS = 8
 
 
-def render(doc: StructuredDocument, output_path: str, preset=None) -> str:
+def render(
+    doc: StructuredDocument,
+    output_path: str,
+    preset=None,
+    composer_factory=SlideComposer,
+) -> str:
     """Render a StructuredDocument to a styled PPTX file."""
-    with SlideComposer() as p:
+    with composer_factory() as p:
         p.set_slide_size(960, 540)
 
         if preset:
@@ -95,7 +100,7 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
             rows = min(len(table.rows) + 1, MAX_TABLE_ROWS + 1)
             data = [table.headers] + table.rows[:MAX_TABLE_ROWS]
             p.add_blank_slide()
-            idx = p._doc.Slides.Count
+            idx = p.slide_count
             p.add_table(
                 idx, rows, len(table.headers),
                 60, 120, 840, 380,
@@ -109,7 +114,7 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
     for img in images:
         try:
             p.add_blank_slide()
-            idx = p._doc.Slides.Count
+            idx = p.slide_count
             p.add_image(idx, img.path, 80, 100, 800, 400)
         except Exception:
             pass
