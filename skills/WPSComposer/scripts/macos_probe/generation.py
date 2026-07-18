@@ -102,6 +102,17 @@ MARKER_CONTENT_MEMBERS = {
     "xlsx": frozenset({"xl/sharedStrings.xml"}),
     "pptx": frozenset({"ppt/slides/slide1.xml"}),
 }
+MARKER_TEXT_QNAMES = {
+    "docx": (
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+    ),
+    "xlsx": (
+        "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t"
+    ),
+    "pptx": (
+        "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -200,6 +211,7 @@ def _validate_marker_package(path: Path, format_name: str) -> None:
     validate_office_package(path, format_name)
     normalized = str(format_name).lower().lstrip(".")
     content_members = MARKER_CONTENT_MEMBERS[normalized]
+    text_qname = MARKER_TEXT_QNAMES[normalized]
     found = False
     try:
         with zipfile.ZipFile(path) as package:
@@ -209,7 +221,10 @@ def _validate_marker_package(path: Path, format_name: str) -> None:
                     continue
                 root = ElementTree.fromstring(package.read(name))
                 if name in content_members:
-                    text = "".join(root.itertext())
+                    text = "".join(
+                        element.text or ""
+                        for element in root.iter(text_qname)
+                    )
                     if FEASIBILITY_MARKER in text:
                         found = True
     except (

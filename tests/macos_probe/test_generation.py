@@ -62,6 +62,17 @@ CONTENT_MEMBERS = {
     "xlsx": "xl/sharedStrings.xml",
     "pptx": "ppt/slides/slide1.xml",
 }
+VISIBLE_TEXT_QNAMES = {
+    "docx": (
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+    ),
+    "xlsx": (
+        "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t"
+    ),
+    "pptx": (
+        "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+    ),
+}
 
 
 def _rewrite_member(path: Path, member: str, transform) -> None:
@@ -75,7 +86,7 @@ def _rewrite_member(path: Path, member: str, transform) -> None:
             destination.writestr(name, data)
 
 
-def _xml_with_marker(data: bytes) -> bytes:
+def _xml_with_root_marker(data: bytes) -> bytes:
     root = ElementTree.fromstring(data)
     root.text = (root.text or "") + MARKER
     return ElementTree.tostring(
@@ -83,8 +94,37 @@ def _xml_with_marker(data: bytes) -> bytes:
     )
 
 
+def _xml_with_visible_marker(data: bytes, format_name: str) -> bytes:
+    root = ElementTree.fromstring(data)
+    qname = VISIBLE_TEXT_QNAMES[format_name]
+    if format_name == "xlsx":
+        namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+        shared_string = next(root.iter(f"{{{namespace}}}si"))
+        for child in list(shared_string):
+            shared_string.remove(child)
+        rich_text = ElementTree.SubElement(shared_string, f"{{{namespace}}}r")
+        text = ElementTree.SubElement(rich_text, qname)
+        text.text = MARKER
+    else:
+        text = next(root.iter(qname))
+        text.text = (text.text or "") + MARKER
+    return ElementTree.tostring(
+        root, encoding="utf-8", xml_declaration=True
+    )
+
+
 def _add_marker(path: Path, format_name: str) -> None:
-    _rewrite_member(path, CONTENT_MEMBERS[format_name], _xml_with_marker)
+    _rewrite_member(
+        path,
+        CONTENT_MEMBERS[format_name],
+        lambda data: _xml_with_visible_marker(data, format_name),
+    )
+
+
+def _add_root_marker(path: Path, format_name: str) -> None:
+    _rewrite_member(
+        path, CONTENT_MEMBERS[format_name], _xml_with_root_marker
+    )
 
 
 def _invalid_feasibility_plans():
@@ -128,6 +168,7 @@ class FakeBridge:
         returned_path=None,
         applied_operations=2,
         write_marker=True,
+        marker_writer=_add_marker,
     ):
         self.url = "http://127.0.0.1:45678"
         self.token = "token"
@@ -136,6 +177,7 @@ class FakeBridge:
         self.returned_path = returned_path
         self.applied_operations = applied_operations
         self.write_marker = write_marker
+        self.marker_writer = marker_writer
         self.commands = []
         self.registrations = []
 
@@ -170,7 +212,7 @@ class FakeBridge:
                 {"code": self.error_code, "message": message},
             )
         if self.write_marker:
-            _add_marker(staged, command.params["formatName"])
+            self.marker_writer(staged, command.params["formatName"])
         returned = staged if self.returned_path is None else self.returned_path
         return ProbeResult(
             command_id,
@@ -409,7 +451,7 @@ def test_marker_validator_rejects_malformed_content_xml_with_marker_bytes(
 
 def test_marker_validator_rejects_marker_only_in_unrelated_xml(tmp_path: Path):
     package = _copy_template(tmp_path, "docx")
-    _rewrite_member(package, "docProps/core.xml", _xml_with_marker)
+    _rewrite_member(package, "docProps/core.xml", _xml_with_root_marker)
 
     with pytest.raises(ArtifactValidationError, match="missing IN_PLACE_MARKER"):
         mac_generation._validate_marker_package(package, "docx")
@@ -435,6 +477,36 @@ def test_marker_validator_rejects_content_member_without_marker(tmp_path: Path):
 
     with pytest.raises(ArtifactValidationError, match="missing IN_PLACE_MARKER"):
         mac_generation._validate_marker_package(package, "docx")
+
+
+@pytest.mark.parametrize(
+    ("component", "format_name", "plan"),
+    [
+        ("writer", "docx", WRITER_MARKER_PLAN),
+        ("spreadsheet", "xlsx", SHEET_MARKER_PLAN),
+        ("presentation", "pptx", SLIDE_MARKER_PLAN),
+    ],
+)
+def test_generation_rejects_marker_only_in_content_root_text_without_publishing(
+    tmp_path: Path,
+    component: str,
+    format_name: str,
+    plan: GenerationPlan,
+):
+    bridge = FakeBridge(marker_writer=_add_root_marker)
+
+    with pytest.raises(GenerationError) as caught:
+        _run_with_fakes(
+            tmp_path,
+            component,
+            format_name,
+            plan,
+            bridge=bridge,
+            timeout=0.02,
+        )
+
+    assert caught.value.code == "STAGED_ARTIFACT_INVALID"
+    assert not (tmp_path / f"final.{format_name}").exists()
 
 
 @pytest.mark.parametrize(
