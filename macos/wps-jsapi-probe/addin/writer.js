@@ -251,6 +251,23 @@
     }
   }
 
+  async function convertWriterPdf(params) {
+    const sourcePath = requirePath(params, "sourcePath");
+    const outputPath = requirePath(params, "outputPath");
+    const previousAlerts = Application.DisplayAlerts;
+    Application.DisplayAlerts = 0;
+    const document = Application.Documents.Open(sourcePath, false, true);
+    try {
+      await waitForFileAfterSave(outputPath, function () {
+        document.ExportAsFixedFormat(outputPath, 17, false, 0, 0);
+      });
+      return {path: outputPath};
+    } finally {
+      document.Close(0);
+      Application.DisplayAlerts = previousAlerts;
+    }
+  }
+
   function probe() {
     attempt("writer.documents", function () {
       return Application.Documents.Count;
@@ -271,7 +288,8 @@
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_docx": saveDocx,
-    "smoke_pdf": savePdf
+    "smoke_pdf": savePdf,
+    "convert_writer_pdf": convertWriterPdf
   };
 
   window.WPSComposerProbe = {

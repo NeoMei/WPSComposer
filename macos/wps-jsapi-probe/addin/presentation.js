@@ -127,9 +127,25 @@
     };
   }
 
+  function convertPresentationPdf(params) {
+    const sourcePath = requirePath(params, "sourcePath");
+    const outputPath = requirePath(params, "outputPath");
+    const previousAlerts = Application.DisplayAlerts;
+    Application.DisplayAlerts = 0;
+    const presentation = Application.Presentations.Open(sourcePath, true, false, false);
+    try {
+      presentation.SaveAs(outputPath, 32);
+      return {path: outputPath};
+    } finally {
+      presentation.Close();
+      Application.DisplayAlerts = previousAlerts;
+    }
+  }
+
   const handlers = {
     "probe_capabilities": function () { return probe(); },
-    "smoke_pptx": savePptx
+    "smoke_pptx": savePptx,
+    "convert_presentation_pdf": convertPresentationPdf
   };
 
   window.WPSComposerProbe = {

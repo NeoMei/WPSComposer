@@ -1,12 +1,16 @@
 (function () {
   "use strict";
 
-  function requireOutputPath(params) {
-    const outputPath = params.outputPath;
-    if (typeof outputPath !== "string" || outputPath.length === 0) {
-      throw new Error("outputPath must be a non-empty path");
+  function requirePath(params, name) {
+    const value = params[name];
+    if (typeof value !== "string" || value.length === 0) {
+      throw new Error(`${name} must be a non-empty path`);
     }
-    return outputPath;
+    return value;
+  }
+
+  function requireOutputPath(params) {
+    return requirePath(params, "outputPath");
   }
 
   function saveXlsx(params) {
@@ -102,9 +106,25 @@
     };
   }
 
+  function convertWorkbookPdf(params) {
+    const sourcePath = requirePath(params, "sourcePath");
+    const outputPath = requireOutputPath(params);
+    const previousAlerts = Application.DisplayAlerts;
+    Application.DisplayAlerts = false;
+    const workbook = Application.Workbooks.Open(sourcePath, 0, true);
+    try {
+      workbook.ExportAsFixedFormat(0, outputPath);
+      return {path: outputPath};
+    } finally {
+      workbook.Close(false);
+      Application.DisplayAlerts = previousAlerts;
+    }
+  }
+
   const handlers = {
     "probe_capabilities": function () { return probe(); },
-    "smoke_xlsx": saveXlsx
+    "smoke_xlsx": saveXlsx,
+    "convert_workbook_pdf": convertWorkbookPdf
   };
 
   window.WPSComposerProbe = {

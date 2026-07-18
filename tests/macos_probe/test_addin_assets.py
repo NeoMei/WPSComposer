@@ -67,6 +67,14 @@ def test_writer_accepts_only_the_fixed_loopback_image_url():
     assert 'record("writer.image_source", "mapped"' in source
 
 
+def test_writer_conversion_opens_exports_and_closes_without_saving():
+    source = (ROOT / "writer.js").read_text()
+    assert "Application.Documents.Open(sourcePath, false, true)" in source
+    assert "document.ExportAsFixedFormat(outputPath, 17" in source
+    assert "document.Close(0)" in source
+    assert '"convert_writer_pdf": convertWriterPdf' in source
+
+
 def test_presentation_uses_wps_shapes_and_save():
     source = (ROOT / "presentation.js").read_text()
     assert "Application.Presentations.Add" in source
@@ -77,6 +85,14 @@ def test_presentation_uses_wps_shapes_and_save():
     assert '"smoke_pptx"' in source
 
 
+def test_presentation_conversion_opens_exports_and_closes_without_saving():
+    source = (ROOT / "presentation.js").read_text()
+    assert "Application.Presentations.Open(sourcePath, true, false, false)" in source
+    assert "presentation.SaveAs(outputPath, 32)" in source
+    assert "presentation.Close()" in source
+    assert '"convert_presentation_pdf": convertPresentationPdf' in source
+
+
 def test_spreadsheet_uses_wps_cells_chart_and_save():
     source = (ROOT / "spreadsheet.js").read_text()
     assert "Application.Workbooks.Add" in source
@@ -85,3 +101,11 @@ def test_spreadsheet_uses_wps_cells_chart_and_save():
     assert "SetSourceData" in source
     assert "SaveAs(outputPath, 51)" in source
     assert '"smoke_xlsx"' in source
+
+
+def test_spreadsheet_conversion_exports_the_workbook_and_closes_without_saving():
+    source = (ROOT / "spreadsheet.js").read_text()
+    assert "Application.Workbooks.Open(sourcePath, 0, true)" in source
+    assert "workbook.ExportAsFixedFormat(0, outputPath)" in source
+    assert "workbook.Close(false)" in source
+    assert '"convert_workbook_pdf": convertWorkbookPdf' in source

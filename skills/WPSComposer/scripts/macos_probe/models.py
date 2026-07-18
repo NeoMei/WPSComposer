@@ -12,6 +12,9 @@ METHOD_COMPONENT = {
     "smoke_pdf": "writer",
     "smoke_pptx": "presentation",
     "smoke_xlsx": "spreadsheet",
+    "convert_writer_pdf": "writer",
+    "convert_workbook_pdf": "spreadsheet",
+    "convert_presentation_pdf": "presentation",
 }
 
 
