@@ -506,3 +506,411 @@ eval(fs.readFileSync({path}, "utf8"));
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+WRITER_OPERATION_NAMES = [
+    "writer.reset",
+    "writer.configure_page",
+    "writer.ensure_styles",
+    "writer.add_paragraph",
+    "writer.add_heading",
+    "writer.add_list",
+    "writer.add_table",
+    "writer.add_image",
+    "writer.add_page_break",
+    "writer.add_section",
+    "writer.add_horizontal_line",
+    "writer.insert_toc",
+    "writer.set_page_number",
+    "writer.update_fields",
+]
+
+
+def test_writer_generation_uses_a_literal_complete_operation_dispatch_table():
+    source = (ROOT / "writer.js").read_text()
+    assert "const writerOperations = {" in source
+    for operation in WRITER_OPERATION_NAMES:
+        assert json.dumps(operation) + ":" in source
+    assert "eval(" not in source.split("const writerOperations = {", 1)[1].split(
+        "const handlers =", 1
+    )[0]
+    assert "new Function" not in source
+
+
+def _writer_generation_stub() -> str:
+    return r"""
+const state = {
+  text: [], breaks: [], styleNames: [], tableValues: [], imagePaths: [],
+  colors: [], tableCells: {}, tableBorders: [], imageParagraph: null,
+  fieldAdds: 0, fieldUpdates: 0, tocAdds: 0, tocUpdates: 0, rangeCalls: 0
+};
+function font() { return {set Color(value) {state.colors.push(value);}}; }
+function paragraphFormat() {
+  return {Borders() { return {}; }};
+}
+function range(start, end) {
+  state.rangeCalls += 1;
+  return {
+    Start: start, End: end, Font: font(), ParagraphFormat: paragraphFormat(),
+    InsertAfter(value) { state.text.push(String(value)); document.Content.End += String(value).length; },
+    InsertBreak(kind) { state.breaks.push(kind); },
+    set Text(value) { state.text.push(String(value)); document.Content.End += String(value).length; },
+    get Text() { return ""; }
+  };
+}
+function style(name) { return {Name: name, Font: font(), ParagraphFormat: paragraphFormat()}; }
+const styles = {
+  Item(name) { state.styleNames.push(String(name)); return style(name); },
+  Add(name) { state.styleNames.push(String(name)); return style(name); }
+};
+const table = {
+  AllowAutoFit: true,
+  Cell(row, column) {
+    const cell = {
+      Range: {Font: font(), ParagraphFormat: paragraphFormat(), set Text(value) {
+        state.tableValues.push([row, column, value]);
+      }},
+      Shading: {}
+    };
+    state.tableCells[`${row},${column}`] = cell;
+    return cell;
+  },
+  Rows: {Item() { return {Range: {Font: font()}}; }},
+  Columns: {Item() { return {}; }},
+  Borders(index) { const border = {}; state.tableBorders.push([index, border]); return border; },
+  AutoFitBehavior() {}
+};
+const footerRange = {Font: font(), ParagraphFormat: paragraphFormat(), Text: ""};
+const document = {
+  saveCalls: 0, saveAsCalls: 0, closeArgument: null,
+  Content: {Text: "template", End: 0},
+  PageSetup: {TextColumns: {SetCount(value) {this.Count = value;}}},
+  Styles: styles,
+  Range(start, end) { return range(start, end); },
+  Tables: {Add(ownerRange, rows, cols) {
+    assert.ok(ownerRange); assert.equal(rows, 3); assert.equal(cols, 2); return table;
+  }},
+  InlineShapes: {
+    AddPicture(path, link, save, ownerRange) {
+      assert.ok(ownerRange); state.imagePaths.push(path);
+      state.imageParagraph = paragraphFormat();
+      return {Width: 640, Height: 480, Range: {End: 1, ParagraphFormat: state.imageParagraph}};
+    }
+  },
+  Sections: {Item() {return {
+    Headers: {Item() {return {Range: {Text: ""}};}},
+    Footers: {Item() {return {Range: footerRange};}}
+  };}},
+  TablesOfContents: {
+    Count: 1,
+    Add() {state.tocAdds += 1;},
+    Item() {return {Update() {state.tocUpdates += 1;}};}
+  },
+  Fields: {
+    Add() {state.fieldAdds += 1;},
+    Update() {state.fieldUpdates += 1;}
+  },
+  Save() {this.saveCalls += 1;},
+  SaveAs() {this.saveAsCalls += 1;},
+  SaveAs2() {this.saveAsCalls += 1;},
+  Close(value) {this.closeArgument = value;}
+};
+global.Application = {
+  DisplayAlerts: 7,
+  get Selection() {throw new Error("generation touched another document selection");},
+  Documents: {Open(path, confirm, readOnly) {
+    assert.equal(path, "/staged/generated.docx");
+    assert.equal(confirm, false); assert.equal(readOnly, false); return document;
+  }}
+};
+"""
+
+
+def test_writer_generation_executes_all_operations_with_document_owned_ranges():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    operations = [
+        {"op": "writer.reset", "args": {}},
+        {
+            "op": "writer.configure_page",
+            "args": {
+                "marginTop": 72,
+                "marginBottom": 73,
+                "marginLeft": 90,
+                "marginRight": 91,
+                "pageWidth": 612,
+                "pageHeight": 792,
+                "landscape": False,
+                "columns": 2,
+                "header": "Header",
+                "footer": "Footer",
+            },
+        },
+        {
+            "op": "writer.ensure_styles",
+            "args": {"styles": [{"name": "Body Text", "fontSize": 12, "color": "#112233"}]},
+        },
+        {
+            "op": "writer.add_paragraph",
+            "args": {
+                "text": "Rich text",
+                "style": "Body Text",
+                "spans": [
+                    {"text": "Rich", "bold": True},
+                    {"text": " text", "italic": True},
+                ],
+            },
+        },
+        {"op": "writer.add_heading", "args": {"text": "Heading", "level": 2}},
+        {
+            "op": "writer.add_list",
+            "args": {"items": ["One", "Two"], "ordered": False, "glyph": "-", "indent": 20},
+        },
+        {
+            "op": "writer.add_table",
+            "args": {
+                "rows": 3,
+                "cols": 2,
+                "data": [["Item", "Amount"], ["A", 10], ["B", 20]],
+                "bandedRows": True,
+                "borderColor": "#BFBFBF",
+            },
+        },
+        {
+            "op": "writer.add_image",
+            "args": {"imageId": "image-1", "width": 240, "inline": True, "preserveAspect": True},
+        },
+        {"op": "writer.add_page_break", "args": {}},
+        {"op": "writer.add_section", "args": {}},
+        {"op": "writer.add_horizontal_line", "args": {}},
+        {"op": "writer.insert_toc", "args": {"title": "Contents"}},
+        {"op": "writer.set_page_number", "args": {}},
+        {"op": "writer.update_fields", "args": {}},
+    ]
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+{_writer_generation_stub()}
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  const result = await window.WPSComposerProbe.handleCommand({{
+    method: "generate_writer_document",
+    params: {{
+      stagedPath: "/staged/generated.docx",
+      resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+      plan: {{component: "writer", operations: {json.dumps(operations)}}}
+    }}
+  }});
+  assert.equal(result.appliedOperations, 14);
+  assert.equal(document.saveCalls, 1); assert.equal(document.saveAsCalls, 0);
+  assert.equal(document.closeArgument, 0); assert.equal(Application.DisplayAlerts, 7);
+  assert.ok(state.rangeCalls > 0);
+  assert.equal(document.PageSetup.TopMargin, 72);
+  assert.equal(document.PageSetup.TextColumns.Count, 2);
+  assert.ok(state.colors.includes(0x332211));
+  assert.ok(state.text.join("").includes("Rich text"));
+  assert.ok(state.text.join("").includes("Heading"));
+  assert.ok(state.text.join("").includes("-\\tOne"));
+  assert.deepEqual(state.tableValues[5], [3, 2, 20]);
+  assert.equal(state.tableCells["3,1"].Shading.BackgroundPatternColor, 0xF2F2F2);
+  assert.equal(state.tableCells["3,1"].TopPadding, 1.5);
+  assert.equal(state.tableCells["3,1"].Range.ParagraphFormat.FirstLineIndent, 0);
+  assert.equal(state.tableBorders.length, 6);
+  assert.equal(state.tableBorders[0][1].Color, 0xBFBFBF);
+  assert.deepEqual(state.imagePaths, ["http://127.0.0.1:3889/resource-image-1.png"]);
+  assert.equal(state.imageParagraph.Alignment, 1);
+  assert.equal(state.imageParagraph.KeepWithNext, -1);
+  assert.equal(state.imageParagraph.SpaceAfter, 0);
+  assert.ok(state.text.filter(function (value) {{return value === "\\r";}}).length >= 2);
+  assert.ok(state.breaks.includes(7)); assert.ok(state.breaks.includes(2));
+  assert.equal(state.tocAdds, 1); assert.equal(state.tocUpdates, 1);
+  assert.equal(state.fieldAdds, 1); assert.equal(state.fieldUpdates, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_writer_generation_rejects_missing_dispatch_handler_before_open():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+let source = fs.readFileSync({path}, "utf8");
+source = source.replace('"writer.update_fields": updateWriterFields', '"writer.update_fields": null');
+eval(source);
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_writer_document",
+      params: {{stagedPath: "/staged/generated.docx", plan: {{component: "writer", operations: [
+        {{op: "writer.update_fields", args: {{}}}}
+      ]}}}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize(
+    "resources",
+    [
+        {},
+        {"image-1": "http://127.0.0.1:3889/../secret.png"},
+        {"image-1": "http://127.0.0.1:3889/%2e%2e%2fsecret.png"},
+        {"image-1": "https://example.test/image.png"},
+    ],
+)
+def test_writer_generation_rejects_missing_or_unsafe_resources_before_open(resources):
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_writer_document",
+      params: {{stagedPath: "/staged/generated.docx", resources: {json.dumps(resources)},
+        plan: {{component: "writer", operations: [
+          {{op: "writer.add_image", args: {{imageId: "image-1"}}}}
+        ]}}}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        {"op": "writer.reset", "args": {"unexpected": True}},
+        {
+            "op": "writer.configure_page",
+            "args": {
+                "marginTop": 72,
+                "marginBottom": 72,
+                "marginLeft": 90,
+                "marginRight": 90,
+                "columns": True,
+            },
+        },
+        {"op": "writer.ensure_styles", "args": {"styles": [{"name": 7}]}},
+        {
+            "op": "writer.add_paragraph",
+            "args": {"text": "text", "spans": [{"text": "x", "bold": "yes"}]},
+        },
+        {"op": "writer.add_heading", "args": {"text": "Heading", "level": 1.5}},
+        {"op": "writer.add_list", "args": {"items": ["ok", {"bad": True}], "ordered": False}},
+        {
+            "op": "writer.add_table",
+            "args": {"rows": 2, "cols": 2, "data": [["a", "b"], ["ragged"]]},
+        },
+        {"op": "writer.add_table", "args": {"rows": 0, "cols": 1, "data": []}},
+        {"op": "writer.add_table", "args": {"rows": 1, "cols": 2, "data": [["only one"]]}},
+        {"op": "writer.add_image", "args": {"imageId": "image-1", "inline": "true"}},
+        {"op": "writer.insert_toc", "args": {"title": 7}},
+        {"op": "writer.add_list", "args": {"items": ["x" * 100_001], "ordered": False}},
+    ],
+)
+def test_writer_generation_revalidates_operation_arguments_before_open(operation):
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    resources = (
+        {"image-1": "http://127.0.0.1:3889/resource-image-1.png"}
+        if operation["op"] == "writer.add_image"
+        else {}
+    )
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_writer_document",
+      params: {{stagedPath: "/staged/generated.docx", resources: {json.dumps(resources)},
+        plan: {{component: "writer", operations: [{json.dumps(operation)}]}}}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_writer_generation_rejects_extra_plan_fields_before_open():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_writer_document",
+      params: {{stagedPath: "/staged/generated.docx", plan: {{
+        component: "writer", operations: [{{op: "writer.reset", args: {{}}}}],
+        dynamicHandler: "eval"
+      }}}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_writer_generation_enforces_utf8_plan_byte_limit_before_open():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  const item = "汉".repeat(90000);
+  const plan = {{component: "writer", operations: [{{
+    op: "writer.add_list", args: {{items: Array(8).fill(item), ordered: false}}
+  }}]}};
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_writer_document",
+      params: {{stagedPath: "/staged/generated.docx", plan}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)

@@ -10,7 +10,7 @@ Key improvement over inline formatting:
 from __future__ import annotations
 
 from ..document_model import (
-    StructuredDocument, Section, Paragraph as MDParagraph, Span,
+    StructuredDocument, Section, Paragraph as MDParagraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
     HorizontalRule, TaskList,
 )
@@ -29,55 +29,45 @@ MARGIN_LEFT = 90      # ~3.17 cm (Word default)
 MARGIN_RIGHT = 90
 
 
-def render(doc, output_path, preset=None):
+def render(doc, output_path, preset=None, composer_factory=WriterComposer):
     """Render StructuredDocument to a professionally styled DOCX."""
-    with WriterComposer() as w:
-        # ---- Page setup ----
-        w.set_margins(MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT)
-
-        # ---- Define ALL named styles once (pandoc approach) ----
-        w.ensure_styles(RS.STYLES)
-        w.ensure_styles(RS.CHAR_STYLES)
-        w.ensure_heading_styles(RS.HEADING_STYLE_MAP)
-
-        # ---- Apply preset colors to heading styles ----
-        if preset:
-            _apply_preset_to_styles(w, preset)
-
-        # ---- Title page ----
-        _render_title_page(w, doc, preset)
-
-        # ---- TOC ----
-        w.insert_toc("\u76ee  \u5f55")
-
-        # ---- Detect numbering scheme and init state ----
-        scheme = detect_numbering_scheme(doc.sections)
-        ns = NumberingState(scheme=scheme)
-
-        # ---- Body ----
-        first_section = True
-        for section in doc.sections:
-            if section.level == 1 and not first_section:
-                w.add_section()
-            first_section = False
-            _render_section(w, section, preset, ns)
-
-        # ---- Footer + fields ----
-        w.set_page_number_in_footer()
-        w.update_fields()
-
+    with composer_factory() as w:
+        _render_into(w, doc, preset)
         return w.save_docx(output_path)
+
+
+def _render_into(w, doc, preset):
+    _configure_document(w, preset)
+    _render_title_page(w, doc, preset)
+    _render_body(w, doc, preset)
+    w.set_page_number_in_footer()
+    w.update_fields()
+
+
+def _configure_document(w, preset):
+    w.set_margins(MARGIN_TOP, MARGIN_BOTTOM, MARGIN_LEFT, MARGIN_RIGHT)
+    w.ensure_styles(RS.STYLES)
+    w.ensure_styles(RS.CHAR_STYLES)
+    w.ensure_heading_styles(RS.HEADING_STYLE_MAP)
+    if preset:
+        _apply_preset_to_styles(w, preset)
+
+
+def _render_body(w, doc, preset):
+    w.insert_toc("\u76ee  \u5f55")
+    scheme = detect_numbering_scheme(doc.sections)
+    numbering = NumberingState(scheme=scheme)
+    first_section = True
+    for section in doc.sections:
+        if section.level == 1 and not first_section:
+            w.add_section()
+        first_section = False
+        _render_section(w, section, preset, numbering)
 
 
 def _apply_preset_to_styles(w, preset):
     """Keep Writer heading text black for formal-document output."""
-    try:
-        doc = w.doc
-        for level in range(1, 7):
-            style = doc.Styles(-(level + 1))
-            style.Font.Color = 0
-    except Exception:
-        pass
+    w.apply_heading_text_color("#000000")
 
 
 def _render_title_page(w, doc, preset):
@@ -159,110 +149,7 @@ def _render_paragraph(w, para, is_first_after_heading=False):
     # Choose style: First Paragraph after heading, else Body Text
     style_name = "First Paragraph" if is_first_after_heading else "Body Text"
 
-    # Fast path: plain text
-    if len(para.spans) == 1 and _is_plain(para.spans[0]):
-        _add_body_paragraph(w, para.spans[0].text, style_name)
-        return
-
-    # Mixed formatting: apply style first, then inline overrides
-    sel = w.selection
-    _apply_body_style(w, style_name)
-
-    for span in para.spans:
-        _apply_span(w, span)
-        sel.TypeText(span.text)
-
-    sel.TypeParagraph()
-    w._reset_selection_to_normal()
-
-
-
-
-def _add_body_paragraph(w, text, style_name):
-    """Write a body paragraph with explicit font properties.
-
-    Ensures correct font even if previous paragraph was bold/styled.
-    """
-    s = w.selection
-    _apply_body_style(w, style_name)
-    # Re-apply font properties right before typing (WPS may reset after style)
-    s.Font.Bold = False
-    s.Font.Italic = False
-    w._set_font_family(s.Font, RS.BODY_FONT, RS.LATIN_FONT)
-    s.Font.Size = 12
-    s.Font.Color = 0
-    s.TypeText(text)
-    s.TypeParagraph()
-    w._reset_selection_to_normal()
-
-
-def _apply_body_style(w, style_name):
-    """Apply body text style + explicit formatting overrides."""
-    from .. import reference_styles as RS
-    sel = w.selection
-    # Clear any direct formatting carried over from previous paragraph
-    try:
-        sel.ClearFormatting()
-    except Exception:
-        pass
-    try:
-        sel.Style = sel.Document.Styles(style_name)
-    except Exception:
-        pass
-    # Clear again after style change (WPS may inject formatting)
-    try:
-        sel.Font.Bold = False
-        sel.Font.Italic = False
-    except Exception:
-        pass
-    # Explicit overrides (defend against WPS built-in style limitations)
-    props = dict(RS.STYLES["BodyText"])
-    if style_name == "First Paragraph":
-        props.update(RS.STYLES["FirstParagraph"])
-    w._set_font_family(sel.Font, RS.BODY_FONT, RS.LATIN_FONT)
-    sel.Font.Size = props.get("font_size", 12)
-    sel.Font.Color = 0
-    sel.Font.Bold = False
-    sel.Font.Italic = False
-    sel.ParagraphFormat.Alignment = props.get("align", 3)
-    sel.ParagraphFormat.FirstLineIndent = props.get("indent_first", 24)
-    sel.ParagraphFormat.LeftIndent = props.get("left_indent", 0)
-    sel.ParagraphFormat.RightIndent = props.get("right_indent", 0)
-    sel.ParagraphFormat.SpaceBefore = props.get("space_before", 0)
-    sel.ParagraphFormat.SpaceAfter = props.get("space_after", 0)
-    w._set_line_spacing(
-        sel.ParagraphFormat,
-        props.get("line_spacing"),
-        props.get("line_spacing_rule", "one_and_half"),
-    )
-
-
-def _apply_span(w, span):
-    """Apply inline character formatting on top of the paragraph style."""
-    sel = w.selection
-    if span.code:
-        try:
-            sel.Style = sel.Document.Styles("Verbatim Char")
-        except Exception:
-            w._set_font_family(sel.Font, RS.MONO_FONT, RS.MONO_FONT)
-            sel.Font.Size = 9
-    else:
-        w._set_font_family(sel.Font, RS.BODY_FONT, RS.LATIN_FONT)
-        sel.Font.Size = 12
-
-    sel.Font.Bold = span.bold
-    sel.Font.Italic = span.italic
-    sel.Font.StrikeThrough = getattr(span, "strikethrough", False)
-
-    if span.link:
-        try:
-            sel.Style = sel.Document.Styles("Hyperlink")
-        except Exception:
-            sel.Font.Underline = 1
-        sel.Font.Color = 0
-    else:
-        sel.Font.Color = 0
-        sel.Font.Underline = 0
+    w.add_rich_paragraph(para.spans, style_name)
 
 # ---------------------------------------------------------------------------
 # Lists
@@ -310,9 +197,7 @@ def _render_table(w, table, preset):
 
 def _render_code(w, block):
     """Render code using the Source Code named style."""
-    for line in block.code.split("\n"):
-        w.add_styled_paragraph(line if line else " ", "Source Code")
-    w.add_paragraph("", size=4)
+    w.add_code_lines(block.code.split("\n"))
 
 
 # ---------------------------------------------------------------------------
@@ -322,7 +207,7 @@ def _render_code(w, block):
 
 def _render_image(w, img):
     try:
-        shape = w.add_image(
+        w.add_image_block(
             img.path,
             width=img.width,
             height=img.height,
@@ -332,13 +217,6 @@ def _render_image(w, img):
             preserve_aspect=True,
             alt=img.alt,
         )
-        try:
-            shape.Range.ParagraphFormat.Alignment = 1
-            shape.Range.ParagraphFormat.KeepWithNext = -1
-            shape.Range.ParagraphFormat.SpaceAfter = 0
-        except Exception:
-            pass
-        w.selection.TypeParagraph()
         if img.alt:
             w.add_styled_paragraph(img.alt, "Image Caption")
     except Exception:
@@ -365,20 +243,7 @@ def _render_blockquote(w, quote):
 
 def _render_hr(w):
     """Horizontal rule via paragraph bottom border."""
-    sel = w.selection
-    sel.ParagraphFormat.Alignment = 1
-    try:
-        sel.ParagraphFormat.Borders(-4).LineStyle = 1
-        sel.ParagraphFormat.Borders(-4).LineWidth = 6
-        sel.ParagraphFormat.Borders(-4).Color = 0xC0C0C0
-    except Exception:
-        pass
-    sel.TypeText(" ")
-    sel.TypeParagraph()
-    try:
-        sel.ParagraphFormat.Borders(-4).LineStyle = 0
-    except Exception:
-        pass
+    w.add_paragraph_horizontal_line()
 
 
 # ---------------------------------------------------------------------------
@@ -388,11 +253,6 @@ def _render_hr(w):
 
 def _spans_to_text(spans):
     return "".join(s.text for s in spans)
-
-
-def _is_plain(span):
-    return not (span.bold or span.italic or span.code
-                or span.link or getattr(span, "strikethrough", False))
 
 
 def _is_english(doc):

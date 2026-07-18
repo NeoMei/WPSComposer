@@ -171,6 +171,15 @@ class WriterComposer(BaseComposer):
                 continue
             self._configure_style(style, props, is_char=False)
 
+    def apply_heading_text_color(self, color):
+        """Apply one text color to the built-in Heading 1-6 styles."""
+        value = hex_to_rgb_long(color) if isinstance(color, str) else color
+        try:
+            for level in range(1, 7):
+                self._doc.Styles(-(level + 1)).Font.Color = value
+        except Exception:
+            pass
+
     def _ensure_one_style(self, key, props):
         """Create or update a single named style."""
         name = props.get("name", key)
@@ -292,6 +301,110 @@ class WriterComposer(BaseComposer):
         s.TypeText(text)
         s.TypeParagraph()
         self._reset_selection_to_normal()
+
+    def _apply_body_style(self, style_name):
+        """Apply the renderer's defensive body-style formatting."""
+        from . import reference_styles as RS
+
+        selection = self.selection
+        try:
+            selection.ClearFormatting()
+        except Exception:
+            pass
+        try:
+            selection.Style = selection.Document.Styles(style_name)
+        except Exception:
+            pass
+        try:
+            selection.Font.Bold = False
+            selection.Font.Italic = False
+        except Exception:
+            pass
+        props = dict(RS.STYLES["BodyText"])
+        if style_name == "First Paragraph":
+            props.update(RS.STYLES["FirstParagraph"])
+        self._set_font_family(selection.Font, RS.BODY_FONT, RS.LATIN_FONT)
+        selection.Font.Size = props.get("font_size", 12)
+        selection.Font.Color = 0
+        selection.Font.Bold = False
+        selection.Font.Italic = False
+        selection.ParagraphFormat.Alignment = props.get("align", 3)
+        selection.ParagraphFormat.FirstLineIndent = props.get("indent_first", 24)
+        selection.ParagraphFormat.LeftIndent = props.get("left_indent", 0)
+        selection.ParagraphFormat.RightIndent = props.get("right_indent", 0)
+        selection.ParagraphFormat.SpaceBefore = props.get("space_before", 0)
+        selection.ParagraphFormat.SpaceAfter = props.get("space_after", 0)
+        self._set_line_spacing(
+            selection.ParagraphFormat,
+            props.get("line_spacing"),
+            props.get("line_spacing_rule", "one_and_half"),
+        )
+
+    def _apply_span_format(self, span):
+        """Apply one renderer span to the active Writer selection."""
+        from . import reference_styles as RS
+
+        selection = self.selection
+        if span.code:
+            try:
+                selection.Style = selection.Document.Styles("Verbatim Char")
+            except Exception:
+                self._set_font_family(selection.Font, RS.MONO_FONT, RS.MONO_FONT)
+                selection.Font.Size = 9
+        else:
+            self._set_font_family(selection.Font, RS.BODY_FONT, RS.LATIN_FONT)
+            selection.Font.Size = 12
+
+        selection.Font.Bold = span.bold
+        selection.Font.Italic = span.italic
+        selection.Font.StrikeThrough = getattr(span, "strikethrough", False)
+        if span.link:
+            try:
+                selection.Style = selection.Document.Styles("Hyperlink")
+            except Exception:
+                selection.Font.Underline = 1
+            selection.Font.Color = 0
+        else:
+            selection.Font.Color = 0
+            selection.Font.Underline = 0
+
+    def add_rich_paragraph(self, spans, style_name):
+        """Write a renderer paragraph while preserving current COM semantics."""
+        from . import reference_styles as RS
+
+        spans = list(spans)
+        if len(spans) == 1 and not (
+            spans[0].bold
+            or spans[0].italic
+            or spans[0].code
+            or spans[0].link
+            or getattr(spans[0], "strikethrough", False)
+        ):
+            selection = self.selection
+            self._apply_body_style(style_name)
+            selection.Font.Bold = False
+            selection.Font.Italic = False
+            self._set_font_family(selection.Font, RS.BODY_FONT, RS.LATIN_FONT)
+            selection.Font.Size = 12
+            selection.Font.Color = 0
+            selection.TypeText(spans[0].text)
+            selection.TypeParagraph()
+            self._reset_selection_to_normal()
+            return
+
+        selection = self.selection
+        self._apply_body_style(style_name)
+        for span in spans:
+            self._apply_span_format(span)
+            selection.TypeText(span.text)
+        selection.TypeParagraph()
+        self._reset_selection_to_normal()
+
+    def add_code_lines(self, lines):
+        """Write Source Code paragraphs followed by the renderer spacer."""
+        for line in lines:
+            self.add_styled_paragraph(line if line else " ", "Source Code")
+        self.add_paragraph("", size=4)
 
     def _reset_selection_to_normal(self):
         """Clear carried direct formatting and restore the Normal style."""
@@ -795,12 +908,42 @@ class WriterComposer(BaseComposer):
                 pass
         return shape
 
+    def add_image_block(self, *args, **kwargs):
+        """Insert and finish an image block as the Writer renderer expects."""
+        shape = self.add_image(*args, **kwargs)
+        try:
+            shape.Range.ParagraphFormat.Alignment = 1
+            shape.Range.ParagraphFormat.KeepWithNext = -1
+            shape.Range.ParagraphFormat.SpaceAfter = 0
+        except Exception:
+            pass
+        self.selection.TypeParagraph()
+        return shape
+
     def add_page_break(self):
         self.selection.InsertBreak(7)
 
     def add_horizontal_line(self):
         s = self.selection
         s.InlineShapes.AddHorizontalLineStandard()
+
+    def add_paragraph_horizontal_line(self):
+        """Add the paragraph-border rule used for Markdown horizontal rules."""
+        selection = self.selection
+        selection.ParagraphFormat.Alignment = 1
+        try:
+            border = selection.ParagraphFormat.Borders(-4)
+            border.LineStyle = 1
+            border.LineWidth = 6
+            border.Color = 0xC0C0C0
+        except Exception:
+            pass
+        selection.TypeText(" ")
+        selection.TypeParagraph()
+        try:
+            selection.ParagraphFormat.Borders(-4).LineStyle = 0
+        except Exception:
+            pass
 
     def insert_toc(self, title="Table of Contents"):
         s = self.selection
@@ -1111,4 +1254,3 @@ class WriterComposer(BaseComposer):
 # ===========================================================================
 #  SHEET  (xlsx)
 # ===========================================================================
-
