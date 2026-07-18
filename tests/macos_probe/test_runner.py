@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
+import json
 from pathlib import Path
 import shutil
+import zipfile
 
 import pytest
 
@@ -17,9 +19,16 @@ from skills.WPSComposer.scripts.macos_probe.runner import (
 
 
 def test_validate_native_zip_artifacts(tmp_path: Path):
-    for suffix in ("docx", "pptx", "xlsx"):
+    members = {
+        "docx": "word/document.xml",
+        "pptx": "ppt/presentation.xml",
+        "xlsx": "xl/workbook.xml",
+    }
+    for suffix, member in members.items():
         path = tmp_path / f"smoke.{suffix}"
-        path.write_bytes(b"PK\x03\x04" + b"x" * 2048)
+        with zipfile.ZipFile(path, "w") as package:
+            package.writestr("[Content_Types].xml", "<Types />")
+            package.writestr(member, "x" * 2048)
         validate_artifact(path, suffix)
 
 
@@ -78,8 +87,8 @@ def test_validate_pdf_signature(tmp_path: Path):
 
 def test_validate_artifact_rejects_empty_or_wrong_signature(tmp_path: Path):
     path = tmp_path / "bad.docx"
-    path.write_bytes(b"not a package")
-    with pytest.raises(ArtifactError, match="invalid DOCX signature"):
+    path.write_bytes(b"not a package" + b"x" * 2048)
+    with pytest.raises(ArtifactError, match="Invalid DOCX ZIP package"):
         validate_artifact(path, "docx")
 
 
@@ -90,7 +99,9 @@ def test_wait_for_artifact_handles_delayed_writer_flush(tmp_path: Path):
         import time
 
         time.sleep(0.05)
-        path.write_bytes(b"PK\x03\x04" + b"x" * 2048)
+        with zipfile.ZipFile(path, "w") as package:
+            package.writestr("[Content_Types].xml", "<Types />")
+            package.writestr("word/document.xml", "x" * 2048)
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(write_later)
@@ -118,10 +129,18 @@ def fake_component(bridge, component, command_count):
             if component == "writer":
                 assert command.params["imageUrl"] == runner.WRITER_IMAGE_URL
             path = Path(command.params["outputPath"])
-            signature = (
-                b"%PDF-1.7\n" if path.suffix == ".pdf" else b"PK\x03\x04"
-            )
-            path.write_bytes(signature + b"x" * 2048)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if path.suffix == ".pdf":
+                path.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+            else:
+                members = {
+                    ".docx": "word/document.xml",
+                    ".pptx": "ppt/presentation.xml",
+                    ".xlsx": "xl/workbook.xml",
+                }
+                with zipfile.ZipFile(path, "w") as package:
+                    package.writestr("[Content_Types].xml", "<Types />")
+                    package.writestr(members[path.suffix], "x" * 2048)
             value = {"path": str(path), "capabilities": {}}
             if path.suffix == ".pdf":
                 value["preset"] = "obsidian-reading"
@@ -129,6 +148,8 @@ def fake_component(bridge, component, command_count):
 
 
 def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
+    staging = tmp_path / "container" / "session"
+    staging.mkdir(parents=True)
     output = tmp_path / "output"
     output.mkdir()
     image = tmp_path / "fixture.png"
@@ -152,7 +173,7 @@ def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
             {"writer", "presentation", "spreadsheet"}, 2
         )
         report = _execute_commands(
-            bridge, policy, output, image, timeout=2
+            bridge, policy, staging, output, image, timeout=2
         )
         for future in futures:
             future.result(timeout=2)
@@ -165,6 +186,13 @@ def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
     ]
     assert report["status"] == "passed"
     assert report["pdfPreset"] == "obsidian-reading"
+    assert report["artifactTransport"] == "wps-container-staging"
+    assert {Path(item["path"]).parent for item in report["artifacts"]} == {
+        output.resolve()
+    }
+    assert str(staging.resolve()) not in json.dumps(report)
+    for _, _, filename, _ in runner.OUTPUT_COMMANDS:
+        assert not (staging / filename).exists()
     assert "temporaryDocx" not in report
 
 

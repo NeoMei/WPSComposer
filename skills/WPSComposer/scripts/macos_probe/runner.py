@@ -10,6 +10,12 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+from ..artifact_transport import (
+    ArtifactValidationError,
+    publish_artifact,
+    validate_office_package,
+    validate_pdf,
+)
 from .bridge import LoopbackBridge
 from .models import COMPONENTS, PathPolicy, ProbeResult, ProtocolError
 from .runtime import ProbeRuntime, read_wps_version
@@ -32,7 +38,7 @@ OUTPUT_COMMANDS = (
 )
 
 
-class ArtifactError(RuntimeError):
+class ArtifactError(ArtifactValidationError):
     """Raised when WPS did not produce a structurally plausible artifact."""
 
 
@@ -45,21 +51,13 @@ class Phase0Failed(RuntimeError):
 
 
 def validate_artifact(path: Path, format_name: str) -> None:
-    if not path.is_file():
-        raise ArtifactError(
-            f"{format_name.upper()} output is missing: {path}"
-        )
-    with path.open("rb") as stream:
-        signature = stream.read(8)
-    expected = b"%PDF-" if format_name == "pdf" else b"PK\x03\x04"
-    if not signature.startswith(expected):
-        raise ArtifactError(
-            f"invalid {format_name.upper()} signature: {path}"
-        )
-    if path.stat().st_size < 1024:
-        raise ArtifactError(
-            f"{format_name.upper()} output is too small: {path}"
-        )
+    try:
+        if format_name == "pdf":
+            validate_pdf(path)
+        else:
+            validate_office_package(path, format_name)
+    except ArtifactValidationError as exc:
+        raise ArtifactError(str(exc)) from exc
 
 
 def wait_for_artifact(path: Path, format_name: str, timeout: float) -> None:
@@ -132,6 +130,7 @@ def _wait_for_result(
 def _execute_commands(
     bridge: LoopbackBridge,
     policy: PathPolicy,
+    staging_dir: Path,
     output_dir: Path,
     image_path: Path,
     timeout: float,
@@ -162,67 +161,97 @@ def _execute_commands(
             capabilities[component].update(reported)
 
     allowed_image = policy.require_allowed(image_path)
-    pdf_source = policy.require_allowed(
-        image_path.parent / "smoke-pdf-source.docx"
-    )
-    for component, method, filename, format_name in OUTPUT_COMMANDS:
-        output_path = policy.require_allowed(output_dir / filename)
-        command = bridge.issue(
-            component,
-            method,
-            {
-                "outputPath": str(output_path),
-                "imagePath": str(allowed_image),
-                "imageUrl": WRITER_IMAGE_URL,
-                "sourcePath": str(pdf_source),
-            },
-        )
-        result, failure = _wait_for_result(
-            bridge, component, method, command.id, timeout
-        )
-        if failure is not None:
-            failures.append(failure)
-            continue
-        assert result is not None
-        reported_capabilities = result.value.get("capabilities") or {}
-        if isinstance(reported_capabilities, dict):
-            capabilities[component].update(reported_capabilities)
-        try:
-            reported_path = policy.require_allowed(
-                str(result.value.get("path", ""))
-            )
-            if reported_path != output_path:
-                raise ArtifactError(
-                    f"WPS reported {reported_path}, expected {output_path}"
-                )
-            wait_for_artifact(
-                output_path,
-                format_name,
-                timeout=min(timeout, 10),
-            )
-            if format_name == "pdf" and result.value.get("preset") != (
-                "obsidian-reading"
-            ):
-                raise ArtifactError(
-                    "PDF result did not report obsidian-reading"
-                )
-        except (ArtifactError, ProtocolError) as exc:
-            failures.append(
-                _failure(
+    private_staging = policy.require_allowed(staging_dir)
+    pdf_source = policy.require_allowed(private_staging / "smoke-pdf-source.docx")
+    try:
+        for component, method, filename, format_name in OUTPUT_COMMANDS:
+            staged_path = policy.require_allowed(private_staging / filename)
+            final_path = policy.require_allowed(output_dir / filename)
+            try:
+                command = bridge.issue(
                     component,
                     method,
-                    "ARTIFACT_VALIDATION_FAILED",
-                    str(exc),
+                    {
+                        "outputPath": str(staged_path),
+                        "imagePath": str(allowed_image),
+                        "imageUrl": WRITER_IMAGE_URL,
+                        "sourcePath": str(pdf_source),
+                    },
                 )
-            )
-            continue
-        artifacts.append(
-            {
-                "format": format_name,
-                "path": str(output_path),
-                "size": output_path.stat().st_size,
-            }
-        )
+                result, failure = _wait_for_result(
+                    bridge, component, method, command.id, timeout
+                )
+                if failure is not None:
+                    failures.append(failure)
+                    continue
+                assert result is not None
+                reported_capabilities = result.value.get("capabilities") or {}
+                if isinstance(reported_capabilities, dict):
+                    capabilities[component].update(reported_capabilities)
+                reported_path = policy.require_allowed(
+                    str(result.value.get("path", ""))
+                )
+                if reported_path != staged_path:
+                    raise ArtifactError(
+                        f"WPS reported {reported_path}, expected {staged_path}"
+                    )
+                wait_for_artifact(
+                    staged_path,
+                    format_name,
+                    timeout=min(timeout, 10),
+                )
+                if format_name == "pdf" and result.value.get("preset") != (
+                    "obsidian-reading"
+                ):
+                    raise ArtifactError(
+                        "PDF result did not report obsidian-reading"
+                    )
+                validator = (
+                    validate_pdf
+                    if format_name == "pdf"
+                    else lambda path, name=format_name: validate_office_package(
+                        path, name
+                    )
+                )
+                published = publish_artifact(
+                    staged_path,
+                    final_path,
+                    overwrite=False,
+                    validator=validator,
+                )
+                artifacts.append(
+                    {
+                        "format": format_name,
+                        "path": str(published),
+                        "size": published.stat().st_size,
+                    }
+                )
+            except (ArtifactValidationError, ProtocolError) as exc:
+                failures.append(
+                    _failure(
+                        component,
+                        method,
+                        "ARTIFACT_VALIDATION_FAILED",
+                        str(exc),
+                    )
+                )
+            finally:
+                staged_path.unlink(missing_ok=True)
+    finally:
+        pdf_source.unlink(missing_ok=True)
+
+    staging_text = str(private_staging)
+
+    def redact(value: Any) -> Any:
+        if isinstance(value, str):
+            return value.replace(staging_text, "<wps-staging>")
+        if isinstance(value, dict):
+            return {key: redact(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [redact(item) for item in value]
+        return value
+
+    failures = redact(failures)
 
     return {
         "status": "passed" if not failures and len(artifacts) == 4 else "failed",
@@ -230,6 +259,7 @@ def _execute_commands(
         "failures": failures,
         "components": capabilities,
         "pdfPreset": "obsidian-reading",
+        "artifactTransport": "wps-container-staging",
         "timingsMs": {
             "commands": round((time.monotonic() - started) * 1000, 3)
         },
@@ -347,6 +377,7 @@ def run_phase0(
         "requestedFonts": ["PingFang SC", "Helvetica Neue"],
         "resolvedFonts": [],
         "pdfPreset": "obsidian-reading",
+        "artifactTransport": "wps-container-staging",
         "artifacts": [],
         "failures": [],
         "warnings": [],
@@ -366,16 +397,23 @@ def run_phase0(
                 node_override=node,
             )
             with runtime:
+                if runtime.staging_dir is None:
+                    raise RuntimeError("WPS staging session was not created")
                 profiles = runtime.prepare_profiles()
-                image_path = runtime_dir / "fixture.png"
+                image_path = runtime.staging_dir / "fixture.png"
                 image_path.write_bytes(base64.b64decode(PNG_FIXTURE))
                 _publish_writer_image(profiles, image_path)
                 runtime.start_servers()
                 runtime.activate_components()
                 _wait_for_component_registration(bridge, runtime, timeout)
-                policy = PathPolicy((runtime_dir, output))
+                policy = PathPolicy((runtime_dir, runtime.staging_dir, output))
                 execution = _execute_commands(
-                    bridge, policy, output, image_path, timeout
+                    bridge,
+                    policy,
+                    runtime.staging_dir,
+                    output,
+                    image_path,
+                    timeout,
                 )
                 capabilities = execution.pop("components")
                 report.update(execution)
