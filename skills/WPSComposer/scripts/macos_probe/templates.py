@@ -7,6 +7,7 @@ import hashlib
 import os
 from pathlib import Path
 import shutil
+import tempfile
 
 from ..artifact_transport import validate_office_package
 
@@ -69,14 +70,42 @@ def clone_template(probe_root: Path, staging_dir: Path, component: str) -> Path:
     """Validate a pinned WPS template and copy it into the private session."""
     spec = template_for_component(component)
     source = Path(probe_root) / "node_modules/wpsjs/src/lib/res" / spec.filename
+    target = Path(staging_dir) / spec.output_name
     try:
-        digest = _sha256(source)
+        if _sha256(source) != spec.sha256:
+            raise TemplateError(f"Pinned {component} template digest mismatch")
     except OSError as exc:
         raise TemplateError(f"Pinned {component} template digest mismatch") from exc
-    if digest != spec.sha256:
-        raise TemplateError(f"Pinned {component} template digest mismatch")
-    validate_office_package(source, spec.format_name)
-    target = Path(staging_dir) / spec.output_name
-    shutil.copyfile(source, target)
-    os.chmod(target, 0o600)
-    return target
+    temporary: Path | None = None
+    target_created = False
+    published = False
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            dir=staging_dir,
+            prefix=".wpscomposer-template-",
+            suffix=".tmp",
+        )
+        temporary = Path(temporary_name)
+        os.close(descriptor)
+        os.chmod(temporary, 0o600)
+        try:
+            shutil.copyfile(source, temporary)
+        except OSError as exc:
+            raise TemplateError(
+                f"Pinned {component} template digest mismatch"
+            ) from exc
+        if _sha256(temporary) != spec.sha256:
+            raise TemplateError(f"Pinned {component} template digest mismatch")
+        validate_office_package(temporary, spec.format_name)
+        os.chmod(temporary, 0o600)
+        os.link(temporary, target)
+        target_created = True
+        temporary.unlink()
+        temporary = None
+        published = True
+        return target
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+        if target_created and not published:
+            target.unlink(missing_ok=True)
