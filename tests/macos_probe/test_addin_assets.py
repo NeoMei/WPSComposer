@@ -1190,6 +1190,47 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "ut
     _run_sheet_script(body)
 
 
+def test_sheet_generation_strips_apostrophe_exposed_by_name_truncation():
+    requested = "A" * 30 + "'B"
+    body = f"""
+let openCalls = 0;
+const sheet = {{Name: "Template", Cells: {{Clear() {{}}}}, Delete() {{}}}};
+const workbook = {{Worksheets: {{Count: 1, Item() {{return sheet;}}}}, Save() {{}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1; return workbook;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [
+      {{op: "sheet.reset", args: {{}}}},
+      {{op: "sheet.rename", args: {{index: 1, name: {json.dumps(requested)}}}}}
+    ]}}
+  }}}});
+  assert.equal(openCalls, 1); assert.equal(sheet.Name, {json.dumps('A' * 30)});
+  assert.equal(Application.DisplayAlerts, 7);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+def test_sheet_generation_allows_object_prototype_name_when_not_used():
+    body = f"""
+const sheet = {{Name: "Template", Cells: {{Clear() {{}}}}, Delete() {{}}}};
+const workbook = {{Worksheets: {{Count: 1, Item() {{return sheet;}}}}, Save() {{}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{return workbook;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [
+      {{op: "sheet.reset", args: {{}}}},
+      {{op: "sheet.rename", args: {{index: 1, name: "constructor"}}}}
+    ]}}
+  }}}});
+  assert.equal(sheet.Name, "constructor"); assert.equal(Application.DisplayAlerts, 7);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
 @pytest.mark.parametrize(
     "operation",
     [
@@ -1225,6 +1266,109 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "ut
     process.exit(2);
   }} catch (error) {{
     assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize("operation_name", ["toString", "constructor", "valueOf"])
+def test_sheet_generation_rejects_object_prototype_operation_before_open(
+    operation_name,
+):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+      stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [
+        {{op: {json.dumps(operation_name)}, args: {{}}}}
+      ]}}
+    }}}});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize(
+    "operations",
+    [
+        [
+            {"op": "sheet.reset", "args": {}},
+            {"op": "sheet.rename", "args": {"index": 2, "name": "Missing"}},
+        ],
+        [
+            {"op": "sheet.reset", "args": {}},
+            {"op": "sheet.add", "args": {"name": "Second"}},
+            {"op": "sheet.select", "args": {"index": 3}},
+        ],
+        [
+            {"op": "sheet.reset", "args": {}},
+            {"op": "sheet.add", "args": {"name": "Second"}},
+            {"op": "sheet.rename", "args": {"index": 3, "name": "Missing"}},
+        ],
+    ],
+)
+def test_sheet_generation_rejects_out_of_sequence_sheet_index_before_open(
+    operations,
+):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+      stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: {json.dumps(operations)}}}
+    }}}});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {
+            "startRow": 2**53 - 1,
+            "startCol": 1,
+            "values": [["a"], ["b"], ["c"]],
+        },
+        {
+            "startRow": 1,
+            "startCol": 2**53 - 1,
+            "values": [["a", "b", "c"]],
+        },
+    ],
+)
+def test_sheet_generation_rejects_unsafe_derived_table_range_before_open(args):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+      stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [
+        {{op: "sheet.write_table", args: {json.dumps(args)}}}
+      ]}}
+    }}}});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID");
+    assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """

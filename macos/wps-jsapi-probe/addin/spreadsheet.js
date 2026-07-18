@@ -54,6 +54,10 @@
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 
+  function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
   function sheetCollectionItem(collection, index) {
     if (collection && typeof collection.Item === "function") {
       return collection.Item(index);
@@ -89,21 +93,22 @@
     if (!name) {
       name = "Sheet";
     }
-    return truncateSheetName(name, 31);
+    name = truncateSheetName(name, 31).replace(/^'+|'+$/g, "").trim();
+    return name || "Sheet";
   }
 
   function uniqueSheetName(workbook, requested, excludedSheet) {
-    const used = {};
+    const used = new Set();
     for (let index = 1; index <= workbook.Worksheets.Count; index += 1) {
       const sheet = sheetCollectionItem(workbook.Worksheets, index);
       if (sheet !== excludedSheet) {
-        used[String(sheet.Name).toLowerCase()] = true;
+        used.add(String(sheet.Name).toLowerCase());
       }
     }
     const base = sanitizeSheetName(requested);
     let candidate = base;
     let suffixIndex = 2;
-    while (used[candidate.toLowerCase()]) {
+    while (used.has(candidate.toLowerCase())) {
       const suffix = ` (${suffixIndex})`;
       candidate = truncateSheetName(base, 31 - sheetCharacters(suffix).length) + suffix;
       suffixIndex += 1;
@@ -189,6 +194,7 @@
     "sheet.set_column_width": setSheetColumnWidth,
     "sheet.autofit": autofitSheet
   };
+  Object.setPrototypeOf(sheetOperations, null);
 
   const sheetOperationNames = [
     "sheet.reset",
@@ -199,6 +205,7 @@
     "sheet.set_column_width",
     "sheet.autofit"
   ];
+  const sheetOperationNameSet = new Set(sheetOperationNames);
 
   const sheetArgumentRules = {
     "sheet.reset": {required: [], allowed: []},
@@ -209,6 +216,7 @@
     "sheet.set_column_width": {required: ["column", "width"], allowed: ["column", "width"]},
     "sheet.autofit": {required: [], allowed: []}
   };
+  Object.setPrototypeOf(sheetArgumentRules, null);
 
   function validateSheetTable(values) {
     if (!Array.isArray(values) || values.length === 0 || !Array.isArray(values[0]) || values[0].length === 0) {
@@ -265,6 +273,17 @@
     }
     if (operation.op === "sheet.write_table") {
       validateSheetTable(args.values);
+      const rowOffset = args.values.length - 1;
+      const columnOffset = args.values[0].length - 1;
+      const endRow = args.startRow + rowOffset;
+      const endColumn = args.startCol + columnOffset;
+      if (
+        !Number.isSafeInteger(endRow) || !Number.isSafeInteger(endColumn) ||
+        endRow - args.startRow !== rowOffset ||
+        endColumn - args.startCol !== columnOffset
+      ) {
+        invalidSheetPlan("sheet.write_table range is outside the safe integer range");
+      }
     }
   }
 
@@ -336,14 +355,20 @@
     }
     const expected = sheetOperationNames.slice().sort().join(",");
     if (
+      sheetOperationNameSet.size !== sheetOperationNames.length ||
       Object.keys(sheetOperations).sort().join(",") !== expected ||
       Object.keys(sheetArgumentRules).sort().join(",") !== expected ||
       sheetOperationNames.some(function (name) {
-        return typeof sheetOperations[name] !== "function" || !sheetArgumentRules[name];
+        return !sheetOperationNameSet.has(name) ||
+          !hasOwn(sheetOperations, name) ||
+          !hasOwn(sheetArgumentRules, name) ||
+          typeof sheetOperations[name] !== "function" ||
+          !sheetArgumentRules[name];
       })
     ) {
       invalidSheetPlan("Spreadsheet operation catalog is incomplete");
     }
+    const sheetState = {count: 1, current: 1};
     plan.operations.forEach(function (operation) {
       if (
         !isObject(operation) || Object.keys(operation).sort().join(",") !== "args,op" ||
@@ -351,10 +376,30 @@
       ) {
         invalidSheetPlan("Spreadsheet operation is invalid");
       }
-      if (typeof sheetOperations[operation.op] !== "function" || !sheetArgumentRules[operation.op]) {
+      if (
+        !sheetOperationNameSet.has(operation.op) ||
+        !hasOwn(sheetOperations, operation.op) ||
+        !hasOwn(sheetArgumentRules, operation.op) ||
+        typeof sheetOperations[operation.op] !== "function" ||
+        !sheetArgumentRules[operation.op]
+      ) {
         invalidSheetPlan(`Unsupported Spreadsheet operation: ${operation.op}`);
       }
       requireSheetArguments(operation);
+      if (operation.op === "sheet.reset") {
+        sheetState.count = 1;
+        sheetState.current = 1;
+      } else if (operation.op === "sheet.add") {
+        sheetState.count += 1;
+        sheetState.current = sheetState.count;
+      } else if (operation.op === "sheet.rename" || operation.op === "sheet.select") {
+        if (operation.args.index > sheetState.count) {
+          invalidSheetPlan(`${operation.op} index exceeds planned worksheet count`);
+        }
+        if (operation.op === "sheet.select") {
+          sheetState.current = operation.args.index;
+        }
+      }
     });
     return plan.operations;
   }
