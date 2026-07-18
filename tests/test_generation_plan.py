@@ -91,6 +91,23 @@ def test_allowed_operations_are_a_closed_component_scoped_set():
     }
 
 
+def test_allowed_operations_cannot_be_widened_at_runtime():
+    try:
+        with pytest.raises(TypeError):
+            ALLOWED_OPERATIONS["rogue"] = {"eval"}
+    finally:
+        if isinstance(ALLOWED_OPERATIONS, dict):
+            ALLOWED_OPERATIONS.pop("rogue", None)
+
+    writer_operations = ALLOWED_OPERATIONS["writer"]
+    try:
+        with pytest.raises(AttributeError):
+            writer_operations.add("writer.eval")
+    finally:
+        if isinstance(writer_operations, set):
+            writer_operations.discard("writer.eval")
+
+
 def test_generation_plan_requires_matching_component():
     with pytest.raises(OperationPlanError, match="component mismatch"):
         validate_generation_plan(
@@ -164,6 +181,21 @@ def test_generation_plan_rejects_non_json_arguments():
                 "component": "writer",
                 "operations": [
                     {"op": "writer.add_paragraph", "args": {"text": object()}}
+                ],
+            },
+            "writer",
+        )
+
+
+def test_generation_plan_normalizes_cyclic_arguments_to_protocol_error():
+    cyclic = {}
+    cyclic["self"] = cyclic
+    with pytest.raises(OperationPlanError, match="JSON-compatible"):
+        validate_generation_plan(
+            {
+                "component": "writer",
+                "operations": [
+                    {"op": "writer.add_paragraph", "args": cyclic}
                 ],
             },
             "writer",

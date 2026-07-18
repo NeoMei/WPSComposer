@@ -63,6 +63,12 @@ ALLOWED_OPERATIONS = {
         "slide.add_table",
     },
 }
+ALLOWED_OPERATIONS = MappingProxyType(
+    {
+        component: frozenset(operations)
+        for component, operations in ALLOWED_OPERATIONS.items()
+    }
+)
 
 
 class OperationPlanError(ValueError):
@@ -144,28 +150,38 @@ class RecordedGeneration:
 
 
 def _validate_json_value(value: Any) -> None:
-    if isinstance(value, str):
-        if len(value) > MAX_STRING_CHARS:
-            raise OperationPlanError("string exceeds 100,000 characters")
-        return
-    if value is None or isinstance(value, (bool, int)):
-        return
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise OperationPlanError("operation arguments must be JSON-compatible")
-        return
-    if isinstance(value, list):
-        for item in value:
-            _validate_json_value(item)
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if not isinstance(key, str):
-                raise OperationPlanError("operation arguments must be JSON-compatible")
-            _validate_json_value(key)
-            _validate_json_value(item)
-        return
-    raise OperationPlanError("operation arguments must be JSON-compatible")
+    pending = [value]
+    seen_containers = set()
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if len(item) > MAX_STRING_CHARS:
+                raise OperationPlanError("string exceeds 100,000 characters")
+        elif item is None or isinstance(item, (bool, int)):
+            continue
+        elif isinstance(item, float):
+            if not math.isfinite(item):
+                raise OperationPlanError(
+                    "operation arguments must be JSON-compatible"
+                )
+        elif isinstance(item, (list, dict)):
+            identity = id(item)
+            if identity in seen_containers:
+                continue
+            seen_containers.add(identity)
+            if isinstance(item, list):
+                pending.extend(item)
+            else:
+                for key, nested in item.items():
+                    if not isinstance(key, str):
+                        raise OperationPlanError(
+                            "operation arguments must be JSON-compatible"
+                        )
+                    pending.extend((key, nested))
+        else:
+            raise OperationPlanError(
+                "operation arguments must be JSON-compatible"
+            )
 
 
 def _table_cell_count(args: Mapping[str, Any]) -> int:
@@ -221,7 +237,7 @@ def _serialized_plan(raw: Mapping[str, Any]) -> bytes:
             ensure_ascii=False,
             separators=(",", ":"),
         ).encode("utf-8")
-    except (TypeError, ValueError) as error:
+    except (RecursionError, TypeError, ValueError) as error:
         raise OperationPlanError(
             "operation arguments must be JSON-compatible"
         ) from error
