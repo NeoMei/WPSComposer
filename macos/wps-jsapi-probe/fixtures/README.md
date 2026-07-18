@@ -3,6 +3,13 @@
 The real conversion gate intentionally uses files serialized by WPS rather
 than adding synthetic Office binaries to this repository.
 
+Generation probes start from the three official `wpsjs` templates installed in
+`node_modules/wpsjs/src/lib/res`: `wpsDemo.docx`, `etDemo.xlsx`, and
+`wppDemo.pptx`. Their SHA-256 digests are pinned in
+`skills/WPSComposer/scripts/macos_probe/templates.py`; a probe verifies the
+source digest and package structure before copying it to a session-private
+`generated.docx`, `generated.xlsx`, or `generated.pptx` with mode `0600`.
+
 For `.doc`, `.docx`, `.xls`, `.ppt`, and `.pptx`, use the matching files under:
 
 ```text
