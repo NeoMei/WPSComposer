@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..artifact_transport import (
+    ArtifactTransportError,
     ArtifactValidationError,
     publish_artifact,
     validate_office_package,
@@ -225,6 +226,10 @@ def _execute_commands(
                         "path": str(published),
                         "size": published.stat().st_size,
                     }
+                )
+            except ArtifactTransportError as exc:
+                failures.append(
+                    _failure(component, method, exc.code, str(exc))
                 )
             except (ArtifactValidationError, ProtocolError) as exc:
                 failures.append(

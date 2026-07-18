@@ -28,7 +28,7 @@ def test_bridge_client_has_no_dynamic_code_execution():
     assert "/v1/result" in source
     assert "eval(" not in source
     assert "new Function" not in source
-    assert 'error.code === "string"' in source
+    assert "ERROR_CODES.indexOf(error.code)" in source
 
 
 def test_writer_uses_wps_save_and_pdf_export():
@@ -210,5 +210,48 @@ def test_spreadsheet_close_failure_still_restores_alerts():
             Close() {throw new Error("close failed");}
           };}}
         }""",
+        "CONVERSION_COMMAND_FAILED",
+    )
+
+
+@pytest.mark.parametrize(
+    ("component_file", "method", "application_source"),
+    [
+        (
+            "writer.js",
+            "convert_writer_pdf",
+            """{DisplayAlerts: 7, Documents: {Open() {
+              const error = new Error("vendor failure");
+              error.code = "WPS_E_7001";
+              throw error;
+            }}}""",
+        ),
+        (
+            "spreadsheet.js",
+            "convert_workbook_pdf",
+            """{DisplayAlerts: 7, Workbooks: {Open() {
+              const error = new Error("vendor failure");
+              error.code = "WPS_E_7001";
+              throw error;
+            }}}""",
+        ),
+        (
+            "presentation.js",
+            "convert_presentation_pdf",
+            """{DisplayAlerts: 7, Presentations: {Open() {
+              const error = new Error("vendor failure");
+              error.code = "WPS_E_7001";
+              throw error;
+            }}}""",
+        ),
+    ],
+)
+def test_conversion_rejects_vendor_error_codes(
+    component_file: str, method: str, application_source: str
+):
+    _run_component_failure_case(
+        component_file,
+        method,
+        application_source,
         "CONVERSION_COMMAND_FAILED",
     )

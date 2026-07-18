@@ -207,6 +207,16 @@ def test_macos_redacts_staging_path_from_command_error(tmp_path: Path):
     assert "<wps-staging>/converted.pdf" in caught.value.message
 
 
+def test_macos_normalizes_unknown_remote_error_code(tmp_path: Path):
+    request = _request(tmp_path, "pptx", "presentation")
+    bridge = FakeBridge(result_error="vendor failure", error_code="WPS_E_7001")
+
+    with pytest.raises(ConversionError) as caught:
+        _run_with_fakes(request, tmp_path, bridge=bridge)
+
+    assert caught.value.code == "CONVERSION_COMMAND_FAILED"
+
+
 def test_registration_restore_failure_retains_durable_recovery(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

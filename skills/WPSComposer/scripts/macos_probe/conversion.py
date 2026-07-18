@@ -13,7 +13,12 @@ from ..artifact_transport import (
     publish_artifact,
     validate_pdf,
 )
-from ..conversion import ConversionError, ConversionRequest
+from ..conversion import (
+    REMOTE_CONVERSION_ERROR_CODES,
+    ConversionError,
+    ConversionRequest,
+    normalize_conversion_error_code,
+)
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
 from .runtime import ProbeRuntime
@@ -126,7 +131,9 @@ def _run_conversion(
         details = dict(result.error or {})
         raise _error(
             request,
-            str(details.get("code") or "CONVERSION_COMMAND_FAILED"),
+            normalize_conversion_error_code(
+                details.get("code"), allowed=REMOTE_CONVERSION_ERROR_CODES
+            ),
             _redact_staging(
                 str(details.get("message") or "WPS conversion failed"),
                 runtime.staging_dir,

@@ -133,7 +133,7 @@ def test_conversion_error_exposes_stable_fields(
     assert error.message == "boom"
 
 
-def test_conversion_preserves_backend_conversion_error(
+def test_conversion_normalizes_unknown_backend_error_code(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     source = tmp_path / "input.xlsx"
@@ -157,7 +157,31 @@ def test_conversion_preserves_backend_conversion_error(
 
     with pytest.raises(ConversionError) as caught:
         convert_to_pdf(str(source))
-    assert caught.value is expected
+    assert caught.value is not expected
+    assert caught.value.code == "CONVERSION_COMMAND_FAILED"
+    assert caught.value.message == "password required"
+
+
+def test_conversion_maps_final_validation_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+
+    def invalid_backend(request):
+        request.output.write_bytes(b"not a pdf")
+        return request.output
+
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: ("test-backend", invalid_backend),
+    )
+
+    with pytest.raises(ConversionError) as caught:
+        convert_to_pdf(str(source))
+
+    assert caught.value.code == "FINAL_ARTIFACT_INVALID"
 
 
 def test_conversion_preserves_public_path_errors_from_backend(
@@ -200,3 +224,24 @@ def test_conversion_maps_typed_transport_error(
         convert_to_pdf(str(source))
     assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
     assert caught.value.message == "destination is read-only"
+
+
+def test_conversion_normalizes_unknown_transport_error_code(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+
+    def failed_backend(request):
+        raise ArtifactTransportError("VENDOR_IO_ERROR", "publish failed")
+
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: ("windows-com", failed_backend),
+    )
+
+    with pytest.raises(ConversionError) as caught:
+        convert_to_pdf(str(source))
+
+    assert caught.value.code == "CONVERSION_COMMAND_FAILED"

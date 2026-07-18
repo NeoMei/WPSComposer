@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from skills.WPSComposer.scripts.conversion import ConversionRequest
+from skills.WPSComposer.scripts.conversion import ConversionError, ConversionRequest
 from skills.WPSComposer.scripts.windows_conversion import convert_windows
 
 
@@ -127,11 +127,43 @@ def test_windows_export_failure_closes_source_and_publishes_nothing(
         def open_document(cls, source, read_only=False, visible=False):
             return FailingComposer(calls, source, read_only, visible)
 
-    with pytest.raises(RuntimeError, match="COM export failed"):
+    with pytest.raises(ConversionError) as caught:
         convert_windows(request, composer_classes={"writer": FailingClass})
 
+    assert caught.value.code == "CONVERSION_COMMAND_FAILED"
+    assert caught.value.backend == "windows-com"
+    assert caught.value.message == "COM export failed"
     assert calls[-1] == ("close", False)
     assert not request.output.exists()
+
+
+def test_windows_redacts_staging_path_from_invalid_pdf_error(tmp_path: Path):
+    calls = []
+    request = _request(tmp_path, "xlsx", "spreadsheet")
+
+    class InvalidDocument(FakeDocument):
+        @staticmethod
+        def _write_pdf(path: str) -> None:
+            Path(path).write_bytes(b"invalid")
+
+    class InvalidComposer(FakeComposer):
+        def __init__(self, calls, source, read_only, visible):
+            super().__init__(calls, source, read_only, visible)
+            self.doc = InvalidDocument(calls)
+
+    class InvalidClass:
+        @classmethod
+        def open_document(cls, source, read_only=False, visible=False):
+            return InvalidComposer(calls, source, read_only, visible)
+
+    with pytest.raises(ConversionError) as caught:
+        convert_windows(
+            request, composer_classes={"spreadsheet": InvalidClass}
+        )
+
+    assert caught.value.code == "STAGED_ARTIFACT_INVALID"
+    assert "wpscomposer-convert-" not in caught.value.message
+    assert "<conversion-staging>" in caught.value.message
 
 
 def test_windows_backend_rejects_unknown_component(tmp_path: Path):

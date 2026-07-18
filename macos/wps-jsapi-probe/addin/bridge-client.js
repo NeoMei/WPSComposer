@@ -1,6 +1,12 @@
 (function () {
   "use strict";
 
+  const ERROR_CODES = [
+    "CONVERSION_COMMAND_FAILED",
+    "INTERACTIVE_INPUT_REQUIRED",
+    "NO_VISIBLE_WORKSHEETS"
+  ];
+
   let started = false;
 
   async function readJson(response) {
@@ -65,7 +71,7 @@
           ok: false,
           value: {},
           error: {
-            code: error && typeof error.code === "string"
+            code: error && ERROR_CODES.indexOf(error.code) !== -1
               ? error.code
               : "CONVERSION_COMMAND_FAILED",
             message: String(error && error.message ? error.message : error),

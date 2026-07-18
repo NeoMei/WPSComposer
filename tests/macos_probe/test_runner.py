@@ -6,6 +6,7 @@ import zipfile
 
 import pytest
 
+from skills.WPSComposer.scripts.artifact_transport import ArtifactTransportError
 from skills.WPSComposer.scripts.macos_probe.bridge import LoopbackBridge
 from skills.WPSComposer.scripts.macos_probe.models import PathPolicy, ProbeResult
 from skills.WPSComposer.scripts.macos_probe import runner
@@ -194,6 +195,53 @@ def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
     for _, _, filename, _ in runner.OUTPUT_COMMANDS:
         assert not (staging / filename).exists()
     assert "temporaryDocx" not in report
+
+
+def test_execute_commands_reports_typed_publication_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    staging = tmp_path / "container" / "session"
+    staging.mkdir(parents=True)
+    output = tmp_path / "output"
+    output.mkdir()
+    image = tmp_path / "fixture.png"
+    image.write_bytes(b"png")
+    policy = PathPolicy((tmp_path, output))
+    origins = {
+        "http://127.0.0.1:3891",
+        "http://127.0.0.1:3892",
+        "http://127.0.0.1:3893",
+    }
+    original_publish = runner.publish_artifact
+    attempts = 0
+
+    def fail_once(*args, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ArtifactTransportError(
+                "ARTIFACT_PUBLISH_FAILED", "destination rejected"
+            )
+        return original_publish(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "publish_artifact", fail_once)
+    with LoopbackBridge(origins) as bridge, ThreadPoolExecutor(
+        max_workers=3
+    ) as pool:
+        futures = (
+            pool.submit(fake_component, bridge, "writer", 3),
+            pool.submit(fake_component, bridge, "presentation", 2),
+            pool.submit(fake_component, bridge, "spreadsheet", 2),
+        )
+        bridge.wait_registered({"writer", "presentation", "spreadsheet"}, 2)
+        report = _execute_commands(
+            bridge, policy, staging, output, image, timeout=2
+        )
+        for future in futures:
+            future.result(timeout=2)
+
+    assert report["status"] == "failed"
+    assert report["failures"][0]["code"] == "ARTIFACT_PUBLISH_FAILED"
 
 
 def test_publish_writer_image_copies_only_into_writer_profile(tmp_path: Path):

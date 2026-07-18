@@ -7,7 +7,11 @@ from pathlib import Path
 import sys
 from typing import Callable, Optional, Tuple
 
-from .artifact_transport import ArtifactTransportError, validate_pdf
+from .artifact_transport import (
+    ArtifactTransportError,
+    ArtifactValidationError,
+    validate_pdf,
+)
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -18,6 +22,42 @@ _COMPONENT_BY_SUFFIX = {
     ".ppt": "presentation",
     ".pptx": "presentation",
 }
+
+STABLE_CONVERSION_ERROR_CODES = frozenset(
+    {
+        "ARTIFACT_PUBLISH_FAILED",
+        "BACKEND_UNAVAILABLE",
+        "CONVERSION_COMMAND_FAILED",
+        "CONVERSION_FAILED",
+        "FINAL_ARTIFACT_INVALID",
+        "INTERACTIVE_INPUT_REQUIRED",
+        "MACOS_GATE_NOT_PASSED",
+        "NO_VISIBLE_WORKSHEETS",
+        "PROTOCOL_ERROR",
+        "REGISTRATION_RESTORE_FAILED",
+        "STAGED_ARTIFACT_INVALID",
+        "STAGING_SAVE_FAILED",
+        "STAGING_UNAVAILABLE",
+        "UNSUPPORTED_COMPONENT",
+    }
+)
+REMOTE_CONVERSION_ERROR_CODES = frozenset(
+    {
+        "CONVERSION_COMMAND_FAILED",
+        "INTERACTIVE_INPUT_REQUIRED",
+        "NO_VISIBLE_WORKSHEETS",
+    }
+)
+
+
+def normalize_conversion_error_code(
+    code: object,
+    *,
+    allowed=STABLE_CONVERSION_ERROR_CODES,
+    fallback: str = "CONVERSION_COMMAND_FAILED",
+) -> str:
+    value = str(code) if isinstance(code, str) else ""
+    return value if value in allowed else fallback
 
 
 @dataclass(frozen=True)
@@ -126,13 +166,22 @@ def convert_to_pdf(
     backend_name, backend = _select_backend(request)
     try:
         result = Path(backend(request)).expanduser().resolve()
-        validate_pdf(result)
-        return str(result)
-    except (FileNotFoundError, FileExistsError, ValueError, ConversionError):
+    except (FileNotFoundError, FileExistsError, ValueError):
         raise
+    except ConversionError as exc:
+        normalized = normalize_conversion_error_code(exc.code)
+        if normalized == exc.code:
+            raise
+        raise ConversionError(
+            code=normalized,
+            source=exc.source,
+            component=exc.component,
+            backend=exc.backend,
+            message=exc.message,
+        ) from exc
     except ArtifactTransportError as exc:
         raise ConversionError(
-            code=exc.code,
+            code=normalize_conversion_error_code(exc.code),
             source=str(request.source),
             component=request.component,
             backend=backend_name,
@@ -146,3 +195,14 @@ def convert_to_pdf(
             backend=backend_name,
             message=str(exc),
         ) from exc
+    try:
+        validate_pdf(result)
+    except ArtifactValidationError as exc:
+        raise ConversionError(
+            code="FINAL_ARTIFACT_INVALID",
+            source=str(request.source),
+            component=request.component,
+            backend=backend_name,
+            message=str(exc),
+        ) from exc
+    return str(result)

@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from typing import Optional
 
 
 PLUGIN_NAME = "wps-composer"
@@ -108,6 +109,26 @@ def _write_json_atomically(path: Path, data: dict) -> None:
             temporary_path.unlink()
 
 
+def _restore_bytes_atomically(path: Path, original: Optional[bytes]) -> None:
+    """Restore exact pre-transaction bytes without relying on JSON writing."""
+    if original is None:
+        path.unlink(missing_ok=True)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=path.name + ".restore.", suffix=".tmp", dir=path.parent
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(original)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def _copy_plugin(source_root: Path, destination: Path, force: bool) -> None:
     if destination.exists():
         if not force:
@@ -136,8 +157,13 @@ def _install_macos_runtime(destination: Path) -> None:
         raise InstallerError(
             "Node.js 20+ and npm are required for macOS WPS conversion"
         )
-    node = Path(raw_node).expanduser().resolve()
-    npm = Path(raw_npm).expanduser().resolve()
+    node = Path(raw_node).expanduser().absolute()
+    sibling_npm = node.parent / "npm"
+    npm = (
+        sibling_npm
+        if sibling_npm.is_file()
+        else Path(raw_npm).expanduser().absolute()
+    )
     try:
         version = subprocess.run(
             [str(node), "--version"],
@@ -184,6 +210,9 @@ def install_plugin(
         marketplace_root / ".agents" / "plugins" / "marketplace.json"
     )
     marketplace = _read_marketplace(marketplace_file)
+    marketplace_original = (
+        marketplace_file.read_bytes() if marketplace_file.exists() else None
+    )
     source_path = _marketplace_source_path(destination, marketplace_root)
 
     if destination.exists() and not force:
@@ -196,12 +225,17 @@ def install_plugin(
         tempfile.mkdtemp(prefix=".wpscomposer-install-", dir=destination.parent)
     )
     staged_destination = staging_root / PLUGIN_NAME
+    previous_destination = staging_root / "previous-plugin"
+    previous_moved = False
+    replacement_installed = False
     try:
         _copy_plugin(source_root, staged_destination, force=False)
         _install_macos_runtime(staged_destination)
         if destination.exists():
-            shutil.rmtree(destination)
+            os.replace(destination, previous_destination)
+            previous_moved = True
         os.replace(staged_destination, destination)
+        replacement_installed = True
         plugins = [
             plugin
             for plugin in marketplace["plugins"]
@@ -210,6 +244,13 @@ def install_plugin(
         plugins.append(_plugin_entry(source_path))
         marketplace["plugins"] = plugins
         _write_json_atomically(marketplace_file, marketplace)
+    except Exception:
+        if replacement_installed and destination.exists():
+            shutil.rmtree(destination)
+        if previous_moved and previous_destination.exists():
+            os.replace(previous_destination, destination)
+        _restore_bytes_atomically(marketplace_file, marketplace_original)
+        raise
     finally:
         shutil.rmtree(staging_root, ignore_errors=True)
     return InstallResult(destination, marketplace_file, source_path)

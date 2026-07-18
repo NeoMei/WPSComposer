@@ -14,7 +14,12 @@
   }
 
   function conversionError(error, code) {
-    if (error && typeof error.code === "string") {
+    const allowedCodes = [
+      "CONVERSION_COMMAND_FAILED",
+      "INTERACTIVE_INPUT_REQUIRED",
+      "NO_VISIBLE_WORKSHEETS"
+    ];
+    if (error && allowedCodes.indexOf(error.code) !== -1) {
       return error;
     }
     const message = String(error && error.message ? error.message : error);

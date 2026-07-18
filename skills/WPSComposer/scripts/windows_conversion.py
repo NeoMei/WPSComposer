@@ -6,8 +6,8 @@ from pathlib import Path
 import tempfile
 from typing import Mapping, Optional, Type
 
-from .artifact_transport import publish_artifact, validate_pdf
-from .conversion import ConversionRequest
+from .artifact_transport import ArtifactTransportError, publish_artifact, validate_pdf
+from .conversion import ConversionError, ConversionRequest
 from .sheet import SheetComposer
 from .slide import SlideComposer
 from .writer import WriterComposer
@@ -36,22 +36,50 @@ def convert_windows(
 
     with tempfile.TemporaryDirectory(prefix="wpscomposer-convert-") as directory:
         staged = Path(directory) / "converted.pdf"
-        with composer_class.open_document(
-            str(request.source), read_only=True, visible=False
-        ) as composer:
-            if request.component == "writer":
-                composer.doc.ExportAsFixedFormat(str(staged), 17)
-            elif request.component == "spreadsheet":
-                composer.doc.ExportAsFixedFormat(0, str(staged))
-            elif request.component == "presentation":
-                composer.doc.SaveAs(str(staged), 32)
-            else:
-                raise ValueError(
-                    f"Unsupported conversion component: {request.component}"
-                )
-        return publish_artifact(
-            staged,
-            request.output,
-            overwrite=request.overwrite,
-            validator=validate_pdf,
-        )
+        aliases = {str(staged.parent), str(staged.parent.resolve())}
+
+        def redact(message: object) -> str:
+            redacted = str(message)
+            for alias in aliases:
+                redacted = redacted.replace(alias, "<conversion-staging>")
+            return redacted
+
+        try:
+            with composer_class.open_document(
+                str(request.source), read_only=True, visible=False
+            ) as composer:
+                if request.component == "writer":
+                    composer.doc.ExportAsFixedFormat(str(staged), 17)
+                elif request.component == "spreadsheet":
+                    composer.doc.ExportAsFixedFormat(0, str(staged))
+                elif request.component == "presentation":
+                    composer.doc.SaveAs(str(staged), 32)
+                else:
+                    raise ValueError(
+                        f"Unsupported conversion component: {request.component}"
+                    )
+        except ValueError:
+            raise
+        except Exception as exc:
+            raise ConversionError(
+                code="CONVERSION_COMMAND_FAILED",
+                source=str(request.source),
+                component=request.component,
+                backend="windows-com",
+                message=redact(exc),
+            ) from exc
+        try:
+            return publish_artifact(
+                staged,
+                request.output,
+                overwrite=request.overwrite,
+                validator=validate_pdf,
+            )
+        except ArtifactTransportError as exc:
+            raise ConversionError(
+                code=exc.code,
+                source=str(request.source),
+                component=request.component,
+                backend="windows-com",
+                message=redact(exc),
+            ) from exc

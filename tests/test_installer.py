@@ -174,3 +174,39 @@ def test_runtime_install_failure_leaves_destination_and_marketplace_unchanged(
 
     assert not (codex_home / "plugins" / "wps-composer").exists()
     assert not (tmp_path / ".agents/plugins/marketplace.json").exists()
+
+
+def test_force_upgrade_restores_old_plugin_and_marketplace_after_commit_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    codex_home = tmp_path / ".codex"
+    destination = codex_home / "plugins" / "wps-composer"
+    destination.mkdir(parents=True)
+    (destination / "old.txt").write_text("old", encoding="utf-8")
+    marketplace_file = tmp_path / ".agents/plugins/marketplace.json"
+    marketplace_file.parent.mkdir(parents=True)
+    original_marketplace = json.dumps(
+        {
+            "name": "personal",
+            "plugins": [
+                {
+                    "name": "wps-composer",
+                    "source": {"source": "local", "path": "./old"},
+                }
+            ],
+        }
+    ).encode()
+    marketplace_file.write_bytes(original_marketplace)
+
+    def fail_after_marketplace_replace(path: Path, data: dict):
+        path.write_text('{"changed": true}\n', encoding="utf-8")
+        raise OSError("marketplace commit failed")
+
+    monkeypatch.setattr(install, "_write_json_atomically", fail_after_marketplace_replace)
+
+    with pytest.raises(OSError, match="marketplace commit failed"):
+        install_plugin(ROOT, codex_home, tmp_path, force=True)
+
+    assert (destination / "old.txt").read_text(encoding="utf-8") == "old"
+    assert not (destination / ".codex-plugin/plugin.json").exists()
+    assert marketplace_file.read_bytes() == original_marketplace

@@ -35,6 +35,12 @@ is workbook-level and includes every visible worksheet.
 `message`, plus `to_dict()`. Windows uses WPS/MS Office COM. macOS uses typed
 WPS JSAPI commands with source and output staged in WPS's private application
 container, followed by validated destination-local atomic publication.
+Vendor-specific error codes are normalized to the stable public set. Common
+codes include `CONVERSION_COMMAND_FAILED`, `INTERACTIVE_INPUT_REQUIRED`,
+`NO_VISIBLE_WORKSHEETS`, `STAGED_ARTIFACT_INVALID`,
+`ARTIFACT_PUBLISH_FAILED`, `FINAL_ARTIFACT_INVALID`, and
+`REGISTRATION_RESTORE_FAILED`. Private staging paths are redacted from public
+messages.
 
 ## Color format
 
