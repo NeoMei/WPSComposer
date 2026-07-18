@@ -9,6 +9,7 @@ import tempfile
 import time
 from typing import Callable, Mapping, Optional
 import zipfile
+from xml.etree import ElementTree
 
 from ..artifact_transport import (
     ArtifactTransportError,
@@ -16,7 +17,11 @@ from ..artifact_transport import (
     publish_artifact,
     validate_office_package,
 )
-from ..generation_plan import RecordedGeneration
+from ..generation_plan import (
+    OperationPlanError,
+    RecordedGeneration,
+    validate_generation_plan,
+)
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
 from .runtime import ProbeRuntime
@@ -53,6 +58,50 @@ MACOS_GENERATION_ENABLED = {
     "pdf": False,
 }
 FEASIBILITY_MARKER = "IN_PLACE_MARKER"
+FEASIBILITY_PLANS = {
+    "writer": {
+        "component": "writer",
+        "operations": [
+            {"op": "writer.reset", "args": {}},
+            {
+                "op": "writer.add_paragraph",
+                "args": {
+                    "text": FEASIBILITY_MARKER,
+                    "style": "Body Text",
+                },
+            },
+        ],
+    },
+    "spreadsheet": {
+        "component": "spreadsheet",
+        "operations": [
+            {"op": "sheet.reset", "args": {}},
+            {
+                "op": "sheet.write_table",
+                "args": {
+                    "startRow": 1,
+                    "startCol": 1,
+                    "values": [[FEASIBILITY_MARKER]],
+                },
+            },
+        ],
+    },
+    "presentation": {
+        "component": "presentation",
+        "operations": [
+            {"op": "slide.reset", "args": {}},
+            {
+                "op": "slide.add_title",
+                "args": {"title": FEASIBILITY_MARKER},
+            },
+        ],
+    },
+}
+MARKER_CONTENT_MEMBERS = {
+    "docx": frozenset({"word/document.xml"}),
+    "xlsx": frozenset({"xl/sharedStrings.xml"}),
+    "pptx": frozenset({"ppt/slides/slide1.xml"}),
+}
 
 
 @dataclass(frozen=True)
@@ -98,6 +147,34 @@ def _redact_staging(message: str, staging_dir: Path) -> str:
     return str(message).replace(str(staging_dir), "<wps-staging>")
 
 
+def _validate_feasibility_recording(
+    request: GenerationRequest, recorded: RecordedGeneration
+) -> RecordedGeneration:
+    try:
+        validated = validate_generation_plan(
+            recorded.plan.to_dict(), request.component
+        )
+    except (AttributeError, OperationPlanError, TypeError) as exc:
+        raise _error(
+            request,
+            "OPERATION_PLAN_INVALID",
+            str(exc) or "Generation plan is invalid",
+        ) from exc
+    if validated.to_dict() != FEASIBILITY_PLANS[request.component]:
+        raise _error(
+            request,
+            "OPERATION_PLAN_INVALID",
+            "Generation plan is not the exact in-place feasibility plan",
+        )
+    if recorded.resources:
+        raise _error(
+            request,
+            "OPERATION_PLAN_INVALID",
+            "Feasibility generation does not accept host resources",
+        )
+    return RecordedGeneration(validated, ())
+
+
 def _wait_for_registration(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
@@ -121,21 +198,34 @@ def _wait_for_registration(
 
 def _validate_marker_package(path: Path, format_name: str) -> None:
     validate_office_package(path, format_name)
-    marker = FEASIBILITY_MARKER.encode("utf-8")
+    normalized = str(format_name).lower().lstrip(".")
+    content_members = MARKER_CONTENT_MEMBERS[normalized]
+    found = False
     try:
         with zipfile.ZipFile(path) as package:
-            found = any(
-                marker in package.read(name)
-                for name in package.namelist()
-                if name.lower().endswith(".xml")
-            )
-    except (OSError, zipfile.BadZipFile, KeyError) as exc:
+            for name in package.namelist():
+                lowered = name.lower()
+                if not (lowered.endswith(".xml") or lowered.endswith(".rels")):
+                    continue
+                root = ElementTree.fromstring(package.read(name))
+                if name in content_members:
+                    text = "".join(root.itertext())
+                    if FEASIBILITY_MARKER in text:
+                        found = True
+    except (
+        ElementTree.ParseError,
+        KeyError,
+        OSError,
+        RuntimeError,
+        zipfile.BadZipFile,
+    ) as exc:
         raise ArtifactValidationError(
-            f"Invalid {format_name.upper()} marker package: {path}"
+            f"Invalid {normalized.upper()} XML package: {path}"
         ) from exc
     if not found:
         raise ArtifactValidationError(
-            f"{format_name.upper()} package is missing {FEASIBILITY_MARKER}: {path}"
+            f"{normalized.upper()} package is missing {FEASIBILITY_MARKER} "
+            f"in its generation content member: {path}"
         )
 
 
@@ -290,18 +380,7 @@ def execute_generation_plan(
             "OPERATION_PLAN_INVALID",
             "Generation component and format do not match",
         )
-    if recorded.plan.component != request.component:
-        raise _error(
-            request,
-            "OPERATION_PLAN_INVALID",
-            "Generation plan component does not match the request",
-        )
-    if recorded.resources:
-        raise _error(
-            request,
-            "OPERATION_PLAN_INVALID",
-            "Feasibility generation does not accept host resources",
-        )
+    recorded = _validate_feasibility_recording(request, recorded)
     method = METHODS[request.component]
 
     repository_root = Path(__file__).resolve().parents[4]
