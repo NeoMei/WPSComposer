@@ -45,6 +45,18 @@ registration, removed its WPS-container session, and left the pre-existing WPS
 process untouched. `MACOS_CONVERSION_ENABLED` is therefore enabled while the
 unrelated macOS generation gate stays closed.
 
+After the safety review changes, the full six-format gate was repeated into
+`/tmp/wpscomposer-conversion-gate-run-5-20260718` and
+`/tmp/wpscomposer-conversion-gate-run-6-20260718`. Both rounds again passed;
+the resulting page counts were Writer 1, Spreadsheet 2, and Presentation 1 for
+both legacy and OOXML inputs. The paired output sizes were identical between
+runs (DOC/DOCX 42,390 bytes, XLS 15,917 bytes, XLSX 199,724 bytes, and
+PPT/PPTX 323,254/67,177 bytes). A separate clean installer gate excluded the
+source `node_modules`, installed only the locked production dependency tree,
+found the `wpsjs` CLI and recorded Node 20.20.2, with `npm audit --omit=dev`
+reporting zero vulnerabilities. Registration and staging cleanup checks again
+finished with `publish.xml` absent and zero WPS-container sessions.
+
 ## Problem
 
 Mac WPS is sandboxed and declares user-selected file access rather than broad

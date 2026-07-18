@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from typing import Callable, Optional, Tuple
 
-from .artifact_transport import validate_pdf
+from .artifact_transport import ArtifactTransportError, validate_pdf
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -130,6 +130,14 @@ def convert_to_pdf(
         return str(result)
     except (FileNotFoundError, FileExistsError, ValueError, ConversionError):
         raise
+    except ArtifactTransportError as exc:
+        raise ConversionError(
+            code=exc.code,
+            source=str(request.source),
+            component=request.component,
+            backend=backend_name,
+            message=str(exc),
+        ) from exc
     except Exception as exc:
         raise ConversionError(
             code="CONVERSION_FAILED",

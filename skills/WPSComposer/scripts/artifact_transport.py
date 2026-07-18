@@ -14,6 +14,14 @@ class ArtifactValidationError(RuntimeError):
     """Raised when a staged or published artifact is structurally invalid."""
 
 
+class ArtifactTransportError(RuntimeError):
+    """Stable failure raised by a particular artifact transport stage."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
 _OFFICE_MEMBERS = {
     "docx": "word/document.xml",
     "xlsx": "xl/workbook.xml",
@@ -78,30 +86,61 @@ def publish_artifact(
     """Validate, copy locally, fsync, atomically replace, and revalidate."""
     source = Path(staged).expanduser().resolve()
     target = Path(destination).expanduser().resolve()
-    validator(source)
+    try:
+        validator(source)
+    except ArtifactValidationError as exc:
+        raise ArtifactTransportError(
+            "STAGED_ARTIFACT_INVALID", str(exc)
+        ) from exc
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() and not overwrite:
         raise FileExistsError(f"Output already exists: {target}")
 
     temporary: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="wb",
-            dir=target.parent,
-            prefix=".wpscomposer-",
-            suffix=".tmp",
-            delete=False,
-        ) as stream:
-            temporary = Path(stream.name)
-            with source.open("rb") as incoming:
-                shutil.copyfileobj(incoming, stream)
-            stream.flush()
-            os.fsync(stream.fileno())
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=target.parent,
+                prefix=".wpscomposer-",
+                suffix=".tmp",
+                delete=False,
+            ) as stream:
+                temporary = Path(stream.name)
+                with source.open("rb") as incoming:
+                    shutil.copyfileobj(incoming, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except OSError as exc:
+            raise ArtifactTransportError(
+                "ARTIFACT_PUBLISH_FAILED", str(exc)
+            ) from exc
 
-        validator(temporary)
-        os.replace(temporary, target)
+        try:
+            validator(temporary)
+        except ArtifactValidationError as exc:
+            raise ArtifactTransportError(
+                "ARTIFACT_PUBLISH_FAILED", str(exc)
+            ) from exc
+        try:
+            if overwrite:
+                os.replace(temporary, target)
+            else:
+                os.link(temporary, target)
+                temporary.unlink()
+        except FileExistsError:
+            raise
+        except OSError as exc:
+            raise ArtifactTransportError(
+                "ARTIFACT_PUBLISH_FAILED", str(exc)
+            ) from exc
         temporary = None
-        validator(target)
+        try:
+            validator(target)
+        except ArtifactValidationError as exc:
+            raise ArtifactTransportError(
+                "FINAL_ARTIFACT_INVALID", str(exc)
+            ) from exc
         return target
     finally:
         if temporary is not None:

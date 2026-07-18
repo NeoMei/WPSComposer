@@ -16,10 +16,17 @@ from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
 
 
 class FakeBridge:
-    def __init__(self, *, result_error=None, returned_path=None):
+    def __init__(
+        self,
+        *,
+        result_error=None,
+        error_code="CONVERSION_COMMAND_FAILED",
+        returned_path=None,
+    ):
         self.url = "http://127.0.0.1:45678"
         self.token = "token"
         self.result_error = result_error
+        self.error_code = error_code
         self.returned_path = returned_path
         self.commands = []
         self.registrations = []
@@ -51,11 +58,15 @@ class FakeBridge:
         command = next(item for item in self.commands if item.id == command_id)
         self.source_bytes = Path(command.params["sourcePath"]).read_bytes()
         if self.result_error is not None:
+            output = Path(command.params["outputPath"])
+            message = self.result_error.replace(
+                "{staging}", str(output.parent)
+            )
             return ProbeResult(
                 command_id,
                 False,
                 {},
-                {"code": "PASSWORD_REQUIRED", "message": self.result_error},
+                {"code": self.error_code, "message": message},
             )
         output = Path(command.params["outputPath"])
         output.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
@@ -67,6 +78,7 @@ class FakeRuntime:
     def __init__(self, staging_dir: Path, calls: list):
         self.staging_dir = staging_dir.resolve()
         self.calls = calls
+        self.registration_restored = True
 
     def __enter__(self):
         self.staging_dir.mkdir(parents=True)
@@ -160,12 +172,15 @@ def test_macos_gate_can_be_explicitly_disabled(tmp_path: Path):
 
 def test_macos_command_failure_publishes_no_partial_pdf(tmp_path: Path):
     request = _request(tmp_path, "xlsx", "spreadsheet")
-    bridge = FakeBridge(result_error="password or modal dialog required")
+    bridge = FakeBridge(
+        result_error="password or modal dialog required",
+        error_code="INTERACTIVE_INPUT_REQUIRED",
+    )
 
     with pytest.raises(ConversionError) as caught:
         _run_with_fakes(request, tmp_path, bridge=bridge)
 
-    assert caught.value.code == "PASSWORD_REQUIRED"
+    assert caught.value.code == "INTERACTIVE_INPUT_REQUIRED"
     assert caught.value.message == "password or modal dialog required"
     assert not request.output.exists()
 
@@ -179,3 +194,58 @@ def test_macos_rejects_result_path_outside_staging(tmp_path: Path):
 
     assert caught.value.code == "PROTOCOL_ERROR"
     assert not request.output.exists()
+
+
+def test_macos_redacts_staging_path_from_command_error(tmp_path: Path):
+    request = _request(tmp_path, "docx", "writer")
+    bridge = FakeBridge(result_error="failed at {staging}/converted.pdf")
+
+    with pytest.raises(ConversionError) as caught:
+        _run_with_fakes(request, tmp_path, bridge=bridge)
+
+    assert str((tmp_path / "container").resolve()) not in caught.value.message
+    assert "<wps-staging>/converted.pdf" in caught.value.message
+
+
+def test_registration_restore_failure_retains_durable_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    request = _request(tmp_path, "pptx", "presentation")
+    runtime_root = tmp_path / "durable-runtime"
+    runtime_root.mkdir()
+    monkeypatch.setattr(
+        mac_conversion.tempfile,
+        "mkdtemp",
+        lambda *args, **kwargs: str(runtime_root),
+    )
+
+    class RecoveryRuntime(FakeRuntime):
+        def __init__(self, probe_root, runtime_dir, bridge_url, token):
+            super().__init__(tmp_path / "container" / "session", [])
+            self.runtime_dir = Path(runtime_dir)
+
+        def __enter__(self):
+            super().__enter__()
+            recovery = self.runtime_dir / "registration-recovery"
+            recovery.mkdir(parents=True)
+            (recovery / "publish.xml.original").write_bytes(b"original")
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            self.registration_restored = False
+            shutil.rmtree(self.staging_dir, ignore_errors=True)
+            raise RuntimeError("registration restore failed")
+
+    with pytest.raises(ConversionError) as caught:
+        convert_macos(
+            request,
+            enabled=True,
+            bridge_factory=lambda origins: FakeBridge(),
+            runtime_factory=RecoveryRuntime,
+            timeout=2,
+        )
+
+    recovery = runtime_root / "runtime" / "registration-recovery"
+    assert caught.value.code == "REGISTRATION_RESTORE_FAILED"
+    assert str(recovery) in caught.value.message
+    assert (recovery / "publish.xml.original").read_bytes() == b"original"

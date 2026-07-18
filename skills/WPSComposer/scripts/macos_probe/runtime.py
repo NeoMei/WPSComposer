@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import json
 import os
 import platform
@@ -190,6 +191,50 @@ def find_node(override: Optional[str] = None) -> Path:
     raise RuntimeError("Node.js 20 or newer is required")
 
 
+def read_configured_node(probe_root: Path) -> Optional[str]:
+    """Read the Node executable recorded by the transactional installer."""
+    runtime_file = probe_root.resolve() / "runtime.json"
+    if not runtime_file.is_file():
+        return None
+    try:
+        payload = json.loads(runtime_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Invalid installed runtime configuration: {runtime_file}") from exc
+    raw_node = payload.get("node") if isinstance(payload, dict) else None
+    if not isinstance(raw_node, str) or not raw_node:
+        raise RuntimeError(f"Invalid installed runtime configuration: {runtime_file}")
+    return str(Path(raw_node).expanduser().resolve())
+
+
+@contextmanager
+def wps_runtime_lock(lock_path: Path, timeout: float = 120):
+    """Serialize WPS registration and fixed-port ownership across processes."""
+    import fcntl
+
+    target = lock_path.expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    descriptor = os.open(target, os.O_CREAT | os.O_RDWR, 0o600)
+    deadline = time.monotonic() + timeout
+    acquired = False
+    try:
+        while True:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "Timed out waiting for another WPSComposer session"
+                    )
+                time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+        yield
+    finally:
+        if acquired:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
+
+
 def find_wpsjs_cli(probe_root: Path) -> Path:
     cli = (probe_root / "node_modules/wpsjs/src/index.js").resolve()
     if not cli.is_file():
@@ -282,12 +327,21 @@ class ProbeRuntime:
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
         self._wps_pids_before: Optional[set[int]] = None
+        self._runtime_lock = None
         self.registration_restored = True
 
     def __enter__(self) -> "ProbeRuntime":
-        self._preflight()
-        self._wps_pids_before = list_wps_pids(self.wps_app)
+        self._runtime_lock = wps_runtime_lock(
+            self.staging_root.parent / ".wpscomposer-runtime.lock"
+        )
         try:
+            self._runtime_lock.__enter__()
+        except Exception:
+            self._runtime_lock = None
+            raise
+        try:
+            self._preflight()
+            self._wps_pids_before = list_wps_pids(self.wps_app)
             self.runtime_dir.mkdir(parents=True, exist_ok=False)
             self.staging_dir = create_staging_session(self.staging_root)
         except Exception:
@@ -322,7 +376,7 @@ class ProbeRuntime:
     def start_servers(self) -> None:
         if set(self.profiles) != set(COMPONENT_CONFIG):
             raise RuntimeError("prepare_profiles() must run before start_servers()")
-        node = find_node(self.node_override)
+        node = find_node(self.node_override or read_configured_node(self.probe_root))
         cli = find_wpsjs_cli(self.probe_root)
         recovery = self.runtime_dir / "registration-recovery"
         self._snapshot = RegistrationSnapshot.capture(
@@ -470,6 +524,18 @@ class ProbeRuntime:
                 try:
                     self.restore_registration()
                 finally:
-                    if self.staging_dir is not None:
-                        shutil.rmtree(self.staging_dir, ignore_errors=True)
-                        self.staging_dir = None
+                    try:
+                        if self.staging_dir is not None:
+                            staging_dir = self.staging_dir
+                            self.staging_dir = None
+                            try:
+                                shutil.rmtree(staging_dir)
+                            except OSError as exc:
+                                raise RuntimeError(
+                                    "Failed to remove WPS staging session"
+                                ) from exc
+                    finally:
+                        if self._runtime_lock is not None:
+                            runtime_lock = self._runtime_lock
+                            self._runtime_lock = None
+                            runtime_lock.__exit__(None, None, None)

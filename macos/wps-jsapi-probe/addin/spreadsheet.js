@@ -13,6 +13,32 @@
     return requirePath(params, "outputPath");
   }
 
+  function conversionError(error, code) {
+    if (error && typeof error.code === "string") {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || (
+      /password|passcode|protected|dialog|prompt|密码|对话框/i.test(message)
+        ? "INTERACTIVE_INPUT_REQUIRED"
+        : "CONVERSION_COMMAND_FAILED"
+    );
+    return typed;
+  }
+
+  function requireVisibleWorksheet(workbook) {
+    for (let index = 1; index <= workbook.Worksheets.Count; index += 1) {
+      if (workbook.Worksheets.Item(index).Visible !== 0) {
+        return;
+      }
+    }
+    throw conversionError(
+      new Error("Workbook has no visible worksheets"),
+      "NO_VISIBLE_WORKSHEETS"
+    );
+  }
+
   function saveXlsx(params) {
     const outputPath = requireOutputPath(params);
     const workbook = Application.Workbooks.Add();
@@ -110,14 +136,29 @@
     const sourcePath = requirePath(params, "sourcePath");
     const outputPath = requireOutputPath(params);
     const previousAlerts = Application.DisplayAlerts;
-    Application.DisplayAlerts = false;
-    const workbook = Application.Workbooks.Open(sourcePath, 0, true);
+    let workbook = null;
+    let failure = null;
     try {
+      Application.DisplayAlerts = false;
+      workbook = Application.Workbooks.Open(sourcePath, 0, true);
+      requireVisibleWorksheet(workbook);
       workbook.ExportAsFixedFormat(0, outputPath);
       return {path: outputPath};
+    } catch (error) {
+      failure = conversionError(error);
+      throw failure;
     } finally {
-      workbook.Close(false);
-      Application.DisplayAlerts = previousAlerts;
+      try {
+        if (workbook !== null) {
+          workbook.Close(false);
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw conversionError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
     }
   }
 

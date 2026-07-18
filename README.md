@@ -65,7 +65,7 @@ git clone https://github.com/NeoMei/WPSComposer.git
 
 # 安装到 Codex 个人插件 marketplace
 cd WPSComposer
-python3 install.py            # 首次安装
+python3 install.py            # 首次安装（macOS 会安装锁定的 JSAPI 运行时）
 python3 install.py --force    # 覆盖更新
 ```
 
@@ -76,6 +76,9 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 ### 运行时要求
 
 - Python 3.9 或更高版本。
+- macOS 的 Office 转 PDF 需要 Node.js 20 或更高版本。安装器会根据
+  `package-lock.json` 执行 `npm ci --omit=dev --ignore-scripts`，并在插件正式替换前
+  完成全部依赖安装；失败时不会留下半安装目录或更改 marketplace。
 - Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
 - macOS：公开 `generate()` 仍为 **NO-GO**，因为 WPS 12.1.26035 的
   Writer `SaveAs2` 会打开原生保存面板；已有 Office 文件转 PDF 已通过
@@ -228,7 +231,11 @@ WPSComposer/
 
 ## 开发调试
 
-在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件，用 pytest 和临时脚本验证。原生 WPS 排版改动可另外导出 PDF 作为开发验证证据，但公开生成接口只返回用户请求的格式。调试满意后运行 `python3 install.py --force` 更新本地插件。
+在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件。
+从源码目录直接运行 macOS JSAPI 门禁前，先在
+`macos/wps-jsapi-probe/` 执行 `npm ci`；用 pytest 和临时脚本验证。
+原生 WPS 排版改动可另外导出 PDF 作为开发验证证据，但公开生成接口只返回用户请求的格式。
+调试满意后运行 `python3 install.py --force` 更新本地插件。
 
 ## License
 

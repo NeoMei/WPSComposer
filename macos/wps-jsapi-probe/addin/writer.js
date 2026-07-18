@@ -31,6 +31,20 @@
     return value;
   }
 
+  function conversionError(error, code) {
+    if (error && typeof error.code === "string") {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || (
+      /password|passcode|protected|dialog|prompt|密码|对话框/i.test(message)
+        ? "INTERACTIVE_INPUT_REQUIRED"
+        : "CONVERSION_COMMAND_FAILED"
+    );
+    return typed;
+  }
+
   function requireImageUrl(params) {
     if (params.imageUrl !== WRITER_IMAGE_URL) {
       throw new Error("imageUrl must be the fixed Writer loopback asset");
@@ -255,16 +269,30 @@
     const sourcePath = requirePath(params, "sourcePath");
     const outputPath = requirePath(params, "outputPath");
     const previousAlerts = Application.DisplayAlerts;
-    Application.DisplayAlerts = 0;
-    const document = Application.Documents.Open(sourcePath, false, true);
+    let document = null;
+    let failure = null;
     try {
+      Application.DisplayAlerts = 0;
+      document = Application.Documents.Open(sourcePath, false, true);
       await waitForFileAfterSave(outputPath, function () {
         document.ExportAsFixedFormat(outputPath, 17, false, 0, 0);
       });
       return {path: outputPath};
+    } catch (error) {
+      failure = conversionError(error);
+      throw failure;
     } finally {
-      document.Close(0);
-      Application.DisplayAlerts = previousAlerts;
+      try {
+        if (document !== null) {
+          document.Close(0);
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw conversionError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
     }
   }
 

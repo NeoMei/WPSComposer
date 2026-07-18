@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from skills.WPSComposer.scripts.artifact_transport import ArtifactTransportError
 from skills.WPSComposer.scripts import conversion
 from skills.WPSComposer.scripts.conversion import (
     ConversionError,
@@ -176,3 +177,26 @@ def test_conversion_preserves_public_path_errors_from_backend(
 
     with pytest.raises(FileExistsError, match="Output already exists"):
         convert_to_pdf(str(source))
+
+
+def test_conversion_maps_typed_transport_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+
+    def failed_backend(request):
+        raise ArtifactTransportError(
+            "ARTIFACT_PUBLISH_FAILED", "destination is read-only"
+        )
+
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: ("windows-com", failed_backend),
+    )
+
+    with pytest.raises(ConversionError) as caught:
+        convert_to_pdf(str(source))
+    assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
+    assert caught.value.message == "destination is read-only"

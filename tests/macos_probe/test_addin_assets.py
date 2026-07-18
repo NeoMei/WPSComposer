@@ -1,4 +1,8 @@
+import json
 from pathlib import Path
+import subprocess
+
+import pytest
 
 ROOT = Path("macos/wps-jsapi-probe/addin")
 
@@ -24,6 +28,7 @@ def test_bridge_client_has_no_dynamic_code_execution():
     assert "/v1/result" in source
     assert "eval(" not in source
     assert "new Function" not in source
+    assert 'error.code === "string"' in source
 
 
 def test_writer_uses_wps_save_and_pdf_export():
@@ -109,3 +114,101 @@ def test_spreadsheet_conversion_exports_the_workbook_and_closes_without_saving()
     assert "workbook.ExportAsFixedFormat(0, outputPath)" in source
     assert "workbook.Close(false)" in source
     assert '"convert_workbook_pdf": convertWorkbookPdf' in source
+
+
+def _run_component_failure_case(
+    component_file: str,
+    method: str,
+    application_source: str,
+    expected_code: str,
+) -> None:
+    path = json.dumps(str((ROOT / component_file).resolve()))
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+global.Application = {application_source};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: {json.dumps(method)},
+      params: {{sourcePath: "/staged/source", outputPath: "/staged/output.pdf"}}
+    }});
+    console.error("handler unexpectedly succeeded");
+    process.exit(2);
+  }} catch (error) {{
+    if (Application.DisplayAlerts !== 7) {{
+      console.error(`DisplayAlerts leaked: ${{Application.DisplayAlerts}}`);
+      process.exit(3);
+    }}
+    if (error.code !== {json.dumps(expected_code)}) {{
+      console.error(`unexpected code: ${{error.code}}`);
+      process.exit(4);
+    }}
+  }}
+}}());
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize(
+    ("component_file", "method", "application_source"),
+    [
+        (
+            "writer.js",
+            "convert_writer_pdf",
+            '{DisplayAlerts: 7, Documents: {Open() {throw new Error("password required");}}}',
+        ),
+        (
+            "spreadsheet.js",
+            "convert_workbook_pdf",
+            '{DisplayAlerts: 7, Workbooks: {Open() {throw new Error("password required");}}}',
+        ),
+        (
+            "presentation.js",
+            "convert_presentation_pdf",
+            '{DisplayAlerts: 7, Presentations: {Open() {throw new Error("password required");}}}',
+        ),
+    ],
+)
+def test_conversion_open_failure_is_typed_and_restores_alerts(
+    component_file: str, method: str, application_source: str
+):
+    _run_component_failure_case(
+        component_file,
+        method,
+        application_source,
+        "INTERACTIVE_INPUT_REQUIRED",
+    )
+
+
+def test_spreadsheet_rejects_workbook_without_visible_sheets():
+    _run_component_failure_case(
+        "spreadsheet.js",
+        "convert_workbook_pdf",
+        """{
+          DisplayAlerts: 7,
+          Workbooks: {Open() {return {
+            Worksheets: {Count: 2, Item() {return {Visible: 0};}},
+            ExportAsFixedFormat() {},
+            Close() {}
+          };}}
+        }""",
+        "NO_VISIBLE_WORKSHEETS",
+    )
+
+
+def test_spreadsheet_close_failure_still_restores_alerts():
+    _run_component_failure_case(
+        "spreadsheet.js",
+        "convert_workbook_pdf",
+        """{
+          DisplayAlerts: 7,
+          Workbooks: {Open() {return {
+            Worksheets: {Count: 1, Item() {return {Visible: -1};}},
+            ExportAsFixedFormat() {},
+            Close() {throw new Error("close failed");}
+          };}}
+        }""",
+        "CONVERSION_COMMAND_FAILED",
+    )

@@ -11,6 +11,7 @@ from skills.WPSComposer.scripts.macos_probe.runtime import (
     RegistrationSnapshot,
     build_profile,
     find_node,
+    read_configured_node,
 )
 
 
@@ -96,11 +97,20 @@ def test_probe_toolchain_is_pinned_and_audit_override_is_reviewed():
     package = json.loads(
         Path("macos/wps-jsapi-probe/package.json").read_text(encoding="utf-8")
     )
-    assert package["devDependencies"] == {
-        "wps-jsapi-declare": "2.2.0",
-        "wpsjs": "2.2.3",
-    }
+    assert package["dependencies"] == {"wpsjs": "2.2.3"}
+    assert package["devDependencies"] == {"wps-jsapi-declare": "2.2.0"}
     assert package["overrides"] == {"tmp": "0.2.7"}
+
+
+def test_read_configured_node_uses_installer_runtime_file(tmp_path: Path):
+    node = tmp_path / "runtime" / "node"
+    node.parent.mkdir()
+    node.write_text("node", encoding="utf-8")
+    (tmp_path / "runtime.json").write_text(
+        json.dumps({"node": str(node)}), encoding="utf-8"
+    )
+
+    assert read_configured_node(tmp_path) == str(node.resolve())
 
 
 def test_component_activation_uses_a_fresh_wps_instance(tmp_path: Path):
@@ -181,6 +191,44 @@ def test_runtime_removes_staging_session_after_failure(
             raise RuntimeError("forced failure")
 
     assert not session.exists()
+
+
+def test_runtime_surfaces_staging_cleanup_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        staging_root=tmp_path / "container" / "WPSComposer",
+    )
+    original_rmtree = runtime.shutil.rmtree
+
+    with pytest.raises(RuntimeError, match="remove WPS staging session"):
+        with probe:
+            session = probe.staging_dir
+            assert session is not None
+            monkeypatch.setattr(
+                runtime.shutil,
+                "rmtree",
+                lambda path: (_ for _ in ()).throw(OSError("busy")),
+            )
+
+    monkeypatch.setattr(runtime.shutil, "rmtree", original_rmtree)
+    original_rmtree(session)
+
+
+def test_runtime_lock_serializes_overlapping_sessions(tmp_path: Path):
+    lock_path = tmp_path / "wpscomposer.lock"
+
+    with runtime.wps_runtime_lock(lock_path, timeout=1):
+        with pytest.raises(TimeoutError, match="another WPSComposer session"):
+            with runtime.wps_runtime_lock(lock_path, timeout=0.01):
+                pass
 
 
 def test_list_wps_pids_only_matches_exact_main_executable(monkeypatch):

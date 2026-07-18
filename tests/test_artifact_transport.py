@@ -7,6 +7,7 @@ import zipfile
 import pytest
 
 from skills.WPSComposer.scripts.artifact_transport import (
+    ArtifactTransportError,
     ArtifactValidationError,
     publish_artifact,
     validate_office_package,
@@ -125,7 +126,7 @@ def test_publish_validation_failure_leaves_no_partial_destination(
     staged.write_bytes(b"broken")
     destination = tmp_path / "result.pdf"
 
-    with pytest.raises(ArtifactValidationError):
+    with pytest.raises(ArtifactTransportError) as caught:
         publish_artifact(
             staged,
             destination,
@@ -133,6 +134,7 @@ def test_publish_validation_failure_leaves_no_partial_destination(
             validator=validate_pdf,
         )
 
+    assert caught.value.code == "STAGED_ARTIFACT_INVALID"
     assert not destination.exists()
     assert not list(tmp_path.glob(".wpscomposer-*.tmp"))
 
@@ -154,10 +156,36 @@ def test_publish_uses_os_replace_in_destination_directory(
     publish_artifact(
         staged,
         destination,
-        overwrite=False,
+        overwrite=True,
         validator=validate_pdf,
     )
 
     assert len(calls) == 1
     assert calls[0][0].parent == destination.parent.resolve()
     assert calls[0][1] == destination.resolve()
+
+
+def test_publish_does_not_clobber_target_created_during_no_overwrite_race(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"staged" * 1024)
+    destination = tmp_path / "result.pdf"
+    intruder = b"%PDF-1.7\n" + b"intruder" * 1024
+    original_link = os.link
+
+    def raced_link(source, target):
+        Path(target).write_bytes(intruder)
+        return original_link(source, target)
+
+    monkeypatch.setattr(os, "link", raced_link)
+
+    with pytest.raises(FileExistsError):
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=False,
+            validator=validate_pdf,
+        )
+
+    assert destination.read_bytes() == intruder
+    assert not list(tmp_path.glob(".wpscomposer-*.tmp"))

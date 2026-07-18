@@ -11,6 +11,20 @@
     return value;
   }
 
+  function conversionError(error, code) {
+    if (error && typeof error.code === "string") {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || (
+      /password|passcode|protected|dialog|prompt|密码|对话框/i.test(message)
+        ? "INTERACTIVE_INPUT_REQUIRED"
+        : "CONVERSION_COMMAND_FAILED"
+    );
+    return typed;
+  }
+
   function text(slide, value, left, top, width, height, size, bold) {
     const shape = slide.Shapes.AddTextbox(1, left, top, width, height);
     shape.TextFrame.TextRange.Text = value;
@@ -131,14 +145,28 @@
     const sourcePath = requirePath(params, "sourcePath");
     const outputPath = requirePath(params, "outputPath");
     const previousAlerts = Application.DisplayAlerts;
-    Application.DisplayAlerts = 0;
-    const presentation = Application.Presentations.Open(sourcePath, true, false, false);
+    let presentation = null;
+    let failure = null;
     try {
+      Application.DisplayAlerts = 0;
+      presentation = Application.Presentations.Open(sourcePath, true, false, false);
       presentation.SaveAs(outputPath, 32);
       return {path: outputPath};
+    } catch (error) {
+      failure = conversionError(error);
+      throw failure;
     } finally {
-      presentation.Close();
-      Application.DisplayAlerts = previousAlerts;
+      try {
+        if (presentation !== null) {
+          presentation.Close();
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw conversionError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
     }
   }
 

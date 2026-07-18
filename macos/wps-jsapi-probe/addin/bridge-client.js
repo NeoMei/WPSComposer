@@ -65,7 +65,9 @@
           ok: false,
           value: {},
           error: {
-            code: "JSAPI_COMMAND_FAILED",
+            code: error && typeof error.code === "string"
+              ? error.code
+              : "CONVERSION_COMMAND_FAILED",
             message: String(error && error.message ? error.message : error),
             stack: String(error && error.stack ? error.stack : "")
           }
