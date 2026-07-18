@@ -119,10 +119,13 @@ generic escape hatch.
 
 ### Native templates
 
-The repository contains one minimal, WPS-produced template for each OOXML
-format. Every template must pass `validate_office_package`, contain no personal
-metadata beyond a fixed WPSComposer marker, and be documented with its WPS
-version and SHA-256 digest.
+The pinned production `wpsjs==2.2.3` dependency contains one WPS-produced
+fixture for each OOXML format: `wpsDemo.docx`, `etDemo.xlsx`, and
+`wppDemo.pptx`. Runtime installation already guarantees these assets exist.
+The backend treats them as immutable source templates, checks their fixed
+SHA-256 digests before each clone, and validates each with
+`validate_office_package`. This avoids duplicating third-party binary fixtures
+in the repository while still making their provenance and bytes deterministic.
 
 At runtime the host copies the template to a private session filename:
 
