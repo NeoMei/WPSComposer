@@ -151,3 +151,80 @@ Per the Task 6 boundary, no real WPS gate was run; Task 9 owns it.
 
 No blocking concern is known within Task 6. Native installed-WPS behavior is
 intentionally deferred to Task 9 and production macOS generation remains off.
+
+## Independent-review follow-up
+
+### Findings addressed
+
+An independent review identified four Presentation validation gaps. The
+follow-up now:
+
+- accepts only canonical staged resource paths under the current session's
+  `resources/` directory, derived from `stagedPath`, instead of applying the
+  Writer-only loopback URL contract;
+- rejects resource traversal, external absolute paths, URLs, unsafe path
+  syntax, inherited mappings, prototype resource identifiers, and unused or
+  missing resources before opening WPS;
+- treats `resources` as optional only when the own field is absent; explicit
+  `false`, `0`, empty string, `null`, and arrays are invalid before open;
+- requires exactly one leading `slide.reset`, rejecting missing, late, or
+  repeated reset operations before the staged presentation is opened;
+- validates AddPicture's natural width and height, derived aspect-fit size,
+  WPS readback size, and final endpoints as positive, finite, safe-range, and
+  within four configured slide dimensions;
+- deletes a newly created invalid picture when the API supports `Delete`,
+  never calls `Save`, closes the staged presentation, and reports the runtime
+  failure as `GENERATION_COMMAND_FAILED`.
+
+The Presentation resource contract follows Task 7's approved staging design:
+the host copies non-Writer resources to
+`runtime.staging_dir/resources/resource-<id>.<suffix>` and sends the absolute
+internal path in the manifest. No host source path, external output path, URL,
+GUI action, or permission automation is introduced.
+
+### Follow-up TDD evidence
+
+Each review item received a failing executable Node regression before its
+production fix:
+
+```text
+staged resource path replacing Writer URL: 1 failed
+leading/unique reset state:                3 failed, 3 passed
+explicit false/0/""/null resources:         4 failed, 1 passed
+natural and derived image geometry:        9 failed, 3 passed
+post-fit endpoint ordering:                1 failed
+```
+
+The exact review counterexample (`960x540`, natural `100x1e9`, requested width
+`100`) now fails after shape creation, deletes the invalid shape, calls no
+`Save`, closes the staged presentation, and restores alerts. Safe one-axis and
+natural-size cases preserve aspect ratio. Natural dimensions are bounded
+before scaling, while endpoint validation correctly applies to the final
+aspect-fitted box rather than the larger pre-fit box.
+
+### Follow-up focused GREEN
+
+```text
+Presentation add-in tests: 73 passed, 91 deselected
+Task 6 focused suite:      173 passed in 2.92s
+```
+
+Public routing and all production gates remain unchanged, and no installed-WPS
+gate was run.
+
+### Follow-up verification
+
+```text
+Presentation review regressions: 63 passed, 101 deselected in 1.24s
+Task 6 focused suite:          173 passed in 2.93s
+Markdown/public regression:     3 passed in 0.02s
+Complete deterministic suite: 478 passed in 8.16s
+```
+
+The following also exited zero without diagnostics:
+
+```text
+node --check macos/wps-jsapi-probe/addin/presentation.js
+.venv/bin/python -m compileall skills/WPSComposer/scripts
+git diff --check
+```

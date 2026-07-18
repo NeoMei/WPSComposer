@@ -275,18 +275,49 @@
     newSlide(presentation, context);
   }
 
+  function validateRuntimePictureDimensions(width, height, context) {
+    const horizontalLimit = context.width * 4;
+    const verticalLimit = context.height * 4;
+    if (
+      typeof width !== "number" || typeof height !== "number" ||
+      !Number.isFinite(width) || !Number.isFinite(height) ||
+      width <= 0 || height <= 0 ||
+      width > Number.MAX_SAFE_INTEGER || height > Number.MAX_SAFE_INTEGER ||
+      width > horizontalLimit || height > verticalLimit
+    ) {
+      throw new Error("Presentation image dimensions are unsafe");
+    }
+  }
+
+  function validateRuntimePictureBox(width, height, args, context) {
+    validateRuntimePictureDimensions(width, height, context);
+    const horizontalLimit = context.width * 4;
+    const verticalLimit = context.height * 4;
+    const right = args.left + width;
+    const bottom = args.top + height;
+    if (
+      !Number.isFinite(right) || !Number.isFinite(bottom) ||
+      right > Number.MAX_SAFE_INTEGER || bottom > Number.MAX_SAFE_INTEGER ||
+      right > horizontalLimit || bottom > verticalLimit
+    ) {
+      throw new Error("Presentation image target box is unsafe");
+    }
+  }
+
   function addSlideImage(presentation, args, context, resources) {
     const slide = slideCollectionItem(presentation.Slides, args.slide);
-    const shape = slide.Shapes.AddPicture(
-      resources[args.imageId],
-      false,
-      true,
-      args.left,
-      args.top
-    );
-    const naturalWidth = Number(shape.Width);
-    const naturalHeight = Number(shape.Height);
-    if (naturalWidth > 0 && naturalHeight > 0) {
+    let shape = null;
+    try {
+      shape = slide.Shapes.AddPicture(
+        resources[args.imageId],
+        false,
+        true,
+        args.left,
+        args.top
+      );
+      const naturalWidth = shape.Width;
+      const naturalHeight = shape.Height;
+      validateRuntimePictureDimensions(naturalWidth, naturalHeight, context);
       let scale = 1;
       if (args.width !== undefined && args.height !== undefined) {
         scale = Math.min(args.width / naturalWidth, args.height / naturalHeight);
@@ -295,11 +326,24 @@
       } else if (args.height !== undefined) {
         scale = args.height / naturalHeight;
       }
-      shape.Width = naturalWidth * scale;
-      shape.Height = naturalHeight * scale;
+      const finalWidth = naturalWidth * scale;
+      const finalHeight = naturalHeight * scale;
+      validateRuntimePictureBox(finalWidth, finalHeight, args, context);
+      shape.Width = finalWidth;
+      shape.Height = finalHeight;
+      validateRuntimePictureBox(shape.Width, shape.Height, args, context);
+      shape.Left = args.left;
+      shape.Top = args.top;
+    } catch (error) {
+      if (shape && typeof shape.Delete === "function") {
+        try {
+          shape.Delete();
+        } catch (cleanupError) {
+          // Closing the staged presentation without Save remains the fallback.
+        }
+      }
+      throw error;
     }
-    shape.Left = args.left;
-    shape.Top = args.top;
   }
 
   function addSlideTable(presentation, args, context) {
@@ -587,32 +631,56 @@
     }
   }
 
-  function validateSlideResource(imageId, resources) {
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(imageId)) {
+  function canonicalPresentationPath(value, label) {
+    if (
+      typeof value !== "string" || value.length === 0 || value[0] !== "/" ||
+      value.indexOf("\\") !== -1 || value.indexOf("\0") !== -1 ||
+      value.indexOf("://") !== -1 || value.indexOf("%") !== -1 ||
+      value.indexOf("?") !== -1 || value.indexOf("#") !== -1
+    ) {
+      invalidSlidePlan(`${label} is unsafe`);
+    }
+    const normalized = [];
+    value.split("/").forEach(function (segment) {
+      if (!segment || segment === ".") {
+        return;
+      }
+      if (segment === "..") {
+        invalidSlidePlan(`${label} contains traversal`);
+      }
+      normalized.push(segment);
+    });
+    if (!normalized.length) {
+      invalidSlidePlan(`${label} is unsafe`);
+    }
+    return `/${normalized.join("/")}`;
+  }
+
+  function validateSlideResource(imageId, resources, stagedPath) {
+    if (
+      !/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(imageId) ||
+      imageId === "__proto__" || imageId === "prototype" ||
+      hasOwn(Object.prototype, imageId)
+    ) {
       invalidSlidePlan("Presentation imageId must be a logical identifier");
     }
     if (!isObject(resources) || !hasOwn(resources, imageId)) {
       invalidSlidePlan(`Missing Presentation resource: ${imageId}`);
     }
-    const resource = resources[imageId];
-    if (
-      typeof resource !== "string" || resource.indexOf("..") !== -1 ||
-      resource.indexOf("\\") !== -1 || resource.indexOf("%") !== -1
-    ) {
-      invalidSlidePlan(`Unsafe Presentation resource: ${imageId}`);
+    const canonicalStagedPath = canonicalPresentationPath(
+      stagedPath,
+      "Presentation stagedPath"
+    );
+    const lastSeparator = canonicalStagedPath.lastIndexOf("/");
+    if (lastSeparator <= 0) {
+      invalidSlidePlan("Presentation stagedPath has no session directory");
     }
-    let parsed;
-    try {
-      parsed = new URL(resource);
-    } catch (error) {
-      invalidSlidePlan(`Unsafe Presentation resource: ${imageId}`);
-    }
-    if (
-      parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" ||
-      parsed.port !== "3889" || parsed.username || parsed.password ||
-      parsed.search || parsed.hash ||
-      parsed.pathname.split("/").filter(Boolean).length !== 1
-    ) {
+    const resourceRoot = `${canonicalStagedPath.slice(0, lastSeparator)}/resources`;
+    const resource = canonicalPresentationPath(
+      resources[imageId],
+      `Presentation resource ${imageId}`
+    );
+    if (resource.indexOf(`${resourceRoot}/`) !== 0) {
       invalidSlidePlan(`Unsafe Presentation resource: ${imageId}`);
     }
   }
@@ -707,7 +775,7 @@
     }
   }
 
-  function validateSlideOperations(plan, resources) {
+  function validateSlideOperations(plan, resources, stagedPath) {
     if (!isObject(resources)) {
       invalidSlidePlan("Presentation resources must be an object");
     }
@@ -744,9 +812,13 @@
     ) {
       invalidSlidePlan("Presentation operation catalog is incomplete");
     }
+    if (!isObject(plan.operations[0]) || plan.operations[0].op !== "slide.reset") {
+      invalidSlidePlan("Presentation generation plan must begin with slide.reset");
+    }
     const state = {count: 0, width: 960, height: 540, preset: null};
     const usedResources = Object.create(null);
-    plan.operations.forEach(function (operation) {
+    let resetSeen = false;
+    plan.operations.forEach(function (operation, operationIndex) {
       if (
         !isObject(operation) || Object.keys(operation).sort().join(",") !== "args,op" ||
         typeof operation.op !== "string" || !isObject(operation.args)
@@ -762,6 +834,10 @@
       }
       requireSlideArguments(operation);
       if (operation.op === "slide.reset") {
+        if (resetSeen || operationIndex !== 0) {
+          invalidSlidePlan("Presentation generation plan must contain one leading slide.reset");
+        }
+        resetSeen = true;
         state.count = 0;
       } else if (operation.op === "slide.set_size") {
         if (
@@ -788,12 +864,12 @@
         }
         validateGeometryBox(operation.args, state, operation.op);
         if (operation.op === "slide.add_image") {
-          validateSlideResource(operation.args.imageId, resources);
+          validateSlideResource(operation.args.imageId, resources, stagedPath);
           usedResources[operation.args.imageId] = true;
         }
       }
     });
-    Object.keys(resources || {}).forEach(function (resourceId) {
+    Object.keys(resources).forEach(function (resourceId) {
       if (!usedResources[resourceId]) {
         invalidSlidePlan(`Unused Presentation resource: ${resourceId}`);
       }
@@ -801,15 +877,15 @@
     return plan.operations;
   }
 
-  function executeSlideOperations(presentation, plan, resources) {
-    const operations = validateSlideOperations(plan, resources);
+  function executeSlideOperations(presentation, plan, resources, stagedPath) {
+    const operations = validateSlideOperations(plan, resources, stagedPath);
     const context = {width: 960, height: 540, preset: null};
     operations.forEach(function (operation) {
       slideOperations[operation.op](
         presentation,
         operation.args,
         context,
-        resources || {}
+        resources
       );
     });
     return operations.length;
@@ -817,7 +893,8 @@
 
   function generatePresentationDeck(params) {
     const stagedPath = requirePath(params, "stagedPath");
-    validateSlideOperations(params.plan, params.resources || {});
+    const resources = hasOwn(params, "resources") ? params.resources : {};
+    validateSlideOperations(params.plan, resources, stagedPath);
     const previousAlerts = Application.DisplayAlerts;
     let presentation = null;
     let failure = null;
@@ -827,7 +904,8 @@
       const applied = executeSlideOperations(
         presentation,
         params.plan,
-        params.resources || {}
+        resources,
+        stagedPath
       );
       presentation.Save();
       return {path: stagedPath, appliedOperations: applied};

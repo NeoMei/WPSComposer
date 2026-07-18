@@ -1601,7 +1601,7 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
 (async function () {{
   const result = await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
     stagedPath: "/staged/generated.pptx",
-    resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    resources: {{"image-1": "/staged/resources/resource-image-1.png"}},
     plan: {{component: "presentation", operations: {json.dumps(operations)}}}
   }}}});
   assert.equal(result.appliedOperations, 10); assert.equal(presentation.saveCalls, 1);
@@ -1612,7 +1612,7 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
   assert.equal(state.textboxes[0].TextFrame.TextRange.Font.Name, "Arial");
   assert.equal(state.textboxes[0].TextFrame.TextRange.Font.Color.RGB, 0x8B3C1A);
   assert.ok(state.textboxes.some(function (shape) {{return shape.TextFrame.TextRange.Text === "One\\rTwo";}}));
-  assert.equal(state.pictures[0].path, "http://127.0.0.1:3889/resource-image-1.png");
+  assert.equal(state.pictures[0].path, "/staged/resources/resource-image-1.png");
   assert.equal(state.pictures[0].Width, 800); assert.equal(state.pictures[0].Height, 400);
   assert.equal(state.pictures[0].Left, 80); assert.equal(state.pictures[0].Top, 100);
   assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Text, "Item");
@@ -1678,6 +1678,10 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
     [
         [{"op": "slide.add_image", "args": {"slide": 1, "imageId": "image-1", "left": 0, "top": 0}}],
         [
+            {"op": "slide.add_blank", "args": {}},
+            {"op": "slide.add_image", "args": {"slide": 1, "imageId": "image-1", "left": 0, "top": 0}},
+        ],
+        [
             {"op": "slide.reset", "args": {}},
             {"op": "slide.add_title", "args": {"title": "Only"}},
             {"op": "slide.add_table", "args": {"slide": 2, "rows": 1, "cols": 1, "left": 0, "top": 0, "width": 10, "height": 10, "data": [["x"]]}},
@@ -1687,16 +1691,30 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
             {"op": "slide.reset", "args": {}},
             {"op": "slide.add_image", "args": {"slide": 1, "imageId": "image-1", "left": 0, "top": 0}},
         ],
+        [
+            {"op": "slide.reset", "args": {}},
+            {"op": "slide.reset", "args": {}},
+        ],
+        [
+            {"op": "slide.set_size", "args": {"width": 960, "height": 540}},
+            {"op": "slide.reset", "args": {}},
+            {"op": "slide.add_blank", "args": {}},
+        ],
     ],
 )
 def test_presentation_generation_rejects_out_of_sequence_slide_state_before_open(operations):
+    resources = (
+        {"image-1": "/staged/resources/resource-image-1.png"}
+        if any(operation["op"] == "slide.add_image" for operation in operations)
+        else {}
+    )
     body = f"""
 let openCalls = 0;
 global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
 eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
 (async function () {{
   try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
-    stagedPath: "/staged/generated.pptx", resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    stagedPath: "/staged/generated.pptx", resources: {json.dumps(resources)},
     plan: {{component: "presentation", operations: {json.dumps(operations)}}}
   }}}}); process.exit(2);}}
   catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
@@ -1725,10 +1743,11 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
 (async function () {{
   const testedOperation = {operation};
   const resources = testedOperation.op === "slide.add_image"
-    ? {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}} : {{}};
+    ? {{"image-1": "/staged/resources/resource-image-1.png"}} : {{}};
   try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
     stagedPath: "/staged/generated.pptx", resources,
     plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
       {{op: "slide.set_size", args: {{width: 100, height: 50}}}},
       {{op: "slide.add_blank", args: {{}}}}, testedOperation
     ]}}
@@ -1744,8 +1763,14 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
     [
         {},
         {"image-1": "file:///tmp/x.png"},
-        {"image-1": "http://127.0.0.1:3889/a/b.png"},
-        {"image-1": "http://127.0.0.1:3889/x.png", "unused": "http://127.0.0.1:3889/y.png"},
+        {"image-1": "http://127.0.0.1:3889/x.png"},
+        {"image-1": "/tmp/x.png"},
+        {"image-1": "/staged/../outside.png"},
+        {"image-1": "/staged/resources/../secret.png"},
+        {
+            "image-1": "/staged/resources/x.png",
+            "unused": "/staged/resources/y.png",
+        },
     ],
 )
 def test_presentation_generation_rejects_missing_or_unsafe_resources_before_open(resources):
@@ -1757,8 +1782,31 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
   try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
     stagedPath: "/staged/generated.pptx", resources: {json.dumps(resources)},
     plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
       {{op: "slide.add_blank", args: {{}}}},
       {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 0, top: 0}}}}
+    ]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize("image_id", ["constructor", "toString", "valueOf", "prototype"])
+def test_presentation_generation_rejects_prototype_resource_keys_before_open(image_id):
+    body = f"""
+let openCalls = 0;
+const resources = Object.create(null);
+resources[{json.dumps(image_id)}] = "/staged/resources/x.png";
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx", resources,
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}}, {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: {json.dumps(image_id)}, left: 0, top: 0}}}}
     ]}}
   }}}}); process.exit(2);}}
   catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
@@ -1782,8 +1830,9 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
 (async function () {{
   await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
     stagedPath: "/staged/generated.pptx",
-    resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+    resources: {{"image-1": "/staged/resources/resource-image-1.png"}},
     plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
       {{op: "slide.set_size", args: {{width: 960.1, height: 540.1}}}},
       {{op: "slide.add_blank", args: {{}}}},
       {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 80.25, top: 100.25, width: 800.25, height: 400.25}}}}
@@ -1795,14 +1844,139 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
     _run_presentation_script(body)
 
 
-def test_presentation_generation_rejects_non_object_resources_before_open():
+@pytest.mark.parametrize(
+    ("image_args", "expected_width", "expected_height"),
+    [
+        ("width: 100", 100, 50),
+        ("height: 100", 200, 100),
+        ("", 1600, 800),
+    ],
+)
+def test_presentation_image_validates_and_preserves_natural_aspect_ratio(
+    image_args,
+    expected_width,
+    expected_height,
+):
+    comma = "," if image_args else ""
+    body = f"""
+let slideCount = 0; let stagedSlide = null; let saveCalls = 0;
+const picture = {{Width: 1600, Height: 800, Delete() {{throw new Error("valid image deleted");}}}};
+const slides = {{
+  get Count() {{return slideCount;}},
+  Add() {{slideCount += 1; stagedSlide = {{Shapes: {{AddPicture() {{return picture;}}}}}}; return stagedSlide;}},
+  Item() {{return stagedSlide;}}
+}};
+const presentation = {{Slides: slides, PageSetup: {{}}, Save() {{saveCalls += 1;}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{return presentation;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx",
+    resources: {{"image-1": "/staged/resources/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
+      {{op: "slide.set_size", args: {{width: 960, height: 540}}}},
+      {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 80, top: 100{comma} {image_args}}}}}
+    ]}}
+  }}}});
+  assert.equal(picture.Width, {expected_width}); assert.equal(picture.Height, {expected_height});
+  assert.equal(picture.Left, 80); assert.equal(picture.Top, 100); assert.equal(saveCalls, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+def test_presentation_image_checks_endpoints_after_aspect_fit_not_before():
+    body = f"""
+let slideCount = 0; let stagedSlide = null; let saveCalls = 0;
+const picture = {{Width: 3800, Height: 100}};
+const slides = {{
+  get Count() {{return slideCount;}},
+  Add() {{slideCount += 1; stagedSlide = {{Shapes: {{AddPicture() {{return picture;}}}}}}; return stagedSlide;}},
+  Item() {{return stagedSlide;}}
+}};
+const presentation = {{Slides: slides, PageSetup: {{}}, Save() {{saveCalls += 1;}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{return presentation;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx",
+    resources: {{"image-1": "/staged/resources/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
+      {{op: "slide.set_size", args: {{width: 960, height: 540}}}},
+      {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 80, top: 100, width: 100}}}}
+    ]}}
+  }}}});
+  assert.equal(picture.Width, 100); assert.ok(Math.abs(picture.Height - (10000 / 3800)) < 1e-9);
+  assert.equal(saveCalls, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize(
+    ("natural_width", "natural_height", "image_args"),
+    [
+        ("NaN", "800", "width: 100"),
+        ("1600", "Infinity", "width: 100"),
+        ("0", "800", "width: 100"),
+        ("-1", "800", "width: 100"),
+        ("Number.MAX_SAFE_INTEGER + 1", "800", "width: 100"),
+        ("5000", "800", "width: 100"),
+        ("100", "1e9", "width: 100"),
+        ("1", "2000", "width: 100"),
+        ("3800", "100", ""),
+    ],
+)
+def test_presentation_image_rejects_unsafe_natural_or_derived_geometry_without_save(
+    natural_width,
+    natural_height,
+    image_args,
+):
+    comma = "," if image_args else ""
+    body = f"""
+let slideCount = 0; let stagedSlide = null; let saveCalls = 0; let closeCalls = 0; let deleteCalls = 0;
+const picture = {{Width: {natural_width}, Height: {natural_height}, Delete() {{deleteCalls += 1;}}}};
+const slides = {{
+  get Count() {{return slideCount;}},
+  Add() {{slideCount += 1; stagedSlide = {{Shapes: {{AddPicture() {{return picture;}}}}}}; return stagedSlide;}},
+  Item() {{return stagedSlide;}}
+}};
+const presentation = {{Slides: slides, PageSetup: {{}}, Save() {{saveCalls += 1;}}, Close() {{closeCalls += 1;}}}};
+global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{return presentation;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
+    stagedPath: "/staged/generated.pptx",
+    resources: {{"image-1": "/staged/resources/resource-image-1.png"}},
+    plan: {{component: "presentation", operations: [
+      {{op: "slide.reset", args: {{}}}},
+      {{op: "slide.set_size", args: {{width: 960, height: 540}}}},
+      {{op: "slide.add_blank", args: {{}}}},
+      {{op: "slide.add_image", args: {{slide: 1, imageId: "image-1", left: 80, top: 100{comma} {image_args}}}}}
+    ]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{
+    assert.equal(error.code, "GENERATION_COMMAND_FAILED"); assert.equal(saveCalls, 0);
+    assert.equal(closeCalls, 1); assert.equal(deleteCalls, 1); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_presentation_script(body)
+
+
+@pytest.mark.parametrize("resources", [False, 0, "", None, []])
+def test_presentation_generation_rejects_non_object_resources_before_open(resources):
     body = f"""
 let openCalls = 0;
 global.Application = {{DisplayAlerts: 7, Presentations: {{Open() {{openCalls += 1;}}}}}};
 eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "utf8"));
 (async function () {{
   try {{await window.WPSComposerProbe.handleCommand({{method: "generate_presentation_deck", params: {{
-    stagedPath: "/staged/generated.pptx", resources: [],
+    stagedPath: "/staged/generated.pptx", resources: {json.dumps(resources)},
     plan: {{component: "presentation", operations: [{{op: "slide.reset", args: {{}}}}]}}
   }}}}); process.exit(2);}}
   catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
