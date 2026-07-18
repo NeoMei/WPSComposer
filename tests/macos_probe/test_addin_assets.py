@@ -295,10 +295,11 @@ global.Application = {
         '{op: "sheet.write_table", args: '
         '{startRow: 1, startCol: 1, values: [["IN_PLACE_MARKER"]]}}]',
         """
-const cell = {Value2: null};
+const cell = {row: 1, column: 1};
+const range = {Font: {}, Interior: {}, Value2: null};
 const sheet = {Cells: {Clear() {}, Item(row, column) {
   assert.equal(row, 1); assert.equal(column, 1); return cell;
-}}};
+}}, Range(start, end) {assert.equal(start, cell); assert.equal(end, cell); return range;}};
 const document = {
   saveCalls: 0, saveAsCalls: 0, closeArgument: null,
   Worksheets: {Item(index) {assert.equal(index, 1); return sheet;}},
@@ -317,7 +318,7 @@ global.Application = {
 };
 """,
         "document",
-        "assert.equal(document.closeArgument, false); assert.equal(cell.Value2, \"IN_PLACE_MARKER\");",
+        "assert.equal(document.closeArgument, false); assert.deepEqual(range.Value2, [[\"IN_PLACE_MARKER\"]]);",
     ),
     (
         "presentation.js",
@@ -422,7 +423,7 @@ def _generation_failure_application(component: str, stage: str) -> str:
     else:
         mutation = {
             "writer": 'Content: {Text: "", InsertAfter() {}},',
-            "spreadsheet": "Worksheets: {Item() {return {Cells: {Clear() {}, Item() {return {Value2: null};}}};}},",
+            "spreadsheet": "Worksheets: {Item() {return {Cells: {Clear() {}, Item() {return {};}} , Range() {return {Font: {}, Interior: {}, set Value2(value) {}};}};}},",
             "presentation": "Slides: {Count: 0, Add() {return {Shapes: {AddTextbox() {return {TextFrame: {TextRange: {Text: \"\"}}};}}};}},",
         }[component]
     if stage == "open":
@@ -1017,3 +1018,302 @@ eval(fs.readFileSync({path}, "utf8"));
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+SHEET_OPERATION_NAMES = [
+    "sheet.reset",
+    "sheet.rename",
+    "sheet.add",
+    "sheet.select",
+    "sheet.write_table",
+    "sheet.set_column_width",
+    "sheet.autofit",
+]
+
+
+def _run_sheet_script(body: str) -> None:
+    path = json.dumps(str((ROOT / "spreadsheet.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+{body}
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_sheet_generation_uses_a_literal_complete_operation_dispatch_table():
+    source = (ROOT / "spreadsheet.js").read_text()
+    assert "const sheetOperations = {" in source
+    for operation in SHEET_OPERATION_NAMES:
+        assert json.dumps(operation) + ":" in source
+    dispatch = source.split("const sheetOperations = {", 1)[1].split(
+        "const handlers =", 1
+    )[0]
+    assert "eval(" not in dispatch
+    assert "new Function" not in source
+
+
+def test_sheet_generation_executes_all_operations_on_staged_workbook_objects():
+    operations = [
+        {"op": "sheet.reset", "args": {}},
+        {"op": "sheet.rename", "args": {"index": 1, "name": "Summary"}},
+        {
+            "op": "sheet.write_table",
+            "args": {
+                "startRow": 1,
+                "startCol": 1,
+                "values": [["Item", "Amount"], ["A", 10]],
+                "headerBold": True,
+                "headerShade": "#123456",
+                "headerFontColor": "#FFFFFF",
+                "fontSize": 11,
+            },
+        },
+        {"op": "sheet.set_column_width", "args": {"column": "A", "width": 15}},
+        {"op": "sheet.add", "args": {"name": "Details"}},
+        {
+            "op": "sheet.write_table",
+            "args": {"startRow": 2, "startCol": 2, "values": [["Code"], ["X"]]},
+        },
+        {"op": "sheet.set_column_width", "args": {"column": "B", "width": 12}},
+        {"op": "sheet.select", "args": {"index": 1}},
+        {"op": "sheet.autofit", "args": {}},
+    ]
+    body = f"""
+const state = {{deletes: 0, clears: 0, writes: [], ranges: [], widths: [], activations: [], autofits: 0}};
+function makeSheet(name, owner) {{
+  const sheet = {{Name: name, owner}};
+  sheet.Cells = {{
+    Clear() {{assert.equal(sheet.owner, "staged"); state.clears += 1;}},
+    Item(row, column) {{return {{row, column, owner: sheet.owner}};}}
+  }};
+  sheet.Range = function (start, end) {{
+    assert.equal(start.owner, "staged"); assert.equal(end.owner, "staged");
+    const range = {{Font: {{}}, Interior: {{}}, start, end}};
+    Object.defineProperty(range, "Value2", {{set(value) {{state.writes.push(value);}}}});
+    state.ranges.push(range); return range;
+  }};
+  sheet.Columns = {{Item(column) {{
+    const target = {{}};
+    Object.defineProperty(target, "ColumnWidth", {{set(value) {{state.widths.push([sheet.Name, column, value]);}}}});
+    return target;
+  }}}};
+  sheet.UsedRange = {{Columns: {{AutoFit() {{assert.equal(sheet.owner, "staged"); state.autofits += 1;}}}}}};
+  sheet.Activate = function () {{state.activations.push(sheet.Name);}};
+  return sheet;
+}}
+const sheets = [makeSheet("Template", "staged"), makeSheet("Extra", "staged"), makeSheet("Third", "staged")];
+const worksheets = {{
+  get Count() {{return sheets.length;}},
+  Item(index) {{assert.ok(index >= 1 && index <= sheets.length); return sheets[index - 1];}},
+  Add(before, after) {{assert.equal(before, null); assert.equal(after, sheets[sheets.length - 1]); const sheet = makeSheet("New", "staged"); sheets.push(sheet); return sheet;}}
+}};
+sheets.forEach(function (sheet) {{sheet.Delete = function () {{assert.equal(sheet.owner, "staged"); sheets.splice(sheets.indexOf(sheet), 1); state.deletes += 1;}};}});
+const otherSheets = [makeSheet("User workbook", "other")];
+const workbook = {{Worksheets: worksheets, saveCalls: 0, closeArgument: null,
+  Save() {{this.saveCalls += 1;}}, Close(value) {{this.closeArgument = value;}}}};
+global.Application = {{DisplayAlerts: 7,
+  get ActiveWorkbook() {{throw new Error("global workbook access");}},
+  get ActiveSheet() {{throw new Error("global sheet access");}},
+  Workbooks: {{Open() {{return workbook;}}}}
+}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  const result = await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: {json.dumps(operations)}}}
+  }}}});
+  assert.equal(result.appliedOperations, 9); assert.equal(workbook.saveCalls, 1);
+  assert.equal(workbook.closeArgument, false); assert.equal(Application.DisplayAlerts, 7);
+  assert.equal(state.deletes, 2); assert.equal(state.clears, 1); assert.equal(sheets.length, 2);
+  assert.equal(otherSheets.length, 1); assert.equal(otherSheets[0].Name, "User workbook");
+  assert.deepEqual(state.writes, [
+    [["Item", "Amount"], ["A", 10]], [["Code"], ["X"]]
+  ]);
+  assert.equal(state.ranges[0].Font.Size, 11); assert.equal(state.ranges[1].Font.Bold, true);
+  assert.equal(state.ranges[1].Font.Color, 0xFFFFFF); assert.equal(state.ranges[1].Interior.Color, 0x563412);
+  assert.deepEqual(state.widths, [["Summary", "A", 15], ["Details", "B", 12]]);
+  assert.deepEqual(state.activations, ["Summary"]); assert.equal(state.autofits, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+def test_sheet_reset_keeps_one_staged_worksheet_and_ignores_other_workbooks():
+    body = f"""
+let deleteCalls = 0; let clearCalls = 0; let otherDeleteCalls = 0;
+const sheet = {{Cells: {{Clear() {{clearCalls += 1;}}}}, Delete() {{deleteCalls += 1;}}}};
+const workbook = {{Worksheets: {{Count: 1, Item(index) {{assert.equal(index, 1); return sheet;}}}}, Save() {{}}, Close() {{}}}};
+const otherWorkbook = {{Worksheets: {{Count: 2, Item() {{return {{Delete() {{otherDeleteCalls += 1;}}}};}}}}}};
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{return workbook;}}}},
+  get ActiveWorkbook() {{return otherWorkbook;}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [{{op: "sheet.reset", args: {{}}}}]}}
+  }}}});
+  assert.equal(deleteCalls, 0); assert.equal(clearCalls, 1); assert.equal(otherDeleteCalls, 0);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+def test_sheet_generation_sanitizes_and_uniquifies_names_deterministically():
+    long_name = "A" * 40
+    operations = [
+        {"op": "sheet.reset", "args": {}},
+        {"op": "sheet.rename", "args": {"index": 1, "name": "   "}},
+        {"op": "sheet.add", "args": {"name": "'"}},
+        {"op": "sheet.add", "args": {"name": "Bad[]:*?/\\Name"}},
+        {"op": "sheet.add", "args": {"name": long_name}},
+        {"op": "sheet.add", "args": {"name": long_name}},
+    ]
+    body = f"""
+const sheets = [];
+function makeSheet(name) {{return {{Name: name, Cells: {{Clear() {{}}}}, Delete() {{sheets.splice(sheets.indexOf(this), 1);}}}};}}
+sheets.push(makeSheet("Template"));
+const workbook = {{Worksheets: {{
+  get Count() {{return sheets.length;}}, Item(index) {{return sheets[index - 1];}},
+  Add(before, after) {{const sheet = makeSheet("New"); sheets.push(sheet); return sheet;}}
+}}, Save() {{}}, Close() {{}}}};
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{return workbook;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: {json.dumps(operations)}}}
+  }}}});
+  assert.deepEqual(sheets.map(function (sheet) {{return sheet.Name;}}), [
+    "Sheet", "Sheet (2)", "Bad_______Name", {json.dumps('A' * 31)}, {json.dumps('A' * 27 + ' (2)')}
+  ]);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        '{op: "sheet.reset", args: {unexpected: true}}',
+        '{op: "sheet.rename", args: {index: 0, name: "Summary"}}',
+        '{op: "sheet.rename", args: {index: 1, name: 7}}',
+        '{op: "sheet.add", args: {name: {dynamic: true}}}',
+        '{op: "sheet.select", args: {index: 1.5}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: [["a", "b"], ["ragged"]]}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: []}}',
+        '{op: "sheet.write_table", args: {startRow: 0, startCol: 1, values: [["x"]]}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: [[Number.MAX_SAFE_INTEGER + 1]]}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: [[NaN]]}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: [["x"]], headerBold: "yes"}}',
+        '{op: "sheet.write_table", args: {startRow: 1, startCol: 1, values: [["x"]], rogue: true}}',
+        '{op: "sheet.set_column_width", args: {column: 7, width: 15}}',
+        '{op: "sheet.set_column_width", args: {column: "A", width: Infinity}}',
+        '{op: "sheet.autofit", args: {unexpected: true}}',
+        '{op: "rogue.eval", args: {}}',
+        '{op: "sheet.reset", args: {}, handler: "dynamic"}',
+    ],
+)
+def test_sheet_generation_revalidates_operations_before_open(operation):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+      stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [{operation}]}}
+    }}}});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0); assert.equal(Application.DisplayAlerts, 7);
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize(
+    "plan",
+    [
+        '{component: "spreadsheet", operations: [{op: "sheet.reset", args: {}}], dynamicHandler: "eval"}',
+        '{component: "writer", operations: [{op: "sheet.reset", args: {}}]}',
+        '{component: "spreadsheet", operations: []}',
+    ],
+)
+def test_sheet_generation_rejects_malformed_plan_before_open(plan):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{stagedPath: "/staged/generated.xlsx", plan: {plan}}}}});
+    process.exit(2);
+  }} catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+def test_sheet_generation_enforces_string_and_utf8_plan_limits_before_open():
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+async function reject(plan) {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{stagedPath: "/staged/generated.xlsx", plan}}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}}
+(async function () {{
+  await reject({{component: "spreadsheet", operations: [{{op: "sheet.add", args: {{name: "x".repeat(100001)}}}}]}});
+  const value = "汉".repeat(90000);
+  await reject({{component: "spreadsheet", operations: [{{op: "sheet.write_table", args: {{startRow: 1, startCol: 1, values: Array(8).fill(0).map(function () {{return [value];}})}}}}]}});
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+@pytest.mark.parametrize(
+    ("original", "replacement"),
+    [
+        ('"sheet.autofit": autofitSheet', '"sheet.autofit": null'),
+        (
+            '"sheet.autofit": {required: [], allowed: []}',
+            '"sheet.autofit-missing": {required: [], allowed: []}',
+        ),
+    ],
+)
+def test_sheet_generation_rejects_incomplete_catalog_before_open(
+    original, replacement
+):
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+let source = fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8");
+source = source.replace({json.dumps(original)}, {json.dumps(replacement)});
+eval(source);
+(async function () {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{
+    stagedPath: "/staged/generated.xlsx", plan: {{component: "spreadsheet", operations: [{{op: "sheet.reset", args: {{}}}}]}}
+  }}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)
+
+
+def test_sheet_generation_enforces_operation_and_table_cell_limits_before_open():
+    body = f"""
+let openCalls = 0;
+global.Application = {{DisplayAlerts: 7, Workbooks: {{Open() {{openCalls += 1;}}}}}};
+eval(fs.readFileSync({json.dumps(str((ROOT / 'spreadsheet.js').resolve()))}, "utf8"));
+async function reject(plan) {{
+  try {{await window.WPSComposerProbe.handleCommand({{method: "generate_spreadsheet_workbook", params: {{stagedPath: "/staged/generated.xlsx", plan}}}}); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "OPERATION_PLAN_INVALID"); assert.equal(openCalls, 0);}}
+}}
+(async function () {{
+  await reject({{component: "spreadsheet", operations: Array(10001).fill(0).map(function () {{return {{op: "sheet.reset", args: {{}}}};}})}});
+  const row = Array(101).fill("x");
+  await reject({{component: "spreadsheet", operations: [{{op: "sheet.write_table", args: {{startRow: 1, startCol: 1, values: Array(100).fill(row)}}}}]}});
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_sheet_script(body)

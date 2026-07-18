@@ -326,3 +326,63 @@ class RecordingWriterComposer:
         plan = GenerationPlan("writer", tuple(self._operations))
         validated = validate_generation_plan(plan.to_dict(), "writer")
         return RecordedGeneration(validated, tuple(self._resources))
+
+
+class RecordingSheetComposer:
+    """Record Sheet renderer calls without opening WPS or touching files."""
+
+    def __init__(self):
+        self._operations = []
+
+    def __enter__(self):
+        self._record("sheet.reset")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+    def _record(self, op, **args):
+        self._operations.append(GenerationOperation(op, args))
+
+    def rename_sheet(self, index, name):
+        self._record("sheet.rename", index=int(index), name=str(name))
+
+    def add_sheet(self, name=None):
+        self._record("sheet.add", name=str(name))
+
+    def select_sheet(self, index):
+        self._record("sheet.select", index=int(index))
+
+    def write_table(
+        self,
+        start_row,
+        start_col,
+        data,
+        header_bold=True,
+        header_shade="#4472C4",
+        header_font_color="#FFFFFF",
+        font_size=11,
+    ):
+        if header_shade is True:
+            header_shade = "#4472C4"
+        self._record(
+            "sheet.write_table",
+            startRow=int(start_row),
+            startCol=int(start_col),
+            values=[list(row) for row in data],
+            headerBold=bool(header_bold),
+            headerShade=header_shade,
+            headerFontColor=header_font_color,
+            fontSize=font_size,
+        )
+
+    def set_column_width(self, column, width):
+        self._record("sheet.set_column_width", column=str(column), width=width)
+
+    def autofit(self):
+        self._record("sheet.autofit")
+
+    def save_xlsx(self, path):
+        plan = GenerationPlan("spreadsheet", tuple(self._operations))
+        validated = validate_generation_plan(plan.to_dict(), "spreadsheet")
+        return RecordedGeneration(validated, ())

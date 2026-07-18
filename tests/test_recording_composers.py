@@ -8,6 +8,12 @@ from skills.WPSComposer.scripts.generation_plan import (
     ALLOWED_OPERATIONS,
     validate_generation_plan,
 )
+from skills.WPSComposer.scripts.document_model import (
+    Section,
+    StructuredDocument,
+    TableBlock,
+)
+from skills.WPSComposer.scripts.renderers import sheet_renderer
 
 
 def test_recording_composers_module_exists():
@@ -158,3 +164,68 @@ def test_recording_writer_normalizes_styles_spans_and_reuses_logical_image_ids(
     assert image_ids == ["image-1", "image-1"]
     assert len(recorded.resources) == 1
     assert validate_generation_plan(recorded.plan.to_dict(), "writer") == recorded.plan
+
+
+def test_recording_sheet_renderer_records_multi_table_plan_in_windows_call_order():
+    document = StructuredDocument(
+        sections=[
+            Section(
+                level=2,
+                heading="Summary",
+                elements=[TableBlock(["Item", "Amount"], [["A", 10]])],
+            ),
+            Section(
+                level=2,
+                heading="Details",
+                elements=[TableBlock(["Code", "Owner"], [["X", "Ada"]])],
+            ),
+        ]
+    )
+    composer = recording_composers.RecordingSheetComposer()
+
+    recorded = sheet_renderer.render(
+        document,
+        "ignored.xlsx",
+        composer_factory=lambda: composer,
+    )
+
+    operations = [operation.to_dict() for operation in recorded.plan.operations]
+    assert operations == [
+        {"op": "sheet.reset", "args": {}},
+        {"op": "sheet.rename", "args": {"index": 1, "name": "Summary"}},
+        {
+            "op": "sheet.write_table",
+            "args": {
+                "startRow": 1,
+                "startCol": 1,
+                "values": [["Item", "Amount"], ["A", 10]],
+                "headerBold": True,
+                "headerShade": "#4472C4",
+                "headerFontColor": "#FFFFFF",
+                "fontSize": 11,
+            },
+        },
+        {"op": "sheet.set_column_width", "args": {"column": "A", "width": 15}},
+        {"op": "sheet.set_column_width", "args": {"column": "B", "width": 12}},
+        {"op": "sheet.add", "args": {"name": "Details"}},
+        {
+            "op": "sheet.write_table",
+            "args": {
+                "startRow": 1,
+                "startCol": 1,
+                "values": [["Code", "Owner"], ["X", "Ada"]],
+                "headerBold": True,
+                "headerShade": "#4472C4",
+                "headerFontColor": "#FFFFFF",
+                "fontSize": 11,
+            },
+        },
+        {"op": "sheet.set_column_width", "args": {"column": "A", "width": 15}},
+        {"op": "sheet.set_column_width", "args": {"column": "B", "width": 12}},
+        {"op": "sheet.select", "args": {"index": 1}},
+        {"op": "sheet.autofit", "args": {}},
+    ]
+    assert {operation["op"] for operation in operations} == ALLOWED_OPERATIONS[
+        "spreadsheet"
+    ]
+    assert validate_generation_plan(recorded.plan.to_dict(), "spreadsheet") == recorded.plan
