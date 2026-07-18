@@ -30,6 +30,102 @@
     return typed;
   }
 
+  function generationError(error, code) {
+    const allowedCodes = [
+      "GENERATION_COMMAND_FAILED",
+      "OPERATION_PLAN_INVALID"
+    ];
+    if (error && allowedCodes.indexOf(error.code) !== -1) {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || "GENERATION_COMMAND_FAILED";
+    return typed;
+  }
+
+  function invalidSlidePlan(message) {
+    throw generationError(new Error(message), "OPERATION_PLAN_INVALID");
+  }
+
+  function validateSlideOperations(plan) {
+    if (!plan || plan.component !== "presentation" || !Array.isArray(plan.operations) || plan.operations.length === 0) {
+      invalidSlidePlan("Presentation generation plan is invalid");
+    }
+    plan.operations.forEach(function (operation) {
+      if (!operation || typeof operation !== "object" || !operation.args || typeof operation.args !== "object") {
+        invalidSlidePlan("Presentation operation is invalid");
+      }
+      if (operation.op === "slide.reset") {
+        if (Object.keys(operation.args).length !== 0) {
+          invalidSlidePlan("slide.reset arguments are invalid");
+        }
+        return;
+      }
+      if (operation.op === "slide.add_title") {
+        const keys = Object.keys(operation.args);
+        if (
+          typeof operation.args.title !== "string" ||
+          keys.some(function (key) { return key !== "title"; })
+        ) {
+          invalidSlidePlan("slide.add_title arguments are invalid");
+        }
+        return;
+      }
+      invalidSlidePlan(`Unsupported Presentation operation: ${operation.op}`);
+    });
+    return plan.operations;
+  }
+
+  function executeSlideOperations(presentation, plan) {
+    const operations = validateSlideOperations(plan);
+    operations.forEach(function (operation) {
+      if (operation.op === "slide.reset") {
+        while (presentation.Slides.Count > 0) {
+          presentation.Slides.Item(1).Delete();
+        }
+      } else {
+        const slide = presentation.Slides.Add(
+          presentation.Slides.Count + 1,
+          12
+        );
+        const shape = slide.Shapes.AddTextbox(1, 48, 80, 620, 80);
+        shape.TextFrame.TextRange.Text = operation.args.title;
+      }
+    });
+    return operations.length;
+  }
+
+  function generatePresentationDeck(params) {
+    const stagedPath = requirePath(params, "stagedPath");
+    validateSlideOperations(params.plan);
+    const previousAlerts = Application.DisplayAlerts;
+    let presentation = null;
+    let failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      presentation = Application.Presentations.Open(stagedPath, false, false, false);
+      const applied = executeSlideOperations(presentation, params.plan);
+      presentation.Save();
+      return {path: stagedPath, appliedOperations: applied};
+    } catch (error) {
+      failure = generationError(error);
+      throw failure;
+    } finally {
+      try {
+        if (presentation !== null) {
+          presentation.Close();
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw generationError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
+
   function text(slide, value, left, top, width, height, size, bold) {
     const shape = slide.Shapes.AddTextbox(1, left, top, width, height);
     shape.TextFrame.TextRange.Text = value;
@@ -178,7 +274,8 @@
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_pptx": savePptx,
-    "convert_presentation_pdf": convertPresentationPdf
+    "convert_presentation_pdf": convertPresentationPdf,
+    "generate_presentation_deck": generatePresentationDeck
   };
 
   window.WPSComposerProbe = {

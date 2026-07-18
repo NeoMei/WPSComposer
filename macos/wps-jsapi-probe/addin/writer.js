@@ -50,6 +50,96 @@
     return typed;
   }
 
+  function generationError(error, code) {
+    const allowedCodes = [
+      "GENERATION_COMMAND_FAILED",
+      "OPERATION_PLAN_INVALID"
+    ];
+    if (error && allowedCodes.indexOf(error.code) !== -1) {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || "GENERATION_COMMAND_FAILED";
+    return typed;
+  }
+
+  function invalidWriterPlan(message) {
+    throw generationError(new Error(message), "OPERATION_PLAN_INVALID");
+  }
+
+  function validateWriterOperations(plan) {
+    if (!plan || plan.component !== "writer" || !Array.isArray(plan.operations) || plan.operations.length === 0) {
+      invalidWriterPlan("Writer generation plan is invalid");
+    }
+    plan.operations.forEach(function (operation) {
+      if (!operation || typeof operation !== "object" || !operation.args || typeof operation.args !== "object") {
+        invalidWriterPlan("Writer operation is invalid");
+      }
+      if (operation.op === "writer.reset") {
+        if (Object.keys(operation.args).length !== 0) {
+          invalidWriterPlan("writer.reset arguments are invalid");
+        }
+        return;
+      }
+      if (operation.op === "writer.add_paragraph") {
+        const keys = Object.keys(operation.args);
+        if (
+          typeof operation.args.text !== "string" ||
+          keys.some(function (key) { return key !== "text" && key !== "style"; }) ||
+          (Object.prototype.hasOwnProperty.call(operation.args, "style") && typeof operation.args.style !== "string")
+        ) {
+          invalidWriterPlan("writer.add_paragraph arguments are invalid");
+        }
+        return;
+      }
+      invalidWriterPlan(`Unsupported Writer operation: ${operation.op}`);
+    });
+    return plan.operations;
+  }
+
+  function executeWriterOperations(document, plan) {
+    const operations = validateWriterOperations(plan);
+    operations.forEach(function (operation) {
+      if (operation.op === "writer.reset") {
+        document.Content.Text = "";
+      } else {
+        document.Content.InsertAfter(operation.args.text);
+      }
+    });
+    return operations.length;
+  }
+
+  function generateWriterDocument(params) {
+    const stagedPath = requirePath(params, "stagedPath");
+    validateWriterOperations(params.plan);
+    const previousAlerts = Application.DisplayAlerts;
+    let document = null;
+    let failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      document = Application.Documents.Open(stagedPath, false, false);
+      const applied = executeWriterOperations(document, params.plan);
+      document.Save();
+      return {path: stagedPath, appliedOperations: applied};
+    } catch (error) {
+      failure = generationError(error);
+      throw failure;
+    } finally {
+      try {
+        if (document !== null) {
+          document.Close(0);
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw generationError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
+
   function requireImageUrl(params) {
     if (params.imageUrl !== WRITER_IMAGE_URL) {
       throw new Error("imageUrl must be the fixed Writer loopback asset");
@@ -322,7 +412,8 @@
     "probe_capabilities": function () { return probe(); },
     "smoke_docx": saveDocx,
     "smoke_pdf": savePdf,
-    "convert_writer_pdf": convertWriterPdf
+    "convert_writer_pdf": convertWriterPdf,
+    "generate_writer_document": generateWriterDocument
   };
 
   window.WPSComposerProbe = {

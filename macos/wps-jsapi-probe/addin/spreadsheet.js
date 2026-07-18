@@ -32,6 +32,109 @@
     return typed;
   }
 
+  function generationError(error, code) {
+    const allowedCodes = [
+      "GENERATION_COMMAND_FAILED",
+      "OPERATION_PLAN_INVALID"
+    ];
+    if (error && allowedCodes.indexOf(error.code) !== -1) {
+      return error;
+    }
+    const message = String(error && error.message ? error.message : error);
+    const typed = new Error(message);
+    typed.code = code || "GENERATION_COMMAND_FAILED";
+    return typed;
+  }
+
+  function invalidSheetPlan(message) {
+    throw generationError(new Error(message), "OPERATION_PLAN_INVALID");
+  }
+
+  function validateSheetOperations(plan) {
+    if (!plan || plan.component !== "spreadsheet" || !Array.isArray(plan.operations) || plan.operations.length === 0) {
+      invalidSheetPlan("Spreadsheet generation plan is invalid");
+    }
+    plan.operations.forEach(function (operation) {
+      if (!operation || typeof operation !== "object" || !operation.args || typeof operation.args !== "object") {
+        invalidSheetPlan("Spreadsheet operation is invalid");
+      }
+      if (operation.op === "sheet.reset") {
+        if (Object.keys(operation.args).length !== 0) {
+          invalidSheetPlan("sheet.reset arguments are invalid");
+        }
+        return;
+      }
+      if (operation.op === "sheet.write_table") {
+        const args = operation.args;
+        const keys = Object.keys(args);
+        if (
+          !Number.isInteger(args.startRow) || args.startRow < 1 ||
+          !Number.isInteger(args.startCol) || args.startCol < 1 ||
+          !Array.isArray(args.values) || args.values.length === 0 ||
+          keys.some(function (key) {
+            return ["startRow", "startCol", "values"].indexOf(key) === -1;
+          }) ||
+          args.values.some(function (row) { return !Array.isArray(row); })
+        ) {
+          invalidSheetPlan("sheet.write_table arguments are invalid");
+        }
+        return;
+      }
+      invalidSheetPlan(`Unsupported Spreadsheet operation: ${operation.op}`);
+    });
+    return plan.operations;
+  }
+
+  function executeSheetOperations(workbook, plan) {
+    const operations = validateSheetOperations(plan);
+    const sheet = workbook.Worksheets.Item(1);
+    operations.forEach(function (operation) {
+      if (operation.op === "sheet.reset") {
+        sheet.Cells.Clear();
+        return;
+      }
+      operation.args.values.forEach(function (row, rowOffset) {
+        row.forEach(function (value, columnOffset) {
+          sheet.Cells.Item(
+            operation.args.startRow + rowOffset,
+            operation.args.startCol + columnOffset
+          ).Value2 = value;
+        });
+      });
+    });
+    return operations.length;
+  }
+
+  function generateSpreadsheetWorkbook(params) {
+    const stagedPath = requirePath(params, "stagedPath");
+    validateSheetOperations(params.plan);
+    const previousAlerts = Application.DisplayAlerts;
+    let workbook = null;
+    let failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      workbook = Application.Workbooks.Open(stagedPath, 0, false);
+      const applied = executeSheetOperations(workbook, params.plan);
+      workbook.Save();
+      return {path: stagedPath, appliedOperations: applied};
+    } catch (error) {
+      failure = generationError(error);
+      throw failure;
+    } finally {
+      try {
+        if (workbook !== null) {
+          workbook.Close(false);
+        }
+      } catch (closeError) {
+        if (failure === null) {
+          throw generationError(closeError);
+        }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
+
   function requireVisibleWorksheet(workbook) {
     for (let index = 1; index <= workbook.Worksheets.Count; index += 1) {
       if (workbook.Worksheets.Item(index).Visible !== 0) {
@@ -170,7 +273,8 @@
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_xlsx": saveXlsx,
-    "convert_workbook_pdf": convertWorkbookPdf
+    "convert_workbook_pdf": convertWorkbookPdf,
+    "generate_spreadsheet_workbook": generateSpreadsheetWorkbook
   };
 
   window.WPSComposerProbe = {
