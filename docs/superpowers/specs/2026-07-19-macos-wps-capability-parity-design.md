@@ -257,14 +257,18 @@ After the feasibility gate, the full acceptance matrix generates twice:
 
 - a styled multi-section DOCX with TOC, table, image, header/footer, and page
   number;
-- a multi-sheet XLSX with formulas, merged cells, borders, frozen panes,
-  conditional formatting, and a chart;
+- a multi-sheet XLSX with styled tables, correct values, column widths, and
+  autofit, matching the current public Markdown renderer;
 - a multi-slide PPTX with text, bullets, image, table, notes, and a preset;
 - a Writer-derived PDF from the same representative Markdown.
 
 Every Office artifact passes ZIP validation and semantic inspection. Every PDF
 passes signature, page-count, and extracted-text checks. No output is enabled
 until its two consecutive runs pass.
+
+Formula, chart, merged-cell, frozen-pane, conditional-formatting, and other
+lower-level composer operations belong to the capability-depth slice because
+the current public Markdown renderer does not invoke them.
 
 ## Later slices
 
