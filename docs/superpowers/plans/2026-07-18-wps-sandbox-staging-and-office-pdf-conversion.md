@@ -599,7 +599,7 @@ METHODS = {
 
 def convert_macos(request, *, runtime_factory=ProbeRuntime, bridge_factory=LoopbackBridge):
     with bridge_factory(ORIGINS) as bridge:
-        repository_root = Path(__file__).resolve().parents[5]
+        repository_root = Path(__file__).resolve().parents[4]
         probe_root = repository_root / "macos/wps-jsapi-probe"
         with tempfile.TemporaryDirectory(prefix="wpscomposer-macos-convert-") as directory:
             runtime = runtime_factory(
