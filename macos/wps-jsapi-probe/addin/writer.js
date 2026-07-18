@@ -286,6 +286,87 @@
     });
   }
 
+  function writerVisualTextWidth(value) {
+    const lines = String(value === null || value === undefined ? "" : value).split(/\r?\n/);
+    return Math.max.apply(null, lines.map(function (line) {
+      let width = 0;
+      Array.from(line).forEach(function (character) {
+        const code = character.codePointAt(0);
+        const wide =
+          (code >= 0x1100 && code <= 0x115F) ||
+          (code >= 0x2329 && code <= 0x232A) ||
+          (code >= 0x2E80 && code <= 0xA4CF && code !== 0x303F) ||
+          (code >= 0xAC00 && code <= 0xD7A3) ||
+          (code >= 0xF900 && code <= 0xFAFF) ||
+          (code >= 0xFE10 && code <= 0xFE19) ||
+          (code >= 0xFE30 && code <= 0xFE6F) ||
+          (code >= 0xFF00 && code <= 0xFF60) ||
+          (code >= 0xFFE0 && code <= 0xFFE6) ||
+          (code >= 0x1F300 && code <= 0x1FAFF) ||
+          (code >= 0x20000 && code <= 0x3FFFD);
+        width += wide ? 2 : 1;
+      });
+      return width;
+    }));
+  }
+
+  function writerContentColumnWidths(data, columns, availableWidth) {
+    if (columns <= 0) {
+      return [];
+    }
+    const representatives = [];
+    for (let column = 0; column < columns; column += 1) {
+      const samples = data.filter(function (row) {
+        return column < row.length && String(row[column]).trim();
+      }).map(function (row) {
+        return writerVisualTextWidth(row[column]);
+      });
+      if (!samples.length) {
+        representatives.push(4);
+        continue;
+      }
+      const header = samples[0] * 1.15;
+      samples.sort(function (left, right) { return left - right; });
+      const quartile = samples[Math.round((samples.length - 1) * 0.75)];
+      representatives.push(Math.max(4, Math.min(80, Math.max(header, quartile))));
+    }
+    const weights = representatives.map(function (value) { return Math.pow(value, 0.7); });
+    const minimums = {1: 1, 2: 0.24, 3: 0.15, 4: 0.11, 5: 0.085};
+    const minimum = minimums[columns] || Math.min(0.08, 0.6 / columns);
+    const maximum = columns === 2 ? 0.72 : 0.65;
+    const ratios = new Array(columns).fill(0);
+    let active = weights.map(function (_, index) { return index; });
+    let remaining = 1;
+    while (active.length) {
+      const totalWeight = active.reduce(function (total, index) {
+        return total + weights[index];
+      }, 0) || active.length;
+      const trial = {};
+      active.forEach(function (index) {
+        trial[index] = remaining * weights[index] / totalWeight;
+      });
+      let constrained = false;
+      active.slice().forEach(function (index) {
+        if (trial[index] < minimum) {
+          ratios[index] = minimum;
+        } else if (trial[index] > maximum) {
+          ratios[index] = maximum;
+        } else {
+          return;
+        }
+        remaining -= ratios[index];
+        active = active.filter(function (candidate) { return candidate !== index; });
+        constrained = true;
+      });
+      if (!constrained) {
+        active.forEach(function (index) { ratios[index] = trial[index]; });
+        break;
+      }
+    }
+    const total = ratios.reduce(function (sum, ratio) { return sum + ratio; }, 0) || 1;
+    return ratios.map(function (ratio) { return availableWidth * ratio / total; });
+  }
+
   function addWriterTable(document, args) {
     const insertion = writerEndRange(document);
     const table = document.Tables.Add(insertion, args.rows, args.cols);
@@ -296,7 +377,20 @@
           ? args.data[row][column]
           : "";
         cell.Range.Text = String(value);
-        applyWriterFont(cell.Range.Font, {fontSize: args.fontSize});
+        let style = null;
+        try {
+          style = writerStyle(document, row === 0 ? "Table Header" : "Table Body");
+        } catch (error) {
+          style = null;
+        }
+        if (style) {
+          cell.Range.Style = style;
+        }
+        applyWriterFont(cell.Range.Font, {
+          fontName: "仿宋",
+          fontNameAscii: "Times New Roman",
+          fontSize: args.fontSize === undefined ? 10 : args.fontSize
+        });
         const paragraph = cell.Range.ParagraphFormat;
         paragraph.FirstLineIndent = 0;
         paragraph.LeftIndent = 0;
@@ -325,15 +419,37 @@
     if (args.repeatHeader && args.rows > 1) {
       writerCollectionItem(table.Rows, 1).HeadingFormat = -1;
     }
-    if (Array.isArray(args.columnWidths)) {
-      args.columnWidths.forEach(function (width, index) {
+    let columnWidths = Array.isArray(args.columnWidths) ? args.columnWidths.slice() : [];
+    let inferredWidths = false;
+    let availableWidth = null;
+    if (args.autoFit && !columnWidths.length) {
+      const pageSetup = document.PageSetup;
+      availableWidth = Math.max(
+        72,
+        Number(pageSetup.PageWidth) - Number(pageSetup.LeftMargin) - Number(pageSetup.RightMargin)
+      );
+      columnWidths = writerContentColumnWidths(args.data, args.cols, availableWidth);
+      inferredWidths = true;
+    }
+    if (columnWidths.length) {
+      if (typeof table.AutoFitBehavior === "function") {
+        table.AutoFitBehavior(0);
+      }
+      table.AllowAutoFit = false;
+      if (inferredWidths) {
+        table.PreferredWidthType = 2;
+        table.PreferredWidth = availableWidth;
+      }
+      columnWidths.slice(0, args.cols).forEach(function (width, index) {
         const tableColumn = writerCollectionItem(table.Columns, index + 1);
         if (tableColumn) {
-          tableColumn.Width = width;
+          if (typeof tableColumn.SetWidth === "function") {
+            tableColumn.SetWidth(width, 0);
+          } else {
+            tableColumn.Width = width;
+          }
         }
       });
-    } else if (args.autoFit && typeof table.AutoFitBehavior === "function") {
-      table.AutoFitBehavior(1);
     }
     if (typeof table.Borders === "function") {
       for (let borderIndex = -6; borderIndex < 0; borderIndex += 1) {
@@ -344,6 +460,7 @@
       }
     }
     if (table.Rows) {
+      table.Rows.HeightRule = 0;
       table.Rows.AllowBreakAcrossPages = false;
     }
     const afterTable = writerEndRange(document);
@@ -352,17 +469,7 @@
     }
   }
 
-  function addWriterImage(document, args, resources) {
-    const imagePath = resources[args.imageId];
-    const insertion = writerEndRange(document);
-    if (!args.inline && document.Shapes && typeof document.Shapes.AddPicture === "function") {
-      const shape = document.Shapes.AddPicture(imagePath, false, true);
-      setWriterValue(shape, "Width", args.width);
-      setWriterValue(shape, "Height", args.height);
-      setWriterValue(shape, "AlternativeText", args.alt);
-      return;
-    }
-    const shape = document.InlineShapes.AddPicture(imagePath, false, true, insertion);
+  function sizeWriterImage(shape, args) {
     if (!shape) {
       throw new Error("Writer image insertion returned no shape");
     }
@@ -391,6 +498,30 @@
       shape.Height *= scale;
     }
     setWriterValue(shape, "AlternativeText", args.alt);
+  }
+
+  function addWriterImage(document, args, resources) {
+    const imagePath = resources[args.imageId];
+    const insertion = writerEndRange(document);
+    let shape;
+    if (!args.inline && document.Shapes && typeof document.Shapes.AddPicture === "function") {
+      shape = document.Shapes.AddPicture(
+        imagePath,
+        false,
+        true,
+        0,
+        0,
+        args.width === undefined ? -1 : args.width,
+        args.height === undefined ? -1 : args.height,
+        insertion
+      );
+      if (shape && shape.WrapFormat) {
+        setWriterValue(shape.WrapFormat, "Type", args.wrap);
+      }
+    } else {
+      shape = document.InlineShapes.AddPicture(imagePath, false, true, insertion);
+    }
+    sizeWriterImage(shape, args);
     if (shape.Range && shape.Range.ParagraphFormat) {
       shape.Range.ParagraphFormat.Alignment = 1;
       shape.Range.ParagraphFormat.KeepWithNext = -1;
@@ -424,9 +555,17 @@
 
   function insertWriterToc(document, args) {
     if (args.title) {
-      insertWriterText(document, args.title, "Heading 1", {align: 1});
+      insertWriterText(document, args.title, "Heading 1", {
+        size: 18,
+        bold: false,
+        color: "#000000",
+        align: 1,
+        lineSpacing: 18,
+        spaceAfter: 5
+      });
     }
     document.TablesOfContents.Add(writerEndRange(document), true, 1, 3);
+    writerEndRange(document).InsertBreak(7);
   }
 
   function setWriterPageNumber(document) {
@@ -461,6 +600,23 @@
     "writer.set_page_number": setWriterPageNumber,
     "writer.update_fields": updateWriterFields
   };
+
+  const writerOperationNames = [
+    "writer.reset",
+    "writer.configure_page",
+    "writer.ensure_styles",
+    "writer.add_paragraph",
+    "writer.add_heading",
+    "writer.add_list",
+    "writer.add_table",
+    "writer.add_image",
+    "writer.add_page_break",
+    "writer.add_section",
+    "writer.add_horizontal_line",
+    "writer.insert_toc",
+    "writer.set_page_number",
+    "writer.update_fields"
+  ];
 
   const writerArgumentRules = {
     "writer.reset": {required: [], allowed: []},
@@ -543,7 +699,9 @@
     if (operation.op === "writer.add_table") {
       validateWriterTable(args);
     }
-    if (Object.prototype.hasOwnProperty.call(args, "columnWidths") && (!Array.isArray(args.columnWidths) || args.columnWidths.some(function (value) { return !Number.isFinite(value); }))) {
+    if (Object.prototype.hasOwnProperty.call(args, "columnWidths") && (!Array.isArray(args.columnWidths) || args.columnWidths.some(function (value) {
+      return !Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER;
+    }))) {
       invalidWriterPlan("writer.add_table columnWidths are invalid");
     }
     if (Object.prototype.hasOwnProperty.call(args, "alignments") && (!Array.isArray(args.alignments) || args.alignments.some(function (value) { return typeof value !== "string"; }))) {
@@ -746,6 +904,17 @@
     validateWriterJsonLimits(plan);
     if (writerUtf8ByteLength(serialized) > 2000000) {
       invalidWriterPlan("Writer generation plan is too large");
+    }
+    const expectedOperations = writerOperationNames.slice().sort().join(",");
+    if (
+      Object.keys(writerOperations).sort().join(",") !== expectedOperations ||
+      Object.keys(writerArgumentRules).sort().join(",") !== expectedOperations ||
+      writerOperationNames.some(function (operationName) {
+        return typeof writerOperations[operationName] !== "function" ||
+          !writerArgumentRules[operationName];
+      })
+    ) {
+      invalidWriterPlan("Writer operation catalog is incomplete");
     }
     const usedResources = {};
     plan.operations.forEach(function (operation) {

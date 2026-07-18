@@ -542,6 +542,7 @@ def _writer_generation_stub() -> str:
 const state = {
   text: [], breaks: [], styleNames: [], tableValues: [], imagePaths: [],
   colors: [], tableCells: {}, tableBorders: [], imageParagraph: null,
+  ranges: [], tableAutoFit: [], tocRange: null,
   fieldAdds: 0, fieldUpdates: 0, tocAdds: 0, tocUpdates: 0, rangeCalls: 0
 };
 function font() { return {set Color(value) {state.colors.push(value);}}; }
@@ -550,19 +551,23 @@ function paragraphFormat() {
 }
 function range(start, end) {
   state.rangeCalls += 1;
-  return {
+  const result = {
     Start: start, End: end, Font: font(), ParagraphFormat: paragraphFormat(),
     InsertAfter(value) { state.text.push(String(value)); document.Content.End += String(value).length; },
     InsertBreak(kind) { state.breaks.push(kind); },
     set Text(value) { state.text.push(String(value)); document.Content.End += String(value).length; },
     get Text() { return ""; }
   };
+  state.ranges.push(result);
+  return result;
 }
 function style(name) { return {Name: name, Font: font(), ParagraphFormat: paragraphFormat()}; }
 const styles = {
   Item(name) { state.styleNames.push(String(name)); return style(name); },
   Add(name) { state.styleNames.push(String(name)); return style(name); }
 };
+const tableColumns = [{}, {}];
+const tableRows = {Item() { return {Range: {Font: font()}}; }};
 const table = {
   AllowAutoFit: true,
   Cell(row, column) {
@@ -575,10 +580,10 @@ const table = {
     state.tableCells[`${row},${column}`] = cell;
     return cell;
   },
-  Rows: {Item() { return {Range: {Font: font()}}; }},
-  Columns: {Item() { return {}; }},
+  Rows: tableRows,
+  Columns: {Item(index) { return tableColumns[index - 1]; }},
   Borders(index) { const border = {}; state.tableBorders.push([index, border]); return border; },
-  AutoFitBehavior() {}
+  AutoFitBehavior(value) {state.tableAutoFit.push(value);}
 };
 const footerRange = {Font: font(), ParagraphFormat: paragraphFormat(), Text: ""};
 const document = {
@@ -603,7 +608,7 @@ const document = {
   };}},
   TablesOfContents: {
     Count: 1,
-    Add() {state.tocAdds += 1;},
+    Add(ownerRange) {state.tocAdds += 1; state.tocRange = ownerRange;},
     Item() {return {Update() {state.tocUpdates += 1;}};}
   },
   Fields: {
@@ -670,8 +675,9 @@ def test_writer_generation_executes_all_operations_with_document_owned_ranges():
             "args": {
                 "rows": 3,
                 "cols": 2,
-                "data": [["Item", "Amount"], ["A", 10], ["B", 20]],
+                "data": [["Item", "Narrative"], ["A", "short"], ["B", "A much longer narrative value"]],
                 "bandedRows": True,
+                "autoFit": True,
                 "borderColor": "#BFBFBF",
             },
         },
@@ -711,20 +717,89 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.ok(state.text.join("").includes("Rich text"));
   assert.ok(state.text.join("").includes("Heading"));
   assert.ok(state.text.join("").includes("-\\tOne"));
-  assert.deepEqual(state.tableValues[5], [3, 2, 20]);
+  assert.deepEqual(state.tableValues[5], [3, 2, "A much longer narrative value"]);
+  assert.equal(state.tableCells["1,1"].Range.Style.Name, "Table Header");
+  assert.equal(state.tableCells["2,1"].Range.Style.Name, "Table Body");
+  assert.equal(state.tableCells["2,1"].Range.Font.Name, "\u4eff\u5b8b");
+  assert.equal(state.tableCells["2,1"].Range.Font.NameAscii, "Times New Roman");
   assert.equal(state.tableCells["3,1"].Shading.BackgroundPatternColor, 0xF2F2F2);
   assert.equal(state.tableCells["3,1"].TopPadding, 1.5);
   assert.equal(state.tableCells["3,1"].Range.ParagraphFormat.FirstLineIndent, 0);
   assert.equal(state.tableBorders.length, 6);
   assert.equal(state.tableBorders[0][1].Color, 0xBFBFBF);
+  assert.deepEqual(state.tableAutoFit, [0]);
+  assert.equal(table.AllowAutoFit, false);
+  assert.equal(tableRows.HeightRule, 0);
+  assert.ok(tableColumns[1].Width > tableColumns[0].Width);
+  assert.ok(Math.abs(tableColumns[0].Width + tableColumns[1].Width - 431) < 0.01);
   assert.deepEqual(state.imagePaths, ["http://127.0.0.1:3889/resource-image-1.png"]);
   assert.equal(state.imageParagraph.Alignment, 1);
   assert.equal(state.imageParagraph.KeepWithNext, -1);
   assert.equal(state.imageParagraph.SpaceAfter, 0);
   assert.ok(state.text.filter(function (value) {{return value === "\\r";}}).length >= 2);
-  assert.ok(state.breaks.includes(7)); assert.ok(state.breaks.includes(2));
+  assert.equal(state.breaks.filter(function (value) {{return value === 7;}}).length, 2);
+  assert.ok(state.breaks.includes(2));
   assert.equal(state.tocAdds, 1); assert.equal(state.tocUpdates, 1);
+  const tocTitle = state.ranges.find(function (value) {{
+    return value.Style && value.Style.Name === "Heading 1";
+  }});
+  assert.equal(tocTitle.Font.Size, 18); assert.equal(tocTitle.Font.Bold, 0);
+  assert.equal(tocTitle.ParagraphFormat.Alignment, 1);
+  assert.equal(tocTitle.ParagraphFormat.LineSpacing, 18);
+  assert.equal(tocTitle.ParagraphFormat.SpaceAfter, 5);
   assert.equal(state.fieldAdds, 1); assert.equal(state.fieldUpdates, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+
+def test_writer_floating_image_uses_document_anchor_and_complete_sizing_semantics():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const anchor = {{owner: "staged-document"}};
+const shape = {{
+  Width: 600, Height: 400, WrapFormat: {{}},
+  Range: {{ParagraphFormat: {{}}}}
+}};
+let pictureArgs = null;
+const document = {{
+  Content: {{Text: "template", End: 1, InsertAfter() {{}}}},
+  Range(start, end) {{assert.equal(start, 0); assert.equal(end, 0); return anchor;}},
+  Shapes: {{AddPicture() {{pictureArgs = Array.from(arguments); return shape;}}}},
+  Save() {{}}, Close() {{}}
+}};
+global.Application = {{
+  DisplayAlerts: 7,
+  get Selection() {{throw new Error("global selection accessed");}},
+  Documents: {{Open() {{return document;}}}}
+}};
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{
+    method: "generate_writer_document",
+    params: {{
+      stagedPath: "/staged/generated.docx",
+      resources: {{"image-1": "http://127.0.0.1:3889/resource-image-1.png"}},
+      plan: {{component: "writer", operations: [{{
+        op: "writer.add_image",
+        args: {{
+          imageId: "image-1", width: 300, height: 200,
+          maxWidth: 150, maxHeight: 100, wrap: 3,
+          inline: false, preserveAspect: true, alt: "Diagram"
+        }}
+      }}]}}
+    }}
+  }});
+  assert.equal(pictureArgs.length, 8);
+  assert.equal(pictureArgs[7], anchor);
+  assert.equal(shape.LockAspectRatio, -1);
+  assert.equal(shape.WrapFormat.Type, 3);
+  assert.equal(shape.Width, 150); assert.equal(shape.Height, 100);
+  assert.equal(shape.AlternativeText, "Diagram");
+  assert.equal(Application.DisplayAlerts, 7);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
@@ -737,7 +812,10 @@ const assert = require("assert");
 const fs = require("fs");
 global.window = {{}};
 let openCalls = 0;
-global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{openCalls += 1;}}}}}};
+global.Application = {{DisplayAlerts: 7, Documents: {{Open() {{
+  openCalls += 1;
+  return {{Content: {{Text: ""}}, Save() {{}}, Close() {{}}}};
+}}}}}};
 let source = fs.readFileSync({path}, "utf8");
 source = source.replace('"writer.update_fields": updateWriterFields', '"writer.update_fields": null');
 eval(source);
@@ -746,7 +824,7 @@ eval(source);
     await window.WPSComposerProbe.handleCommand({{
       method: "generate_writer_document",
       params: {{stagedPath: "/staged/generated.docx", plan: {{component: "writer", operations: [
-        {{op: "writer.update_fields", args: {{}}}}
+        {{op: "writer.reset", args: {{}}}}
       ]}}}}
     }});
     process.exit(2);
@@ -823,6 +901,15 @@ eval(fs.readFileSync({path}, "utf8"));
         },
         {"op": "writer.add_table", "args": {"rows": 0, "cols": 1, "data": []}},
         {"op": "writer.add_table", "args": {"rows": 1, "cols": 2, "data": [["only one"]]}},
+        {
+            "op": "writer.add_table",
+            "args": {
+                "rows": 1,
+                "cols": 1,
+                "data": [["x"]],
+                "columnWidths": [1e308],
+            },
+        },
         {"op": "writer.add_image", "args": {"imageId": "image-1", "inline": "true"}},
         {"op": "writer.insert_toc", "args": {"title": 7}},
         {"op": "writer.add_list", "args": {"items": ["x" * 100_001], "ordered": False}},
