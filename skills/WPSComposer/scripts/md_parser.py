@@ -221,7 +221,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
 
         # Horizontal rule (---, ***, ___)
         if _HR_RE.match(line.strip()):
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(HorizontalRule())
             i += 1
             continue
@@ -240,7 +240,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                     i += 1
                 else:
                     break
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(TaskList(items=items))
             continue
 
@@ -258,7 +258,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
         # directory is still available; renderers should not depend on cwd.
         image_match = _IMAGE_RE.fullmatch(line.strip())
         if image_match:
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(ImageBlock(
                 path=_resolve_image_path(
                     _image_match_path(image_match), base_dir
@@ -277,7 +277,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                 code_lines.append(lines[i])
                 i += 1
             i += 1  # skip closing ```
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(
                 CodeBlock(code="\n".join(code_lines), language=language)
             )
@@ -289,7 +289,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
             while i < len(lines) and lines[i].startswith(">"):
                 quote_lines.append(lines[i][1:].strip())
                 i += 1
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             paras = [Paragraph(spans=_parse_inline(ql)) for ql in quote_lines if ql]
             current_section.elements.append(BlockQuote(paragraphs=paras))
             continue
@@ -316,7 +316,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                     i += 1
                 else:
                     break
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(ListBlock(items=items, ordered=False))
             continue
 
@@ -333,7 +333,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                     i += 1
                 else:
                     break
-            _ensure_section(current_section, sections)
+            current_section = _ensure_section(current_section, sections)
             current_section.elements.append(ListBlock(items=items, ordered=True))
             continue
 
@@ -345,7 +345,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
             i += 1
         para_text = " ".join(pl.strip() for pl in para_lines)
         spans = _parse_inline(para_text)
-        _ensure_section(current_section, sections)
+        current_section = _ensure_section(current_section, sections)
         current_section.elements.append(Paragraph(spans=spans))
 
     # Build document
@@ -356,11 +356,12 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
     return doc
 
 
-def _ensure_section(current: Optional[Section], sections: List[Section]):
+def _ensure_section(current: Optional[Section], sections: List[Section]) -> Section:
     """Ensure there's a current section; create one if not."""
     if current is None:
         current = Section(level=0, heading="")
         sections.append(current)
+    return current
 
 
 def _detect_alignments(separator_line: str) -> list:
@@ -380,7 +381,7 @@ def _is_separator_cell(cell: str) -> bool:
     return bool(re.match(r"^[\-\s:]+\+?$", cell))
 
 
-_BLOCK_STARTS = {"#", "-", "*", ">", "|", "```", "---", "***", "___", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."}
+_BLOCK_STARTS = {"#", "-", "*", ">", "|", "```", "---", "***", "___"}
 
 
 def _is_block_start(line: str) -> bool:
@@ -413,7 +414,7 @@ def _parse_table_block(table_lines: List[str], current: Optional[Section], secti
     else:
         headers = rows[0] if rows else []
         data = rows[1:] if len(rows) > 1 else []
-    _ensure_section(current, sections)
+    current = _ensure_section(current, sections)
     current.elements.append(TableBlock(headers=headers, rows=data, alignments=alignments))
 def _parse_frontmatter(lines: List[str], doc: StructuredDocument):
     """Parse YAML frontmatter lines into doc.metadata."""
