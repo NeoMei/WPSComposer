@@ -948,6 +948,10 @@
 
   function generateWriterDocument(params) {
     const stagedPath = requirePath(params, "stagedPath");
+    const outputFormat = params.outputFormat === "pdf" ? "pdf" : "docx";
+    const stagedPdfPath = outputFormat === "pdf"
+      ? requirePath(params, "stagedPdfPath")
+      : null;
     validateWriterOperations(params.plan, params.resources || {});
     const previousAlerts = Application.DisplayAlerts;
     let document = null;
@@ -957,6 +961,14 @@
       document = Application.Documents.Open(stagedPath, false, false);
       const applied = executeWriterOperations(document, params.plan, params.resources || {});
       document.Save();
+      if (outputFormat === "pdf") {
+        document.ExportAsFixedFormat(stagedPdfPath, 17, false, 0, 0);
+        return {
+          path: stagedPdfPath,
+          sourcePath: stagedPath,
+          appliedOperations: applied
+        };
+      }
       return {path: stagedPath, appliedOperations: applied};
     } catch (error) {
       failure = generationError(error);

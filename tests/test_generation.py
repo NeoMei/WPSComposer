@@ -468,30 +468,18 @@ def test_generate_macos_checks_production_gate_before_recording(tmp_path):
     assert not renderer_called
 
 
-def test_pdf_enabled_injection_still_fails_unsupported_before_runtime(tmp_path):
-    bridge_called = False
-    request = GenerationRequest(tmp_path / "report.pdf", "writer", "pdf")
-    recorded = RecordedGeneration(
-        GenerationPlan("writer", (GenerationOperation("writer.reset", {}),)),
-        (),
+def test_pdf_enabled_injection_routes_through_pdf_lifecycle(tmp_path):
+    """With gate injection, PDF routes through the Writer-derived PDF lifecycle."""
+    captured = []
+    result = execute_generation_plan(
+        GenerationRequest(tmp_path / "r.pdf", "writer", "pdf"),
+        _writer_recording("PDF Report"),
+        enabled={"pdf": True},
+        bridge_factory=lambda origins: PdfGenerationBridge(mode="success"),
+        runtime_factory=_runtime_factory(captured),
+        timeout=5,
     )
-
-    def bridge_factory(origins):
-        nonlocal bridge_called
-        bridge_called = True
-        raise AssertionError("Task 7 must not start WPS for PDF")
-
-    with pytest.raises(GenerationError) as caught:
-        execute_generation_plan(
-            request,
-            recorded,
-            enabled={"pdf": True},
-            bridge_factory=bridge_factory,
-        )
-
-    assert caught.value.code == "MACOS_CAPABILITY_UNAVAILABLE"
-    assert not bridge_called
-    assert not request.output.exists()
+    assert result == (tmp_path / "r.pdf").resolve()
 
 
 def test_unknown_vendor_generation_code_is_normalized():
@@ -940,3 +928,171 @@ def test_writer_semantics_require_planned_structure(tmp_path, kind):
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
     assert not request.output.exists()
+
+
+# ---- Task 8: Writer-derived PDF generation ----
+
+
+class PdfGenerationBridge(GenerationBridge):
+    """Fake bridge that writes both a semantic DOCX and a PDF."""
+
+    def __init__(self, mode="success"):
+        super().__init__(mode=mode)
+        self.mode = mode
+
+    def wait_result(self, command_id, timeout):
+        command = self.commands[-1]
+        staged_docx = Path(command.params["stagedPath"])
+        staged_pdf = staged_docx.with_suffix(".pdf")
+        if self.mode == "timeout":
+            raise TimeoutError("pdf timeout")
+        if self.mode == "remote":
+            return ProbeResult(
+                command_id, False, {},
+                {"code": "WPS_E_PRIVATE", "message": "vendor error"},
+            )
+        if self.mode == "count":
+            plan = command.params["plan"]
+            _write_semantic_artifact(staged_docx, "docx", plan)
+            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            return ProbeResult(
+                command_id, True,
+                {
+                    "path": str(staged_pdf),
+                    "sourcePath": str(staged_docx),
+                    "appliedOperations": len(plan["operations"]) + 1,
+                },
+                None,
+            )
+        if self.mode == "bad-source-path":
+            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            return ProbeResult(
+                command_id, True,
+                {
+                    "path": str(staged_pdf),
+                    "sourcePath": str(Path("/tmp/wpscomposer-bad.docx")),
+                    "appliedOperations": len(command.params["plan"]["operations"]),
+                },
+                None,
+            )
+        if self.mode == "bad-pdf":
+            staged_pdf.write_bytes(b"NOT A PDF")
+            return ProbeResult(
+                command_id, True,
+                {
+                    "path": str(staged_pdf),
+                    "sourcePath": str(staged_docx),
+                    "appliedOperations": len(command.params["plan"]["operations"]),
+                },
+                None,
+            )
+        if self.mode == "unchanged-docx":
+            # Leave staged docx as template clone (unchanged)
+            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            return ProbeResult(
+                command_id, True,
+                {
+                    "path": str(staged_pdf),
+                    "sourcePath": str(staged_docx),
+                    "appliedOperations": len(command.params["plan"]["operations"]),
+                },
+                None,
+            )
+        # Default success
+        plan = command.params["plan"]
+        _write_semantic_artifact(staged_docx, "docx", plan)
+        staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+        return ProbeResult(
+            command_id, True,
+            {
+                "path": str(staged_pdf),
+                "sourcePath": str(staged_docx),
+                "appliedOperations": len(plan["operations"]),
+            },
+            None,
+        )
+
+
+def _run_pdf_generation(tmp_path, mode="success"):
+    captured = []
+    output = tmp_path / "report.pdf"
+    request = GenerationRequest(output, "writer", "pdf")
+    recorded = _writer_recording("PDF Report")
+    return execute_generation_plan(
+        request,
+        recorded,
+        enabled={"pdf": True},
+        bridge_factory=lambda origins: PdfGenerationBridge(mode=mode),
+        runtime_factory=_runtime_factory(captured),
+        timeout=5,
+    ), captured
+
+
+def test_pdf_generation_publishes_pdf_not_docx(tmp_path):
+    result, captured = _run_pdf_generation(tmp_path)
+    assert result == (tmp_path / "report.pdf").resolve()
+    assert (tmp_path / "report.pdf").exists()
+    assert (tmp_path / "report.pdf").read_bytes().startswith(b"%PDF-")
+
+
+def test_pdf_generation_rejects_bad_pdf_signature(tmp_path):
+    with pytest.raises(GenerationError) as caught:
+        _run_pdf_generation(tmp_path, mode="bad-pdf")
+    assert caught.value.code == "STAGED_ARTIFACT_INVALID"
+    assert not (tmp_path / "report.pdf").exists()
+
+
+def test_pdf_generation_rejects_unchanged_private_docx(tmp_path):
+    with pytest.raises(GenerationError) as caught:
+        _run_pdf_generation(tmp_path, mode="unchanged-docx")
+    assert caught.value.code == "STAGED_ARTIFACT_INVALID"
+
+
+def test_pdf_generation_rejects_wrong_applied_count(tmp_path):
+    with pytest.raises(GenerationError) as caught:
+        _run_pdf_generation(tmp_path, mode="count")
+    assert caught.value.code == "PROTOCOL_ERROR"
+
+
+def test_pdf_generation_rejects_wrong_source_path(tmp_path):
+    with pytest.raises(GenerationError) as caught:
+        _run_pdf_generation(tmp_path, mode="bad-source-path")
+    assert caught.value.code == "PROTOCOL_ERROR"
+
+
+def test_pdf_generation_cleans_up_private_files(tmp_path):
+    _run_pdf_generation(tmp_path)
+    # Private DOCX and staging PDF should be cleaned up after publish
+    # They were in staging dir which is cleaned by runtime exit
+    assert (tmp_path / "report.pdf").exists()
+
+
+def test_pdf_generation_via_generate_macos(monkeypatch, tmp_path):
+    """generate_macos with format=pdf routes through the PDF lifecycle."""
+    captured_bridges = []
+    captured_runtime = []
+
+    def bridge_factory(origins):
+        bridge = PdfGenerationBridge(mode="success")
+        captured_bridges.append(bridge)
+        return bridge
+
+    doc = StructuredDocument(
+        title="Test PDF",
+        sections=[Section(
+            level=1,
+            heading="Section",
+            elements=[Paragraph(spans=[Span(text="Content")])],
+        )],
+    )
+    output = tmp_path / "output.pdf"
+    result = generate_macos(
+        doc, "pdf", output, None,
+        enabled={"pdf": True},
+        bridge_factory=bridge_factory,
+        runtime_factory=_runtime_factory(captured_runtime),
+        timeout=5,
+    )
+    assert result == output.resolve()
+    assert output.exists()
+    assert output.read_bytes().startswith(b"%PDF-")

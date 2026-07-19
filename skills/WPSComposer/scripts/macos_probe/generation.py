@@ -20,6 +20,7 @@ from ..artifact_transport import (
     ArtifactValidationError,
     publish_artifact,
     validate_office_package,
+    validate_pdf,
 )
 from ..generation_plan import (
     GenerationResource,
@@ -45,6 +46,7 @@ METHODS = {
 }
 FORMAT_COMPONENTS = {
     "docx": "writer",
+    "pdf": "writer",
     "xlsx": "spreadsheet",
     "pptx": "presentation",
 }
@@ -433,6 +435,22 @@ def _wait_for_marker(path: Path, format_name: str, timeout: float) -> None:
         time.sleep(min(0.05, remaining))
 
 
+def _wait_for_pdf(path: Path, timeout: float) -> None:
+    deadline = time.monotonic() + timeout
+    failure: Optional[ArtifactValidationError] = None
+    while True:
+        try:
+            validate_pdf(path)
+            return
+        except ArtifactValidationError as exc:
+            failure = exc
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            assert failure is not None
+            raise failure
+        time.sleep(min(0.05, remaining))
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -749,6 +767,7 @@ def _run_generation(
     timeout: float,
     feasibility: bool,
 ) -> Path:
+    is_pdf = request.format_name == "pdf"
     if runtime.staging_dir is None:
         raise _error(
             request,
@@ -768,20 +787,25 @@ def _run_generation(
             "Pinned WPS generation template could not be staged",
         ) from exc
     template_digest = _sha256(staged)
+    staged_pdf = policy.require_allowed(staged.with_suffix(".pdf")) if is_pdf else None
     resources = stage_generation_resources(request, recorded, runtime)
     runtime.start_servers()
     runtime.activate_component(request.component)
     _wait_for_registration(bridge, runtime, request.component, timeout)
 
+    command_params = {
+        "stagedPath": str(staged),
+        "formatName": request.format_name,
+        "plan": recorded.plan.to_dict(),
+        "resources": resources,
+    }
+    if is_pdf:
+        command_params["outputFormat"] = "pdf"
+        command_params["stagedPdfPath"] = str(staged_pdf)
     command = bridge.issue(
         request.component,
         method,
-        {
-            "stagedPath": str(staged),
-            "formatName": request.format_name,
-            "plan": recorded.plan.to_dict(),
-            "resources": resources,
-        },
+        command_params,
     )
     try:
         result = bridge.wait_result(command.id, timeout)
@@ -799,6 +823,7 @@ def _run_generation(
             remote_code,
             "WPS generation command failed",
         )
+    expected_returned = staged_pdf if is_pdf else staged
     try:
         reported = policy.require_allowed(str(result.value.get("path", "")))
     except ProtocolError as exc:
@@ -807,12 +832,28 @@ def _run_generation(
             "PROTOCOL_ERROR",
             "WPS returned an invalid staged generation path",
         ) from exc
-    if reported != staged:
+    if reported != expected_returned:
         raise _error(
             request,
             "PROTOCOL_ERROR",
             "WPS returned an unexpected staged generation path",
         )
+    if is_pdf:
+        reported_source = result.value.get("sourcePath", "")
+        try:
+            source_path = policy.require_allowed(str(reported_source))
+        except ProtocolError as exc:
+            raise _error(
+                request,
+                "PROTOCOL_ERROR",
+                "WPS returned an invalid private source path",
+            ) from exc
+        if source_path != staged:
+            raise _error(
+                request,
+                "PROTOCOL_ERROR",
+                "WPS returned an unexpected private source path",
+            )
     applied = result.value.get("appliedOperations")
     if (
         isinstance(applied, bool)
@@ -827,6 +868,15 @@ def _run_generation(
     try:
         if feasibility:
             _wait_for_marker(staged, request.format_name, timeout)
+        elif is_pdf:
+            _wait_for_generated_package(
+                staged,
+                "docx",
+                recorded,
+                template_digest,
+                timeout,
+            )
+            _wait_for_pdf(staged_pdf, timeout)
         else:
             _wait_for_generated_package(
                 staged,
@@ -846,6 +896,8 @@ def _run_generation(
             validator = lambda path: _validate_marker_package(
                 path, request.format_name
             )
+        elif is_pdf:
+            validator = lambda path: validate_pdf(path)
         else:
             validator = lambda path: _validate_generated_package(
                 path,
@@ -853,12 +905,16 @@ def _run_generation(
                 recorded,
                 template_digest,
             )
-        return publish_artifact(
-            staged,
+        published = publish_artifact(
+            staged_pdf if is_pdf else staged,
             request.output,
             overwrite=request.overwrite,
             validator=validator,
         )
+        if is_pdf:
+            staged.unlink(missing_ok=True)
+            staged_pdf.unlink(missing_ok=True)
+        return published
     except ArtifactTransportError as exc:
         if exc.code == "FINAL_ARTIFACT_INVALID" and not request.overwrite:
             request.output.unlink(missing_ok=True)
@@ -893,12 +949,6 @@ def _execute_generation_plan(
             request,
             "MACOS_GENERATION_GATE_NOT_PASSED",
             "Mac WPS generation is disabled until the real acceptance gate passes",
-        )
-    if request.format_name == "pdf":
-        raise _error(
-            request,
-            "MACOS_CAPABILITY_UNAVAILABLE",
-            "Mac WPS PDF generation is not available in this release",
         )
     expected_component = FORMAT_COMPONENTS.get(request.format_name)
     if expected_component is None:
@@ -1053,12 +1103,6 @@ def generate_macos(
             "MACOS_GENERATION_GATE_NOT_PASSED",
             "Mac WPS generation is disabled until the real acceptance gate passes",
         )
-    if normalized_format == "pdf":
-        raise _error(
-            request,
-            "MACOS_CAPABILITY_UNAVAILABLE",
-            "Mac WPS PDF generation is not available in this release",
-        )
     if normalized_format not in FORMAT_COMPONENTS:
         raise _error(
             request,
@@ -1075,6 +1119,7 @@ def generate_macos(
 
     renderer, composer_factory = {
         "docx": (writer_renderer.render, RecordingWriterComposer),
+        "pdf": (writer_renderer.render, RecordingWriterComposer),
         "xlsx": (sheet_renderer.render, RecordingSheetComposer),
         "pptx": (slide_renderer.render, RecordingSlideComposer),
     }[normalized_format]
