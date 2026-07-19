@@ -13,11 +13,14 @@ Usage::
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import sys
 from typing import Optional
 
 from .md_parser import parse_file, parse
 from .document_model import StructuredDocument
 from .design_presets import get_preset, list_presets, DesignPreset
+from .macos_probe.generation import GenerationError, generate_macos
 
 
 def generate(
@@ -82,9 +85,32 @@ def generate(
     # Determine output path
     if output is None:
         output = f"{base_name}.{format}"
-    output = os.path.abspath(output)
+    output_path = Path(output).expanduser().resolve()
+    if output_path.suffix.lower() != f".{format}":
+        raise ValueError(
+            f"Output extension must match requested format '.{format}'."
+        )
+    if output_path.exists():
+        raise FileExistsError(f"Output already exists: {output_path}")
+    output = str(output_path)
 
     # Route to renderer
+    if sys.platform == "darwin":
+        return str(generate_macos(doc, format, output_path, design_preset))
+    if sys.platform != "win32":
+        component = {
+            "docx": "writer",
+            "pdf": "writer",
+            "xlsx": "spreadsheet",
+            "pptx": "presentation",
+        }[format]
+        raise GenerationError(
+            code="MACOS_CAPABILITY_UNAVAILABLE",
+            output=output,
+            component=component,
+            backend="unsupported-platform",
+            message=f"WPS generation is unavailable on platform {sys.platform}",
+        )
     if format == "docx":
         from .renderers.writer_renderer import render as _render
         return _render(doc, output, preset=design_preset)

@@ -19,7 +19,7 @@ from skills.WPSComposer.scripts.macos_probe import generation as mac_generation
 from skills.WPSComposer.scripts.macos_probe.generation import (
     GenerationError,
     GenerationRequest,
-    execute_generation_plan,
+    execute_feasibility_plan,
 )
 from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
 
@@ -268,7 +268,7 @@ def _run_with_fakes(
         format_name=format_name,
         overwrite=False,
     )
-    result = execute_generation_plan(
+    result = execute_feasibility_plan(
         request,
         RecordedGeneration(plan, ()),
         enabled={format_name: True},
@@ -311,10 +311,11 @@ def test_generation_uses_only_staged_path_and_publishes_valid_package(
     command = bridge.commands[0]
     assert command.component == component
     assert command.method == method
-    assert set(command.params) == {"stagedPath", "formatName", "plan"}
+    assert set(command.params) == {"stagedPath", "formatName", "plan", "resources"}
     assert Path(command.params["stagedPath"]).parent == runtime.staging_dir
     assert command.params["formatName"] == format_name
     assert command.params["plan"] == plan.to_dict()
+    assert command.params["resources"] == {}
     assert "output" not in command.params
     assert result == request.output.resolve()
     assert result.is_file()
@@ -333,7 +334,7 @@ def test_generation_production_gates_remain_disabled(tmp_path: Path):
         tmp_path / "final.docx", "writer", "docx", False
     )
     with pytest.raises(GenerationError) as caught:
-        execute_generation_plan(
+        execute_feasibility_plan(
             request, RecordedGeneration(WRITER_MARKER_PLAN, ())
         )
     assert caught.value.code == "MACOS_GENERATION_GATE_NOT_PASSED"
@@ -345,7 +346,7 @@ def test_generation_rejects_component_format_and_plan_mismatch(tmp_path: Path):
         tmp_path / "final.xlsx", "spreadsheet", "xlsx", False
     )
     with pytest.raises(GenerationError) as caught:
-        execute_generation_plan(
+        execute_feasibility_plan(
             request,
             RecordedGeneration(WRITER_MARKER_PLAN, ()),
             enabled={"xlsx": True},
@@ -361,7 +362,7 @@ def test_generation_rejects_host_resources_in_feasibility_backend(tmp_path: Path
         tmp_path / "final.docx", "writer", "docx", False
     )
     with pytest.raises(GenerationError) as caught:
-        execute_generation_plan(
+        execute_feasibility_plan(
             request,
             RecordedGeneration(WRITER_MARKER_PLAN, (resource,)),
             enabled={"docx": True},
@@ -397,7 +398,7 @@ def test_generation_rejects_non_feasibility_plan_before_runtime_creation(
         False,
     )
     with pytest.raises(GenerationError) as caught:
-        execute_generation_plan(
+        execute_feasibility_plan(
             request,
             RecordedGeneration(plan, ()),
             enabled={format_name: True},

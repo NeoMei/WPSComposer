@@ -19,6 +19,7 @@ def test_public_package_exports_supported_api():
         "parse_file",
         "StructuredDocument",
         "ConversionError",
+        "GenerationError",
         "convert_to_pdf",
     }
 
