@@ -2,6 +2,7 @@
 
 Date: 2026-07-16
 Status: Approved design
+Phase 0: implementation complete 2026-07-20, see [macOS Phase 0](../../macos-phase0.md)
 
 ## Summary
 

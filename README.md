@@ -71,6 +71,7 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 
 - Python 3.9 或更高版本。
 - Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
+- macOS: WPS JSAPI backend is in Phase 0 feasibility validation. See [macOS Phase 0](docs/macos-phase0.md) for tested versions, capabilities, and current limitations.
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 

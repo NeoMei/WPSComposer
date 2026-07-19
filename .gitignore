@@ -22,3 +22,8 @@ test_output/
 # IDE / tool metadata
 .codebase-memory/
 .serena/
+
+# macOS probe runtime
+macos/wps-jsapi-probe/node_modules/
+macos/wps-jsapi-probe/.runtime/
+build/macos-phase0/
