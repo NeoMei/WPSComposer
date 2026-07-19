@@ -63,6 +63,11 @@ class RegistrationSnapshot:
 
     @classmethod
     def capture(cls, path: Path, recovery_dir: Path) -> "RegistrationSnapshot":
+        if (recovery_dir / "registration.json").exists():
+            raise RuntimeError(
+                f"Recovery artifacts already exist at {recovery_dir}. "
+                "A previous probe may have crashed. Restore manually before rerunning."
+            )
         original = path.read_bytes() if path.is_file() else None
         recovery_dir.mkdir(parents=True, mode=0o700, exist_ok=True)
         meta = {"path": str(path), "existed": original is not None}
@@ -204,6 +209,7 @@ class ProbeRuntime:
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
             )
+            log_file.close()
             self._processes.append(proc)
             port = self._detect_port(log_path, timeout=15)
             if port is None:

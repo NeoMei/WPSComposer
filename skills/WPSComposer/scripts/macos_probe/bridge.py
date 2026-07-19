@@ -188,9 +188,19 @@ class LoopbackBridge:
                     self._send_error(401, "unauthorized", "Missing or invalid token")
                     return
                 parsed = urlparse(self.path)
-                length = int(self.headers.get("Content-Length", 0))
-                raw = self.rfile.read(length) if length else b""
-                body = json.loads(raw) if raw else {}
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                except (ValueError, TypeError):
+                    length = 0
+                if length <= 0:
+                    raw = b""
+                else:
+                    raw = self.rfile.read(min(length, 1048576))
+                try:
+                    body = json.loads(raw) if raw else {}
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    self._send_error(400, "bad_json", "Invalid JSON body")
+                    return
 
                 if parsed.path == "/v1/register":
                     component = body.get("component", "")

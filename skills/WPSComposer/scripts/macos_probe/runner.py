@@ -107,6 +107,9 @@ def _execute_commands(
                 if container_path and not out_path.is_file():
                     import shutil
                     src = Path(container_path)
+                    wps_container = Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac/Data"
+                    if not (src.resolve() == wps_container or wps_container in src.resolve().parents):
+                        raise ArtifactError(f"containerPath outside WPS sandbox: {src}")
                     if src.is_file():
                         shutil.copy2(src, out_path)
                         src.unlink(missing_ok=True)
@@ -167,6 +170,8 @@ def run_phase0(
     from .runtime import COMPONENT_CONFIG, ProbeRuntime, read_wps_version
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    for stale in ("smoke.docx", "smoke.pptx", "smoke.xlsx", "smoke.pdf"):
+        (output_dir / stale).unlink(missing_ok=True)
     run_dir = output_dir / ".runtime"
     probe_root = Path(__file__).resolve().parent.parent.parent.parent.parent / "macos" / "wps-jsapi-probe"
 

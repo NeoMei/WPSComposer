@@ -18,11 +18,14 @@ def main() -> int:
         report_path = run_phase0(args.output_dir, node=args.node, timeout=args.timeout)
     except Exception as exc:
         print(f"Phase 0 failed: {exc}", file=sys.stderr)
-        print(f"Report: {args.output_dir / 'phase0-report.json'}", file=sys.stderr)
         return 1
 
     import json
-    report = json.loads(report_path.read_text())
+    try:
+        report = json.loads(report_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Phase 0 failed: cannot read report: {exc}", file=sys.stderr)
+        return 1
     if report.get("status") == "passed":
         print(str(report_path.resolve()))
         return 0
