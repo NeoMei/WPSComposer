@@ -80,7 +80,7 @@
     const outputPath = params.outputPath;
     const document = buildDocument("docx", params.imagePath);
     try {
-      var containerDir = "/Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/Documents";
+      var containerDir = params.containerDir || "/tmp";
       var fileName = outputPath.split("/").pop();
       var containerPath = containerDir + "/" + fileName;
       document.SaveAs2(containerPath, 16);

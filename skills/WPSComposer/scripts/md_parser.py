@@ -71,7 +71,7 @@ def _parse_inline(text: str) -> List[Span]:
             matches.append((m.start(), m.end(), "strike", m.group(1)))
         # Link with title (tooltip) takes priority
         for m in _LINK_TITLE_RE.finditer(remaining):
-            title = m.group(3) or m.group(4) or ""
+            title = m.group(3) or ""
             matches.append((m.start(), m.end(), "link", m.group(1), m.group(2), title))
         for m in _LINK_RE.finditer(remaining):
             matches.append((m.start(), m.end(), "link", m.group(1), m.group(2)))

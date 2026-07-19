@@ -22,7 +22,8 @@ class ArtifactError(RuntimeError):
 def validate_artifact(path: Path, format_name: str) -> None:
     if not path.is_file():
         raise ArtifactError(f"{format_name.upper()} output is missing: {path}")
-    signature = path.read_bytes()[:8]
+    with path.open("rb") as f:
+        signature = f.read(8)
     expected = b"%PDF-" if format_name == "pdf" else b"PK\x03\x04"
     if not signature.startswith(expected):
         raise ArtifactError(f"invalid {format_name.upper()} signature: {path}")
@@ -97,6 +98,8 @@ def _execute_commands(
         out_path = output_dir / filename
         policy.require_allowed(out_path)
         params = {"outputPath": str(out_path.resolve()), "imagePath": str(image_path.resolve())}
+        if method == "smoke_docx":
+            params["containerDir"] = str(Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/Documents")
         start = time.monotonic()
         command = bridge.issue(component, method, params)
         try:
@@ -121,7 +124,9 @@ def _execute_commands(
                 })
                 if fmt == "pdf":
                     pdf_preset = result.value.get("preset", "")
-                for key, val in result.value.get("capabilities", {}).items():
+                for key, val in (result.value.get("capabilities") or {}).items():
+                    if not isinstance(val, dict):
+                        continue
                     comp = key.split(".")[0] if "." in key else component
                     if comp in capabilities:
                         capabilities[comp][key] = val

@@ -63,7 +63,9 @@ class ProbeResult:
         ok = raw.get("ok")
         if not isinstance(ok, bool):
             raise ProtocolError("Result ok must be boolean")
-        value = raw.get("value") or {}
+        value = raw.get("value")
+        if value is None:
+            value = {}
         error = raw.get("error")
         if not isinstance(value, dict):
             raise ProtocolError("Result value must be an object")

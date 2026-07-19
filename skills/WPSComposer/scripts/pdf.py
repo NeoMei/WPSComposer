@@ -6,7 +6,11 @@ No COM dependency - cross-platform pure Python.
 
 from __future__ import annotations
 
-from ._dispatch import _abs
+import os
+
+
+def _pdf_pdf_abs(path):
+    return os.path.abspath(path)
 
 
 # ===========================================================================
@@ -27,8 +31,8 @@ class PdfComposer:
         from pypdf import PdfWriter
         w = PdfWriter()
         for p in input_paths:
-            w.append(_abs(p))
-        out = _abs(output_path)
+            w.append(_pdf_abs(p))
+        out = _pdf_abs(output_path)
         with open(out, "wb") as fh:
             w.write(fh)
         w.close()
@@ -39,8 +43,8 @@ class PdfComposer:
         """Split a PDF into one-page PDFs. Returns list of output paths."""
         from pypdf import PdfReader, PdfWriter
         import os
-        src = _abs(input_path)
-        odir = _abs(output_dir)
+        src = _pdf_abs(input_path)
+        odir = _pdf_abs(output_dir)
         os.makedirs(odir, exist_ok=True)
         base = stem or os.path.splitext(os.path.basename(src))[0]
         reader = PdfReader(src)
@@ -59,11 +63,11 @@ class PdfComposer:
     def extract_pages(input_path, page_indices, output_path):
         """Keep only 1-based page indices into a new PDF. Returns output path."""
         from pypdf import PdfReader, PdfWriter
-        reader = PdfReader(_abs(input_path))
+        reader = PdfReader(_pdf_abs(input_path))
         w = PdfWriter()
         for idx in page_indices:
             w.add_page(reader.pages[idx - 1])
-        out = _abs(output_path)
+        out = _pdf_abs(output_path)
         with open(out, "wb") as fh:
             w.write(fh)
         w.close()
@@ -73,12 +77,12 @@ class PdfComposer:
     def rotate(input_path, angle, output_path):
         """Rotate all pages. angle in {90, 180, 270}. Returns output path."""
         from pypdf import PdfReader, PdfWriter
-        reader = PdfReader(_abs(input_path))
+        reader = PdfReader(_pdf_abs(input_path))
         w = PdfWriter()
         for page in reader.pages:
             page.rotate(angle)
             w.add_page(page)
-        out = _abs(output_path)
+        out = _pdf_abs(output_path)
         with open(out, "wb") as fh:
             w.write(fh)
         w.close()
@@ -88,7 +92,7 @@ class PdfComposer:
     def extract_text(input_path, pages=None):
         """Extract text. pages=None for all, else 1-based list. Returns str."""
         import pdfplumber
-        with pdfplumber.open(_abs(input_path)) as pdf:
+        with pdfplumber.open(_pdf_abs(input_path)) as pdf:
             idxs = pages if pages is not None else range(1, len(pdf.pages) + 1)
             chunks = []
             for i in idxs:
@@ -100,7 +104,7 @@ class PdfComposer:
     def page_count(input_path):
         """Return number of pages."""
         from pypdf import PdfReader
-        return len(PdfReader(_abs(input_path)).pages)
+        return len(PdfReader(_pdf_abs(input_path)).pages)
 
     @staticmethod
     def add_text_watermark(input_path, text, output_path,
@@ -110,8 +114,8 @@ class PdfComposer:
         from reportlab.pdfgen import canvas
         from reportlab.lib.colors import Color
         import io
-        src = _abs(input_path)
-        out = _abs(output_path)
+        src = _pdf_abs(input_path)
+        out = _pdf_abs(output_path)
         reader = PdfReader(src)
         first = reader.pages[0]
         pw = float(first.mediabox.width)

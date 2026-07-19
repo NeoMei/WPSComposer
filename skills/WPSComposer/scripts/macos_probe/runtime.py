@@ -4,7 +4,6 @@ import json
 import os
 import plistlib
 import shutil
-import socket
 import subprocess
 import sys
 import time
@@ -90,13 +89,18 @@ class RegistrationSnapshot:
                 fh.flush()
                 os.fsync(fh.fileno())
             os.replace(tmp, self._path)
-            assert self._path.read_bytes() == self._original
+            if self._path.read_bytes() != self._original:
+                raise RuntimeError(f"Registration restore verification failed: {self._path}")
         else:
             self._path.unlink(missing_ok=True)
-            assert not self._path.exists()
+            if self._path.exists():
+                raise RuntimeError(f"Registration file still exists after removal: {self._path}")
         for name in ("registration.json", "publish.xml.original"):
             (self._recovery_dir / name).unlink(missing_ok=True)
-        self._recovery_dir.rmdir()
+        try:
+            self._recovery_dir.rmdir()
+        except OSError:
+            pass
 
 
 def find_node(override: Optional[str] = None) -> Path:
@@ -141,17 +145,11 @@ def find_wpsjs_cli(probe_root: Path) -> Path:
 
 def read_wps_version() -> str:
     with (WPS_APP / "Contents/Info.plist").open("rb") as stream:
-        value = plistlib.load(stream)["CFBundleShortVersionString"]
-    return str(value)
-
-
-def _port_free(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind(("127.0.0.1", port))
-            return True
-        except OSError:
-            return False
+        plist = plistlib.load(stream)
+    try:
+        return str(plist["CFBundleShortVersionString"])
+    except KeyError:
+        raise RuntimeError("WPS Info.plist missing CFBundleShortVersionString")
 
 
 def _wait_http(url: str, timeout: float = 15.0) -> bool:
