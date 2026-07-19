@@ -2,6 +2,7 @@
 
 Guidelines for contributing to **WPSComposer**, a Codex plugin that generates
 rich-layout DOCX / PPTX / XLSX / PDF documents through WPS Office automation.
+Windows uses COM; macOS uses WPS JSAPI add-ins over a loopback bridge.
 
 ## Project Structure & Module Organization
 

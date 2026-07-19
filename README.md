@@ -1,6 +1,6 @@
 # WPSComposer
 
-> 一个 Codex 插件：通过 WPS Office COM 自动化，让 AI agent 能够生成和编辑高质量排版的 DOCX / PPTX / XLSX / PDF 文档。
+> 一个 Codex 插件：通过 WPS Office 自动化，让 AI agent 能够生成和编辑高质量排版的 DOCX / PPTX / XLSX / PDF 文档。支持 Windows（COM）和 macOS（WPS JSAPI）。
 
 ## 为什么需要这个插件？
 
@@ -39,7 +39,8 @@ StructuredDocument（结构化文档模型）
   │  + 设计预设 (design_presets) + 排版规范 (reference_styles)
   ▼
 Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
-  │  通过 COM 接口驱动 WPS Office
+  │  Windows: COM 接口驱动 WPS/MS Office
+  │  macOS:   WPS JSAPI 加载项 + loopback bridge
   ▼
 用户请求的单一产物：DOCX / PPTX / XLSX / PDF
 ```
@@ -70,8 +71,8 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 ### 运行时要求
 
 - Python 3.9 或更高版本。
-- Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
-- macOS: WPS JSAPI backend is in Phase 0 feasibility validation. See [macOS Phase 0](docs/macos-phase0.md) for tested versions, capabilities, and current limitations.
+- **Windows**：生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
+- **macOS**：通过 WPS JSAPI 加载项生成 DOCX/PPTX/XLSX/PDF，需要 WPS Office for Mac（已验证 12.1.26035）和 Node.js 20+。详见 [macOS Phase 0](docs/macos-phase0.md)。
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 
@@ -179,10 +180,19 @@ WPSComposer/
 │       ├── quality_checks.py        # 质量校验
 │       ├── formatting.py            # 格式工具函数
 │       ├── heading_numbering.py     # 标题自动编号
+│       ├── macos_probe/             # macOS WPS JSAPI 可行性探针
+│       │   ├── models.py            # 协议模型 + 路径沙箱
+│       │   ├── bridge.py            # 认证 loopback HTTP 桥
+│       │   ├── runtime.py           # wpsjs 进程管理 + 注册回滚
+│       │   └── runner.py            # 编排 + 产物验证 + 报告
 │       └── renderers/               # 格式渲染器
 │           ├── writer_renderer.py
 │           ├── sheet_renderer.py
 │           └── slide_renderer.py
+├── macos/wps-jsapi-probe/           # WPS JS 加载项（Phase 0）
+│   ├── addin/                       # 加载项 HTML/JS/XML
+│   ├── package.json                 # wpsjs 2.2.3  pinned
+│   └── package-lock.json
 ├── install.py                       # 跨平台安装器
 ├── install.ps1                     # PowerShell 包装脚本
 ├── install.sh                      # macOS/Linux 包装脚本

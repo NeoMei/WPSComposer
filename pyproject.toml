@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wps-composer"
-version = "0.2.0"
-description = "WPS-backed rich document composition for Codex"
+version = "0.3.0"
+description = "WPS-backed rich document composition for Codex (Windows COM + macOS JSAPI)"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
