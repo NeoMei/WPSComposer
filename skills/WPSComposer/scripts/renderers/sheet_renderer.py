@@ -13,7 +13,7 @@ from ..sheet import SheetComposer
 
 
 def render(doc: StructuredDocument, output_path: str,
-           preset=None) -> str:
+           preset=None, composer_factory=SheetComposer) -> str:
     """Render StructuredDocument tables to a styled XLSX file.
 
     Args:
@@ -28,7 +28,7 @@ def render(doc: StructuredDocument, output_path: str,
     if not tables:
         raise ValueError("No tables found in document. Nothing to render to XLSX.")
 
-    with SheetComposer() as s:
+    with composer_factory() as s:
         header_color = preset.get_color("primary") if preset else "#4472C4"
 
         # Map each table section to a sheet
@@ -48,7 +48,7 @@ def render(doc: StructuredDocument, output_path: str,
                 if sheet_index == 0:
                     # Rename default sheet
                     try:
-                        s._doc.Worksheets(1).Name = sheet_name
+                        s.rename_sheet(1, sheet_name)
                     except Exception:
                         pass
                 else:

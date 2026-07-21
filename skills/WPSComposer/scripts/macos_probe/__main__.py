@@ -3,36 +3,36 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import Optional
 
-from .runner import run_phase0
+from .runner import Phase0Failed, run_phase0
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="macOS WPS JSAPI Phase 0 probe")
-    parser.add_argument("--output-dir", default="build/macos-phase0", type=Path)
-    parser.add_argument("--node", default=None)
-    parser.add_argument("--timeout", default=90, type=float)
-    args = parser.parse_args()
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run the macOS WPS JSAPI Phase 0 feasibility probe."
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("build/macos-phase0"),
+    )
+    parser.add_argument("--node")
+    parser.add_argument("--timeout", type=float, default=90)
+    return parser
 
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
     try:
-        report_path = run_phase0(args.output_dir, node=args.node, timeout=args.timeout)
-    except Exception as exc:
-        print(f"Phase 0 failed: {exc}", file=sys.stderr)
+        report_path = run_phase0(args.output_dir, args.node, args.timeout)
+    except Phase0Failed as exc:
+        print(f"Mac WPS Phase 0 failed: {exc}", file=sys.stderr)
+        print(f"Report: {exc.report_path}", file=sys.stderr)
         return 1
-
-    import json
-    try:
-        report = json.loads(report_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
-        print(f"Phase 0 failed: cannot read report: {exc}", file=sys.stderr)
-        return 1
-    if report.get("status") == "passed":
-        print(str(report_path.resolve()))
-        return 0
-    print(f"Phase 0 status: {report.get('status')}", file=sys.stderr)
-    print(f"Report: {report_path.resolve()}", file=sys.stderr)
-    return 1
+    print(report_path)
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

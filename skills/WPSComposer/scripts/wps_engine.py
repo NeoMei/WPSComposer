@@ -82,6 +82,8 @@ from .slide import SlideComposer
 from .pdf import PdfComposer
 # High-level API (MD -> document generation)
 from .orchestrator import generate, list_formats, list_available_presets
+from .conversion import ConversionError, convert_to_pdf
+from .macos_probe.generation import GenerationError
 
 # Document model + parser
 from .document_model import (
@@ -151,6 +153,9 @@ __all__ = [
     "generate",
     "list_formats",
     "list_available_presets",
+    "ConversionError",
+    "GenerationError",
+    "convert_to_pdf",
     # Document model and parser
     "StructuredDocument",
     "Section",

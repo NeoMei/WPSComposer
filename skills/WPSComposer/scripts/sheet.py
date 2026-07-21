@@ -65,6 +65,11 @@ class SheetComposer(BaseComposer):
         self._ws = self._doc.Worksheets(index)
         return self._ws
 
+    def rename_sheet(self, index, name):
+        ws = self._doc.Worksheets(index)
+        ws.Name = name
+        return ws
+
     def add_sheet(self, name=None):
         count = self._doc.Worksheets.Count
         ws = self._doc.Worksheets.Add(None, self._doc.Worksheets(count))
@@ -516,4 +521,3 @@ class SheetComposer(BaseComposer):
 # ===========================================================================
 #  SLIDE  (pptx)
 # ===========================================================================
-

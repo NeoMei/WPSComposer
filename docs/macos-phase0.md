@@ -1,65 +1,151 @@
-# macOS WPS JSAPI Phase 0 Feasibility
+# macOS WPS JSAPI Phase 0 evidence
 
-Status: **PASSED 2026-07-20** — all 4 artifacts validated
+## Decision
 
-## Setup
+**NO-GO for document generation Phase 1 on the tested WPS version.** Do not
+route the public `generate()` API to the macOS backend.
 
-```bash
-cd macos/wps-jsapi-probe
-PATH=/Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm ci
-```
+**GO for existing Office-to-PDF conversion.** On 2026-07-18, two consecutive
+installed-Mac runs converted `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
+`.pptx` through the container-staged typed backend. The two-visible-sheet XLSX
+produced a two-page PDF, every output passed `pdfinfo`, registration was
+restored, and no staging session remained. Public `convert_to_pdf()` is enabled
+on macOS; this does not change the generation decision below.
 
-## Run
+The installed Mac WPS can load authenticated JS add-ins and can serialize the
+Presentation and Spreadsheet smoke files. Writer exposes document creation,
+formatting, image, `SaveAs2`, and `ExportAsFixedFormat` APIs, but it did not
+complete DOCX or PDF serialization. A minimal Writer experiment containing
+only one text paragraph failed identically, so the result is not caused by the
+table or image fixture.
+
+Phase 1 may be reconsidered only after a WPS update or a documented Writer API
+sequence produces and validates all four independent outputs. The production
+Windows COM backend remains unchanged.
+
+## Tested environment
+
+| Item | Value |
+|---|---|
+| Test time | 2026-07-17 21:52 CST (+0800) |
+| macOS | 26.5.2 (25F84) |
+| WPS Office | 12.1.26035 |
+| Node.js | 24.14.0 (Codex bundled runtime) |
+| `wpsjs` | 2.2.3 |
+| `wps-jsapi-declare` | 2.2.0 |
+| npm audit | 0 known vulnerabilities across 152 dependencies |
+
+The real probe command was:
 
 ```bash
 .venv/bin/python -m skills.WPSComposer.scripts.macos_probe \
   --node /Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node \
-  --output-dir build/macos-phase0 \
-  --timeout 120
+  --output-dir build/macos-phase0-after-manual-authorization \
+  --timeout 60
 ```
 
-WPS must not be running before the probe starts (wpsjs registers add-ins via publish.xml at launch).
+Primary failure report:
+`build/macos-phase0-after-manual-authorization/phase0-report.json`.
 
-## Tested versions
+This control run was performed after the user had completed the visible macOS
+authorization prompts. It still produced and validated PPTX and XLSX while
+Writer failed both new-document saves with the same completion-event timeout. The result
+therefore is not attributed to a prompt being approved too late. Recent TCC
+logs showed an Apple Events denial for the optional Codex Computer Use helper,
+not a WPS Writer file-access denial; that denial affected automated window
+inspection only and was not used by the probe.
 
-| Item | Version |
-|------|---------|
-| macOS | Darwin (Apple Silicon) |
-| WPS Office | 12.1.26035 |
-| Node.js | v24.14.0 |
-| wpsjs | 2.2.3 |
-| wps-jsapi-declare | 2.2.0 |
+Two additional runs isolate and corroborate the result:
 
-## Artifacts
+- `build/macos-phase0-minimal-writer/phase0-report.json` removes Writer tables
+  and images and still times out waiting for `smoke.docx` to save.
+- `build/macos-phase0-http-image-clean/phase0-report.json` records the complete
+  capability map and independently validated PPTX/XLSX artifacts.
 
-| Format | Size | WPS API | Validation |
-|--------|------|---------|------------|
-| DOCX | 11,181 B | Document.SaveAs2 format 16 (sandbox relay) | ✅ PK zip + word/document.xml |
-| PPTX | 72,995 B | Presentation.SaveAs format 24 | ✅ PK zip + ppt/presentation.xml |
-| XLSX | 13,181 B | Workbook.SaveAs format 51 | ✅ PK zip + xl/workbook.xml |
-| PDF | 745,786 B | Document.ExportAsFixedFormat format 17 | ✅ %PDF- signature |
+All paths above are runtime evidence under the gitignored `build/` directory.
 
-## Key findings
+## Artifact evidence
 
-- **Writer SaveAs2 sandbox restriction**: `Document.SaveAs2` silently fails when targeting paths outside the WPS sandbox container. Workaround: save to `~/Library/Containers/com.kingsoft.wpsoffice.mac/Data/Documents/` then copy out from the host side. Classification: `mapped`.
-- **Writer InlineShapes.AddPicture**: works with absolute paths (earlier null was a relative-path issue).
-- **wpsjs --port flag**: broken in 2.2.3 (rest/spread parameter bug); probe uses portfinder sequential ports detected from server logs.
-- **Presentation.SaveAs / Workbook.SaveAs**: work natively with absolute paths (no sandbox restriction).
-- **ExportAsFixedFormat**: works natively for PDF export from Writer.
+| Format | Actual test path | Size | WPS API | Validation |
+|---|---|---:|---|---|
+| DOCX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.docx` | missing | `Document.SaveAs2(path, 12)` | **Failed:** no file and no `FileAfterSave` event within 15 seconds |
+| PPTX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pptx` | 73,006 | `Presentation.SaveAs(path, 24)` | **Passed:** ZIP signature, size, and `ppt/presentation.xml` verified |
+| XLSX | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.xlsx` | 13,179 | `Workbook.SaveAs(path, 51)` | **Passed:** ZIP signature, size, and `xl/workbook.xml` verified |
+| PDF | `/Users/neomei/项目/WpsComposer/.worktrees/macos-jsapi-phase0/build/macos-phase0-after-manual-authorization/smoke.pdf` | missing | `Document.ExportAsFixedFormat(path, 17, ...)` | **Failed for generation:** Writer could not first serialize the independent temporary source document. A later direct export of an existing staged DOC/DOCX succeeded and is the basis of `convert_to_pdf()` support. |
 
-## Registration rollback
+The all-four artifact structure check therefore fails by design. Partial files
+are not reported as successful outputs.
 
-The probe snapshots `~/Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml` before starting and restores it atomically on exit (including error and timeout paths). Verified: file was ABSENT before and ABSENT after the run.
+## Capability matrix
 
-Recovery directory is printed to stderr before any modification; if the process is killed, use it to restore manually:
+Classification reflects observed behavior, not merely the presence of a JSAPI
+member.
 
-```bash
-recovery="<printed path>"
-cp "$recovery/publish.xml.original" "$HOME/Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml"
-# or if registration.json says "existed": false:
-rm "$HOME/Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml"
+| Component | Capability | Class | Evidence/detail |
+|---|---|---|---|
+| Writer | `writer.documents` | native | `Application.Documents.Count` succeeded |
+| Writer | `writer.font_enumeration` | native | `Application.FontNames.Count` succeeded; the probe did not resolve a concrete requested-font list |
+| Writer | `writer.template_enumeration` | native | `Application.Templates.Count` succeeded |
+| Writer | `writer.image_source` | mapped | Allowed image served from the fixed Writer loopback origin |
+| Writer | `writer.font_ascii` | mapped | `Font.NameAscii` accepted as the Latin-font mapping |
+| Writer | `writer.tables` | native | `Document.Tables.Add` succeeded |
+| Writer | `writer.image_return` | native | HTTP image insertion returned an `InlineShape` |
+| Writer | `writer.image_api` | native | `Document.InlineShapes.AddPicture` accepted the loopback URL |
+| Writer | `writer.images` | native | Inline image creation and sizing succeeded before save |
+| Writer | `writer.save_docx` | unsupported | `SaveAs2` is exposed but produced no file and no completion event, including for a one-paragraph document |
+| Writer | `writer.export_pdf` | unsupported | No standalone PDF was produced; the independent Writer source save also failed |
+| Presentation | `presentation.presentations` | native | Presentations collection accessible |
+| Presentation | `presentation.slides` | native | `Slides.Add` succeeded |
+| Presentation | `presentation.shapes` | native | Shapes collection accessible |
+| Presentation | `presentation.template_resolution` | mapped | `Presentations.Add` used the WPS-native blank presentation |
+| Presentation | `presentation.create` | native | `Presentations.Add` succeeded |
+| Presentation | `presentation.text` | native | `Shapes.AddTextbox` succeeded |
+| Presentation | `presentation.image` | native | `Shapes.AddPicture` succeeded |
+| Presentation | `presentation.table` | native | `Shapes.AddTable` succeeded |
+| Presentation | `presentation.save_pptx` | native | Format 24 produced a valid 73,006-byte PPTX |
+| Spreadsheet | `spreadsheet.workbooks` | native | Workbooks collection accessible |
+| Spreadsheet | `spreadsheet.range` | native | `Worksheet.Range` succeeded |
+| Spreadsheet | `spreadsheet.charts` | native | `Worksheet.ChartObjects` accessible |
+| Spreadsheet | `spreadsheet.create` | native | `Workbooks.Add` succeeded |
+| Spreadsheet | `spreadsheet.values` | native | Cell `Value2` assignment succeeded |
+| Spreadsheet | `spreadsheet.formulas` | native | `Range.Formula` and `FillDown` succeeded |
+| Spreadsheet | `spreadsheet.formatting` | native | Font, fill, borders, and `AutoFit` succeeded |
+| Spreadsheet | `spreadsheet.chart` | native | `ChartObjects.Add` and `SetSourceData` succeeded |
+| Spreadsheet | `spreadsheet.save_xlsx` | native | Format 51 produced a valid 13,179-byte XLSX in the authorization-control run |
+| Spreadsheet | `spreadsheet.template_resolution` | mapped | `Workbooks.Add` used the WPS-native default workbook |
+
+## Safety and rollback evidence
+
+The registration path was absent before every real run:
+
+```text
+~/Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml
+ABSENT
 ```
 
-## Phase 1 decision
+It was also absent after partial artifact generation, command failure, timeout,
+and an interrupted run. Probe-created WPS processes were identified as the exact PID difference
+from the pre-run WPS process snapshot and terminated without touching
+pre-existing instances. Temporary recovery directories were removed only after
+registration verification succeeded.
 
-**Proceed.** All four output formats (DOCX, PPTX, XLSX, PDF) are validated through Mac WPS JSAPI. DOCX requires a sandbox relay (save to container, copy out). Registration rollback is verified safe.
+If a crash bypasses normal cleanup:
+
+1. Stop only the Node processes whose command points into
+   `macos/wps-jsapi-probe/node_modules/wpsjs`; do not quit an unrelated WPS
+   session.
+2. Open the `WPS registration recovery: ...` directory printed by the probe and
+   inspect `registration.json`.
+3. When `existed` is `true`, copy `publish.xml.original` to a temporary file in
+   the registration directory and atomically rename it to `publish.xml`. When
+   `existed` is `false`, remove only the probe-created `publish.xml`.
+4. Reopen only the WPS instances used for the probe and verify the registration
+   file matches its pre-run state.
+
+## Re-running the gate
+
+Install the pinned dependencies with `npm ci` in
+`macos/wps-jsapi-probe`, then run the command above into a new, empty output
+directory. A future **GO** requires valid DOCX, PPTX, XLSX, and PDF artifacts,
+plus a supported Writer font/template resolution path. API availability alone
+is insufficient.

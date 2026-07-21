@@ -18,6 +18,12 @@ def test_methods_are_routed_to_one_component():
         "smoke_pdf": "writer",
         "smoke_pptx": "presentation",
         "smoke_xlsx": "spreadsheet",
+        "convert_writer_pdf": "writer",
+        "convert_workbook_pdf": "spreadsheet",
+        "convert_presentation_pdf": "presentation",
+        "generate_writer_document": "writer",
+        "generate_spreadsheet_workbook": "spreadsheet",
+        "generate_presentation_deck": "presentation",
     }
 
 
@@ -29,6 +35,29 @@ def test_command_rejects_unknown_method():
 def test_command_rejects_wrong_component():
     with pytest.raises(ProtocolError, match="requires presentation"):
         ProbeCommand.create("writer", "smoke_pptx", {})
+
+
+def test_generation_command_is_component_typed():
+    with pytest.raises(ProtocolError, match="requires writer"):
+        ProbeCommand.create("spreadsheet", "generate_writer_document", {})
+
+
+@pytest.mark.parametrize(
+    ("component", "method"),
+    [
+        ("writer", "convert_writer_pdf"),
+        ("spreadsheet", "convert_workbook_pdf"),
+        ("presentation", "convert_presentation_pdf"),
+    ],
+)
+def test_conversion_methods_are_scoped_to_one_component(component, method):
+    assert ProbeCommand.create(component, method, {}).method == method
+    wrong = next(
+        name for name in ("writer", "spreadsheet", "presentation")
+        if name != component
+    )
+    with pytest.raises(ProtocolError, match=f"requires {component}"):
+        ProbeCommand.create(wrong, method, {})
 
 
 def test_result_round_trip():

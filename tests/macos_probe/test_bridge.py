@@ -55,7 +55,9 @@ def test_command_round_trip():
             origin,
         )
         assert status == 204
-        command = bridge.issue("writer", "smoke_docx", {"outputPath": "/tmp/a.docx"})
+        command = bridge.issue(
+            "writer", "smoke_docx", {"outputPath": "/tmp/a.docx"}
+        )
         status, payload = request(
             bridge,
             "GET",
@@ -70,7 +72,12 @@ def test_command_round_trip():
             bridge,
             "POST",
             "/v1/result",
-            {"id": command.id, "ok": True, "value": {"saved": True}, "error": None},
+            {
+                "id": command.id,
+                "ok": True,
+                "value": {"saved": True},
+                "error": None,
+            },
             bridge.token,
             origin,
         )
@@ -85,7 +92,11 @@ def test_wait_registered_reports_independent_components():
         "http://127.0.0.1:3893",
     }
     with LoopbackBridge(origins) as bridge, ThreadPoolExecutor() as pool:
-        for component, port in (("writer", 3891), ("presentation", 3892), ("spreadsheet", 3893)):
+        for component, port in (
+            ("writer", 3891),
+            ("presentation", 3892),
+            ("spreadsheet", 3893),
+        ):
             pool.submit(
                 request,
                 bridge,
@@ -96,6 +107,11 @@ def test_wait_registered_reports_independent_components():
                 f"http://127.0.0.1:{port}",
             )
         bridge.wait_registered({"writer", "presentation", "spreadsheet"}, 2)
+        assert bridge.registered_components() == {
+            "writer",
+            "presentation",
+            "spreadsheet",
+        }
 
 
 def test_completion_is_idempotent_and_cancellation_ignores_late_result():
@@ -118,4 +134,6 @@ def test_conflicting_duplicate_result_is_rejected():
         command = bridge.issue("writer", "smoke_docx", {})
         bridge.state.complete(ProbeResult(command.id, True, {"saved": True}, None))
         with pytest.raises(ProtocolError, match="Conflicting duplicate"):
-            bridge.state.complete(ProbeResult(command.id, False, {}, {"code": "failed"}))
+            bridge.state.complete(
+                ProbeResult(command.id, False, {}, {"code": "failed"})
+            )

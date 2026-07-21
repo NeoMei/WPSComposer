@@ -18,6 +18,9 @@ def test_public_package_exports_supported_api():
         "parse",
         "parse_file",
         "StructuredDocument",
+        "ConversionError",
+        "GenerationError",
+        "convert_to_pdf",
     }
 
     assert required <= set(api.__all__)

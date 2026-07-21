@@ -67,6 +67,7 @@ Append `.venv/` to `.gitignore`, then run:
 
 ```bash
 python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip setuptools
 .venv/bin/python -m pip install -e '.[dev]'
 ```
 
@@ -350,12 +351,12 @@ def test_command_round_trip():
 
 def test_wait_registered_reports_independent_components():
     origins = {
+        "http://127.0.0.1:3889",
+        "http://127.0.0.1:3890",
         "http://127.0.0.1:3891",
-        "http://127.0.0.1:3892",
-        "http://127.0.0.1:3893",
     }
     with LoopbackBridge(origins) as bridge, ThreadPoolExecutor() as pool:
-        for component, port in (("writer", 3891), ("presentation", 3892), ("spreadsheet", 3893)):
+        for component, port in (("writer", 3889), ("presentation", 3890), ("spreadsheet", 3891)):
             pool.submit(
                 request,
                 bridge,
@@ -554,6 +555,9 @@ git commit -m "Add authenticated macOS probe bridge"
   "devDependencies": {
     "wps-jsapi-declare": "2.2.0",
     "wpsjs": "2.2.3"
+  },
+  "overrides": {
+    "tmp": "0.2.7"
   }
 }
 ```
@@ -565,10 +569,11 @@ Run:
 ```bash
 cd macos/wps-jsapi-probe
 PATH=/Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm install --package-lock-only
+PATH=/Users/neomei/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH npm ci
 npm ls --depth=0
 ```
 
-Expected: `wpsjs@2.2.3` and `wps-jsapi-declare@2.2.0`, with no dependency resolution error. Do not commit `node_modules`.
+Expected: `wpsjs@2.2.3`, `wps-jsapi-declare@2.2.0`, and the reviewed `tmp@0.2.7` security override, with no dependency resolution error. Do not commit `node_modules`. Run `npm audit --json > audit.json` inside the gitignored per-run evidence directory and record findings in `docs/macos-phase0.md`; do not apply an unreviewed `npm audit fix` to the official WPS toolchain.
 
 - [ ] **Step 3: Write failing runtime tests**
 
@@ -586,9 +591,9 @@ from skills.WPSComposer.scripts.macos_probe.runtime import (
 
 def test_component_config_uses_distinct_ports_and_wps_types():
     assert COMPONENT_CONFIG == {
-        "writer": {"addon_type": "wps", "port": 3891, "script": "writer.js"},
-        "presentation": {"addon_type": "wpp", "port": 3892, "script": "presentation.js"},
-        "spreadsheet": {"addon_type": "et", "port": 3893, "script": "spreadsheet.js"},
+        "writer": {"addon_type": "wps", "port": 3889, "script": "writer.js"},
+        "presentation": {"addon_type": "wpp", "port": 3890, "script": "presentation.js"},
+        "spreadsheet": {"addon_type": "et", "port": 3891, "script": "spreadsheet.js"},
     }
 
 
@@ -658,9 +663,9 @@ Use these exact constants in `runtime.py`:
 WPS_APP = Path("/Applications/wpsoffice.app")
 PUBLISH_XML = Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml"
 COMPONENT_CONFIG = {
-    "writer": {"addon_type": "wps", "port": 3891, "script": "writer.js"},
-    "presentation": {"addon_type": "wpp", "port": 3892, "script": "presentation.js"},
-    "spreadsheet": {"addon_type": "et", "port": 3893, "script": "spreadsheet.js"},
+    "writer": {"addon_type": "wps", "port": 3889, "script": "writer.js"},
+    "presentation": {"addon_type": "wpp", "port": 3890, "script": "presentation.js"},
+    "spreadsheet": {"addon_type": "et", "port": 3891, "script": "spreadsheet.js"},
 }
 ```
 
@@ -702,7 +707,7 @@ build/macos-phase0/
 
 1. Reject non-macOS platforms and missing `/Applications/wpsoffice.app`.
 2. Snapshot `PUBLISH_XML` to a printed, private recovery directory before starting any server.
-3. Verify ports 3891, 3892, and 3893 are free by binding temporary sockets to `127.0.0.1`.
+3. Verify ports 3889, 3890, and 3891 are free by binding temporary sockets to `127.0.0.1`.
 4. Spawn one process per profile, in Writer → Presentation → Spreadsheet order, and wait for each HTTP server before starting the next. Sequential startup prevents two `wpsjs` processes from reading and overwriting the same `publish.xml` concurrently. Use:
 
 ```python
@@ -719,10 +724,10 @@ build/macos-phase0/
 5. Set each process `cwd` to its profile and capture merged stdout/stderr in a per-component log file.
 6. Poll `http://127.0.0.1:<port>/index.html` for at most 15 seconds.
 7. Copy `wpsDemo.docx`, `wppDemo.pptx`, and `etDemo.xlsx` from `node_modules/wpsjs/src/lib/res` into the run directory.
-8. Activate components with `open -a /Applications/wpsoffice.app <fixture>`; never invoke Accessibility or keyboard automation.
-9. On cleanup, terminate only the three child Node processes, wait five seconds, kill a child only if it did not terminate, and restore `publish.xml` in `finally`.
+8. After all three HTTP servers are listening, activate each component with `open -n -a /Applications/wpsoffice.app <fixture>`, then wait for all add-ins to register. `-n` is required because an already-running WPS process reads the add-in registration only at process startup; a fresh instance loads the complete Writer/WPP/ET registration without quitting or disturbing an existing user instance. Never invoke Accessibility or keyboard automation.
+9. Snapshot exact WPS main-process PIDs before startup. On cleanup, terminate the child Node processes and only the exact WPS main-process PID difference created during the probe, wait five seconds, kill an owned process only if it did not terminate, and restore `publish.xml` in `finally`.
 
-`wpsjs 2.2.3` selects its `debug_publish` path on Darwin; that implementation still launches WPS even when `--server` is supplied. Treat those launches as expected and harmless, then open the three fixture paths explicitly so every component add-in loads. Do not claim that `--server` suppresses WPS on this version.
+`wpsjs 2.2.3` selects its `debug_publish` path on Darwin. That implementation still launches WPS when `--server` is supplied and wraps the parsed options in an array, so its requested `--port` is ignored. Start profiles sequentially and rely on its own `portfinder` defaults: Writer gets 3889, Presentation gets 3890, and Spreadsheet gets 3891. Treat the WPS launches as expected, then open the three fixture paths explicitly so every component add-in loads. Do not patch `node_modules` or claim that these two options behave correctly on this version.
 
 Read WPS version using Python's plist parser so the path is handled without a shell domain lookup:
 
@@ -1435,9 +1440,9 @@ def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
     image.write_bytes(b"png")
     policy = PathPolicy((tmp_path, output))
     origins = {
+        "http://127.0.0.1:3889",
+        "http://127.0.0.1:3890",
         "http://127.0.0.1:3891",
-        "http://127.0.0.1:3892",
-        "http://127.0.0.1:3893",
     }
 
     with LoopbackBridge(origins) as bridge, ThreadPoolExecutor(max_workers=3) as pool:
@@ -1588,6 +1593,10 @@ git commit -m "Add Mac WPS Phase 0 probe runner"
 **Interfaces:**
 - Consumes: the complete Phase 0 runner and the installed Mac WPS.
 - Produces: an evidence-backed pass/fail decision and a capability-gap table that gates Phase 1.
+
+**Actual result (2026-07-17):** NO-GO on WPS 12.1.26035. PPTX and XLSX
+validated, but Writer produced neither DOCX nor PDF, including in a minimal
+one-paragraph isolation run. See `docs/macos-phase0.md`.
 
 - [ ] **Step 1: Install the pinned probe dependencies**
 

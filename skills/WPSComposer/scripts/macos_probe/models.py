@@ -12,6 +12,12 @@ METHOD_COMPONENT = {
     "smoke_pdf": "writer",
     "smoke_pptx": "presentation",
     "smoke_xlsx": "spreadsheet",
+    "convert_writer_pdf": "writer",
+    "convert_workbook_pdf": "spreadsheet",
+    "convert_presentation_pdf": "presentation",
+    "generate_writer_document": "writer",
+    "generate_spreadsheet_workbook": "spreadsheet",
+    "generate_presentation_deck": "presentation",
 }
 
 
@@ -63,9 +69,7 @@ class ProbeResult:
         ok = raw.get("ok")
         if not isinstance(ok, bool):
             raise ProtocolError("Result ok must be boolean")
-        value = raw.get("value")
-        if value is None:
-            value = {}
+        value = raw.get("value") or {}
         error = raw.get("error")
         if not isinstance(value, dict):
             raise ProtocolError("Result value must be an object")

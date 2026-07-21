@@ -1,220 +1,479 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import locale
+import shutil
+import tempfile
 import time
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Optional
 
+from ..artifact_transport import (
+    ArtifactTransportError,
+    ArtifactValidationError,
+    publish_artifact,
+    validate_office_package,
+    validate_pdf,
+)
 from .bridge import LoopbackBridge
-from .models import PathPolicy, ProbeResult
+from .models import COMPONENTS, PathPolicy, ProbeResult, ProtocolError
+from .runtime import ProbeRuntime, read_wps_version
 
 PNG_FIXTURE = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8"
     "/x8AAusB9Y9Zl1sAAAAASUVORK5CYII="
 )
+ORIGINS = {
+    "http://127.0.0.1:3889",
+    "http://127.0.0.1:3890",
+    "http://127.0.0.1:3891",
+}
+WRITER_IMAGE_URL = "http://127.0.0.1:3889/fixture.png"
+OUTPUT_COMMANDS = (
+    ("writer", "smoke_docx", "smoke.docx", "docx"),
+    ("presentation", "smoke_pptx", "smoke.pptx", "pptx"),
+    ("spreadsheet", "smoke_xlsx", "smoke.xlsx", "xlsx"),
+    ("writer", "smoke_pdf", "smoke.pdf", "pdf"),
+)
 
 
-class ArtifactError(RuntimeError):
-    pass
+class ArtifactError(ArtifactValidationError):
+    """Raised when WPS did not produce a structurally plausible artifact."""
+
+
+class Phase0Failed(RuntimeError):
+    """Raised after a failing probe report has been safely written."""
+
+    def __init__(self, message: str, report_path: Path):
+        super().__init__(message)
+        self.report_path = report_path
 
 
 def validate_artifact(path: Path, format_name: str) -> None:
-    if not path.is_file():
-        raise ArtifactError(f"{format_name.upper()} output is missing: {path}")
-    with path.open("rb") as f:
-        signature = f.read(8)
-    expected = b"%PDF-" if format_name == "pdf" else b"PK\x03\x04"
-    if not signature.startswith(expected):
-        raise ArtifactError(f"invalid {format_name.upper()} signature: {path}")
-    if path.stat().st_size < 1024:
-        raise ArtifactError(f"{format_name.upper()} output is too small: {path}")
+    try:
+        if format_name == "pdf":
+            validate_pdf(path)
+        else:
+            validate_office_package(path, format_name)
+    except ArtifactValidationError as exc:
+        raise ArtifactError(str(exc)) from exc
 
 
-def _write_json(path: Path, data: Any) -> None:
-    path.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+def wait_for_artifact(path: Path, format_name: str, timeout: float) -> None:
+    """Wait for WPS Writer's asynchronous filesystem flush to finish."""
+    if timeout <= 0:
+        raise ValueError("artifact timeout must be positive")
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            validate_artifact(path, format_name)
+            return
+        except ArtifactError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+
+
+def _failure(
+    component: str,
+    method: str,
+    code: str,
+    message: str,
+    error: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    return {
+        "component": component,
+        "method": method,
+        "code": code,
+        "message": message,
+        "error": error,
+        "logPath": None,
+    }
+
+
+def _wait_for_result(
+    bridge: LoopbackBridge,
+    component: str,
+    method: str,
+    command_id: str,
+    timeout: float,
+) -> tuple[Optional[ProbeResult], Optional[dict[str, Any]]]:
+    try:
+        result = bridge.wait_result(command_id, timeout)
+    except TimeoutError as exc:
+        bridge.state.cancel(command_id)
+        return None, _failure(
+            component,
+            method,
+            "COMMAND_TIMEOUT",
+            str(exc),
+            {"cancellation": "mapped"},
+        )
+    if not result.ok:
+        error = None if result.error is None else dict(result.error)
+        message = (
+            str(error.get("message", "WPS JSAPI command failed"))
+            if error
+            else "WPS JSAPI command failed"
+        )
+        return None, _failure(
+            component,
+            method,
+            "JSAPI_COMMAND_FAILED",
+            message,
+            error,
+        )
+    return result, None
 
 
 def _execute_commands(
     bridge: LoopbackBridge,
     policy: PathPolicy,
+    staging_dir: Path,
     output_dir: Path,
     image_path: Path,
-    timeout: float = 90,
-    registered: set | None = None,
+    timeout: float,
 ) -> dict[str, Any]:
-    policy.require_allowed(image_path)
-    if registered is None:
-        registered = {"writer", "presentation", "spreadsheet"}
-    capabilities: dict[str, Any] = {"writer": {}, "presentation": {}, "spreadsheet": {}}
+    """Run independent component probes and all four typed smoke commands."""
+    started = time.monotonic()
     failures: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
-    timings: dict[str, Any] = {}
-    pdf_preset = ""
+    capabilities: dict[str, dict[str, Any]] = {
+        component: {} for component in COMPONENTS
+    }
 
-    for component in ("writer", "presentation", "spreadsheet"):
-        if component not in registered:
-            failures.append({
-                "component": component,
-                "method": "register",
-                "error": {"code": "not_registered", "message": f"{component} add-in did not connect"},
-            })
-            continue
-        start = time.monotonic()
+    for component in COMPONENTS:
         command = bridge.issue(component, "probe_capabilities", {})
-        try:
-            result = bridge.wait_result(command.id, timeout)
-            timings[f"{component}_probe_ms"] = round((time.monotonic() - start) * 1000)
-            if result.ok:
-                caps = result.value.get("capabilities", {})
-                capabilities[component] = caps
-            else:
-                failures.append({
-                    "component": component,
-                    "method": "probe_capabilities",
-                    "error": dict(result.error or {}),
-                })
-        except TimeoutError:
-            bridge.state.cancel(command.id)
-            failures.append({
-                "component": component,
-                "method": "probe_capabilities",
-                "error": {"code": "timeout", "message": "probe timed out"},
-                "cancellation": "mapped",
-            })
-
-    commands = (
-        ("writer", "smoke_docx", "smoke.docx", "docx"),
-        ("presentation", "smoke_pptx", "smoke.pptx", "pptx"),
-        ("spreadsheet", "smoke_xlsx", "smoke.xlsx", "xlsx"),
-        ("writer", "smoke_pdf", "smoke.pdf", "pdf"),
-    )
-
-    for component, method, filename, fmt in commands:
-        if component not in registered:
+        result, failure = _wait_for_result(
+            bridge,
+            component,
+            "probe_capabilities",
+            command.id,
+            timeout,
+        )
+        if failure is not None:
+            failures.append(failure)
             continue
-        out_path = output_dir / filename
-        policy.require_allowed(out_path)
-        params = {"outputPath": str(out_path.resolve()), "imagePath": str(image_path.resolve())}
-        if method == "smoke_docx":
-            params["containerDir"] = str(Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac/Data/Documents")
-        start = time.monotonic()
-        command = bridge.issue(component, method, params)
-        try:
-            result = bridge.wait_result(command.id, timeout)
-            timings[f"{method}_ms"] = round((time.monotonic() - start) * 1000)
-            if result.ok:
-                container_path = result.value.get("containerPath")
-                if container_path and not out_path.is_file():
-                    import shutil
-                    src = Path(container_path)
-                    wps_container = Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac/Data"
-                    if not (src.resolve() == wps_container or wps_container in src.resolve().parents):
-                        raise ArtifactError(f"containerPath outside WPS sandbox: {src}")
-                    if src.is_file():
-                        shutil.copy2(src, out_path)
-                        src.unlink(missing_ok=True)
-                validate_artifact(out_path, fmt)
-                artifacts.append({
-                    "format": fmt,
-                    "path": str(out_path.resolve()),
-                    "size": out_path.stat().st_size,
-                })
-                if fmt == "pdf":
-                    pdf_preset = result.value.get("preset", "")
-                for key, val in (result.value.get("capabilities") or {}).items():
-                    if not isinstance(val, dict):
-                        continue
-                    comp = key.split(".")[0] if "." in key else component
-                    if comp in capabilities:
-                        capabilities[comp][key] = val
-            else:
-                failures.append({
-                    "component": component,
-                    "method": method,
-                    "error": dict(result.error or {}),
-                })
-        except TimeoutError:
-            bridge.state.cancel(command.id)
-            failures.append({
-                "component": component,
-                "method": method,
-                "error": {"code": "timeout", "message": f"{method} timed out"},
-                "cancellation": "mapped",
-            })
-        except ArtifactError as exc:
-            failures.append({
-                "component": component,
-                "method": method,
-                "error": {"code": "artifact_invalid", "message": str(exc)},
-            })
+        assert result is not None
+        reported = result.value.get("capabilities") or {}
+        if isinstance(reported, dict):
+            capabilities[component].update(reported)
 
-    status = "passed" if len(artifacts) == 4 and not failures else "failed"
+    allowed_image = policy.require_allowed(image_path)
+    private_staging = policy.require_allowed(staging_dir)
+    pdf_source = policy.require_allowed(private_staging / "smoke-pdf-source.docx")
+    try:
+        for component, method, filename, format_name in OUTPUT_COMMANDS:
+            staged_path = policy.require_allowed(private_staging / filename)
+            final_path = policy.require_allowed(output_dir / filename)
+            try:
+                command = bridge.issue(
+                    component,
+                    method,
+                    {
+                        "outputPath": str(staged_path),
+                        "imagePath": str(allowed_image),
+                        "imageUrl": WRITER_IMAGE_URL,
+                        "sourcePath": str(pdf_source),
+                    },
+                )
+                result, failure = _wait_for_result(
+                    bridge, component, method, command.id, timeout
+                )
+                if failure is not None:
+                    failures.append(failure)
+                    continue
+                assert result is not None
+                reported_capabilities = result.value.get("capabilities") or {}
+                if isinstance(reported_capabilities, dict):
+                    capabilities[component].update(reported_capabilities)
+                reported_path = policy.require_allowed(
+                    str(result.value.get("path", ""))
+                )
+                if reported_path != staged_path:
+                    raise ArtifactError(
+                        f"WPS reported {reported_path}, expected {staged_path}"
+                    )
+                wait_for_artifact(
+                    staged_path,
+                    format_name,
+                    timeout=min(timeout, 10),
+                )
+                if format_name == "pdf" and result.value.get("preset") != (
+                    "obsidian-reading"
+                ):
+                    raise ArtifactError(
+                        "PDF result did not report obsidian-reading"
+                    )
+                validator = (
+                    validate_pdf
+                    if format_name == "pdf"
+                    else lambda path, name=format_name: validate_office_package(
+                        path, name
+                    )
+                )
+                published = publish_artifact(
+                    staged_path,
+                    final_path,
+                    overwrite=False,
+                    validator=validator,
+                )
+                artifacts.append(
+                    {
+                        "format": format_name,
+                        "path": str(published),
+                        "size": published.stat().st_size,
+                    }
+                )
+            except ArtifactTransportError as exc:
+                failures.append(
+                    _failure(component, method, exc.code, str(exc))
+                )
+            except (ArtifactValidationError, ProtocolError) as exc:
+                failures.append(
+                    _failure(
+                        component,
+                        method,
+                        "ARTIFACT_VALIDATION_FAILED",
+                        str(exc),
+                    )
+                )
+            finally:
+                staged_path.unlink(missing_ok=True)
+    finally:
+        pdf_source.unlink(missing_ok=True)
+
+    staging_text = str(private_staging)
+
+    def redact(value: Any) -> Any:
+        if isinstance(value, str):
+            return value.replace(staging_text, "<wps-staging>")
+        if isinstance(value, dict):
+            return {key: redact(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [redact(item) for item in value]
+        return value
+
+    failures = redact(failures)
+
     return {
-        "schemaVersion": 1,
-        "status": status,
-        "backend": "mac-wps-jsapi-probe",
-        "platform": "macOS",
-        "wpsVersion": "",
-        "wpsjsVersion": "2.2.3",
-        "pdfPreset": pdf_preset,
+        "status": "passed" if not failures and len(artifacts) == 4 else "failed",
         "artifacts": artifacts,
         "failures": failures,
-        "timingsMs": timings,
-        "capabilities": capabilities,
+        "components": capabilities,
+        "pdfPreset": "obsidian-reading",
+        "artifactTransport": "wps-container-staging",
+        "timingsMs": {
+            "commands": round((time.monotonic() - started) * 1000, 3)
+        },
     }
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _smoke_spec_hash(addin_dir: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(item for item in addin_dir.iterdir() if item.is_file()):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _publish_writer_image(
+    profiles: dict[str, Path], image_path: Path
+) -> str:
+    writer_profile = profiles["writer"]
+    shutil.copy2(image_path, writer_profile / "fixture.png")
+    return WRITER_IMAGE_URL
+
+
+def _copy_logs(runtime: ProbeRuntime, output_dir: Path) -> dict[str, str]:
+    copied: dict[str, str] = {}
+    existing = {name: path for name, path in runtime.logs.items() if path.is_file()}
+    if not existing:
+        return copied
+    logs_dir = output_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    for component, source in existing.items():
+        target = logs_dir / source.name
+        shutil.copy2(source, target)
+        copied[component] = str(target.resolve())
+    return copied
+
+
+def _ensure_output_targets_are_new(output_dir: Path) -> None:
+    for _, _, filename, _ in OUTPUT_COMMANDS:
+        target = output_dir / filename
+        if target.exists():
+            raise FileExistsError(
+                f"Refusing to overwrite an existing Phase 0 artifact: {target}"
+            )
+    with tempfile.NamedTemporaryFile(dir=output_dir, prefix=".write-test-"):
+        pass
+
+
+def _allocate_runtime_dir() -> tuple[Path, Path]:
+    root = Path(tempfile.mkdtemp(prefix="wpscomposer-phase0-"))
+    return root, root / "runtime"
+
+
+def _wait_for_component_registration(
+    bridge: LoopbackBridge,
+    runtime: ProbeRuntime,
+    timeout: float,
+) -> None:
+    """Retry only WPS components that miss the initial registration window."""
+    expected = set(COMPONENTS)
+    deadline = time.monotonic() + timeout
+    for attempt in range(4):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            bridge.wait_registered(expected, 0)
+            return
+        try:
+            bridge.wait_registered(expected, min(10, remaining))
+            return
+        except TimeoutError:
+            missing = expected - bridge.registered_components()
+            if attempt == 3:
+                raise
+            for component in sorted(missing):
+                runtime.activate_component(component)
 
 
 def run_phase0(
     output_dir: Path,
-    node: str | None = None,
+    node: Optional[str] = None,
     timeout: float = 90,
 ) -> Path:
-    from .runtime import COMPONENT_CONFIG, ProbeRuntime, read_wps_version
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for stale in ("smoke.docx", "smoke.pptx", "smoke.xlsx", "smoke.pdf"):
-        (output_dir / stale).unlink(missing_ok=True)
-    run_dir = output_dir / ".runtime"
-    probe_root = Path(__file__).resolve().parent.parent.parent.parent.parent / "macos" / "wps-jsapi-probe"
-
-    image_path = output_dir / "fixture.png"
-    image_path.write_bytes(base64.b64decode(PNG_FIXTURE))
-
-    policy = PathPolicy((output_dir,))
-    origins = {"*"}
-
-    wps_version = read_wps_version()
-
-    with LoopbackBridge(origins) as bridge:
-        runtime = ProbeRuntime(probe_root, run_dir, node=node)
-        try:
-            runtime.prepare_profiles(bridge.url, bridge.token)
-            runtime.start_servers()
-            runtime.activate_components()
-            registered = set()
-            for comp in ("writer", "presentation", "spreadsheet"):
-                try:
-                    bridge.wait_registered({comp}, min(timeout, 60))
-                    registered.add(comp)
-                except TimeoutError:
-                    pass
-            report = _execute_commands(bridge, policy, output_dir, image_path, timeout, registered)
-        finally:
-            runtime.restore_registration()
-
-    report["wpsVersion"] = wps_version
-
-    caps_path = output_dir / "capabilities.json"
-    _write_json(caps_path, {
+    """Run the installed-Mac feasibility gate and return its report path."""
+    if timeout <= 0:
+        raise ValueError("timeout must be positive")
+    started = time.monotonic()
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    report_path = output / "phase0-report.json"
+    capabilities_path = output / "capabilities.json"
+    runtime_root, runtime_dir = _allocate_runtime_dir()
+    repository_root = Path(__file__).resolve().parents[4]
+    probe_root = repository_root / "macos/wps-jsapi-probe"
+    addin_dir = probe_root / "addin"
+    capabilities: dict[str, dict[str, Any]] = {
+        component: {} for component in COMPONENTS
+    }
+    report: dict[str, Any] = {
         "schemaVersion": 1,
+        "status": "failed",
+        "backend": "mac-wps-jsapi-probe",
         "platform": "macOS",
-        "wpsVersion": wps_version,
-        "components": report.pop("capabilities", {}),
-    })
+        "wpsVersion": "unknown",
+        "wpsjsVersion": "2.2.3",
+        "locale": locale.getlocale()[0] or "unknown",
+        "requestedFormats": ["docx", "pptx", "xlsx", "pdf"],
+        "renderPlanSchemaVersion": None,
+        "smokeSpecHash": _smoke_spec_hash(addin_dir),
+        "requestedFonts": ["PingFang SC", "Helvetica Neue"],
+        "resolvedFonts": [],
+        "pdfPreset": "obsidian-reading",
+        "artifactTransport": "wps-container-staging",
+        "artifacts": [],
+        "failures": [],
+        "warnings": [],
+        "logPaths": {},
+        "timingsMs": {},
+    }
+    runtime: Optional[ProbeRuntime] = None
+    try:
+        _ensure_output_targets_are_new(output)
+        report["wpsVersion"] = read_wps_version()
+        with LoopbackBridge(ORIGINS) as bridge:
+            runtime = ProbeRuntime(
+                probe_root,
+                runtime_dir,
+                bridge.url,
+                bridge.token,
+                node_override=node,
+            )
+            with runtime:
+                if runtime.staging_dir is None:
+                    raise RuntimeError("WPS staging session was not created")
+                profiles = runtime.prepare_profiles()
+                image_path = runtime.staging_dir / "fixture.png"
+                image_path.write_bytes(base64.b64decode(PNG_FIXTURE))
+                _publish_writer_image(profiles, image_path)
+                runtime.start_servers()
+                runtime.activate_components()
+                _wait_for_component_registration(bridge, runtime, timeout)
+                policy = PathPolicy((runtime_dir, runtime.staging_dir, output))
+                execution = _execute_commands(
+                    bridge,
+                    policy,
+                    runtime.staging_dir,
+                    output,
+                    image_path,
+                    timeout,
+                )
+                capabilities = execution.pop("components")
+                report.update(execution)
+    except Exception as exc:
+        report["status"] = "failed"
+        report["failures"].append(
+            _failure(
+                "runtime",
+                "run_phase0",
+                type(exc).__name__,
+                str(exc),
+            )
+        )
+    finally:
+        if runtime is not None:
+            report["logPaths"] = _copy_logs(runtime, output)
+            for failure in report["failures"]:
+                component = failure.get("component")
+                if component in report["logPaths"]:
+                    failure["logPath"] = report["logPaths"][component]
+            if runtime.registration_restored:
+                shutil.rmtree(runtime_root, ignore_errors=True)
+            else:
+                report["recoveryDirectory"] = str(runtime_dir)
+        else:
+            shutil.rmtree(runtime_root, ignore_errors=True)
 
-    report_path = output_dir / "phase0-report.json"
+    unsupported = []
+    for component, entries in capabilities.items():
+        for name, entry in entries.items():
+            if isinstance(entry, dict) and entry.get("classification") == (
+                "unsupported"
+            ):
+                unsupported.append(f"{component}:{name}")
+    if unsupported:
+        report["warnings"].append(
+            "Unsupported capabilities: " + ", ".join(sorted(unsupported))
+        )
+    report["timingsMs"]["total"] = round(
+        (time.monotonic() - started) * 1000, 3
+    )
+    _write_json(
+        capabilities_path,
+        {
+            "schemaVersion": 1,
+            "platform": "macOS",
+            "wpsVersion": report["wpsVersion"],
+            "components": capabilities,
+        },
+    )
     _write_json(report_path, report)
+    if report["status"] != "passed":
+        first = report["failures"][0] if report["failures"] else {}
+        raise Phase0Failed(
+            str(first.get("message", "Mac WPS Phase 0 failed")),
+            report_path,
+        )
     return report_path

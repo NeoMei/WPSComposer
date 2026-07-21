@@ -1,6 +1,12 @@
 (function () {
   "use strict";
 
+  const ERROR_CODES = [
+    "CONVERSION_COMMAND_FAILED",
+    "INTERACTIVE_INPUT_REQUIRED",
+    "NO_VISIBLE_WORKSHEETS"
+  ];
+
   let started = false;
 
   async function readJson(response) {
@@ -13,7 +19,10 @@
       Authorization: `Bearer ${session.token}`,
       "Content-Type": "application/json"
     });
-    const response = await fetch(`${session.bridgeUrl}${path}`, Object.assign({}, options, {headers}));
+    const response = await fetch(
+      `${session.bridgeUrl}${path}`,
+      Object.assign({}, options, {headers})
+    );
     if (!response.ok && response.status !== 204) {
       throw new Error(`Bridge ${path} failed with HTTP ${response.status}`);
     }
@@ -21,12 +30,17 @@
   }
 
   async function sendResult(session, result) {
-    await request(session, "/v1/result", {method: "POST", body: JSON.stringify(result)});
+    await request(session, "/v1/result", {
+      method: "POST",
+      body: JSON.stringify(result)
+    });
   }
 
   async function run() {
     const sessionResponse = await fetch("./session.json", {cache: "no-store"});
-    if (!sessionResponse.ok) throw new Error("session.json is unavailable");
+    if (!sessionResponse.ok) {
+      throw new Error("session.json is unavailable");
+    }
     const session = await sessionResponse.json();
     await request(session, "/v1/register", {
       method: "POST",
@@ -39,18 +53,27 @@
         `/v1/next?component=${encodeURIComponent(session.component)}`,
         {method: "GET"}
       );
-      if (next.status === 204) continue;
+      if (next.status === 204) {
+        continue;
+      }
       const command = next.body;
       try {
         const value = await window.WPSComposerProbe.handleCommand(command);
-        await sendResult(session, {id: command.id, ok: true, value, error: null});
+        await sendResult(session, {
+          id: command.id,
+          ok: true,
+          value,
+          error: null
+        });
       } catch (error) {
         await sendResult(session, {
           id: command.id,
           ok: false,
           value: {},
           error: {
-            code: "JSAPI_COMMAND_FAILED",
+            code: error && ERROR_CODES.indexOf(error.code) !== -1
+              ? error.code
+              : "CONVERSION_COMMAND_FAILED",
             message: String(error && error.message ? error.message : error),
             stack: String(error && error.stack ? error.stack : "")
           }

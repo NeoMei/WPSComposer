@@ -1,6 +1,6 @@
 # WPSComposer
 
-> 一个 Codex 插件：通过 WPS Office 自动化，让 AI agent 能够生成和编辑高质量排版的 DOCX / PPTX / XLSX / PDF 文档。支持 Windows（COM）和 macOS（WPS JSAPI）。
+> 一个 Codex 插件：通过 WPS Office COM 自动化，让 AI agent 能够生成和编辑高质量排版的 DOCX / PPTX / XLSX / PDF 文档。
 
 ## 为什么需要这个插件？
 
@@ -25,6 +25,12 @@ WPSComposer 的做法是直接驱动 WPS Office（或 MS Office）的 COM 接口
 
 **编辑 PDF**（合并/拆分/水印/旋转/提取）。
 
+**Office 转 PDF**（单文件、跨平台）：
+- Word：`.doc`、`.docx`
+- Excel：`.xls`、`.xlsx`，导出全部可见工作表
+- PowerPoint：`.ppt`、`.pptx`
+- Windows 使用 WPS/MS Office COM；macOS 使用 WPS JSAPI 容器暂存后原子发布
+
 ## 原理架构
 
 ```
@@ -39,8 +45,7 @@ StructuredDocument（结构化文档模型）
   │  + 设计预设 (design_presets) + 排版规范 (reference_styles)
   ▼
 Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
-  │  Windows: COM 接口驱动 WPS/MS Office
-  │  macOS:   WPS JSAPI 加载项 + loopback bridge
+  │  通过 COM 接口驱动 WPS Office
   ▼
 用户请求的单一产物：DOCX / PPTX / XLSX / PDF
 ```
@@ -60,7 +65,7 @@ git clone https://github.com/NeoMei/WPSComposer.git
 
 # 安装到 Codex 个人插件 marketplace
 cd WPSComposer
-python3 install.py            # 首次安装
+python3 install.py            # 首次安装（macOS 会安装锁定的 JSAPI 运行时）
 python3 install.py --force    # 覆盖更新
 ```
 
@@ -71,8 +76,13 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
 ### 运行时要求
 
 - Python 3.9 或更高版本。
-- **Windows**：生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
-- **macOS**：通过 WPS JSAPI 加载项生成 DOCX/PPTX/XLSX/PDF，需要 WPS Office for Mac（已验证 12.1.26035）和 Node.js 20+。详见 [macOS Phase 0](docs/macos-phase0.md)。
+- macOS 的 Office 转 PDF 需要 Node.js 20 或更高版本。安装器会根据
+  `package-lock.json` 执行 `npm ci --omit=dev --ignore-scripts`，并在插件正式替换前
+  完成全部依赖安装；失败时不会留下半安装目录或更改 marketplace。
+- Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
+- macOS：公开 `generate()` 仍为 **NO-GO**，因为 WPS 12.1.26035 的
+  Writer `SaveAs2` 会打开原生保存面板；已有 Office 文件转 PDF 已通过
+  六格式双轮真实门禁并启用。详见 [macOS Phase 0](docs/macos-phase0.md)。
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 
@@ -123,6 +133,30 @@ edit(
 
 可寻址的元素包括：段落、表格、单元格、形状、节、页眉页脚等。目标语法和补丁字段详见 [API 参考](skills/WPSComposer/references/api.md)。
 
+### Word / Excel / PowerPoint 转 PDF
+
+```python
+from skills.WPSComposer import convert_to_pdf
+
+# 默认输出同目录、同文件名的 .pdf
+pdf = convert_to_pdf("季度报告.xlsx")
+
+# 指定输出；只有显式 overwrite=True 才覆盖已有文件
+pdf = convert_to_pdf(
+    "演示稿.pptx",
+    "exports/演示稿.pdf",
+    overwrite=True,
+)
+```
+
+`source` 只接受 `.doc/.docx/.xls/.xlsx/.ppt/.pptx`，大小写不敏感；一次只
+转换一个文件。缺失源文件抛出 `FileNotFoundError`，已有目标默认抛出
+`FileExistsError`，不支持的扩展名抛出 `ValueError`。WPS/Office 运行时错误
+抛出 `ConversionError`，并提供 `code`、`source`、`component`、`backend`
+和 `message` 字段。macOS 上输入和输出都先进入 WPS 私有容器会话，校验后
+再通过目标目录内临时文件、`fsync` 和原子替换发布；不需要完全磁盘访问、
+辅助功能、AppleScript 或屏幕控制权限。
+
 ### PDF 编辑
 
 ```python
@@ -153,6 +187,7 @@ print(PdfComposer.extract_text("输入.pdf"))
 | 自动目录 / 页码字段 | ✅ | — | — |
 | 检查已有文档格式 | ✅ | ✅ | ✅ |
 | 元素级格式补丁 | ✅ | ✅ | ✅ |
+| 转为 PDF（含旧格式） | ✅ DOC/DOCX | ✅ XLS/XLSX（全部可见表） | ✅ PPT/PPTX |
 
 ## 模块结构
 
@@ -165,6 +200,10 @@ WPSComposer/
 │   └── scripts/
 │       ├── wps_engine.py            # 统一入口（re-export facade）
 │       ├── orchestrator.py          # generate() 一行生成
+│       ├── conversion.py            # convert_to_pdf() 跨平台入口
+│       ├── artifact_transport.py     # 校验、fsync、原子发布
+│       ├── windows_conversion.py     # Windows COM 转换后端
+│       ├── macos_probe/              # macOS WPS JSAPI、容器暂存与转换
 │       ├── _dispatch.py             # COM 连接、ProgID 回退链
 │       ├── _colors.py               # 统一颜色模型（hex ↔ BGR）
 │       ├── _base.py                 # BaseComposer 通用生命周期
@@ -180,19 +219,10 @@ WPSComposer/
 │       ├── quality_checks.py        # 质量校验
 │       ├── formatting.py            # 格式工具函数
 │       ├── heading_numbering.py     # 标题自动编号
-│       ├── macos_probe/             # macOS WPS JSAPI 可行性探针
-│       │   ├── models.py            # 协议模型 + 路径沙箱
-│       │   ├── bridge.py            # 认证 loopback HTTP 桥
-│       │   ├── runtime.py           # wpsjs 进程管理 + 注册回滚
-│       │   └── runner.py            # 编排 + 产物验证 + 报告
 │       └── renderers/               # 格式渲染器
 │           ├── writer_renderer.py
 │           ├── sheet_renderer.py
 │           └── slide_renderer.py
-├── macos/wps-jsapi-probe/           # WPS JS 加载项（Phase 0）
-│   ├── addin/                       # 加载项 HTML/JS/XML
-│   ├── package.json                 # wpsjs 2.2.3  pinned
-│   └── package-lock.json
 ├── install.py                       # 跨平台安装器
 ├── install.ps1                     # PowerShell 包装脚本
 ├── install.sh                      # macOS/Linux 包装脚本
@@ -201,7 +231,11 @@ WPSComposer/
 
 ## 开发调试
 
-在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件，用 pytest 和临时脚本验证。原生 WPS 排版改动可另外导出 PDF 作为开发验证证据，但公开生成接口只返回用户请求的格式。调试满意后运行 `python3 install.py --force` 更新本地插件。
+在本项目目录里直接修改 `skills/WPSComposer/scripts/` 下的文件。
+从源码目录直接运行 macOS JSAPI 门禁前，先在
+`macos/wps-jsapi-probe/` 执行 `npm ci`；用 pytest 和临时脚本验证。
+原生 WPS 排版改动可另外导出 PDF 作为开发验证证据，但公开生成接口只返回用户请求的格式。
+调试满意后运行 `python3 install.py --force` 更新本地插件。
 
 ## License
 

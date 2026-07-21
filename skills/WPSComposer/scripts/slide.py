@@ -85,6 +85,11 @@ class SlideComposer(BaseComposer):
     def pres(self):
         return self._doc
 
+    @property
+    def slide_count(self):
+        """Return the number of slides owned by this presentation."""
+        return int(self._doc.Slides.Count)
+
     def set_slide_size(self, width_pt=960, height_pt=540):
         try:
             ps = self._doc.PageSetup
@@ -732,4 +737,3 @@ class SlideComposer(BaseComposer):
 # WPS exposes KPDF.Application but its Dispatch blocks headless (GUI RPC),
 # so PDF *editing* uses pypdf/pdfplumber instead. PDF *generation* still goes
 # through the three WPS composers above (export_pdf).
-

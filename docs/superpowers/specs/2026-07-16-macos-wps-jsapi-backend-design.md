@@ -279,6 +279,16 @@ Build the smallest WPS JS add-in and bridge that proves all four output paths on
 the installed Mac WPS version. Produce DOCX, PPTX, XLSX, and standalone PDF
 smoke artifacts and record exact JSAPI gaps.
 
+**Tested 2026-07-17: NO-GO on WPS 12.1.26035.** The reversible probe loaded
+all three JS add-ins and WPS produced structurally valid PPTX and XLSX files,
+but Writer `SaveAs2` and standalone PDF export did not produce files. The same
+failure occurred with a one-paragraph Writer document, so Phase 1 remains
+gated and the public macOS `generate()` path stays disabled. See
+[macOS Phase 0 evidence](../../macos-phase0.md) for the exact environment,
+capability matrix, artifacts, errors, and rollback verification. This result
+does not change the approved architecture; it records that the current tested
+WPS version does not satisfy its feasibility prerequisites.
+
 ### Phase 1: Shared render plan and core elements
 
 Introduce the backend contract and RenderPlan. Implement headings, paragraphs,
