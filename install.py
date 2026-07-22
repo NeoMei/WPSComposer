@@ -244,7 +244,7 @@ def install_plugin(
         plugins.append(_plugin_entry(source_path))
         marketplace["plugins"] = plugins
         _write_json_atomically(marketplace_file, marketplace)
-    except Exception:
+    except BaseException:
         if replacement_installed and destination.exists():
             shutil.rmtree(destination)
         if previous_moved and previous_destination.exists():

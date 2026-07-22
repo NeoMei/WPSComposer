@@ -31,23 +31,33 @@ _OFFICE_MEMBERS = {
 
 def _require_regular_file(path: Path, format_name: str) -> Path:
     target = Path(path).expanduser().resolve()
-    if not target.is_file():
+    try:
+        if not target.is_file():
+            raise ArtifactValidationError(
+                f"{format_name.upper()} artifact is missing: {target}"
+            )
+        if target.stat().st_size < 256:
+            # floor catches empty/truncated output; small valid PDFs are ~400+ bytes
+            raise ArtifactValidationError(
+                f"{format_name.upper()} artifact is too small: {target}"
+            )
+    except FileNotFoundError as exc:
+        # the file vanished between is_file() and stat() (async replace)
         raise ArtifactValidationError(
             f"{format_name.upper()} artifact is missing: {target}"
-        )
-    if target.stat().st_size < 1024:
-        raise ArtifactValidationError(
-            f"{format_name.upper()} artifact is too small: {target}"
-        )
+        ) from exc
     return target
 
 
 def validate_pdf(path: Path) -> None:
     """Require a non-trivial file with a PDF signature."""
     target = _require_regular_file(path, "pdf")
-    with target.open("rb") as stream:
-        if not stream.read(5).startswith(b"%PDF-"):
-            raise ArtifactValidationError(f"Invalid PDF signature: {target}")
+    try:
+        with target.open("rb") as stream:
+            if not stream.read(5).startswith(b"%PDF-"):
+                raise ArtifactValidationError(f"Invalid PDF signature: {target}")
+    except FileNotFoundError as exc:
+        raise ArtifactValidationError(f"PDF artifact is missing: {target}") from exc
 
 
 def validate_office_package(path: Path, format_name: str) -> None:

@@ -139,7 +139,11 @@ def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
         composer = attach_active(kind)
     else:
         composer = open_document(path, kind=kind, read_only=False, visible=visible)
-        composer.__enter__()
+        try:
+            composer.__enter__()
+        except Exception:
+            composer.close(save_changes=False)
+            raise
     try:
         before = composer.inspect_document() if inspect_after else None
         reports = apply_patches(composer, patches, stop_on_error=stop_on_error)

@@ -179,9 +179,12 @@ def _render_task_list(w, tasklist):
 
 def _render_table(w, table, preset):
     w.add_paragraph("", size=4)
-    data = [table.headers] + table.rows
+    data = ([table.headers] if table.headers else []) + table.rows
+    cols = max(len(r) for r in data) if data else 0
+    if not cols:
+        return
     w.add_table(
-        rows=len(data), cols=len(table.headers),
+        rows=len(data), cols=cols,
         data=data, shade_header="#D9D9D9", header_color="#000000",
         font_size=10,
         alignments=table.alignments if table.alignments else None,

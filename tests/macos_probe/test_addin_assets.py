@@ -44,8 +44,8 @@ def test_writer_uses_wps_save_and_pdf_export():
 
 def test_writer_waits_for_wps_file_completion_event_before_close():
     source = (ROOT / "writer.js").read_text()
-    assert 'AddApiEventListener("FileAfterSave"' in source
-    assert 'RemoveApiEventListener("FileAfterSave")' in source
+    assert 'AddApiEventListener("FileAfterSave", onFileAfterSave)' in source
+    assert 'RemoveApiEventListener("FileAfterSave", onFileAfterSave)' in source
     assert "await waitForFileAfterSave(outputPath" in source
     assert "retainedDocuments" not in source
 
@@ -586,7 +586,7 @@ const table = {
   Borders(index) { const border = {}; state.tableBorders.push([index, border]); return border; },
   AutoFitBehavior(value) {state.tableAutoFit.push(value);}
 };
-const footerRange = {Font: font(), ParagraphFormat: paragraphFormat(), Text: ""};
+const footerRange = {Font: font(), ParagraphFormat: paragraphFormat(), Text: "", Collapse() {state.footerCollapsed = true;}};
 const document = {
   saveCalls: 0, saveAsCalls: 0, closeArgument: null,
   Content: {Text: "template", End: 0},
@@ -1616,7 +1616,7 @@ eval(fs.readFileSync({json.dumps(str((ROOT / 'presentation.js').resolve()))}, "u
   assert.equal(state.pictures[0].Width, 800); assert.equal(state.pictures[0].Height, 400);
   assert.equal(state.pictures[0].Left, 80); assert.equal(state.pictures[0].Top, 100);
   assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Text, "Item");
-  assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Font.Bold, true);
+  assert.equal(state.tables[0].cells["1,1"].Shape.TextFrame.TextRange.Font.Bold, -1);
   assert.equal(state.tables[0].cells["1,1"].Shape.Fill.ForeColor.RGB, 0xC47244);
   assert.equal(otherPresentation.Slides.length, 1);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});

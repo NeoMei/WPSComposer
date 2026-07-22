@@ -271,9 +271,13 @@ TALK_PRESETS: Dict[str, dict] = {
 # Registration -- extendable layout system
 # ============================================================
 
-def register(layout: LayoutTemplate) -> LayoutTemplate:
-    '''Register a new or replacement layout template.'''
-    LAYOUTS[layout.name] = layout
+def register(layout: LayoutTemplate, name: str = None) -> LayoutTemplate:
+    '''Register a new or replacement layout template.
+
+    Built-ins are keyed by slug (e.g. ``"cover"``); pass ``name`` to replace
+    one instead of shadowing it under its display name.
+    '''
+    LAYOUTS[name or layout.name] = layout
     return layout
 
 

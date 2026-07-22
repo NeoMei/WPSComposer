@@ -50,12 +50,12 @@ FMT_ODS = 60                        # OpenDocument spreadsheet
 # Slide formats
 FMT_PPTX = 24
 FMT_PDF_FROM_PPT = 32
-FMT_PPT = 2                         # .ppt (97-2003)
-FMT_PPSX = 36                       # .ppsx
+FMT_PPT = 1                         # .ppt (97-2003, ppSaveAsPresentation)
+FMT_PPSX = 28                       # .ppsx (ppSaveAsOpenXMLShow)
 FMT_PPTM = 25                       # macro-enabled presentation
 FMT_POTX = 26                       # template
 FMT_POTM = 27                       # macro-enabled template
-FMT_PPSM = 28                       # macro-enabled show
+FMT_PPSM = 29                       # macro-enabled show
 FMT_ODP = 35                        # OpenDocument presentation
 
 # ---------------------------------------------------------------------------

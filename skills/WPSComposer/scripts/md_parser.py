@@ -26,7 +26,7 @@ from .document_model import (
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 _ITALIC_RE = re.compile(r"\*(.+?)\*")
-_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)]+)\)")
 _IMAGE_RE = re.compile(
     r"!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))"
     r"(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)"
@@ -36,7 +36,7 @@ _IMAGE_RE = re.compile(
 _HR_RE = re.compile(r"^(?:-{3,}|\*{3,}|_{3,})\s*$")
 _TASK_RE = re.compile(r"^[-*]\s+\[([ xX])\]\s+(.+)$")
 _STRIKE_RE = re.compile(r"~~(.+?)~~")
-_LINK_TITLE_RE = re.compile(r'\[([^\]]+)\]\(([^)\s]+)\s+"([^"]+)"\)')
+_LINK_TITLE_RE = re.compile(r'(?<!!)\[([^\]]+)\]\(([^)\s]+)\s+"([^"]+)"\)')
 _NESTED_UL_RE = re.compile(r"^(\s+)[-*+]\s+(.+)$")
 _NESTED_OL_RE = re.compile(r"^(\s+)\d+\.\s+(.+)$")
 
@@ -51,7 +51,7 @@ def _parse_inline(text: str) -> List[Span]:
     for m in _INLINE_CODE_RE.finditer(text):
         codes.append((m.start(), m.end(), m.group(1)))
 
-    if not codes and not _BOLD_RE.search(text) and not _ITALIC_RE.search(text) and not _LINK_RE.search(text):
+    if not codes and not _BOLD_RE.search(text) and not _ITALIC_RE.search(text) and not _LINK_RE.search(text) and not _IMAGE_RE.search(text):
         return [Span(text=text)] if text else []
 
     # Simple approach: tokenize by priority
@@ -69,6 +69,10 @@ def _parse_inline(text: str) -> List[Span]:
             matches.append((m.start(), m.end(), "italic", m.group(1)))
         for m in _STRIKE_RE.finditer(remaining):
             matches.append((m.start(), m.end(), "strike", m.group(1)))
+        # Inline images degrade to their alt text (block-level images are
+        # handled separately); code spans still win by position
+        for m in _IMAGE_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "image", m.group(1)))
         # Link with title (tooltip) takes priority
         for m in _LINK_TITLE_RE.finditer(remaining):
             title = m.group(3) or ""
@@ -98,6 +102,8 @@ def _parse_inline(text: str) -> List[Span]:
             spans.append(Span(text=first[3], italic=True))
         elif mtype == "strike":
             spans.append(Span(text=first[3], strikethrough=True))
+        elif mtype == "image":
+            spans.append(Span(text=first[3]))
         elif mtype == "link":
             link_url = first[4]
             link_title = first[5] if len(first) > 5 else None
@@ -170,6 +176,11 @@ def _extract_image_refs(text: str, base_dir: str = "") -> List[ImageBlock]:
     return images
 
 
+def _plain_text(text: str) -> str:
+    """Strip inline markdown markers, keeping the visible text."""
+    return "".join(s.text for s in _parse_inline(text))
+
+
 # ---------------------------------------------------------------------------
 # Main parser
 # ---------------------------------------------------------------------------
@@ -195,12 +206,21 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
             end_idx += 1
         if end_idx < len(lines):
             fm_lines = lines[1:end_idx]
-            _parse_frontmatter(fm_lines, doc)
-            lines = lines[end_idx + 1:]
+            # require at least one key: value line, otherwise the --- pair
+            # is just two horizontal rules and the content must be kept
+            if any(re.match(r"^\s*[\w.-]+\s*:\s*\S", l) for l in fm_lines):
+                _parse_frontmatter(fm_lines, doc)
+                lines = lines[end_idx + 1:]
 
     # Auto-detect title from first H1
     if not doc.title:
+        in_fence = False
         for line in lines:
+            if line.strip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             m = _HEADING_RE.match(line)
             if m and m.group(1) == "#":
                 doc.title = m.group(2).strip()
@@ -234,7 +254,7 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                 tm2 = _TASK_RE.match(lines[i])
                 if tm2:
                     checked = tm2.group(1).lower() == "x"
-                    items.append((tm2.group(2).strip(), checked))
+                    items.append((_plain_text(tm2.group(2).strip()), checked))
                     i += 1
                 elif not lines[i].strip():
                     i += 1
@@ -300,7 +320,14 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
             while i < len(lines) and _is_table_row(lines[i]):
                 table_lines.append(lines[i])
                 i += 1
-            _parse_table_block(table_lines, current_section, sections)
+            if len(table_lines) < 2:
+                # a lone pipe-prefixed line is a paragraph, not a table
+                current_section = _ensure_section(current_section, sections)
+                current_section.elements.append(
+                    Paragraph(spans=_parse_inline(table_lines[0].strip()))
+                )
+            else:
+                _parse_table_block(table_lines, current_section, sections)
             continue
 
         # Unordered list
@@ -311,6 +338,12 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                 ulm2 = _UL_RE.match(lines[i])
                 if ulm2:
                     items.append(_parse_inline(ulm2.group(1).strip()))
+                    i += 1
+                elif _NESTED_UL_RE.match(lines[i]):
+                    # ponytail: ListBlock is flat; nested items are flattened
+                    items.append(
+                        _parse_inline(_NESTED_UL_RE.match(lines[i]).group(2).strip())
+                    )
                     i += 1
                 elif not lines[i].strip():
                     i += 1
@@ -328,6 +361,12 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                 olm2 = _OL_RE.match(lines[i])
                 if olm2:
                     items.append(_parse_inline(olm2.group(1).strip()))
+                    i += 1
+                elif _NESTED_OL_RE.match(lines[i]):
+                    # ponytail: ListBlock is flat; nested items are flattened
+                    items.append(
+                        _parse_inline(_NESTED_OL_RE.match(lines[i]).group(2).strip())
+                    )
                     i += 1
                 elif not lines[i].strip():
                     i += 1
@@ -381,7 +420,7 @@ def _is_separator_cell(cell: str) -> bool:
     return bool(re.match(r"^[\-\s:]+\+?$", cell))
 
 
-_BLOCK_STARTS = {"#", "-", "*", ">", "|", "```", "---", "***", "___"}
+_BLOCK_STARTS = {"#", ">", "|", "```", "---", "***", "___"}
 
 
 def _is_block_start(line: str) -> bool:
@@ -393,7 +432,9 @@ def _is_block_start(line: str) -> bool:
     for prefix in _BLOCK_STARTS:
         if s.startswith(prefix):
             return True
-    return _OL_RE.match(s) is not None
+    # list markers require whitespace after the marker, so continuation
+    # lines like "-5 percent" or "*emphasis*" stay in the paragraph
+    return _UL_RE.match(s) is not None or _OL_RE.match(s) is not None
 
 
 
@@ -408,12 +449,25 @@ def _parse_table_block(table_lines: List[str], current: Optional[Section], secti
             sep_idx = idx
             alignments = _detect_alignments(table_lines[idx])
             break
-    if sep_idx is not None and sep_idx > 0:
-        headers = rows[sep_idx - 1]
-        data = rows[sep_idx + 1:]
+    if sep_idx == 0:
+        headers, data = [], rows[1:]
+    elif sep_idx == 1:
+        headers, data = rows[0], rows[2:]
     else:
+        # a separator beyond row 2 is not a markdown table separator;
+        # treat rows as content so nothing is silently dropped
         headers = rows[0] if rows else []
-        data = rows[1:] if len(rows) > 1 else []
+        data = [
+            row for row in rows[1:]
+            if not all(_is_separator_cell(c) for c in row)
+        ]
+        alignments = []
+    # pad ragged rows: renderers and the macOS plan validators require
+    # rectangular grids, and Word pads short rows too
+    width = max((len(r) for r in [headers, *data]), default=0)
+    if headers:
+        headers = headers + [""] * (width - len(headers))
+    data = [row + [""] * (width - len(row)) for row in data]
     current = _ensure_section(current, sections)
     current.elements.append(TableBlock(headers=headers, rows=data, alignments=alignments))
 def _parse_frontmatter(lines: List[str], doc: StructuredDocument):

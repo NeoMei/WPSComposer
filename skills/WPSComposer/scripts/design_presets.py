@@ -248,16 +248,19 @@ PRESETS["proposal"] = DesignPreset(
 # Registration -- extendable preset system
 # ============================================================
 
-def register(preset: DesignPreset) -> DesignPreset:
+def register(preset: DesignPreset, name: str = None) -> DesignPreset:
     '''Register a new or replacement design preset.
 
     Args:
         preset: A DesignPreset instance.
+        name: Optional lookup key; defaults to ``preset.name``. Built-ins are
+              keyed by slug (e.g. ``"academic"``), so pass a slug to replace
+              one instead of shadowing it under its display name.
 
     Returns:
         The preset (for use as a decorator).
     '''
-    PRESETS[preset.name] = preset
+    PRESETS[name or preset.name] = preset
     return preset
 
 

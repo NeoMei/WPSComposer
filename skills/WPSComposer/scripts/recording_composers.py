@@ -245,6 +245,9 @@ class RecordingWriterComposer:
         )
 
     def _image_id(self, path):
+        if "://" in str(path):
+            # remote URLs are not stageable resources; renderers fall back
+            raise OperationPlanError(f"unsupported remote image resource: {path}")
         source_path = Path(path).expanduser().resolve()
         if source_path in self._resource_ids:
             return self._resource_ids[source_path]
@@ -365,16 +368,18 @@ class RecordingSheetComposer:
     ):
         if header_shade is True:
             header_shade = "#4472C4"
-        self._record(
-            "sheet.write_table",
+        args = dict(
             startRow=int(start_row),
             startCol=int(start_col),
             values=[list(row) for row in data],
             headerBold=bool(header_bold),
-            headerShade=header_shade,
             headerFontColor=header_font_color,
             fontSize=font_size,
         )
+        # falsy header_shade means "no shading" (SheetComposer parity);
+        # emit it explicitly or the add-in defaults to #4472C4
+        args["headerShade"] = header_shade if header_shade else False
+        self._record("sheet.write_table", **args)
 
     def set_column_width(self, column, width):
         self._record("sheet.set_column_width", column=str(column), width=width)
@@ -423,10 +428,10 @@ class RecordingSlideComposer:
             for role, value in preset.fonts.items()
         }
         spacing = {
-            "margin": preset.spacing["margin"],
-            "gap": preset.spacing["gap"],
-            "cardPadding": preset.spacing["card_padding"],
-            "lineHeight": preset.spacing["line_height"],
+            "margin": preset.spacing.get("margin", 60),
+            "gap": preset.spacing.get("gap", 20),
+            "cardPadding": preset.spacing.get("card_padding", 20),
+            "lineHeight": preset.spacing.get("line_height", 1.2),
         }
         self._record(
             "slide.apply_preset",
@@ -481,6 +486,9 @@ class RecordingSlideComposer:
         return None, self._slide_count
 
     def _image_id(self, path):
+        if "://" in str(path):
+            # remote URLs are not stageable resources; renderers fall back
+            raise OperationPlanError(f"unsupported remote image resource: {path}")
         source_path = Path(path).expanduser().resolve()
         if source_path in self._resource_ids:
             return self._resource_ids[source_path]

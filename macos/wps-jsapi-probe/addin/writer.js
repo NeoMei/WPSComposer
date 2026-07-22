@@ -265,6 +265,11 @@
           if (linkStyle) {
             spanRange.Style = linkStyle;
           }
+          try {
+            document.Hyperlinks.Add(spanRange, span.link);
+          } catch (linkError) {
+            void linkError;
+          }
         }
       }
       offset += span.text.length;
@@ -376,7 +381,7 @@
         const value = args.data[row] && args.data[row][column] !== undefined
           ? args.data[row][column]
           : "";
-        cell.Range.Text = String(value);
+        cell.Range.Text = value === null ? "" : String(value);
         let style = null;
         try {
           style = writerStyle(document, row === 0 ? "Table Header" : "Table Body");
@@ -437,7 +442,7 @@
       }
       table.AllowAutoFit = false;
       if (inferredWidths) {
-        table.PreferredWidthType = 2;
+        table.PreferredWidthType = 3; // wdPreferredWidthPoints
         table.PreferredWidth = availableWidth;
       }
       columnWidths.slice(0, args.cols).forEach(function (width, index) {
@@ -544,7 +549,7 @@
   function addWriterHorizontalLine(document) {
     const range = writerEndRange(document);
     if (range.ParagraphFormat && typeof range.ParagraphFormat.Borders === "function") {
-      const border = range.ParagraphFormat.Borders(-4);
+      const border = range.ParagraphFormat.Borders(-3); // wdBorderBottom
       border.LineStyle = 1;
       border.LineWidth = 6;
     }
@@ -572,6 +577,7 @@
     const section = writerCollectionItem(document.Sections, 1);
     const footer = writerCollectionItem(section.Footers, 1).Range;
     footer.Text = "Page ";
+    footer.Collapse(0); // wdCollapseEnd — Fields.Add replaces a non-collapsed range
     document.Fields.Add(footer, 33);
   }
 
@@ -863,7 +869,7 @@
   }
 
   function validateWriterResource(imageId, resources) {
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(imageId)) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(imageId)) {
       invalidWriterPlan("Writer imageId must be a logical identifier");
     }
     if (!isObject(resources) || !Object.prototype.hasOwnProperty.call(resources, imageId)) {
@@ -1001,6 +1007,13 @@
       let settled = false;
       let timer = null;
 
+      function onFileAfterSave(document, filePath) {
+        if (typeof filePath !== "string" || filePath !== outputPath) {
+          return;
+        }
+        finish(null);
+      }
+
       function finish(error) {
         if (settled) {
           return;
@@ -1010,7 +1023,7 @@
           clearTimeout(timer);
         }
         try {
-          Application.ApiEvent.RemoveApiEventListener("FileAfterSave");
+          Application.ApiEvent.RemoveApiEventListener("FileAfterSave", onFileAfterSave);
         } catch (cleanupError) {
           if (!error) {
             error = cleanupError;
@@ -1023,15 +1036,7 @@
         }
       }
 
-      Application.ApiEvent.AddApiEventListener("FileAfterSave", function (
-        document,
-        filePath
-      ) {
-        if (typeof filePath === "string" && filePath !== outputPath) {
-          return;
-        }
-        finish(null);
-      });
+      Application.ApiEvent.AddApiEventListener("FileAfterSave", onFileAfterSave);
       timer = setTimeout(function () {
         finish(new Error(`Timed out waiting for WPS to save ${outputPath}`));
       }, 15000);

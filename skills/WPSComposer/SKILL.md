@@ -102,7 +102,7 @@ Use the stable public package for new code::
     )
 
 ### Usage
-`python
+```python
 from skills.WPSComposer import WriterComposer, SheetComposer, SlideComposer
 
 with WriterComposer() as w:      # KWps.Application
@@ -143,14 +143,14 @@ preset.get_font("title")              # ("Arial", 40, "#1A3C8B")
 
 `scripts/layout_templates.py` — 14 PPT slide layouts + 4 talk-type sequences:
 ```python
-from layout_templates import get_layout, get_talk_preset
+from skills.WPSComposer.scripts.layout_templates import get_layout, get_talk_preset
 layout = get_layout("cover")          # 14 layouts total
 talk = get_talk_preset("defense")     # conference/business/defense/school
 ```
 
 `scripts/quality_checks.py` — slide-level validation against design rules:
 ```python
-from quality_checks import validate_slide, review_deck, REVIEW_DIMENSIONS
+from skills.WPSComposer.scripts.quality_checks import validate_slide, review_deck, REVIEW_DIMENSIONS
 result = validate_slide(elements, preset.rules)   # {"pass": bool, "score": 0-100, ...}
 ```
 

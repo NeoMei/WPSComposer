@@ -1096,3 +1096,30 @@ def test_pdf_generation_via_generate_macos(monkeypatch, tmp_path):
     assert result == output.resolve()
     assert output.exists()
     assert output.read_bytes().startswith(b"%PDF-")
+
+
+def test_generation_rejects_spans_that_do_not_match_paragraph_text(tmp_path):
+    plan = GenerationPlan(
+        "writer",
+        (
+            GenerationOperation("writer.reset", {}),
+            GenerationOperation(
+                "writer.add_paragraph",
+                {
+                    "text": "hello world",
+                    "spans": [{"text": "hello"}, {"text": " mars"}],
+                },
+            ),
+        ),
+    )
+    request = GenerationRequest(tmp_path / "final.docx", "writer", "docx")
+    with pytest.raises(GenerationError) as caught:
+        execute_generation_plan(
+            request,
+            RecordedGeneration(plan, ()),
+            enabled={"docx": True},
+            bridge_factory=lambda origins: (_ for _ in ()).throw(
+                AssertionError("bridge must not start")
+            ),
+        )
+    assert caught.value.code == "OPERATION_PLAN_INVALID"

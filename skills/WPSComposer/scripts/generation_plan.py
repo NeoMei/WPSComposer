@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Optional
 
 
 MAX_PLAN_BYTES = 2_000_000
@@ -213,6 +214,20 @@ def _string(value: Any, path: str) -> None:
         _invalid(path, "string")
 
 
+_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def _color(value: Any, path: str) -> None:
+    if not isinstance(value, str) or not _COLOR_RE.match(value):
+        _invalid(path, "#RRGGBB color string")
+
+
+def _color_or_false(value: Any, path: str) -> None:
+    if value is False:
+        return
+    _color(value, path)
+
+
 def _nullable_string(value: Any, path: str) -> None:
     if value is not None:
         _string(value, path)
@@ -239,6 +254,33 @@ def _number(value: Any, path: str) -> None:
         return
     if not math.isfinite(value) or abs(value) > MAX_SAFE_NUMBER:
         _invalid(path, "finite number in the interoperable safe range")
+
+
+def _bounded_integer(minimum: int, maximum: Optional[int] = None) -> ArgumentValidator:
+    def validate(value: Any, path: str) -> None:
+        _integer(value, path)
+        if value < minimum or (maximum is not None and value > maximum):
+            expected = f"integer >= {minimum}"
+            if maximum is not None:
+                expected = f"integer in [{minimum}, {maximum}]"
+            _invalid(path, expected)
+
+    return validate
+
+
+def _bounded_number(minimum: float, exclusive: bool = False) -> ArgumentValidator:
+    def validate(value: Any, path: str) -> None:
+        _number(value, path)
+        if (exclusive and value <= minimum) or (not exclusive and value < minimum):
+            op = ">" if exclusive else ">="
+            _invalid(path, f"number {op} {minimum}")
+
+    return validate
+
+
+_POSITIVE_INT = _bounded_integer(1)
+_POSITIVE_NUMBER = _bounded_number(0, exclusive=True)
+_NONNEGATIVE_NUMBER = _bounded_number(0)
 
 
 def _cell(value: Any, path: str) -> None:
@@ -311,12 +353,12 @@ _STYLE_SCHEMA = _schema(
     basedOn=_string,
     fontName=_string,
     fontNameAscii=_string,
-    fontSize=_number,
+    fontSize=_POSITIVE_NUMBER,
     bold=_boolean,
     italic=_boolean,
     underline=_boolean,
     strikethrough=_boolean,
-    color=_string,
+    color=_color,
     align=_integer,
     indentFirst=_number,
     leftIndent=_number,
@@ -327,7 +369,7 @@ _STYLE_SCHEMA = _schema(
     spaceAfter=_number,
     shading=_string,
     leftBorder=_boolean,
-    borderColor=_string,
+    borderColor=_color,
     keepWithNext=_boolean,
     outlineLevel=_integer,
 )
@@ -355,8 +397,8 @@ def _table(value: Any, path: str) -> None:
 _FONT_SCHEMA = _schema(
     ("family", "size", "color"),
     family=_string,
-    size=_number,
-    color=_string,
+    size=_POSITIVE_NUMBER,
+    color=_color,
 )
 
 
@@ -364,23 +406,6 @@ def _font(value: Any, path: str) -> None:
     _validate_object(value, path, _FONT_SCHEMA)
 
 
-_COLORS_SCHEMA = _schema(
-    ("primary", "dark", "background"),
-    primary=_string,
-    secondary=_string,
-    accent=_string,
-    dark=_string,
-    light=_string,
-    background=_string,
-)
-_FONTS_SCHEMA = _schema(
-    ("title", "body"),
-    title=_font,
-    subtitle=_font,
-    body=_font,
-    caption=_font,
-    chinese=_font,
-)
 _SPACING_SCHEMA = _schema(
     ("margin", "gap", "cardPadding", "lineHeight"),
     margin=_number,
@@ -388,11 +413,29 @@ _SPACING_SCHEMA = _schema(
     cardPadding=_number,
     lineHeight=_number,
 )
+def _role_map(required: frozenset, item_validator: ArgumentValidator) -> ArgumentValidator:
+    """Preset role map: required roles must exist, extra custom roles pass."""
+
+    def validate(value: Any, path: str) -> None:
+        if not isinstance(value, dict):
+            _invalid(path, "object")
+        missing = required - set(value)
+        if missing:
+            names = ", ".join(sorted(missing))
+            raise OperationPlanError(
+                f"invalid argument {path}: missing roles: {names}"
+            )
+        for name, item in value.items():
+            item_validator(item, f"{path}.{name}")
+
+    return validate
+
+
 _PRESET_SCHEMA = _schema(
     ("name", "colors", "fonts"),
     name=_string,
-    colors=lambda value, path: _validate_object(value, path, _COLORS_SCHEMA),
-    fonts=lambda value, path: _validate_object(value, path, _FONTS_SCHEMA),
+    colors=_role_map(frozenset({"primary", "dark", "background"}), _color),
+    fonts=_role_map(frozenset({"title", "body"}), _font),
     spacing=lambda value, path: _validate_object(value, path, _SPACING_SCHEMA),
 )
 
@@ -406,14 +449,14 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
         "writer.reset": _schema(),
         "writer.configure_page": _schema(
             ("marginTop", "marginBottom", "marginLeft", "marginRight"),
-            marginTop=_number,
-            marginBottom=_number,
-            marginLeft=_number,
-            marginRight=_number,
-            pageWidth=_number,
-            pageHeight=_number,
+            marginTop=_NONNEGATIVE_NUMBER,
+            marginBottom=_NONNEGATIVE_NUMBER,
+            marginLeft=_NONNEGATIVE_NUMBER,
+            marginRight=_NONNEGATIVE_NUMBER,
+            pageWidth=_POSITIVE_NUMBER,
+            pageHeight=_POSITIVE_NUMBER,
             landscape=_boolean,
-            columns=_integer,
+            columns=_POSITIVE_INT,
             header=_string,
             footer=_string,
         ),
@@ -425,10 +468,10 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             text=_string,
             style=_string,
             spans=_list_of(_span),
-            size=_number,
+            size=_POSITIVE_NUMBER,
             bold=_boolean,
             italic=_boolean,
-            color=_string,
+            color=_color,
             align=_integer,
             indentFirst=_number,
             lineSpacing=_number,
@@ -441,10 +484,10 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
         "writer.add_heading": _schema(
             ("text", "level"),
             text=_string,
-            level=_integer,
-            size=_number,
+            level=_bounded_integer(1, 6),
+            size=_POSITIVE_NUMBER,
             bold=_boolean,
-            color=_string,
+            color=_color,
             lineSpacing=_number,
             lineSpacingRule=_string,
             spaceAfter=_number,
@@ -458,26 +501,26 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
         ),
         "writer.add_table": _schema(
             ("rows", "cols", "data"),
-            rows=_integer,
-            cols=_integer,
+            rows=_POSITIVE_INT,
+            cols=_POSITIVE_INT,
             data=_table,
-            shadeHeader=_string,
-            headerColor=_string,
-            fontSize=_number,
+            shadeHeader=_color,
+            headerColor=_color,
+            fontSize=_POSITIVE_NUMBER,
             columnWidths=_NUMBER_LIST,
             alignments=_STRING_LIST,
             bandedRows=_boolean,
             autoFit=_boolean,
             repeatHeader=_boolean,
-            borderColor=_string,
+            borderColor=_color,
         ),
         "writer.add_image": _schema(
             ("imageId",),
             imageId=_string,
-            width=_number,
-            height=_number,
-            maxWidth=_number,
-            maxHeight=_number,
+            width=_POSITIVE_NUMBER,
+            height=_POSITIVE_NUMBER,
+            maxWidth=_POSITIVE_NUMBER,
+            maxHeight=_POSITIVE_NUMBER,
             wrap=_integer,
             inline=_boolean,
             preserveAspect=_boolean,
@@ -490,67 +533,67 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
         "writer.set_page_number": _schema(),
         "writer.update_fields": _schema(),
         "sheet.reset": _schema(),
-        "sheet.rename": _schema(("index", "name"), index=_integer, name=_string),
+        "sheet.rename": _schema(("index", "name"), index=_POSITIVE_INT, name=_string),
         "sheet.add": _schema(("name",), name=_string),
-        "sheet.select": _schema(("index",), index=_integer),
+        "sheet.select": _schema(("index",), index=_POSITIVE_INT),
         "sheet.write_table": _schema(
             ("startRow", "startCol", "values"),
-            startRow=_integer,
-            startCol=_integer,
+            startRow=_POSITIVE_INT,
+            startCol=_POSITIVE_INT,
             values=_table,
             headerBold=_boolean,
-            headerShade=_string,
-            headerFontColor=_string,
-            fontSize=_number,
+            headerShade=_color_or_false,
+            headerFontColor=_color,
+            fontSize=_POSITIVE_NUMBER,
         ),
         "sheet.set_column_width": _schema(
-            ("column", "width"), column=_string, width=_number
+            ("column", "width"), column=_string, width=_POSITIVE_NUMBER
         ),
         "sheet.autofit": _schema(),
         "slide.reset": _schema(),
         "slide.set_size": _schema(
-            ("width", "height"), width=_number, height=_number
+            ("width", "height"), width=_POSITIVE_NUMBER, height=_POSITIVE_NUMBER
         ),
         "slide.apply_preset": _schema(("preset",), preset=_preset),
         "slide.add_title": _schema(
             ("title",),
             title=_string,
             subtitle=_nullable_string,
-            titleSize=_number,
-            subtitleSize=_number,
-            titleColor=_string,
+            titleSize=_POSITIVE_NUMBER,
+            subtitleSize=_POSITIVE_NUMBER,
+            titleColor=_color,
         ),
         "slide.add_section": _schema(("title",), title=_string),
         "slide.add_bullets": _schema(
             ("title", "items"),
             title=_string,
             items=_STRING_LIST,
-            titleSize=_number,
-            bodySize=_number,
+            titleSize=_POSITIVE_NUMBER,
+            bodySize=_POSITIVE_NUMBER,
         ),
         "slide.add_blank": _schema(),
         "slide.add_image": _schema(
             ("slide", "imageId", "left", "top"),
-            slide=_integer,
+            slide=_POSITIVE_INT,
             imageId=_string,
-            left=_number,
-            top=_number,
-            width=_number,
-            height=_number,
+            left=_NONNEGATIVE_NUMBER,
+            top=_NONNEGATIVE_NUMBER,
+            width=_POSITIVE_NUMBER,
+            height=_POSITIVE_NUMBER,
         ),
         "slide.add_table": _schema(
             ("slide", "rows", "cols", "left", "top", "width", "height", "data"),
-            slide=_integer,
-            rows=_integer,
-            cols=_integer,
-            left=_number,
-            top=_number,
-            width=_number,
-            height=_number,
+            slide=_POSITIVE_INT,
+            rows=_POSITIVE_INT,
+            cols=_POSITIVE_INT,
+            left=_NONNEGATIVE_NUMBER,
+            top=_NONNEGATIVE_NUMBER,
+            width=_POSITIVE_NUMBER,
+            height=_POSITIVE_NUMBER,
             data=_table,
-            headerShade=_string,
-            headerFont=_string,
-            fontSize=_number,
+            headerShade=_color,
+            headerFont=_color,
+            fontSize=_POSITIVE_NUMBER,
         ),
     }
 )
@@ -559,6 +602,44 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
 def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
     schema = _OPERATION_ARG_SCHEMAS[op]
     _validate_object(args, f"{op}.args", schema)
+    _validate_table_shape(op, args)
+
+
+def _validate_table_shape(op: str, args: Mapping[str, Any]) -> None:
+    """Cross-check grid data against declared rows/cols (add-ins reject
+    mismatches; fail here before booting WPS)."""
+    data_key = "data" if "data" in args else "values" if "values" in args else None
+    if data_key is None:
+        return
+    data = args[data_key]
+    if not isinstance(data, list) or not data:
+        if data_key == "values" or "rows" in args:
+            raise OperationPlanError(
+                f"invalid argument {op}.args.{data_key}: expected a non-empty array"
+            )
+        return
+    rows = args.get("rows")
+    cols = args.get("cols")
+    if rows is None and cols is None:
+        for index, row in enumerate(data):
+            if not isinstance(row, list) or not row:
+                raise OperationPlanError(
+                    f"invalid argument {op}.args.{data_key}[{index}]: "
+                    "expected a non-empty array"
+                )
+        return
+    if rows is not None and len(data) != rows:
+        raise OperationPlanError(
+            f"invalid argument {op}.args.{data_key}: {len(data)} rows, expected {rows}"
+        )
+    if cols is not None:
+        for index, row in enumerate(data):
+            width = len(row) if isinstance(row, list) else 1
+            if width != cols:
+                raise OperationPlanError(
+                    f"invalid argument {op}.args.{data_key}[{index}]: "
+                    f"{width} cells, expected {cols}"
+                )
 
 
 def _table_cell_count(args: Mapping[str, Any]) -> int:

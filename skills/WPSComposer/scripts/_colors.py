@@ -51,6 +51,7 @@ _SEMANTIC_COLOR_MAP = {
     "dark":          "dark",
     "light":         "light",
     "light_text":    "light",
+    "bg":            "bg",
     "white":         "bg",           # assuming light bg for now
     "gray":          "dark",         # maps to dark (gray variant)
 }

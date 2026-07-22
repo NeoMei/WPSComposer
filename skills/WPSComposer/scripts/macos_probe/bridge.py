@@ -32,6 +32,16 @@ class BridgeState:
         self._last_seen: dict[str, float] = {}
         self._condition = Condition()
 
+    def claim_session(self, component: str) -> bool:
+        """Validate a session-token claim for a component.
+
+        Re-claiming is allowed: the endpoint is loopback-only and
+        origin-checked, and the add-in must be able to recover after a
+        webview reload (its JS context loses the token on every reload).
+        """
+        self._require_component(component)
+        return True
+
     def register(self, component: str) -> None:
         self._require_component(component)
         with self._condition:
@@ -158,6 +168,18 @@ def _handler_class(
                 self._send_json(200, command.to_dict())
 
         def do_POST(self) -> None:
+            if self.path == "/v1/session":
+                # Unauthenticated but loopback-only and origin-checked.
+                if not self._validate_origin():
+                    return
+                try:
+                    body = self._read_json()
+                    state.claim_session(str(body.get("component", "")))
+                except (ProtocolError, ValueError) as exc:
+                    self._send_error_json(400, "INVALID_REQUEST", str(exc))
+                    return
+                self._send_json(200, {"token": token})
+                return
             if not self._authorize():
                 return
             if not self._validate_origin():
@@ -181,7 +203,11 @@ def _handler_class(
         def _authorize(self) -> bool:
             supplied = self.headers.get("Authorization", "")
             expected = f"Bearer {token}"
-            if not secrets.compare_digest(supplied, expected):
+            try:
+                matched = secrets.compare_digest(supplied, expected)
+            except TypeError:
+                matched = False
+            if not matched:
                 self._send_error_json(
                     401, "UNAUTHORIZED", "A valid bearer token is required"
                 )

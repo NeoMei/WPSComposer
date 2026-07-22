@@ -228,6 +228,20 @@ def _validate_baseline_invariants(
             f"{request.component.capitalize()} generation requires one leading reset",
         )
 
+    if request.component == "writer":
+        for operation in operations:
+            if operation.op != "writer.add_paragraph":
+                continue
+            spans = operation.args.get("spans")
+            if spans is None:
+                continue
+            joined = "".join(span["text"] for span in spans)
+            if joined != operation.args["text"]:
+                raise _error(
+                    request,
+                    "OPERATION_PLAN_INVALID",
+                    "Writer paragraph spans must concatenate to the paragraph text",
+                )
     if request.component == "spreadsheet":
         sheet_count = 1
         for operation in operations:
@@ -365,9 +379,8 @@ def _wait_for_registration(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
     component: str,
-    timeout: float,
+    deadline: float,
 ) -> None:
-    deadline = time.monotonic() + timeout
     for attempt in range(4):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -453,9 +466,13 @@ def _wait_for_pdf(path: Path, timeout: float) -> None:
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
+    try:
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    except FileNotFoundError as exc:
+        # async WPS flush replaced the file mid-read; let callers retry
+        raise ArtifactValidationError(f"Artifact vanished: {path}") from exc
     return digest.hexdigest()
 
 
@@ -564,6 +581,32 @@ def _package_xml(path: Path) -> dict[str, ElementTree.Element]:
     return parsed
 
 
+def _expected_cell_text(value: object, component: str) -> Optional[str]:
+    """Canonical visible text for a table cell, matching renderer semantics.
+
+    Writers render cells with JS ``String(value)`` (null → ""), spreadsheets
+    store typed values (bool → 1/0, not searchable text).
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        if component == "spreadsheet":
+            return None
+        return "true" if value else "false"
+    if isinstance(value, float):
+        if value.is_integer():
+            value = int(value)
+        elif "e" in str(value).lower():
+            # spreadsheet XML serializes exponent floats differently
+            # ("1.0E-05" vs Python "1e-05"); cannot substring-match reliably
+            return None
+    if isinstance(value, int) and abs(value) >= 10**15 and component == "spreadsheet":
+        # Excel caps at 15 significant digits and switches to E-notation
+        return None
+    text = str(value)
+    return text if text else None
+
+
 def _expected_text(recorded: RecordedGeneration) -> list[str]:
     values: list[str] = []
     for operation in recorded.plan.operations:
@@ -581,7 +624,12 @@ def _expected_text(recorded: RecordedGeneration) -> list[str]:
                 for row in rows:
                     if isinstance(row, tuple):
                         values.extend(
-                            str(item) for item in row if item is not None and str(item)
+                            text
+                            for item in row
+                            if (text := _expected_cell_text(
+                                item, recorded.plan.component
+                            ))
+                            is not None
                         )
     return list(dict.fromkeys(values))
 
@@ -791,7 +839,15 @@ def _run_generation(
     resources = stage_generation_resources(request, recorded, runtime)
     runtime.start_servers()
     runtime.activate_component(request.component)
-    _wait_for_registration(bridge, runtime, request.component, timeout)
+    deadline = time.monotonic() + timeout
+    try:
+        _wait_for_registration(bridge, runtime, request.component, deadline)
+    except TimeoutError as exc:
+        raise _error(
+            request,
+            "GENERATION_COMMAND_FAILED",
+            "Timed out waiting for the WPS add-in to register",
+        ) from exc
 
     command_params = {
         "stagedPath": str(staged),
@@ -808,8 +864,11 @@ def _run_generation(
         command_params,
     )
     try:
-        result = bridge.wait_result(command.id, timeout)
+        result = bridge.wait_result(
+            command.id, max(0.0, deadline - time.monotonic())
+        )
     except TimeoutError as exc:
+        bridge.state.cancel(command.id)
         raise _error(
             request,
             "GENERATION_COMMAND_FAILED",
@@ -916,7 +975,9 @@ def _run_generation(
             staged_pdf.unlink(missing_ok=True)
         return published
     except ArtifactTransportError as exc:
-        if exc.code == "FINAL_ARTIFACT_INVALID" and not request.overwrite:
+        if exc.code == "FINAL_ARTIFACT_INVALID":
+            # the published artifact failed validation; never leave it behind
+            # (with overwrite=True it has already replaced the user's file)
             request.output.unlink(missing_ok=True)
         message = {
             "STAGED_ARTIFACT_INVALID": "Staged WPS artifact is invalid",
@@ -1068,6 +1129,12 @@ def execute_feasibility_plan(
     timeout: float = 90,
 ) -> Path:
     """Retain Task 3's exact marker-only feasibility path without weakening it."""
+    if request.format_name == "pdf":
+        raise _error(
+            request,
+            "OPERATION_PLAN_INVALID",
+            "The marker-only feasibility path does not support PDF output",
+        )
     exact = _validate_feasibility_recording(request, recorded)
     return _execute_generation_plan(
         request,

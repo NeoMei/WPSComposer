@@ -6,6 +6,8 @@ Tables without a heading go to a default "Data" sheet.
 
 from __future__ import annotations
 
+import re
+
 from ..document_model import (
     StructuredDocument, Section, TableBlock,
 )
@@ -42,8 +44,9 @@ def render(doc: StructuredDocument, output_path: str,
 
                 # Create/select sheet
                 sheet_name = section.heading if section.has_heading else f"Table{table_idx + 1}"
-                # Sanitize sheet name (31 char limit)
-                sheet_name = sheet_name[:31]
+                # Excel sheet names: 31 chars max, no []:*?/\
+                sheet_name = re.sub(r"[\[\]:*?/\\]", " ", sheet_name).strip()[:31]
+                sheet_name = sheet_name or f"Table{table_idx + 1}"
 
                 if sheet_index == 0:
                     # Rename default sheet
@@ -57,18 +60,13 @@ def render(doc: StructuredDocument, output_path: str,
                 sheet_index += 1
 
                 # Write table data
-                data = [elem.headers] + elem.rows
+                data = ([elem.headers] if elem.headers else []) + elem.rows
                 s.write_table(
                     start_row=1, start_col=1,
                     data=data,
-                    header_shade=True,
+                    header_shade=header_color,
                     header_font_color="#FFFFFF",
                 )
-                s.set_column_width("A", 15)
-                if len(elem.headers) > 1:
-                    for c in range(2, len(elem.headers) + 1):
-                        col_letter = chr(64 + c) if c <= 26 else "Z"
-                        s.set_column_width(col_letter, 12)
 
                 table_idx += 1
 

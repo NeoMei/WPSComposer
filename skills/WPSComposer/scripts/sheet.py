@@ -56,10 +56,6 @@ class SheetComposer(BaseComposer):
     def _active_document(app):
         return app.ActiveWorkbook
 
-    @property
-    def ws(self):
-        return self._ws
-
 
     def select_sheet(self, index):
         self._ws = self._doc.Worksheets(index)
@@ -97,6 +93,8 @@ class SheetComposer(BaseComposer):
     def write_table(self, start_row, start_col, data, header_bold=True,
                     header_shade="#4472C4", header_font_color="#FFFFFF",
                     font_size=11):
+        if not data:
+            return
         for r, rowvals in enumerate(data):
             for c, v in enumerate(rowvals):
                 cell = self.ws.Cells(start_row + r, start_col + c)
@@ -109,13 +107,6 @@ class SheetComposer(BaseComposer):
                         cell.Font.Color = hex_to_rgb_long(header_font_color)
                     if header_shade:
                         cell.Interior.Color = hex_to_rgb_long(header_shade)
-        if header_shade or header_bold:
-            for c in range(len(data[0])):
-                cell = self.ws.Cells(start_row, start_col + c)
-                if header_bold:
-                    cell.Font.Bold = True
-                if header_shade:
-                    cell.Interior.Color = hex_to_rgb_long(header_shade)
 
     def set_cell_style(self, row, col, bold=None, italic=None, font_size=None,
                        font_color=None, fill_color=None, align=None,
@@ -171,9 +162,13 @@ class SheetComposer(BaseComposer):
         self.ws.Range(range_str).Merge()
 
     def freeze_panes(self, cell):
-        self._app.ActiveWindow.SplitColumn = 0
+        window = self._app.ActiveWindow
+        if window is None:
+            # ponytail: headless sessions have no window to freeze; no-op
+            return
+        window.SplitColumn = 0
         self.ws.Range(cell).Select()
-        self._app.ActiveWindow.FreezePanes = True
+        window.FreezePanes = True
 
     def set_column_width(self, col, width):
         self.ws.Columns(col).ColumnWidth = width
@@ -223,12 +218,16 @@ class SheetComposer(BaseComposer):
         rng.HorizontalAlignment = -4108  # center
 
     def conditional_format(self, range_str, rule_type="cellvalue",
-                           operator=1, formula="0", fill_color="#FFC7CE"):
-        """Simple highlight rule. operator: 1=between-like; use formula for value."""
+                           operator=5, formula="0", fill_color="#FFC7CE"):
+        """Highlight cells. rule_type: "cellvalue"|"expression" (or numeric
+        XlFormatConditionType). operator: XlFormatConditionOperator, default
+        5=xlGreater compares against formula."""
         rng = self.ws.Range(range_str)
+        type_map = {"cellvalue": 1, "expression": 2}  # xlCellValue / xlExpression
         try:
             rng.FormatConditions.Delete()
-            fmt = rng.FormatConditions.Add(rule_type, operator, formula)
+            fmt = rng.FormatConditions.Add(
+                type_map.get(rule_type, rule_type), operator, formula)
             fmt.Interior.Color = hex_to_rgb_long(fill_color)
         except Exception:
             pass
@@ -513,8 +512,8 @@ class SheetComposer(BaseComposer):
 
     def export_pdf(self, path):
         p = _abs(path)
-        ws1 = self._doc.Worksheets(1) if hasattr(self._doc, "Worksheets") else self._doc.Sheets(1)
-        ws1.ExportAsFixedFormat(FMT_PDF_FROM_XLS, p)
+        # Workbook-level export includes every sheet, not just Worksheets(1)
+        self._doc.ExportAsFixedFormat(FMT_PDF_FROM_XLS, p)
         return p
 
 

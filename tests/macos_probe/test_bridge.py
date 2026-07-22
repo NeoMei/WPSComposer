@@ -29,6 +29,57 @@ def test_bridge_rejects_missing_token():
         assert error.value.code == 401
 
 
+def test_session_token_claim_is_reload_safe():
+    origin = "http://127.0.0.1:3891"
+    with LoopbackBridge({origin}) as bridge:
+        status, body = request(
+            bridge, "POST", "/v1/session",
+            {"component": "writer"}, origin=origin,
+        )
+        assert status == 200
+        assert body == {"token": bridge.token}
+        # re-claim is allowed so a reloaded add-in webview can recover
+        status, body = request(
+            bridge, "POST", "/v1/session",
+            {"component": "writer"}, origin=origin,
+        )
+        assert status == 200
+        assert body == {"token": bridge.token}
+        # invalid component is rejected
+        with pytest.raises(HTTPError) as error:
+            request(
+                bridge, "POST", "/v1/session",
+                {"component": "bogus"}, origin=origin,
+            )
+        assert error.value.code == 400
+        # unlisted origin is rejected
+        with pytest.raises(HTTPError) as error:
+            request(
+                bridge, "POST", "/v1/session",
+                {"component": "presentation"}, origin="http://example.com",
+            )
+        assert error.value.code == 403
+
+
+def test_non_ascii_authorization_header_returns_401():
+    origin = "http://127.0.0.1:3891"
+    with LoopbackBridge({origin}) as bridge:
+        req = Request(
+            bridge.url + "/v1/register",
+            data=json.dumps({"component": "writer"}).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Origin": origin,
+                "Authorization": "Bearer caf\u00e9",
+            },
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            with urlopen(req, timeout=2):
+                pass
+        assert error.value.code == 401
+
+
 def test_bridge_rejects_unlisted_origin():
     with LoopbackBridge({"http://127.0.0.1:3891"}) as bridge:
         with pytest.raises(HTTPError) as error:

@@ -70,5 +70,5 @@ def test_slide_renderer_uses_public_slide_count_for_table_and_image_slides():
         composer_factory=lambda: composer,
     )
 
-    assert ("table", 2) in calls
-    assert ("image", 3) in calls
+    assert ("table", 1) in calls
+    assert ("image", 2) in calls

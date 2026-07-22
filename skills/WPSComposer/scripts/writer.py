@@ -363,7 +363,6 @@ class WriterComposer(BaseComposer):
                 selection.Style = selection.Document.Styles("Hyperlink")
             except Exception:
                 selection.Font.Underline = 1
-            selection.Font.Color = 0
         else:
             selection.Font.Color = 0
             selection.Font.Underline = 0
@@ -396,7 +395,16 @@ class WriterComposer(BaseComposer):
         self._apply_body_style(style_name)
         for span in spans:
             self._apply_span_format(span)
-            selection.TypeText(span.text)
+            if span.link:
+                start = selection.End
+                selection.TypeText(span.text)
+                try:
+                    anchor = self._doc.Range(start, selection.End)
+                    self._doc.Hyperlinks.Add(anchor, span.link)
+                except Exception:
+                    pass
+            else:
+                selection.TypeText(span.text)
         selection.TypeParagraph()
         self._reset_selection_to_normal()
 
@@ -452,6 +460,7 @@ class WriterComposer(BaseComposer):
         sec = self._doc.Sections(1)
         f = sec.Footers(1).Range
         f.Text = "Page "
+        f.Collapse(0)  # wdCollapseEnd — Fields.Add replaces a non-collapsed range
         self._doc.Fields.Add(f, 33)  # wdFieldPage=33
 
     # ---- text ----
@@ -574,6 +583,12 @@ class WriterComposer(BaseComposer):
                 pass
             s.ParagraphFormat.LeftIndent = indent
             s.ParagraphFormat.FirstLineIndent = -indent  # hanging indent
+            try:
+                # tab after the glyph must land on the indent, not the
+                # default 36pt stop, or first line and wraps misalign
+                s.ParagraphFormat.TabStops.Add(indent)
+            except Exception:
+                pass
             self._set_line_spacing(s.ParagraphFormat, rule="one_and_half")
             s.ParagraphFormat.SpaceBefore = 0
             s.ParagraphFormat.SpaceAfter = 3
@@ -604,6 +619,12 @@ class WriterComposer(BaseComposer):
                 pass
             s.ParagraphFormat.LeftIndent = indent
             s.ParagraphFormat.FirstLineIndent = -indent  # hanging indent
+            try:
+                # tab after the glyph must land on the indent, not the
+                # default 36pt stop, or first line and wraps misalign
+                s.ParagraphFormat.TabStops.Add(indent)
+            except Exception:
+                pass
             self._set_line_spacing(s.ParagraphFormat, rule="one_and_half")
             s.ParagraphFormat.SpaceBefore = 0
             s.ParagraphFormat.SpaceAfter = 3
@@ -732,7 +753,7 @@ class WriterComposer(BaseComposer):
                 tbl.AutoFitBehavior(0)  # wdAutoFitFixed
                 tbl.AllowAutoFit = False
                 if inferred_widths:
-                    tbl.PreferredWidthType = 2  # wdPreferredWidthPoints
+                    tbl.PreferredWidthType = 3  # wdPreferredWidthPoints
                     tbl.PreferredWidth = available_width
             except Exception:
                 pass
@@ -787,6 +808,8 @@ class WriterComposer(BaseComposer):
 
     def add_merged_table(self, data, merges=None, shade_header="#4472C4"):
         """data: list of rows (lists). merges: list of (r1,c1,r2,c2) 1-based."""
+        if not data:
+            return None
         rows = len(data)
         cols = max(len(r) for r in data)
         normalized = [list(row) + [""] * (cols - len(row)) for row in data]
@@ -897,6 +920,16 @@ class WriterComposer(BaseComposer):
             )
         else:
             shape = self._doc.Shapes.AddPicture(p, False, True)
+            # honour a single-dimension constraint, keeping aspect ratio
+            try:
+                if width:
+                    shape.LockAspectRatio = -1
+                    shape.Width = width
+                elif height:
+                    shape.LockAspectRatio = -1
+                    shape.Height = height
+            except Exception:
+                pass
         try:
             shape.WrapFormat.Type = wrap
         except Exception:
@@ -932,7 +965,7 @@ class WriterComposer(BaseComposer):
         selection = self.selection
         selection.ParagraphFormat.Alignment = 1
         try:
-            border = selection.ParagraphFormat.Borders(-4)
+            border = selection.ParagraphFormat.Borders(-3)  # wdBorderBottom
             border.LineStyle = 1
             border.LineWidth = 6
             border.Color = 0xC0C0C0
@@ -941,7 +974,7 @@ class WriterComposer(BaseComposer):
         selection.TypeText(" ")
         selection.TypeParagraph()
         try:
-            selection.ParagraphFormat.Borders(-4).LineStyle = 0
+            selection.ParagraphFormat.Borders(-3).LineStyle = 0
         except Exception:
             pass
 

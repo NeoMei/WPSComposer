@@ -10,6 +10,15 @@ from __future__ import annotations
 from ._colors import hex_to_rgb_long, rgb_long_to_hex
 
 
+def _color_long(value):
+    """hex_to_rgb_long that degrades to None instead of raising, so one bad
+    colour lands in `rejected` instead of aborting the whole patch batch."""
+    try:
+        return hex_to_rgb_long(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def safe_get(obj, name, default=None):
     """Read a COM property without making inspection fail as a whole."""
     try:
@@ -154,10 +163,13 @@ def apply_font(font, patch):
     for key, value in patch.items():
         if key == "color":
             color_obj = safe_get(font, "Color")
-            if color_obj is not None and not isinstance(color_obj, (int, float)):
-                ok = safe_set(color_obj, "RGB", hex_to_rgb_long(value))
+            long = _color_long(value)
+            if long is None:
+                ok = False
+            elif color_obj is not None and not isinstance(color_obj, (int, float)):
+                ok = safe_set(color_obj, "RGB", long)
             else:
-                ok = safe_set(font, "Color", hex_to_rgb_long(value))
+                ok = safe_set(font, "Color", long)
         elif key == "name":
             results = [safe_set(font, "Name", value)]
             for attr in ("NameFarEast", "NameAscii", "NameOther", "NameBi"):
@@ -198,10 +210,12 @@ def apply_fill(fill, patch):
         ok = False
         if key == "color":
             fore = safe_get(fill, "ForeColor")
-            ok = fore is not None and safe_set(fore, "RGB", hex_to_rgb_long(value))
+            long = _color_long(value)
+            ok = fore is not None and long is not None and safe_set(fore, "RGB", long)
         elif key == "back_color":
             back = safe_get(fill, "BackColor")
-            ok = back is not None and safe_set(back, "RGB", hex_to_rgb_long(value))
+            long = _color_long(value)
+            ok = back is not None and long is not None and safe_set(back, "RGB", long)
         elif key == "visible":
             ok = safe_set(fill, "Visible", value)
         elif key == "transparency":
@@ -220,7 +234,8 @@ def apply_line(line, patch):
     for key, value in patch.items():
         if key == "color":
             fore = safe_get(line, "ForeColor")
-            ok = fore is not None and safe_set(fore, "RGB", hex_to_rgb_long(value))
+            long = _color_long(value)
+            ok = fore is not None and long is not None and safe_set(fore, "RGB", long)
         elif key in mapping:
             ok = safe_set(line, mapping[key], value)
         else:

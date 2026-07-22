@@ -57,9 +57,8 @@ def _wait_for_registration(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
     component: str,
-    timeout: float,
+    deadline: float,
 ) -> None:
-    deadline = time.monotonic() + timeout
     for attempt in range(4):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -94,7 +93,15 @@ def _run_conversion(
     runtime.prepare_profiles()
     runtime.start_servers()
     runtime.activate_component(request.component)
-    _wait_for_registration(bridge, runtime, request.component, timeout)
+    deadline = time.monotonic() + timeout
+    try:
+        _wait_for_registration(bridge, runtime, request.component, deadline)
+    except TimeoutError as exc:
+        raise _error(
+            request,
+            "CONVERSION_COMMAND_FAILED",
+            "Timed out waiting for the WPS add-in to register",
+        ) from exc
 
     policy = PathPolicy((runtime.staging_dir,))
     staged_source = policy.require_allowed(
@@ -120,8 +127,11 @@ def _run_conversion(
         },
     )
     try:
-        result = bridge.wait_result(command.id, timeout)
+        result = bridge.wait_result(
+            command.id, max(0.0, deadline - time.monotonic())
+        )
     except TimeoutError as exc:
+        bridge.state.cancel(command.id)
         raise _error(
             request,
             "CONVERSION_COMMAND_FAILED",

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from ..document_model import (
     StructuredDocument, Section, Paragraph,
-    ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
+    ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote, TaskList,
 )
 from ..slide import SlideComposer
 
@@ -71,6 +71,14 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
             tables.append(elem)
         elif isinstance(elem, ImageBlock):
             images.append(elem)
+        elif isinstance(elem, CodeBlock):
+            code = elem.code.strip()
+            if code:
+                bullets.append(code)
+        elif isinstance(elem, TaskList):
+            for text, checked in elem.items:
+                glyph = "☑" if checked else "☐"
+                bullets.append(f"{glyph} {text}".rstrip())
         elif isinstance(elem, BlockQuote):
             for para in elem.paragraphs:
                 text = _spans_to_text(para.spans).strip()
@@ -82,10 +90,11 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
 
     # First bullet slide
     first = bullets[:MAX_BULLETS]
-    p.add_bullets_slide(
-        section.heading if section.has_heading else "",
-        first, title_size=28, body_size=18,
-    )
+    if first:
+        p.add_bullets_slide(
+            section.heading if section.has_heading else "",
+            first, title_size=28, body_size=18,
+        )
 
     # Overflow bullet slides
     remaining = bullets[MAX_BULLETS:]
@@ -97,12 +106,15 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
     # Table slides
     for table in tables:
         try:
-            rows = min(len(table.rows) + 1, MAX_TABLE_ROWS + 1)
-            data = [table.headers] + table.rows[:MAX_TABLE_ROWS]
+            data = ([table.headers] if table.headers else []) + table.rows[:MAX_TABLE_ROWS]
+            cols = max(len(r) for r in data) if data else 0
+            if not cols:
+                continue
+            rows = len(data)
             p.add_blank_slide()
             idx = p.slide_count
             p.add_table(
-                idx, rows, len(table.headers),
+                idx, rows, cols,
                 60, 120, 840, 380,
                 data,
                 header_shade="#4472C4", header_font="#FFFFFF", font_size=14,

@@ -51,7 +51,7 @@ class SlideComposer(BaseComposer):
     MSO_RECTANGLE = 1
     MSO_ROUNDED_RECTANGLE = 5
     MSO_OVAL = 9
-    MSO_RIGHT_ARROW = 13
+    MSO_RIGHT_ARROW = 33
     MSO_LEFT_RIGHT_ARROW = 37
 
     @staticmethod
@@ -68,18 +68,10 @@ class SlideComposer(BaseComposer):
         return app.ActivePresentation
 
     LAYOUT_TITLE = 1
-    LAYOUT_TITLE_CONTENT = 1
+    LAYOUT_TITLE_CONTENT = 2        # ppLayoutText: title + body placeholder
     LAYOUT_BLANK = 12
-    LAYOUT_SECTION = 2
+    LAYOUT_SECTION = 11             # ppLayoutTitleOnly
     LAYOUT_TWO_CONTENT = 3
-
-    # shape types
-    MSO_TEXTBOX = 17
-    MSO_RECTANGLE = 1
-    MSO_ROUNDED_RECTANGLE = 5
-    MSO_OVAL = 9
-    MSO_RIGHT_ARROW = 13
-    MSO_LEFT_RIGHT_ARROW = 37
 
     @property
     def pres(self):
@@ -354,6 +346,10 @@ class SlideComposer(BaseComposer):
 
         for elem in layout.elements:
             etype = elem.get("type")
+            # ponytail: compound types (grid_items, stat_cards, quadrant,
+            # timeline_items, columns, pipeline_items, table,
+            # image_placeholder) need structured per-item content this API
+            # doesn't accept yet; only static bg/line/box/text render.
             if etype == "bg":
                 try:
                     color = elem.get("color", "#FFFFFF")
@@ -370,8 +366,11 @@ class SlideComposer(BaseComposer):
                     w = elem.get("w", 100)
                     h = elem.get("h", 3)
                     color = elem.get("color", "#000000")
+                    # horizontal bar: the line's thickness is its weight,
+                    # drawing to (left+w, top+h) would make a diagonal
+                    mid = top + h / 2
                     shape = slide.Shapes.AddLine(
-                        left, top, left + w, top + h
+                        left, mid, left + w, mid
                     )
                     shape.Line.ForeColor.RGB = hex_to_rgb_long(color)
                     shape.Line.Weight = max(h, 1)
@@ -704,6 +703,7 @@ class SlideComposer(BaseComposer):
                 "vertical_anchor": "VerticalAnchor",
             }
             if vertical_alignment is not None:
+                text_frame_patch = dict(text_frame_patch)
                 text_frame_patch["vertical_anchor"] = vertical_alignment
             for key, value in text_frame_patch.items():
                 ok = key in mapping and safe_set(text_frame, mapping[key], value)

@@ -61,9 +61,13 @@ def build_profile(
     profiles_root: Path,
     component: str,
     bridge_url: str,
-    token: str,
 ) -> Path:
-    """Create one static add-in profile for the selected WPS component."""
+    """Create one static add-in profile for the selected WPS component.
+
+    The bridge token is deliberately NOT written here: this directory is
+    statically served by ``wpsjs debug --server``, so the add-in claims the
+    token from the bridge's ``/v1/session`` endpoint at startup.
+    """
     if component not in COMPONENT_CONFIG:
         raise ValueError(f"Unknown component: {component}")
     config = COMPONENT_CONFIG[component]
@@ -86,7 +90,6 @@ def build_profile(
         {
             "bridgeUrl": bridge_url,
             "component": component,
-            "token": token,
         },
     )
     return profile
@@ -107,6 +110,8 @@ class RegistrationSnapshot:
     ) -> "RegistrationSnapshot":
         target = path.expanduser().resolve()
         recovery = recovery_dir.expanduser().resolve()
+        if recovery.exists():
+            cls._recover_stale(recovery)
         recovery.mkdir(parents=True, exist_ok=False, mode=0o700)
         os.chmod(recovery, 0o700)
         existed = target.is_file()
@@ -161,6 +166,40 @@ class RegistrationSnapshot:
         for name in ("publish.xml.original", "registration.json"):
             (self.recovery_dir / name).unlink(missing_ok=True)
         self.recovery_dir.rmdir()
+
+    @classmethod
+    def _recover_stale(cls, recovery: Path) -> None:
+        """Restore registration left behind by a crashed probe run."""
+        meta_path = recovery / "registration.json"
+        if not meta_path.is_file():
+            raise RuntimeError(
+                f"Incomplete recovery directory at {recovery}; "
+                "inspect and remove it manually."
+            )
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        target = Path(meta["path"])
+        backup = recovery / "publish.xml.original"
+        existed = bool(meta.get("existed"))
+        if existed and not backup.is_file():
+            # crash between writing metadata and the backup: restoring would
+            # DELETE the user's real publish.xml — refuse
+            raise RuntimeError(
+                f"Recovery metadata at {recovery} is missing its backup; "
+                "inspect and remove it manually."
+            )
+        original = backup.read_bytes() if existed else None
+        if (
+            original is not None
+            and target.is_file()
+            and target.read_bytes() == original
+        ):
+            # crash before registration was ever modified: nothing to restore
+            meta_path.unlink(missing_ok=True)
+            backup.unlink(missing_ok=True)
+            recovery.rmdir()
+            return
+        snapshot = cls(target, original, meta.get("mode"), recovery)
+        snapshot.restore()
 
 
 def find_node(override: Optional[str] = None) -> Path:
@@ -287,9 +326,33 @@ def owned_wps_pids(before: set[int], after: set[int]) -> set[int]:
     return after - before
 
 
+def _pid_elapsed_seconds(pid: int) -> Optional[float]:
+    """Elapsed seconds since the process started; None if it is gone."""
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "etimes=", "-p", str(pid)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    try:
+        return float(result.stdout.strip())
+    except ValueError:
+        return None
+
+
 def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
     """Create one private session inside the WPS application container."""
     parent = root.expanduser().resolve()
+    container = Path.home() / "Library/Containers/com.kingsoft.wpsoffice.mac"
+    if parent.is_relative_to(container.resolve()) and not container.exists():
+        raise RuntimeError(
+            f"WPS sandbox container is missing: {container}. "
+            "Refusing to fabricate it; is WPS Office for Mac installed?"
+        )
     parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(parent, 0o700)
     session = Path(tempfile.mkdtemp(prefix="session-", dir=parent))
@@ -327,6 +390,7 @@ class ProbeRuntime:
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
         self._wps_pids_before: Optional[set[int]] = None
+        self._entered_at: Optional[float] = None
         self._runtime_lock = None
         self.registration_restored = True
 
@@ -341,6 +405,7 @@ class ProbeRuntime:
             raise
         try:
             self._preflight()
+            self._entered_at = time.monotonic()
             self._wps_pids_before = list_wps_pids(self.wps_app)
             self.runtime_dir.mkdir(parents=True, exist_ok=False)
             self.staging_dir = create_staging_session(self.staging_root)
@@ -369,7 +434,6 @@ class ProbeRuntime:
                 profiles_root,
                 component,
                 self.bridge_url,
-                self.token,
             )
         return dict(self.profiles)
 
@@ -475,12 +539,34 @@ class ProbeRuntime:
             self._snapshot = None
             self.registration_restored = True
 
+    def _owned_wps_pids(
+        self, before: set[int], entered_at: Optional[float]
+    ) -> set[int]:
+        """WPS instances spawned during this run.
+
+        Age-based (not set-subtraction): a recycled PID from `before` still
+        counts if the process started after we entered, and a pre-run PID
+        that died and was recycled is excluded because it looks young only
+        if the new process really started during this run.
+        """
+        after = list_wps_pids(self.wps_app)
+        if entered_at is None:
+            return after - before
+        max_age = time.monotonic() - entered_at
+        return {
+            pid
+            for pid in after
+            if (age := _pid_elapsed_seconds(pid)) is not None
+            and age <= max_age
+        }
+
     def _terminate_owned_wps(self) -> None:
         if self._wps_pids_before is None:
             return
         before = self._wps_pids_before
+        entered_at = self._entered_at
         self._wps_pids_before = None
-        owned = owned_wps_pids(before, list_wps_pids(self.wps_app))
+        owned = self._owned_wps_pids(before, entered_at)
         for pid in sorted(owned):
             try:
                 os.kill(pid, signal.SIGTERM)
@@ -490,7 +576,7 @@ class ProbeRuntime:
             return
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
-            remaining = owned_wps_pids(before, list_wps_pids(self.wps_app))
+            remaining = self._owned_wps_pids(before, entered_at)
             if not remaining:
                 return
             time.sleep(0.1)

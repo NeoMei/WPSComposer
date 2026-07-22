@@ -41,10 +41,10 @@ def validate_slide(
             warnings.append(f"标题字号 {fs}pt < 推荐 36pt")
             score -= 5
         if role == "body" and fs < 20:
-            warnings.append(f"正文字号 {fs}pt < 推荐 24pt")
+            warnings.append(f"正文字号 {fs}pt < 推荐 20pt")
             score -= 3
         if role == "caption" and fs < 14:
-            warnings.append(f"标注字号 {fs}pt < 推荐 18pt")
+            warnings.append(f"标注字号 {fs}pt < 推荐 14pt")
             score -= 2
 
     # 2. Content density check

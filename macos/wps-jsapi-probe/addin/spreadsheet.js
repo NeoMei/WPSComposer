@@ -168,9 +168,11 @@
     header.Font.Color = sheetColor(
       args.headerFontColor === undefined ? "#FFFFFF" : args.headerFontColor
     );
-    header.Interior.Color = sheetColor(
-      args.headerShade === undefined ? "#4472C4" : args.headerShade
-    );
+    if (args.headerShade !== false) {
+      header.Interior.Color = sheetColor(
+        args.headerShade === undefined ? "#4472C4" : args.headerShade
+      );
+    }
   }
 
   function setSheetColumnWidth(workbook, args, context) {
@@ -263,11 +265,14 @@
         invalidSheetPlan(`${operation.op} ${name} is invalid`);
       }
     });
-    ["name", "column", "headerShade", "headerFontColor"].forEach(function (name) {
+    ["name", "column", "headerFontColor"].forEach(function (name) {
       if (Object.prototype.hasOwnProperty.call(args, name) && typeof args[name] !== "string") {
         invalidSheetPlan(`${operation.op} ${name} is invalid`);
       }
     });
+    if (Object.prototype.hasOwnProperty.call(args, "headerShade") && args.headerShade !== false && typeof args.headerShade !== "string") {
+      invalidSheetPlan("sheet.write_table headerShade is invalid");
+    }
     if (Object.prototype.hasOwnProperty.call(args, "headerBold") && typeof args.headerBold !== "boolean") {
       invalidSheetPlan("sheet.write_table headerBold is invalid");
     }
@@ -445,7 +450,7 @@
 
   function requireVisibleWorksheet(workbook) {
     for (let index = 1; index <= workbook.Worksheets.Count; index += 1) {
-      if (workbook.Worksheets.Item(index).Visible !== 0) {
+      if (workbook.Worksheets.Item(index).Visible === -1) { // xlSheetVisible
         return;
       }
     }

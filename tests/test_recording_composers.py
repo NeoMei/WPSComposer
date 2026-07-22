@@ -208,8 +208,6 @@ def test_recording_sheet_renderer_records_multi_table_plan_in_windows_call_order
                 "fontSize": 11,
             },
         },
-        {"op": "sheet.set_column_width", "args": {"column": "A", "width": 15}},
-        {"op": "sheet.set_column_width", "args": {"column": "B", "width": 12}},
         {"op": "sheet.add", "args": {"name": "Details"}},
         {
             "op": "sheet.write_table",
@@ -223,12 +221,10 @@ def test_recording_sheet_renderer_records_multi_table_plan_in_windows_call_order
                 "fontSize": 11,
             },
         },
-        {"op": "sheet.set_column_width", "args": {"column": "A", "width": 15}},
-        {"op": "sheet.set_column_width", "args": {"column": "B", "width": 12}},
         {"op": "sheet.select", "args": {"index": 1}},
         {"op": "sheet.autofit", "args": {}},
     ]
-    assert {operation["op"] for operation in operations} == ALLOWED_OPERATIONS[
+    assert {operation["op"] for operation in operations} <= ALLOWED_OPERATIONS[
         "spreadsheet"
     ]
     assert validate_generation_plan(recorded.plan.to_dict(), "spreadsheet") == recorded.plan

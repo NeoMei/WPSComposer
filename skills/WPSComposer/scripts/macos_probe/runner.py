@@ -231,6 +231,16 @@ def _execute_commands(
                 failures.append(
                     _failure(component, method, exc.code, str(exc))
                 )
+            except FileExistsError as exc:
+                # output appeared between pre-flight and publish (TOCTOU)
+                failures.append(
+                    _failure(
+                        component,
+                        method,
+                        "ARTIFACT_PUBLISH_FAILED",
+                        str(exc),
+                    )
+                )
             except (ArtifactValidationError, ProtocolError) as exc:
                 failures.append(
                     _failure(
@@ -280,8 +290,12 @@ def _write_json(path: Path, payload: object) -> None:
 
 def _smoke_spec_hash(addin_dir: Path) -> str:
     digest = hashlib.sha256()
-    for path in sorted(item for item in addin_dir.iterdir() if item.is_file()):
-        digest.update(path.name.encode("utf-8"))
+    files = (
+        item for item in addin_dir.rglob("*")
+        if item.is_file() and not item.is_symlink()
+    )
+    for path in sorted(files):
+        digest.update(str(path.relative_to(addin_dir)).encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()
 

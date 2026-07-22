@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 
 
-def _pdf_pdf_abs(path):
+def _pdf_abs(path):
     return os.path.abspath(path)
 
 
@@ -107,23 +107,24 @@ class PdfComposer:
         return len(PdfReader(_pdf_abs(input_path)).pages)
 
     @staticmethod
-    def add_text_watermark(input_path, text, output_path,
-                            fontsize=50, opacity=0.15, angle=45):
-        """Stamp a diagonal text watermark on every page. Returns output path."""
-        from pypdf import PdfReader, PdfWriter
+    def _watermark_page(text, pw, ph, fontsize, opacity, angle):
+        from pypdf import PdfReader
         from reportlab.pdfgen import canvas
         from reportlab.lib.colors import Color
         import io
-        src = _pdf_abs(input_path)
-        out = _pdf_abs(output_path)
-        reader = PdfReader(src)
-        first = reader.pages[0]
-        pw = float(first.mediabox.width)
-        ph = float(first.mediabox.height)
+        font = "Helvetica"
+        if any(ord(ch) > 0x2E7F for ch in text):
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+            try:
+                pdfmetrics.getFont("STSong-Light")
+            except KeyError:
+                pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+            font = "STSong-Light"
         wm_buf = io.BytesIO()
         c = canvas.Canvas(wm_buf, pagesize=(pw, ph))
         c.saveState()
-        c.setFont("Helvetica", fontsize)
+        c.setFont(font, fontsize)
         try:
             c.setFillColor(Color(0.5, 0.5, 0.5, alpha=opacity))
         except Exception:
@@ -135,10 +136,23 @@ class PdfComposer:
         c.showPage()
         c.save()
         wm_buf.seek(0)
-        wm_page = PdfReader(wm_buf).pages[0]
+        return PdfReader(wm_buf).pages[0]
+
+    @staticmethod
+    def add_text_watermark(input_path, text, output_path,
+                            fontsize=50, opacity=0.15, angle=45):
+        """Stamp a diagonal text watermark on every page. Returns output path."""
+        from pypdf import PdfReader, PdfWriter
+        src = _pdf_abs(input_path)
+        out = _pdf_abs(output_path)
+        reader = PdfReader(src)
         w = PdfWriter()
         for page in reader.pages:
-            page.merge_page(wm_page)
+            pw = float(page.mediabox.width)
+            ph = float(page.mediabox.height)
+            page.merge_page(
+                PdfComposer._watermark_page(text, pw, ph, fontsize, opacity, angle)
+            )
             w.add_page(page)
         with open(out, "wb") as fh:
             w.write(fh)

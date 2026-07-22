@@ -134,7 +134,11 @@ class BaseComposer:
         """Release owned COM objects; attached user documents stay open."""
         if self._owns_doc and self._doc is not None:
             try:
-                self._doc.Close(bool(save_changes))
+                try:
+                    self._doc.Close(bool(save_changes))
+                except TypeError:
+                    # PowerPoint Presentation.Close() takes no argument
+                    self._doc.Close()
             except Exception:
                 pass
         if self._owns_app:

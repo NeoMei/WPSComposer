@@ -365,7 +365,8 @@
       for (let column = 1; column <= args.cols; column += 1) {
         const cell = shape.Table.Cell(row, column).Shape;
         const range = cell.TextFrame.TextRange;
-        range.Text = String(args.data[row - 1][column - 1]);
+        const cellValue = args.data[row - 1][column - 1];
+        range.Text = cellValue === null ? "" : String(cellValue);
         styleSlideText(
           range,
           bodyFont,
@@ -377,7 +378,7 @@
           1
         );
         if (row === 1) {
-          range.Font.Bold = true;
+          range.Font.Bold = -1; // msoTrue (JS true marshals to msoCTrue=1)
           applySlideFill(
             cell.Fill,
             args.headerShade === undefined ? "#4472C4" : args.headerShade
@@ -471,21 +472,24 @@
   function validateSlidePreset(value) {
     exactObject(value, ["name", "colors", "fonts"], ["name", "colors", "fonts", "spacing"], "slide.apply_preset preset");
     requireString(value.name, "slide.apply_preset preset.name", false);
-    exactObject(
-      value.colors,
-      ["primary", "dark", "background"],
-      ["primary", "secondary", "accent", "dark", "light", "background"],
-      "slide.apply_preset preset.colors"
-    );
+    if (!isObject(value.colors) || !isObject(value.fonts)) {
+      invalidSlidePlan("slide.apply_preset preset colors/fonts are invalid");
+    }
+    // extra custom roles are allowed (Python _role_map parity); every
+    // present role must still be a valid color/font
+    ["primary", "dark", "background"].forEach(function (name) {
+      if (!hasOwn(value.colors, name)) {
+        invalidSlidePlan(`slide.apply_preset preset.colors.${name} is required`);
+      }
+    });
     Object.keys(value.colors).forEach(function (name) {
       requireColor(value.colors[name], `slide.apply_preset preset.colors.${name}`);
     });
-    exactObject(
-      value.fonts,
-      ["title", "body"],
-      ["title", "subtitle", "body", "caption", "chinese"],
-      "slide.apply_preset preset.fonts"
-    );
+    ["title", "body"].forEach(function (name) {
+      if (!hasOwn(value.fonts, name)) {
+        invalidSlidePlan(`slide.apply_preset preset.fonts.${name} is required`);
+      }
+    });
     Object.keys(value.fonts).forEach(function (name) {
       validateSlideFont(value.fonts[name], `slide.apply_preset preset.fonts.${name}`);
     });
@@ -658,7 +662,7 @@
 
   function validateSlideResource(imageId, resources, stagedPath) {
     if (
-      !/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(imageId) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(imageId) ||
       imageId === "__proto__" || imageId === "prototype" ||
       hasOwn(Object.prototype, imageId)
     ) {

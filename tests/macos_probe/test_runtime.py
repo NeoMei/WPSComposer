@@ -52,7 +52,6 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         tmp_path / "profiles",
         "writer",
         "http://127.0.0.1:45678",
-        "secret-token",
     )
 
     package = json.loads((profile / "package.json").read_text())
@@ -61,7 +60,6 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
     assert session == {
         "bridgeUrl": "http://127.0.0.1:45678",
         "component": "writer",
-        "token": "secret-token",
     }
     assert (profile / "component.js").read_text() == "writer.js"
 
@@ -72,6 +70,21 @@ def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
     publish.write_bytes(original)
     snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
     publish.write_bytes(b"changed")
+    snapshot.restore()
+    assert publish.read_bytes() == original
+    assert not (tmp_path / "recovery").exists()
+
+
+def test_capture_recovers_stale_recovery_directory(tmp_path: Path):
+    publish = tmp_path / "publish.xml"
+    original = b"<jsplugins><original/></jsplugins>\n"
+    publish.write_bytes(original)
+    RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    publish.write_bytes(b"crashed-mid-probe")
+    # next run: stale recovery dir is restored instead of failing
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    assert publish.read_bytes() == original
+    publish.write_bytes(b"new-probe")
     snapshot.restore()
     assert publish.read_bytes() == original
     assert not (tmp_path / "recovery").exists()

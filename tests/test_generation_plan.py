@@ -410,7 +410,7 @@ def test_operation_schemas_reject_wrong_argument_types(op, field, invalid):
         ("slide.add_image", "left"),
     ],
 )
-@pytest.mark.parametrize("value", [-(2**53 - 1), 2**53 - 1, float(2**53 - 1)])
+@pytest.mark.parametrize("value", [2**53 - 1, float(2**53 - 1)])
 def test_numeric_operation_fields_accept_exact_safe_bound(op, field, value):
     assert MAX_SAFE_NUMBER == 2**53 - 1
     component = _component_for_operation(op)
@@ -752,3 +752,30 @@ def test_generation_resource_resolves_host_path_and_rejects_unlisted_media_type(
 
     with pytest.raises(OperationPlanError, match="unsupported media type"):
         GenerationResource("image-2", tmp_path / "notes.txt", "text/plain")
+
+
+@pytest.mark.parametrize(
+    ("op", "field", "value"),
+    [
+        ("writer.add_table", "rows", 0),
+        ("writer.add_table", "cols", -5),
+        ("writer.add_heading", "level", 0),
+        ("writer.add_heading", "level", 10),
+        ("sheet.write_table", "startRow", 0),
+        ("sheet.select", "index", -1),
+        ("slide.add_table", "slide", 0),
+        ("slide.add_table", "left", -0.5),
+        ("slide.add_image", "width", 0),
+        ("slide.set_size", "height", -100),
+        ("writer.add_image", "maxWidth", -1),
+    ],
+)
+def test_bounded_numeric_fields_reject_out_of_range_values(op, field, value):
+    component = _component_for_operation(op)
+    args = dict(VALID_OPERATION_ARGS[op])
+    args[field] = value
+    with pytest.raises(OperationPlanError, match="invalid argument"):
+        validate_generation_plan(
+            {"component": component, "operations": [{"op": op, "args": args}]},
+            component,
+        )

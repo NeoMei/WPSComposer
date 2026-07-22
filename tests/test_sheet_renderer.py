@@ -86,11 +86,10 @@ def test_sheet_renderer_preserves_windows_table_calls_with_injected_composer():
                 "start_row": 1,
                 "start_col": 1,
                 "data": [["Item"], ["A"]],
-                "header_shade": True,
+                "header_shade": "#123456",
                 "header_font_color": "#FFFFFF",
             },
         ),
-        ("width", "A", 15),
         ("autofit",),
         ("save", "ignored.xlsx"),
     ]

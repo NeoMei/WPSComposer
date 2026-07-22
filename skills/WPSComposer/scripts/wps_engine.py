@@ -89,6 +89,7 @@ from .macos_probe.generation import GenerationError
 from .document_model import (
     StructuredDocument, Section, Paragraph, Span,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
+    HorizontalRule, TaskList,
 )
 from .md_parser import parse, parse_file
 from .document_api import (
@@ -166,6 +167,8 @@ __all__ = [
     "CodeBlock",
     "ImageBlock",
     "BlockQuote",
+    "HorizontalRule",
+    "TaskList",
     "parse",
     "parse_file",
     # Existing/current document API
