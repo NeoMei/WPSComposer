@@ -38,8 +38,8 @@ def render(doc, output_path, preset=None, composer_factory=WriterComposer):
 
 def _render_into(w, doc, preset):
     _configure_document(w, preset)
-    _render_title_page(w, doc, preset)
-    _render_body(w, doc, preset)
+    abstract = _render_title_page(w, doc, preset)
+    _render_body(w, doc, preset, skip_element=abstract)
     w.set_page_number_in_footer()
     w.update_fields()
 
@@ -53,7 +53,7 @@ def _configure_document(w, preset):
         _apply_preset_to_styles(w, preset)
 
 
-def _render_body(w, doc, preset):
+def _render_body(w, doc, preset, skip_element=None):
     w.insert_toc("\u76ee  \u5f55")
     scheme = detect_numbering_scheme(doc.sections)
     numbering = NumberingState(scheme=scheme)
@@ -62,7 +62,7 @@ def _render_body(w, doc, preset):
         if section.level == 1 and not first_section:
             w.add_section()
         first_section = False
-        _render_section(w, section, preset, numbering)
+        _render_section(w, section, preset, numbering, skip_element=skip_element)
 
 
 def _apply_preset_to_styles(w, preset):
@@ -71,23 +71,59 @@ def _apply_preset_to_styles(w, preset):
 
 
 def _render_title_page(w, doc, preset):
-    """Title page using named styles."""
+    """Title page using named styles.
+
+    Renders the title plus, when available, the document abstract (the leading
+    blockquote of the title section) as a subtitle, the author, and the date
+    (accepting either ``date`` or the Obsidian ``created`` front-matter key).
+    Returns the abstract element consumed from the body, if any, so the body
+    can skip rendering it a second time.
+    """
     for _ in range(4):
         w.add_paragraph("", size=12)
     if doc.title:
         w.add_styled_paragraph(doc.title, "Title")
+    abstract = _cover_abstract(doc)
+    if abstract is not None:
+        text = " ".join(p.plain_text for p in abstract.paragraphs).strip()
+        if text:
+            w.add_styled_paragraph(text, "Subtitle")
     if doc.metadata.get("author"):
         w.add_styled_paragraph(doc.metadata["author"], "Author")
-    if doc.metadata.get("date"):
-        w.add_styled_paragraph(doc.metadata["date"], "Date")
+    date = doc.metadata.get("date") or doc.metadata.get("created")
+    if date:
+        w.add_styled_paragraph(date, "Date")
     w.add_horizontal_line()
     w.add_page_break()
+    return abstract
 
 
-def _render_section(w, section, preset, ns=None):
+def _cover_abstract(doc):
+    """Return the leading blockquote of the title section, or None.
+
+    The title section is the first section whose heading equals ``doc.title``
+    (the H1 that also supplies the document title). Its first blockquote is
+    conventionally an abstract/summary; surfacing it on the cover avoids a
+    sparse one-line title page. Only matches when the section heading is the
+    title itself, so ordinary first sections (e.g. "Overview") are untouched.
+    """
+    if not doc.title or not doc.sections:
+        return None
+    first = doc.sections[0]
+    if first.heading != doc.title:
+        return None
+    for elem in first.elements:
+        if isinstance(elem, BlockQuote) and elem.paragraphs:
+            return elem
+    return None
+
+
+def _render_section(w, section, preset, ns=None, skip_element=None):
     """Render a section with intelligent heading numbering.
 
     ns: NumberingState instance for auto-numbering. If None, no numbering.
+    skip_element: an element instance to skip (by identity), e.g. the abstract
+        blockquote that was already rendered on the title page.
     """
     if section.has_heading:
         level = min(section.level, 6)
@@ -108,6 +144,8 @@ def _render_section(w, section, preset, ns=None):
 
     is_first_elem = True
     for elem in section.elements:
+        if skip_element is not None and elem is skip_element:
+            continue
         _render_element(w, elem, preset, is_first_after_heading=is_first_elem)
         is_first_elem = False
 

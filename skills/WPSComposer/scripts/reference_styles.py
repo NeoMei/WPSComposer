@@ -64,6 +64,19 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "line_spacing_rule": "one_and_half",
     },
 
+    # Cover subtitle / abstract (the leading blockquote of the title section)
+    "Subtitle": {
+        "name": "Subtitle",
+        "type": "paragraph",
+        "font_name": BODY_FONT,
+        "font_name_ascii": LATIN_FONT,
+        "font_size": 13,
+        "align": 1,
+        "color": "#595959",
+        "space_after": 18,
+        "line_spacing_rule": "one_and_half",
+    },
+
     # Body text - FangSong 12pt justified indent 2 chars
     "BodyText": {
         "name": "Body Text",
