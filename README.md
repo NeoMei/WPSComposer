@@ -80,9 +80,10 @@ Windows 也可使用 `pwsh ./install.ps1`，macOS/Linux 可使用
   `package-lock.json` 执行 `npm ci --omit=dev --ignore-scripts`，并在插件正式替换前
   完成全部依赖安装；失败时不会留下半安装目录或更改 marketplace。
 - Windows 上生成 DOCX/PPTX/XLSX 需要 WPS Office 或 MS Office，以及 `pywin32`。
-- macOS：公开 `generate()` 仍为 **NO-GO**，因为 WPS 12.1.26035 的
-  Writer `SaveAs2` 会打开原生保存面板；已有 Office 文件转 PDF 已通过
-  六格式双轮真实门禁并启用。详见 [macOS Phase 0](docs/macos-phase0.md)。
+- macOS：公开 `generate()` 已启用。四种格式（docx/xlsx/pptx/pdf）在
+  WPS 12.1.26035 上经门禁 JSAPI 后端实测均可正常序列化；早期 Writer
+  `SaveAs2` 失败已不再复现。已有 Office 文件转 PDF 同样通过六格式双轮
+  真实门禁并启用。详见 [macOS Phase 0](docs/macos-phase0.md)。
 - Markdown 解析、文档模型和 PDF 编辑模块可在非 Windows 系统导入。
 - PDF 编辑需要 `pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`。
 

@@ -2,15 +2,20 @@
 
 ## Decision
 
-**NO-GO for document generation Phase 1 on the tested WPS version.** Do not
-route the public `generate()` API to the macOS backend.
+**GO for document generation on macOS (supersedes the 2026-07-17 NO-GO).** On
+2026-07-25, `generate()` was routed through the gated macOS JSAPI backend on
+the same installed Mac (WPS 12.1.26035) and all four formats serialized: docx,
+xlsx, pptx, and pdf each produced a valid package via `generate_macos`. The
+earlier Writer `SaveAs2` failure no longer reproduces, so
+`MACOS_GENERATION_ENABLED` is open for all four formats. The original NO-GO
+analysis and artifact table are retained below for provenance.
 
 **GO for existing Office-to-PDF conversion.** On 2026-07-18, two consecutive
 installed-Mac runs converted `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
 `.pptx` through the container-staged typed backend. The two-visible-sheet XLSX
 produced a two-page PDF, every output passed `pdfinfo`, registration was
 restored, and no staging session remained. Public `convert_to_pdf()` is enabled
-on macOS; this does not change the generation decision below.
+on macOS.
 
 The installed Mac WPS can load authenticated JS add-ins and can serialize the
 Presentation and Spreadsheet smoke files. Writer exposes document creation,
