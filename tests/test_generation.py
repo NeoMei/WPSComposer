@@ -461,6 +461,7 @@ def test_generate_macos_checks_production_gate_before_recording(tmp_path):
             "docx",
             tmp_path / "report.docx",
             None,
+            enabled={"docx": False},
             renderer_factory=forbidden_renderer,
         )
 

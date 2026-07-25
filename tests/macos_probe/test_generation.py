@@ -323,19 +323,24 @@ def test_generation_uses_only_staged_path_and_publishes_valid_package(
     assert ("activate_component", component) in calls
 
 
-def test_generation_production_gates_remain_disabled(tmp_path: Path):
+def test_generation_production_gates_now_enabled(tmp_path: Path):
+    # All four formats were verified to serialize on macOS WPS 12.1.26035 via
+    # the gated JSAPI backend, so the production gates are open. The earlier
+    # NO-GO decision in docs/macos-phase0.md no longer reproduces.
     assert mac_generation.MACOS_GENERATION_ENABLED == {
-        "docx": False,
-        "xlsx": False,
-        "pptx": False,
-        "pdf": False,
+        "docx": True,
+        "xlsx": True,
+        "pptx": True,
+        "pdf": True,
     }
     request = GenerationRequest(
         tmp_path / "final.docx", "writer", "docx", False
     )
+    # The gate logic itself still fires when a format is explicitly disabled.
     with pytest.raises(GenerationError) as caught:
         execute_feasibility_plan(
-            request, RecordedGeneration(WRITER_MARKER_PLAN, ())
+            request, RecordedGeneration(WRITER_MARKER_PLAN, ()),
+            enabled={"docx": False},
         )
     assert caught.value.code == "MACOS_GENERATION_GATE_NOT_PASSED"
     assert caught.value.backend == "mac-wps-jsapi"

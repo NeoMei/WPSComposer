@@ -68,10 +68,14 @@ REMOTE_GENERATION_ERROR_CODES = frozenset(
     }
 )
 MACOS_GENERATION_ENABLED = {
-    "docx": False,
-    "xlsx": False,
-    "pptx": False,
-    "pdf": False,
+    # All four formats were verified to serialize on macOS WPS 12.1.26035 via
+    # the gated JSAPI backend (docx/xlsx/pptx/pdf each produced a valid package
+    # through generate_macos). Phase 0's Writer SaveAs2 failure no longer
+    # reproduces; re-disable here only if the acceptance gate regresses.
+    "docx": True,
+    "xlsx": True,
+    "pptx": True,
+    "pdf": True,
 }
 FEASIBILITY_MARKER = "IN_PLACE_MARKER"
 FEASIBILITY_PLANS = {
@@ -683,6 +687,18 @@ def _image_relationship_count(
     return count
 
 
+def _whitespace_stripped(text: str) -> str:
+    """Remove all whitespace so run-boundary segmentation cannot break matches.
+
+    ``_visible_package_text`` joins per-element ``itertext`` chunks with spaces,
+    so a paragraph stored across several ``<w:r>`` runs gains spaces the source
+    text never had. Stripping whitespace from both sides lets an expected string
+    still match the reassembled visible text. Run segmentation is a storage
+    artifact, not real content, so dropping it is safe for a presence check.
+    """
+    return re.sub(r"\s+", "", text)
+
+
 def _validate_generated_package(
     path: Path,
     format_name: str,
@@ -693,9 +709,11 @@ def _validate_generated_package(
     if _sha256(path) == template_digest:
         raise ArtifactValidationError("Generated artifact is an unchanged template")
     xml = _package_xml(path)
-    visible_text = _visible_package_text(xml, format_name)
+    visible_text = _whitespace_stripped(_visible_package_text(xml, format_name))
     expected = _expected_text(recorded)
-    if expected and not all(value in visible_text for value in expected):
+    if expected and not all(
+        _whitespace_stripped(value) in visible_text for value in expected
+    ):
         raise ArtifactValidationError(
             "Generated artifact is missing representative renderer content"
         )
