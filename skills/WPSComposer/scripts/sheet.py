@@ -490,6 +490,213 @@ class SheetComposer(BaseComposer):
                 return shape
         return None
 
+    # ------------------------------------------------------------------
+    # Structural verbs (insert / remove / move / clone).
+    # WINDOWS-VERIFY: all COM below. Standard Excel/WPS primitives:
+    # Rows/Cols.Insert & .Delete, Cut+Insert for move, Copy+Insert for clone,
+    # Worksheets.Add/Copy/Move for sheets, ChartObjects.Delete for charts.
+    # Returned "path" is best-effort positional.
+    # ------------------------------------------------------------------
+    def apply_structural_op(self, op):
+        verb = op.get("op")
+        if verb == "insert":
+            return self._insert_element(
+                op.get("parent"), op.get("type"),
+                op.get("props") or {}, op.get("position", "end"),
+            )
+        if verb == "remove":
+            return self._remove_element(op.get("target"),
+                                        axis=op.get("axis", "row"))
+        target = op.get("target") or ""
+        if verb == "move":
+            return self._move_element(target, op.get("to"),
+                                      axis=op.get("axis", "row"))
+        if verb == "clone":
+            return self._clone_element(target, op.get("to"))
+        raise ValueError(f"Unsupported Sheet structural op: {verb!r}")
+
+    def _row_or_col_from_target(self, target):
+        """Return (sheet_index, 'row'|'column'|None, index) for a sheet/cell/
+        range target. WINDOWS-VERIFY."""
+        target = target or ""
+        match = re.fullmatch(r"sheet:(\d+)(?:/(cell|range):([^\s]+))?", target)
+        if not match:
+            raise ValueError(f"Unsupported Sheet target: {target}")
+        sheet_index = int(match.group(1))
+        addr = match.group(3)
+        if addr:
+            ws = self._doc.Worksheets(sheet_index)
+            cell = ws.Range(str(addr))
+            row = int(safe_get(cell, "Row", 0) or 0)
+            col = int(safe_get(cell, "Column", 0) or 0)
+            return sheet_index, row, col
+        return sheet_index, None, None
+
+    def _resolve_insert_index(self, position, anchor_index, used_count, first):
+        if isinstance(position, dict) and "index" in position:
+            return int(position["index"])
+        if anchor_index is not None:
+            return anchor_index
+        return first + used_count + 1
+
+    def _insert_element(self, parent, etype, props, position):
+        sheet_index, anchor_row, anchor_col = self._row_or_col_from_target(parent)
+        ws = self._doc.Worksheets(sheet_index)
+        used = ws.UsedRange
+        used_rows = int(safe_get(used.Rows, "Count", 0) or 0)
+        used_cols = int(safe_get(used.Columns, "Count", 0) or 0)
+        first_row = int(safe_get(used, "Row", 1) or 1)
+        first_col = int(safe_get(used, "Column", 1) or 1)
+        if etype == "row":
+            target_row = self._resolve_insert_index(
+                position, anchor_row, used_rows, first_row)
+            ws.Rows(target_row).Insert(0)  # xlShiftDown
+            values = props.get("values")
+            if values:
+                for offset, value in enumerate(values):
+                    safe_set(ws.Cells(target_row, offset + 1), "Value", value)
+            return {"type": "row", "path": f"sheet:{sheet_index}",
+                    "row": target_row}
+        if etype == "column":
+            target_col = self._resolve_insert_index(
+                position, anchor_col, used_cols, first_col)
+            ws.Columns(target_col).Insert(1)  # xlShiftToRight
+            values = props.get("values")
+            if values:
+                for offset, value in enumerate(values):
+                    safe_set(ws.Cells(offset + 1, target_col), "Value", value)
+            return {"type": "column", "path": f"sheet:{sheet_index}",
+                    "column": target_col}
+        if etype == "sheet":
+            new_ws = self._doc.Worksheets.Add()
+            name = props.get("name")
+            if name:
+                safe_set(new_ws, "Name", str(name))
+            sheet_count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
+            return {"type": "sheet", "path": f"sheet:{sheet_count}"}
+        raise ValueError(f"Unsupported Sheet insert type: {etype!r}")
+
+    def _remove_element(self, target, *, axis="row"):
+        """Remove a shape, chart, worksheet, or the row/column of a cell/range
+        target (selected by ``axis``). WINDOWS-VERIFY."""
+        target = target or ""
+        match = re.fullmatch(r"sheet:(\d+)/shape:(.+)", target)
+        if match:
+            sheet_index = int(match.group(1))
+            shape = self._resolve_shape(sheet_index, match.group(2))
+            if shape is None:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            shape.Delete()
+            return {"removed": target}
+        match = re.fullmatch(r"sheet:(\d+)/chart:(.+)", target)
+        if match:
+            sheet_index = int(match.group(1))
+            ref = match.group(2)
+            try:
+                self._doc.Worksheets(sheet_index).ChartObjects(int(ref)).Delete()
+            except Exception:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            return {"removed": target}
+        match = re.fullmatch(r"sheet:(\d+)", target)
+        if match and "/" not in target:
+            # Whole-worksheet remove. DANGEROUS: WPS requires >=1 visible sheet.
+            sheet_index = int(match.group(1))
+            try:
+                self._doc.Worksheets(sheet_index).Delete()
+            except Exception:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            return {"removed": target}
+        # Cell/range target -> remove its row (default) or column (axis=column)
+        if re.fullmatch(r"sheet:(\d+)/(cell|range):.+", target):
+            sheet_index, row, col = self._row_or_col_from_target(target)
+            ws = self._doc.Worksheets(sheet_index)
+            if axis == "column":
+                if not col:
+                    raise ValueError(f"Unsupported Sheet target: {target}")
+                ws.Columns(col).Delete()
+                return {"removed": target, "column": col}
+            if not row:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            ws.Rows(row).Delete()
+            return {"removed": target, "row": row}
+        raise ValueError(f"Unsupported Sheet target: {target}")
+
+    def _resolve_shape(self, sheet_index, shape_ref):
+        if shape_ref.startswith("@id="):
+            return self._find_shape_in_sheet(sheet_index, shape_id=int(shape_ref[4:]))
+        if shape_ref.startswith("@name="):
+            return self._find_shape_in_sheet(sheet_index, shape_name=shape_ref[6:])
+        if shape_ref.isdigit():
+            try:
+                return self._doc.Worksheets(sheet_index).Shapes(int(shape_ref))
+            except Exception:
+                return None
+        return None
+
+    def _move_element(self, target, to, *, axis="row"):
+        """Move a row, column, or worksheet. For cell/range targets, ``axis``
+        selects row vs column. WINDOWS-VERIFY."""
+        target = target or ""
+        if re.fullmatch(r"sheet:(\d+)", target) and "/" not in target:
+            return self._move_sheet(int(target.split(":")[1]), to)
+        sheet_index, row, col = self._row_or_col_from_target(target)
+        if not (isinstance(to, dict) and "index" in to):
+            raise ValueError("Sheet row/column move requires to={'index': N}")
+        ws = self._doc.Worksheets(sheet_index)
+        dest = int(to["index"])
+        if axis == "column":
+            if not col:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            ws.Columns(col).Cut()
+            ws.Columns(dest).Insert(1)  # xlShiftToRight
+            return {"type": "column", "moved": True, "from": target,
+                    "column": dest}
+        if not row:
+            raise ValueError(f"Unsupported Sheet target: {target}")
+        ws.Rows(row).Cut()
+        ws.Rows(dest).Insert(0)  # xlShiftDown
+        return {"type": "row", "moved": True, "from": target, "row": dest}
+
+    def _move_sheet(self, sheet_index, to):
+        ws = self._doc.Worksheets(sheet_index)
+        if isinstance(to, dict) and "before" in to:
+            ws.Move(Before=self._doc.Worksheets(int(to["before"])))
+        elif isinstance(to, dict) and "after" in to:
+            ws.Move(After=self._doc.Worksheets(int(to["after"])))
+        else:
+            # 'end': move after the last sheet
+            count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
+            ws.Move(After=self._doc.Worksheets(count))
+        return {"type": "sheet", "moved": True, "from": f"sheet:{sheet_index}"}
+
+    def _clone_element(self, target, to):
+        """Clone a row or worksheet. WINDOWS-VERIFY."""
+        target = target or ""
+        if re.fullmatch(r"sheet:(\d+)", target) and "/" not in target:
+            return self._clone_sheet(int(target.split(":")[1]), to)
+        sheet_index, row, col = self._row_or_col_from_target(target)
+        ws = self._doc.Worksheets(sheet_index)
+        if row:
+            if not (isinstance(to, dict) and "index" in to):
+                raise ValueError("Sheet row clone requires to={'index': N}")
+            dest = int(to["index"])
+            ws.Rows(row).Copy()
+            ws.Rows(dest).Insert(0)
+            return {"type": "row", "cloned": True, "from": target, "row": dest}
+        raise ValueError(f"Unsupported Sheet clone target: {target}")
+
+    def _clone_sheet(self, sheet_index, to):
+        ws = self._doc.Worksheets(sheet_index)
+        if isinstance(to, dict) and "after" in to:
+            ws.Copy(After=self._doc.Worksheets(int(to["after"])))
+        elif isinstance(to, dict) and "before" in to:
+            ws.Copy(Before=self._doc.Worksheets(int(to["before"])))
+        else:
+            ws.Copy(After=ws)  # clone in place (right after source)
+        count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
+        return {"type": "sheet", "cloned": True, "from": f"sheet:{sheet_index}",
+                "path": f"sheet:{count}"}
+
     def _range_snapshot(self, rng, element_id, include_value=False):
         if rng is None:
             return {"id": element_id}

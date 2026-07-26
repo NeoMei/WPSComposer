@@ -4,7 +4,8 @@ All three COM composers implement the same small contract:
 
 ``inspect_document()`` -> JSON-compatible element tree
 ``inspect_selection()`` -> formatting of the user's current selection
-``apply_format_patch(target, **patch)`` -> partial, non-destructive update
+``apply_format_patch(target, **patch)`` -> partial, non-destructive update (the ``set`` verb)
+``apply_structural_op(op)`` -> insert / remove / move / clone element (structural verbs)
 
 This module chooses the correct composer from a file extension or document kind
 and adds batch patching for agent workflows.
@@ -13,10 +14,12 @@ Agent-friendly additions (borrowed from the officecli contract):
 
 * :func:`validate_target` / :func:`patch_grammar` -- let an agent self-correct
   a bad target without a guess-fail-retry loop.
-* :class:`PatchError` and structured per-patch reports carrying ``error.code``
+* :class:`PatchError` and structured per-op reports carrying ``error.code``
   + ``suggestion`` instead of bare tracebacks.
-* :func:`apply_patches` / :func:`edit` are atomic by default: any failed patch
+* :func:`apply_ops` / :func:`edit` are atomic by default: any failed op
   blocks the save and returns a structured failure result.
+* Structural verbs (``insert`` / ``remove`` / ``move`` / ``clone``) alongside
+  the formatting ``set`` verb -- full document surgery, not just formatting.
 """
 
 from __future__ import annotations
@@ -311,6 +314,192 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
     return patches
 
 
+# ---------------------------------------------------------------------------
+# Structural operations (insert / remove / move / clone) -- the ``ops`` API
+# ---------------------------------------------------------------------------
+# ``set`` is the formatting verb (apply_format_patch). The four structural
+# verbs are dispatched to composer.apply_structural_op(op). The orchestration
+# layer (validate_op / apply_ops / edit) is pure-Python and host-agnostic; the
+# COM implementations on each composer carry WINDOWS-VERIFY markers.
+
+SET_OPS = {"set"}
+STRUCTURAL_OPS = {"insert", "remove", "move", "clone"}
+ALL_OPS = SET_OPS | STRUCTURAL_OPS
+
+# Insert-able element types per host (informational; composer is final arbiter).
+INSERT_TYPES = {
+    "writer": ("paragraph", "heading", "page_break", "table", "image", "textbox"),
+    "slide": ("slide", "textbox", "image"),
+    "sheet": ("row", "column", "sheet"),
+}
+
+# Parent namespaces for insert (extend the patch target grammar). ``body`` is
+# the Writer document body; ``presentation``/``sheet:N``/``slide:N`` already
+# exist in PATCH_GRAMMAR.
+INSERT_PARENTS = {
+    "writer": ("body",),
+    "slide": ("presentation",),
+    "sheet": ("sheet:N",),
+}
+
+
+def _validate_position(position, kind):
+    """Position/destination spec for insert/move/clone. Accepts:
+
+    * ``"end"`` | ``"start"``
+    * ``{"after": X}`` / ``{"before": X}`` -- X is a target string (Writer
+      paragraph, Slide slide:N) OR an int (Sheet sheet number)
+    * ``{"index": N}`` -- int (row/column/paragraph index)
+    * ``{"slide": N}`` -- int (Slide shape move/clone destination slide)
+
+    The composer is the final arbiter; this only catches obvious garbage and
+    validates string anchors against the grammar when *kind* is known.
+    """
+    if position is None:
+        return {"valid": True, "position": "end"}
+    if isinstance(position, str) and position in ("end", "start"):
+        return {"valid": True, "position": position}
+    if isinstance(position, dict) and len(position) == 1:
+        key, value = next(iter(position.items()))
+        if key in ("index", "slide") and isinstance(value, int):
+            return {"valid": True, "position": {key: value}}
+        if key in ("after", "before"):
+            # Sheet sheet ops use an int sheet number; accept directly.
+            if isinstance(value, int):
+                return {"valid": True, "position": {key: value}}
+            # Writer/Slide use a target string; validate leniently.
+            if isinstance(value, str):
+                if kind:
+                    info = validate_target(value, kind)
+                    if not info.get("valid"):
+                        return {"valid": False, "error": {
+                            "code": "invalid_anchor",
+                            "message": f"position.{key} must be a valid {kind} target: {value!r}",
+                        }}
+                return {"valid": True, "position": {key: value}}
+    return {"valid": False, "error": {
+        "code": "invalid_position",
+        "message": ("position must be 'end', 'start', {'after': X}, "
+                    "{'before': X}, {'index': N}, or {'slide': N}"),
+    }}
+
+
+def validate_op(op, kind=None):
+    """Validate a single op dict (``set`` / ``insert`` / ``remove`` / ``move``
+    / ``clone``) and return ``{"valid": bool, ...}`` with an ``error`` carrying
+    ``code`` + ``message`` on failure -- mirrors :func:`validate_target`."""
+    if not isinstance(op, dict):
+        return {"valid": False, "error": {
+            "code": "invalid_op", "message": "op must be a dict"}}
+    verb = op.get("op", "set")
+    if verb not in ALL_OPS:
+        return {"valid": False, "error": {
+            "code": "unknown_verb",
+            "message": f"unknown op {verb!r}; expected one of {sorted(ALL_OPS)}",
+            "valid_verbs": sorted(ALL_OPS),
+        }}
+
+    if verb == "set":
+        if not op.get("target"):
+            return {"valid": False, "error": {
+                "code": "missing_target", "message": "set op requires 'target'"}}
+        return {"valid": True, "verb": "set", "target": op["target"]}
+
+    if verb == "insert":
+        parent = op.get("parent")
+        etype = op.get("type")
+        if not etype:
+            return {"valid": False, "error": {
+                "code": "missing_type", "message": "insert op requires 'type'"}}
+        if kind and etype not in INSERT_TYPES.get(kind, ()):
+            return {"valid": False, "error": {
+                "code": "unsupported_type",
+                "message": f"{kind} cannot insert type {etype!r}",
+                "valid_types": list(INSERT_TYPES.get(kind, ())),
+            }}
+        pos = _validate_position(op.get("position"), kind)
+        if not pos["valid"]:
+            return pos
+        return {"valid": True, "verb": "insert", "parent": parent,
+                "type": etype, "position": pos["position"]}
+
+    # remove / move / clone all need a target
+    if not op.get("target"):
+        return {"valid": False, "error": {
+            "code": "missing_target",
+            "message": f"{verb} op requires 'target'"}}
+    if verb in ("move", "clone"):
+        pos = _validate_position(op.get("to", op.get("position")), kind)
+        if not pos["valid"]:
+            return pos
+    return {"valid": True, "verb": verb, "target": op["target"]}
+
+
+def apply_ops(composer, ops, *, atomic=True):
+    """Apply an ordered list of ops to an open composer.
+
+    Each op is ``{"op": "set"|"insert"|"remove"|"move"|"clone", ...}``. ``set``
+    delegates to ``composer.apply_format_patch``; the structural verbs delegate
+    to ``composer.apply_structural_op(op)``. Atomic by default: any failure
+    raises :class:`PatchError` carrying every report so far.
+    """
+    kind = _kind_from_composer(composer)
+    reports = []
+
+    for index, op in enumerate(ops):
+        if not isinstance(op, dict):
+            report = {"index": index, "ok": False, "error": {
+                "code": "invalid_op", "message": "op must be a dict"}}
+            reports.append(report)
+            if atomic:
+                raise PatchError(reports)
+            continue
+
+        verb = op.get("op", "set")
+        pre = validate_op(op, kind)
+        if not pre.get("valid"):
+            err = pre.get("error", {})
+            report = {"index": index, "op": verb, "ok": False, "error": err}
+            reports.append(report)
+            if atomic:
+                raise PatchError(reports)
+            continue
+
+        try:
+            if verb == "set":
+                item = {k: v for k, v in op.items() if k != "op"}
+                result = composer.apply_format_patch(item.pop("target"), **item)
+                accepted = list(result.get("accepted", []))
+                rejected = list(result.get("rejected", []))
+                report = {"index": index, "op": "set",
+                          "target": op.get("target"),
+                          "ok": len(rejected) == 0,
+                          "accepted": accepted, "rejected": rejected}
+                for k, v in result.items():
+                    if k not in ("accepted", "rejected"):
+                        report[k] = v
+            else:
+                result = composer.apply_structural_op(op) or {}
+                report = {"index": index, "op": verb,
+                          "target": op.get("target"),
+                          "ok": True, **result}
+            reports.append(report)
+        except ValueError as exc:
+            reports.append(_error_report(index, op.get("target") or op.get("type"), exc, kind))
+            if atomic:
+                raise PatchError(reports) from exc
+        except Exception as exc:
+            reports.append({
+                "index": index, "op": verb,
+                "target": op.get("target"), "ok": False,
+                "error": {"code": "apply_failed", "message": str(exc)},
+            })
+            if atomic:
+                raise PatchError(reports) from exc
+
+    return reports
+
+
 def attach_active(kind=None):
     """Attach to the current WPS/Office document.
 
@@ -338,70 +527,16 @@ def inspect(path=None, *, kind=None, selection=False, **options):
 
 
 def apply_patches(composer, patches, *, atomic=True, stop_on_error=None):
-    """Apply ordered ``{"target": ..., ...}`` patches to an open composer.
+    """Backward-compatible wrapper: apply ``set``-only patches.
 
-    Each patch returns a structured report::
-
-        {"index": int, "target": str, "ok": bool,
-         "accepted": [...], "rejected": [...],
-         "error": {"code": str, "message": str, ...} | absent}
-
-    When *atomic* is True (default) any failure raises :class:`PatchError`
-    carrying every report so far; the caller is expected to discard the
-    unsaved document. ``stop_on_error`` is a deprecated alias that maps to
-    ``atomic`` for backward compatibility.
+    Each patch ``{"target": ..., ...}`` is normalised to a ``set`` op and run
+    through :func:`apply_ops`. New code should call :func:`apply_ops` directly
+    to use the full verb set (``insert`` / ``remove`` / ``move`` / ``clone``).
     """
     if stop_on_error is not None:
         atomic = bool(stop_on_error)
-    kind = _kind_from_composer(composer)
-    reports = []
-
-    for index, patch in enumerate(patches):
-        item = dict(patch)
-        target = item.pop("target", None)
-        if not target:
-            report = {
-                "index": index, "ok": False,
-                "error": {"code": "missing_target",
-                          "message": "patch requires a 'target' key"},
-            }
-            reports.append(report)
-            if atomic:
-                raise PatchError(reports)
-            continue
-
-        try:
-            result = composer.apply_format_patch(target, **item)
-        except ValueError as exc:
-            report = _error_report(index, target, exc, kind)
-            reports.append(report)
-            if atomic:
-                raise PatchError(reports) from exc
-            continue
-        except Exception as exc:
-            report = {
-                "index": index, "target": target, "ok": False,
-                "error": {"code": "apply_failed", "message": str(exc)},
-            }
-            reports.append(report)
-            if atomic:
-                raise PatchError(reports) from exc
-            continue
-
-        accepted = list(result.get("accepted", []))
-        rejected = list(result.get("rejected", []))
-        report = {
-            "index": index, "target": target,
-            "ok": len(rejected) == 0,
-            "accepted": accepted,
-            "rejected": rejected,
-        }
-        for key, value in result.items():
-            if key not in ("accepted", "rejected"):
-                report[key] = value
-        reports.append(report)
-
-    return reports
+    ops = [{"op": "set", **patch} for patch in patches]
+    return apply_ops(composer, ops, atomic=atomic)
 
 
 def _error_report(index, target, exc, kind):
@@ -427,22 +562,40 @@ def _error_report(index, target, exc, kind):
     return report
 
 
-def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
-         visible=False, atomic=True, stop_on_error=None,
+def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
+         export_pdf=None, visible=False, atomic=True, stop_on_error=None,
          inspect_after=False, raise_on_error=False):
     """Inspect/edit/save a file or the active document in one agent call.
 
-    If *path* and *output* are both omitted, the active document is edited
-    and saved in place. Supplying *output* keeps the original untouched.
+    Accepts two equivalent inputs:
 
-    Atomic by default: if any patch fails, the document is **not** saved and
-    the structured result carries ``ok=False`` plus an ``errors`` list. Set
+    * ``patches`` -- list of ``{"target": ..., ...}`` formatting patches (the
+      legacy ``set``-only form; still supported).
+    * ``ops`` -- list of ``{"op": "set"|"insert"|"remove"|"move"|"clone", ...}``
+      for mixed formatting + structural editing.
+
+    Patches run first, then ops, in one atomic transaction. If *path* and
+    *output* are both omitted, the active document is edited and saved in
+    place. Supplying *output* keeps the original untouched.
+
+    Atomic by default: if any op fails, the document is **not** saved and the
+    structured result carries ``ok=False`` plus an ``errors`` list. Set
     ``atomic=False`` to keep the old best-effort behaviour (save whatever
     succeeded). ``raise_on_error=True`` re-raises the :class:`PatchError` for
     callers that prefer exceptions over structured results.
+
+    .. note:: structural ops (insert/remove/move/clone) shift positional ids
+       of later siblings. Address subsequent ops by stable id
+       (``@paraId`` / ``@id``) or re-inspect between batches.
     """
     if stop_on_error is not None:
         atomic = bool(stop_on_error)
+
+    combined = []
+    if patches:
+        combined.extend({"op": "set", **patch} for patch in patches)
+    if ops:
+        combined.extend(ops)
 
     attached = path is None
     if attached:
@@ -456,16 +609,16 @@ def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
             raise
     try:
         before = composer.inspect_document() if inspect_after else None
-        patch_failed = False
+        op_failed = False
         try:
-            reports = apply_patches(composer, patches, atomic=atomic)
+            reports = apply_ops(composer, combined, atomic=atomic)
         except PatchError as exc:
             reports = exc.reports
-            patch_failed = True
+            op_failed = True
             if raise_on_error:
                 raise
 
-        if patch_failed and atomic:
+        if op_failed and atomic:
             saved_path = None
             pdf_path = None
         else:
@@ -473,12 +626,13 @@ def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
             pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
         after = composer.inspect_document() if inspect_after else None
         return {
-            "ok": not patch_failed,
+            "ok": not op_failed,
             "saved": saved_path is not None,
             "saved_path": saved_path,
             "pdf_path": pdf_path,
-            "patches": reports,
-            "errors": [r for r in reports if not r.get("ok")] if patch_failed else [],
+            "ops": reports,
+            "patches": reports,  # back-compat alias; prefer "ops"
+            "errors": [r for r in reports if not r.get("ok")] if op_failed else [],
             "before": before,
             "after": after,
         }
@@ -501,8 +655,10 @@ def supported_formats():
 
 __all__ = [
     "open_document", "attach_active", "inspect", "edit", "apply_patches",
+    "apply_ops", "validate_op",
     "snapshot_json", "supported_formats", "composer_for_path",
     "composer_for_kind",
     "validate_target", "patch_grammar", "snapshot_to_patches",
     "PatchError", "PATCH_GRAMMAR",
+    "ALL_OPS", "STRUCTURAL_OPS", "INSERT_TYPES",
 ]

@@ -143,7 +143,79 @@ assert r["ok"]
 
 If a snapshot key (e.g. a `font_snapshot` field) is not accepted by
 `apply_font`, it lands in the patch's `rejected` list — inspect
-`r["patches"][*]["rejected"]` to find any asymmetry.
+`r["ops"][*]["rejected"]` (or the `patches` alias) to find any asymmetry.
+
+### G. Structural verbs (NEW — insert / remove / move / clone, full coverage)
+
+`apply_structural_op(op)` was added to all three composers and covers all
+addressable element types (gaps from the first pass are filled). The
+orchestration (`apply_ops` / `edit(ops=...)` / `validate_op`) is tested on macOS
+with a fake composer (72 tests); the COM bodies are tagged `# WINDOWS-VERIFY`.
+
+| Host | insert | remove | move | clone |
+|---|---|---|---|---|
+| Writer | paragraph / heading / page_break / table / image / textbox | paragraph / shape / table | paragraph / shape / table (clipboard) | paragraph / shape / table (clipboard) |
+| Slide | slide / textbox / image | slide / shape | slide (reorder) / shape (`{"slide": N}`) | slide / shape |
+| Sheet | row / column / sheet | row / column / shape / chart / sheet | row / column / sheet | row / sheet |
+
+**Verify each verb end-to-end** on a docx with ≥3 paragraphs + a table + a
+shape, a pptx with ≥3 slides + shapes, an xlsx with ≥3 rows/cols + a chart:
+
+```python
+from skills.WPSComposer import edit
+# Writer: full set
+edit("f.docx", output="o.docx", ops=[
+    {"op": "insert", "type": "paragraph", "props": {"text": "appended"}},
+    {"op": "insert", "type": "table", "props": {"rows": 2, "cols": 2, "data": [["a","b"],["c","d"]]}},
+    {"op": "insert", "type": "image", "props": {"path": "logo.png"}},
+    {"op": "insert", "type": "textbox", "props": {"text": "note", "left": 100, "top": 100, "width": 200, "height": 50}},
+    {"op": "remove", "target": "table:1"},
+    {"op": "remove", "target": "shape:1"},
+    {"op": "clone", "target": "paragraph:1", "to": "end"},
+    {"op": "move", "target": "paragraph:2", "to": {"after": "paragraph:4"}},
+])
+# Slide: shape move/clone to another slide
+edit("f.pptx", output="o.pptx", ops=[
+    {"op": "insert", "type": "slide", "props": {"layout": 12}},
+    {"op": "clone", "target": "slide:1/shape:@id=7", "to": {"slide": 2}},
+    {"op": "move", "target": "slide:1/shape:2", "to": {"slide": 3}},
+    {"op": "remove", "target": "slide:2"},
+])
+# Sheet: column/sheet insert+remove, row/sheet clone
+edit("f.xlsx", output="o.xlsx", ops=[
+    {"op": "insert", "parent": "sheet:1", "type": "column",
+     "props": {"values": ["x", "y"]}, "position": {"index": 2}},
+    {"op": "insert", "type": "sheet", "props": {"name": "Summary"}},
+    {"op": "remove", "target": "sheet:1/cell:C1"},          # removes row 3? confirm
+    {"op": "remove", "target": "sheet:2/chart:1"},
+    {"op": "clone", "target": "sheet:1/cell:A2", "to": {"index": 5}},
+    {"op": "clone", "target": "sheet:1", "to": {"after": 1}},
+    {"op": "move", "target": "sheet:1", "to": {"after": 2}},
+])
+```
+
+**Assumptions to confirm** (the risky blind-COM parts):
+
+- Writer `_structural_target` resolves paragraph (positional/`@paraId`) / shape /
+  table to a COM object; `move`/`clone` use `obj.Cut()`/`obj.Copy()` +
+  `Range.Paste()`. Confirm shape paste via `Range.Paste()` works (shapes are
+  floating); if not, paste via a `Selection` or `Shapes.Paste`.
+- Writer `image` insert uses `InlineShapes.AddPicture`; the returned path is
+  `shape:N` (InlineShapes share the Shapes index on some hosts — confirm the
+  returned index actually resolves).
+- Slide shape move = `shape.Cut()` + `Slides(N).Shapes.Paste()`; clone =
+  `shape.Duplicate()` (same slide) or `Copy`+`Paste` (cross-slide). Confirm
+  `Shapes.Paste()` returns/positions the new shape.
+- Sheet `Rows(n).Insert(0)` / `Columns(n).Insert(1)` shift direction constants
+  (`xlShiftDown=0`, `xlShiftToRight=1`); `Worksheets.Add()` / `.Copy(After=)` /
+  `.Move(After=)` for sheets; `ChartObjects(n).Delete()` for charts. Cell/range
+  `remove`/`move` take `"axis": "row"|"column"` (default row) to pick the axis.
+- Sheet whole-`sheet` remove is **dangerous** (WPS requires ≥1 visible sheet) —
+  the call raises if it would remove the last sheet; confirm the error surfaces
+  as `invalid_target`/`apply_failed` and not a crash.
+- Inserted/cloned element `path` is **best-effort positional**; re-`inspect()`
+  for a stable id. Structural ops shift sibling positional indices — address
+  later ops in the same batch by stable id or re-inspect between batches.
 
 ## Implementation notes (all borrowable points now implemented)
 
@@ -156,9 +228,10 @@ needs to verify, not implement.
 |---|---|---|---|
 | 1 | Stable ID addressing (`@paraId` / `@id` / `@name`) | implemented (COM unverified) | checklist D |
 | 2 | Structured errors + self-heal suggestions | implemented + tested | `document_api.py::_error_report`, `PatchError` |
-| 3 | Atomic batch | implemented + tested | `edit()` / `apply_patches()` |
+| 3 | Atomic batch | implemented + tested | `edit()` / `apply_ops()` |
 | 4 | dump → replay | implemented + tested | `snapshot_to_patches()` (checklist F) |
 | 5 | Built-in help | implemented + tested | `patch_grammar()` / `validate_target()` |
+| 6 | Structural editing (insert/remove/move/clone) | implemented (COM unverified) | checklist G |
 
 ### Known limitations to keep in mind on Windows
 
@@ -189,8 +262,9 @@ python -m venv .venv
 ```
 
 The full suite was 533 passed + 1 skipped (pypdf) on macOS before this change;
-after this change it is 577 passed + 1 skipped (44 new tests in
-`tests/test_document_api.py`).
+after this change it is 607 passed + 1 skipped (74 tests in
+`tests/test_document_api.py`: orchestration, stable-id grammar, paraId
+extraction, snapshot_to_patches, and structural verbs across all hosts).
 
 COM smoke (Windows only, ad hoc):
 
@@ -210,24 +284,28 @@ Fill in during the Windows run:
 | `pywin32` version | _(to fill)_ |
 | Python | _(to fill)_ |
 | `tests/test_document_api.py` | _(pass/fail)_ |
-| Items A–F above | _(pass/fail per item)_ |
+| Items A–G above | _(pass/fail per item)_ |
 
 ## Files touched this session
 
 - `skills/WPSComposer/scripts/document_api.py` — grammar data (`PATCH_GRAMMAR`
   with `@paraId`/`@id`/`@name` forms), `validate_target`, `patch_grammar`,
-  `snapshot_to_patches`, `PatchError`, rewritten `apply_patches`/`edit`
+  `snapshot_to_patches`, `PatchError`, `apply_ops`/`validate_op` (structural
+  verbs), rewritten `apply_patches`/`edit`
 - `skills/WPSComposer/scripts/writer.py` — pure `_extract_paraids` /
   `read_paraids_from_docx`; COM wiring `_read_paraid_map` /
   `_paragraph_index_for_paraid`; `@paraId=` branch in `apply_format_patch`;
-  paraId readback in `inspect_document`
+  paraId readback in `inspect_document`; `apply_structural_op` (insert/remove/
+  move/clone)
 - `skills/WPSComposer/scripts/slide.py` — `shape.Id` readback in
   `_shape_snapshot`; `@id=` / `@name=` branches + `_find_shape_in_slide` /
-  `_apply_shape_patch`
+  `_apply_shape_patch`; `apply_structural_op` (insert slide/textbox/image,
+  remove, move, clone)
 - `skills/WPSComposer/scripts/sheet.py` — `shape.Id` readback; `@id=` /
-  `@name=` branches + `_find_shape_in_sheet` / `_apply_shape_patch`
+  `@name=` branches + `_find_shape_in_sheet` / `_apply_shape_patch`;
+  `apply_structural_op` (insert/remove/move row, remove shape)
 - `skills/WPSComposer/scripts/wps_engine.py` — new exports
 - `skills/WPSComposer/references/api.md` — structured-result / atomic /
-  stable-id / replay docs
+  stable-id / replay / structural-verbs docs
 - `skills/WPSComposer/SKILL.md` — pointer to new functions + this doc
-- `tests/test_document_api.py` — fake-composer + pure-helper suite (44 tests)
+- `tests/test_document_api.py` — fake-composer + pure-helper suite (59 tests)

@@ -1324,6 +1324,172 @@ class WriterComposer(BaseComposer):
                 return offset + 1
         return None
 
+    # ------------------------------------------------------------------
+    # Structural verbs (insert / remove / move / clone).
+    # WINDOWS-VERIFY: all COM below. Uses standard Word/WPS primitives
+    # (Range.InsertAfter / .Delete / .Cut / .Copy / .Paste). Returned
+    # "path" is a best-effort POSITIONAL id (re-inspect for a stable
+    # @paraId after a save). move/clone use clipboard (Cut/Copy + Paste).
+    # ------------------------------------------------------------------
+    def apply_structural_op(self, op):
+        verb = op.get("op")
+        if verb == "insert":
+            return self._insert_element(
+                op.get("parent", "body"), op.get("type"),
+                op.get("props") or {}, op.get("position", "end"),
+            )
+        if verb == "remove":
+            return self._remove_element(op.get("target"))
+        if verb == "move":
+            return self._move_or_clone(op.get("target"), op.get("to", "end"), cut=True)
+        if verb == "clone":
+            return self._move_or_clone(op.get("target"), op.get("to", "end"), cut=False)
+        raise ValueError(f"Unsupported Writer structural op: {verb!r}")
+
+    def _paragraph_range_for_target(self, target):
+        """Resolve a paragraph target (positional or @paraId) to a COM Range,
+        or raise ValueError. WINDOWS-VERIFY."""
+        match = re.fullmatch(r"paragraph:(\d+)", target or "")
+        if match:
+            return self._doc.Paragraphs(int(match.group(1))).Range
+        match = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target or "")
+        if match:
+            index = self._paragraph_index_for_paraid(match.group(1))
+            if index is None:
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return self._doc.Paragraphs(index).Range
+        raise ValueError(f"Unsupported Writer target: {target}")
+
+    def _resolve_insert_range(self, position):
+        """Return a COM Range at which to insert (collapsed appropriately).
+        Supports 'end', 'start', {'after': ptarget}, {'before': ptarget},
+        {'index': N}. WINDOWS-VERIFY: whole-doc range access (doc.Range vs
+        doc.Content vs doc.Range(0,0)) confirmed on Windows — see checklist G."""
+        doc = self._doc
+        if position in (None, "end"):
+            rng = doc.Range
+            rng.Collapse(0)  # wdCollapseEnd
+            return rng
+        if position == "start":
+            rng = doc.Range(0, 0)
+            return rng
+        if isinstance(position, dict):
+            if "after" in position:
+                rng = self._paragraph_range_for_target(position["after"])
+                rng.Collapse(0)
+                return rng
+            if "before" in position:
+                rng = self._paragraph_range_for_target(position["before"])
+                rng.Collapse(1)  # wdCollapseStart
+                return rng
+            if "index" in position:
+                return self._doc.Paragraphs(int(position["index"])).Range
+        raise ValueError(f"Unsupported Writer insert position: {position!r}")
+
+    def _insert_element(self, parent, etype, props, position):
+        # WINDOWS-VERIFY: two COM-logic items deferred to Windows (see
+        # checklist G "Known COM-logic items"): (1) bare `doc.Range` access for
+        # the 'end'/'start' positions may need to be `doc.Content`; (2) heading
+        # style is applied AFTER the positional early-return, so a heading
+        # inserted at the default 'end' position currently skips the Heading
+        # style. Resolve both against a live WPS host.
+        doc = self._doc
+        if etype == "page_break":
+            rng = self._resolve_insert_range(position)
+            rng.InsertBreak(7)  # wdPageBreak
+            return {"type": "page_break"}
+        if etype in ("paragraph", "heading"):
+            text = str(props.get("text", ""))
+            rng = self._resolve_insert_range(position)
+            rng.InsertAfter(text + "\r")
+            try:
+                new_index = int(safe_get(doc.Paragraphs, "Count", 0) or 0)
+                if position in (None, "end") and new_index:
+                    return {"type": etype, "path": f"paragraph:{new_index}"}
+            except Exception:
+                pass
+            if etype == "heading":
+                level = int(props.get("level", 1))
+                try:
+                    rng.Style = self._doc.Styles(f"Heading {min(max(level, 1), 9)}")
+                except Exception:
+                    pass
+            return {"type": etype}
+        if etype == "table":
+            rng = self._resolve_insert_range(position)
+            rows = int(props.get("rows", 2))
+            cols = int(props.get("cols", 2))
+            table = doc.Tables.Add(rng, rows, cols)
+            data = props.get("data") or []
+            for r, row in enumerate(data[:rows], start=1):
+                for c, value in enumerate(row[:cols], start=1):
+                    try:
+                        table.Cell(r, c).Range.Text = str(value)
+                    except Exception:
+                        pass
+            table_index = int(safe_get(doc.Tables, "Count", 0) or 0)
+            return {"type": "table", "path": f"table:{table_index}"}
+        if etype == "image":
+            path = str(props.get("path", ""))
+            rng = self._resolve_insert_range(position)
+            shape = doc.InlineShapes.AddPicture(path, False, True, rng)
+            shape_index = int(safe_get(doc.InlineShapes, "Count", 0) or 0)
+            return {"type": "image", "path": f"shape:{shape_index}"}
+        if etype == "textbox":
+            left = float(props.get("left", 100))
+            top = float(props.get("top", 100))
+            width = float(props.get("width", 200))
+            height = float(props.get("height", 50))
+            shape = doc.Shapes.AddTextbox(1, left, top, width, height)
+            text = props.get("text")
+            if text is not None:
+                tr = safe_get(safe_get(shape, "TextFrame"), "TextRange")
+                if tr is not None:
+                    safe_set(tr, "Text", str(text))
+            shape_index = int(safe_get(doc.Shapes, "Count", 0) or 0)
+            return {"type": "textbox", "path": f"shape:{shape_index}"}
+        raise ValueError(f"Unsupported Writer insert type: {etype!r}")
+
+    def _structural_target(self, target):
+        """Resolve a structural target to (kind, object). kind is 'paragraph',
+        'shape', or 'table'; object is the COM Range/Shape/Table. Raises
+        ValueError on unrecognised targets. WINDOWS-VERIFY."""
+        target = target or ""
+        m = re.fullmatch(r"paragraph:(\d+)", target)
+        if m:
+            return "paragraph", self._doc.Paragraphs(int(m.group(1))).Range
+        m = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target)
+        if m:
+            idx = self._paragraph_index_for_paraid(m.group(1))
+            if idx is None:
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return "paragraph", self._doc.Paragraphs(idx).Range
+        m = re.fullmatch(r"shape:(\d+)", target)
+        if m:
+            return "shape", self._doc.Shapes(int(m.group(1)))
+        m = re.fullmatch(r"table:(\d+)", target)
+        if m:
+            return "table", self._doc.Tables(int(m.group(1))).Range
+        raise ValueError(f"Unsupported Writer target: {target}")
+
+    def _remove_element(self, target):
+        kind, obj = self._structural_target(target)
+        obj.Delete()
+        return {"removed": target, "kind": kind}
+
+    def _move_or_clone(self, target, to, *, cut):
+        """Move (cut=True) or clone (cut=False) a paragraph/table/shape to *to*
+        via the clipboard. WINDOWS-VERIFY: confirm Cut/Copy/Paste preserves
+        formatting under headless WPS; shapes paste via Range.Paste()."""
+        kind, obj = self._structural_target(target)
+        if cut:
+            obj.Cut()
+        else:
+            obj.Copy()
+        dest = self._resolve_insert_range(to)
+        dest.Paste()
+        return {"type": kind, "moved": cut, "from": target}
+
     def _range_snapshot(self, rng, element_id):
         text = str(safe_get(rng, "Text", "")).rstrip("\r\x07")
         return {

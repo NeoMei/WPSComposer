@@ -4,12 +4,16 @@ import pytest
 
 from skills.WPSComposer.scripts import document_api as api
 from skills.WPSComposer.scripts.document_api import (
+    ALL_OPS,
+    INSERT_TYPES,
     PATCH_GRAMMAR,
     PatchError,
+    apply_ops,
     apply_patches,
     edit,
     patch_grammar,
     snapshot_to_patches,
+    validate_op,
     validate_target,
 )
 
@@ -46,6 +50,18 @@ class FakeWriterComposer:
         accepted = sorted(patch.keys())
         self.applied.append((target, patch))
         return {"accepted": accepted, "rejected": []}
+
+    def apply_structural_op(self, op):
+        # Fake structural dispatcher: records the op and returns a fake path.
+        verb = op.get("op")
+        if verb == "remove" and op.get("target") == "paragraph:404":
+            raise ValueError("Unsupported Writer target: paragraph:404")
+        if verb == "insert":
+            etype = op.get("type")
+            self.applied.append(("insert", op))
+            return {"type": etype, "path": "paragraph:999"}
+        self.applied.append((verb, op))
+        return {"path": op.get("target")}
 
     def save(self, path):
         self.saved = True
@@ -455,4 +471,210 @@ def test_snapshot_to_patches_skips_invalid_ids():
         "paragraphs": [{"id": "whoami:5", "font": {"size": 12}}],
     }
     assert snapshot_to_patches(snapshot) == []
+
+
+# ---------------------------------------------------------------------------
+# validate_op + apply_ops (structural verbs)
+# ---------------------------------------------------------------------------
+
+def test_validate_op_accepts_set():
+    info = validate_op({"op": "set", "target": "paragraph:1"}, "writer")
+    assert info["valid"] is True and info["verb"] == "set"
+
+
+def test_validate_op_rejects_unknown_verb():
+    info = validate_op({"op": "frobnicate", "target": "paragraph:1"}, "writer")
+    assert info["valid"] is False
+    assert info["error"]["code"] == "unknown_verb"
+    assert "set" in info["error"]["valid_verbs"]
+
+
+def test_validate_op_insert_requires_type():
+    info = validate_op({"op": "insert", "parent": "body"}, "writer")
+    assert info["valid"] is False
+    assert info["error"]["code"] == "missing_type"
+
+
+def test_validate_op_insert_rejects_unsupported_type_per_kind():
+    info = validate_op({"op": "insert", "type": "slide"}, "writer")
+    assert info["valid"] is False
+    assert info["error"]["code"] == "unsupported_type"
+    assert "paragraph" in info["error"]["valid_types"]
+
+
+@pytest.mark.parametrize("verb", ["remove", "move", "clone"])
+def test_validate_op_structural_verbs_require_target(verb):
+    info = validate_op({"op": verb}, "writer")
+    assert info["valid"] is False
+    assert info["error"]["code"] == "missing_target"
+
+
+def test_validate_op_position_accepts_after_anchor():
+    info = validate_op(
+        {"op": "insert", "type": "paragraph",
+         "position": {"after": "paragraph:2"}},
+        "writer",
+    )
+    assert info["valid"] is True
+    assert info["position"] == {"after": "paragraph:2"}
+
+
+def test_validate_op_position_accepts_slide_shape_destination():
+    # Slide shape move/clone use {"slide": N} -- must NOT be rejected.
+    info = validate_op(
+        {"op": "move", "target": "slide:1/shape:2", "to": {"slide": 3}},
+        "slide",
+    )
+    assert info["valid"] is True
+
+
+def test_validate_op_position_accepts_int_sheet_anchors():
+    # Sheet sheet move/clone use {"after": N} / {"before": N} with int sheet
+    # numbers -- must NOT crash validate_target on an int.
+    for spec in ({"after": 2}, {"before": 3}):
+        info = validate_op(
+            {"op": "move", "target": "sheet:1", "to": spec}, "sheet"
+        )
+        assert info["valid"] is True, (spec, info)
+
+
+def test_validate_op_position_rejects_bad_anchor():
+    info = validate_op(
+        {"op": "insert", "type": "paragraph",
+         "position": {"after": "whoami:9"}},
+        "writer",
+    )
+    assert info["valid"] is False
+    assert info["error"]["code"] == "invalid_anchor"
+
+
+@pytest.mark.parametrize("kind,etype", [
+    ("writer", "paragraph"), ("writer", "heading"), ("writer", "page_break"),
+    ("writer", "table"), ("writer", "image"), ("writer", "textbox"),
+    ("slide", "slide"), ("slide", "textbox"), ("slide", "image"),
+    ("sheet", "row"), ("sheet", "column"), ("sheet", "sheet"),
+])
+def test_validate_op_accepts_all_documented_insert_types(kind, etype):
+    # parent chosen so position anchors (if any) validate; default 'end' is fine
+    info = validate_op({"op": "insert", "type": etype}, kind)
+    assert info["valid"] is True, (kind, etype, info)
+
+
+def test_apply_ops_dispatches_clone_verb():
+    composer = FakeWriterComposer()
+    reports = apply_ops(composer, [
+        {"op": "clone", "target": "paragraph:2", "to": "end"},
+    ])
+    assert reports[0]["op"] == "clone"
+    assert reports[0]["ok"] is True
+    # fake composer records the dispatched verb
+    assert composer.applied[-1][0] == "clone"
+
+
+def test_validate_op_ignores_unknown_extra_fields_like_axis():
+    # Sheet remove/move accept an `axis` hint; validate_op must not reject it.
+    info = validate_op(
+        {"op": "remove", "target": "sheet:1/cell:C1", "axis": "column"},
+        "sheet",
+    )
+    assert info["valid"] is True
+
+
+def test_apply_ops_forwards_axis_field_to_structural_handler():
+    composer = FakeWriterComposer()
+    apply_ops(composer, [
+        {"op": "remove", "target": "paragraph:2", "axis": "column"},
+    ])
+    # the fake records the full op dict for structural verbs
+    recorded_op = composer.applied[-1][1]
+    assert recorded_op.get("axis") == "column"
+
+
+def test_apply_ops_runs_mixed_set_and_structural():
+    composer = FakeWriterComposer()
+    reports = apply_ops(composer, [
+        {"op": "set", "target": "paragraph:1", "font": {"size": 12}},
+        {"op": "insert", "parent": "body", "type": "paragraph",
+         "props": {"text": "new"}},
+        {"op": "remove", "target": "paragraph:2"},
+    ])
+    assert [r["op"] for r in reports] == ["set", "insert", "remove"]
+    assert all(r["ok"] for r in reports)
+    assert reports[1]["path"] == "paragraph:999"
+    # set went to apply_format_patch, structural went to apply_structural_op
+    assert composer.applied[0] == ("paragraph:1", {"font": {"size": 12}})
+    assert composer.applied[1][0] == "insert"
+
+
+def test_apply_ops_structural_failure_is_atomic():
+    composer = FakeWriterComposer()
+    with pytest.raises(PatchError) as exc_info:
+        apply_ops(composer, [
+            {"op": "insert", "type": "paragraph"},
+            {"op": "remove", "target": "paragraph:404"},  # fake raises
+        ])
+    reports = exc_info.value.reports
+    assert reports[0]["ok"] is True
+    assert reports[1]["ok"] is False
+    assert reports[1]["error"]["code"] == "invalid_target"
+
+
+def test_apply_ops_best_effort_continues_past_structural_failure():
+    composer = FakeWriterComposer()
+    reports = apply_ops(composer, [
+        {"op": "insert", "type": "paragraph"},
+        {"op": "remove", "target": "paragraph:404"},
+        {"op": "insert", "type": "heading"},
+    ], atomic=False)
+    assert reports[1]["ok"] is False
+    assert reports[2]["ok"] is True
+
+
+def test_apply_patches_still_works_as_set_wrapper():
+    composer = FakeWriterComposer()
+    reports = apply_patches(
+        composer, [{"target": "paragraph:1", "font": {"size": 12}}]
+    )
+    assert reports[0]["op"] == "set"
+    assert reports[0]["ok"] is True
+
+
+def test_edit_accepts_ops_and_patches_combined():
+    composer = FakeWriterComposer()
+
+    def fake_open(path, *, kind=None, read_only=False, visible=False):
+        return composer
+
+    with _Monkey(api, "open_document", fake_open):
+        result = api.edit(
+            "report.docx",
+            output="out.docx",
+            patches=[{"target": "paragraph:1", "font": {"size": 12}}],
+            ops=[{"op": "insert", "parent": "body", "type": "paragraph",
+                  "props": {"text": "x"}}],
+        )
+    assert result["ok"] is True
+    assert result["saved"] is True
+    # patches run first, then ops
+    ops = result["ops"]
+    assert [o["op"] for o in ops] == ["set", "insert"]
+
+
+def test_edit_atomic_blocks_save_on_structural_failure():
+    composer = FakeWriterComposer()
+
+    def fake_open(path, *, kind=None, read_only=False, visible=False):
+        return composer
+
+    with _Monkey(api, "open_document", fake_open):
+        result = api.edit(
+            "report.docx",
+            output="out.docx",
+            ops=[{"op": "insert", "type": "paragraph"},
+                 {"op": "remove", "target": "paragraph:404"}],
+        )
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert composer.saved is False
+    assert result["errors"][0]["error"]["code"] == "invalid_target"
 

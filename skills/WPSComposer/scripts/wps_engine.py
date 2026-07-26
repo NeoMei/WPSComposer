@@ -93,10 +93,11 @@ from .document_model import (
 )
 from .md_parser import parse, parse_file
 from .document_api import (
-    open_document, attach_active, inspect, edit, apply_patches,
+    open_document, attach_active, inspect, edit, apply_patches, apply_ops,
+    validate_op,
     snapshot_json, supported_formats,
     validate_target, patch_grammar, snapshot_to_patches,
-    PatchError, PATCH_GRAMMAR,
+    PatchError, PATCH_GRAMMAR, ALL_OPS, STRUCTURAL_OPS, INSERT_TYPES,
 )
 
 
@@ -184,6 +185,11 @@ __all__ = [
     "validate_target",
     "patch_grammar",
     "snapshot_to_patches",
+    "apply_ops",
+    "validate_op",
     "PatchError",
     "PATCH_GRAMMAR",
+    "ALL_OPS",
+    "STRUCTURAL_OPS",
+    "INSERT_TYPES",
 ]

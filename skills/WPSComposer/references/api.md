@@ -172,6 +172,67 @@ patches = snapshot_to_patches(snap, dimensions=("font", "fill"))   # copy fonts 
 edit("target.docx", output="target-styled.docx", patches=patches)
 ```
 
+### Structural operations (insert / remove / move / clone)
+
+`edit()` and `apply_ops()` accept an `ops=[...]` list of typed operations
+alongside (or instead of) formatting `patches`. Each op carries an `op` verb:
+
+| Verb | Purpose | Required keys |
+|---|---|---|
+| `set` | apply a formatting patch (== `patches` entries) | `target`, + format keys |
+| `insert` | add a new element | `type`, optional `parent`, `props`, `position` |
+| `remove` | delete an element | `target` |
+| `move` | relocate an element | `target`, `to` (position) |
+| `clone` | duplicate an element | `target`, `to` (position) |
+
+`patches=[...]` is sugar for `ops=[{"op":"set", ...}, ...]` and runs first;
+pass `ops=` for structural verbs or to interleave order. All ops share one
+atomic transaction.
+
+Insert-able `type` per host:
+
+| Host | Insert types |
+|---|---|
+| Writer | `paragraph`, `heading` (`text`, `level`), `page_break`, `table` (`rows`, `cols`, `data`), `image` (`path`), `textbox` (`text`, `left/top/width/height`) |
+| Slide | `slide` (`layout`), `textbox`/`shape` (`text`, geometry), `image` (`path`, geometry) |
+| Sheet | `row`, `column` (`values`, `position.index`), `sheet` (`name`) |
+
+`remove` / `move` / `clone` accept any addressable element the host resolves:
+
+| Host | remove | move | clone |
+|---|---|---|---|
+| Writer | paragraph / shape / table | paragraph / shape / table (clipboard) | paragraph / shape / table (clipboard) |
+| Slide | slide / shape | slide (reorder) / shape (to `{"slide": N}`) | slide / shape (`Duplicate`, or to `{"slide": N}`) |
+| Sheet | row / column / shape / chart / sheet | row / column / sheet | row / sheet |
+
+`position` / `to` (for insert/move/clone): `"end"` (default), `"start"`,
+`{"after": target}`, `{"before": target}`, or `{"index": N}`; Slide shape
+move/clone accept `{"slide": N}` to target another slide; Sheet sheet
+move/clone accept `{"before": N}` / `{"after": N}`. Sheet `remove`/`move` on a
+cell/range target take `"axis": "row"` (default) or `"axis": "column"` to pick
+which axis the address resolves to.
+
+```python
+from skills.WPSComposer import edit
+edit("deck.pptx", output="deck2.pptx", ops=[
+    {"op": "insert", "type": "slide", "props": {"layout": 12}},
+    {"op": "insert", "parent": "slide:3", "type": "textbox",
+     "props": {"text": "New callout", "left": 100, "top": 100, "width": 300}},
+    {"op": "clone", "target": "slide:1", "to": "end"},
+    {"op": "remove", "target": "slide:2"},
+    {"op": "set", "target": "slide:1/shape:@id=7", "font": {"size": 18}},
+])
+```
+
+`validate_op(op, kind)` checks any op against the schema and returns an
+`error.code` (`unknown_verb` / `missing_type` / `unsupported_type` /
+`missing_target` / `invalid_anchor` / `invalid_position`) on a miss.
+
+**Positional-id drift caveat:** structural verbs shift sibling indices. Address
+subsequent ops by stable id (`@paraId` / `@id`) or re-`inspect()` between
+batches. Returned `path` values for inserted/cloned elements are best-effort
+positional; re-inspect for a stable id after a save.
+
 ### Recognized input formats
 
 - Writer: DOC/DOCX/DOCM/DOT/DOTX/DOTM, RTF, TXT, HTML/MHTML, XML, ODT,

@@ -646,6 +646,182 @@ class SlideComposer(BaseComposer):
                 return shape
         return None
 
+    # ------------------------------------------------------------------
+    # Structural verbs (insert / remove / move / clone).
+    # WINDOWS-VERIFY: all COM below. PpSlideLayout blank=12; msoTextOrientation
+    # horizontal=1. MoveTo/Duplicate are standard on Slides; shape Delete is
+    # standard. Returned "path" is best-effort positional (re-inspect for a
+    # stable @id).
+    # ------------------------------------------------------------------
+    def apply_structural_op(self, op):
+        verb = op.get("op")
+        if verb == "insert":
+            return self._insert_element(
+                op.get("parent"), op.get("type"),
+                op.get("props") or {}, op.get("position", "end"),
+            )
+        if verb == "remove":
+            return self._remove_element(op.get("target"))
+        target = op.get("target") or ""
+        is_shape = "/shape:" in target
+        if verb == "move":
+            return (self._move_shape(target, op.get("to"))
+                    if is_shape else self._move_slide(target, op.get("to", "end")))
+        if verb == "clone":
+            return (self._clone_shape(target, op.get("to"))
+                    if is_shape else self._clone_slide(target, op.get("to", "end")))
+        raise ValueError(f"Unsupported Slide structural op: {verb!r}")
+
+    @staticmethod
+    def _slide_index_from_target(target):
+        match = re.fullmatch(r"slide:(\d+)", target or "")
+        if not match:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        return int(match.group(1))
+
+    def _resolve_slide_position(self, position, count):
+        """Map a position spec to a 1-based slide index. 'end' -> count+1,
+        'start' -> 1, {'after': slide:N} -> N+1, {'before': ...} -> N,
+        {'index': N} -> N. WINDOWS-VERIFY."""
+        if position in (None, "end"):
+            return count + 1
+        if position == "start":
+            return 1
+        if isinstance(position, dict):
+            if "after" in position:
+                return self._slide_index_from_target(position["after"]) + 1
+            if "before" in position:
+                return self._slide_index_from_target(position["before"])
+            if "index" in position:
+                return int(position["index"])
+        raise ValueError(f"Unsupported Slide position: {position!r}")
+
+    def _insert_element(self, parent, etype, props, position):
+        pres = self._doc
+        if etype == "slide":
+            count = int(safe_get(pres.Slides, "Count", 0) or 0)
+            index = self._resolve_slide_position(position, count)
+            layout = int(props.get("layout", 12))  # ppLayoutBlank
+            slide = pres.Slides.Add(index, layout)
+            return {"type": "slide", "path": f"slide:{index}"}
+        if etype in ("textbox", "shape"):
+            slide_index = self._slide_index_from_target(parent or "")
+            slide = pres.Slides(slide_index)
+            left = float(props.get("left", 100))
+            top = float(props.get("top", 100))
+            width = float(props.get("width", 300))
+            height = float(props.get("height", 100))
+            shape = slide.Shapes.AddTextbox(1, left, top, width, height)
+            text = props.get("text")
+            if text is not None:
+                tr = safe_get(safe_get(shape, "TextFrame"), "TextRange")
+                if tr is not None:
+                    safe_set(tr, "Text", str(text))
+            shape_count = int(safe_get(slide.Shapes, "Count", 0) or 0)
+            return {"type": etype,
+                    "path": f"slide:{slide_index}/shape:{shape_count}"}
+        if etype == "image":
+            slide_index = self._slide_index_from_target(parent or "")
+            slide = pres.Slides(slide_index)
+            left = float(props.get("left", 100))
+            top = float(props.get("top", 100))
+            width = props.get("width")
+            height = props.get("height")
+            shape = slide.Shapes.AddPicture(
+                str(props.get("path", "")), False, True, left, top, width, height,
+            )
+            shape_count = int(safe_get(slide.Shapes, "Count", 0) or 0)
+            return {"type": "image",
+                    "path": f"slide:{slide_index}/shape:{shape_count}"}
+        raise ValueError(f"Unsupported Slide insert type: {etype!r}")
+
+    def _remove_element(self, target):
+        target = target or ""
+        match = re.fullmatch(r"slide:(\d+)(?:/shape:(.+))?", target)
+        if not match:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        slide_index = int(match.group(1))
+        if match.group(2) is None:
+            self._doc.Slides(slide_index).Delete()
+            return {"removed": target}
+        shape = self._resolve_shape(slide_index, match.group(2))
+        if shape is None:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        shape.Delete()
+        return {"removed": target}
+
+    def _resolve_shape(self, slide_index, shape_ref):
+        """shape_ref is the part after 'slide:N/shape:' -- positional N,
+        '@id=K', or '@name=NAME'. WINDOWS-VERIFY."""
+        if shape_ref.startswith("@id="):
+            return self._find_shape_in_slide(slide_index, shape_id=int(shape_ref[4:]))
+        if shape_ref.startswith("@name="):
+            return self._find_shape_in_slide(slide_index, shape_name=shape_ref[6:])
+        if shape_ref.isdigit():
+            try:
+                return self._doc.Slides(slide_index).Shapes(int(shape_ref))
+            except Exception:
+                return None
+        return None
+
+    def _move_slide(self, target, to):
+        index = self._slide_index_from_target(target)
+        slide = self._doc.Slides(index)
+        count = int(safe_get(self._doc.Slides, "Count", 0) or 0)
+        new_index = self._resolve_slide_position(to, count)
+        slide.MoveTo(new_index)
+        return {"type": "slide", "moved": True, "from": target}
+
+    def _clone_slide(self, target, to):
+        index = self._slide_index_from_target(target)
+        self._doc.Slides(index).Duplicate()
+        return {"type": "slide", "cloned": True, "from": target}
+
+    @staticmethod
+    def _split_shape_target(target):
+        """Split 'slide:N/shape:REF' into (slide_index, shape_ref).
+        WINDOWS-VERIFY."""
+        match = re.fullmatch(r"slide:(\d+)/shape:(.+)", target or "")
+        if not match:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        return int(match.group(1)), match.group(2)
+
+    def _dest_slide_index_for(self, to, default_index):
+        """Resolve a shape move/clone 'to' spec to a slide index. Accepts
+        {'slide': N}, 'end'/'start' (same slide), or None (same slide)."""
+        if isinstance(to, dict) and "slide" in to:
+            return int(to["slide"])
+        return default_index
+
+    def _move_shape(self, target, to):
+        """Move a shape to another slide (or in-place) via Cut + Paste.
+        WINDOWS-VERIFY: confirm clipboard round-trip keeps shape formatting."""
+        slide_index, shape_ref = self._split_shape_target(target)
+        shape = self._resolve_shape(slide_index, shape_ref)
+        if shape is None:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        dest_index = self._dest_slide_index_for(to, slide_index)
+        shape.Cut()
+        self._doc.Slides(dest_index).Shapes.Paste()
+        return {"type": "shape", "moved": True, "from": target,
+                "to_slide": dest_index}
+
+    def _clone_shape(self, target, to):
+        """Clone a shape. ``Shape.Duplicate()`` clones in place; to clone onto
+        another slide, Copy + Paste on the destination. WINDOWS-VERIFY."""
+        slide_index, shape_ref = self._split_shape_target(target)
+        shape = self._resolve_shape(slide_index, shape_ref)
+        if shape is None:
+            raise ValueError(f"Unsupported Slide target: {target}")
+        dest_index = self._dest_slide_index_for(to, slide_index)
+        if dest_index == slide_index:
+            shape.Duplicate()
+        else:
+            shape.Copy()
+            self._doc.Slides(dest_index).Shapes.Paste()
+        return {"type": "shape", "cloned": True, "from": target,
+                "to_slide": dest_index}
+
     def _shape_snapshot(self, shape, slide_index, shape_index, include_text, prefix):
         # WINDOWS-VERIFY: shape.Id is a stable COM integer; shape.Name is the
         # editable label. Prefer the @id form in the snapshot id so agents
