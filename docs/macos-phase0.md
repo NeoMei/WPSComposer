@@ -10,6 +10,17 @@ earlier Writer `SaveAs2` failure no longer reproduces, so
 `MACOS_GENERATION_ENABLED` is open for all four formats. The original NO-GO
 analysis and artifact table are retained below for provenance.
 
+**GO for the Phase 0 smoke probe (2026-07-26 fix).** The smoke `smoke_docx` /
+`smoke_pdf` commands previously timed out at `waitForFileAfterSave`
+(`writer.js`) because the `FileAfterSave` JSAPI event is never emitted for
+`SaveAs2` on this WPS build (it is emitted for `ExportAsFixedFormat`, which is
+why `convert_to_pdf` always worked). The two `SaveAs2` call sites now call
+`SaveAs2` directly — mirroring the production `generateWriterDocument` path
+(`Save()` then `Close()`, host validates via filesystem poll) — and a full
+probe run produces all four smoke artifacts: docx, pptx, xlsx, pdf. See the
+"2026-07-26 smoke re-run" table below.
+
+
 **GO for existing Office-to-PDF conversion.** On 2026-07-18, two consecutive
 installed-Mac runs converted `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
 `.pptx` through the container-staged typed backend. The two-visible-sheet XLSX
@@ -69,7 +80,29 @@ Two additional runs isolate and corroborate the result:
 
 All paths above are runtime evidence under the gitignored `build/` directory.
 
+## 2026-07-26 smoke re-run (post SaveAs2-event fix)
+
+After dropping the `FileAfterSave` event wait from the two `SaveAs2` call sites
+in `macos/wps-jsapi-probe/addin/writer.js` (`saveDocx`, `savePdf`'s source
+save), a full `macos_probe` run on the same installed Mac produced all four
+smoke artifacts with `status: passed` and zero failures:
+
+| Format | Path | Size | Validation |
+|---|---|---:|---|
+| DOCX | `build/mac-recheck2/smoke.docx` | 11,885 | ZIP, 18 parts, `word/document.xml` present |
+| PPTX | `build/mac-recheck2/smoke.pptx` | 73,474 | ZIP, valid |
+| XLSX | `build/mac-recheck2/smoke.xlsx` | 13,179 | ZIP, valid |
+| PDF | `build/mac-recheck2/smoke.pdf` | 745,649 | `%PDF-` header, valid |
+
+Re-run command:
+
+```bash
+.venv/bin/python -m skills.WPSComposer.scripts.macos_probe \
+  --node <node-path> --output-dir build/mac-recheck2 --timeout 120
+```
+
 ## Artifact evidence
+
 
 | Format | Actual test path | Size | WPS API | Validation |
 |---|---|---:|---|---|

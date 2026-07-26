@@ -1175,9 +1175,13 @@
     const document = Application.Documents.Add();
     try {
       renderDocument(document, "docx", imagePath);
-      await waitForFileAfterSave(outputPath, function () {
-        document.SaveAs2(outputPath, 12);
-      });
+      // SaveAs2 is synchronous and returns after the package is written; do
+      // NOT wrap it in waitForFileAfterSave -- the FileAfterSave JSAPI event
+      // is never emitted for SaveAs2 on this WPS build (it is emitted for
+      // ExportAsFixedFormat, which is why convert_to_pdf works). Mirrors the
+      // production generateWriterDocument path (Save() then Close). The host
+      // validates the artifact via its filesystem poll.
+      document.SaveAs2(outputPath, 12);
       record("writer.save_docx", "native", "Document.SaveAs2 format 12");
       return {path: outputPath, capabilities};
     } finally {
@@ -1192,9 +1196,10 @@
     const document = Application.Documents.Add();
     try {
       renderDocument(document, "pdf", imagePath);
-      await waitForFileAfterSave(sourcePath, function () {
-        document.SaveAs2(sourcePath, 12);
-      });
+      // SaveAs2 without the event wait -- see saveDocx for rationale.
+      document.SaveAs2(sourcePath, 12);
+      // ExportAsFixedFormat DOES emit FileAfterSave, so keep the event wait
+      // here (fast path; falls through to host validation if it ever drops).
       await waitForFileAfterSave(outputPath, function () {
         document.ExportAsFixedFormat(outputPath, 17, false, 0, 0);
       });
