@@ -48,16 +48,20 @@ All in `skills/WPSComposer/scripts/document_api.py`, exported via
 Run on macOS:
 
 ```bash
-.venv/bin/python -m pytest tests/test_document_api.py -v   # 27 passed
+.venv/bin/python -m pytest tests/test_document_api.py -v   # 76 passed
 ```
 
 ## Windows verification checklist
 
 Environment to fill in at the bottom of this file before running.
 
+> **The verify scripts below are illustrative.** `fixtures/` does not exist in
+> the repo — substitute any real `.docx`/`.pptx`/`.xlsx` on the machine, or
+> create one first with `python -c "from skills.WPSComposer import generate; generate('x.md', format='docx', output='sample.docx')"` (after writing a tiny `x.md`).
+
 Every COM-coupled change in this session is tagged `# WINDOWS-VERIFY:` in the
 source. `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` lists all 33
-sites. The high-value ones are called out below with file:line references.
+sites. The high-value ones are called out below with symbol references.
 
 ### A. Error-classification heuristic parity (orchestration layer)
 
@@ -105,11 +109,11 @@ write), but the live WPS window may still show partially-applied formatting
 
 This is the main COM work added this session. Three hosts:
 
-| Host | What to verify | Source |
+| Host | What to verify | Source (symbol; grep `WINDOWS-VERIFY` for the exact site) |
 |---|---|---|
-| Writer `@paraId` | `inspect()` emits `paragraph:@paraId=HEX` for saved docx; `apply_format_patch("paragraph:@paraId=...")` hits the right paragraph after a structural change | `writer.py:1087` (read), `writer.py:1203` (resolve), `_read_paraid_map`/`_paragraph_index_for_paraid` |
-| Slide `@id` / `@name` | `inspect()` emits `slide:N/shape:@id=K`; `@id=` and `@name=` resolve to the right shape | `slide.py:649` (`_shape_snapshot`), `slide.py:581`+`595` (branches), `_find_shape_in_slide` |
-| Sheet `@id` / `@name` | same for `sheet:N/shape:@id=K` / `@name=` | `sheet.py:298` (snapshot), `sheet.py:391`+`404` (branches), `_find_shape_in_sheet` |
+| Writer `@paraId` | `inspect()` emits `paragraph:@paraId=HEX` for saved docx; `apply_format_patch("paragraph:@paraId=...")` hits the right paragraph after a structural change | `writer.py`: `_read_paraid_map`, `_paragraph_index_for_paraid`, `_extract_paraids` (pure), `inspect_document` paragraph loop, `apply_format_patch` `@paraId=` branch |
+| Slide `@id` / `@name` | `inspect()` emits `slide:N/shape:@id=K`; `@id=` and `@name=` resolve to the right shape | `slide.py`: `_shape_snapshot`, `apply_format_patch` `@id=`/`@name=` branches, `_find_shape_in_slide` |
+| Sheet `@id` / `@name` | same for `sheet:N/shape:@id=K` / `@name=` | `sheet.py`: shape snapshot in `inspect_document`, `apply_format_patch` `@id=`/`@name=` branches, `_find_shape_in_sheet` |
 
 **Writer assumptions to confirm** (the riskiest piece):
 
@@ -164,7 +168,7 @@ If a snapshot key (e.g. a `font_snapshot` field) is not accepted by
 `apply_structural_op(op)` was added to all three composers and covers all
 addressable element types (gaps from the first pass are filled). The
 orchestration (`apply_ops` / `edit(ops=...)` / `validate_op`) is tested on macOS
-with a fake composer (72 tests); the COM bodies are tagged `# WINDOWS-VERIFY`.
+with a fake composer (76 tests); the COM bodies are tagged `# WINDOWS-VERIFY`.
 
 | Host | insert | remove | move | clone |
 |---|---|---|---|---|
@@ -200,7 +204,8 @@ edit("f.xlsx", output="o.xlsx", ops=[
     {"op": "insert", "parent": "sheet:1", "type": "column",
      "props": {"values": ["x", "y"]}, "position": {"index": 2}},
     {"op": "insert", "type": "sheet", "props": {"name": "Summary"}},
-    {"op": "remove", "target": "sheet:1/cell:C1"},          # removes row 3? confirm
+    {"op": "remove", "target": "sheet:1/cell:C1"},          # axis=row default -> removes row 1
+    {"op": "remove", "target": "sheet:1/cell:C1", "axis": "column"},  # removes column C (3)
     {"op": "remove", "target": "sheet:2/chart:1"},
     {"op": "clone", "target": "sheet:1/cell:A2", "to": {"index": 5}},
     {"op": "clone", "target": "sheet:1", "to": {"after": 1}},
@@ -220,6 +225,16 @@ edit("f.xlsx", output="o.xlsx", ops=[
 - Slide shape move = `shape.Cut()` + `Slides(N).Shapes.Paste()`; clone =
   `shape.Duplicate()` (same slide) or `Copy`+`Paste` (cross-slide). Confirm
   `Shapes.Paste()` returns/positions the new shape.
+- Sheet `Rows(n).Insert(0)` / `Columns(n).Insert(1)` shift direction constants
+  (`xlShiftDown=0`, `xlShiftToRight=1`); `Worksheets.Add()` / `.Copy(After=)` /
+  `.Move(After=)` for sheets; `ChartObjects(n).Delete()` for charts. Cell/range
+  `remove`/`move` take `"axis": "row"|"column"` (default row) to pick the axis.
+- Sheet whole-`sheet` remove is **dangerous** (WPS requires ≥1 visible sheet) —
+  the call raises if it would remove the last sheet; confirm the error surfaces
+  as `invalid_target`/`apply_failed` and not a crash.
+- Inserted/cloned element `path` is **best-effort positional**; re-`inspect()`
+  for a stable id. Structural ops shift sibling positional indices — address
+  later ops in the same batch by stable id or re-inspect between batches.
 
 **Known COM bugs found by code review (fix on Windows — do NOT re-derive):**
 
@@ -244,23 +259,14 @@ edit("f.xlsx", output="o.xlsx", ops=[
 
 These are the known issues; others may surface during the end-to-end run —
 append them here as you find and fix them.
-- Sheet `Rows(n).Insert(0)` / `Columns(n).Insert(1)` shift direction constants
-  (`xlShiftDown=0`, `xlShiftToRight=1`); `Worksheets.Add()` / `.Copy(After=)` /
-  `.Move(After=)` for sheets; `ChartObjects(n).Delete()` for charts. Cell/range
-  `remove`/`move` take `"axis": "row"|"column"` (default row) to pick the axis.
-- Sheet whole-`sheet` remove is **dangerous** (WPS requires ≥1 visible sheet) —
-  the call raises if it would remove the last sheet; confirm the error surfaces
-  as `invalid_target`/`apply_failed` and not a crash.
-- Inserted/cloned element `path` is **best-effort positional**; re-`inspect()`
-  for a stable id. Structural ops shift sibling positional indices — address
-  later ops in the same batch by stable id or re-inspect between batches.
 
 ## Implementation notes (all borrowable points now implemented)
 
-All five borrowable points are implemented. The pure-Python layers are tested
+All six borrowable points are implemented. The pure-Python layers are tested
 on macOS; the COM-coupled layers are written, tagged `# WINDOWS-VERIFY:` in
-source, and listed in checklist D–F above. Nothing is deferred — Windows only
-needs to verify, not implement.
+source, and listed in checklists D–G above. Windows needs to **verify the COM
+behaviour AND fix the known COM bugs** called out in checklist G (those were
+written blind and cannot be validated without a live host).
 
 | # | Borrowable point | Status | Where |
 |---|---|---|---|
@@ -300,7 +306,7 @@ python -m venv .venv
 ```
 
 The full suite was 533 passed + 1 skipped (pypdf) on macOS before this change;
-after this change it is 607 passed + 1 skipped (74 tests in
+after this change it is 609 passed + 1 skipped (76 tests in
 `tests/test_document_api.py`: orchestration, stable-id grammar, paraId
 extraction, snapshot_to_patches, and structural verbs across all hosts).
 
@@ -346,4 +352,4 @@ Fill in during the Windows run:
 - `skills/WPSComposer/references/api.md` — structured-result / atomic /
   stable-id / replay / structural-verbs docs
 - `skills/WPSComposer/SKILL.md` — pointer to new functions + this doc
-- `tests/test_document_api.py` — fake-composer + pure-helper suite (59 tests)
+- `tests/test_document_api.py` — fake-composer + pure-helper suite (76 tests)
