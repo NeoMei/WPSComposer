@@ -73,8 +73,9 @@ pwsh ./install.ps1
 - Python 3.9+, 4-space indentation, and `from __future__ import annotations`.
 - Composer classes use `PascalCase`; methods use `snake_case`.
 - Color arguments accept `#RRGGBB` strings or BGR integers.
-- Preserve the public facade and update `SKILL.md` plus `references/api.md`
-  whenever a public import or signature changes.
+- Preserve the public facade and update `skills/WPSComposer/SKILL.md` plus
+  `skills/WPSComposer/references/api.md` whenever a public import or signature
+  changes.
 
 ## Testing Guidelines
 

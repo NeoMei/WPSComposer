@@ -103,7 +103,7 @@ it is unchanged.
 For `edit(path=None)` atomic mode skips `save_current()` on failure (no disk
 write), but the live WPS window may still show partially-applied formatting
 (COM calls are not rolled back). Verify both halves and confirm against the
-"Atomicity and the attach-active caveat" note in `references/api.md`.
+"Atomicity and the attach-active caveat" note in `skills/WPSComposer/references/api.md`.
 
 ### D. Stable-ID readback + resolution (NEW — borrowable #1, the core)
 
