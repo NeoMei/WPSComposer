@@ -1,22 +1,36 @@
 # Windows COM verification handoff
 
+> **Start here on Windows.** Read `AGENTS.md` first, then this file, then run
+> `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` to list every COM site
+> flagged for verification.
+
 ## Status
 
-**Pending Windows verification.** This session added agent-friendly
-conversational-edit features to `skills/WPSComposer/scripts/document_api.py`
-(structured patch results, atomic `edit()`, target validation, grammar help).
-The pure-Python orchestration layer is fully tested with a fake composer
-(`tests/test_document_api.py`, 29 tests, green on macOS), but several
-behaviours are COM-coupled and can only be verified against a live WPS/Office
-host on Windows. This document is the checklist for that verification.
+**Pending Windows verification.** A sequence of macOS sessions added
+agent-friendly conversational-edit features to
+`skills/WPSComposer/scripts/document_api.py` and the three COM composers
+(`writer.py` / `sheet.py` / `slide.py`):
+
+- **Orchestration (pure-Python, tested on macOS):** structured patch results +
+  `PatchError`, atomic `edit()`, `validate_target` / `patch_grammar`,
+  `snapshot_to_patches` (dump→replay), and structural verbs via `apply_ops` /
+  `validate_op` (`insert` / `remove` / `move` / `clone`).
+- **COM bodies (written blind, need Windows verification):** stable-ID readback
+  (`@paraId` / `@id` / `@name`) and resolution, and the full `apply_structural_op`
+  implementations on all three composers.
+
+The macOS suite is green (**609 passed, 1 skipped**; 76 tests in
+`tests/test_document_api.py`) and a 7000-iteration fuzz of the orchestration
+layer produced 0 crashes. The COM-coupled behaviour can only be verified against
+a live WPS/Office host on Windows.
 
 ## Why macOS could not finish
 
-The conversational API (`inspect` / `edit` / `apply_format_patch`) drives the
-WPS COM object model. macOS uses the WPS JSAPI bridge for *generation* only
-(`generate()` / `convert_to_pdf()`); the inspect/edit path has no macOS
-backend. `apply_format_patch`, `inspect_document`, and the real save/rollback
-semantics therefore need a Windows host with `pywin32` + WPS (or MS) Office.
+The conversational API (`inspect` / `edit` / `apply_format_patch` /
+`apply_structural_op`) drives the WPS COM object model. macOS uses the WPS
+JSAPI bridge for *generation* only (`generate()` / `convert_to_pdf()`); the
+inspect/edit path has no macOS backend. The COM bodies therefore need a Windows
+host with `pywin32` + WPS (or MS) Office.
 
 ## What was implemented and already verified (macOS, pure-Python)
 
@@ -42,7 +56,7 @@ Run on macOS:
 Environment to fill in at the bottom of this file before running.
 
 Every COM-coupled change in this session is tagged `# WINDOWS-VERIFY:` in the
-source. `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` lists all 15
+source. `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` lists all 33
 sites. The high-value ones are called out below with file:line references.
 
 ### A. Error-classification heuristic parity (orchestration layer)
@@ -206,6 +220,30 @@ edit("f.xlsx", output="o.xlsx", ops=[
 - Slide shape move = `shape.Cut()` + `Slides(N).Shapes.Paste()`; clone =
   `shape.Duplicate()` (same slide) or `Copy`+`Paste` (cross-slide). Confirm
   `Shapes.Paste()` returns/positions the new shape.
+
+**Known COM bugs found by code review (fix on Windows — do NOT re-derive):**
+
+- **Writer `_resolve_insert_range` end/start** (`writer.py`): uses bare
+  `doc.Range` (a *method*, not a property) → will crash on `.Collapse()`. Fix:
+  use `doc.Content` (the main-story Range) collapsed to end/start. Everywhere
+  else in the file calls `doc.Range(start, end)` with args.
+- **Writer `_insert_element` heading at end** (`writer.py`): the positional
+  `return` fires *before* the Heading style is applied, so
+  `{"op":"insert","type":"heading","position":"end"}` (the default!) yields a
+  plain paragraph. Fix: apply the Heading style before the early return
+  (`InsertAfter` extends the range to cover the new text, so `rng.Style = ...`
+  applies to it).
+- **Sheet `chart:N` remove** (`sheet.py`): only handles positional integer
+  refs (`int(ref)`); a non-numeric ref raises. Inspect emits positional chart
+  ids, so this is consistent — but coerce/validate cleanly rather than rely on
+  the bare `int()`.
+- **Writer image insert path** (`writer.py`): returns `shape:N` from
+  `InlineShapes.Count`, but `_structural_target` resolves `shape:N` via
+  `doc.Shapes(N)` (a different collection). Confirm the index cross-resolves,
+  or return an InlineShapes-addressable path.
+
+These are the known issues; others may surface during the end-to-end run —
+append them here as you find and fix them.
 - Sheet `Rows(n).Insert(0)` / `Columns(n).Insert(1)` shift direction constants
   (`xlShiftDown=0`, `xlShiftToRight=1`); `Worksheets.Add()` / `.Copy(After=)` /
   `.Move(After=)` for sheets; `ChartObjects(n).Delete()` for charts. Cell/range
