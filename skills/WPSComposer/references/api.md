@@ -102,11 +102,14 @@ Common functions:
 | `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
 | `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
 | `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=[...], output=None, export_pdf=None, atomic=True, raise_on_error=False)` | Apply ordered patches and save in place or to a copy. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned |
-| `apply_patches(composer, patches, atomic=True)` | Low-level patch loop; raises `PatchError` (carrying `.reports`) in atomic mode |
+| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned |
+| `apply_ops(composer, ops, atomic=True)` | Unified op executor (`set`/`insert`/`remove`/`move`/`clone`); raises `PatchError` in atomic mode |
+| `apply_patches(composer, patches, atomic=True)` | Back-compat wrapper: `set`-only patches, normalised to `apply_ops` |
+| `validate_op(op, kind=None)` | Validate one op dict against the schema; returns `{valid, error:{code,...}}` |
 | `validate_target(target, kind)` | Validate a patch target against the grammar; returns a suggestion on miss |
 | `patch_grammar(kind=None)` | Return the address grammar as plain data (agent help / discovery) |
-| `PatchError` | Exception raised in atomic mode; `.reports` and `.errors` carry structured per-patch results |
+| `snapshot_to_patches(snapshot, dimensions=("font","paragraph","fill"))` | Convert an inspect snapshot to a replayable patch list (dump→replay) |
+| `PatchError` | Exception raised in atomic mode; `.reports` and `.errors` carry structured per-op results |
 | `supported_formats()` | Return recognized Writer/Sheet/Slide extensions |
 | `snapshot_json(snapshot)` | Serialize a snapshot without losing Chinese text |
 

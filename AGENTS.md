@@ -13,18 +13,27 @@ WPSComposer/
 │   ├── SKILL.md                     # Skill entry (name: WPSComposer)
 │   ├── references/api.md            # Public composer API reference
 │   └── scripts/
-│       ├── wps_engine.py            # Backward-compatible public facade
+│       ├── wps_engine.py            # Backward-compatible public facade (re-exports)
 │       ├── _dispatch.py             # COM dispatch and format constants
 │       ├── _colors.py               # Unified colour model
 │       ├── _base.py                 # Shared composer lifecycle
-│       ├── writer.py                # WriterComposer
-│       ├── sheet.py                 # SheetComposer
-│       ├── slide.py                 # SlideComposer
+│       ├── writer.py                # WriterComposer (docx) + paraId helpers
+│       ├── sheet.py                 # SheetComposer (xlsx)
+│       ├── slide.py                 # SlideComposer (pptx)
 │       ├── pdf.py                   # Cross-platform PDF editing
+│       ├── document_api.py          # inspect/edit/apply_ops/validate_op orchestration
+│       ├── orchestrator.py          # generate() — markdown → document
+│       ├── md_parser.py             # Markdown → StructuredDocument
+│       ├── document_model.py        # StructuredDocument data model
+│       ├── conversion.py            # convert_to_pdf (Office→PDF)
+│       ├── recording_composers.py   # COM-free recording doubles for generation plans
+│       ├── generation_plan.py       # Closed generation plan validation
 │       ├── design_presets.py        # Five design presets
 │       ├── layout_templates.py      # Slide layouts
-│       └── quality_checks.py        # Layout validation
+│       ├── quality_checks.py        # Layout validation
+│       └── macos_probe/             # macOS WPS JSAPI bridge (generation/conversion only)
 ├── tests/                          # Platform-independent pytest suite
+├── docs/windows-verification.md   # READ FIRST on Windows — COM verification handoff
 ├── install.py                     # Cross-platform marketplace installer
 ├── install.ps1                   # PowerShell wrapper
 └── install.sh                    # macOS/Linux wrapper

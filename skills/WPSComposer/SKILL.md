@@ -69,9 +69,25 @@ grammar and patch fields.
 `{"ok": False, "errors": [...]}` instead of raising. `validate_target(target,
 kind)` checks a target against the grammar and suggests the closest valid form
 on a miss, and `patch_grammar(kind)` returns the grammar as data for agent
-discovery. The COM-coupled parts of this change (real `inspect`/`edit` against
-a live WPS host, native stable IDs) are tracked in
-`docs/windows-verification.md`.
+discovery.
+
+For **structural editing** (insert/remove/move/clone), pass `ops=` instead of
+(or alongside) `patches`. Each op carries a verb: `set` (formatting, == a
+patch), `insert` (paragraph/table/shape/slide/row/…), `remove`, `move`,
+`clone`. Patches run first, then ops, in one atomic transaction. See
+`references/api.md` → "Structural operations" for the full verb/type matrix.
+
+```python
+edit("deck.pptx", output="deck2.pptx", ops=[
+    {"op": "insert", "type": "slide", "props": {"layout": 12}},
+    {"op": "clone", "target": "slide:1", "to": "end"},
+    {"op": "remove", "target": "slide:2"},
+])
+```
+
+The COM-coupled parts of this work (real `inspect`/`edit`/structural ops
+against a live WPS host, native stable IDs) are written but need Windows
+verification — tracked in `docs/windows-verification.md`.
 
 ## When to use
 
