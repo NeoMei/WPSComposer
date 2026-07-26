@@ -114,10 +114,15 @@ backward-compatible re-export facade:
 | `_dispatch.py` | — | COM dispatch, ProgID chains, format constants, WPS path search |
 | `_colors.py` | — | Unified colour model: hex→BGR, semantic name resolution |
 | `_base.py` | BaseComposer | Shared COM lifecycle + save/export |
-| `writer.py` | WriterComposer | WPS Writer → docx |
+| `writer.py` | WriterComposer | WPS Writer → docx (+ paraId helpers) |
 | `sheet.py` | SheetComposer | WPS Spreadsheets → xlsx |
 | `slide.py` | SlideComposer | WPS Presentation → pptx |
 | `pdf.py` | PdfComposer | PDF edit (pypdf/pdfplumber, cross-platform) |
+| `document_api.py` | — | Conversational API: `inspect`/`edit`/`apply_ops`/`validate_op`/`validate_target`/`snapshot_to_patches` + atomic orchestration |
+| `orchestrator.py` | — | `generate()` — markdown → document |
+
+See `AGENTS.md` for the full module layout (including the macOS JSAPI backend
+under `macos_probe/`).
 
 Use the stable public package for new code::
 
