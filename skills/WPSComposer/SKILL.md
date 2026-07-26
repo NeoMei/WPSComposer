@@ -65,6 +65,14 @@ sections, Sheet cells/ranges/shapes/charts/page setup, and Slide shapes/text
 paragraphs/runs/table cells/backgrounds. See `references/api.md` for the target
 grammar and patch fields.
 
+`edit()` is atomic by default: a failed patch blocks the save and returns
+`{"ok": False, "errors": [...]}` instead of raising. `validate_target(target,
+kind)` checks a target against the grammar and suggests the closest valid form
+on a miss, and `patch_grammar(kind)` returns the grammar as data for agent
+discovery. The COM-coupled parts of this change (real `inspect`/`edit` against
+a live WPS host, native stable IDs) are tracked in
+`docs/windows-verification.md`.
+
 ## When to use
 
 - Documents needing **multi-column** layout, **floating shapes with text wrap**,

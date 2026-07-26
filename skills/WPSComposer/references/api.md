@@ -70,7 +70,8 @@ w.apply_format_patch(
 )
 w.save_current()
 
-# Batch-edit a copy while preserving the original.
+# Batch-edit a copy while preserving the original. Atomic by default: if any
+# patch fails, nothing is saved and the result carries ok=False + errors.
 result = edit(
     "report.docx",
     output="report-revised.docx",
@@ -80,6 +81,18 @@ result = edit(
         {"target": "table:1/cell:2,1", "fill": {"color": "#FFF2CC"}},
     ],
 )
+# result == {"ok": bool, "saved": bool, "saved_path": str|None,
+#            "pdf_path": str|None, "patches": [...], "errors": [...],
+#            "before": ...|None, "after": ...|None}
+
+# Validate a target before applying -- lets an agent self-correct instead of
+# guess-fail-retry. Returns {"valid": bool, "element": ..., "error": {...}}.
+validate_target("paragraph:3", "writer")
+# -> {"valid": True, "kind": "writer", "element": "paragraph", "form": "paragraph:N"}
+
+validate_target("paragraf:3", "writer")
+# -> {"valid": False, "error": {"code": "invalid_target",
+#       "valid_forms": [...], "closest": "paragraph:N"}}
 ```
 
 Common functions:
@@ -89,7 +102,11 @@ Common functions:
 | `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
 | `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
 | `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=[...], output=None, export_pdf=None)` | Apply ordered patches and save in place or to a copy |
+| `edit(path=None, kind=None, patches=[...], output=None, export_pdf=None, atomic=True, raise_on_error=False)` | Apply ordered patches and save in place or to a copy. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned |
+| `apply_patches(composer, patches, atomic=True)` | Low-level patch loop; raises `PatchError` (carrying `.reports`) in atomic mode |
+| `validate_target(target, kind)` | Validate a patch target against the grammar; returns a suggestion on miss |
+| `patch_grammar(kind=None)` | Return the address grammar as plain data (agent help / discovery) |
+| `PatchError` | Exception raised in atomic mode; `.reports` and `.errors` carry structured per-patch results |
 | `supported_formats()` | Return recognized Writer/Sheet/Slide extensions |
 | `snapshot_json(snapshot)` | Serialize a snapshot without losing Chinese text |
 
@@ -97,16 +114,63 @@ Every composer also exposes `inspect_document()`, `inspect_selection()`,
 `apply_format_patch(target, **patch)`, `save_current()`, and `save(path)`.
 Patches are partial: properties omitted by the agent are not reset.
 
+Each patch report is structured for agent consumption:
+
+```python
+{"index": 0, "target": "paragraph:1", "ok": True,
+ "accepted": ["font"], "rejected": []}
+# on failure:
+{"index": 1, "target": "paragraf:2", "ok": False,
+ "error": {"code": "invalid_target", "message": "...",
+           "valid_forms": ["paragraph:N", ...], "closest": "paragraph:N"}}
+```
+
+Error codes: `missing_target`, `invalid_target`, `invalid_value`,
+`apply_failed`, `unsupported_kind`.
+
+### Atomicity and the attach-active caveat
+
+`edit()` is **atomic by default** (`atomic=True`): if any patch fails, the
+document is not saved (no file is written for `output=`, and `save_current()`
+is not called for the active document). Set `atomic=False` for the legacy
+best-effort behaviour that saves whatever succeeded.
+
+Caveat for the `path=None` (attach-active) workflow: atomic mode guarantees
+**no disk write** on failure, but the live WPS/Office window may still show
+the partially-applied in-memory edits, because COM formatting calls cannot be
+selectively rolled back without an undo stack. After a failed atomic `edit()`
+on the active document, re-inspect (`inspect()`) before retrying.
+
 ### Address grammar
 
 | Host | Targets |
 |---|---|
-| Writer | `selection`, `paragraph:N`, `range:START-END`, `table:N/cell:R,C`, `shape:N`, `section:N` |
-| Sheet | `selection`, `sheet:N`, `sheet:N/cell:A1`, `sheet:N/range:A1:C20`, `sheet:N/shape:N`, `sheet:N/chart:N` |
-| Slide | `selection`, `presentation`, `slide:N`, `slide:N/shape:N`, `.../paragraph:N`, `.../paragraph:N/run:N`, `.../table/cell:R,C` |
+| Writer | `selection`, `paragraph:N`, `paragraph:@paraId=HEX` *(stable)*, `range:START-END`, `table:N/cell:R,C`, `shape:N`, `section:N` |
+| Sheet | `selection`, `sheet:N`, `sheet:N/cell:A1`, `sheet:N/range:A1:C20`, `sheet:N/shape:N`, `sheet:N/shape:@id=N` *(stable)*, `sheet:N/shape:@name=NAME` *(stable)*, `sheet:N/chart:N` |
+| Slide | `selection`, `presentation`, `slide:N`, `slide:N/shape:N`, `slide:N/shape:@id=N` *(stable)*, `slide:N/shape:@name=NAME` *(stable)*, `.../paragraph:N`, `.../paragraph:N/run:N`, `.../table/cell:R,C` |
 
-All indices are 1-based. Inspection snapshots return these exact ids so agents
-do not need to reconstruct selectors manually.
+All indices are 1-based. **Stable forms** (`@paraId` / `@id` / `@name`) survive
+structural edits between `inspect()` and `edit()` and are emitted by
+`inspect()` whenever the host exposes a native id — prefer them over
+positional indices. Inspection snapshots return these exact ids so agents
+do not need to reconstruct selectors manually. `validate_target(target, kind)`
+checks any candidate against this grammar and returns the closest valid form
+on a miss; `patch_grammar(kind)` returns the table above as plain data.
+
+### Replay a snapshot's formatting (dump → replay)
+
+`snapshot_to_patches(snapshot, dimensions=("font", "paragraph", "fill"))` walks
+an `inspect()` snapshot and emits a patch list that reproduces the captured
+formatting on another document — the WpsComposer analogue of officecli's
+`dump` → `batch`, scoped to formatting (full structural cloning is
+`generate()`'s job). Only non-empty requested dimensions are emitted.
+
+```python
+from skills.WPSComposer import inspect, snapshot_to_patches, edit
+snap = inspect("styled-sample.docx")
+patches = snapshot_to_patches(snap, dimensions=("font", "fill"))   # copy fonts + fills
+edit("target.docx", output="target-styled.docx", patches=patches)
+```
 
 ### Recognized input formats
 

@@ -8,12 +8,23 @@ All three COM composers implement the same small contract:
 
 This module chooses the correct composer from a file extension or document kind
 and adds batch patching for agent workflows.
+
+Agent-friendly additions (borrowed from the officecli contract):
+
+* :func:`validate_target` / :func:`patch_grammar` -- let an agent self-correct
+  a bad target without a guess-fail-retry loop.
+* :class:`PatchError` and structured per-patch reports carrying ``error.code``
+  + ``suggestion`` instead of bare tracebacks.
+* :func:`apply_patches` / :func:`edit` are atomic by default: any failed patch
+  blocks the save and returns a structured failure result.
 """
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
+import re
 
 from .writer import WriterComposer
 from .sheet import SheetComposer
@@ -73,6 +84,233 @@ def open_document(path, *, kind=None, read_only=False, visible=False):
     return cls.open_document(path, read_only=read_only, visible=visible)
 
 
+# ---------------------------------------------------------------------------
+# Patch target grammar -- single source of truth for validation + help
+# ---------------------------------------------------------------------------
+# Each entry: (example_form, regex_or_None, element_kind, description).
+# regex None marks a literal target ("selection", "presentation").
+
+PATCH_GRAMMAR = {
+    "writer": [
+        ("selection", None, "selection", "the active selection"),
+        ("paragraph:N", r"paragraph:(\d+)", "paragraph",
+         "a paragraph by 1-based index"),
+        # Stable form: survives structural edits between inspect() and edit().
+        # WINDOWS-VERIFY: paraId is read from w14:paraId in document.xml
+        # (see WriterComposer._read_paraid_map). Hex, case-insensitive.
+        ("paragraph:@paraId=HEX", r"paragraph:@paraId=([0-9A-Fa-f]+)", "paragraph",
+         "a paragraph by its stable w14:paraId (preferred over positional)"),
+        ("range:S-E", r"range:(\d+)-(\d+)", "range",
+         "a character range by start,end offsets"),
+        ("table:N/cell:R,C", r"table:(\d+)/cell:(\d+),(\d+)", "table_cell",
+         "a table cell by table,row,col (1-based)"),
+        ("shape:N", r"shape:(\d+)", "shape",
+         "a floating shape by 1-based index"),
+        ("section:N", r"section:(\d+)", "section",
+         "a page-layout section by 1-based index"),
+    ],
+    "sheet": [
+        ("selection", None, "selection", "the active selection"),
+        ("sheet:N", r"sheet:(\d+)", "sheet", "a worksheet by 1-based index"),
+        ("sheet:N/cell:A1", r"sheet:(\d+)/cell:(.+)", "cell",
+         "a cell on a worksheet (leading $ accepted)"),
+        ("sheet:N/range:A1:C20", r"sheet:(\d+)/range:(.+)", "range",
+         "a range on a worksheet"),
+        ("sheet:N/shape:N", r"sheet:(\d+)/shape:(\d+)", "shape",
+         "a shape on a worksheet by 1-based index"),
+        # Stable forms. WINDOWS-VERIFY: shape.Id / shape.Name readback in
+        # SheetComposer.inspect_document (shape snapshot).
+        ("sheet:N/shape:@id=N", r"sheet:(\d+)/shape:@id=(\d+)", "shape",
+         "a shape by its stable COM Id (preferred over positional)"),
+        ("sheet:N/shape:@name=NAME", r"sheet:(\d+)/shape:@name=(.+)", "shape",
+         "a shape by Name"),
+        ("sheet:N/chart:N", r"sheet:(\d+)/chart:(\d+)", "chart",
+         "a chart object on a worksheet"),
+    ],
+    "slide": [
+        ("selection", None, "selection", "the active selection"),
+        ("presentation", None, "presentation", "the whole presentation"),
+        ("slide:N", r"slide:(\d+)", "slide", "a slide by 1-based index"),
+        ("slide:N/shape:N", r"slide:(\d+)/shape:(\d+)", "shape",
+         "a shape on a slide by 1-based index"),
+        # Stable forms. WINDOWS-VERIFY: shape.Id / shape.Name readback in
+        # SlideComposer._shape_snapshot; resolution in apply_format_patch.
+        ("slide:N/shape:@id=N", r"slide:(\d+)/shape:@id=(\d+)", "shape",
+         "a shape by its stable Shape.Id (preferred over positional)"),
+        ("slide:N/shape:@name=NAME", r"slide:(\d+)/shape:@name=(.+)", "shape",
+         "a shape by Name"),
+        ("slide:N/shape:N/paragraph:N",
+         r"slide:(\d+)/shape:(\d+)/paragraph:(\d+)", "paragraph",
+         "a text paragraph inside a shape"),
+        ("slide:N/shape:N/paragraph:N/run:N",
+         r"slide:(\d+)/shape:(\d+)/paragraph:(\d+)/run:(\d+)", "run",
+         "a single run inside a shape paragraph"),
+        ("slide:N/shape:N/table/cell:R,C",
+         r"slide:(\d+)/shape:(\d+)/table/cell:(\d+),(\d+)", "table_cell",
+         "a table cell by shape,row,col (1-based)"),
+    ],
+}
+
+_KIND_ALIASES = {
+    "writer": "writer", "word": "writer", "document": "writer",
+    "sheet": "sheet", "excel": "sheet", "spreadsheet": "sheet",
+    "slide": "slide", "powerpoint": "slide", "presentation": "slide",
+}
+
+_COMPOSER_KIND = {
+    WriterComposer: "writer",
+    SheetComposer: "sheet",
+    SlideComposer: "slide",
+}
+
+
+def _normalize_kind(kind):
+    if kind is None:
+        return None
+    return _KIND_ALIASES.get(str(kind).lower())
+
+
+def _kind_from_composer(composer):
+    for cls in type(composer).__mro__:
+        if cls in _COMPOSER_KIND:
+            return _COMPOSER_KIND[cls]
+    return getattr(composer, "kind", None)
+
+
+def patch_grammar(kind=None):
+    """Return the patch-target grammar as plain data (agent help / discovery).
+
+    With *kind* omitted, returns a dict keyed by kind. With a kind, returns
+    that kind's list of ``{form, element, description}`` entries.
+    """
+    if kind is None:
+        return {
+            name: [
+                {"form": form, "element": element, "description": desc}
+                for form, _pat, element, desc in entries
+            ]
+            for name, entries in PATCH_GRAMMAR.items()
+        }
+    normalized = _normalize_kind(kind)
+    if normalized not in PATCH_GRAMMAR:
+        raise ValueError(
+            f"Unknown kind {kind!r}; expected writer, sheet, or slide"
+        )
+    return [
+        {"form": form, "element": element, "description": desc}
+        for form, _pat, element, desc in PATCH_GRAMMAR[normalized]
+    ]
+
+
+def validate_target(target, kind):
+    """Validate a patch target string against the grammar for *kind*.
+
+    Returns ``{"valid": bool, "kind": ..., "element": ..., "form": ...}`` on
+    success, or ``{"valid": False, "error": {"code", "message",
+    "valid_forms", "closest"}}`` on failure -- the suggestion lets an agent
+    self-correct instead of guessing.
+    """
+    normalized = _normalize_kind(kind)
+    if normalized not in PATCH_GRAMMAR:
+        return {
+            "valid": False,
+            "kind": kind,
+            "error": {
+                "code": "unsupported_kind",
+                "message": f"Unknown kind {kind!r}",
+                "valid_forms": sorted(PATCH_GRAMMAR),
+            },
+        }
+    for form, pattern, element, _desc in PATCH_GRAMMAR[normalized]:
+        if pattern is None:
+            matched = target == form
+        else:
+            matched = re.fullmatch(pattern, target) is not None
+        if matched:
+            return {
+                "valid": True,
+                "kind": normalized,
+                "element": element,
+                "form": form,
+            }
+    forms = [f for f, _p, _e, _d in PATCH_GRAMMAR[normalized]]
+    closest = difflib.get_close_matches(target, forms, n=1, cutoff=0.4)
+    return {
+        "valid": False,
+        "kind": normalized,
+        "target": target,
+        "error": {
+            "code": "invalid_target",
+            "message": f"Unsupported {normalized} target: {target!r}",
+            "valid_forms": forms,
+            "closest": closest[0] if closest else None,
+        },
+    }
+
+
+class PatchError(ValueError):
+    """Raised when one or more patches fail in atomic mode.
+
+    Carries the full per-patch ``reports`` list and the failing ``errors``
+    so callers (or agents) can inspect what went wrong without re-running.
+    """
+
+    def __init__(self, reports):
+        self.reports = list(reports)
+        self.errors = [r for r in self.reports if not r.get("ok")]
+        message = "{} of {} patch(es) failed".format(
+            len(self.errors), len(self.reports)
+        )
+        super().__init__(message)
+
+
+def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
+    """Convert an :func:`inspect` snapshot into a replayable patch list.
+
+    Walks the snapshot recursively and emits one ``{"target": id, ...}`` patch
+    per element that has a valid, stable address plus at least one of the
+    requested formatting *dimensions*. The result can be passed to
+    :func:`apply_patches` or :func:`edit` to reproduce the captured styling on
+    another document ("make this doc look like that one").
+
+    This is the WpsComposer analogue of officecli's ``dump`` -> ``batch``
+    replay, scoped to *formatting* (full structural cloning is ``generate()``'s
+    job via markdown). Only non-empty dimensions are emitted, so callers can
+    pass ``dimensions=("font",)`` to copy just fonts.
+
+    Note: fidelity depends on the snapshot/apply key symmetry for each
+    dimension (e.g. ``font_snapshot`` keys vs ``apply_font`` keys); see the
+    Windows verification doc for the round-trip check.
+    """
+    kind = snapshot.get("kind") if isinstance(snapshot, dict) else None
+    wanted = tuple(dimensions)
+    patches = []
+    seen = set()
+
+    def visit(node):
+        if isinstance(node, dict):
+            element_id = node.get("id")
+            if isinstance(element_id, str) and element_id not in seen:
+                info = validate_target(element_id, kind) if kind else None
+                if info and info.get("valid"):
+                    patch = {"target": element_id}
+                    for dim in wanted:
+                        value = node.get(dim)
+                        if isinstance(value, dict) and value:
+                            patch[dim] = value
+                    if len(patch) > 1:
+                        patches.append(patch)
+                        seen.add(element_id)
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(snapshot)
+    return patches
+
+
 def attach_active(kind=None):
     """Attach to the current WPS/Office document.
 
@@ -99,41 +337,113 @@ def inspect(path=None, *, kind=None, selection=False, **options):
         return composer.inspect_selection() if selection else composer.inspect_document(**options)
 
 
-def apply_patches(composer, patches, *, stop_on_error=True):
-    """Apply ordered ``{"target": ..., ...}`` patches to an open composer."""
+def apply_patches(composer, patches, *, atomic=True, stop_on_error=None):
+    """Apply ordered ``{"target": ..., ...}`` patches to an open composer.
+
+    Each patch returns a structured report::
+
+        {"index": int, "target": str, "ok": bool,
+         "accepted": [...], "rejected": [...],
+         "error": {"code": str, "message": str, ...} | absent}
+
+    When *atomic* is True (default) any failure raises :class:`PatchError`
+    carrying every report so far; the caller is expected to discard the
+    unsaved document. ``stop_on_error`` is a deprecated alias that maps to
+    ``atomic`` for backward compatibility.
+    """
+    if stop_on_error is not None:
+        atomic = bool(stop_on_error)
+    kind = _kind_from_composer(composer)
     reports = []
+
     for index, patch in enumerate(patches):
         item = dict(patch)
         target = item.pop("target", None)
         if not target:
-            error = "patch requires a target"
-            reports.append({"index": index, "ok": False, "error": error})
-            if stop_on_error:
-                raise ValueError(error)
+            report = {
+                "index": index, "ok": False,
+                "error": {"code": "missing_target",
+                          "message": "patch requires a 'target' key"},
+            }
+            reports.append(report)
+            if atomic:
+                raise PatchError(reports)
             continue
+
         try:
             result = composer.apply_format_patch(target, **item)
-            reports.append({
-                "index": index,
-                "target": target,
-                "ok": not result.get("rejected"),
-                **result,
-            })
+        except ValueError as exc:
+            report = _error_report(index, target, exc, kind)
+            reports.append(report)
+            if atomic:
+                raise PatchError(reports) from exc
+            continue
         except Exception as exc:
-            reports.append({"index": index, "target": target,
-                            "ok": False, "error": str(exc)})
-            if stop_on_error:
-                raise
+            report = {
+                "index": index, "target": target, "ok": False,
+                "error": {"code": "apply_failed", "message": str(exc)},
+            }
+            reports.append(report)
+            if atomic:
+                raise PatchError(reports) from exc
+            continue
+
+        accepted = list(result.get("accepted", []))
+        rejected = list(result.get("rejected", []))
+        report = {
+            "index": index, "target": target,
+            "ok": len(rejected) == 0,
+            "accepted": accepted,
+            "rejected": rejected,
+        }
+        for key, value in result.items():
+            if key not in ("accepted", "rejected"):
+                report[key] = value
+        reports.append(report)
+
     return reports
 
 
+def _error_report(index, target, exc, kind):
+    """Build a structured error report for a ValueError, enriching target
+    mistakes with the grammar suggestion when *kind* is known."""
+    text = str(exc)
+    looks_like_target = (
+        "Unsupported" in text or "target" in text.lower()
+        or "Unknown kind" in text
+    )
+    code = "invalid_target" if looks_like_target else "invalid_value"
+    report = {
+        "index": index, "target": target, "ok": False,
+        "error": {"code": code, "message": text},
+    }
+    if kind and code == "invalid_target":
+        info = validate_target(target, kind)
+        err = info.get("error") or {}
+        if err:
+            report["error"].update({
+                k: v for k, v in err.items() if k != "message"
+            })
+    return report
+
+
 def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
-         visible=False, stop_on_error=True, inspect_after=False):
+         visible=False, atomic=True, stop_on_error=None,
+         inspect_after=False, raise_on_error=False):
     """Inspect/edit/save a file or the active document in one agent call.
 
-    If ``path`` and ``output`` are both omitted, the active document is edited
-    and saved in place.  Supplying ``output`` keeps the original untouched.
+    If *path* and *output* are both omitted, the active document is edited
+    and saved in place. Supplying *output* keeps the original untouched.
+
+    Atomic by default: if any patch fails, the document is **not** saved and
+    the structured result carries ``ok=False`` plus an ``errors`` list. Set
+    ``atomic=False`` to keep the old best-effort behaviour (save whatever
+    succeeded). ``raise_on_error=True`` re-raises the :class:`PatchError` for
+    callers that prefer exceptions over structured results.
     """
+    if stop_on_error is not None:
+        atomic = bool(stop_on_error)
+
     attached = path is None
     if attached:
         composer = attach_active(kind)
@@ -146,14 +456,29 @@ def edit(path=None, *, kind=None, patches, output=None, export_pdf=None,
             raise
     try:
         before = composer.inspect_document() if inspect_after else None
-        reports = apply_patches(composer, patches, stop_on_error=stop_on_error)
-        saved_path = composer.save(output) if output else composer.save_current()
-        pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
+        patch_failed = False
+        try:
+            reports = apply_patches(composer, patches, atomic=atomic)
+        except PatchError as exc:
+            reports = exc.reports
+            patch_failed = True
+            if raise_on_error:
+                raise
+
+        if patch_failed and atomic:
+            saved_path = None
+            pdf_path = None
+        else:
+            saved_path = composer.save(output) if output else composer.save_current()
+            pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
         after = composer.inspect_document() if inspect_after else None
         return {
+            "ok": not patch_failed,
+            "saved": saved_path is not None,
             "saved_path": saved_path,
             "pdf_path": pdf_path,
             "patches": reports,
+            "errors": [r for r in reports if not r.get("ok")] if patch_failed else [],
             "before": before,
             "after": after,
         }
@@ -178,4 +503,6 @@ __all__ = [
     "open_document", "attach_active", "inspect", "edit", "apply_patches",
     "snapshot_json", "supported_formats", "composer_for_path",
     "composer_for_kind",
+    "validate_target", "patch_grammar", "snapshot_to_patches",
+    "PatchError", "PATCH_GRAMMAR",
 ]

@@ -95,6 +95,8 @@ from .md_parser import parse, parse_file
 from .document_api import (
     open_document, attach_active, inspect, edit, apply_patches,
     snapshot_json, supported_formats,
+    validate_target, patch_grammar, snapshot_to_patches,
+    PatchError, PATCH_GRAMMAR,
 )
 
 
@@ -179,4 +181,9 @@ __all__ = [
     "apply_patches",
     "snapshot_json",
     "supported_formats",
+    "validate_target",
+    "patch_grammar",
+    "snapshot_to_patches",
+    "PatchError",
+    "PATCH_GRAMMAR",
 ]

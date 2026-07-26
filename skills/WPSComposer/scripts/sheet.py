@@ -295,9 +295,18 @@ class SheetComposer(BaseComposer):
             shape_count = int(safe_get(ws.Shapes, "Count", 0) or 0)
             for shape_index in range(1, shape_count + 1):
                 shape = ws.Shapes(shape_index)
+                # WINDOWS-VERIFY: shape.Id is a stable COM integer; prefer the
+                # @id form in the snapshot id; positional shape_index kept.
+                shape_id = safe_get(shape, "Id")
+                element_id = (
+                    f"sheet:{sheet_index}/shape:@id={shape_id}"
+                    if shape_id is not None
+                    else f"sheet:{sheet_index}/shape:{shape_index}"
+                )
                 shapes.append({
-                    "id": f"sheet:{sheet_index}/shape:{shape_index}",
+                    "id": element_id,
                     "index": shape_index,
+                    "shape_id": shape_id,
                     "name": safe_get(shape, "Name"),
                     "type": safe_get(shape, "Type"),
                     "geometry": geometry_snapshot(shape),
@@ -377,19 +386,35 @@ class SheetComposer(BaseComposer):
                 row_height, column_width, borders,
             )
 
+        match = re.fullmatch(r"sheet:(\d+)/shape:@id=(\d+)", target)
+        if match:
+            # WINDOWS-VERIFY: resolve a stable shape.Id; merge_results body is
+            # shared with the positional shape branch.
+            shape = self._find_shape_in_sheet(
+                int(match.group(1)), shape_id=int(match.group(2))
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            return self._apply_shape_patch(
+                shape, geometry, fill, line, name,
+            )
+
+        match = re.fullmatch(r"sheet:(\d+)/shape:@name=(.+)", target)
+        if match:
+            # WINDOWS-VERIFY: resolve a shape by Name.
+            shape = self._find_shape_in_sheet(
+                int(match.group(1)), shape_name=match.group(2)
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Sheet target: {target}")
+            return self._apply_shape_patch(
+                shape, geometry, fill, line, name,
+            )
+
         match = re.fullmatch(r"sheet:(\d+)/shape:(\d+)", target)
         if match:
             shape = self._doc.Worksheets(int(match.group(1))).Shapes(int(match.group(2)))
-            results = [
-                self._prefix_result(apply_geometry(shape, geometry), "geometry"),
-                self._prefix_result(apply_fill(shape.Fill, fill), "fill"),
-                self._prefix_result(apply_line(shape.Line, line), "line"),
-            ]
-            if name is not None:
-                ok = safe_set(shape, "Name", name)
-                results.append({"accepted": ["name"] if ok else [],
-                                "rejected": [] if ok else ["name"]})
-            return merge_results(*results)
+            return self._apply_shape_patch(shape, geometry, fill, line, name)
 
         match = re.fullmatch(r"sheet:(\d+)/chart:(\d+)", target)
         if match:
@@ -431,6 +456,39 @@ class SheetComposer(BaseComposer):
             return {"accepted": accepted, "rejected": rejected}
 
         raise ValueError(f"Unsupported Sheet target: {target}")
+
+    def _apply_shape_patch(self, shape, geometry, fill, line, name):
+        """Shared body for positional / @id / @name shape patches."""
+        results = [
+            self._prefix_result(apply_geometry(shape, geometry), "geometry"),
+            self._prefix_result(apply_fill(shape.Fill, fill), "fill"),
+            self._prefix_result(apply_line(shape.Line, line), "line"),
+        ]
+        if name is not None:
+            ok = safe_set(shape, "Name", name)
+            results.append({"accepted": ["name"] if ok else [],
+                            "rejected": [] if ok else ["name"]})
+        return merge_results(*results)
+
+    def _find_shape_in_sheet(self, sheet_index, *, shape_id=None, shape_name=None):
+        """Return the first shape on ``Worksheets(sheet_index)`` whose COM
+        ``Id`` or ``Name`` matches, or ``None``. WINDOWS-VERIFY: confirm the
+        readback values match what inspect emitted."""
+        try:
+            shapes = self._doc.Worksheets(sheet_index).Shapes
+        except Exception:
+            return None
+        count = int(safe_get(shapes, "Count", 0) or 0)
+        for index in range(1, count + 1):
+            try:
+                shape = shapes(index)
+            except Exception:
+                continue
+            if shape_id is not None and safe_get(shape, "Id") == shape_id:
+                return shape
+            if shape_name is not None and safe_get(shape, "Name") == shape_name:
+                return shape
+        return None
 
     def _range_snapshot(self, rng, element_id, include_value=False):
         if rng is None:

@@ -6,8 +6,11 @@ merged tables, TOC, and auto-populated fields.
 
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
+import zipfile
+from xml.etree import ElementTree
 
 from ._dispatch import (
     _abs, FMT_DOCX, FMT_PDF_FROM_DOC, FMT_DOC, FMT_DOCM, FMT_DOTX,
@@ -45,6 +48,47 @@ _LINE_SPACING_RULES = {
     "exact": 4,
     "multiple": 5,
 }
+
+
+# ---------------------------------------------------------------------------
+# Stable paragraph IDs (w14:paraId)
+# ---------------------------------------------------------------------------
+# Pure helpers, unit-tested without COM. COM-side wiring
+# (WriterComposer._read_paraid_map / _paragraph_index_for_paraid) is marked
+# WINDOWS-VERIFY below.
+
+_W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+_W14_NS = "http://schemas.microsoft.com/office/word/2010/wordml"
+_PARAID_ATTR = "{%s}paraId" % _W14_NS
+
+
+def _extract_paraids(document_xml_bytes):
+    """Return the ``w14:paraId`` of every ``<w:p>`` in document order.
+
+    The returned list is 0-based and aligned to ``doc.Paragraphs(index)``:
+    element 0 corresponds to ``Paragraphs(1)``. Entries are ``None`` when the
+    paragraph has no ``w14:paraId`` (older docs, or paragraphs Word did not
+    tag). This is a pure transform of the ``word/document.xml`` part and does
+    not touch COM.
+    """
+    root = ElementTree.fromstring(document_xml_bytes)
+    paraids = []
+    for paragraph in root.iter("{%s}p" % _W_NS):
+        paraids.append(paragraph.get(_PARAID_ATTR))
+    return paraids
+
+
+def read_paraids_from_docx(path):
+    """Open a .docx zip and return its paragraph-id list (see
+    :func:`_extract_paraids`). Returns ``[]`` if the part is missing or the
+    file cannot be read. Pure except for file IO; safe to call on a doc that
+    is open in WPS (read-only zip access)."""
+    try:
+        with zipfile.ZipFile(os.fspath(path)) as archive:
+            with archive.open("word/document.xml") as part:
+                return _extract_paraids(part.read())
+    except (OSError, zipfile.BadZipFile, KeyError, ElementTree.ParseError):
+        return []
 
 
 def _visual_text_width(value):
@@ -1040,11 +1084,26 @@ class WriterComposer(BaseComposer):
         section_count = int(safe_get(doc.Sections, "Count", 0) or 0)
         limit = max_elements if max_elements is not None else float("inf")
 
+        # WINDOWS-VERIFY: stable paragraph ids read from the saved .docx on
+        # disk. Only present for saved docs; unsaved/never-saved docs fall
+        # back to purely positional ids. The list is 0-based, aligned to
+        # Paragraphs(1..N); a count mismatch falls back to positional too.
+        paraids = self._read_paraid_map(paragraph_count)
+
         paragraphs = []
         for index in range(1, min(paragraph_count, int(limit) if limit != float("inf") else paragraph_count) + 1):
             para = doc.Paragraphs(index)
-            snap = self._range_snapshot(para.Range, f"paragraph:{index}")
+            paraid = paraids[index - 1] if index <= len(paraids) else None
+            # Prefer the stable id when available so agents naturally use it;
+            # keep positional via the "index" field as a fallback.
+            element_id = (
+                "paragraph:@paraId=%s" % paraid if paraid
+                else "paragraph:%d" % index
+            )
+            snap = self._range_snapshot(para.Range, element_id)
             snap["index"] = index
+            if paraid:
+                snap["para_id"] = paraid
             snap["style"] = self._style_name(safe_get(para.Range, "Style"))
             if not include_text:
                 snap.pop("text", None)
@@ -1139,6 +1198,17 @@ class WriterComposer(BaseComposer):
             rng = self.selection.Range
             return self._patch_range(rng, text, font, paragraph, style)
 
+        match = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target)
+        if match:
+            # WINDOWS-VERIFY: resolve a stable paraId back to a positional
+            # Paragraphs(index) by re-reading the docx paraid list. Raises
+            # ValueError (-> invalid_target) when the id is not present.
+            index = self._paragraph_index_for_paraid(match.group(1))
+            if index is None:
+                raise ValueError(f"Unsupported Writer target: {target}")
+            rng = self._doc.Paragraphs(index).Range
+            return self._patch_range(rng, text, font, paragraph, style)
+
         match = re.fullmatch(r"paragraph:(\d+)", target)
         if match:
             rng = self._doc.Paragraphs(int(match.group(1))).Range
@@ -1213,6 +1283,46 @@ class WriterComposer(BaseComposer):
             return {"accepted": accepted, "rejected": rejected}
 
         raise ValueError(f"Unsupported Writer target: {target}")
+
+    # ------------------------------------------------------------------
+    # Stable paragraph-id support (w14:paraId). COM-adjacent but isolated.
+    # WINDOWS-VERIFY: the only assumption is that the document-order walk of
+    # <w:p> in word/document.xml matches doc.Paragraphs(1..N). Confirm with
+    # len(paraids) == doc.Paragraphs.Count on a few real docs.
+    # ------------------------------------------------------------------
+    def _read_paraid_map(self, expected_count):
+        """Return the paraId list for the current document, or ``[]`` if it
+        cannot be read (unsaved doc, non-docx source, read failure).
+
+        Memoized per (document path, paragraph count): the docx on disk is
+        stable while the composer holds the document open, so repeated
+        ``@paraId`` resolutions in one ``edit()`` batch do not re-read the zip.
+        """
+        path = safe_get(self._doc, "FullName")
+        cache = getattr(self, "_paraid_cache", None)
+        if cache is not None and cache[0] == path and cache[1] == expected_count:
+            return cache[2]
+        if not path:
+            return []
+        paraids = read_paraids_from_docx(path)
+        if expected_count is not None and len(paraids) != int(expected_count):
+            # Mismatch means our document-order assumption is wrong for this
+            # doc -- fall back to positional rather than emit wrong ids.
+            return []
+        self._paraid_cache = (path, expected_count, paraids)
+        return paraids
+
+    def _paragraph_index_for_paraid(self, paraid):
+        """Return the 1-based Paragraphs index for *paraid*, or ``None``."""
+        count = int(safe_get(self._doc.Paragraphs, "Count", 0) or 0)
+        paraids = self._read_paraid_map(count)
+        if not paraids:
+            return None
+        normalized = paraid.lower()
+        for offset, value in enumerate(paraids):
+            if value and value.lower() == normalized:
+                return offset + 1
+        return None
 
     def _range_snapshot(self, rng, element_id):
         text = str(safe_get(rng, "Text", "")).rstrip("\r\x07")

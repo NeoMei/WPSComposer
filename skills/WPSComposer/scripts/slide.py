@@ -578,25 +578,87 @@ class SlideComposer(BaseComposer):
             rng = para.Runs(int(match.group(4)), 1) if match.group(4) else para
             return self._patch_text_range(rng, text, font, paragraph)
 
+        match = re.fullmatch(r"slide:(\d+)/shape:@id=(\d+)", target)
+        if match:
+            # WINDOWS-VERIFY: resolve a stable Shape.Id to the shape object.
+            shape = self._find_shape_in_slide(
+                int(match.group(1)), shape_id=int(match.group(2))
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Slide target: {target}")
+            return self._apply_shape_patch(
+                shape, text, font, paragraph, geometry, fill, line, text_frame,
+                vertical_alignment, name,
+            )
+
+        match = re.fullmatch(r"slide:(\d+)/shape:@name=(.+)", target)
+        if match:
+            # WINDOWS-VERIFY: resolve a shape by Name.
+            shape = self._find_shape_in_slide(
+                int(match.group(1)), shape_name=match.group(2)
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Slide target: {target}")
+            return self._apply_shape_patch(
+                shape, text, font, paragraph, geometry, fill, line, text_frame,
+                vertical_alignment, name,
+            )
+
         match = re.fullmatch(r"slide:(\d+)/shape:(\d+)", target)
         if match:
             shape = self._doc.Slides(int(match.group(1))).Shapes(int(match.group(2)))
-            result = self._patch_text_shape(
+            return self._apply_shape_patch(
                 shape, text, font, paragraph, geometry, fill, line, text_frame,
-                vertical_alignment,
+                vertical_alignment, name,
             )
-            if name is not None:
-                ok = safe_set(shape, "Name", name)
-                result["accepted" if ok else "rejected"].append("name")
-            return result
 
         raise ValueError(f"Unsupported Slide target: {target}")
 
+    def _apply_shape_patch(self, shape, text, font, paragraph, geometry, fill,
+                           line, text_frame, vertical_alignment, name):
+        """Shared body for positional / @id / @name shape patches."""
+        result = self._patch_text_shape(
+            shape, text, font, paragraph, geometry, fill, line, text_frame,
+            vertical_alignment,
+        )
+        if name is not None:
+            ok = safe_set(shape, "Name", name)
+            result["accepted" if ok else "rejected"].append("name")
+        return result
+
+    def _find_shape_in_slide(self, slide_index, *, shape_id=None, shape_name=None):
+        """Return the first shape on ``Slides(slide_index)`` whose COM ``Id``
+        or ``Name`` matches, or ``None``. WINDOWS-VERIFY: confirm shape.Id and
+        shape.Name readback values match what inspect emitted."""
+        try:
+            shapes = self._doc.Slides(slide_index).Shapes
+        except Exception:
+            return None
+        count = int(safe_get(shapes, "Count", 0) or 0)
+        for index in range(1, count + 1):
+            try:
+                shape = shapes(index)
+            except Exception:
+                continue
+            if shape_id is not None and safe_get(shape, "Id") == shape_id:
+                return shape
+            if shape_name is not None and safe_get(shape, "Name") == shape_name:
+                return shape
+        return None
+
     def _shape_snapshot(self, shape, slide_index, shape_index, include_text, prefix):
-        element_id = f"{prefix}/shape:{shape_index}"
+        # WINDOWS-VERIFY: shape.Id is a stable COM integer; shape.Name is the
+        # editable label. Prefer the @id form in the snapshot id so agents
+        # address shapes stably; positional shape_index is kept as fallback.
+        shape_id = safe_get(shape, "Id")
+        if shape_id is not None:
+            element_id = f"{prefix}/shape:@id={shape_id}"
+        else:
+            element_id = f"{prefix}/shape:{shape_index}"
         result = {
             "id": element_id,
             "index": shape_index,
+            "shape_id": shape_id,
             "name": safe_get(shape, "Name"),
             "type": safe_get(shape, "Type"),
             "geometry": geometry_snapshot(shape),
