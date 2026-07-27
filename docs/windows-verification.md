@@ -1,13 +1,20 @@
 # Windows COM verification handoff
 
-> **Start here on Windows.** Read `AGENTS.md` first, then this file, then run
-> `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` to list every COM site
-> flagged for verification.
+> **Start here on Windows.** Read `AGENTS.md` first, then this file.
+> Verification **completed on Windows** — see "Windows run results" below.
 
 ## Status
 
-**Pending Windows verification.** A sequence of macOS sessions added
-agent-friendly conversational-edit features to
+**Verified on Windows (2026-07-27).** All checklist items A–G pass against a
+live WPS Office host. The four pre-known COM bugs were fixed as directed, and
+seven further COM-behaviour bugs found during the live run were fixed (listed
+in "Bugs fixed in the Windows run" below). The full platform-independent
+suite is green on Windows (600 passed, 11 skipped — the skips are POSIX-only
+macOS-probe tests plus the pypdf skip), and the COM verification scripts in
+`fixtures/verify_*.py` pass end-to-end.
+
+Historical context: a sequence of macOS sessions added agent-friendly
+conversational-edit features to
 `skills/WPSComposer/scripts/document_api.py` and the three COM composers
 (`writer.py` / `sheet.py` / `slide.py`):
 
@@ -15,11 +22,11 @@ agent-friendly conversational-edit features to
   `PatchError`, atomic `edit()`, `validate_target` / `patch_grammar`,
   `snapshot_to_patches` (dump→replay), and structural verbs via `apply_ops` /
   `validate_op` (`insert` / `remove` / `move` / `clone`).
-- **COM bodies (written blind, need Windows verification):** stable-ID readback
-  (`@paraId` / `@id` / `@name`) and resolution, and the full `apply_structural_op`
-  implementations on all three composers.
+- **COM bodies (written blind, verified and fixed on Windows):** stable-ID
+  readback (`@paraId` / `@id` / `@name`) and resolution, and the full
+  `apply_structural_op` implementations on all three composers.
 
-The macOS suite is green (**609 passed, 1 skipped**; 76 tests in
+The macOS suite is green (**609 passed, 1 skipped**; 77 tests in
 `tests/test_document_api.py`) and a 7000-iteration fuzz of the orchestration
 layer produced 0 crashes. The COM-coupled behaviour can only be verified against
 a live WPS/Office host on Windows.
@@ -48,20 +55,20 @@ All in `skills/WPSComposer/scripts/document_api.py`, exported via
 Run on macOS:
 
 ```bash
-.venv/bin/python -m pytest tests/test_document_api.py -v   # 76 passed
+.venv/bin/python -m pytest tests/test_document_api.py -v   # 77 passed
 ```
 
 ## Windows verification checklist
 
-Environment to fill in at the bottom of this file before running.
+Environment is recorded at the bottom of this file.
 
-> **The verify scripts below are illustrative.** `fixtures/` does not exist in
-> the repo — substitute any real `.docx`/`.pptx`/`.xlsx` on the machine, or
-> create one first with `python -c "from skills.WPSComposer import generate; generate('x.md', format='docx', output='sample.docx')"` (after writing a tiny `x.md`).
+> **The verify scripts below are illustrative.** Runnable equivalents live in
+> `fixtures/verify_*.py` (see "Windows run results"); `fixtures/make_fixtures.py`
+> recreates the sample documents.
 
-Every COM-coupled change in this session is tagged `# WINDOWS-VERIFY:` in the
-source. `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` lists all 33
-sites. The high-value ones are called out below with symbol references.
+The COM-coupled changes were tagged `# WINDOWS-VERIFY:` in source; all markers
+were verified and cleared in the Windows run. The high-value sites are called
+out below with symbol references.
 
 ### A. Error-classification heuristic parity (orchestration layer)
 
@@ -168,7 +175,7 @@ If a snapshot key (e.g. a `font_snapshot` field) is not accepted by
 `apply_structural_op(op)` was added to all three composers and covers all
 addressable element types (gaps from the first pass are filled). The
 orchestration (`apply_ops` / `edit(ops=...)` / `validate_op`) is tested on macOS
-with a fake composer (76 tests); the COM bodies are tagged `# WINDOWS-VERIFY`.
+with a fake composer (77 tests); the COM bodies are tagged `# WINDOWS-VERIFY`.
 
 | Host | insert | remove | move | clone |
 |---|---|---|---|---|
@@ -236,46 +243,103 @@ edit("f.xlsx", output="o.xlsx", ops=[
   for a stable id. Structural ops shift sibling positional indices — address
   later ops in the same batch by stable id or re-inspect between batches.
 
-**Known COM bugs found by code review (fix on Windows — do NOT re-derive):**
+**Known COM bugs found by code review (fixed in the Windows run):**
 
-- **Writer `_resolve_insert_range` end/start** (`writer.py`): uses bare
-  `doc.Range` (a *method*, not a property) → will crash on `.Collapse()`. Fix:
-  use `doc.Content` (the main-story Range) collapsed to end/start. Everywhere
-  else in the file calls `doc.Range(start, end)` with args.
+- **Writer `_resolve_insert_range` end/start** (`writer.py`): used bare
+  `doc.Range` (a *method*, not a property) → would crash on `.Collapse()`.
+  Fixed: `doc.Content` collapsed to end/start.
 - **Writer `_insert_element` heading at end** (`writer.py`): the positional
-  `return` fires *before* the Heading style is applied, so
-  `{"op":"insert","type":"heading","position":"end"}` (the default!) yields a
-  plain paragraph. Fix: apply the Heading style before the early return
-  (`InsertAfter` extends the range to cover the new text, so `rng.Style = ...`
-  applies to it).
-- **Sheet `chart:N` remove** (`sheet.py`): only handles positional integer
-  refs (`int(ref)`); a non-numeric ref raises. Inspect emits positional chart
-  ids, so this is consistent — but coerce/validate cleanly rather than rely on
-  the bare `int()`.
-- **Writer image insert path** (`writer.py`): returns `shape:N` from
-  `InlineShapes.Count`, but `_structural_target` resolves `shape:N` via
-  `doc.Shapes(N)` (a different collection). Confirm the index cross-resolves,
-  or return an InlineShapes-addressable path.
+  `return` fired *before* the Heading style was applied. Fixed: style applied
+  before the early return, using the locale-independent built-in style id
+  (`Styles(-1 - level)`, wdStyleHeading1..9 = -2..-10) — the English name
+  "Heading N" does not exist in localized WPS builds.
+- **Sheet `chart:N` remove** (`sheet.py`): non-numeric refs no longer hit the
+  bare `int()`; the pattern is restricted to digits and falls through to the
+  standard `Unsupported Sheet target` ValueError.
+- **Writer image insert path** (`writer.py`): returned `shape:N` from
+  `InlineShapes.Count`, but `shape:N` resolved via `doc.Shapes(N)` (a different
+  collection). Fixed: returns `inline_shape:N`, and `_structural_target`
+  resolves that form via `doc.InlineShapes(N).Range`.
 
-These are the known issues; others may surface during the end-to-end run —
-append them here as you find and fix them.
+## Bugs fixed in the Windows run (found live, not by review)
+
+1. **`_extract_paraids` did not match `doc.Paragraphs`** (`writer.py`). The
+   naive `root.iter(w:p)` walk (a) counted text-box-story paragraphs that COM
+   excludes, and (b) missed that COM counts one paragraph per table
+   *end-of-row mark* (no `<w:p>` in the XML). Fixed by pruning
+   `w:txbxContent` subtrees and appending one `None` per `<w:tr>`. Verified
+   aligned on docs with tables + textboxes (30 == 30).
+2. **WPS ET ignores keyword `Before=`/`After=` on `Worksheet.Move`/`Copy`**
+   (`sheet.py`). With kwargs, `Copy` silently falls back to "new workbook" —
+   clones leaked into a second workbook and the save lost them. Fixed by
+   calling positionally: `ws.Copy(None, target)` / `ws.Move(None, target)`.
+3. **Sheet `insert type=sheet` crashed without a parent** (`sheet.py`):
+   `_insert_element` parsed `parent` unconditionally before dispatch. The
+   whole-workbook sheet insert is now handled before parent parsing.
+4. **Slide image insert crashed without explicit width/height** (`slide.py`):
+   `None` was passed to `Shapes.AddPicture`. Now defaults to `-1` (native
+   size).
+5. **`snapshot_to_patches` emitted document-specific stable ids**
+   (`document_api.py`): replaying a dump on *another* document could never
+   resolve `@paraId`/`@id`. Targets are now rewritten to positional form via
+   the element's `index` (stable ids still work for same-document addressing
+   through `edit()` directly). `None`-valued snapshot keys are dropped (they
+   mean "host reported no value" and landed in `rejected`).
+6. **Positional out-of-range targets raised raw COM errors** (`writer.py`):
+   `paragraph:99999` etc. surfaced as `apply_failed` with an opaque HRESULT.
+   Bounds checks now raise `ValueError` → classified `invalid_target` with
+   self-heal `valid_forms`, consistent with the `@paraId` path.
+7. **Flaky `AttributeError: KWpp.Application.Presentations`** (`_base.py`):
+   WPS's single-process model occasionally hands back an app object whose
+   collection property is not ready. `__enter__` now re-dispatches and
+   retries up to 3 times (0.6 s backoff); 4 consecutive clean verification
+   runs after the fix (was ~1-in-3 failure).
+
+## Test-suite fixes for Windows (platform-independent suite)
+
+- `macos/wps-jsapi-probe` requires `npm ci` once — several `macos_probe` and
+  `test_generation.py` tests need the real `wpsjs` template fixtures
+  (`node_modules/wpsjs/.../res/wpsDemo.docx`). Without it: 43 failures.
+- `tests/macos_probe/test_addin_assets.py` ran 100 KB scripts through
+  `node -e` — over the Windows 8191-char command-line limit. Scripts now go
+  through a temp file.
+- 10 macOS-probe tests assert POSIX-only behaviour (`fcntl`, `ps`, `0o700`
+  file modes, `/` paths, executable shell stubs) and are now
+  `skipif(os.name != "posix")`.
+
+## WPS quirks worth knowing (discovered this run)
+
+- WPS preserves `w14:paraId` across saves and assigns ids to new paragraphs.
+- zh-CN WPS localizes built-in style names (`标题 1`); use style ids -2..-10.
+- `Range.WordOpenXML` exists but returns the whole Flat-OPC package per call —
+  too heavy for per-paragraph id readback; the zip walk is the right source.
+- `edit()` batches run patches first, then ops. `@paraId` resolution after an
+  unsaved structural change in the same batch cannot work (the id map comes
+  from the on-disk package) and fails cleanly as `invalid_target`; address
+  post-insert elements in a later batch (re-inspect).
+- Headless WPS automation leaks processes over long sessions (Quit does not
+  always reap them) — kill stray `wps`/`et`/`wpp` processes after big runs.
+- WPS `Slides.MoveTo(p)` inserts BEFORE the slide at pre-move index `p`
+  (source still counted); `MoveTo(count+1)` appends to the end without
+  raising. `_move_slide`/`_clone_slide` convert the desired final position
+  `F` to `F+1 when F > source else F`. Sample decks generated from markdown
+  can repeat a title across slides ("Deck Title" on slides 1-2) — use unique
+  stamps, not titles, to assert landing positions.
 
 ## Implementation notes (all borrowable points now implemented)
 
-All six borrowable points are implemented. The pure-Python layers are tested
-on macOS; the COM-coupled layers are written, tagged `# WINDOWS-VERIFY:` in
-source, and listed in checklists D–G above. Windows needs to **verify the COM
-behaviour AND fix the known COM bugs** called out in checklist G (those were
-written blind and cannot be validated without a live host).
+All six borrowable points are implemented **and COM-verified on Windows**. The
+pure-Python layers are tested cross-platform; the COM-coupled layers passed the
+live checklists A–G and the `# WINDOWS-VERIFY` tags are cleared.
 
 | # | Borrowable point | Status | Where |
 |---|---|---|---|
-| 1 | Stable ID addressing (`@paraId` / `@id` / `@name`) | implemented (COM unverified) | checklist D |
+| 1 | Stable ID addressing (`@paraId` / `@id` / `@name`) | implemented + COM-verified | checklist D |
 | 2 | Structured errors + self-heal suggestions | implemented + tested | `document_api.py::_error_report`, `PatchError` |
 | 3 | Atomic batch | implemented + tested | `edit()` / `apply_ops()` |
-| 4 | dump → replay | implemented + tested | `snapshot_to_patches()` (checklist F) |
+| 4 | dump → replay | implemented + COM-verified | `snapshot_to_patches()` (checklist F) |
 | 5 | Built-in help | implemented + tested | `patch_grammar()` / `validate_target()` |
-| 6 | Structural editing (insert/remove/move/clone) | implemented (COM unverified) | checklist G |
+| 6 | Structural editing (insert/remove/move/clone) | implemented + COM-verified | checklist G |
 
 ### Known limitations to keep in mind on Windows
 
@@ -284,13 +348,14 @@ written blind and cannot be validated without a live host).
   positional ids for them. Saving once enables stable ids. This is by design,
   not a bug.
 - **Word paraId count must match `doc.Paragraphs.Count`.** `_read_paraid_map`
-  enforces this and falls back to positional on mismatch. If you see stable
-  ids never emitted on a doc that should have them, the document-order
-  assumption needs revisiting (see checklist D, Writer assumption 1).
+  enforces this and falls back to positional on mismatch. The alignment
+  (text-box story pruned, one `None` per table row-end mark) was validated on
+  real documents with tables and textboxes; exotic stories (nested tables,
+  SDT-wrapped rows) may still mismatch — positional fallback covers them.
 - **`snapshot_to_patches` fidelity is bounded by snapshot/apply key symmetry.**
   A snapshot field that `apply_font`/`apply_fill` does not accept lands in the
-  patch's `rejected` list. Check `r["patches"][*]["rejected"]` during the
-  round-trip (checklist F).
+  patch's `rejected` list. `None`-valued fields are dropped at emission time
+  (they mean "host reported no value").
 - **`shape.Id` / `shape.Name` resolution compares Python int / str equality.**
   If a COM host returns `Id` as a non-int variant, `_find_shape_in_*` won't
   match; coerce in the helper if that surfaces.
@@ -306,9 +371,11 @@ python -m venv .venv
 ```
 
 The full suite was 533 passed + 1 skipped (pypdf) on macOS before this change;
-after this change it is 609 passed + 1 skipped (76 tests in
+after this change it is 609 passed + 1 skipped (77 tests in
 `tests/test_document_api.py`: orchestration, stable-id grammar, paraId
 extraction, snapshot_to_patches, and structural verbs across all hosts).
+On Windows it is 600 passed + 11 skipped (10 POSIX-only macOS-probe tests +
+pypdf). One-time setup: `npm ci` in `macos/wps-jsapi-probe` (test fixtures).
 
 COM smoke (Windows only, ad hoc):
 
@@ -318,17 +385,35 @@ COM smoke (Windows only, ad hoc):
 
 ## Tested environment
 
-Fill in during the Windows run:
-
 | Item | Value |
 |---|---|
-| Test date | _(to fill)_ |
-| Windows build | _(to fill)_ |
-| WPS Office / MS Office version | _(to fill)_ |
-| `pywin32` version | _(to fill)_ |
-| Python | _(to fill)_ |
-| `tests/test_document_api.py` | _(pass/fail)_ |
-| Items A–G above | _(pass/fail per item)_ |
+| Test date | 2026-07-27 |
+| Windows build | 10.0.26200 |
+| WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN) |
+| `pywin32` version | 312 |
+| Python | 3.14.3 |
+| `tests/test_document_api.py` | pass (77) |
+| Full suite | 600 passed, 11 skipped (10 POSIX-only + pypdf) |
+| Items A–G above | all pass |
+
+## Windows run results
+
+Live COM verification scripts (runnable, kept in `fixtures/`):
+
+| Script | Covers | Result |
+|---|---|---|
+| `fixtures/verify_ab.py` | A (error classification ×3 hosts), B (atomic no-save, happy path, source unchanged) | 6/6 |
+| `fixtures/verify_c.py` | C (attach-active caveat, both halves) | 4/4 |
+| `fixtures/verify_d.py` | D (`@paraId` readback 27/30 ids, stability across insert+save; slide/sheet `@id`/`@name`) | 4/4 |
+| `fixtures/verify_e.py` | E (edge target forms: `$A$1`, run path, table cell, `range:0-10`) | 5/5 |
+| `fixtures/verify_f.py` | F (font dump→replay round-trip, no rejected keys, title-font fidelity) | 1/1 |
+| `fixtures/verify_g.py` | G (31 checks: full insert/remove/move/clone matrix on all hosts + last-sheet guard + exact slide move/clone landing positions) | 31/31 |
+| `fixtures/verify_cr1.py` | Code-review R1: attach + `output=` does not rebind the live document (save_copy guard) | pass |
+| `fixtures/verify_r1.py` | Completeness R1: writer move table/shape + clone shape, slide table-cell target, paraId alignment on more document shapes | pass |
+
+Fixtures: `fixtures/make_fixtures.py` + `fixtures/add_extras.py` build
+`sample.docx` (≥3 paragraphs + table + textbox), `sample.pptx` (4 slides),
+`sample.xlsx` (4×3 data + chart) via the real engine.
 
 ## Files touched this session
 
@@ -352,4 +437,4 @@ Fill in during the Windows run:
 - `skills/WPSComposer/references/api.md` — structured-result / atomic /
   stable-id / replay / structural-verbs docs
 - `skills/WPSComposer/SKILL.md` — pointer to new functions + this doc
-- `tests/test_document_api.py` — fake-composer + pure-helper suite (76 tests)
+- `tests/test_document_api.py` — fake-composer + pure-helper suite (77 tests)

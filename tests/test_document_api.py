@@ -370,10 +370,27 @@ _SAMPLE_DOCUMENT_XML = b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"
 
 def test_extract_paraids_returns_document_order_with_none_for_missing():
     # Order must match doc.Paragraphs(1..N): body para, body para, table-cell
-    # para, trailing body para. Missing w14:paraId -> None.
+    # para, one None for the row end-of-mark (counted by COM Paragraphs but
+    # absent from the XML), trailing body para. Missing w14:paraId -> None.
     assert _extract_paraids(_SAMPLE_DOCUMENT_XML) == [
-        "0A1B2C3D", None, "FEDCBA98", "11223344",
+        "0A1B2C3D", None, "FEDCBA98", None, "11223344",
     ]
+
+
+def test_extract_paraids_prunes_textbox_story():
+    xml = (
+        b'<w:document xmlns:w="http://schemas.openxmlformats.org/'
+        b'wordprocessingml/2006/main" '
+        b'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">'
+        b'<w:body>'
+        b'<w:p w14:paraId="0A1B2C3D"><w:r><w:drawing><w:txbxContent>'
+        b'<w:p w14:paraId="BADBADBA"><w:r><w:t>textbox story</w:t></w:r></w:p>'
+        b'</w:txbxContent></w:drawing></w:r></w:p>'
+        b'<w:p w14:paraId="11223344"><w:r><w:t>body</w:t></w:r></w:p>'
+        b'</w:body></w:document>'
+    )
+    # The text-frame story paragraph is not in Document.Paragraphs.
+    assert _extract_paraids(xml) == ["0A1B2C3D", "11223344"]
 
 
 def test_extract_paraids_empty_body():
@@ -404,7 +421,7 @@ def test_read_paraids_from_docx_round_trips_real_docx(tmp_path):
     with zipfile.ZipFile(docx, "w") as archive:
         archive.writestr("word/document.xml", _SAMPLE_DOCUMENT_XML)
     assert read_paraids_from_docx(docx) == [
-        "0A1B2C3D", None, "FEDCBA98", "11223344",
+        "0A1B2C3D", None, "FEDCBA98", None, "11223344",
     ]
 
 
@@ -430,7 +447,9 @@ def test_snapshot_to_patches_emits_one_patch_per_styled_element():
     }
     patches = snapshot_to_patches(snapshot)
     targets = [p["target"] for p in patches]
-    assert targets == ["paragraph:@paraId=1A2B3C4D", "table:1/cell:1,1"]
+    # Stable ids are rewritten to positional ones: replay targets another
+    # document, where @paraId cannot resolve.
+    assert targets == ["paragraph:1", "table:1/cell:1,1"]
     assert patches[0]["font"] == {"size": 12, "bold": True}
     assert patches[0]["paragraph"] == {"alignment": 3}
     assert patches[1]["fill"] == {"color": "#FFF2CC"}
@@ -453,14 +472,14 @@ def test_snapshot_to_patches_walks_nested_slide_shapes():
         "kind": "slide",
         "slides": [
             {"id": "slide:1", "shapes": [
-                {"id": "slide:1/shape:@id=7", "font": {"size": 18}},
-                {"id": "slide:1/shape:2", "fill": {"color": "#FF0000"}},
+                {"id": "slide:1/shape:@id=7", "index": 1, "font": {"size": 18}},
+                {"id": "slide:1/shape:2", "index": 2, "fill": {"color": "#FF0000"}},
             ]},
         ],
     }
     patches = snapshot_to_patches(snapshot)
     assert {p["target"] for p in patches} == {
-        "slide:1/shape:@id=7", "slide:1/shape:2",
+        "slide:1/shape:1", "slide:1/shape:2",
     }
 
 

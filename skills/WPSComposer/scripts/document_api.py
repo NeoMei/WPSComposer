@@ -99,7 +99,7 @@ PATCH_GRAMMAR = {
         ("paragraph:N", r"paragraph:(\d+)", "paragraph",
          "a paragraph by 1-based index"),
         # Stable form: survives structural edits between inspect() and edit().
-        # WINDOWS-VERIFY: paraId is read from w14:paraId in document.xml
+        # paraId is read from w14:paraId in document.xml
         # (see WriterComposer._read_paraid_map). Hex, case-insensitive.
         ("paragraph:@paraId=HEX", r"paragraph:@paraId=([0-9A-Fa-f]+)", "paragraph",
          "a paragraph by its stable w14:paraId (preferred over positional)"),
@@ -121,7 +121,7 @@ PATCH_GRAMMAR = {
          "a range on a worksheet"),
         ("sheet:N/shape:N", r"sheet:(\d+)/shape:(\d+)", "shape",
          "a shape on a worksheet by 1-based index"),
-        # Stable forms. WINDOWS-VERIFY: shape.Id / shape.Name readback in
+        # Stable forms. shape.Id / shape.Name readback in
         # SheetComposer.inspect_document (shape snapshot).
         ("sheet:N/shape:@id=N", r"sheet:(\d+)/shape:@id=(\d+)", "shape",
          "a shape by its stable COM Id (preferred over positional)"),
@@ -136,7 +136,7 @@ PATCH_GRAMMAR = {
         ("slide:N", r"slide:(\d+)", "slide", "a slide by 1-based index"),
         ("slide:N/shape:N", r"slide:(\d+)/shape:(\d+)", "shape",
          "a shape on a slide by 1-based index"),
-        # Stable forms. WINDOWS-VERIFY: shape.Id / shape.Name readback in
+        # Stable forms. shape.Id / shape.Name readback in
         # SlideComposer._shape_snapshot; resolution in apply_format_patch.
         ("slide:N/shape:@id=N", r"slide:(\d+)/shape:@id=(\d+)", "shape",
          "a shape by its stable Shape.Id (preferred over positional)"),
@@ -290,9 +290,32 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
     patches = []
     seen = set()
 
+    # Snapshot keys the host exposes read-only; replaying them always lands
+    # in `rejected`. (Fill.Type and ZOrderPosition are read-only in the
+    # Office/WPS object models.)
+    readonly = {"fill": ("type",), "geometry": ("z_order",)}
+
+    def replayable_id(node, element_id):
+        # Stable ids (@paraId/@id/@name) are document-specific; replaying them
+        # on another document cannot resolve. Rewrite to the positional form
+        # using the element's index when one is available.
+        index = node.get("index")
+        if not (isinstance(index, int) and index > 0):
+            return element_id
+        if re.fullmatch(r"paragraph:@paraId=[0-9A-Fa-f]+", element_id):
+            return f"paragraph:{index}"
+        match = re.fullmatch(
+            r"((?:slide|sheet):\d+/shape:)@(?:id|name)=.+", element_id
+        )
+        if match:
+            return f"{match.group(1)}{index}"
+        return element_id
+
     def visit(node):
         if isinstance(node, dict):
             element_id = node.get("id")
+            if isinstance(element_id, str):
+                element_id = replayable_id(node, element_id)
             if isinstance(element_id, str) and element_id not in seen:
                 info = validate_target(element_id, kind) if kind else None
                 if info and info.get("valid"):
@@ -300,7 +323,13 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
                     for dim in wanted:
                         value = node.get(dim)
                         if isinstance(value, dict) and value:
-                            patch[dim] = value
+                            # None means "host reported no value" — nothing to
+                            # replay; carrying it would land in `rejected`.
+                            value = {k: v for k, v in value.items()
+                                     if v is not None
+                                     and k not in readonly.get(dim, ())}
+                            if value:
+                                patch[dim] = value
                     if len(patch) > 1:
                         patches.append(patch)
                         seen.add(element_id)
@@ -320,7 +349,7 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
 # ``set`` is the formatting verb (apply_format_patch). The four structural
 # verbs are dispatched to composer.apply_structural_op(op). The orchestration
 # layer (validate_op / apply_ops / edit) is pure-Python and host-agnostic; the
-# COM implementations on each composer carry WINDOWS-VERIFY markers.
+# COM implementations live on each composer.
 
 SET_OPS = {"set"}
 STRUCTURAL_OPS = {"insert", "remove", "move", "clone"}
@@ -576,7 +605,9 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
 
     Patches run first, then ops, in one atomic transaction. If *path* and
     *output* are both omitted, the active document is edited and saved in
-    place. Supplying *output* keeps the original untouched.
+    place. Supplying *output* keeps the original untouched when opening by
+    *path*; in attach mode (*path* omitted) the live document keeps its
+    binding and *output* receives a copy (see `BaseComposer.save_copy`).
 
     Atomic by default: if any op fails, the document is **not** saved and the
     structured result carries ``ok=False`` plus an ``errors`` list. Set
@@ -622,7 +653,13 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
             saved_path = None
             pdf_path = None
         else:
-            saved_path = composer.save(output) if output else composer.save_current()
+            if attached and output:
+                # SaveAs on an attached document would rebind the user's live
+                # document to the new path; save_copy avoids that (WPS
+                # Writer/Presentation SaveCopyAs is broken — see _base.py).
+                saved_path = composer.save_copy(output)
+            else:
+                saved_path = composer.save(output) if output else composer.save_current()
             pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
         after = composer.inspect_document() if inspect_after else None
         return {

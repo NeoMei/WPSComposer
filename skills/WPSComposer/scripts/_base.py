@@ -6,6 +6,7 @@ WriterComposer, SheetComposer, and SlideComposer inherit from this.
 from __future__ import annotations
 
 import os
+import time
 
 from ._dispatch import _require, _dispatch, _safe_quit, _abs
 
@@ -77,11 +78,25 @@ class BaseComposer:
     def __enter__(self):
         if self._doc is not None:
             return self
-        app = self._open()
-        if self._path:
-            self._doc = self._open_document(app, self._path, self._read_only)
-        else:
-            self._doc = self._create_doc(app)
+        last = None
+        for attempt in range(3):
+            app = self._open()
+            try:
+                if self._path:
+                    self._doc = self._open_document(app, self._path, self._read_only)
+                else:
+                    self._doc = self._create_doc(app)
+                break
+            except AttributeError as exc:
+                # ponytail: WPS's single-process model occasionally hands back a
+                # COM object whose collection property (Documents/Presentations/
+                # Workbooks) is not ready yet — re-dispatch and retry.
+                last = exc
+                _safe_quit(self._app)
+                self._app = None
+                if attempt == 2:
+                    raise last
+                time.sleep(0.6)
         self._owns_doc = True
         return self
 
@@ -181,8 +196,29 @@ class BaseComposer:
         return p
 
     def save_copy(self, path, fmt=None):
-        """Save to another path while keeping the session available."""
-        return self.save(path, fmt)
+        """Save a copy to *path* WITHOUT rebinding the document.
+
+        Prefers the host's ``SaveCopyAs``. WPS Writer/Presentation lack a
+        working one, so the fallback is ``SaveAs(path)`` followed by
+        ``SaveAs(original)`` — both files receive the current content and the
+        live document stays bound to its original path.
+        """
+        p = _abs(path)
+        try:
+            self._doc.SaveCopyAs(p)
+            return p
+        except Exception:
+            pass
+        current = self._doc.FullName
+        save_fmt = fmt
+        if save_fmt is None:
+            try:
+                save_fmt = self._doc.SaveFormat
+            except Exception:
+                save_fmt = self._native_fmt
+        self.save(p, save_fmt)
+        self._doc.SaveAs(current, save_fmt)
+        return p
 
     # ---- properties ----
 

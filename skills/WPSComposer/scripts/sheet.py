@@ -295,7 +295,7 @@ class SheetComposer(BaseComposer):
             shape_count = int(safe_get(ws.Shapes, "Count", 0) or 0)
             for shape_index in range(1, shape_count + 1):
                 shape = ws.Shapes(shape_index)
-                # WINDOWS-VERIFY: shape.Id is a stable COM integer; prefer the
+                # shape.Id is a stable COM integer; prefer the
                 # @id form in the snapshot id; positional shape_index kept.
                 shape_id = safe_get(shape, "Id")
                 element_id = (
@@ -388,7 +388,7 @@ class SheetComposer(BaseComposer):
 
         match = re.fullmatch(r"sheet:(\d+)/shape:@id=(\d+)", target)
         if match:
-            # WINDOWS-VERIFY: resolve a stable shape.Id; merge_results body is
+            # Resolve a stable shape.Id; merge_results body is
             # shared with the positional shape branch.
             shape = self._find_shape_in_sheet(
                 int(match.group(1)), shape_id=int(match.group(2))
@@ -401,7 +401,7 @@ class SheetComposer(BaseComposer):
 
         match = re.fullmatch(r"sheet:(\d+)/shape:@name=(.+)", target)
         if match:
-            # WINDOWS-VERIFY: resolve a shape by Name.
+            # Resolve a shape by Name.
             shape = self._find_shape_in_sheet(
                 int(match.group(1)), shape_name=match.group(2)
             )
@@ -472,8 +472,7 @@ class SheetComposer(BaseComposer):
 
     def _find_shape_in_sheet(self, sheet_index, *, shape_id=None, shape_name=None):
         """Return the first shape on ``Worksheets(sheet_index)`` whose COM
-        ``Id`` or ``Name`` matches, or ``None``. WINDOWS-VERIFY: confirm the
-        readback values match what inspect emitted."""
+        ``Id`` or ``Name`` matches, or ``None``."""
         try:
             shapes = self._doc.Worksheets(sheet_index).Shapes
         except Exception:
@@ -492,7 +491,7 @@ class SheetComposer(BaseComposer):
 
     # ------------------------------------------------------------------
     # Structural verbs (insert / remove / move / clone).
-    # WINDOWS-VERIFY: all COM below. Standard Excel/WPS primitives:
+    # Standard Excel/WPS primitives:
     # Rows/Cols.Insert & .Delete, Cut+Insert for move, Copy+Insert for clone,
     # Worksheets.Add/Copy/Move for sheets, ChartObjects.Delete for charts.
     # Returned "path" is best-effort positional.
@@ -517,7 +516,7 @@ class SheetComposer(BaseComposer):
 
     def _row_or_col_from_target(self, target):
         """Return (sheet_index, 'row'|'column'|None, index) for a sheet/cell/
-        range target. WINDOWS-VERIFY."""
+        range target."""
         target = target or ""
         match = re.fullmatch(r"sheet:(\d+)(?:/(cell|range):([^\s]+))?", target)
         if not match:
@@ -540,6 +539,15 @@ class SheetComposer(BaseComposer):
         return first + used_count + 1
 
     def _insert_element(self, parent, etype, props, position):
+        if etype == "sheet":
+            # Whole-workbook insert: no parent target required.
+            new_ws = self._doc.Worksheets.Add()
+            name = props.get("name")
+            if name:
+                safe_set(new_ws, "Name", str(name))
+            return {"type": "sheet", "path": f"sheet:{int(new_ws.Index)}"}
+        if not parent:
+            raise ValueError(f"Sheet {etype} insert requires parent='sheet:N'")
         sheet_index, anchor_row, anchor_col = self._row_or_col_from_target(parent)
         ws = self._doc.Worksheets(sheet_index)
         used = ws.UsedRange
@@ -550,7 +558,7 @@ class SheetComposer(BaseComposer):
         if etype == "row":
             target_row = self._resolve_insert_index(
                 position, anchor_row, used_rows, first_row)
-            ws.Rows(target_row).Insert(0)  # xlShiftDown
+            ws.Rows(target_row).Insert(-4121)  # xlShiftDown
             values = props.get("values")
             if values:
                 for offset, value in enumerate(values):
@@ -560,25 +568,18 @@ class SheetComposer(BaseComposer):
         if etype == "column":
             target_col = self._resolve_insert_index(
                 position, anchor_col, used_cols, first_col)
-            ws.Columns(target_col).Insert(1)  # xlShiftToRight
+            ws.Columns(target_col).Insert(-4161)  # xlShiftToRight
             values = props.get("values")
             if values:
                 for offset, value in enumerate(values):
                     safe_set(ws.Cells(offset + 1, target_col), "Value", value)
             return {"type": "column", "path": f"sheet:{sheet_index}",
                     "column": target_col}
-        if etype == "sheet":
-            new_ws = self._doc.Worksheets.Add()
-            name = props.get("name")
-            if name:
-                safe_set(new_ws, "Name", str(name))
-            sheet_count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
-            return {"type": "sheet", "path": f"sheet:{sheet_count}"}
         raise ValueError(f"Unsupported Sheet insert type: {etype!r}")
 
     def _remove_element(self, target, *, axis="row"):
         """Remove a shape, chart, worksheet, or the row/column of a cell/range
-        target (selected by ``axis``). WINDOWS-VERIFY."""
+        target (selected by ``axis``)."""
         target = target or ""
         match = re.fullmatch(r"sheet:(\d+)/shape:(.+)", target)
         if match:
@@ -588,12 +589,12 @@ class SheetComposer(BaseComposer):
                 raise ValueError(f"Unsupported Sheet target: {target}")
             shape.Delete()
             return {"removed": target}
-        match = re.fullmatch(r"sheet:(\d+)/chart:(.+)", target)
+        match = re.fullmatch(r"sheet:(\d+)/chart:(\d+)", target)
         if match:
             sheet_index = int(match.group(1))
-            ref = match.group(2)
+            ref = int(match.group(2))
             try:
-                self._doc.Worksheets(sheet_index).ChartObjects(int(ref)).Delete()
+                self._doc.Worksheets(sheet_index).ChartObjects(ref).Delete()
             except Exception:
                 raise ValueError(f"Unsupported Sheet target: {target}")
             return {"removed": target}
@@ -635,7 +636,7 @@ class SheetComposer(BaseComposer):
 
     def _move_element(self, target, to, *, axis="row"):
         """Move a row, column, or worksheet. For cell/range targets, ``axis``
-        selects row vs column. WINDOWS-VERIFY."""
+        selects row vs column."""
         target = target or ""
         if re.fullmatch(r"sheet:(\d+)", target) and "/" not in target:
             return self._move_sheet(int(target.split(":")[1]), to)
@@ -648,29 +649,31 @@ class SheetComposer(BaseComposer):
             if not col:
                 raise ValueError(f"Unsupported Sheet target: {target}")
             ws.Columns(col).Cut()
-            ws.Columns(dest).Insert(1)  # xlShiftToRight
+            ws.Columns(dest).Insert(-4161)  # xlShiftToRight
             return {"type": "column", "moved": True, "from": target,
                     "column": dest}
         if not row:
             raise ValueError(f"Unsupported Sheet target: {target}")
         ws.Rows(row).Cut()
-        ws.Rows(dest).Insert(0)  # xlShiftDown
+        ws.Rows(dest).Insert(-4121)  # xlShiftDown
         return {"type": "row", "moved": True, "from": target, "row": dest}
 
     def _move_sheet(self, sheet_index, to):
         ws = self._doc.Worksheets(sheet_index)
+        # WPS ET silently ignores keyword Before=/After= on Move/Copy (falls
+        # back to "new workbook"), so always call positionally: (Before, After).
         if isinstance(to, dict) and "before" in to:
-            ws.Move(Before=self._doc.Worksheets(int(to["before"])))
+            ws.Move(self._doc.Worksheets(int(to["before"])))
         elif isinstance(to, dict) and "after" in to:
-            ws.Move(After=self._doc.Worksheets(int(to["after"])))
+            ws.Move(None, self._doc.Worksheets(int(to["after"])))
         else:
             # 'end': move after the last sheet
             count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
-            ws.Move(After=self._doc.Worksheets(count))
+            ws.Move(None, self._doc.Worksheets(count))
         return {"type": "sheet", "moved": True, "from": f"sheet:{sheet_index}"}
 
     def _clone_element(self, target, to):
-        """Clone a row or worksheet. WINDOWS-VERIFY."""
+        """Clone a row or worksheet."""
         target = target or ""
         if re.fullmatch(r"sheet:(\d+)", target) and "/" not in target:
             return self._clone_sheet(int(target.split(":")[1]), to)
@@ -681,18 +684,19 @@ class SheetComposer(BaseComposer):
                 raise ValueError("Sheet row clone requires to={'index': N}")
             dest = int(to["index"])
             ws.Rows(row).Copy()
-            ws.Rows(dest).Insert(0)
+            ws.Rows(dest).Insert(-4121)  # xlShiftDown
             return {"type": "row", "cloned": True, "from": target, "row": dest}
         raise ValueError(f"Unsupported Sheet clone target: {target}")
 
     def _clone_sheet(self, sheet_index, to):
         ws = self._doc.Worksheets(sheet_index)
+        # Positional (Before, After) — see _move_sheet for why.
         if isinstance(to, dict) and "after" in to:
-            ws.Copy(After=self._doc.Worksheets(int(to["after"])))
+            ws.Copy(None, self._doc.Worksheets(int(to["after"])))
         elif isinstance(to, dict) and "before" in to:
-            ws.Copy(Before=self._doc.Worksheets(int(to["before"])))
+            ws.Copy(self._doc.Worksheets(int(to["before"])))
         else:
-            ws.Copy(After=ws)  # clone in place (right after source)
+            ws.Copy(None, ws)  # clone in place (right after source)
         count = int(safe_get(self._doc.Worksheets, "Count", 0) or 0)
         return {"type": "sheet", "cloned": True, "from": f"sheet:{sheet_index}",
                 "path": f"sheet:{count}"}

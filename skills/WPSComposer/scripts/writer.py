@@ -54,27 +54,48 @@ _LINE_SPACING_RULES = {
 # Stable paragraph IDs (w14:paraId)
 # ---------------------------------------------------------------------------
 # Pure helpers, unit-tested without COM. COM-side wiring
-# (WriterComposer._read_paraid_map / _paragraph_index_for_paraid) is marked
-# WINDOWS-VERIFY below.
+# (WriterComposer._read_paraid_map / _paragraph_index_for_paraid).
 
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _W14_NS = "http://schemas.microsoft.com/office/word/2010/wordml"
 _PARAID_ATTR = "{%s}paraId" % _W14_NS
 
 
-def _extract_paraids(document_xml_bytes):
-    """Return the ``w14:paraId`` of every ``<w:p>`` in document order.
+def _walk_story(element, out):
+    """Append (paraId | None) entries aligned to ``Document.Paragraphs``.
 
-    The returned list is 0-based and aligned to ``doc.Paragraphs(index)``:
-    element 0 corresponds to ``Paragraphs(1)``. Entries are ``None`` when the
-    paragraph has no ``w14:paraId`` (older docs, or paragraphs Word did not
-    tag). This is a pure transform of the ``word/document.xml`` part and does
-    not touch COM.
+    Main-story ``<w:p>`` elements contribute their ``w14:paraId`` (or ``None``
+    when untagged). Each ``<w:tr>`` contributes one extra ``None`` AFTER its
+    cells: Word's ``Paragraphs`` collection counts the end-of-row mark as a
+    paragraph, but the mark has no ``<w:p>`` in the XML. Text-box stories are
+    pruned (not counted by ``Document.Paragraphs``).
+    """
+    if element.tag == "{%s}txbxContent" % _W_NS:
+        return
+    if element.tag == "{%s}p" % _W_NS:
+        out.append(element.get(_PARAID_ATTR))
+        return
+    if element.tag == "{%s}tr" % _W_NS:
+        for child in element:
+            _walk_story(child, out)
+        out.append(None)  # end-of-row mark: counted by COM, absent from XML
+        return
+    for child in element:
+        _walk_story(child, out)
+
+
+def _extract_paraids(document_xml_bytes):
+    """Return the ``w14:paraId`` list aligned to ``doc.Paragraphs(index)``.
+
+    The returned list is 0-based: element 0 corresponds to ``Paragraphs(1)``.
+    Entries are ``None`` when the paragraph has no ``w14:paraId`` (older docs,
+    paragraphs Word did not tag) or is a table end-of-row mark (no ``<w:p>``
+    in the XML). This is a pure transform of the ``word/document.xml`` part
+    and does not touch COM.
     """
     root = ElementTree.fromstring(document_xml_bytes)
     paraids = []
-    for paragraph in root.iter("{%s}p" % _W_NS):
-        paraids.append(paragraph.get(_PARAID_ATTR))
+    _walk_story(root, paraids)
     return paraids
 
 
@@ -1084,7 +1105,7 @@ class WriterComposer(BaseComposer):
         section_count = int(safe_get(doc.Sections, "Count", 0) or 0)
         limit = max_elements if max_elements is not None else float("inf")
 
-        # WINDOWS-VERIFY: stable paragraph ids read from the saved .docx on
+        # Stable paragraph ids read from the saved .docx on
         # disk. Only present for saved docs; unsaved/never-saved docs fall
         # back to purely positional ids. The list is 0-based, aligned to
         # Paragraphs(1..N); a count mismatch falls back to positional too.
@@ -1200,7 +1221,7 @@ class WriterComposer(BaseComposer):
 
         match = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target)
         if match:
-            # WINDOWS-VERIFY: resolve a stable paraId back to a positional
+            # Resolve a stable paraId back to a positional
             # Paragraphs(index) by re-reading the docx paraid list. Raises
             # ValueError (-> invalid_target) when the id is not present.
             index = self._paragraph_index_for_paraid(match.group(1))
@@ -1211,7 +1232,11 @@ class WriterComposer(BaseComposer):
 
         match = re.fullmatch(r"paragraph:(\d+)", target)
         if match:
-            rng = self._doc.Paragraphs(int(match.group(1))).Range
+            index = int(match.group(1))
+            count = int(safe_get(self._doc.Paragraphs, "Count", 0) or 0)
+            if not 1 <= index <= count:
+                raise ValueError(f"Unsupported Writer target: {target}")
+            rng = self._doc.Paragraphs(index).Range
             return self._patch_range(rng, text, font, paragraph, style)
 
         match = re.fullmatch(r"range:(\d+)-(\d+)", target)
@@ -1221,8 +1246,14 @@ class WriterComposer(BaseComposer):
 
         match = re.fullmatch(r"table:(\d+)/cell:(\d+),(\d+)", target)
         if match:
-            table = self._doc.Tables(int(match.group(1)))
-            cell = table.Cell(int(match.group(2)), int(match.group(3)))
+            tindex = int(match.group(1))
+            if not 1 <= tindex <= int(safe_get(self._doc.Tables, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            table = self._doc.Tables(tindex)
+            try:
+                cell = table.Cell(int(match.group(2)), int(match.group(3)))
+            except Exception:
+                raise ValueError(f"Unsupported Writer target: {target}")
             result = self._patch_range(cell.Range, text, font, paragraph, style)
             if vertical_alignment is not None:
                 ok = safe_set(cell, "VerticalAlignment", vertical_alignment)
@@ -1237,7 +1268,10 @@ class WriterComposer(BaseComposer):
 
         match = re.fullmatch(r"shape:(\d+)", target)
         if match:
-            shape = self._doc.Shapes(int(match.group(1)))
+            index = int(match.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.Shapes, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            shape = self._doc.Shapes(index)
             results = [
                 self._prefix_result(apply_geometry(shape, geometry), "geometry"),
                 self._prefix_result(apply_fill(shape.Fill, fill), "fill"),
@@ -1285,10 +1319,9 @@ class WriterComposer(BaseComposer):
         raise ValueError(f"Unsupported Writer target: {target}")
 
     # ------------------------------------------------------------------
-    # Stable paragraph-id support (w14:paraId). COM-adjacent but isolated.
-    # WINDOWS-VERIFY: the only assumption is that the document-order walk of
-    # <w:p> in word/document.xml matches doc.Paragraphs(1..N). Confirm with
-    # len(paraids) == doc.Paragraphs.Count on a few real docs.
+    # Stable paragraph-id support (w14:paraId). The alignment assumption:
+    # the main-story walk of <w:p> in word/document.xml (text-box story
+    # pruned, one None per table row-end mark) matches doc.Paragraphs(1..N).
     # ------------------------------------------------------------------
     def _read_paraid_map(self, expected_count):
         """Return the paraId list for the current document, or ``[]`` if it
@@ -1326,7 +1359,7 @@ class WriterComposer(BaseComposer):
 
     # ------------------------------------------------------------------
     # Structural verbs (insert / remove / move / clone).
-    # WINDOWS-VERIFY: all COM below. Uses standard Word/WPS primitives
+    # Uses standard Word/WPS primitives
     # (Range.InsertAfter / .Delete / .Cut / .Copy / .Paste). Returned
     # "path" is a best-effort POSITIONAL id (re-inspect for a stable
     # @paraId after a save). move/clone use clipboard (Cut/Copy + Paste).
@@ -1348,10 +1381,13 @@ class WriterComposer(BaseComposer):
 
     def _paragraph_range_for_target(self, target):
         """Resolve a paragraph target (positional or @paraId) to a COM Range,
-        or raise ValueError. WINDOWS-VERIFY."""
+        or raise ValueError."""
         match = re.fullmatch(r"paragraph:(\d+)", target or "")
         if match:
-            return self._doc.Paragraphs(int(match.group(1))).Range
+            index = int(match.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.Paragraphs, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return self._doc.Paragraphs(index).Range
         match = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target or "")
         if match:
             index = self._paragraph_index_for_paraid(match.group(1))
@@ -1363,15 +1399,15 @@ class WriterComposer(BaseComposer):
     def _resolve_insert_range(self, position):
         """Return a COM Range at which to insert (collapsed appropriately).
         Supports 'end', 'start', {'after': ptarget}, {'before': ptarget},
-        {'index': N}. WINDOWS-VERIFY: whole-doc range access (doc.Range vs
-        doc.Content vs doc.Range(0,0)) confirmed on Windows — see checklist G."""
+        {'index': N}."""
         doc = self._doc
         if position in (None, "end"):
-            rng = doc.Range
+            rng = doc.Content
             rng.Collapse(0)  # wdCollapseEnd
             return rng
         if position == "start":
-            rng = doc.Range(0, 0)
+            rng = doc.Content
+            rng.Collapse(1)  # wdCollapseStart
             return rng
         if isinstance(position, dict):
             if "after" in position:
@@ -1383,16 +1419,13 @@ class WriterComposer(BaseComposer):
                 rng.Collapse(1)  # wdCollapseStart
                 return rng
             if "index" in position:
-                return self._doc.Paragraphs(int(position["index"])).Range
+                index = int(position["index"])
+                if not 1 <= index <= int(safe_get(doc.Paragraphs, "Count", 0) or 0):
+                    raise ValueError(f"Unsupported Writer insert position: {position!r}")
+                return doc.Paragraphs(index).Range
         raise ValueError(f"Unsupported Writer insert position: {position!r}")
 
     def _insert_element(self, parent, etype, props, position):
-        # WINDOWS-VERIFY: two COM-logic items deferred to Windows (see
-        # checklist G "Known COM-logic items"): (1) bare `doc.Range` access for
-        # the 'end'/'start' positions may need to be `doc.Content`; (2) heading
-        # style is applied AFTER the positional early-return, so a heading
-        # inserted at the default 'end' position currently skips the Heading
-        # style. Resolve both against a live WPS host.
         doc = self._doc
         if etype == "page_break":
             rng = self._resolve_insert_range(position)
@@ -1402,18 +1435,22 @@ class WriterComposer(BaseComposer):
             text = str(props.get("text", ""))
             rng = self._resolve_insert_range(position)
             rng.InsertAfter(text + "\r")
+            if etype == "heading":
+                # InsertAfter expanded rng over the new text, so the style
+                # applies to the inserted paragraph. Use the locale-independent
+                # built-in style id (wdStyleHeading1..9 = -2..-10): the English
+                # name "Heading N" does not exist in localized WPS builds.
+                level = min(max(int(props.get("level", 1)), 1), 9)
+                try:
+                    rng.Style = self._doc.Styles(-1 - level)
+                except Exception:
+                    pass
             try:
                 new_index = int(safe_get(doc.Paragraphs, "Count", 0) or 0)
                 if position in (None, "end") and new_index:
                     return {"type": etype, "path": f"paragraph:{new_index}"}
             except Exception:
                 pass
-            if etype == "heading":
-                level = int(props.get("level", 1))
-                try:
-                    rng.Style = self._doc.Styles(f"Heading {min(max(level, 1), 9)}")
-                except Exception:
-                    pass
             return {"type": etype}
         if etype == "table":
             rng = self._resolve_insert_range(position)
@@ -1432,9 +1469,9 @@ class WriterComposer(BaseComposer):
         if etype == "image":
             path = str(props.get("path", ""))
             rng = self._resolve_insert_range(position)
-            shape = doc.InlineShapes.AddPicture(path, False, True, rng)
+            doc.InlineShapes.AddPicture(path, False, True, rng)
             shape_index = int(safe_get(doc.InlineShapes, "Count", 0) or 0)
-            return {"type": "image", "path": f"shape:{shape_index}"}
+            return {"type": "image", "path": f"inline_shape:{shape_index}"}
         if etype == "textbox":
             left = float(props.get("left", 100))
             top = float(props.get("top", 100))
@@ -1452,12 +1489,15 @@ class WriterComposer(BaseComposer):
 
     def _structural_target(self, target):
         """Resolve a structural target to (kind, object). kind is 'paragraph',
-        'shape', or 'table'; object is the COM Range/Shape/Table. Raises
-        ValueError on unrecognised targets. WINDOWS-VERIFY."""
+        'shape', 'inline_shape', or 'table'; object is the COM Range/Shape.
+        Raises ValueError on unrecognised targets."""
         target = target or ""
         m = re.fullmatch(r"paragraph:(\d+)", target)
         if m:
-            return "paragraph", self._doc.Paragraphs(int(m.group(1))).Range
+            index = int(m.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.Paragraphs, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return "paragraph", self._doc.Paragraphs(index).Range
         m = re.fullmatch(r"paragraph:@paraId=([0-9A-Fa-f]+)", target)
         if m:
             idx = self._paragraph_index_for_paraid(m.group(1))
@@ -1466,10 +1506,22 @@ class WriterComposer(BaseComposer):
             return "paragraph", self._doc.Paragraphs(idx).Range
         m = re.fullmatch(r"shape:(\d+)", target)
         if m:
-            return "shape", self._doc.Shapes(int(m.group(1)))
+            index = int(m.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.Shapes, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return "shape", self._doc.Shapes(index)
+        m = re.fullmatch(r"inline_shape:(\d+)", target)
+        if m:
+            index = int(m.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.InlineShapes, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return "inline_shape", self._doc.InlineShapes(index).Range
         m = re.fullmatch(r"table:(\d+)", target)
         if m:
-            return "table", self._doc.Tables(int(m.group(1))).Range
+            index = int(m.group(1))
+            if not 1 <= index <= int(safe_get(self._doc.Tables, "Count", 0) or 0):
+                raise ValueError(f"Unsupported Writer target: {target}")
+            return "table", self._doc.Tables(index)
         raise ValueError(f"Unsupported Writer target: {target}")
 
     def _remove_element(self, target):
@@ -1479,13 +1531,31 @@ class WriterComposer(BaseComposer):
 
     def _move_or_clone(self, target, to, *, cut):
         """Move (cut=True) or clone (cut=False) a paragraph/table/shape to *to*
-        via the clipboard. WINDOWS-VERIFY: confirm Cut/Copy/Paste preserves
-        formatting under headless WPS; shapes paste via Range.Paste()."""
+        via the clipboard.
+
+        WPS quirks handled here (verified on Windows):
+        * ``Table.Range.Cut()`` is a silent no-op (paste then duplicates) —
+          move is Copy + explicit ``Table.Delete()``.
+        * ``Shape.Cut()``/``Copy()`` raise ``<unknown>.Cut`` — go through
+          ``Select()`` + ``Selection.Cut()/Copy()`` instead.
+        """
         kind, obj = self._structural_target(target)
-        if cut:
-            obj.Cut()
+        if kind == "shape":
+            obj.Select()
+            selection = self._app.Selection
+            if cut:
+                selection.Cut()
+            else:
+                selection.Copy()
+        elif kind == "table":
+            obj.Range.Copy()
+            if cut:
+                obj.Delete()
         else:
-            obj.Copy()
+            if cut:
+                obj.Cut()
+            else:
+                obj.Copy()
         dest = self._resolve_insert_range(to)
         dest.Paste()
         return {"type": kind, "moved": cut, "from": target}

@@ -1,10 +1,23 @@
 import json
+import os
 from pathlib import Path
 import subprocess
+import tempfile
 
 import pytest
 
 ROOT = Path("macos/wps-jsapi-probe/addin")
+
+
+def _run_node_script(script: str) -> None:
+    # ponytail: temp file instead of `node -e` — Windows caps command lines at 8191 chars
+    fd, name = tempfile.mkstemp(suffix=".js")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(script)
+        subprocess.run(["node", name], check=True, capture_output=True, text=True)
+    finally:
+        os.unlink(name)
 
 
 def test_manifest_and_ribbon_are_minimal_and_load_probe():
@@ -148,7 +161,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }}());
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 @pytest.mark.parametrize(
@@ -405,7 +418,7 @@ eval(fs.readFileSync({path}, "utf8"));
   {component_assertions}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def _generation_failure_application(component: str, stage: str) -> str:
@@ -468,7 +481,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})();
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 @pytest.mark.parametrize(
@@ -506,7 +519,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 WRITER_OPERATION_NAMES = [
@@ -751,7 +764,7 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.equal(state.fieldAdds, 1); assert.equal(state.fieldUpdates, 1);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 @pytest.mark.parametrize(
@@ -819,7 +832,7 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.equal(Application.DisplayAlerts, 7);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def test_writer_generation_rejects_missing_dispatch_handler_before_open():
@@ -851,7 +864,7 @@ eval(source);
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 @pytest.mark.parametrize(
@@ -888,7 +901,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 @pytest.mark.parametrize(
@@ -960,7 +973,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def test_writer_generation_rejects_extra_plan_fields_before_open():
@@ -988,7 +1001,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def test_writer_generation_enforces_utf8_plan_byte_limit_before_open():
@@ -1017,7 +1030,7 @@ eval(fs.readFileSync({path}, "utf8"));
   }}
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 SHEET_OPERATION_NAMES = [
@@ -1039,7 +1052,7 @@ const fs = require("fs");
 global.window = {{}};
 {body}
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def test_sheet_generation_uses_a_literal_complete_operation_dispatch_table():
@@ -1483,7 +1496,7 @@ const fs = require("fs");
 global.window = {{}};
 {body}
 """
-    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+    _run_node_script(script)
 
 
 def test_presentation_generation_uses_a_literal_complete_operation_dispatch_table():

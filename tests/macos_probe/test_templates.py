@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import shutil
 import stat
@@ -20,6 +21,8 @@ REAL_WRITER_FIXTURE = (
 )
 
 
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode assertions")
 def test_clone_template_verifies_digest_and_creates_private_copy(tmp_path: Path):
     source = tmp_path / "probe/node_modules/wpsjs/src/lib/res/wpsDemo.docx"
     source.parent.mkdir(parents=True)

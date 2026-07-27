@@ -142,7 +142,9 @@ Caveat for the `path=None` (attach-active) workflow: atomic mode guarantees
 **no disk write** on failure, but the live WPS/Office window may still show
 the partially-applied in-memory edits, because COM formatting calls cannot be
 selectively rolled back without an undo stack. After a failed atomic `edit()`
-on the active document, re-inspect (`inspect()`) before retrying.
+on the active document, re-inspect (`inspect()`) before retrying. With
+`output=` in attach mode the live document is saved in place and *output*
+receives a file copy — `SaveAs` would rebind the live window to the new path.
 
 ### Address grammar
 
@@ -167,6 +169,9 @@ an `inspect()` snapshot and emits a patch list that reproduces the captured
 formatting on another document — the WpsComposer analogue of officecli's
 `dump` → `batch`, scoped to formatting (full structural cloning is
 `generate()`'s job). Only non-empty requested dimensions are emitted.
+Stable ids (`@paraId` / `@id` / `@name`) are document-specific, so emitted
+targets are rewritten to their positional form (`paragraph:N`, `.../shape:N`)
+via the element's index; fields the host reported as `None` are dropped.
 
 ```python
 from skills.WPSComposer import inspect, snapshot_to_patches, edit
@@ -234,7 +239,9 @@ edit("deck.pptx", output="deck2.pptx", ops=[
 **Positional-id drift caveat:** structural verbs shift sibling indices. Address
 subsequent ops by stable id (`@paraId` / `@id`) or re-`inspect()` between
 batches. Returned `path` values for inserted/cloned elements are best-effort
-positional; re-inspect for a stable id after a save.
+positional; re-inspect for a stable id after a save. Writer `image` inserts
+return an `inline_shape:N` path (InlineShapes are a separate collection from
+floating `shape:N`); it resolves for `remove` / `move` / `clone`.
 
 ### Recognized input formats
 

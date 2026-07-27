@@ -580,7 +580,7 @@ class SlideComposer(BaseComposer):
 
         match = re.fullmatch(r"slide:(\d+)/shape:@id=(\d+)", target)
         if match:
-            # WINDOWS-VERIFY: resolve a stable Shape.Id to the shape object.
+            # Resolve a stable Shape.Id to the shape object.
             shape = self._find_shape_in_slide(
                 int(match.group(1)), shape_id=int(match.group(2))
             )
@@ -593,7 +593,7 @@ class SlideComposer(BaseComposer):
 
         match = re.fullmatch(r"slide:(\d+)/shape:@name=(.+)", target)
         if match:
-            # WINDOWS-VERIFY: resolve a shape by Name.
+            # Resolve a shape by Name.
             shape = self._find_shape_in_slide(
                 int(match.group(1)), shape_name=match.group(2)
             )
@@ -628,8 +628,7 @@ class SlideComposer(BaseComposer):
 
     def _find_shape_in_slide(self, slide_index, *, shape_id=None, shape_name=None):
         """Return the first shape on ``Slides(slide_index)`` whose COM ``Id``
-        or ``Name`` matches, or ``None``. WINDOWS-VERIFY: confirm shape.Id and
-        shape.Name readback values match what inspect emitted."""
+        or ``Name`` matches, or ``None``."""
         try:
             shapes = self._doc.Slides(slide_index).Shapes
         except Exception:
@@ -648,7 +647,7 @@ class SlideComposer(BaseComposer):
 
     # ------------------------------------------------------------------
     # Structural verbs (insert / remove / move / clone).
-    # WINDOWS-VERIFY: all COM below. PpSlideLayout blank=12; msoTextOrientation
+    # PpSlideLayout blank=12; msoTextOrientation
     # horizontal=1. MoveTo/Duplicate are standard on Slides; shape Delete is
     # standard. Returned "path" is best-effort positional (re-inspect for a
     # stable @id).
@@ -682,7 +681,7 @@ class SlideComposer(BaseComposer):
     def _resolve_slide_position(self, position, count):
         """Map a position spec to a 1-based slide index. 'end' -> count+1,
         'start' -> 1, {'after': slide:N} -> N+1, {'before': ...} -> N,
-        {'index': N} -> N. WINDOWS-VERIFY."""
+        {'index': N} -> N."""
         if position in (None, "end"):
             return count + 1
         if position == "start":
@@ -705,7 +704,10 @@ class SlideComposer(BaseComposer):
             slide = pres.Slides.Add(index, layout)
             return {"type": "slide", "path": f"slide:{index}"}
         if etype in ("textbox", "shape"):
-            slide_index = self._slide_index_from_target(parent or "")
+            if not parent:
+                raise ValueError(
+                    f"Slide {etype} insert requires parent='slide:N'")
+            slide_index = self._slide_index_from_target(parent)
             slide = pres.Slides(slide_index)
             left = float(props.get("left", 100))
             top = float(props.get("top", 100))
@@ -721,12 +723,15 @@ class SlideComposer(BaseComposer):
             return {"type": etype,
                     "path": f"slide:{slide_index}/shape:{shape_count}"}
         if etype == "image":
-            slide_index = self._slide_index_from_target(parent or "")
+            if not parent:
+                raise ValueError("Slide image insert requires parent='slide:N'")
+            slide_index = self._slide_index_from_target(parent)
             slide = pres.Slides(slide_index)
             left = float(props.get("left", 100))
             top = float(props.get("top", 100))
-            width = props.get("width")
-            height = props.get("height")
+            # -1 keeps the picture's native dimensions.
+            width = float(props.get("width") or -1)
+            height = float(props.get("height") or -1)
             shape = slide.Shapes.AddPicture(
                 str(props.get("path", "")), False, True, left, top, width, height,
             )
@@ -752,7 +757,7 @@ class SlideComposer(BaseComposer):
 
     def _resolve_shape(self, slide_index, shape_ref):
         """shape_ref is the part after 'slide:N/shape:' -- positional N,
-        '@id=K', or '@name=NAME'. WINDOWS-VERIFY."""
+        '@id=K', or '@name=NAME'."""
         if shape_ref.startswith("@id="):
             return self._find_shape_in_slide(slide_index, shape_id=int(shape_ref[4:]))
         if shape_ref.startswith("@name="):
@@ -769,18 +774,43 @@ class SlideComposer(BaseComposer):
         slide = self._doc.Slides(index)
         count = int(safe_get(self._doc.Slides, "Count", 0) or 0)
         new_index = self._resolve_slide_position(to, count)
-        slide.MoveTo(new_index)
+        # Anchors resolve against pre-move numbering: when the source sits
+        # before the anchor, removing it shifts the anchor down by one.
+        if isinstance(to, dict):
+            anchor_ref = to.get("after") or to.get("before")
+            if anchor_ref is not None and index < self._slide_index_from_target(anchor_ref):
+                new_index -= 1
+        # new_index is the desired FINAL position (1..count).
+        new_index = max(1, min(new_index, count))
+        # WPS MoveTo(p) inserts BEFORE the slide at pre-move index p (source
+        # still counted); p = count+1 appends to the end. Convert:
+        if new_index > index:
+            new_index += 1
+        if new_index != index:
+            slide.MoveTo(new_index)
         return {"type": "slide", "moved": True, "from": target}
 
     def _clone_slide(self, target, to):
         index = self._slide_index_from_target(target)
         self._doc.Slides(index).Duplicate()
+        # Duplicate lands directly after the source; the dispatcher defaults
+        # `to` to 'end', so the dup is moved unless it already is last.
+        if to is not None:
+            count = int(safe_get(self._doc.Slides, "Count", 0) or 0)
+            # count already includes the duplicate; clamp 'end' (count+1) to
+            # the desired FINAL position (1..count).
+            dup_index = index + 1
+            new_index = max(1, min(self._resolve_slide_position(to, count), count))
+            # WPS MoveTo(p) inserts BEFORE pre-move index p; count+1 appends.
+            if new_index > dup_index:
+                new_index += 1
+            if new_index != dup_index:
+                self._doc.Slides(dup_index).MoveTo(new_index)
         return {"type": "slide", "cloned": True, "from": target}
 
     @staticmethod
     def _split_shape_target(target):
-        """Split 'slide:N/shape:REF' into (slide_index, shape_ref).
-        WINDOWS-VERIFY."""
+        """Split 'slide:N/shape:REF' into (slide_index, shape_ref)."""
         match = re.fullmatch(r"slide:(\d+)/shape:(.+)", target or "")
         if not match:
             raise ValueError(f"Unsupported Slide target: {target}")
@@ -794,8 +824,7 @@ class SlideComposer(BaseComposer):
         return default_index
 
     def _move_shape(self, target, to):
-        """Move a shape to another slide (or in-place) via Cut + Paste.
-        WINDOWS-VERIFY: confirm clipboard round-trip keeps shape formatting."""
+        """Move a shape to another slide (or in-place) via Cut + Paste."""
         slide_index, shape_ref = self._split_shape_target(target)
         shape = self._resolve_shape(slide_index, shape_ref)
         if shape is None:
@@ -808,7 +837,7 @@ class SlideComposer(BaseComposer):
 
     def _clone_shape(self, target, to):
         """Clone a shape. ``Shape.Duplicate()`` clones in place; to clone onto
-        another slide, Copy + Paste on the destination. WINDOWS-VERIFY."""
+        another slide, Copy + Paste on the destination."""
         slide_index, shape_ref = self._split_shape_target(target)
         shape = self._resolve_shape(slide_index, shape_ref)
         if shape is None:
@@ -823,7 +852,7 @@ class SlideComposer(BaseComposer):
                 "to_slide": dest_index}
 
     def _shape_snapshot(self, shape, slide_index, shape_index, include_text, prefix):
-        # WINDOWS-VERIFY: shape.Id is a stable COM integer; shape.Name is the
+        # shape.Id is a stable COM integer; shape.Name is the
         # editable label. Prefer the @id form in the snapshot id so agents
         # address shapes stably; positional shape_index is kept as fallback.
         shape_id = safe_get(shape, "Id")

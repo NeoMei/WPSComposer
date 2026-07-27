@@ -1,4 +1,5 @@
 import json
+import os
 import signal
 import stat
 from pathlib import Path
@@ -12,6 +13,11 @@ from skills.WPSComposer.scripts.macos_probe.runtime import (
     build_profile,
     find_node,
     read_configured_node,
+)
+
+# ponytail: these tests exercise POSIX-only probe behaviour (fcntl, ps, POSIX perms)
+posix_only = pytest.mark.skipif(
+    os.name != "posix", reason="macOS probe uses POSIX-only runtime facilities"
 )
 
 
@@ -99,6 +105,8 @@ def test_registration_snapshot_removes_probe_created_file(tmp_path: Path):
     assert not (tmp_path / "recovery").exists()
 
 
+
+@posix_only
 def test_find_node_honors_explicit_override(tmp_path: Path):
     node = tmp_path / "node"
     node.write_text("#!/bin/sh\nprintf 'v24.0.0\\n'\n")
@@ -126,6 +134,8 @@ def test_read_configured_node_uses_installer_runtime_file(tmp_path: Path):
     assert read_configured_node(tmp_path) == str(node.resolve())
 
 
+
+@posix_only
 def test_component_activation_uses_a_fresh_wps_instance(tmp_path: Path):
     fixture = tmp_path / "fixture.pptx"
     command = runtime.activation_command(
@@ -144,12 +154,16 @@ def test_owned_wps_pids_only_returns_processes_started_after_snapshot():
     assert runtime.owned_wps_pids({101, 102}, {102, 201, 202}) == {201, 202}
 
 
+
+@posix_only
 def test_default_staging_root_is_inside_wps_container():
     assert str(runtime.WPS_STAGING_ROOT).endswith(
         "Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer"
     )
 
 
+
+@posix_only
 def test_create_staging_session_is_private(tmp_path: Path):
     session = runtime.create_staging_session(tmp_path / "WPSComposer")
     try:
@@ -160,6 +174,8 @@ def test_create_staging_session_is_private(tmp_path: Path):
         session.rmdir()
 
 
+
+@posix_only
 def test_runtime_removes_staging_session_after_success(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
@@ -182,6 +198,8 @@ def test_runtime_removes_staging_session_after_success(
     assert not session.exists()
 
 
+
+@posix_only
 def test_runtime_removes_staging_session_after_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
@@ -206,6 +224,8 @@ def test_runtime_removes_staging_session_after_failure(
     assert not session.exists()
 
 
+
+@posix_only
 def test_runtime_surfaces_staging_cleanup_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
@@ -235,6 +255,8 @@ def test_runtime_surfaces_staging_cleanup_failure(
     original_rmtree(session)
 
 
+
+@posix_only
 def test_runtime_lock_serializes_overlapping_sessions(tmp_path: Path):
     lock_path = tmp_path / "wpscomposer.lock"
 
@@ -244,6 +266,8 @@ def test_runtime_lock_serializes_overlapping_sessions(tmp_path: Path):
                 pass
 
 
+
+@posix_only
 def test_list_wps_pids_only_matches_exact_main_executable(monkeypatch):
     class Result:
         stdout = """\

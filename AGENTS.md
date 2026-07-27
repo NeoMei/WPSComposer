@@ -101,25 +101,12 @@ pwsh ./install.ps1
 - The parser, models, presets, and public package remain importable on macOS and
   Linux without `pywin32`.
 
-## Windows verification handoff (READ FIRST on Windows)
+## Windows verification handoff (completed)
 
-Several features were implemented on macOS but the COM-coupled parts could only
-be **written blind** — they need a live WPS/Office host on Windows to verify
-and fix. **Before any COM work on Windows, read `docs/windows-verification.md`.**
-
-It covers:
-
-- The full checklist (items A–G) with runnable verify scripts.
-- The 33 `# WINDOWS-VERIFY:` markers in `skills/WPSComposer/scripts/` —
-  `grep -rn WINDOWS-VERIFY skills/WPSComposer/scripts/` lists every site.
-- Known COM-logic concerns flagged for Windows (e.g. Writer `doc.Range` vs
-  `doc.Content`, heading-style early-return ordering, clipboard fidelity, shape
-  paste targets, Sheet whole-sheet delete safety).
-
-The macOS-verifiable layer (orchestration: `apply_ops`, `validate_op`,
-`validate_target`, `snapshot_to_patches`, `_extract_paraids`, atomic `edit()`)
-is fully tested (609 passing) and should not need rework — only the COM bodies
-of `inspect_document` / `apply_format_patch` / `apply_structural_op` in
-`writer.py`, `sheet.py`, `slide.py` need verification and fixes against a real
-host. Update `docs/windows-verification.md` (and clear the `WINDOWS-VERIFY`
-markers you resolve) as you go.
+The COM-coupled conversational-edit features (stable-ID addressing, structural
+verbs) were implemented blind on macOS and **verified and fixed on Windows
+(2026-07-27, WPS Office 12.1.0.26899)**. `docs/windows-verification.md`
+records the full checklist (A–G), the bugs found and fixed in the Windows run,
+runnable verification scripts (`fixtures/verify_*.py`), and WPS quirks worth
+knowing (locale-independent style ids, ET's positional-only `Move`/`Copy`,
+headless process leaks).
