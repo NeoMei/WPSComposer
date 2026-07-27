@@ -1,6 +1,6 @@
 ---
 name: WPSComposer
-description: Generate rich-layout DOCX, PPTX, and XLSX documents via WPS Office COM automation. Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx).
+description: 'Generate rich-layout DOCX, PPTX, and XLSX documents via WPS Office COM automation. Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx).'
 ---
 
 # WPS Composer
