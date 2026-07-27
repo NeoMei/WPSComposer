@@ -1,6 +1,7 @@
 # WPSComposer
 
-> 一个 Codex 插件：通过 WPS Office 自动化，让 AI agent 能够**生成**和**编辑**高质量排版的 DOCX / PPTX / XLSX / PDF 文档。
+> 一个 Agent Skill：通过 WPS Office 自动化，让 AI agent 能够**生成**和**编辑**高质量排版的 DOCX / PPTX / XLSX / PDF 文档。
+> 遵循标准 `SKILL.md` 约定，任何支持 agent skills 的工具（Codex、Claude Code、opencode 等）都可加载；仓库附带 Codex 插件打包（`.codex-plugin/`）作为其中一种安装方式。
 >
 > 当前版本：**0.5.0**（Windows 10/11 + WPS Office 12.1 实测验证；macOS 生成与转 PDF 经 JSAPI 门禁验证）
 
@@ -122,6 +123,10 @@ Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
 
 ### 安装
 
+核心就是 `skills/WPSComposer/` 目录——任何支持 `SKILL.md` 约定的 agent 把它放入 skills 搜索路径即可使用（例如符号链接或复制到该工具的 skills 目录）。
+
+对于 Codex，仓库附带的安装器会注册到个人插件 marketplace：
+
 ```bash
 git clone https://github.com/NeoMei/WPSComposer.git
 cd WPSComposer
@@ -129,7 +134,7 @@ python3 install.py            # 首次安装（macOS 会安装锁定的 JSAPI �
 python3 install.py --force    # 覆盖更新
 ```
 
-Windows 也可 `pwsh ./install.ps1`，macOS/Linux 可 `./install.sh`。安装后重启 Codex Desktop，在 Plugins 目录启用 `wps-composer`，然后在 Codex 中引用 `$WPSComposer`。
+Windows 也可 `pwsh ./install.ps1`，macOS/Linux 可 `./install.sh`。安装后重启 Codex Desktop，在 Plugins 目录启用 `wps-composer`，然后在 Codex 中引用 `$WPSComposer`。其他 agent 工具按各自的 skill 加载方式指向 `skills/WPSComposer/` 即可。
 
 ### 运行时要求
 
@@ -246,9 +251,9 @@ print(PdfComposer.extract_text("输入.pdf"))
 
 ```
 WPSComposer/
-├── .codex-plugin/plugin.json        # 插件清单
+├── .codex-plugin/plugin.json        # Codex 插件打包（安装方式之一）
 ├── skills/WPSComposer/
-│   ├── SKILL.md                     # Codex 加载的 skill 入口
+│   ├── SKILL.md                     # Skill 入口（标准约定，任何 agent 可加载）
 │   ├── references/api.md            # API 完整参考
 │   └── scripts/
 │       ├── wps_engine.py            # 统一入口（re-export facade）
