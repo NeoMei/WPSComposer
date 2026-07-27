@@ -1,14 +1,16 @@
 ---
 name: WPSComposer
-description: 'Generate rich-layout DOCX, PPTX, and XLSX documents via WPS Office COM automation. Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx).'
+description: 'Generate and edit rich-layout DOCX, PPTX, XLSX, and PDF documents by driving the real WPS Office layout engine — via COM on Windows (full generation + conversational editing) or the WPS JSAPI bridge on macOS (generation and Office-to-PDF conversion). Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx).'
 ---
 
 # WPS Composer
 
 Generate DOCX / PPTX / XLSX with full layout control by driving the WPS Office
-COM engine. WPS computes the layout (columns, wrapping, field results, chart
-rendering), so output matches what you'd see in the WPS GUI — no hand-rolled
-OOXML, no guessing about wrapping or page breaks.
+layout engine — COM on Windows, the JSAPI loopback bridge on macOS. WPS computes
+the layout (columns, wrapping, field results, chart rendering), so output
+matches what you'd see in the WPS GUI — no hand-rolled OOXML, no guessing about
+wrapping or page breaks. Conversational inspect/edit is Windows-only; macOS
+covers generation and Office-to-PDF conversion.
 
 ## Quick start -- Markdown to document
 
