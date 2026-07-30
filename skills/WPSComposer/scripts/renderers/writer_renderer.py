@@ -12,7 +12,7 @@ from __future__ import annotations
 from ..document_model import (
     StructuredDocument, Section, Paragraph as MDParagraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
-    HorizontalRule, TaskList,
+    HorizontalRule, TaskList, ExcalidrawBlock,
 )
 from ..writer import WriterComposer
 from .. import reference_styles as RS
@@ -137,6 +137,8 @@ def _render_element(w, elem, preset, is_first_after_heading=False):
         _render_code(w, elem)
     elif isinstance(elem, ImageBlock):
         _render_image(w, elem)
+    elif isinstance(elem, ExcalidrawBlock):
+        _render_excalidraw(w, elem)
     elif isinstance(elem, BlockQuote):
         _render_blockquote(w, elem)
     elif isinstance(elem, HorizontalRule):
@@ -235,6 +237,199 @@ def _render_image(w, img):
             w.add_styled_paragraph(img.alt, "Image Caption")
     except Exception:
         w.add_styled_paragraph(f"[Image: {img.alt or img.path}]", "Image Caption")
+
+
+# ---------------------------------------------------------------------------
+# Excalidraw
+# ---------------------------------------------------------------------------
+
+
+def _render_excalidraw(w, block):
+    """Render an Excalidraw diagram to SVG and embed it."""
+    try:
+        svg_path = _render_excalidraw_to_svg(block.path, block.width, block.height)
+        if svg_path:
+            w.add_image_block(
+                svg_path,
+                width=block.width,
+                height=block.height,
+                max_width=600,
+                max_height=500,
+                inline=True,
+                preserve_aspect=True,
+                alt=block.alt,
+            )
+            if block.alt:
+                w.add_styled_paragraph(block.alt, "Image Caption")
+        else:
+            w.add_styled_paragraph(f"[Excalidraw: {block.alt or block.path}]", "Image Caption")
+    except Exception as e:
+        w.add_styled_paragraph(f"[Excalidraw error: {block.alt or block.path}]", "Image Caption")
+
+
+def _render_excalidraw_to_svg(excalidraw_path, width=None, height=None):
+    """Render an Excalidraw .excalidraw.md file to SVG.
+    
+    Returns the path to the rendered SVG file, or None on failure.
+    """
+    import re
+    import json
+    import tempfile
+    import os
+    
+    try:
+        import lzstring
+    except ImportError:
+        return None
+    
+    # Read the .excalidraw.md file
+    with open(excalidraw_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Extract the compressed JSON from ```compressed-json block
+    json_match = re.search(r'```compressed-json\s*\n(.*?)\n```', content, re.DOTALL)
+    if not json_match:
+        return None
+    
+    compressed_data = json_match.group(1).strip()
+    if not compressed_data:
+        return None
+    
+    # Remove newlines and whitespace from compressed data (LZString doesn't handle them)
+    compressed_data = re.sub(r'\s+', '', compressed_data)
+    
+    # Decompress using LZString
+    try:
+        lz = lzstring.LZString()
+        decompressed = lz.decompressFromBase64(compressed_data)
+        if not decompressed:
+            return None
+        scene_data = json.loads(decompressed)
+    except Exception:
+        return None
+    
+    # Render to SVG using simple Python-based renderer
+    try:
+        svg_content = _render_excalidraw_scene_to_svg(scene_data)
+        if not svg_content:
+            return None
+        
+        # Save to temp file
+        temp_dir = tempfile.gettempdir()
+        svg_path = os.path.join(temp_dir, f"excalidraw_{os.path.basename(excalidraw_path)}.svg")
+        with open(svg_path, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+        
+        return svg_path
+    except Exception:
+        return None
+
+
+def _render_excalidraw_scene_to_svg(scene_data):
+    """Convert Excalidraw scene data to SVG string."""
+    elements = scene_data.get('elements', [])
+    if not elements:
+        return None
+    
+    # Calculate bounding box
+    min_x = min_y = float('inf')
+    max_x = max_y = float('-inf')
+    
+    for el in elements:
+        if el.get('isDeleted'):
+            continue
+        x, y = el.get('x', 0), el.get('y', 0)
+        w, h = el.get('width', 0), el.get('height', 0)
+        min_x = min(min_x, x)
+        min_y = min(min_y, y)
+        max_x = max(max_x, x + w)
+        max_y = max(max_y, y + h)
+    
+    if min_x == float('inf'):
+        return None
+    
+    # Add padding
+    padding = 20
+    min_x -= padding
+    min_y -= padding
+    max_x += padding
+    max_y += padding
+    
+    width = max_x - min_x
+    height = max_y - min_y
+    
+    # Build SVG
+    svg_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{min_x} {min_y} {width} {height}" width="{width}" height="{height}">',
+        '<rect width="100%" height="100%" fill="white"/>',
+        '<defs><marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#000000"/></marker></defs>',
+    ]
+    
+    for el in elements:
+        if el.get('isDeleted'):
+            continue
+        
+        el_type = el.get('type', '')
+        x = el.get('x', 0)
+        y = el.get('y', 0)
+        w = el.get('width', 0)
+        h = el.get('height', 0)
+        stroke = el.get('strokeColor', '#000000')
+        fill = el.get('backgroundColor', 'transparent')
+        stroke_width = el.get('strokeWidth', 1)
+        opacity = el.get('opacity', 100) / 100.0
+        text = el.get('text', '')
+        font_size = el.get('fontSize', 20)
+        roundness = el.get('roundness', {}).get('type') if el.get('roundness') else None
+        
+        # Common attributes
+        attrs = f'fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" opacity="{opacity}"'
+        
+        if el_type == 'rectangle':
+            rx = '5' if roundness else '0'
+            svg_parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" {attrs}/>')
+        
+        elif el_type == 'ellipse':
+            cx, cy = x + w/2, y + h/2
+            rx, ry = w/2, h/2
+            svg_parts.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" {attrs}/>')
+        
+        elif el_type == 'diamond':
+            points = f"{x+w/2},{y} {x+w},{y+h/2} {x+w/2},{y+h} {x},{y+h/2}"
+            svg_parts.append(f'<polygon points="{points}" {attrs}/>')
+        
+        elif el_type == 'text':
+            # Escape XML special characters
+            text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            svg_parts.append(f'<text x="{x}" y="{y + font_size}" font-size="{font_size}" fill="{stroke}" font-family="Arial, sans-serif">{text}</text>')
+        
+        elif el_type == 'line':
+            points = el.get('points', [[0, 0], [w, h]])
+            if len(points) >= 2:
+                path_data = f"M {x + points[0][0]} {y + points[0][1]}"
+                for pt in points[1:]:
+                    path_data += f" L {x + pt[0]} {y + pt[1]}"
+                svg_parts.append(f'<path d="{path_data}" fill="none" {attrs}/>')
+        
+        elif el_type == 'arrow':
+            points = el.get('points', [[0, 0], [w, h]])
+            if len(points) >= 2:
+                path_data = f"M {x + points[0][0]} {y + points[0][1]}"
+                for pt in points[1:]:
+                    path_data += f" L {x + pt[0]} {y + pt[1]}"
+                svg_parts.append(f'<path d="{path_data}" fill="none" {attrs} marker-end="url(#arrowhead)"/>')
+        
+        elif el_type == 'freedraw':
+            points = el.get('points', [])
+            if points:
+                path_data = f"M {x + points[0][0]} {y + points[0][1]}"
+                for pt in points[1:]:
+                    path_data += f" L {x + pt[0]} {y + pt[1]}"
+                svg_parts.append(f'<path d="{path_data}" fill="none" {attrs} stroke-linecap="round" stroke-linejoin="round"/>')
+    
+    svg_parts.append('</svg>')
+    
+    return '\n'.join(svg_parts)
 
 
 # ---------------------------------------------------------------------------

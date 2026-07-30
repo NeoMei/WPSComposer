@@ -77,6 +77,19 @@ class ImageBlock:
 
 
 @dataclass
+class ExcalidrawBlock:
+    """An embedded Excalidraw diagram.
+    
+    Stores the path to the .excalidraw.md file and optional dimensions.
+    The actual SVG rendering happens at render time.
+    """
+    path: str = ""
+    alt: str = ""
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+
+@dataclass
 class BlockQuote:
     """Blockquote — rendered as indented italic."""
     paragraphs: List[Paragraph] = field(default_factory=list)

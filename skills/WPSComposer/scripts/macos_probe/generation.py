@@ -1016,7 +1016,7 @@ def _execute_generation_plan(
     enabled: Optional[Mapping[str, bool]] = None,
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
-    timeout: float = 90,
+    timeout: float = 600,
     feasibility: bool = False,
 ) -> Path:
     """Execute one host-validated plan against a private template clone."""
@@ -1123,7 +1123,7 @@ def execute_generation_plan(
     enabled: Optional[Mapping[str, bool]] = None,
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
-    timeout: float = 90,
+    timeout: float = 600,
 ) -> Path:
     """Execute a complete renderer plan through one private WPS runtime."""
     return _execute_generation_plan(
@@ -1144,7 +1144,7 @@ def execute_feasibility_plan(
     enabled: Optional[Mapping[str, bool]] = None,
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
-    timeout: float = 90,
+    timeout: float = 600,
 ) -> Path:
     """Retain Task 3's exact marker-only feasibility path without weakening it."""
     if request.format_name == "pdf":
@@ -1175,7 +1175,7 @@ def generate_macos(
     enabled: Optional[Mapping[str, bool]] = None,
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
-    timeout: float = 90,
+    timeout: float = 600,
 ) -> Path:
     """Record a public renderer and generate through the gated macOS backend."""
     normalized_format = str(format_name).lower().lstrip(".")

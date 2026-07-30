@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 from .document_model import (
     StructuredDocument, Section, Span, Paragraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
-    HorizontalRule, TaskList,
+    HorizontalRule, TaskList, ExcalidrawBlock,
 )
 
 
@@ -28,9 +28,13 @@ _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 _ITALIC_RE = re.compile(r"\*(.+?)\*")
 _LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)]+)\)")
 _IMAGE_RE = re.compile(
-    r"!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^\s)]+))"
+    r"!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^)]+?))"
     r"(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)"
 )
+
+# Obsidian wikilink image syntax: ![[path]] or ![[path|width]] or ![[path|widthxheight]]
+# Supports: ![[path]], ![[path|300]], ![[path|300x200]], ![[path|100%]], ![[path| 100%]]
+_WIKILINK_IMAGE_RE = re.compile(r"^!\[\[([^\]|]+)(?:\|\s*(\d+%?))?(?:\s*x\s*(\d+%?))?\]\]\s*$")
 
 # Extended syntax
 _HR_RE = re.compile(r"^(?:-{3,}|\*{3,}|_{3,})\s*$")
@@ -164,7 +168,44 @@ def _resolve_image_path(path: str, base_dir: str = "") -> str:
         return os.path.abspath(url2pathname(parsed.path))
     if os.path.isabs(path):
         return os.path.normpath(path)
-    return os.path.abspath(os.path.join(base_dir or os.curdir, path))
+    
+    # First try resolving relative to base_dir
+    resolved = os.path.abspath(os.path.join(base_dir or os.curdir, path))
+    if os.path.exists(resolved):
+        return resolved
+    
+    # For Obsidian wikilinks, path is relative to vault root
+    # Try to find vault root by looking for .obsidian folder
+    vault_root = _find_vault_root(base_dir or os.curdir)
+    if vault_root:
+        resolved_from_vault = os.path.abspath(os.path.join(vault_root, path))
+        if os.path.exists(resolved_from_vault):
+            return resolved_from_vault
+        # Try with .md extension (Obsidian hides .md extension in wikilinks)
+        if not path.endswith('.md'):
+            resolved_from_vault_md = resolved_from_vault + '.md'
+            if os.path.exists(resolved_from_vault_md):
+                return resolved_from_vault_md
+    
+    # Try with .md extension relative to base_dir
+    if not path.endswith('.md'):
+        resolved_md = resolved + '.md'
+        if os.path.exists(resolved_md):
+            return resolved_md
+    
+    return resolved
+
+
+def _find_vault_root(start_dir: str) -> Optional[str]:
+    """Find the Obsidian vault root by looking for .obsidian folder."""
+    current = os.path.abspath(start_dir)
+    while True:
+        if os.path.isdir(os.path.join(current, '.obsidian')):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return None
+        current = parent
 
 
 def _extract_image_refs(text: str, base_dir: str = "") -> List[ImageBlock]:
@@ -174,6 +215,38 @@ def _extract_image_refs(text: str, base_dir: str = "") -> List[ImageBlock]:
         path = _resolve_image_path(_image_match_path(m), base_dir)
         images.append(ImageBlock(path=path, alt=m.group(1)))
     return images
+
+
+def _is_excalidraw_file(path: str) -> bool:
+    """Check if a file path is an Excalidraw file."""
+    return path.endswith('.excalidraw.md') or path.endswith('.excalidraw')
+
+
+def _parse_wikilink_image(line: str, base_dir: str = "") -> Optional[ExcalidrawBlock]:
+    """Parse an Obsidian wikilink image reference.
+    
+    Returns an ExcalidrawBlock if it's an Excalidraw file,
+    or None if it's not a wikilink image.
+    """
+    m = _WIKILINK_IMAGE_RE.match(line.strip())
+    if not m:
+        return None
+    
+    path = m.group(1).strip()
+    # Handle percentage widths (e.g., "100%") - treat as None for now
+    width_str = m.group(2)
+    width = int(width_str.replace('%', '')) if width_str and '%' not in width_str else None
+    height_str = m.group(3)
+    height = int(height_str.replace('%', '')) if height_str and '%' not in height_str else None
+    
+    resolved_path = _resolve_image_path(path, base_dir)
+    
+    return ExcalidrawBlock(
+        path=resolved_path,
+        alt=os.path.basename(path),
+        width=width,
+        height=height,
+    )
 
 
 def _plain_text(text: str) -> str:
@@ -285,6 +358,14 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
                 ),
                 alt=image_match.group(1).strip(),
             ))
+            i += 1
+            continue
+
+        # Obsidian wikilink image: ![[path]] or ![[path|width]] or ![[path|widthxheight]]
+        wikilink_block = _parse_wikilink_image(line, base_dir)
+        if wikilink_block is not None:
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(wikilink_block)
             i += 1
             continue
 
@@ -428,6 +509,8 @@ def _is_block_start(line: str) -> bool:
     if not s:
         return False
     if _IMAGE_RE.fullmatch(s):
+        return True
+    if _WIKILINK_IMAGE_RE.match(s):
         return True
     for prefix in _BLOCK_STARTS:
         if s.startswith(prefix):
