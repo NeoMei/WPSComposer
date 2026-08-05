@@ -608,6 +608,20 @@
     return "#" + h(r) + h(g) + h(b);
   }
 
+  // ET exposes a colour either as a raw long (cell.Font.Color /
+  // cell.Interior.Color on Windows COM) or as an object with an .RGB
+  // property (WPS JSAPI). Read defensively to match the Python
+  // formatting.font_snapshot / color_hex parity.
+  function sColorLong(owner, name) {
+    if (!owner) { return null; }
+    var value = sSafeGet(owner, name, null);
+    if (typeof value === "number") { return sColorHex(value); }
+    if (value !== null && typeof value === "object") {
+      return sColorHex(sSafeGet(value, "RGB", null));
+    }
+    return null;
+  }
+
   function sAddress(cell) {
     // Address is a method in JSAPI (returns the address string).
     try {
@@ -624,9 +638,9 @@
         size: sSafeGet(sSafeGet(cell, "Font"), "Size", null),
         bold: sSafeGet(sSafeGet(cell, "Font"), "Bold", null),
         italic: sSafeGet(sSafeGet(cell, "Font"), "Italic", null),
-        color: sColorHex(sSafeGet(sSafeGet(sSafeGet(cell, "Font"), "Color"), "RGB", null))
+        color: sColorLong(sSafeGet(cell, "Font"), "Color")
       },
-      fill_color: sColorHex(sSafeGet(sSafeGet(sSafeGet(cell, "Interior"), "Color"), null, null)),
+      fill_color: sColorLong(sSafeGet(cell, "Interior"), "Color"),
       horizontal_alignment: sSafeGet(cell, "HorizontalAlignment", null),
       number_format: sSafeGet(cell, "NumberFormat", null)
     };
