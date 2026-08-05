@@ -10,9 +10,9 @@ Key improvement over inline formatting:
 from __future__ import annotations
 
 from ..document_model import (
-    StructuredDocument, Section, Paragraph as MDParagraph,
+    StructuredDocument, Section, Span, Paragraph as MDParagraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
-    HorizontalRule, TaskList, ExcalidrawBlock,
+    HorizontalRule, TaskList, ExcalidrawBlock, MathBlock,
 )
 from ..writer import WriterComposer
 from .. import reference_styles as RS
@@ -20,6 +20,7 @@ from ..heading_numbering import (
     NumberingState, has_manual_numbering, strip_manual_numbering,
     detect_numbering_scheme,
 )
+from ..math_render import latex_to_unicode, latex_to_png
 
 
 # Standard A4 margins (matches formal Chinese doc conventions)
@@ -139,6 +140,8 @@ def _render_element(w, elem, preset, is_first_after_heading=False):
         _render_image(w, elem)
     elif isinstance(elem, ExcalidrawBlock):
         _render_excalidraw(w, elem)
+    elif isinstance(elem, MathBlock):
+        _render_math_block(w, elem)
     elif isinstance(elem, BlockQuote):
         _render_blockquote(w, elem)
     elif isinstance(elem, HorizontalRule):
@@ -155,14 +158,23 @@ def _render_paragraph(w, para, is_first_after_heading=False):
 
     Uses "First Paragraph" style (no indent) for the first paragraph
     after a heading, "Body Text" style for subsequent paragraphs.
+    Converts inline math spans ($...$) to Unicode text before rendering.
     """
     if not para.spans:
         return
 
+    # Convert math spans to Unicode text spans
+    resolved_spans = []
+    for s in para.spans:
+        if s.math:
+            resolved_spans.append(Span(text=latex_to_unicode(s.math), italic=True))
+        else:
+            resolved_spans.append(s)
+
     # Choose style: First Paragraph after heading, else Body Text
     style_name = "First Paragraph" if is_first_after_heading else "Body Text"
 
-    w.add_rich_paragraph(para.spans, style_name)
+    w.add_rich_paragraph(resolved_spans, style_name)
 
 # ---------------------------------------------------------------------------
 # Lists
@@ -433,6 +445,28 @@ def _render_excalidraw_scene_to_svg(scene_data):
 
 
 # ---------------------------------------------------------------------------
+# Display math block — render as centered PNG
+# ---------------------------------------------------------------------------
+
+
+def _render_math_block(w, block):
+    """Render display math ($$...$$) as a centered PNG image."""
+    try:
+        png_path = latex_to_png(block.latex)
+        w.add_image_block(
+            png_path,
+            max_width=450,
+            max_height=300,
+            inline=True,
+            preserve_aspect=True,
+            alt=block.latex,
+        )
+    except Exception:
+        # Fallback: render as styled text
+        w.add_styled_paragraph(latex_to_unicode(block.latex), "Block Text")
+
+
+# ---------------------------------------------------------------------------
 # Blockquote — uses Block Text style (border + indent)
 # ---------------------------------------------------------------------------
 
@@ -461,7 +495,14 @@ def _render_hr(w):
 
 
 def _spans_to_text(spans):
-    return "".join(s.text for s in spans)
+    """Join span texts, converting any math spans to Unicode."""
+    parts = []
+    for s in spans:
+        if s.math:
+            parts.append(latex_to_unicode(s.math))
+        else:
+            parts.append(s.text)
+    return "".join(parts)
 
 
 def _is_english(doc):

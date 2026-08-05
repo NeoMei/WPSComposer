@@ -9,8 +9,10 @@ from __future__ import annotations
 from ..document_model import (
     StructuredDocument, Section, Paragraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote, TaskList,
+    MathBlock,
 )
 from ..slide import SlideComposer
+from ..math_render import latex_to_unicode
 
 MAX_BULLETS = 6
 MAX_TABLE_ROWS = 8
@@ -59,7 +61,7 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
 
     for elem in section.elements:
         if isinstance(elem, Paragraph):
-            text = elem.plain_text.strip()
+            text = _spans_to_text(elem.spans).strip()
             if text:
                 bullets.append(text)
         elif isinstance(elem, ListBlock):
@@ -84,6 +86,10 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
                 text = _spans_to_text(para.spans).strip()
                 if text:
                     bullets.append('"' + text + '"')
+        elif isinstance(elem, MathBlock):
+            text = latex_to_unicode(elem.latex).strip()
+            if text:
+                bullets.append(text)
 
     if not bullets and not tables and not images:
         return
@@ -133,4 +139,11 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
 
 
 def _spans_to_text(spans: list) -> str:
-    return "".join(s.text for s in spans)
+    """Join span texts, converting any math spans to Unicode."""
+    parts = []
+    for s in spans:
+        if getattr(s, "math", ""):
+            parts.append(latex_to_unicode(s.math))
+        else:
+            parts.append(s.text)
+    return "".join(parts)

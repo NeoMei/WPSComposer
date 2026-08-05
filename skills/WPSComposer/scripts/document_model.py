@@ -24,6 +24,7 @@ class Span:
     strikethrough: bool = False
     link: Optional[str] = None   # URL
     link_title: Optional[str] = None  # tooltip
+    math: str = ""  # raw LaTeX for inline math ($...$); empty = not math
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +88,12 @@ class ExcalidrawBlock:
     alt: str = ""
     width: Optional[int] = None
     height: Optional[int] = None
+
+
+@dataclass
+class MathBlock:
+    """A display math block ($$...$$).  Stores raw LaTeX for image rendering."""
+    latex: str = ""
 
 
 @dataclass

@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 from .document_model import (
     StructuredDocument, Section, Span, Paragraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
-    HorizontalRule, TaskList, ExcalidrawBlock,
+    HorizontalRule, TaskList, ExcalidrawBlock, MathBlock,
 )
 
 
@@ -24,6 +24,50 @@ from .document_model import (
 # ---------------------------------------------------------------------------
 
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+# Inline math: $...$ but not $$...$$  (negative lookbehind/ahead for extra $)
+# Post-filter rejects false positives where plain text contains $ signs (prices etc.)
+_INLINE_MATH_RE = re.compile(r"(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)")
+
+
+# Known math words that look like English but are legitimate in formulas
+_MATH_WORDS = frozenset(
+    "sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh "
+    "log ln exp lim sup inf max min arg dim det deg ker mod "
+    "gcd lcm Re Im".split()
+)
+# Common 2-letter English words that signal non-math content
+_EN_2LETTER = frozenset(
+    "on is to in or as at by of it an do no so up us we he be me my "
+    "if am go".split()
+)
+
+
+def _looks_like_math(content: str) -> bool:
+    """Heuristic: reject false-positive $...$ matches from dollar amounts etc.
+
+    Returns True only if the content between $...$ looks like a math expression.
+    """
+    if not content:
+        return False
+    # Strong indicators: LaTeX commands, super/subscripts, braces, norm notation
+    if "\\" in content or "^" in content or "_" in content or "{" in content:
+        return True
+    if content.count("|") >= 2:
+        return True
+    # Short, space-free expressions like $x$, $n$, $2^n$, $xy+yz$
+    if " " not in content and len(content) <= 15:
+        return True
+    # Content with spaces: check for English words to reject prose
+    # 3+ letter words not in math vocabulary
+    for w in re.findall(r"[a-z]{3,}", content):
+        if w not in _MATH_WORDS:
+            return False
+    # 2-letter English words (only relevant when content has spaces)
+    for token in content.split():
+        clean = re.sub(r"[^a-z]", "", token.lower())
+        if len(clean) == 2 and clean in _EN_2LETTER:
+            return False
+    return True
 _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 _ITALIC_RE = re.compile(r"\*(.+?)\*")
 _LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)]+)\)")
@@ -55,7 +99,7 @@ def _parse_inline(text: str) -> List[Span]:
     for m in _INLINE_CODE_RE.finditer(text):
         codes.append((m.start(), m.end(), m.group(1)))
 
-    if not codes and not _BOLD_RE.search(text) and not _ITALIC_RE.search(text) and not _LINK_RE.search(text) and not _IMAGE_RE.search(text):
+    if not codes and not _INLINE_MATH_RE.search(text) and not _BOLD_RE.search(text) and not _ITALIC_RE.search(text) and not _LINK_RE.search(text) and not _IMAGE_RE.search(text):
         return [Span(text=text)] if text else []
 
     # Simple approach: tokenize by priority
@@ -67,6 +111,9 @@ def _parse_inline(text: str) -> List[Span]:
         matches = []
         for m in _INLINE_CODE_RE.finditer(remaining):
             matches.append((m.start(), m.end(), "code", m.group(1)))
+        for m in _INLINE_MATH_RE.finditer(remaining):
+            if _looks_like_math(m.group(1)):
+                matches.append((m.start(), m.end(), "math", m.group(1)))
         for m in _BOLD_RE.finditer(remaining):
             matches.append((m.start(), m.end(), "bold", m.group(1)))
         for m in _ITALIC_RE.finditer(remaining):
@@ -100,6 +147,8 @@ def _parse_inline(text: str) -> List[Span]:
         mtype = first[2]
         if mtype == "code":
             spans.append(Span(text=first[3], code=True))
+        elif mtype == "math":
+            spans.append(Span(text=first[3], math=first[3]))
         elif mtype == "bold":
             spans.append(Span(text=first[3], bold=True))
         elif mtype == "italic":
@@ -118,12 +167,26 @@ def _parse_inline(text: str) -> List[Span]:
     # Merge adjacent plain-text spans
     merged = []
     for s in spans:
-        if merged and not s.bold and not s.italic and not s.code and not s.link and not s.strikethrough \
-           and not merged[-1].bold and not merged[-1].italic and not merged[-1].code and not merged[-1].link and not merged[-1].strikethrough:
+        if merged and not s.bold and not s.italic and not s.code and not s.link and not s.strikethrough and not s.math \
+           and not merged[-1].bold and not merged[-1].italic and not merged[-1].code and not merged[-1].link and not merged[-1].strikethrough and not merged[-1].math:
             merged[-1].text += s.text
         else:
             merged.append(s)
-    return merged
+
+    # Recursively resolve inline math nested inside bold/italic/strikethrough spans
+    expanded = []
+    for s in merged:
+        if (s.bold or s.italic or s.strikethrough) and not s.math and not s.code and not s.link and "$" in s.text:
+            inner = _parse_inline(s.text)
+            if any(sub.math for sub in inner):
+                for sub in inner:
+                    sub.bold = sub.bold or s.bold
+                    sub.italic = sub.italic or s.italic
+                    sub.strikethrough = sub.strikethrough or s.strikethrough
+                    expanded.append(sub)
+                continue
+        expanded.append(s)
+    return expanded
 
 
 # ---------------------------------------------------------------------------
@@ -144,10 +207,22 @@ def _parse_table_row(line: str) -> List[str]:
     # Table cells are currently rendered as plain strings.  Preserve the
     # visible text while removing Markdown control markers such as ``**``
     # and backticks so they never leak into formal Writer output.
-    return [
-        "".join(span.text for span in _parse_inline(cell.strip()))
-        for cell in line.strip().strip("|").split("|")
-    ]
+    #
+    # Split on unescaped | so LaTeX \| (norm) and |A| (cardinality) survive.
+    raw_cells = re.split(r"(?<!\\)\|", line.strip().strip("|"))
+    result = []
+    for cell in raw_cells:
+        cell = cell.strip()
+        parts = []
+        for span in _parse_inline(cell):
+            if span.math:
+                # Inline math in table cells: convert to readable text.
+                from .math_render import latex_to_unicode
+                parts.append(latex_to_unicode(span.math))
+            else:
+                parts.append(span.text)
+        result.append("".join(parts))
+    return result
 
 
 def _is_separator_row(line: str) -> bool:
@@ -250,8 +325,16 @@ def _parse_wikilink_image(line: str, base_dir: str = "") -> Optional[ExcalidrawB
 
 
 def _plain_text(text: str) -> str:
-    """Strip inline markdown markers, keeping the visible text."""
-    return "".join(s.text for s in _parse_inline(text))
+    """Strip inline markdown markers, keeping the visible text.
+    Converts inline math spans to Unicode approximation."""
+    parts = []
+    for s in _parse_inline(text):
+        if s.math:
+            from .math_render import latex_to_unicode
+            parts.append(latex_to_unicode(s.math))
+        else:
+            parts.append(s.text)
+    return "".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +449,33 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
         if wikilink_block is not None:
             current_section = _ensure_section(current_section, sections)
             current_section.elements.append(wikilink_block)
+            i += 1
+            continue
+
+        # Display math block: $$...$$
+        if line.strip() == "$$":
+            math_lines = []
+            i += 1
+            while i < len(lines) and lines[i].strip() != "$$":
+                math_lines.append(lines[i])
+                i += 1
+            if i >= len(lines):
+                # Unterminated $$: treat opening $$ as literal text, not a block
+                current_section = _ensure_section(current_section, sections)
+                current_section.elements.append(Paragraph(spans=[Span(text="$$")]))
+                for ml in math_lines:
+                    current_section.elements.append(Paragraph(spans=_parse_inline(ml)))
+                continue
+            i += 1  # skip closing $$
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(MathBlock(latex="\n".join(math_lines)))
+            continue
+
+        # Single-line display math: $$ ... $$ on one line
+        single_math = re.match(r"^\$\$(.+)\$\$\s*$", line.strip())
+        if single_math:
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(MathBlock(latex=single_math.group(1).strip()))
             i += 1
             continue
 
@@ -501,13 +611,15 @@ def _is_separator_cell(cell: str) -> bool:
     return bool(re.match(r"^[\-\s:]+\+?$", cell))
 
 
-_BLOCK_STARTS = {"#", ">", "|", "```", "---", "***", "___"}
+_BLOCK_STARTS = {"#", ">", "|", "```", "---", "***", "___", "$$"}
 
 
 def _is_block_start(line: str) -> bool:
     s = line.strip()
     if not s:
         return False
+    if s == "$$":
+        return True
     if _IMAGE_RE.fullmatch(s):
         return True
     if _WIKILINK_IMAGE_RE.match(s):
