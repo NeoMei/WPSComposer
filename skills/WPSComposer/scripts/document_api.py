@@ -34,6 +34,18 @@ from .sheet import SheetComposer
 from .slide import SlideComposer
 
 
+def _com_available():
+    """Return True when the Windows COM dispatch path can run here."""
+    import platform
+    if platform.system() != "Windows":
+        return False
+    try:
+        import win32com.client  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
 WRITER_EXTENSIONS = {
     ".doc", ".docx", ".docm", ".dot", ".dotx", ".dotm", ".rtf",
     ".txt", ".html", ".htm", ".mht", ".mhtml", ".xml", ".odt",
@@ -547,10 +559,28 @@ def attach_active(kind=None):
 
 
 def inspect(path=None, *, kind=None, selection=False, **options):
-    """Inspect a file or the current active document and return plain data."""
+    """Inspect a file or the current active document and return plain data.
+
+    On Windows the live COM path is used.  When COM is unavailable (macOS,
+    or any host without pywin32) and the file is a presentation format,
+    the WPS JSAPI bridge reads structured content through the real WPS
+    engine instead of falling back to PDF extraction.
+    """
     if path is None:
         composer = attach_active(kind)
         return composer.inspect_selection() if selection else composer.inspect_document(**options)
+    if not _com_available():
+        from .macos_probe.inspection import INSPECTABLE, inspect_macos, macos_inspection_available
+        if macos_inspection_available():
+            ext = os.path.splitext(os.fspath(path))[1].lower()
+            if ext in INSPECTABLE:
+                include_text = options.pop("include_text", True)
+                max_shapes = options.pop("max_shapes", None)
+                return inspect_macos(
+                    os.fspath(path),
+                    include_text=bool(include_text),
+                    max_shapes=max_shapes,
+                )
     with open_document(path, kind=kind, read_only=True) as composer:
         return composer.inspect_selection() if selection else composer.inspect_document(**options)
 
@@ -627,6 +657,55 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         combined.extend({"op": "set", **patch} for patch in patches)
     if ops:
         combined.extend(ops)
+
+    # macOS / non-COM host: route presentation edits through the JSAPI bridge.
+    # Only the ``set`` verb (formatting patches) is supported on macOS;
+    # structural ops still require Windows COM.
+    if path is not None and not _com_available():
+        ext = os.path.splitext(os.fspath(path))[1].lower()
+        from .macos_probe.inspection import EDITABLE, edit_macos, macos_inspection_available
+        if macos_inspection_available() and ext in EDITABLE:
+            set_patches = [p for p in combined if p.get("op") == "set"]
+            dropped = [p for p in combined if p.get("op") != "set"]
+            warnings = (
+                [f"{len(dropped)} structural op(s) dropped: "
+                 "insert/remove/move/clone require Windows COM. "
+                 "Only 'set' patches are applied on macOS."]
+                if dropped else []
+            )
+            if set_patches:
+                bridge_patches = [
+                    {k: v for k, v in p.items() if k != "op"}
+                    for p in set_patches
+                ]
+                result = edit_macos(
+                    os.fspath(path), bridge_patches, output=output,
+                )
+                return {
+                    "ok": all(p.get("ok") for p in result.get("patches", [])),
+                    "saved": True,
+                    "saved_path": result.get("path"),
+                    "pdf_path": None,
+                    "ops": result.get("patches", []),
+                    "patches": result.get("patches", []),
+                    "errors": [p for p in result.get("patches", []) if not p.get("ok")],
+                    "warnings": warnings,
+                    "before": None,
+                    "after": None,
+                }
+            # Nothing to do: no patches, or only structural ops.
+            return {
+                "ok": not warnings,
+                "saved": False,
+                "saved_path": None,
+                "pdf_path": None,
+                "ops": [],
+                "patches": [],
+                "errors": [],
+                "warnings": warnings,
+                "before": None,
+                "after": None,
+            }
 
     attached = path is None
     if attached:

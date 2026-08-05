@@ -587,9 +587,151 @@
     "probe_capabilities": function () { return probe(); },
     "smoke_xlsx": saveXlsx,
     "convert_workbook_pdf": convertWorkbookPdf,
-    "generate_spreadsheet_workbook": generateSpreadsheetWorkbook
+    "generate_spreadsheet_workbook": generateSpreadsheetWorkbook,
+    "inspect_workbook": inspectWorkbook
   };
 
+
+  // ---- inspection helpers (read structured content) ----
+
+  function sSafeGet(object, property, fallback) {
+    try { var value = object[property]; return value === undefined ? fallback : value; }
+    catch (e) { return fallback; }
+  }
+
+  function sColorHex(bgrLong) {
+    if (bgrLong === null || bgrLong === undefined) { return null; }
+    var n = Number(bgrLong);
+    if (isNaN(n)) { return null; }
+    var r = n & 0xFF, g = (n >> 8) & 0xFF, b = (n >> 16) & 0xFF;
+    function h(v) { var s = v.toString(16); return s.length < 2 ? "0" + s : s; }
+    return "#" + h(r) + h(g) + h(b);
+  }
+
+  function sAddress(cell) {
+    // Address is a method in JSAPI (returns the address string).
+    try {
+      if (typeof cell.Address === "function") { return String(cell.Address()); }
+      return String(cell.Address);
+    } catch (e) { return ""; }
+  }
+
+  function sCellSnapshot(cell, includeValue) {
+    var snap = {
+      address: sAddress(cell),
+      font: {
+        name: sSafeGet(sSafeGet(cell, "Font"), "Name", null),
+        size: sSafeGet(sSafeGet(cell, "Font"), "Size", null),
+        bold: sSafeGet(sSafeGet(cell, "Font"), "Bold", null),
+        italic: sSafeGet(sSafeGet(cell, "Font"), "Italic", null),
+        color: sColorHex(sSafeGet(sSafeGet(sSafeGet(cell, "Font"), "Color"), "RGB", null))
+      },
+      fill_color: sColorHex(sSafeGet(sSafeGet(sSafeGet(cell, "Interior"), "Color"), null, null)),
+      horizontal_alignment: sSafeGet(cell, "HorizontalAlignment", null),
+      number_format: sSafeGet(cell, "NumberFormat", null)
+    };
+    if (includeValue) {
+      snap.value = sSafeGet(cell, "Value2", null);
+      snap.formula = sSafeGet(cell, "Formula", null);
+    }
+    return snap;
+  }
+
+  function inspectWorkbook(params) {
+    var sourcePath = requirePath(params, "sourcePath");
+    var includeCells = hasOwn(params, "includeCells") ? params.includeCells !== false : true;
+    var maxCells = hasOwn(params, "maxCells") ? Number(params.maxCells) : 1000;
+    var includeEmpty = hasOwn(params, "includeEmpty") ? params.includeEmpty === true : false;
+    var previousAlerts = Application.DisplayAlerts;
+    var workbook = null;
+    var failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      // macOS ET JSAPI: Workbooks.Open may not support the same parameter
+      // signatures as Windows. If Open returns null, the inspection falls
+      // back to an empty result rather than crashing.
+      workbook = Application.Workbooks.Open(sourcePath, 0, true);
+      var wbWorksheets = sSafeGet(workbook, "Worksheets", null);
+      var sheetCount = wbWorksheets ? Number(sSafeGet(wbWorksheets, "Count", 0) || 0) : 0;
+      var sheets = [];
+      var remaining = maxCells;
+      var truncated = false;
+
+      for (var si = 1; si <= sheetCount; si += 1) {
+        var ws = wbWorksheets ? sheetCollectionItem(wbWorksheets, si) : null;
+        if (!ws) { continue; }
+        var used = ws.UsedRange;
+        var rowCount = Number(sSafeGet(used.Rows, "Count", 0) || 0);
+        var colCount = Number(sSafeGet(used.Columns, "Count", 0) || 0);
+        var firstRow = Number(sSafeGet(used, "Row", 1) || 1);
+        var firstCol = Number(sSafeGet(used, "Column", 1) || 1);
+        var usedAddr = sAddress(used);
+        var cells = [];
+        if (includeCells) {
+          for (var ro = 0; ro < rowCount && !truncated; ro += 1) {
+            for (var co = 0; co < colCount; co += 1) {
+              if (remaining <= 0) { truncated = true; break; }
+              var cell = ws.Cells.Item(firstRow + ro, firstCol + co);
+              var value = sSafeGet(cell, "Value2", null);
+              var formula = sSafeGet(cell, "Formula", null);
+              if (!includeEmpty && (value === null || value === "") && (formula === null || formula === "")) {
+                continue;
+              }
+              var cellSnap = sCellSnapshot(cell, true);
+              cellSnap.id = "sheet:" + si + "/cell:" + cellSnap.address;
+              cells.push(cellSnap);
+              remaining -= 1;
+            }
+          }
+        }
+
+        var shapes = [];
+        var shapeCount = Number(sSafeGet(ws.Shapes, "Count", 0) || 0);
+        for (var shi = 1; shi <= shapeCount; shi += 1) {
+          var shape = sheetCollectionItem(ws.Shapes, shi);
+          shapes.push({
+            id: "sheet:" + si + "/shape:" + shi,
+            index: shi,
+            name: sSafeGet(shape, "Name", null),
+            type: sSafeGet(shape, "Type", null)
+          });
+        }
+
+        sheets.push({
+          id: "sheet:" + si,
+          index: si,
+          name: sSafeGet(ws, "Name", null),
+          visible: sSafeGet(ws, "Visible", null),
+          used_range: usedAddr,
+          used_rows: rowCount,
+          used_columns: colCount,
+          cells: cells,
+          shapes: shapes
+        });
+      }
+
+      return {
+        kind: "sheet",
+        name: wbWorksheets ? sSafeGet(workbook, "Name", null) : null,
+        path: wbWorksheets ? sSafeGet(workbook, "FullName", null) : null,
+        saved: wbWorksheets ? sSafeGet(workbook, "Saved", null) : null,
+        sheet_count: sheetCount,
+        cells_truncated: truncated,
+        sheets: sheets
+      };
+    } catch (error) {
+      failure = conversionError(error, "CONVERSION_COMMAND_FAILED");
+      throw failure;
+    } finally {
+      try {
+        if (workbook !== null) { workbook.Close(false); }
+      } catch (closeError) {
+        if (failure === null) { throw conversionError(closeError, "CONVERSION_COMMAND_FAILED"); }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
   window.WPSComposerProbe = {
     handleCommand: function (command) {
       const handler = handlers[command.method];

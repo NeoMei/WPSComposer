@@ -1271,8 +1271,189 @@
     "smoke_docx": saveDocx,
     "smoke_pdf": savePdf,
     "convert_writer_pdf": convertWriterPdf,
-    "generate_writer_document": generateWriterDocument
+    "generate_writer_document": generateWriterDocument,
+    "inspect_document": inspectDocument
   };
+
+
+  function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  // ---- inspection helpers (read structured content) ----
+
+  function wSafeGet(object, property, fallback) {
+    try { var value = object[property]; return value === undefined ? fallback : value; }
+    catch (e) { return fallback; }
+  }
+
+  function wSafeCall(object, method, fallback) {
+    try { var value = object[method](); return value === undefined ? fallback : value; }
+    catch (e) { return fallback; }
+  }
+
+  function wColorHex(bgrLong) {
+    if (bgrLong === null || bgrLong === undefined) { return null; }
+    var n = Number(bgrLong);
+    if (isNaN(n)) { return null; }
+    var r = n & 0xFF, g = (n >> 8) & 0xFF, b = (n >> 16) & 0xFF;
+    function h(v) { var s = v.toString(16); return s.length < 2 ? "0" + s : s; }
+    return "#" + h(r) + h(g) + h(b);
+  }
+
+  function wFontSnapshot(font) {
+    if (!font) { return null; }
+    return {
+      name: wSafeGet(font, "Name", null),
+      size: wSafeGet(font, "Size", null),
+      bold: wSafeGet(font, "Bold", null),
+      italic: wSafeGet(font, "Italic", null),
+      underline: wSafeGet(font, "Underline", null),
+      strikethrough: wSafeGet(font, "StrikeThrough", null),
+      subscript: wSafeGet(font, "Subscript", null),
+      superscript: wSafeGet(font, "Superscript", null),
+      name_far_east: wSafeGet(font, "NameFarEast", null)
+    };
+  }
+
+  function wParagraphSnapshot(fmt) {
+    if (!fmt) { return null; }
+    return {
+      alignment: wSafeGet(fmt, "Alignment", null),
+      left_indent: wSafeGet(fmt, "LeftIndent", null),
+      first_line_indent: wSafeGet(fmt, "FirstLineIndent", null),
+      line_spacing: wSafeGet(fmt, "LineSpacing", null),
+      line_rule_within: wSafeGet(fmt, "LineRuleWithin", null),
+      space_before: wSafeGet(fmt, "SpaceBefore", null),
+      space_after: wSafeGet(fmt, "SpaceAfter", null)
+    };
+  }
+
+  function wRangeSnapshot(range, elementId, includeText) {
+    if (!range) { return null; }
+    var snap = {
+      id: elementId,
+      font: wFontSnapshot(wSafeGet(range, "Font", null)),
+      paragraph: wParagraphSnapshot(wSafeGet(range, "ParagraphFormat", null))
+    };
+    if (includeText) { snap.text = String(wSafeGet(range, "Text", "") || ""); }
+    return snap;
+  }
+
+  function wShapeSnapshot(shape, index, includeText) {
+    var snap = {
+      id: "shape:" + index,
+      index: index,
+      name: wSafeGet(shape, "Name", null),
+      type: wSafeGet(shape, "Type", null)
+    };
+    var tf = wSafeGet(shape, "TextFrame", null);
+    if (tf) {
+      var range = wSafeGet(tf, "TextRange", null);
+      if (range && includeText) {
+        snap.text = String(wSafeGet(range, "Text", "") || "");
+        snap.font = wFontSnapshot(wSafeGet(range, "Font", null));
+      }
+    }
+    return snap;
+  }
+
+  function inspectDocument(params) {
+    var sourcePath = requirePath(params, "sourcePath");
+    var includeText = hasOwn(params, "includeText") ? params.includeText !== false : true;
+    var maxElements = hasOwn(params, "maxElements") ? Number(params.maxElements) : null;
+    var previousAlerts = Application.DisplayAlerts;
+    var document = null;
+    var failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      document = Application.Documents.Open(sourcePath, true, false, false);
+      if (!document) {
+        return {kind: "writer", name: null, path: null, saved: null, counts: {}, paragraphs: [], tables: [], shapes: []};
+      }
+      var paragraphCount = Number(wSafeGet(document.Paragraphs, "Count", 0) || 0);
+      var tableCount = Number(wSafeGet(document.Tables, "Count", 0) || 0);
+      var shapeCount = Number(wSafeGet(document.Shapes, "Count", 0) || 0);
+      var sectionCount = Number(wSafeGet(document.Sections, "Count", 0) || 0);
+      var limit = maxElements !== null ? maxElements : Infinity;
+
+      var paragraphs = [];
+      var count = Math.min(paragraphCount, limit);
+      for (var i = 1; i <= count; i += 1) {
+        var para = writerCollectionItem(document.Paragraphs, i);
+        var elementId = "paragraph:" + i;
+        var snap = wRangeSnapshot(wSafeGet(para, "Range", null), elementId, includeText);
+        if (snap) {
+          snap.index = i;
+          snap.style = wSafeGet(wSafeGet(para.Range, "Style"), "NameLocal", null);
+          paragraphs.push(snap);
+        }
+      }
+
+      var tables = [];
+      var tableLimit = Math.min(tableCount, limit);
+      for (var ti = 1; ti <= tableLimit; ti += 1) {
+        var table = writerCollectionItem(document.Tables, ti);
+        var cells = [];
+        var cellCount = Number(wSafeGet(wSafeGet(table.Range, "Cells"), "Count", 0) || 0);
+        for (var ci = 1; ci <= cellCount; ci += 1) {
+          var cell = writerCollectionItem(table.Range.Cells, ci);
+          var row = Number(wSafeGet(cell, "RowIndex", 0) || 0);
+          var col = Number(wSafeGet(cell, "ColumnIndex", 0) || 0);
+          var cellSnap = wRangeSnapshot(
+            wSafeGet(cell, "Range", null),
+            "table:" + ti + "/cell:" + row + "," + col,
+            includeText
+          );
+          if (cellSnap) {
+            cellSnap.row = row;
+            cellSnap.column = col;
+            cells.push(cellSnap);
+          }
+        }
+        tables.push({
+          id: "table:" + ti,
+          index: ti,
+          rows: Number(wSafeGet(table.Rows, "Count", 0) || 0),
+          columns: Number(wSafeGet(table.Columns, "Count", 0) || 0),
+          cells: cells
+        });
+      }
+
+      var shapes = [];
+      var shapeLimit = Math.min(shapeCount, limit);
+      for (var si = 1; si <= shapeLimit; si += 1) {
+        shapes.push(wShapeSnapshot(writerCollectionItem(document.Shapes, si), si, includeText));
+      }
+
+      return {
+        kind: "writer",
+        name: wSafeGet(document, "Name", null),
+        path: wSafeGet(document, "FullName", null),
+        saved: wSafeGet(document, "Saved", null),
+        counts: {
+          paragraphs: paragraphCount,
+          tables: tableCount,
+          shapes: shapeCount,
+          sections: sectionCount
+        },
+        paragraphs: paragraphs,
+        tables: tables,
+        shapes: shapes
+      };
+    } catch (error) {
+      failure = conversionError(error, "CONVERSION_COMMAND_FAILED");
+      throw failure;
+    } finally {
+      try {
+        if (document !== null) { document.Close(0); }
+      } catch (closeError) {
+        if (failure === null) { throw conversionError(closeError, "CONVERSION_COMMAND_FAILED"); }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
 
   window.WPSComposerProbe = {
     handleCommand: function (command) {

@@ -9,8 +9,9 @@ Generate DOCX / PPTX / XLSX with full layout control by driving the WPS Office
 layout engine — COM on Windows, the JSAPI loopback bridge on macOS. WPS computes
 the layout (columns, wrapping, field results, chart rendering), so output
 matches what you'd see in the WPS GUI — no hand-rolled OOXML, no guessing about
-wrapping or page breaks. Conversational inspect/edit is Windows-only; macOS
-covers generation and Office-to-PDF conversion.
+wrapping or page breaks. Conversational inspect/edit works on both platforms:
+Windows uses COM directly; macOS uses the JSAPI loopback bridge to read and
+edit PPT/DOCX/XLSX through the real WPS engine (no PDF extraction fallback).
 
 ## Quick start -- Markdown to document
 

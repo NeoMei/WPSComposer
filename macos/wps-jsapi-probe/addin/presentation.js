@@ -1080,8 +1080,587 @@
     "probe_capabilities": function () { return probe(); },
     "smoke_pptx": savePptx,
     "convert_presentation_pdf": convertPresentationPdf,
-    "generate_presentation_deck": generatePresentationDeck
+    "generate_presentation_deck": generatePresentationDeck,
+    "inspect_presentation": inspectPresentation,
+    "edit_presentation": editPresentation
   };
+
+  function safeGet(object, property, fallback) {
+    try {
+      var value = object[property];
+      return value === undefined ? fallback : value;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function safeCall(object, method, fallback) {
+    try {
+      var value = object[method]();
+      return value === undefined ? fallback : value;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function fontSnapshot(font) {
+    if (!font) { return null; }
+    return {
+      name: safeGet(font, "Name", null),
+      size: safeGet(font, "Size", null),
+      bold: safeGet(font, "Bold", null),
+      italic: safeGet(font, "Italic", null),
+      underline: safeGet(font, "Underline", null),
+      strikethrough: safeGet(font, "StrikeThrough", null),
+      subscript: safeGet(font, "Subscript", null),
+      superscript: safeGet(font, "Superscript", null),
+      name_far_east: safeGet(font, "NameFarEast", null),
+      color: safeGet(safeGet(font, "Color", null), "RGB", null)
+    };
+  }
+
+  function paragraphSnapshot(paragraphFormat) {
+    if (!paragraphFormat) { return null; }
+    return {
+      alignment: safeGet(paragraphFormat, "Alignment", null),
+      left_indent: safeGet(paragraphFormat, "LeftIndent", null),
+      first_line_indent: safeGet(paragraphFormat, "FirstLineIndent", null),
+      line_spacing: safeGet(paragraphFormat, "LineSpacing", null),
+      line_rule_within: safeGet(paragraphFormat, "LineRuleWithin", null),
+      space_before: safeGet(paragraphFormat, "SpaceBefore", null),
+      space_after: safeGet(paragraphFormat, "SpaceAfter", null)
+    };
+  }
+
+  function fillSnapshot(fill) {
+    if (!fill) { return null; }
+    return {
+      type: safeGet(fill, "Type", null),
+      visible: safeGet(fill, "Visible", null),
+      fore_color_rgb: safeGet(safeGet(fill, "ForeColor", null), "RGB", null)
+    };
+  }
+
+  function lineSnapshot(line) {
+    if (!line) { return null; }
+    return {
+      visible: safeGet(line, "Visible", null),
+      weight: safeGet(line, "Weight", null),
+      fore_color_rgb: safeGet(safeGet(line, "ForeColor", null), "RGB", null)
+    };
+  }
+
+  function paragraphsSnapshot(textRange, elementId, includeText) {
+    var paragraphRange = safeCall(textRange, "Paragraphs", null);
+    var count = paragraphRange ? Number(safeGet(paragraphRange, "Count", 0) || 0) : 0;
+    var paragraphs = [];
+    for (var index = 1; index <= count; index += 1) {
+      var para = textRange.Paragraphs(index, 1);
+      var paragraphId = elementId + "/paragraph:" + index;
+      var snap = {
+        id: paragraphId,
+        index: index,
+        font: fontSnapshot(safeGet(para, "Font", null)),
+        paragraph: paragraphSnapshot(safeGet(para, "ParagraphFormat", null)),
+        runs: []
+      };
+      if (includeText) { snap.text = String(safeGet(para, "Text", "") || ""); }
+      var runRange = safeCall(para, "Runs", null);
+      var runCount = runRange ? Number(safeGet(runRange, "Count", 0) || 0) : 0;
+      for (var runIndex = 1; runIndex <= runCount; runIndex += 1) {
+        var run = para.Runs(runIndex, 1);
+        var runSnap = {
+          id: paragraphId + "/run:" + runIndex,
+          index: runIndex,
+          font: fontSnapshot(safeGet(run, "Font", null))
+        };
+        if (includeText) { runSnap.text = String(safeGet(run, "Text", "") || ""); }
+        snap.runs.push(runSnap);
+      }
+      paragraphs.push(snap);
+    }
+    return paragraphs;
+  }
+
+  function tableSnapshot(shape, elementId, includeText) {
+    var table = safeGet(shape, "Table", null);
+    if (!table) { return null; }
+    var rows = Number(safeGet(safeGet(table, "Rows", {}), "Count", 0) || 0);
+    var cols = Number(safeGet(safeGet(table, "Columns", {}), "Count", 0) || 0);
+    var cells = [];
+    for (var row = 1; row <= rows; row += 1) {
+      for (var col = 1; col <= cols; col += 1) {
+        var cellShape = table.Cell(row, col).Shape;
+        var cellTextRange = safeGet(safeGet(cellShape, "TextFrame", null), "TextRange", null);
+        var cellSnap = {
+          id: elementId + "/table/cell:" + row + "," + col,
+          row: row,
+          column: col,
+          fill: fillSnapshot(safeGet(cellShape, "Fill", null))
+        };
+        if (cellTextRange) {
+          if (includeText) { cellSnap.text = String(safeGet(cellTextRange, "Text", "") || ""); }
+          cellSnap.font = fontSnapshot(safeGet(cellTextRange, "Font", null));
+        }
+        cells.push(cellSnap);
+      }
+    }
+    return {rows: rows, columns: cols, cells: cells};
+  }
+
+  function shapeSnapshot(shape, slideIndex, shapeIndex, includeText, prefix) {
+    var shapeId = safeGet(shape, "Id", null);
+    var elementId = shapeId !== null
+      ? prefix + "/shape:@id=" + shapeId
+      : prefix + "/shape:" + shapeIndex;
+    var hasTable = false;
+    try { hasTable = Boolean(shape.HasTable); } catch (e) { hasTable = false; }
+    var placeholderType = null;
+    try { placeholderType = safeGet(shape.PlaceholderFormat, "Type", null); } catch(e) {}
+    var snapshot = {
+      id: elementId,
+      index: shapeIndex,
+      shape_id: shapeId,
+      name: safeGet(shape, "Name", null),
+      type: safeGet(shape, "Type", null),
+      placeholder_type: placeholderType,
+      geometry: {
+        left: safeGet(shape, "Left", null),
+        top: safeGet(shape, "Top", null),
+        width: safeGet(shape, "Width", null),
+        height: safeGet(shape, "Height", null),
+        rotation: safeGet(shape, "Rotation", null)
+      },
+      fill: fillSnapshot(safeGet(shape, "Fill", null)),
+      line: lineSnapshot(safeGet(shape, "Line", null))
+    };
+    var textFrame = safeGet(shape, "TextFrame", null);
+    if (textFrame) {
+      var range = safeGet(textFrame, "TextRange", null);
+      var tf = {
+        margin_left: safeGet(textFrame, "MarginLeft", null),
+        margin_right: safeGet(textFrame, "MarginRight", null),
+        margin_top: safeGet(textFrame, "MarginTop", null),
+        margin_bottom: safeGet(textFrame, "MarginBottom", null),
+        word_wrap: safeGet(textFrame, "WordWrap", null),
+        auto_size: safeGet(textFrame, "AutoSize", null),
+        vertical_anchor: safeGet(textFrame, "VerticalAnchor", null)
+      };
+      if (range) {
+        tf.text = includeText ? String(safeGet(range, "Text", "") || "") : null;
+        tf.font = fontSnapshot(safeGet(range, "Font", null));
+        tf.paragraph = paragraphSnapshot(safeGet(range, "ParagraphFormat", null));
+        tf.paragraphs = paragraphsSnapshot(range, elementId, includeText);
+        // COM parity: also surface text and font at the shape top level.
+        if (includeText) {
+          snapshot.text = String(safeGet(range, "Text", "") || "");
+        }
+        snapshot.font = fontSnapshot(safeGet(range, "Font", null));
+      }
+      snapshot.text_frame = tf;
+    }
+    if (hasTable) {
+      snapshot.table = tableSnapshot(shape, elementId, includeText);
+    }
+    return snapshot;
+  }
+
+  function collectionItem(collection, index) {
+    if (collection && typeof collection.Item === "function") {
+      return collection.Item(index);
+    }
+    if (typeof collection === "function") {
+      return collection(index);
+    }
+    throw new Error("collection item " + index + " is unavailable");
+  }
+
+  function inspectPresentation(params) {
+    var sourcePath = requirePath(params, "sourcePath");
+    var includeText = hasOwn(params, "includeText") ? params.includeText !== false : true;
+    var maxShapes = hasOwn(params, "maxShapes") ? Number(params.maxShapes) : null;
+    var previousAlerts = Application.DisplayAlerts;
+    var presentation = null;
+    var failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      presentation = Application.Presentations.Open(sourcePath, true, false, false);
+      var slideCount = Number(safeGet(presentation.Slides, "Count", 0) || 0);
+      var slides = [];
+      var remaining = maxShapes !== null ? maxShapes : Infinity;
+      var truncated = false;
+      for (var slideIndex = 1; slideIndex <= slideCount; slideIndex += 1) {
+        var slide = collectionItem(presentation.Slides, slideIndex);
+        var shapeCount = Number(safeGet(slide.Shapes, "Count", 0) || 0);
+        var shapes = [];
+        for (var shapeIndex = 1; shapeIndex <= shapeCount; shapeIndex += 1) {
+          if (remaining <= 0) { truncated = true; break; }
+          shapes.push(shapeSnapshot(
+            collectionItem(slide.Shapes, shapeIndex), slideIndex, shapeIndex,
+            includeText, "slide:" + slideIndex
+          ));
+          remaining -= 1;
+        }
+        var notes = null;
+        try {
+          notes = String(collectionItem(slide.NotesPage.Shapes.Placeholders, 2).TextFrame.TextRange.Text || "");
+        } catch (e) { notes = null; }
+        slides.push({
+          id: "slide:" + slideIndex,
+          index: slideIndex,
+          name: safeGet(slide, "Name", null),
+          layout: safeGet(slide, "Layout", null),
+          follow_master_background: safeGet(slide, "FollowMasterBackground", null),
+          shape_count: shapeCount,
+          shapes: shapes,
+          notes: notes
+        });
+        if (truncated) { break; }
+      }
+      return {
+        kind: "slide",
+        name: safeGet(presentation, "Name", null),
+        path: safeGet(presentation, "FullName", null),
+        saved: safeGet(presentation, "Saved", null),
+        slide_count: slideCount,
+        shapes_truncated: truncated,
+        slides: slides
+      };
+    } catch (error) {
+      failure = conversionError(error, "CONVERSION_COMMAND_FAILED");
+      throw failure;
+    } finally {
+      try {
+        if (presentation !== null) { presentation.Close(); }
+      } catch (closeError) {
+        if (failure === null) { throw conversionError(closeError, "CONVERSION_COMMAND_FAILED"); }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
+
+
+  // ---- patch application helpers (edit) ----
+
+  function safeSet(object, property, value) {
+    try { object[property] = value; return true; }
+    catch (e) { return false; }
+  }
+
+  function colorLong(value) {
+    if (typeof value === "number") { return value; }
+    if (typeof value !== "string") { return null; }
+    var c = value.replace(/^#/, "");
+    if (!/^[0-9A-Fa-f]{6}$/.test(c)) { return null; }
+    var r = parseInt(c.slice(0, 2), 16);
+    var g = parseInt(c.slice(2, 4), 16);
+    var b = parseInt(c.slice(4, 6), 16);
+    return r + (g << 8) + (b << 16);
+  }
+
+  function applyFontEdit(font, patch) {
+    var accepted = [], rejected = [];
+    if (!font || typeof font !== "object") {
+      return {accepted: [], rejected: Object.keys(patch || {})};
+    }
+    var mapping = {
+      name: "Name", size: "Size", bold: "Bold",
+      italic: "Italic", underline: "Underline",
+      strikethrough: "StrikeThrough"
+    };
+    Object.keys(patch || {}).forEach(function (key) {
+      var value = patch[key];
+      var ok = false;
+      if (key === "color") {
+        var long = colorLong(value);
+        if (long !== null) {
+          try { font.Color.RGB = long; ok = true; } catch (e) {
+            try { font.Color = long; ok = true; } catch (e2) { ok = false; }
+          }
+        }
+      } else if (mapping[key]) {
+        ok = safeSet(font, mapping[key], value);
+      } else {
+        ok = false;
+      }
+      (ok ? accepted : rejected).push(key);
+    });
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function applyParagraphEdit(fmt, patch) {
+    var accepted = [], rejected = [];
+    if (!fmt || typeof fmt !== "object") {
+      return {accepted: [], rejected: Object.keys(patch || {})};
+    }
+    var mapping = {
+      alignment: "Alignment",
+      left_indent: "LeftIndent",
+      first_line_indent: "FirstLineIndent",
+      line_spacing: "LineSpacing",
+      line_rule_within: "LineRuleWithin",
+      space_before: "SpaceBefore",
+      space_after: "SpaceAfter"
+    };
+    Object.keys(patch || {}).forEach(function (key) {
+      var ok = mapping[key] ? safeSet(fmt, mapping[key], patch[key]) : false;
+      (ok ? accepted : rejected).push(key);
+    });
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function applyGeometryEdit(shape, patch) {
+    var accepted = [], rejected = [];
+    if (!shape || typeof shape !== "object") {
+      return {accepted: [], rejected: Object.keys(patch || {})};
+    }
+    var mapping = {
+      left: "Left", top: "Top", width: "Width",
+      height: "Height", rotation: "Rotation"
+    };
+    Object.keys(patch || {}).forEach(function (key) {
+      var ok = mapping[key] ? safeSet(shape, mapping[key], patch[key]) : false;
+      (ok ? accepted : rejected).push(key);
+    });
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function applyFillEdit(fill, patch) {
+    var accepted = [], rejected = [];
+    if (!fill || typeof fill !== "object") {
+      return {accepted: [], rejected: Object.keys(patch || {})};
+    }
+    Object.keys(patch || {}).forEach(function (key) {
+      var value = patch[key];
+      var ok = false;
+      if (key === "color") {
+        var long = colorLong(value);
+        if (long !== null) {
+          try { fill.Visible = -1; fill.ForeColor.RGB = long; ok = true; }
+          catch (e) { ok = false; }
+        }
+      } else if (key === "visible") {
+        ok = safeSet(fill, "Visible", value);
+      } else if (key === "transparency") {
+        ok = safeSet(fill, "Transparency", value);
+      }
+      (ok ? accepted : rejected).push(key);
+    });
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function applyLineEdit(line, patch) {
+    var accepted = [], rejected = [];
+    if (!line || typeof line !== "object") {
+      return {accepted: [], rejected: Object.keys(patch || {})};
+    }
+    var mapping = { visible: "Visible", weight: "Weight" };
+    Object.keys(patch || {}).forEach(function (key) {
+      var value = patch[key];
+      var ok = false;
+      if (key === "color") {
+        var long = colorLong(value);
+        if (long !== null) {
+          try { line.Visible = -1; line.ForeColor.RGB = long; ok = true; }
+          catch (e) { ok = false; }
+        }
+      } else if (mapping[key]) {
+        ok = safeSet(line, mapping[key], value);
+      }
+      (ok ? accepted : rejected).push(key);
+    });
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function mergeResults() {
+    var accepted = [], rejected = [];
+    for (var i = 0; i < arguments.length; i += 1) {
+      var r = arguments[i] || {};
+      (r.accepted || []).forEach(function (k) { accepted.push(k); });
+      (r.rejected || []).forEach(function (k) { rejected.push(k); });
+    }
+    return {accepted: accepted, rejected: rejected};
+  }
+
+  function patchTextRange(range, patch) {
+    var font = patch.font || {};
+    var paragraph = patch.paragraph || {};
+    var results = [
+      applyFontEdit(safeGet(range, "Font", null), font),
+      applyParagraphEdit(safeGet(range, "ParagraphFormat", null), paragraph)
+    ];
+    if (patch.text !== undefined && patch.text !== null) {
+      var ok = safeSet(range, "Text", String(patch.text));
+      results.push({accepted: ok ? ["text"] : [], rejected: ok ? [] : ["text"]});
+    }
+    return mergeResults.apply(null, results);
+  }
+
+  function patchShape(shape, patch) {
+    var results = [
+      applyGeometryEdit(shape, patch.geometry || {}),
+      applyFillEdit(safeGet(shape, "Fill", null), patch.fill || {}),
+      applyLineEdit(safeGet(shape, "Line", null), patch.line || {})
+    ];
+    var textFrame = safeGet(shape, "TextFrame", null);
+    var range = textFrame ? safeGet(textFrame, "TextRange", null) : null;
+    if (range) {
+      results.push(patchTextRange(range, patch));
+      var tfPatch = patch.text_frame || {};
+      var tfMap = {
+        margin_left: "MarginLeft", margin_right: "MarginRight",
+        margin_top: "MarginTop", margin_bottom: "MarginBottom",
+        word_wrap: "WordWrap", auto_size: "AutoSize",
+        vertical_anchor: "VerticalAnchor"
+      };
+      var tfAccepted = [], tfRejected = [];
+      if (patch.vertical_alignment !== undefined && patch.vertical_alignment !== null) {
+        tfPatch.vertical_anchor = patch.vertical_alignment;
+      }
+      Object.keys(tfPatch).forEach(function (key) {
+        var ok = tfMap[key] ? safeSet(textFrame, tfMap[key], tfPatch[key]) : false;
+        (ok ? tfAccepted : tfRejected).push("text_frame." + key);
+      });
+      results.push({accepted: tfAccepted, rejected: tfRejected});
+    }
+    return mergeResults.apply(null, results);
+  }
+
+  function findShapeByAttr(slide, attr, value) {
+    var count = Number(safeGet(slide.Shapes, "Count", 0) || 0);
+    for (var i = 1; i <= count; i += 1) {
+      var shape = collectionItem(slide.Shapes, i);
+      var v = safeGet(shape, attr, null);
+      if (String(v) === String(value)) { return shape; }
+    }
+    return null;
+  }
+
+  function resolveTarget(presentation, target) {
+    // Returns {slide, shape, paragraph, run, cell} or throws.
+    var m;
+    m = target.match(/^slide:(\d+)$/);
+    if (m) {
+      return {slide: collectionItem(presentation.Slides, Number(m[1]))};
+    }
+    m = target.match(/^slide:(\d+)\/shape:@id=(\d+)$/);
+    if (m) {
+      var slide = collectionItem(presentation.Slides, Number(m[1]));
+      var shape = findShapeByAttr(slide, "Id", m[2]);
+      if (!shape) { throw new Error("shape @id=" + m[2] + " not found"); }
+      return {slide: slide, shape: shape};
+    }
+    m = target.match(/^slide:(\d+)\/shape:@name=(.+)$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      shape = findShapeByAttr(slide, "Name", m[2]);
+      if (!shape) { throw new Error("shape @name=" + m[2] + " not found"); }
+      return {slide: slide, shape: shape};
+    }
+    m = target.match(/^slide:(\d+)\/shape:(\d+)$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      return {slide: slide, shape: collectionItem(slide.Shapes, Number(m[2]))};
+    }
+    m = target.match(/^slide:(\d+)\/shape:(\d+)\/table\/cell:(\d+),(\d+)$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      shape = collectionItem(slide.Shapes, Number(m[2]));
+      var cellShape = shape.Table.Cell(Number(m[3]), Number(m[4])).Shape;
+      return {slide: slide, shape: cellShape};
+    }
+    m = target.match(/^slide:(\d+)\/shape:@id=(\d+)\/table\/cell:(\d+),(\d+)$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      shape = findShapeByAttr(slide, "Id", m[2]);
+      if (!shape) { throw new Error("shape @id=" + m[2] + " not found"); }
+      cellShape = shape.Table.Cell(Number(m[3]), Number(m[4])).Shape;
+      return {slide: slide, shape: cellShape};
+    }
+    m = target.match(/^slide:(\d+)\/shape:(\d+)\/paragraph:(\d+)(?:\/run:(\d+))?$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      shape = collectionItem(slide.Shapes, Number(m[2]));
+      var range = shape.TextFrame.TextRange;
+      var para = range.Paragraphs(Number(m[3]), 1);
+      var rng = m[4] ? para.Runs(Number(m[4]), 1) : para;
+      return {slide: slide, shape: shape, range: rng};
+    }
+    m = target.match(/^slide:(\d+)\/shape:@id=(\d+)\/paragraph:(\d+)(?:\/run:(\d+))?$/);
+    if (m) {
+      slide = collectionItem(presentation.Slides, Number(m[1]));
+      shape = findShapeByAttr(slide, "Id", m[2]);
+      if (!shape) { throw new Error("shape @id=" + m[2] + " not found"); }
+      range = shape.TextFrame.TextRange;
+      para = range.Paragraphs(Number(m[3]), 1);
+      rng = m[4] ? para.Runs(Number(m[4]), 1) : para;
+      return {slide: slide, shape: shape, range: rng};
+    }
+    throw new Error("Unsupported edit target: " + target);
+  }
+
+  function editPresentation(params) {
+    var sourcePath = requirePath(params, "sourcePath");
+    var outputPath = requirePath(params, "outputPath");
+    var patches = params.patches || [];
+    var previousAlerts = Application.DisplayAlerts;
+    var presentation = null;
+    var failure = null;
+    try {
+      Application.DisplayAlerts = 0;
+      presentation = Application.Presentations.Open(sourcePath, false, false, false);
+      var reports = patches.map(function (patch) {
+        var target = patch.target;
+        var rest = {};
+        Object.keys(patch).forEach(function (k) {
+          if (k !== "target") { rest[k] = patch[k]; }
+        });
+        try {
+          var resolved = resolveTarget(presentation, target);
+          var result;
+          if (resolved.range) {
+            result = patchTextRange(resolved.range, rest);
+          } else if (resolved.shape) {
+            result = patchShape(resolved.shape, rest);
+          } else if (resolved.slide) {
+            // slide-level patch (background, name, follow_master_background)
+            var accepted = [], rejected = [];
+            if (rest.name !== undefined) {
+              (safeSet(resolved.slide, "Name", rest.name) ? accepted : rejected).push("name");
+            }
+            if (rest.follow_master_background !== undefined) {
+              (safeSet(resolved.slide, "FollowMasterBackground", rest.follow_master_background) ? accepted : rejected).push("follow_master_background");
+            }
+            if (rest.background) {
+              var fr = applyFillEdit(safeGet(safeGet(resolved.slide, "Background", null), "Fill", null), rest.background);
+              result = mergeResults({accepted: accepted, rejected: rejected}, fr);
+            } else {
+              result = {accepted: accepted, rejected: rejected};
+            }
+          } else {
+            result = {accepted: [], rejected: ["target"]};
+          }
+          return {target: target, accepted: result.accepted, rejected: result.rejected, ok: result.rejected.length === 0};
+        } catch (e) {
+          return {target: target, accepted: [], rejected: [], ok: false, error: String(e.message || e)};
+        }
+      });
+      presentation.SaveAs(outputPath, 24);
+      return {path: outputPath, patches: reports};
+    } catch (error) {
+      failure = conversionError(error, "CONVERSION_COMMAND_FAILED");
+      throw failure;
+    } finally {
+      try {
+        if (presentation !== null) { presentation.Close(); }
+      } catch (closeError) {
+        if (failure === null) { throw conversionError(closeError, "CONVERSION_COMMAND_FAILED"); }
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
 
   window.WPSComposerProbe = {
     handleCommand: function (command) {
