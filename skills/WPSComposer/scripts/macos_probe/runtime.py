@@ -298,8 +298,19 @@ def _require_free_port(port: int) -> None:
             raise RuntimeError(f"Required add-in port is already in use: {port}") from exc
 
 
-def activation_command(app_path: Path, fixture: Path) -> list[str]:
-    """Launch an isolated WPS instance without disturbing an existing one."""
+def activation_command(
+    app_path: Path, fixture: Path, *, reuse_running: bool = True
+) -> list[str]:
+    """Open the fixture document in WPS.
+
+    With ``reuse_running=True`` (default) and WPS already running, the fixture
+    is handed to the existing instance (opens as a new tab — no second WPS
+    app window, no second Dock icon). Falls back to an isolated ``open -n``
+    instance when WPS is not running or reuse is disabled, so a live WPS
+    session is never disturbed.
+    """
+    if reuse_running and list_wps_pids(app_path):
+        return ["open", "-a", str(app_path), str(fixture)]
     return ["open", "-n", "-a", str(app_path), str(fixture)]
 
 
