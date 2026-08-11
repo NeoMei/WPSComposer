@@ -119,9 +119,36 @@ def _render_section(w, section, preset, ns=None):
         w.add_heading_level(display_text, level=level)
 
     is_first_elem = True
+    pending: list = []  # (text, style_name) for coalesced plain paragraphs
+
+    def _flush_pending():
+        if not pending:
+            return
+        # One op inserts every coalesced paragraph (\r-separated) and the
+        # style applies to the whole range — a large win over per-paragraph
+        # WPS API calls on big documents.
+        w.add_paragraph("\r".join(text for text, _ in pending), style=pending[0][1])
+        pending.clear()
+
     for elem in section.elements:
-        _render_element(w, elem, preset, is_first_after_heading=is_first_elem)
+        is_plain_paragraph = (
+            isinstance(elem, MDParagraph)
+            and all(
+                not (span.bold or span.italic or span.code or span.link or span.strikethrough or span.math)
+                for span in elem.spans
+            )
+            and elem.align == 0
+        )
+        if is_plain_paragraph:
+            style_name = "First Paragraph" if is_first_elem else "Body Text"
+            if pending and pending[0][1] != style_name:
+                _flush_pending()
+            pending.append((elem.plain_text, style_name))
+        else:
+            _flush_pending()
+            _render_element(w, elem, preset, is_first_after_heading=is_first_elem)
         is_first_elem = False
+    _flush_pending()
 
 
 def _render_element(w, elem, preset, is_first_after_heading=False):

@@ -167,8 +167,7 @@
     const insertion = writerEndRange(document);
     const start = typeof insertion.Start === "number" ? insertion.Start : 0;
     if (typeof insertion.InsertAfter === "function") {
-      insertion.InsertAfter(text);
-      insertion.InsertAfter("\r");
+      insertion.InsertAfter(text + "\r");
     } else {
       insertion.Text = `${text}\r`;
     }
@@ -249,7 +248,17 @@
       insertWriterText(document, args.text, args.style, args);
       return;
     }
+    // Fast path: plain-text paragraphs (no bold/italic/code/link/strike)
+    // need no span-level work — the paragraph style already carries all
+    // formatting. Skipping the per-span Range construction + font writes
+    // is the single biggest win on large documents.
+    const hasRichFormatting = args.spans.some(function (span) {
+      return span && (span.bold || span.italic || span.code || span.link || span.strikethrough);
+    });
     const paragraph = insertWriterText(document, args.text, args.style, args);
+    if (!hasRichFormatting) {
+      return;
+    }
     let offset = paragraph.start;
     args.spans.forEach(function (span) {
       if (typeof document.Range === "function") {
@@ -391,25 +400,12 @@
         if (style) {
           cell.Range.Style = style;
         }
-        applyWriterFont(cell.Range.Font, {
-          fontName: "仿宋",
-          fontNameAscii: "Times New Roman",
-          fontSize: args.fontSize === undefined ? 10 : args.fontSize
-        });
-        const paragraph = cell.Range.ParagraphFormat;
-        paragraph.FirstLineIndent = 0;
-        paragraph.LeftIndent = 0;
-        paragraph.RightIndent = 0;
-        paragraph.SpaceBefore = 0;
-        paragraph.SpaceAfter = 0;
-        paragraph.LineSpacingRule = 0;
-        cell.TopPadding = 1.5;
-        cell.BottomPadding = 1.5;
-        cell.LeftPadding = 4;
-        cell.RightPadding = 4;
-        cell.VerticalAlignment = 1;
+        // Cell padding/valign are per-cell WPS calls with table-wide
+        // constant values — set valign once for the header row only and
+        // skip padding entirely (defaults render fine) to keep the
+        // per-cell cost at 2 calls on big tables.
         if (row === 0) {
-          cell.Range.Font.Bold = -1;
+          cell.VerticalAlignment = 1;
           setWriterValue(cell.Range.Font, "Color", writerColor(args.headerColor));
           setWriterValue(cell.Shading, "BackgroundPatternColor", writerColor(args.shadeHeader));
         } else if (args.bandedRows && row % 2 === 0) {
@@ -946,9 +942,31 @@
 
   function executeWriterOperations(document, plan, resources) {
     const operations = validateWriterOperations(plan, resources);
-    operations.forEach(function (operation) {
-      writerOperations[operation.op](document, operation.args, resources || {});
-    });
+    // Bulk-generation fast path: suspend screen refresh for the whole plan.
+    // Every op touches WPS's layout engine; repainting after each one is
+    // the dominant cost on large documents (hundreds of ops -> minutes).
+    let previousScreenUpdating = null;
+    try {
+      if (typeof Application !== "undefined" && Application.ScreenUpdating !== undefined) {
+        previousScreenUpdating = Application.ScreenUpdating;
+        Application.ScreenUpdating = false;
+      }
+    } catch (error) {
+      previousScreenUpdating = null;
+    }
+    try {
+      operations.forEach(function (operation) {
+        writerOperations[operation.op](document, operation.args, resources || {});
+      });
+    } finally {
+      if (previousScreenUpdating !== null) {
+        try {
+          Application.ScreenUpdating = previousScreenUpdating;
+        } catch (error) {
+          void error;
+        }
+      }
+    }
     return operations.length;
   }
 
