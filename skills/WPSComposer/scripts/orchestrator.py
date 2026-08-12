@@ -124,10 +124,10 @@ def generate(
 
     # Route to renderer
     if sys.platform == "darwin":
-        return str(generate_macos(
+        result = generate_macos(
             doc, format, output_path, design_preset, timeout=timeout
-        ))
-    if sys.platform != "win32":
+        )
+    elif sys.platform != "win32":
         component = {
             "docx": "writer",
             "pdf": "writer",
@@ -141,17 +141,20 @@ def generate(
             backend="unsupported-platform",
             message=f"WPS generation is unavailable on platform {sys.platform}",
         )
-    if format == "docx":
+    elif format == "docx":
         from .renderers.writer_renderer import render as _render
-        return _render(doc, output, preset=design_preset)
+
+        result = _render(doc, output, preset=design_preset)
 
     elif format == "pptx":
         from .renderers.slide_renderer import render as _render
-        return _render(doc, output, preset=design_preset)
+
+        result = _render(doc, output, preset=design_preset)
 
     elif format == "xlsx":
         from .renderers.sheet_renderer import render as _render
-        return _render(doc, output, preset=design_preset)
+
+        result = _render(doc, output, preset=design_preset)
 
     elif format == "pdf":
         from .renderers.writer_renderer import render as _writer_render
@@ -164,9 +167,22 @@ def generate(
             with WriterComposer() as w:
                 w._doc.Close(False)
                 w._doc = w._app.Documents.Open(tmp_docx)
-                return w.export_pdf(output)
+                result = w.export_pdf(output)
 
-    raise ValueError(f"Format '{format}' not implemented.")
+    # Convert plain-text heading numbers to native Word/WPS multi-level
+    # numbering so renumbering stays automatic when headings change.
+    if format == "docx" and output_path.exists():
+        try:
+            from .numbering_native import apply_native_numbering
+
+            apply_native_numbering(output_path)
+        except Exception as exc:  # never block a successful generation
+            import warnings
+
+            warnings.warn(
+                f"Native heading numbering could not be applied: {exc}"
+            )
+    return str(output_path)
 
 
 def list_formats() -> list:

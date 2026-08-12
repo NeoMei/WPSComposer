@@ -34,7 +34,6 @@ Under the hood:
 
 For conversational formatting, inspect first and then patch the returned
 element ids. All patches are partial, so omitted properties stay unchanged.
-
 ```python
 from skills.WPSComposer import inspect, edit, attach_active
 
@@ -241,6 +240,25 @@ print(PdfComposer.extract_text("in.pdf"))           # via pdfplumber
 Generate and deliver only the requested artifact format. During development,
 create PDF evidence separately when a native WPS layout change needs visual
 verification; do not make that PDF an automatic public companion output.
+
+## Native heading numbering (docx)
+
+Generated DOCX files carry **native Word/WPS multi-level heading numbering**
+instead of plain-text number prefixes: `第一章` → `第一节` → `一、` → `（一）`
+(chineseCounting, auto-reset per level). Reordering, inserting, or deleting
+headings in WPS renumbers the whole document automatically, and new headings
+styled as Heading 2/3/4 continue the numbering. The document title (`#`) is
+rendered as "第一章"; TOC-style titles ("目  录") stay unnumbered.
+
+Implemented as a post-generation pass (`scripts/numbering_native.py`,
+`apply_native_numbering()`) hooked into `orchestrator.generate()` for the
+`docx` format. It strips plain-text prefixes from Heading 1-4 paragraphs,
+injects `word/numbering.xml`, binds Heading 2-4 styles to levels 1-3
+(style-level `numPr`), and binds Heading 1 chapter paragraphs to level 0
+per-paragraph. Idempotent and never blocks a successful generation.
+
+Note: the TOC field cache keeps the pre-refresh entries; update fields
+(Ctrl+A → F9, or right-click TOC → Update Field) after opening to rebuild it.
 
 ## Installation
 
