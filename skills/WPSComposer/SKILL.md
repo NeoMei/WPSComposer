@@ -257,6 +257,11 @@ injects `word/numbering.xml`, binds Heading 2-4 styles to levels 1-3
 (style-level `numPr`), and binds Heading 1 chapter paragraphs to level 0
 per-paragraph. Idempotent and never blocks a successful generation.
 
+Document title handling: the first H1 (the Markdown document title) is
+rendered on the cover page only — it does **not** appear in the body, is
+not collected by the TOC, and does not take part in numbering. The TOC
+title ("目  录") uses a non-outline style so the TOC does not list itself.
+
 Note: the TOC field cache keeps the pre-refresh entries; update fields
 (Ctrl+A → F9, or right-click TOC → Update Field) after opening to rebuild it.
 

@@ -64,6 +64,17 @@ def _render_body(w, doc, preset):
     numbering = NumberingState(scheme=scheme)
     first_section = True
     for section in doc.sections:
+        # The first H1 is the document title: it is already rendered on the
+        # cover page (via doc.title), so it must NOT appear in the body, in
+        # the TOC, or take part in heading numbering.
+        if (
+            first_section
+            and section.level == 1
+            and section.has_heading
+            and section.heading == doc.title
+        ):
+            first_section = False
+            continue
         if section.level == 1 and not first_section:
             w.add_section()
         first_section = False

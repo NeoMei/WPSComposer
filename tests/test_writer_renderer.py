@@ -155,3 +155,51 @@ def test_writer_renderer_has_no_com_or_private_composer_access():
     assert "._set_font_family" not in text
     assert "._set_line_spacing" not in text
     assert "._reset_selection_to_normal" not in text
+
+
+def test_render_body_skips_document_title_section():
+    # The first H1 equals doc.title (rendered on the cover page): it must
+    # not appear in the body, in the TOC, or take part in numbering.
+    document = StructuredDocument(
+        title="知识库应用价值与材料清单（建议稿）",
+        sections=[
+            Section(level=1, heading="知识库应用价值与材料清单（建议稿）"),
+            Section(level=2, heading="核心组织机制：部门文档柜"),
+            Section(level=3, heading="制度法规一键查询"),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+    writer_renderer._render_body(recorder, document, None)
+
+    heads = [
+        op.args["text"]
+        for op in recorder._operations
+        if op.op == "writer.add_heading"
+    ]
+    assert "第一章 知识库应用价值与材料清单（建议稿）" not in heads
+    # Body headings renumber from the first level without the title
+    assert heads == [
+        "第一节 核心组织机制：部门文档柜",
+        "一、 制度法规一键查询",
+    ]
+
+
+def test_render_body_keeps_multiple_h1_without_cover_title():
+    # Only the title-section is skipped; additional H1s still render.
+    # Manual 第一章 / 第二章 prefixes are detected and kept as-is.
+    document = StructuredDocument(
+        title="报告",
+        sections=[
+            Section(level=1, heading="报告"),
+            Section(level=1, heading="第一章 引言"),
+            Section(level=1, heading="第二章 结论"),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+    writer_renderer._render_body(recorder, document, None)
+    heads = [
+        op.args["text"]
+        for op in recorder._operations
+        if op.op == "writer.add_heading"
+    ]
+    assert heads == ["第一章 引言", "第二章 结论"]

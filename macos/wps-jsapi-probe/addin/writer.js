@@ -556,7 +556,9 @@
 
   function insertWriterToc(document, args) {
     if (args.title) {
-      insertWriterText(document, args.title, "Heading 1", {
+      // Body Text (no outline level): the TOC title must not be collected
+      // by the TOC field itself (Heading 1 would put 目  录 at the top).
+      insertWriterText(document, args.title, "Body Text", {
         size: 18,
         bold: false,
         color: "#000000",

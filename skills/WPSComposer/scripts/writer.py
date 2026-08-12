@@ -1046,10 +1046,12 @@ class WriterComposer(BaseComposer):
     def insert_toc(self, title="Table of Contents"):
         s = self.selection
         if title:
-            # Use Heading 1 style for TOC title so it doesn't inherit
-            # the previous paragraph style (e.g. Date)
+            # Use Body Text (no outline level) for the TOC title so it is
+            # not collected by the TOC field itself (Heading 1 would put
+            # 目  录 at the top of the TOC) and doesn't inherit the
+            # previous paragraph style (e.g. Date)
             try:
-                s.Style = self._doc.Styles(-2)  # wdStyleHeading1
+                s.Style = self._doc.Styles("Body Text")
                 s.Font.Size = 18
                 s.Font.Bold = False
                 s.Font.Color = 0
