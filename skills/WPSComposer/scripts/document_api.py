@@ -661,6 +661,28 @@ def _failed_edit_result(reports, *, warnings=None):
     }
 
 
+def _mutation_primitive_count(value):
+    """Count independently applied leaf values in a patch payload."""
+    if isinstance(value, dict):
+        return sum(_mutation_primitive_count(item) for item in value.values())
+    return 1
+
+
+def _attached_atomic_is_single_primitive(ops):
+    if not ops:
+        return True
+    if len(ops) != 1 or not isinstance(ops[0], dict):
+        return False
+    op = ops[0]
+    if op.get("op", "set") != "set":
+        return False
+    payload = {
+        key: value for key, value in op.items()
+        if key not in {"op", "target"}
+    }
+    return _mutation_primitive_count(payload) <= 1
+
+
 def _validate_edited_artifact(path):
     target = Path(path).expanduser().resolve()
     suffix = target.suffix.lower()
@@ -733,10 +755,11 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     destination-local and atomic. Output formats must remain in the source
     document family.
 
-    Atomic multi-operation edits are rejected before mutation when attaching
-    to a live document because WPS/Office exposes no reliable cross-operation
-    rollback boundary there. Use ``atomic=False`` explicitly for best effort,
-    or edit a file-backed staging copy.
+    Atomic composite edits are rejected before mutation when attaching to a
+    live document because WPS/Office exposes no reliable rollback boundary
+    there. Only a single ``set`` operation containing at most one leaf property
+    is provably one mutation primitive. Use ``atomic=False`` explicitly for
+    best effort, or edit a file-backed staging copy.
 
     .. note:: structural ops (insert/remove/move/clone) shift positional ids
        of later siblings. Address subsequent ops by stable id
@@ -751,6 +774,12 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     if ops:
         combined.extend(ops)
 
+    attached = path is None
+    if attached and output is not None:
+        output_path = os.path.abspath(os.fspath(output))
+        if os.path.exists(output_path) and not overwrite:
+            raise FileExistsError(f"Output already exists: {output_path}")
+
     if path is not None and output is not None:
         source_family = _document_family(path, kind)
         output_family = _document_family(output)
@@ -764,16 +793,15 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         if output_path != source_path and os.path.exists(output_path) and not overwrite:
             raise FileExistsError(f"Output already exists: {output_path}")
 
-    attached = path is None
-    if attached and atomic and len(combined) > 1:
+    if attached and atomic and not _attached_atomic_is_single_primitive(combined):
         reports = [{
             "index": 0,
             "ok": False,
             "error": {
                 "code": "atomic_attached_batch_unsupported",
                 "message": (
-                    "Atomic multi-operation edits of an attached live document "
-                    "are unsupported because the host has no reliable rollback"
+                    "Atomic composite edits of an attached live document are "
+                    "unsupported because the host has no reliable rollback"
                 ),
             },
         }]
@@ -827,7 +855,7 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 }
                 for index, item in dropped_entries
             ]
-            if dropped_reports and atomic:
+            if dropped_reports and (atomic or raise_on_error):
                 if raise_on_error:
                     raise PatchError(dropped_reports)
                 return _failed_edit_result(dropped_reports, warnings=warnings)
@@ -893,6 +921,14 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
             composer.close(save_changes=False)
             raise
     try:
+        if attached and output is not None:
+            source_family = _normalize_kind(_kind_from_composer(composer))
+            output_family = _document_family(output)
+            if source_family and output_family != source_family:
+                raise ValueError(
+                    "edit output must use the same document family as the "
+                    f"attached {source_family} document; got {output_family}"
+                )
         before = composer.inspect_document() if inspect_after else None
         op_failed = False
         try:

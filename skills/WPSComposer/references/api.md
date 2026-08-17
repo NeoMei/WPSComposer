@@ -139,12 +139,15 @@ document is not saved (no file is written for `output=`, and `save_current()`
 is not called for the active document). Set `atomic=False` for the legacy
 best-effort behaviour that saves whatever succeeded.
 
-For `path=None` (attach-active), an atomic request containing more than one
-operation is rejected **before the first mutation** because WPS/Office exposes
-no reliable rollback boundary for the live window. Use `atomic=False`
-explicitly for best-effort live mutation, or edit a file-backed copy. With
-`output=` in attach mode the live document keeps its binding and the output is
-published from a validated destination-local staging file.
+For `path=None` (attach-active), only a single `set` operation containing at
+most one leaf property is accepted in atomic mode. Composite patches and all
+structural operations are rejected **before the first mutation** because
+WPS/Office exposes no reliable rollback boundary for the live window. Use
+`atomic=False` explicitly for best-effort live mutation, or edit a file-backed
+copy. An existing `output=` is rejected before attaching unless
+`overwrite=True`; after attachment, its document family is validated before
+mutation. The live document keeps its binding and the output is published from
+a validated destination-local staging file.
 
 File-backed edits preserve the source document family. A distinct destination
 must not exist unless `overwrite=True`; successful saves are validated in a

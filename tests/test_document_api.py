@@ -361,6 +361,37 @@ def test_edit_attached_atomic_multi_op_rejected_before_first_mutation():
     assert composer.saved is False
 
 
+def test_edit_attached_atomic_compound_patch_rejected_before_partial_mutation():
+    class CompoundPatchComposer(FakeWriterComposer):
+        def __init__(self):
+            super().__init__()
+            self.live = {}
+
+        def apply_format_patch(self, target, **patch):
+            self.live["bold"] = patch["font"]["bold"]
+            return {
+                "accepted": ["font.bold"],
+                "rejected": ["font.unsupported"],
+            }
+
+    composer = CompoundPatchComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        result = api.edit(
+            patches=[{
+                "target": "paragraph:1",
+                "font": {"bold": True, "unsupported": True},
+            }],
+            atomic=True,
+        )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["errors"][0]["error"]["code"] == "atomic_attached_batch_unsupported"
+    assert composer.live == {}
+    assert composer.applied == []
+
+
 def test_edit_rejects_cross_family_output_before_opening():
     opened = []
 
@@ -394,6 +425,44 @@ def test_edit_refuses_existing_output_without_overwrite_before_opening(
 
     assert output.read_bytes() == b"approved"
     assert opened == []
+
+
+def test_edit_attached_refuses_existing_output_before_attach_or_mutation(
+    tmp_path: Path,
+):
+    output = tmp_path / "approved.docx"
+    output.write_bytes(b"approved")
+    attach_calls = []
+
+    def fake_attach(kind=None):
+        attach_calls.append(kind)
+        return FakeWriterComposer()
+
+    with _Monkey(api, "attach_active", fake_attach):
+        with pytest.raises(FileExistsError, match="Output already exists"):
+            api.edit(
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert attach_calls == []
+    assert output.read_bytes() == b"approved"
+
+
+def test_edit_attached_rejects_cross_family_output_before_mutation(tmp_path: Path):
+    composer = FakeWriterComposer()
+    output = tmp_path / "wrong-family.pptx"
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(ValueError, match="same document family"):
+            api.edit(
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.applied == []
+    assert composer.saved is False
+    assert composer.closed is True
 
 
 def test_edit_saves_to_destination_local_stage_before_publish(tmp_path: Path):
@@ -1000,6 +1069,34 @@ def test_macos_best_effort_reports_dropped_structural_ops_as_errors(monkeypatch)
     assert result["saved"] is True
     assert result["errors"][0]["op"] == "remove"
     assert result["errors"][0]["error"]["code"] == "unsupported_operation"
+
+
+def test_macos_best_effort_raise_on_error_rejects_before_bridge_publish(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    calls = []
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection,
+        "edit_macos",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    with pytest.raises(PatchError) as caught:
+        api.edit(
+            "deck.pptx",
+            output="revised.pptx",
+            ops=[
+                {"op": "set", "target": "slide:1", "name": "Updated"},
+                {"op": "remove", "target": "slide:2"},
+            ],
+            atomic=False,
+            raise_on_error=True,
+        )
+
+    assert caught.value.errors[0]["error"]["code"] == "unsupported_operation"
+    assert calls == []
 
 
 def test_macos_best_effort_structural_only_returns_error_report(monkeypatch):
