@@ -89,3 +89,18 @@ def test_plain_wikilink_image_is_not_modeled_as_excalidraw(tmp_path):
 def test_inline_markdown_image_is_rejected_instead_of_losing_the_image():
     with pytest.raises(ValueError, match="Inline Markdown images are not supported"):
         parse("Before ![chart](chart.png) after")
+
+
+def test_image_syntax_inside_inline_code_is_literal_text():
+    document = parse("Example: `![literal](not-an-image.png)`")
+
+    (paragraph,) = document.sections[0].elements
+    assert paragraph.plain_text == "Example: ![literal](not-an-image.png)"
+    assert paragraph.spans[-1].code is True
+
+
+def test_escaped_inline_image_syntax_is_not_rejected():
+    document = parse(r"Example: \![literal](not-an-image.png)")
+
+    (paragraph,) = document.sections[0].elements
+    assert paragraph.plain_text == r"Example: \![literal](not-an-image.png)"

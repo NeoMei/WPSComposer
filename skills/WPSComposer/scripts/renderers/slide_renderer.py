@@ -154,7 +154,18 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
         try:
             p.add_blank_slide()
             idx = p.slide_count
-            p.add_image(idx, img.path, 80, 100, 800, 400)
+            width = img.width
+            height = img.height
+            if width is None and height is None:
+                width = 800
+            p.add_image(
+                idx,
+                img.path,
+                80,
+                100,
+                width=width,
+                height=height,
+            )
         except Exception:
             pass
 

@@ -993,10 +993,6 @@ def _run_generation(
             staged_pdf.unlink(missing_ok=True)
         return published
     except ArtifactTransportError as exc:
-        if exc.code == "FINAL_ARTIFACT_INVALID":
-            # the published artifact failed validation; never leave it behind
-            # (with overwrite=True it has already replaced the user's file)
-            request.output.unlink(missing_ok=True)
         message = {
             "STAGED_ARTIFACT_INVALID": "Staged WPS artifact is invalid",
             "ARTIFACT_PUBLISH_FAILED": "Generated artifact could not be published",

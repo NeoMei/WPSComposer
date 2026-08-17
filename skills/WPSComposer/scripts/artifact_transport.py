@@ -149,6 +149,7 @@ def publish_artifact(
         raise FileExistsError(f"Output already exists: {target}")
 
     temporary: Path | None = None
+    backup: Path | None = None
     try:
         try:
             with tempfile.NamedTemporaryFile(
@@ -176,6 +177,24 @@ def publish_artifact(
             ) from exc
         try:
             if overwrite:
+                if target.exists():
+                    try:
+                        with tempfile.NamedTemporaryFile(
+                            mode="wb",
+                            dir=target.parent,
+                            prefix=".wpscomposer-backup-",
+                            suffix=".tmp",
+                            delete=False,
+                        ) as stream:
+                            backup = Path(stream.name)
+                            with target.open("rb") as existing:
+                                shutil.copyfileobj(existing, stream)
+                            stream.flush()
+                            os.fsync(stream.fileno())
+                    except OSError as exc:
+                        raise ArtifactTransportError(
+                            "ARTIFACT_PUBLISH_FAILED", str(exc)
+                        ) from exc
                 os.replace(temporary, target)
             else:
                 os.link(temporary, target)
@@ -190,10 +209,25 @@ def publish_artifact(
         try:
             validator(target)
         except ArtifactValidationError as exc:
+            try:
+                if backup is not None:
+                    os.replace(backup, target)
+                    backup = None
+                else:
+                    target.unlink(missing_ok=True)
+            except OSError as restore_exc:
+                raise ArtifactTransportError(
+                    "ARTIFACT_PUBLISH_FAILED", str(restore_exc)
+                ) from restore_exc
             raise ArtifactTransportError(
                 "FINAL_ARTIFACT_INVALID", str(exc)
             ) from exc
+        if backup is not None:
+            backup.unlink(missing_ok=True)
+            backup = None
         return target
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+        if backup is not None:
+            backup.unlink(missing_ok=True)

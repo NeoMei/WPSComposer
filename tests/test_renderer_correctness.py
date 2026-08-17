@@ -23,6 +23,23 @@ def test_quality_inspection_failure_fails_closed():
     assert result["status"] == "error"
 
 
+def test_quality_inspection_fails_closed_when_every_shape_proxy_fails():
+    class BrokenShapes:
+        Count = 3
+
+        def __call__(self, index):
+            raise RuntimeError(f"shape {index} disconnected")
+
+    result = validate_wps_slide(
+        SimpleNamespace(Shapes=BrokenShapes()), PRESETS["business"]
+    )
+
+    assert result["pass"] is False
+    assert result["score"] == 0
+    assert result["status"] == "error"
+    assert result["warnings"] == ["Cannot inspect any slide shapes"]
+
+
 def test_pdf_page_indices_reject_zero_negative_bool_and_out_of_range():
     for invalid in (0, -1, True, 3):
         try:

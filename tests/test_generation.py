@@ -923,6 +923,37 @@ def test_artifact_transport_internal_path_is_redacted(monkeypatch, tmp_path):
     assert not request.output.exists()
 
 
+def test_macos_final_validation_failure_keeps_restored_overwrite_target(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "final.docx"
+    output.write_bytes(b"restored old artifact")
+    request = GenerationRequest(
+        output, "writer", "docx", overwrite=True
+    )
+
+    def fail_after_restoring(*args, **kwargs):
+        output.write_bytes(b"restored old artifact")
+        raise ArtifactTransportError(
+            "FINAL_ARTIFACT_INVALID", "simulated final validation failure"
+        )
+
+    monkeypatch.setattr(mac_generation, "publish_artifact", fail_after_restoring)
+
+    with pytest.raises(GenerationError) as caught:
+        execute_generation_plan(
+            request,
+            _writer_recording(),
+            enabled={"docx": True},
+            bridge_factory=lambda origins: GenerationBridge(),
+            runtime_factory=_runtime_factory([]),
+            timeout=2,
+        )
+
+    assert caught.value.code == "FINAL_ARTIFACT_INVALID"
+    assert output.read_bytes() == b"restored old artifact"
+
+
 def test_semantic_validation_requires_all_representative_renderer_text(tmp_path):
     bridge = GenerationBridge("partial")
     request = GenerationRequest(tmp_path / "final.docx", "writer", "docx")

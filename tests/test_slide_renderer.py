@@ -7,6 +7,7 @@ from skills.WPSComposer.scripts.document_model import (
 from skills.WPSComposer.scripts.renderers import slide_renderer
 from skills.WPSComposer.scripts.slide import SlideComposer
 from skills.WPSComposer.scripts.recording_composers import RecordingSlideComposer
+from skills.WPSComposer.scripts.md_parser import parse
 
 
 def test_slide_composer_exposes_public_slide_count():
@@ -140,3 +141,37 @@ def test_slide_renderer_uses_preset_table_colors():
     )
 
     assert table["headerShade"] == PRESETS["tech"].get_color("primary")
+
+
+def test_slide_renderer_preserves_wikilink_image_width_and_height(tmp_path):
+    document = parse(
+        "![[photo.png|320x200]]", base_dir=str(tmp_path)
+    )
+
+    recorded = slide_renderer.render(
+        document, "ignored.pptx", composer_factory=RecordingSlideComposer
+    )
+    image = next(
+        op.to_dict()["args"]
+        for op in recorded.plan.operations
+        if op.op == "slide.add_image"
+    )
+
+    assert image["width"] == 320
+    assert image["height"] == 200
+
+
+def test_slide_renderer_preserves_wikilink_image_width_only(tmp_path):
+    document = parse("![[photo.png|320]]", base_dir=str(tmp_path))
+
+    recorded = slide_renderer.render(
+        document, "ignored.pptx", composer_factory=RecordingSlideComposer
+    )
+    image = next(
+        op.to_dict()["args"]
+        for op in recorded.plan.operations
+        if op.op == "slide.add_image"
+    )
+
+    assert image["width"] == 320
+    assert "height" not in image

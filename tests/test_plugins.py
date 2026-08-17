@@ -48,3 +48,18 @@ def test_excalidraw_plugin_never_overwrites_source_sidecar(monkeypatch, tmp_path
     assert len(rendered_paths) == 1
     assert rendered_paths[0].parent != tmp_path
     assert str(rendered_paths[0]) in result
+
+
+def test_requested_excalidraw_plugin_fails_closed_when_rendering_fails(
+    monkeypatch, tmp_path
+):
+    source = tmp_path / "diagram.excalidraw.md"
+    source.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        excalidraw, "_render_excalidraw_to_png", lambda *args: False
+    )
+
+    with pytest.raises(RuntimeError, match="Failed to render Excalidraw"):
+        run_plugins(
+            "![[diagram.excalidraw.md]]", str(tmp_path), ["excalidraw"]
+        )

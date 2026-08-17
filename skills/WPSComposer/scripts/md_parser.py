@@ -94,17 +94,37 @@ def _parse_inline(text: str) -> List[Span]:
 
     Returns a list of Span objects preserving order.
     """
-    if _IMAGE_RE.search(text):
-        raise ValueError(
-            "Inline Markdown images are not supported; put the image on its own line."
-        )
-
     # First, protect code spans
     codes: List[tuple] = []
     for m in _INLINE_CODE_RE.finditer(text):
         codes.append((m.start(), m.end(), m.group(1)))
 
-    if not codes and not _INLINE_MATH_RE.search(text) and not _BOLD_RE.search(text) and not _ITALIC_RE.search(text) and not _LINK_RE.search(text) and not _IMAGE_RE.search(text):
+    def _inside_code(position: int) -> bool:
+        return any(start <= position < end for start, end, _ in codes)
+
+    def _escaped(position: int) -> bool:
+        slash_count = 0
+        position -= 1
+        while position >= 0 and text[position] == "\\":
+            slash_count += 1
+            position -= 1
+        return slash_count % 2 == 1
+
+    if any(
+        not _inside_code(match.start()) and not _escaped(match.start())
+        for match in _IMAGE_RE.finditer(text)
+    ):
+        raise ValueError(
+            "Inline Markdown images are not supported; put the image on its own line."
+        )
+
+    if (
+        not codes
+        and not _INLINE_MATH_RE.search(text)
+        and not _BOLD_RE.search(text)
+        and not _ITALIC_RE.search(text)
+        and not _LINK_RE.search(text)
+    ):
         return [Span(text=text)] if text else []
 
     # Simple approach: tokenize by priority

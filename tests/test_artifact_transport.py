@@ -208,3 +208,27 @@ def test_publish_does_not_clobber_target_created_during_no_overwrite_race(
 
     assert destination.read_bytes() == intruder
     assert not list(tmp_path.glob(".wpscomposer-*.tmp"))
+
+
+def test_publish_restores_existing_output_when_final_validation_fails(tmp_path):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new artifact")
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    original = destination.read_bytes()
+    replacement = staged.read_bytes()
+
+    def fail_only_after_replace(path):
+        validate_pdf(path)
+        target = Path(path).resolve()
+        if target == destination.resolve() and target.read_bytes() == replacement:
+            raise ArtifactValidationError("simulated final validation failure")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=fail_only_after_replace,
+        )
+
+    assert caught.value.code == "FINAL_ARTIFACT_INVALID"
+    assert destination.read_bytes() == original
