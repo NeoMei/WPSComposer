@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -211,3 +212,50 @@ def test_attached_save_copy_fails_before_rebinding_without_savecopyas(tmp_path):
 
     assert save_as_calls == []
     assert composer.doc.FullName == r"C:\\user\\original.docx"
+
+
+def test_attached_save_copy_reports_recovery_path_if_host_rebinds_then_fails(
+    tmp_path, monkeypatch,
+):
+    monkeypatch.setattr(_base, "_abs", lambda path: str(Path(path).resolve()))
+    class RebindingDocument:
+        FullName = r"C:\\user\\original.docx"
+
+        def SaveCopyAs(self, path):
+            self.FullName = path
+            Path(path).write_bytes(b"RECOVERY")
+            raise OSError("copy failed after rebind")
+
+    composer = _Composer()
+    composer._doc = RebindingDocument()
+    composer._owns_doc = False
+    recovery = tmp_path / "copy.docx"
+
+    with pytest.raises(RuntimeError, match=str(recovery.resolve())):
+        composer.save_copy(recovery)
+
+    assert composer.is_bound_to(recovery)
+    assert recovery.read_bytes() == b"RECOVERY"
+
+
+def test_attached_save_copy_rejects_host_that_claims_success_but_rebinds(
+    tmp_path, monkeypatch,
+):
+    monkeypatch.setattr(_base, "_abs", lambda path: str(Path(path).resolve()))
+
+    class RebindingDocument:
+        FullName = r"C:\\user\\original.docx"
+
+        def SaveCopyAs(self, path):
+            self.FullName = path
+            Path(path).write_bytes(b"RECOVERY")
+
+    composer = _Composer()
+    composer._doc = RebindingDocument()
+    composer._owns_doc = False
+    recovery = tmp_path / "copy.docx"
+
+    with pytest.raises(RuntimeError, match="recovery path"):
+        composer.save_copy(recovery)
+
+    assert composer.is_bound_to(recovery)

@@ -1,6 +1,11 @@
+import pytest
+
 from skills.WPSComposer.scripts.document_model import (
+    ExcalidrawBlock,
     ImageBlock,
+    Paragraph,
     Section,
+    Span,
     StructuredDocument,
     TableBlock,
 )
@@ -175,3 +180,105 @@ def test_slide_renderer_preserves_wikilink_image_width_only(tmp_path):
 
     assert image["width"] == 320
     assert "height" not in image
+
+
+def test_slide_renderer_preserves_interleaved_element_order():
+    document = StructuredDocument(
+        sections=[Section(2, "Flow", [
+            Paragraph([Span("before")]),
+            ImageBlock(path="figure.png"),
+            Paragraph([Span("after")]),
+            TableBlock(["h"], [["cell"]]),
+        ])]
+    )
+
+    recorded = slide_renderer.render(
+        document, "ignored.pptx", composer_factory=RecordingSlideComposer
+    )
+    operations = [operation.op for operation in recorded.plan.operations]
+
+    assert operations == [
+        "slide.reset",
+        "slide.set_size",
+        "slide.add_bullets",
+        "slide.add_blank",
+        "slide.add_image",
+        "slide.add_bullets",
+        "slide.add_bullets",
+        "slide.add_table",
+    ]
+    bullet_items = [
+        operation.to_dict()["args"]["items"]
+        for operation in recorded.plan.operations
+        if operation.op == "slide.add_bullets"
+    ]
+    assert bullet_items[:2] == [["before"], ["after"]]
+
+
+def test_slide_renderer_requires_excalidraw_preprocessing():
+    document = StructuredDocument(
+        sections=[Section(2, "Diagram", [
+            ExcalidrawBlock(path="architecture.excalidraw.md")
+        ])]
+    )
+
+    with pytest.raises(RuntimeError, match="Excalidraw.*excalidraw"):
+        slide_renderer.render(
+            document, "ignored.pptx", composer_factory=RecordingSlideComposer
+        )
+
+
+@pytest.mark.parametrize("failure", ["preset", "table", "image"])
+def test_slide_renderer_propagates_content_and_preset_failures(failure):
+    class FailingComposer:
+        def __init__(self):
+            self.slide_count = 0
+            self.saved = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def set_slide_size(self, *_):
+            pass
+
+        def apply_design_preset(self, _preset):
+            if failure == "preset":
+                raise RuntimeError("preset failed")
+
+        def add_bullets_slide(self, *_args, **_kwargs):
+            self.slide_count += 1
+
+        def add_blank_slide(self):
+            self.slide_count += 1
+
+        def add_table(self, *_args, **_kwargs):
+            if failure == "table":
+                raise RuntimeError("table failed")
+
+        def add_image(self, *_args, **_kwargs):
+            if failure == "image":
+                raise RuntimeError("image failed")
+
+        def save_pptx(self, _path):
+            self.saved = True
+
+    composer = FailingComposer()
+    elements = {
+        "preset": [Paragraph([Span("text")])],
+        "table": [TableBlock(["h"], [["cell"]])],
+        "image": [ImageBlock(path="broken.png")],
+    }[failure]
+    document = StructuredDocument(sections=[Section(2, "Content", elements)])
+
+    with pytest.raises(RuntimeError, match=failure):
+        slide_renderer.render(
+            document,
+            "ignored.pptx",
+            preset=object(),
+            composer_factory=lambda: composer,
+        )
+
+    assert composer.saved is False

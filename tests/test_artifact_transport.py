@@ -149,6 +149,39 @@ def test_publish_overwrites_atomically_when_requested(tmp_path: Path):
     assert not list(tmp_path.glob(".wpscomposer-*.tmp"))
 
 
+def test_group_publish_rolls_back_all_outputs_when_later_publish_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    first_stage = _write_pdf(tmp_path / "stage" / "first.pdf", b"new-first")
+    second_stage = _write_pdf(tmp_path / "stage" / "second.pdf", b"new-second")
+    first = _write_pdf(tmp_path / "out" / "first.pdf", b"old-first")
+    second = _write_pdf(tmp_path / "out" / "second.pdf", b"old-second")
+    originals = (first.read_bytes(), second.read_bytes())
+    real_replace = os.replace
+    publish_count = 0
+
+    def fail_second_publish(source, target):
+        nonlocal publish_count
+        source_path = Path(source)
+        if source_path.name.startswith(".wpscomposer-group-"):
+            publish_count += 1
+            if publish_count == 2:
+                raise OSError("simulated second publish failure")
+        return real_replace(source, target)
+
+    monkeypatch.setattr(os, "replace", fail_second_publish)
+
+    with pytest.raises(ArtifactTransportError, match="second publish failure"):
+        artifact_transport.publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, validate_pdf),
+        ])
+
+    assert (first.read_bytes(), second.read_bytes()) == originals
+    assert not list((tmp_path / "out").glob(".wpscomposer-group-*.tmp"))
+    assert not list((tmp_path / "out").glob(".wpscomposer-group-backup-*.tmp"))
+
+
 def test_publish_validation_failure_leaves_no_partial_destination(
     tmp_path: Path,
 ):

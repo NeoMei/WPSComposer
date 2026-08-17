@@ -593,6 +593,38 @@ class SlideComposer(BaseComposer):
             rng = para.Runs(int(match.group(4)), 1) if match.group(4) else para
             return self._patch_text_range(rng, text, font, paragraph)
 
+        match = re.fullmatch(
+            r"slide:(\d+)/shape:@id=(\d+)/table/cell:(\d+),(\d+)", target
+        )
+        if match:
+            shape = self._find_shape_in_slide(
+                int(match.group(1)), shape_id=int(match.group(2))
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Slide target: {target}")
+            cell_shape = shape.Table.Cell(
+                int(match.group(3)), int(match.group(4))
+            ).Shape
+            return self._patch_text_shape(
+                cell_shape, text, font, paragraph, {}, fill, line, text_frame,
+                vertical_alignment,
+            )
+
+        match = re.fullmatch(
+            r"slide:(\d+)/shape:@id=(\d+)/paragraph:(\d+)"
+            r"(?:/run:(\d+))?", target
+        )
+        if match:
+            shape = self._find_shape_in_slide(
+                int(match.group(1)), shape_id=int(match.group(2))
+            )
+            if shape is None:
+                raise ValueError(f"Unsupported Slide target: {target}")
+            text_range = shape.TextFrame.TextRange
+            para = text_range.Paragraphs(int(match.group(3)), 1)
+            rng = para.Runs(int(match.group(4)), 1) if match.group(4) else para
+            return self._patch_text_range(rng, text, font, paragraph)
+
         match = re.fullmatch(r"slide:(\d+)/shape:@id=(\d+)", target)
         if match:
             # Resolve a stable Shape.Id to the shape object.

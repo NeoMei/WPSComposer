@@ -140,3 +140,49 @@ def test_windows_slide_preset_applies_to_slides_created_after_preset():
     assert title_font.Size == PRESETS["academic"].get_font("title")[1]
     assert subtitle_font.Name == PRESETS["academic"].get_font("subtitle")[0]
     assert subtitle_font.Size == PRESETS["academic"].get_font("subtitle")[1]
+
+
+def test_windows_slide_resolves_stable_shape_id_for_nested_text_and_cell_targets():
+    run = object()
+
+    class Paragraph:
+        def Runs(self, index, count):
+            assert (index, count) == (4, 1)
+            return run
+
+    paragraph = Paragraph()
+
+    class TextRange:
+        def Paragraphs(self, index, count):
+            assert (index, count) == (2, 1)
+            return paragraph
+
+    cell_shape = object()
+    table = SimpleNamespace(
+        Cell=lambda row, col: SimpleNamespace(Shape=cell_shape)
+    )
+    shape = SimpleNamespace(
+        TextFrame=SimpleNamespace(TextRange=TextRange()),
+        Table=table,
+    )
+    composer = object.__new__(SlideComposer)
+    composer._find_shape_in_slide = lambda slide, shape_id=None: shape
+    patched = []
+    composer._patch_text_range = lambda target, *args: patched.append(target) or {
+        "accepted": [], "rejected": []
+    }
+    composer._patch_text_shape = lambda target, *args: patched.append(target) or {
+        "accepted": [], "rejected": []
+    }
+
+    composer.apply_format_patch(
+        "slide:1/shape:@id=7/paragraph:2", font={"bold": True}
+    )
+    composer.apply_format_patch(
+        "slide:1/shape:@id=7/paragraph:2/run:4", font={"bold": True}
+    )
+    composer.apply_format_patch(
+        "slide:1/shape:@id=7/table/cell:2,3", font={"italic": True}
+    )
+
+    assert patched == [paragraph, run, cell_shape]

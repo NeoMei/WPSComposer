@@ -86,6 +86,14 @@ def _rewrite_member(path: Path, member: str, transform) -> None:
             destination.writestr(name, data)
 
 
+def _write_semantic_package(path: Path, members: dict[str, str]) -> Path:
+    with zipfile.ZipFile(path, "w") as package:
+        package.writestr("[Content_Types].xml", "<Types />")
+        for name, content in members.items():
+            package.writestr(name, content)
+    return path
+
+
 def _xml_with_root_marker(data: bytes) -> bytes:
     root = ElementTree.fromstring(data)
     root.text = (root.text or "") + MARKER
@@ -549,3 +557,69 @@ def test_generation_rejects_failed_or_invalid_results(
     assert caught.value.code == expected_code
     assert not (tmp_path / "final.docx").exists()
     assert str((tmp_path / "container").resolve()) not in caught.value.message
+
+
+def test_semantic_validator_counts_repeated_writer_content(tmp_path: Path):
+    package = _write_semantic_package(tmp_path / "repeated.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main"><w:body><w:p><w:r>'
+            '<w:t>REPEATED</w:t></w:r></w:p></w:body></w:document>'
+        ),
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_paragraph", {"text": "REPEATED"}),
+        GenerationOperation("writer.add_paragraph", {"text": "REPEATED"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="content count"):
+        mac_generation._validate_generated_package(
+            package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_requires_every_planned_writer_image(tmp_path: Path):
+    package = _write_semantic_package(tmp_path / "images.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main" xmlns:a="http://schemas.openxmlformats.'
+            'org/drawingml/2006/main"><w:body><w:drawing><a:blip/>'
+            '</w:drawing></w:body></w:document>'
+        ),
+        "word/_rels/document.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/'
+            '2006/relationships"><Relationship Id="rId1" Type="http://schemas.'
+            'openxmlformats.org/officeDocument/2006/relationships/image" '
+            'Target="media/image1.png"/></Relationships>'
+        ),
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_image", {"imageId": "image-1"}),
+        GenerationOperation("writer.add_image", {"imageId": "image-2"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="image structure"):
+        mac_generation._validate_generated_package(
+            package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_aligns_presentation_content_by_slide(tmp_path: Path):
+    drawing = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    package = _write_semantic_package(tmp_path / "swapped.pptx", {
+        "ppt/presentation.xml": "<p:presentation xmlns:p='urn:p'/>",
+        "ppt/slides/slide1.xml": f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'><a:t>SECOND</a:t></p:sld>",
+        "ppt/slides/slide2.xml": f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'><a:t>FIRST</a:t></p:sld>",
+    })
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+        GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide 1 content"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )

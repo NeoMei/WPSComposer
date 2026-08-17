@@ -34,7 +34,9 @@ import tempfile
 from .artifact_transport import (
     ArtifactValidationError,
     publish_artifact,
+    publish_artifact_group,
     validate_office_package,
+    validate_pdf,
 )
 from .writer import WriterComposer
 from .sheet import SheetComposer
@@ -161,6 +163,15 @@ PATCH_GRAMMAR = {
          "a shape by its stable Shape.Id (preferred over positional)"),
         ("slide:N/shape:@name=NAME", r"slide:(\d+)/shape:@name=(.+)", "shape",
          "a shape by Name"),
+        ("slide:N/shape:@id=N/paragraph:N",
+         r"slide:(\d+)/shape:@id=(\d+)/paragraph:(\d+)", "paragraph",
+         "a paragraph inside a shape addressed by stable Shape.Id"),
+        ("slide:N/shape:@id=N/paragraph:N/run:N",
+         r"slide:(\d+)/shape:@id=(\d+)/paragraph:(\d+)/run:(\d+)", "run",
+         "a run inside a shape addressed by stable Shape.Id"),
+        ("slide:N/shape:@id=N/table/cell:R,C",
+         r"slide:(\d+)/shape:@id=(\d+)/table/cell:(\d+),(\d+)", "table_cell",
+         "a table cell inside a shape addressed by stable Shape.Id"),
         ("slide:N/shape:N/paragraph:N",
          r"slide:(\d+)/shape:(\d+)/paragraph:(\d+)", "paragraph",
          "a text paragraph inside a shape"),
@@ -308,6 +319,7 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
     wanted = tuple(dimensions)
     patches = []
     seen = set()
+    stable_shape_positions = {}
 
     # Snapshot keys the host exposes read-only; replaying them always lands
     # in `rejected`. (Fill.Type and ZOrderPosition are read-only in the
@@ -318,16 +330,24 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
         # Stable ids (@paraId/@id/@name) are document-specific; replaying them
         # on another document cannot resolve. Rewrite to the positional form
         # using the element's index when one is available.
+        nested = re.fullmatch(
+            r"(slide:\d+/shape:@id=\d+)(/.+)", element_id
+        )
+        if nested and nested.group(1) in stable_shape_positions:
+            return stable_shape_positions[nested.group(1)] + nested.group(2)
         index = node.get("index")
         if not (isinstance(index, int) and index > 0):
             return element_id
         if re.fullmatch(r"paragraph:@paraId=[0-9A-Fa-f]+", element_id):
             return f"paragraph:{index}"
-        match = re.fullmatch(
-            r"((?:slide|sheet):\d+/shape:)@(?:id|name)=.+", element_id
+        stable_shape = re.fullmatch(
+            r"((?:slide|sheet):\d+/shape:)"
+            r"(?:@id=\d+|@name=[^/]+)", element_id
         )
-        if match:
-            return f"{match.group(1)}{index}"
+        if stable_shape:
+            positional = f"{stable_shape.group(1)}{index}"
+            stable_shape_positions[element_id] = positional
+            return positional
         return element_id
 
     def visit(node):
@@ -725,7 +745,43 @@ def _save_edited_artifact(composer, destination, *, attached, overwrite):
         )
         return str(published)
     finally:
+        retain_staged = False
+        if attached:
+            binding_check = getattr(composer, "is_bound_to", None)
+            if callable(binding_check):
+                try:
+                    retain_staged = bool(binding_check(staged))
+                except BaseException:
+                    # If the host binding cannot be queried, preserve the only
+                    # possible recovery copy instead of deleting a live target.
+                    retain_staged = staged.exists()
+        if not retain_staged:
+            staged.unlink(missing_ok=True)
+
+
+def _stage_composer_artifact(composer, destination, *, export_pdf=False):
+    """Write one composer artifact beside its destination without publishing."""
+    target = Path(destination).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=".wpscomposer-edit-",
+        suffix=target.suffix,
+    )
+    os.close(descriptor)
+    staged = Path(temporary_name)
+    staged.unlink()
+    try:
+        if export_pdf:
+            composer.export_pdf(str(staged))
+            validate_pdf(staged)
+        else:
+            composer.save(str(staged))
+            _validate_edited_artifact(staged)
+    except BaseException:
         staged.unlink(missing_ok=True)
+        raise
+    return staged
 
 
 def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
@@ -775,6 +831,17 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         combined.extend(ops)
 
     attached = path is None
+    if export_pdf is not None:
+        pdf_output = Path(export_pdf).expanduser().resolve()
+        if pdf_output.suffix.lower() != ".pdf":
+            raise ValueError("edit export_pdf target must use the '.pdf' suffix")
+        if pdf_output.exists() and not overwrite:
+            raise FileExistsError(f"Output already exists: {pdf_output}")
+        if attached:
+            raise RuntimeError(
+                "edit export_pdf is unsupported for attached documents because "
+                "the host cannot guarantee non-rebinding export"
+            )
     if attached and output is not None:
         output_path = os.path.abspath(os.fspath(output))
         if os.path.exists(output_path) and not overwrite:
@@ -813,6 +880,11 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     # Only the ``set`` verb (formatting patches) is supported on macOS;
     # structural ops still require Windows COM.
     if path is not None and not _com_available():
+        if export_pdf is not None:
+            raise RuntimeError(
+                "edit export_pdf is unsupported on macOS; edit and PDF "
+                "conversion must be requested as separate operations"
+            )
         ext = os.path.splitext(os.fspath(path))[1].lower()
         from .macos_probe.inspection import EDITABLE, edit_macos, macos_inspection_available
         inspection_available = macos_inspection_available()
@@ -929,6 +1001,11 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                     "edit output must use the same document family as the "
                     f"attached {source_family} document; got {output_family}"
                 )
+            capability = getattr(composer, "supports_attached_save_copy", None)
+            if callable(capability) and not capability():
+                raise RuntimeError(
+                    "Attached document has no reliable non-rebinding copy primitive"
+                )
         before = composer.inspect_document() if inspect_after else None
         op_failed = False
         try:
@@ -957,6 +1034,35 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                     attached=True,
                     overwrite=overwrite,
                 )
+            elif not attached and export_pdf is not None:
+                destination = output if output is not None else path
+                destination_path = Path(destination).expanduser().resolve()
+                source_path = Path(path).expanduser().resolve()
+                staged_document = None
+                staged_pdf = None
+                try:
+                    staged_document = _stage_composer_artifact(
+                        composer, destination_path
+                    )
+                    staged_pdf = _stage_composer_artifact(
+                        composer, pdf_output, export_pdf=True
+                    )
+                    published = publish_artifact_group([
+                        (
+                            staged_document,
+                            destination_path,
+                            overwrite or destination_path == source_path,
+                            _validate_edited_artifact,
+                        ),
+                        (staged_pdf, pdf_output, overwrite, validate_pdf),
+                    ])
+                    saved_path = str(published[0])
+                    pdf_path = str(published[1])
+                finally:
+                    if staged_document is not None:
+                        staged_document.unlink(missing_ok=True)
+                    if staged_pdf is not None:
+                        staged_pdf.unlink(missing_ok=True)
             elif not attached and Path(path).expanduser().is_file():
                 destination = output if output is not None else path
                 in_place = (
@@ -971,7 +1077,8 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 )
             else:
                 saved_path = composer.save(output) if output else composer.save_current()
-            pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
+            if export_pdf is None:
+                pdf_path = None
         after = composer.inspect_document() if inspect_after else None
         return {
             "ok": not had_failures,

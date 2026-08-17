@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from functools import partial
 import hashlib
@@ -652,28 +653,33 @@ def _expected_cell_text(value: object, component: str) -> Optional[str]:
 def _expected_text(recorded: RecordedGeneration) -> list[str]:
     values: list[str] = []
     for operation in recorded.plan.operations:
-        args = operation.args
-        for key in ("text", "title", "subtitle"):
-            value = args.get(key)
-            if isinstance(value, str) and value:
-                values.append(value)
-        items = args.get("items")
-        if isinstance(items, tuple):
-            values.extend(str(item) for item in items if str(item))
-        for key in ("data", "values"):
-            rows = args.get(key)
-            if isinstance(rows, tuple):
-                for row in rows:
-                    if isinstance(row, tuple):
-                        values.extend(
-                            text
-                            for item in row
-                            if (text := _expected_cell_text(
-                                item, recorded.plan.component
-                            ))
-                            is not None
-                        )
-    return list(dict.fromkeys(values))
+        values.extend(
+            _operation_expected_text(operation, recorded.plan.component)
+        )
+    return values
+
+
+def _operation_expected_text(operation, component: str) -> list[str]:
+    values: list[str] = []
+    args = operation.args
+    for key in ("text", "title", "subtitle"):
+        value = args.get(key)
+        if isinstance(value, str) and value:
+            values.append(value)
+    items = args.get("items")
+    if isinstance(items, tuple):
+        values.extend(str(item) for item in items if str(item))
+    for key in ("data", "values"):
+        rows = args.get(key)
+        if isinstance(rows, tuple):
+            for row in rows:
+                if isinstance(row, tuple):
+                    values.extend(
+                        text
+                        for item in row
+                        if (text := _expected_cell_text(item, component)) is not None
+                    )
+    return values
 
 
 def _visible_package_text(
@@ -737,6 +743,92 @@ def _whitespace_stripped(text: str) -> str:
     return re.sub(r"\s+", "", text)
 
 
+def _normalized_expected_counts(values: list[str]) -> Counter:
+    return Counter(
+        normalized
+        for value in values
+        if (normalized := _whitespace_stripped(value))
+    )
+
+
+def _require_text_counts(values: list[str], actual_text: str, context: str) -> None:
+    actual = _whitespace_stripped(actual_text)
+    for value, required in _normalized_expected_counts(values).items():
+        if actual.count(value) < required:
+            raise ArtifactValidationError(
+                f"Generated artifact is missing {context} content count"
+            )
+
+
+def _spreadsheet_cell_text(xml: Mapping[str, ElementTree.Element]) -> list[str]:
+    namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    shared = []
+    shared_root = xml.get("xl/sharedStrings.xml")
+    if shared_root is not None:
+        for item in shared_root.iter(f"{{{namespace}}}si"):
+            shared.append("".join(
+                text.text or "" for text in item.iter(f"{{{namespace}}}t")
+            ))
+    values = []
+    for name, root in sorted(xml.items()):
+        if not (name.startswith("xl/worksheets/sheet") and name.endswith(".xml")):
+            continue
+        for cell in root.iter(f"{{{namespace}}}c"):
+            cell_type = cell.attrib.get("t")
+            if cell_type == "inlineStr":
+                value = "".join(
+                    text.text or "" for text in cell.iter(f"{{{namespace}}}t")
+                )
+            else:
+                value_node = cell.find(f"{{{namespace}}}v")
+                value = "" if value_node is None else value_node.text or ""
+                if cell_type == "s" and value:
+                    try:
+                        value = shared[int(value)]
+                    except (IndexError, ValueError):
+                        value = ""
+            if value:
+                values.append(value)
+    return values
+
+
+def _presentation_expected_by_slide(recorded: RecordedGeneration) -> list[list[str]]:
+    slides: list[list[str]] = []
+    creates = {
+        "slide.add_title", "slide.add_section", "slide.add_bullets", "slide.add_blank"
+    }
+    for operation in recorded.plan.operations:
+        if operation.op in creates:
+            slides.append(_operation_expected_text(
+                operation, recorded.plan.component
+            ))
+        elif operation.op == "slide.add_table":
+            slide_index = int(operation.args.get("slide", 0) or 0)
+            if 1 <= slide_index <= len(slides):
+                slides[slide_index - 1].extend(_operation_expected_text(
+                    operation, recorded.plan.component
+                ))
+    return slides
+
+
+def _image_reference_count(
+    xml: Mapping[str, ElementTree.Element], format_name: str
+) -> int:
+    blip = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
+    names = (
+        ["word/document.xml"]
+        if format_name == "docx"
+        else [
+            name for name in xml
+            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+        ]
+    )
+    return sum(
+        sum(1 for _ in xml[name].iter(blip))
+        for name in names if name in xml
+    )
+
+
 def _validate_generated_package(
     path: Path,
     format_name: str,
@@ -747,15 +839,11 @@ def _validate_generated_package(
     if _sha256(path) == template_digest:
         raise ArtifactValidationError("Generated artifact is an unchanged template")
     xml = _package_xml(path)
-    visible_text = _whitespace_stripped(_visible_package_text(xml, format_name))
     expected = _expected_text(recorded)
-    if expected and not all(
-        _whitespace_stripped(value) in visible_text for value in expected
-    ):
-        raise ArtifactValidationError(
-            "Generated artifact is missing representative renderer content"
-        )
     if format_name == "docx":
+        _require_text_counts(
+            expected, _visible_package_text(xml, format_name), "writer"
+        )
         document = xml.get("word/document.xml")
         table_name = (
             "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tbl"
@@ -771,15 +859,25 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated document is missing planned table structure"
             )
-        planned_images = any(
+        planned_images = sum(
             operation.op == "writer.add_image"
             for operation in recorded.plan.operations
         )
-        if planned_images and _image_relationship_count(xml, "word/_rels/") < 1:
+        if _image_reference_count(xml, format_name) < planned_images:
             raise ArtifactValidationError(
                 "Generated document is missing planned image structure"
             )
     elif format_name == "xlsx":
+        actual_values = Counter(
+            normalized
+            for value in _spreadsheet_cell_text(xml)
+            if (normalized := _whitespace_stripped(value))
+        )
+        for value, required in _normalized_expected_counts(expected).items():
+            if actual_values[value] < required:
+                raise ArtifactValidationError(
+                    "Generated workbook is missing spreadsheet content count"
+                )
         workbook = xml.get("xl/workbook.xml")
         namespace = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet"
         actual = 0 if workbook is None else sum(1 for _ in workbook.iter(namespace))
@@ -809,6 +907,24 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated presentation has an unexpected slide count"
             )
+        expected_slides = _presentation_expected_by_slide(recorded)
+        slide_names = sorted(
+            (
+                name for name in xml
+                if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+            ),
+            key=lambda name: int(re.search(r"slide(\d+)\.xml$", name).group(1)),
+        )
+        drawing_text = (
+            "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+        )
+        for index, (name, slide_expected) in enumerate(
+            zip(slide_names, expected_slides), start=1
+        ):
+            visible = " ".join(
+                node.text or "" for node in xml[name].iter(drawing_text)
+            )
+            _require_text_counts(slide_expected, visible, f"slide {index}")
         table_name = (
             "{http://schemas.openxmlformats.org/drawingml/2006/main}tbl"
         )
@@ -825,13 +941,11 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated presentation is missing planned table structure"
             )
-        planned_images = any(
+        planned_images = sum(
             operation.op == "slide.add_image"
             for operation in recorded.plan.operations
         )
-        if planned_images and _image_relationship_count(
-            xml, "ppt/slides/_rels/"
-        ) < 1:
+        if _image_reference_count(xml, format_name) < planned_images:
             raise ArtifactValidationError(
                 "Generated presentation is missing planned image structure"
             )

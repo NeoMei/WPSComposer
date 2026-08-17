@@ -34,6 +34,7 @@ from .formatting import (
 # ===========================================================================
 
 class SheetComposer(BaseComposer):
+    _attached_save_copy_supported = True
     _progids = ("Ket.Application", "Excel.Application")
     _doc_type = "calc"
     _native_fmt = FMT_XLSX

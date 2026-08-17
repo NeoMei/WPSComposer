@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 
 from ._dispatch import _require, _dispatch, _safe_quit, _abs
 
@@ -28,6 +29,7 @@ class BaseComposer:
     _native_fmt = 0
     _pdf_fmt = 0
     _formats_by_extension = {}
+    _attached_save_copy_supported = False
 
     def __init__(self, path=None, read_only=False, visible=False):
         """Create a composer for a new or existing document.
@@ -225,9 +227,21 @@ class BaseComposer:
         p = _abs(path)
         try:
             self._doc.SaveCopyAs(p)
+            if not self._owns_doc and self.is_bound_to(p):
+                raise RuntimeError(
+                    "Attached document copy unexpectedly rebound the live "
+                    f"document; recovery path retained at {p}"
+                )
             return p
         except Exception as copy_exc:
             if not self._owns_doc:
+                if self.is_bound_to(p):
+                    if isinstance(copy_exc, RuntimeError) and str(p) in str(copy_exc):
+                        raise
+                    raise RuntimeError(
+                        "Attached document copy failed after the live document "
+                        f"was rebound; recovery path retained at {p}"
+                    ) from copy_exc
                 raise RuntimeError(
                     "Attached document has no reliable non-rebinding copy primitive"
                 ) from copy_exc
@@ -247,6 +261,19 @@ class BaseComposer:
                 f"the original path failed: {current}"
             ) from restore_exc
         return p
+
+    def supports_attached_save_copy(self):
+        """Whether attached output copies have a proven non-rebinding primitive."""
+        return bool(self._attached_save_copy_supported)
+
+    def is_bound_to(self, path):
+        """Return whether the active host document is currently bound to *path*."""
+        try:
+            current = Path(os.path.abspath(os.fspath(self._doc.FullName)))
+            target = Path(os.path.abspath(os.fspath(path)))
+        except (AttributeError, TypeError, ValueError):
+            return False
+        return os.path.normcase(str(current)) == os.path.normcase(str(target))
 
     # ---- properties ----
 

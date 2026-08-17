@@ -19,6 +19,7 @@ from skills.WPSComposer.scripts.document_api import (
     validate_op,
     validate_target,
 )
+from tests._pdf_fixture import write_minimal_pdf
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +112,23 @@ class PackageWriterComposer(FakeWriterComposer):
                     "<document><body>edited</body></document>",
                 )
         self.saved = True
+        return str(target)
+
+
+class PackageAndPdfWriterComposer(PackageWriterComposer):
+    def __init__(self, *, pdf_failure=False):
+        super().__init__()
+        self.pdf_failure = pdf_failure
+        self.export_calls = []
+
+    def export_pdf(self, path):
+        target = Path(path)
+        self.export_calls.append(target.resolve())
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if self.pdf_failure:
+            target.write_bytes(b"PARTIAL")
+            raise OSError("simulated PDF export failure")
+        write_minimal_pdf(target, b"edited-pdf")
         return str(target)
 
 
@@ -465,6 +483,62 @@ def test_edit_attached_rejects_cross_family_output_before_mutation(tmp_path: Pat
     assert composer.closed is True
 
 
+def test_edit_attached_rejects_unsupported_save_copy_before_mutation(
+    tmp_path: Path,
+):
+    class NoCopyComposer(FakeWriterComposer):
+        def supports_attached_save_copy(self):
+            return False
+
+    composer = NoCopyComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(RuntimeError, match="non-rebinding copy primitive"):
+            api.edit(
+                output=tmp_path / "copy.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.applied == []
+    assert composer.closed is True
+
+
+def test_edit_attached_retains_stage_when_failed_copy_rebinds_live_document(
+    tmp_path: Path,
+):
+    class ReboundComposer(FakeWriterComposer):
+        bound_path = None
+        staged_path = None
+
+        def supports_attached_save_copy(self):
+            return True
+
+        def save_copy(self, path):
+            self.staged_path = Path(path).resolve()
+            with zipfile.ZipFile(self.staged_path, "w") as package:
+                package.writestr("[Content_Types].xml", "<Types />")
+                package.writestr("word/document.xml", "<document />")
+            self.bound_path = self.staged_path
+            raise RuntimeError(
+                f"live document remains bound to recovery path {self.staged_path}"
+            )
+
+        def is_bound_to(self, path):
+            return self.bound_path == Path(path).resolve()
+
+    composer = ReboundComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(RuntimeError, match="recovery path"):
+            api.edit(
+                output=tmp_path / "copy.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.staged_path.is_file()
+    assert not (tmp_path / "copy.docx").exists()
+
+
 def test_edit_saves_to_destination_local_stage_before_publish(tmp_path: Path):
     source = tmp_path / "source.docx"
     source.write_bytes(b"source-placeholder")
@@ -523,6 +597,113 @@ def test_edit_corrupt_stage_does_not_replace_existing_output(tmp_path: Path):
             )
 
     assert output.read_bytes() == b"approved-original"
+
+
+@pytest.mark.parametrize("export_name", ["result.docx", "result"])
+def test_edit_rejects_non_pdf_export_target_before_opening(
+    tmp_path: Path, export_name: str
+):
+    opened = []
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: opened.append(args)):
+        with pytest.raises(ValueError, match="export_pdf.*\\.pdf"):
+            api.edit(
+                tmp_path / "source.docx",
+                patches=[],
+                export_pdf=tmp_path / export_name,
+            )
+
+    assert opened == []
+
+
+def test_edit_refuses_existing_pdf_before_opening_or_mutation(tmp_path: Path):
+    approved = tmp_path / "approved.pdf"
+    approved.write_bytes(b"APPROVED-PDF")
+    opened = []
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: opened.append(args)):
+        with pytest.raises(FileExistsError, match="Output already exists"):
+            api.edit(
+                tmp_path / "source.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                export_pdf=approved,
+            )
+
+    assert approved.read_bytes() == b"APPROVED-PDF"
+    assert opened == []
+
+
+def test_edit_stages_both_outputs_before_publish_when_pdf_export_fails(
+    tmp_path: Path,
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "approved.docx"
+    pdf = tmp_path / "approved.pdf"
+    output.write_bytes(b"APPROVED-DOCX")
+    pdf.write_bytes(b"APPROVED-PDF")
+    composer = PackageAndPdfWriterComposer(pdf_failure=True)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(OSError, match="PDF export failure"):
+                api.edit(
+                    source,
+                    output=output,
+                    export_pdf=pdf,
+                    overwrite=True,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert output.read_bytes() == b"APPROVED-DOCX"
+    assert pdf.read_bytes() == b"APPROVED-PDF"
+    assert composer.save_calls[0] != output.resolve()
+    assert composer.export_calls[0] != pdf.resolve()
+    assert not composer.save_calls[0].exists()
+    assert not composer.export_calls[0].exists()
+
+
+def test_edit_publishes_valid_document_and_pdf_as_one_group(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                export_pdf=pdf,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert Path(result["saved_path"]) == output.resolve()
+    assert Path(result["pdf_path"]) == pdf.resolve()
+    assert output.is_file()
+    assert pdf.is_file()
+
+
+def test_edit_rejects_export_pdf_on_macos_before_bridge_or_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    bridge_calls = []
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    from skills.WPSComposer.scripts.macos_probe import inspection
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection, "edit_macos", lambda *args, **kwargs: bridge_calls.append(args)
+    )
+
+    with pytest.raises(RuntimeError, match="export_pdf.*unsupported.*macOS"):
+        api.edit(
+            tmp_path / "source.pptx",
+            export_pdf=tmp_path / "out.pdf",
+            patches=[{"target": "slide:1", "fill": {"color": "#ffffff"}}],
+        )
+
+    assert bridge_calls == []
 
 
 def test_edit_raise_on_error_propagates_patch_error():
@@ -589,6 +770,9 @@ class _Monkey:
     ("slide:1/shape:@name=Title 1", "slide", "shape"),       # spaces in name
     ("sheet:2/shape:@id=5", "sheet", "shape"),
     ("sheet:2/shape:@name=My Logo!", "sheet", "shape"),
+    ("slide:1/shape:@id=7/paragraph:2", "slide", "paragraph"),
+    ("slide:1/shape:@id=7/paragraph:2/run:4", "slide", "run"),
+    ("slide:1/shape:@id=7/table/cell:2,3", "slide", "table_cell"),
 ])
 def test_validate_target_accepts_stable_id_forms(target, kind, element):
     info = validate_target(target, kind)
@@ -748,6 +932,43 @@ def test_snapshot_to_patches_walks_nested_slide_shapes():
     assert {p["target"] for p in patches} == {
         "slide:1/shape:1", "slide:1/shape:2",
     }
+
+
+def test_snapshot_to_patches_preserves_stable_shape_nested_scope_and_indices():
+    snapshot = {
+        "kind": "slide",
+        "slides": [{"id": "slide:1", "shapes": [{
+            "id": "slide:1/shape:@id=7",
+            "index": 3,
+            "fill": {"color": "#111111"},
+            "paragraphs": [{
+                "id": "slide:1/shape:@id=7/paragraph:2",
+                "index": 2,
+                "paragraph": {"alignment": 2},
+                "runs": [{
+                    "id": "slide:1/shape:@id=7/paragraph:2/run:4",
+                    "index": 4,
+                    "font": {"bold": True},
+                }],
+            }],
+            "table": {"cells": [{
+                "id": "slide:1/shape:@id=7/table/cell:2,3",
+                "row": 2,
+                "column": 3,
+                "font": {"italic": True},
+            }]},
+        }]}],
+    }
+
+    assert snapshot_to_patches(snapshot) == [
+        {"target": "slide:1/shape:3", "fill": {"color": "#111111"}},
+        {"target": "slide:1/shape:3/paragraph:2",
+         "paragraph": {"alignment": 2}},
+        {"target": "slide:1/shape:3/paragraph:2/run:4",
+         "font": {"bold": True}},
+        {"target": "slide:1/shape:3/table/cell:2,3",
+         "font": {"italic": True}},
+    ]
 
 
 def test_snapshot_to_patches_skips_invalid_ids():

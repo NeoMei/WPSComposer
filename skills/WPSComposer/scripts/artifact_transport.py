@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import tempfile
 import time
-from typing import Callable
+from typing import Callable, Iterable
 import zipfile
 from xml.etree import ElementTree
 
@@ -367,4 +367,138 @@ def publish_artifact(
         if temporary is not None:
             temporary.unlink(missing_ok=True)
         if backup is not None:
+            backup.unlink(missing_ok=True)
+
+
+def publish_artifact_group(
+    artifacts: Iterable[
+        tuple[Path, Path, bool, Callable[[Path], None]]
+    ],
+) -> list[Path]:
+    """Publish a validated artifact set with best-effort whole-set rollback.
+
+    Every staged artifact is copied and validated in its destination directory
+    before any destination is changed. Publication is sequential because files
+    cannot be atomically replaced as a set; if a later publish or final
+    validation fails, all earlier destinations are restored from local backups.
+    """
+    entries = [
+        (Path(staged).expanduser().resolve(),
+         Path(destination).expanduser().resolve(), bool(overwrite), validator)
+        for staged, destination, overwrite, validator in artifacts
+    ]
+    targets = [destination for _staged, destination, _overwrite, _validator in entries]
+    if len(set(targets)) != len(targets):
+        raise ValueError("Artifact group destinations must be unique")
+
+    prepared: list[Path] = []
+    backups: dict[Path, Path] = {}
+    published: list[Path] = []
+    try:
+        for staged, target, overwrite, validator in entries:
+            try:
+                validator(staged)
+            except ArtifactValidationError as exc:
+                raise ArtifactTransportError(
+                    "STAGED_ARTIFACT_INVALID", str(exc)
+                ) from exc
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() and not overwrite:
+                raise FileExistsError(f"Output already exists: {target}")
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb",
+                    dir=target.parent,
+                    prefix=".wpscomposer-group-publish-",
+                    suffix=".tmp",
+                    delete=False,
+                ) as stream:
+                    local = Path(stream.name)
+                    with staged.open("rb") as incoming:
+                        copy_stream_before_deadline(incoming, stream, None)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                validator(local)
+            except ArtifactValidationError as exc:
+                local.unlink(missing_ok=True)
+                raise ArtifactTransportError(
+                    "ARTIFACT_PUBLISH_FAILED", str(exc)
+                ) from exc
+            except OSError as exc:
+                if "local" in locals():
+                    local.unlink(missing_ok=True)
+                raise ArtifactTransportError(
+                    "ARTIFACT_PUBLISH_FAILED", str(exc)
+                ) from exc
+            prepared.append(local)
+
+        for _staged, target, overwrite, _validator in entries:
+            if overwrite and target.exists():
+                try:
+                    with tempfile.NamedTemporaryFile(
+                        mode="wb",
+                        dir=target.parent,
+                        prefix=".wpscomposer-group-backup-",
+                        suffix=".tmp",
+                        delete=False,
+                    ) as stream:
+                        backup = Path(stream.name)
+                        with target.open("rb") as existing:
+                            copy_stream_before_deadline(existing, stream, None)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                except OSError as exc:
+                    raise ArtifactTransportError(
+                        "ARTIFACT_PUBLISH_FAILED", str(exc)
+                    ) from exc
+                backups[target] = backup
+
+        for local, (_staged, target, overwrite, _validator) in zip(prepared, entries):
+            try:
+                if overwrite:
+                    os.replace(local, target)
+                else:
+                    os.link(local, target)
+                    local.unlink()
+            except FileExistsError:
+                raise
+            except OSError as exc:
+                raise ArtifactTransportError(
+                    "ARTIFACT_PUBLISH_FAILED", str(exc)
+                ) from exc
+            published.append(target)
+
+        for _staged, target, _overwrite, validator in entries:
+            try:
+                validator(target)
+            except BaseException as exc:
+                raise ArtifactTransportError(
+                    "FINAL_ARTIFACT_INVALID", str(exc)
+                ) from exc
+        return targets
+    except BaseException as publish_exc:
+        rollback_errors = []
+        for target in reversed(published):
+            backup = backups.pop(target, None)
+            try:
+                if backup is None:
+                    target.unlink(missing_ok=True)
+                else:
+                    os.replace(backup, target)
+            except BaseException as restore_exc:
+                rollback_errors.append((target, backup, restore_exc))
+        if rollback_errors:
+            retained = ", ".join(
+                str(backup) for _target, backup, _exc in rollback_errors
+                if backup is not None
+            )
+            raise ArtifactTransportError(
+                "ARTIFACT_ROLLBACK_FAILED",
+                f"{publish_exc}; recovery artifacts retained at {retained}",
+            ) from publish_exc
+        raise
+    finally:
+        for local in prepared:
+            local.unlink(missing_ok=True)
+        for backup in backups.values():
             backup.unlink(missing_ok=True)
