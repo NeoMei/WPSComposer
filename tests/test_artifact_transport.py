@@ -182,6 +182,90 @@ def test_group_publish_rolls_back_all_outputs_when_later_publish_fails(
     assert not list((tmp_path / "out").glob(".wpscomposer-group-backup-*.tmp"))
 
 
+def test_group_publish_rolls_back_target_when_post_link_cleanup_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    first_stage = _write_pdf(tmp_path / "stage" / "first.pdf", b"new-first")
+    second_stage = _write_pdf(tmp_path / "stage" / "second.pdf", b"new-second")
+    first = tmp_path / "out" / "first.pdf"
+    second = tmp_path / "out" / "second.pdf"
+    real_link = os.link
+    real_unlink = Path.unlink
+    second_local: Path | None = None
+    cleanup_failed = False
+
+    def observe_link(source, target):
+        nonlocal second_local
+        result = real_link(source, target)
+        if Path(target).resolve() == second.resolve():
+            second_local = Path(source).resolve()
+        return result
+
+    def fail_second_local_cleanup(path, *args, **kwargs):
+        nonlocal cleanup_failed
+        if (
+            second_local is not None
+            and path.resolve() == second_local
+            and not cleanup_failed
+        ):
+            cleanup_failed = True
+            raise OSError("simulated post-link cleanup failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "link", observe_link)
+    monkeypatch.setattr(Path, "unlink", fail_second_local_cleanup)
+
+    with pytest.raises(ArtifactTransportError, match="post-link cleanup failure"):
+        artifact_transport.publish_artifact_group([
+            (first_stage, first, False, validate_pdf),
+            (second_stage, second, False, validate_pdf),
+        ])
+
+    assert cleanup_failed
+    assert not first.exists()
+    assert not second.exists()
+    assert not list((tmp_path / "out").glob(".wpscomposer-group-*.tmp"))
+
+
+def test_group_publish_reports_target_when_post_link_rollback_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    staged = _write_pdf(tmp_path / "stage" / "result.pdf", b"new")
+    target = tmp_path / "out" / "result.pdf"
+    real_link = os.link
+    real_unlink = Path.unlink
+    published_local: Path | None = None
+    cleanup_failed = False
+
+    def observe_link(source, destination):
+        nonlocal published_local
+        result = real_link(source, destination)
+        published_local = Path(source).resolve()
+        return result
+
+    def fail_cleanup_and_rollback(path, *args, **kwargs):
+        nonlocal cleanup_failed
+        resolved = path.resolve()
+        if resolved == published_local and not cleanup_failed:
+            cleanup_failed = True
+            raise OSError("simulated post-link cleanup failure")
+        if resolved == target.resolve():
+            raise OSError("simulated rollback failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "link", observe_link)
+    monkeypatch.setattr(Path, "unlink", fail_cleanup_and_rollback)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        artifact_transport.publish_artifact_group([
+            (staged, target, False, validate_pdf),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert str(target.resolve()) in str(caught.value)
+    assert target.exists()
+
+
 def test_publish_validation_failure_leaves_no_partial_destination(
     tmp_path: Path,
 ):

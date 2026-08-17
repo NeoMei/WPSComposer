@@ -682,38 +682,6 @@ def _operation_expected_text(operation, component: str) -> list[str]:
     return values
 
 
-def _visible_package_text(
-    xml: Mapping[str, ElementTree.Element], format_name: str
-) -> str:
-    if format_name == "docx":
-        roots = [xml.get("word/document.xml")]
-        qname = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
-    elif format_name == "xlsx":
-        roots = [
-            root
-            for name, root in xml.items()
-            if name == "xl/sharedStrings.xml"
-            or name.startswith("xl/worksheets/sheet") and name.endswith(".xml")
-        ]
-        qname = None
-    else:
-        roots = [
-            root
-            for name, root in xml.items()
-            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
-        ]
-        qname = "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
-    chunks: list[str] = []
-    for root in roots:
-        if root is None:
-            continue
-        if qname is None:
-            chunks.extend(text for text in root.itertext() if text)
-        else:
-            chunks.extend(element.text or "" for element in root.iter(qname))
-    return " ".join(chunks)
-
-
 def _image_relationship_count(
     xml: Mapping[str, ElementTree.Element], prefix: str
 ) -> int:
@@ -732,14 +700,7 @@ def _image_relationship_count(
 
 
 def _whitespace_stripped(text: str) -> str:
-    """Remove all whitespace so run-boundary segmentation cannot break matches.
-
-    ``_visible_package_text`` joins per-element ``itertext`` chunks with spaces,
-    so a paragraph stored across several ``<w:r>`` runs gains spaces the source
-    text never had. Stripping whitespace from both sides lets an expected string
-    still match the reassembled visible text. Run segmentation is a storage
-    artifact, not real content, so dropping it is safe for a presence check.
-    """
+    """Normalize insignificant whitespace around OOXML run boundaries."""
     return re.sub(r"\s+", "", text)
 
 
@@ -751,13 +712,63 @@ def _normalized_expected_counts(values: list[str]) -> Counter:
     )
 
 
-def _require_text_counts(values: list[str], actual_text: str, context: str) -> None:
-    actual = _whitespace_stripped(actual_text)
-    for value, required in _normalized_expected_counts(values).items():
-        if actual.count(value) < required:
-            raise ArtifactValidationError(
-                f"Generated artifact is missing {context} content count"
-            )
+def _structured_text_items(
+    root: ElementTree.Element | None,
+    container_name: str,
+    text_name: str,
+) -> list[str]:
+    if root is None:
+        return []
+    containers = list(root.iter(container_name))
+    if containers:
+        return [
+            "".join(node.text or "" for node in container.iter(text_name))
+            for container in containers
+        ]
+    # Small synthetic packages and malformed vendor output may omit the normal
+    # paragraph wrapper. Keep each text node distinct rather than joining the
+    # whole document and allowing one node to satisfy several expectations.
+    return [node.text or "" for node in root.iter(text_name)]
+
+
+def _require_structured_text_counts(
+    values: list[str], actual_items: list[str], context: str
+) -> None:
+    expected = [
+        normalized
+        for value in values
+        if (normalized := _whitespace_stripped(value))
+    ]
+    actual = [
+        normalized
+        for value in actual_items
+        if (normalized := _whitespace_stripped(value))
+    ]
+    candidates = [
+        [index for index, item in enumerate(actual) if value in item]
+        for value in expected
+    ]
+    matched_expected = [-1] * len(actual)
+
+    def assign(expected_index: int, visited: set[int]) -> bool:
+        for actual_index in candidates[expected_index]:
+            if actual_index in visited:
+                continue
+            visited.add(actual_index)
+            previous = matched_expected[actual_index]
+            if previous == -1 or assign(previous, visited):
+                matched_expected[actual_index] = expected_index
+                return True
+        return False
+
+    order = sorted(
+        range(len(expected)),
+        key=lambda index: (len(candidates[index]), -len(expected[index])),
+    )
+    if any(not assign(index, set()) for index in order):
+        raise ArtifactValidationError(
+            f"Generated artifact is missing {context} content count"
+        )
 
 
 def _spreadsheet_cell_text(xml: Mapping[str, ElementTree.Element]) -> list[str]:
@@ -841,8 +852,18 @@ def _validate_generated_package(
     xml = _package_xml(path)
     expected = _expected_text(recorded)
     if format_name == "docx":
-        _require_text_counts(
-            expected, _visible_package_text(xml, format_name), "writer"
+        word_paragraph = (
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p"
+        )
+        word_text = (
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+        )
+        _require_structured_text_counts(
+            expected,
+            _structured_text_items(
+                xml.get("word/document.xml"), word_paragraph, word_text
+            ),
+            "writer",
         )
         document = xml.get("word/document.xml")
         table_name = (
@@ -918,13 +939,19 @@ def _validate_generated_package(
         drawing_text = (
             "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
         )
+        drawing_paragraph = (
+            "{http://schemas.openxmlformats.org/drawingml/2006/main}p"
+        )
         for index, (name, slide_expected) in enumerate(
             zip(slide_names, expected_slides), start=1
         ):
-            visible = " ".join(
-                node.text or "" for node in xml[name].iter(drawing_text)
+            _require_structured_text_counts(
+                slide_expected,
+                _structured_text_items(
+                    xml[name], drawing_paragraph, drawing_text
+                ),
+                f"slide {index}",
             )
-            _require_text_counts(slide_expected, visible, f"slide {index}")
         table_name = (
             "{http://schemas.openxmlformats.org/drawingml/2006/main}tbl"
         )

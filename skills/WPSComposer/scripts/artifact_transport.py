@@ -459,6 +459,9 @@ def publish_artifact_group(
                     os.replace(local, target)
                 else:
                     os.link(local, target)
+                    # The link makes the destination externally visible.  Own
+                    # it for rollback before any later cleanup can fail.
+                    published.append(target)
                     local.unlink()
             except FileExistsError:
                 raise
@@ -466,7 +469,8 @@ def publish_artifact_group(
                 raise ArtifactTransportError(
                     "ARTIFACT_PUBLISH_FAILED", str(exc)
                 ) from exc
-            published.append(target)
+            if overwrite:
+                published.append(target)
 
         for _staged, target, _overwrite, validator in entries:
             try:
@@ -489,8 +493,8 @@ def publish_artifact_group(
                 rollback_errors.append((target, backup, restore_exc))
         if rollback_errors:
             retained = ", ".join(
-                str(backup) for _target, backup, _exc in rollback_errors
-                if backup is not None
+                str(backup if backup is not None else target)
+                for target, backup, _exc in rollback_errors
             )
             raise ArtifactTransportError(
                 "ARTIFACT_ROLLBACK_FAILED",

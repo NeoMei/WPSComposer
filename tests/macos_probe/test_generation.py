@@ -579,6 +579,26 @@ def test_semantic_validator_counts_repeated_writer_content(tmp_path: Path):
         )
 
 
+def test_semantic_validator_does_not_reuse_overlapping_writer_text(tmp_path: Path):
+    package = _write_semantic_package(tmp_path / "overlap.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main"><w:body><w:p><w:r>'
+            '<w:t>AA</w:t></w:r></w:p></w:body></w:document>'
+        ),
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_paragraph", {"text": "A"}),
+        GenerationOperation("writer.add_paragraph", {"text": "AA"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="content count"):
+        mac_generation._validate_generated_package(
+            package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
 def test_semantic_validator_requires_every_planned_writer_image(tmp_path: Path):
     package = _write_semantic_package(tmp_path / "images.docx", {
         "word/document.xml": (
@@ -617,6 +637,28 @@ def test_semantic_validator_aligns_presentation_content_by_slide(tmp_path: Path)
         GenerationOperation("slide.reset", {}),
         GenerationOperation("slide.add_title", {"title": "FIRST"}),
         GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide 1 content"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_does_not_reuse_overlapping_slide_text(tmp_path: Path):
+    drawing = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    package = _write_semantic_package(tmp_path / "overlap.pptx", {
+        "ppt/presentation.xml": "<p:presentation xmlns:p='urn:p'/>",
+        "ppt/slides/slide1.xml": (
+            f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'>"
+            "<a:t>AA</a:t></p:sld>"
+        ),
+    })
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation(
+            "slide.add_title", {"title": "A", "subtitle": "AA"}
+        ),
     ))
 
     with pytest.raises(ArtifactValidationError, match="slide 1 content"):
