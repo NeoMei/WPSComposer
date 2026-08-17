@@ -537,7 +537,11 @@ class ProbeRuntime:
         if not target.is_file():
             shutil.copy2(source, target)
         subprocess.run(
-            activation_command(self.wps_app, target),
+            activation_command(
+                self.wps_app,
+                target,
+                reuse_running=not bool(self._wps_pids_before),
+            ),
             check=True,
             timeout=15,
         )

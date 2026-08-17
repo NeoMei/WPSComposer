@@ -307,8 +307,8 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
             raise AssertionError(f"Darwin route imported {name}")
         return real_import(name, *args, **kwargs)
 
-    def fake_generate(doc, format_name, output, preset):
-        calls.append((doc, format_name, output, preset))
+    def fake_generate(doc, format_name, output, preset, *, timeout):
+        calls.append((doc, format_name, output, preset, timeout))
         return output
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
@@ -322,11 +322,12 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
 
     assert result == str(output.resolve())
     assert len(calls) == 1
-    doc, format_name, routed_output, preset = calls[0]
+    doc, format_name, routed_output, preset, timeout = calls[0]
     assert isinstance(doc, StructuredDocument)
     assert format_name == "docx"
     assert routed_output == output.resolve()
     assert preset is None
+    assert timeout == 600
 
 
 def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
@@ -336,7 +337,9 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     monkeypatch.setattr(
         orchestrator,
         "generate_macos",
-        lambda doc, format_name, output, preset: calls.append(output) or output,
+        lambda doc, format_name, output, preset, *, timeout: calls.append(
+            (output, timeout)
+        ) or output,
     )
 
     result = orchestrator.generate(
@@ -344,7 +347,7 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     )
 
     assert result == str((tmp_path / "document.pptx").resolve())
-    assert calls == [(tmp_path / "document.pptx").resolve()]
+    assert calls == [((tmp_path / "document.pptx").resolve(), 600)]
 
 
 def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):

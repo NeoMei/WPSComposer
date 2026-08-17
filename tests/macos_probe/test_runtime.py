@@ -139,7 +139,7 @@ def test_read_configured_node_uses_installer_runtime_file(tmp_path: Path):
 def test_component_activation_uses_a_fresh_wps_instance(tmp_path: Path):
     fixture = tmp_path / "fixture.pptx"
     command = runtime.activation_command(
-        Path("/Applications/wpsoffice.app"), fixture
+        Path("/Applications/wpsoffice.app"), fixture, reuse_running=False
     )
     assert command == [
         "open",
@@ -323,6 +323,7 @@ def test_activate_component_can_retry_one_missing_component(
     probe.staging_dir = tmp_path / "container" / "session-1"
     probe.staging_dir.mkdir(parents=True)
     commands = []
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
     monkeypatch.setattr(
         runtime.subprocess,
         "run",
@@ -339,3 +340,34 @@ def test_activate_component_can_retry_one_missing_component(
         runtime.activation_command(probe.wps_app, first),
         runtime.activation_command(probe.wps_app, first),
     ]
+
+
+def test_activate_component_isolates_from_preexisting_wps_instance(
+    monkeypatch, tmp_path: Path
+):
+    probe_root = tmp_path / "probe"
+    resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
+    resource_dir.mkdir(parents=True)
+    (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe.staging_dir = tmp_path / "container" / "session-1"
+    probe.staging_dir.mkdir(parents=True)
+    probe._wps_pids_before = {101}
+    reuse_choices = []
+
+    def fake_activation_command(app, fixture, *, reuse_running=True):
+        reuse_choices.append(reuse_running)
+        return ["open", str(fixture)]
+
+    monkeypatch.setattr(runtime, "activation_command", fake_activation_command)
+    monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: None)
+
+    probe.activate_component("writer")
+
+    assert reuse_choices == [False]
