@@ -536,15 +536,21 @@ class ProbeRuntime:
         target = fixture_dir / name
         if not target.is_file():
             shutil.copy2(source, target)
-        subprocess.run(
-            activation_command(
-                self.wps_app,
-                target,
-                reuse_running=not bool(self._wps_pids_before),
-            ),
-            check=True,
-            timeout=15,
+        command = activation_command(
+            self.wps_app,
+            target,
+            reuse_running=not bool(self._wps_pids_before),
         )
+        try:
+            subprocess.run(command, check=True, timeout=15)
+        except subprocess.CalledProcessError:
+            if command[:2] != ["open", "-a"]:
+                raise
+            subprocess.run(
+                activation_command(self.wps_app, target, reuse_running=False),
+                check=True,
+                timeout=15,
+            )
         self.fixtures[component] = target
         return target
 

@@ -2,6 +2,7 @@ import json
 import os
 import signal
 import stat
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -371,3 +372,93 @@ def test_activate_component_isolates_from_preexisting_wps_instance(
     probe.activate_component("writer")
 
     assert reuse_choices == [False]
+
+
+def _probe_with_writer_fixture(tmp_path: Path) -> runtime.ProbeRuntime:
+    probe_root = tmp_path / "probe"
+    resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
+    resource_dir.mkdir(parents=True)
+    (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe.staging_dir = tmp_path / "container" / "session-1"
+    probe.staging_dir.mkdir(parents=True)
+    return probe
+
+
+def test_activate_component_falls_back_when_racing_wps_reuse_fails(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    probe._wps_pids_before = set()
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: {201})
+    commands = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if command[:2] == ["open", "-a"]:
+            raise subprocess.CalledProcessError(1, command)
+
+    monkeypatch.setattr(runtime.subprocess, "run", fake_run)
+
+    target = probe.activate_component("writer")
+
+    assert commands == [
+        ["open", "-a", str(probe.wps_app), str(target)],
+        ["open", "-n", "-a", str(probe.wps_app), str(target)],
+    ]
+
+
+def test_activate_component_does_not_retry_an_isolated_command(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    probe._wps_pids_before = {101}
+    failure = subprocess.CalledProcessError(1, ["open", "-n"])
+    commands = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        raise failure
+
+    monkeypatch.setattr(runtime.subprocess, "run", fake_run)
+
+    with pytest.raises(subprocess.CalledProcessError) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert len(commands) == 1
+    assert commands[0][:3] == ["open", "-n", "-a"]
+
+
+def test_activate_component_propagates_isolated_fallback_failure(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    probe._wps_pids_before = set()
+    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: {201})
+    first_failure = subprocess.CalledProcessError(1, ["open", "-a"])
+    fallback_failure = subprocess.CalledProcessError(2, ["open", "-n"])
+    commands = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if len(commands) == 1:
+            raise first_failure
+        raise fallback_failure
+
+    monkeypatch.setattr(runtime.subprocess, "run", fake_run)
+
+    with pytest.raises(subprocess.CalledProcessError) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is fallback_failure
+    assert [command[:3] for command in commands] == [
+        ["open", "-a", str(probe.wps_app)],
+        ["open", "-n", "-a"],
+    ]
