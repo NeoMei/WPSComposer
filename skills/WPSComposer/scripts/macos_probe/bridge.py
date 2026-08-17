@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -22,7 +23,18 @@ MAX_BODY_BYTES = 1024 * 1024
 class BridgeState:
     """Thread-safe command queues and results for one probe session."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        session_nonce: Optional[str] = None,
+        lease_seconds: float = 15.0,
+        clock=monotonic,
+    ):
+        if lease_seconds <= 0:
+            raise ValueError("lease_seconds must be positive")
+        self.session_nonce = session_nonce or secrets.token_urlsafe(24)
+        self.lease_seconds = float(lease_seconds)
+        self._clock = clock
         self._queues = {component: Queue() for component in COMPONENTS}
         self._registered: set[str] = set()
         self._issued: set[str] = set()
@@ -32,7 +44,7 @@ class BridgeState:
         self._last_seen: dict[str, float] = {}
         self._condition = Condition()
 
-    def claim_session(self, component: str) -> bool:
+    def claim_session(self, component: str, session_nonce: str) -> bool:
         """Validate a session-token claim for a component.
 
         Re-claiming is allowed: the endpoint is loopback-only and
@@ -40,13 +52,15 @@ class BridgeState:
         webview reload (its JS context loses the token on every reload).
         """
         self._require_component(component)
+        self._require_session(session_nonce)
         return True
 
-    def register(self, component: str) -> None:
+    def register(self, component: str, session_nonce: str) -> None:
         self._require_component(component)
+        self._require_session(session_nonce)
         with self._condition:
             self._registered.add(component)
-            self._last_seen[component] = monotonic()
+            self._last_seen[component] = self._clock()
             self._condition.notify_all()
 
     def issue(
@@ -54,22 +68,30 @@ class BridgeState:
     ) -> ProbeCommand:
         command = ProbeCommand.create(component, method, params)
         with self._condition:
+            if component not in self._fresh_registered_locked():
+                raise ProtocolError(
+                    f"Component has no fresh client lease: {component}"
+                )
             self._issued.add(command.id)
         self._queues[component].put(command)
         return command
 
     def next(
-        self, component: str, timeout: float = 10.0
+        self, component: str, session_nonce: str, timeout: float = 10.0
     ) -> Optional[ProbeCommand]:
         self._require_component(component)
+        self._require_session(session_nonce)
         with self._condition:
-            self._last_seen[component] = monotonic()
+            self._registered.add(component)
+            self._last_seen[component] = self._clock()
+            self._condition.notify_all()
         try:
             return self._queues[component].get(timeout=timeout)
         except Empty:
             return None
 
-    def complete(self, result: ProbeResult) -> None:
+    def complete(self, result: ProbeResult, session_nonce: str) -> None:
+        self._require_session(session_nonce)
         with self._condition:
             if result.id in self._canceled:
                 return
@@ -107,12 +129,12 @@ class BridgeState:
             return self._results.pop(command_id)
 
     def wait_registered(self, expected: set[str], timeout: float) -> None:
-        deadline = monotonic() + timeout
+        deadline = self._clock() + timeout
         with self._condition:
-            while not expected <= self._registered:
-                remaining = deadline - monotonic()
+            while not expected <= self._fresh_registered_locked():
+                remaining = deadline - self._clock()
                 if remaining <= 0:
-                    missing = sorted(expected - self._registered)
+                    missing = sorted(expected - self._fresh_registered_locked())
                     raise TimeoutError(
                         f"Timed out waiting for components: {missing}"
                     )
@@ -125,7 +147,28 @@ class BridgeState:
 
     def registered_components(self) -> set[str]:
         with self._condition:
-            return set(self._registered)
+            return self._fresh_registered_locked()
+
+    def _fresh_registered_locked(self) -> set[str]:
+        now = self._clock()
+        stale = {
+            component
+            for component in self._registered
+            if now - self._last_seen.get(component, float("-inf"))
+            > self.lease_seconds
+        }
+        self._registered.difference_update(stale)
+        for component in stale:
+            self._last_seen.pop(component, None)
+        return set(self._registered)
+
+    def _require_session(self, session_nonce: str) -> None:
+        try:
+            matched = secrets.compare_digest(session_nonce, self.session_nonce)
+        except TypeError:
+            matched = False
+        if not matched:
+            raise ProtocolError("Stale or invalid bridge session nonce")
 
     @staticmethod
     def _require_component(component: str) -> None:
@@ -156,9 +199,11 @@ def _handler_class(
             if parsed.path != "/v1/next":
                 self._send_error_json(404, "NOT_FOUND", "Unknown endpoint")
                 return
-            component = parse_qs(parsed.query).get("component", [""])[0]
+            query = parse_qs(parsed.query)
+            component = query.get("component", [""])[0]
+            session_nonce = query.get("sessionNonce", [""])[0]
             try:
-                command = state.next(component)
+                command = state.next(component, session_nonce)
             except ProtocolError as exc:
                 self._send_error_json(400, "INVALID_COMPONENT", str(exc))
                 return
@@ -174,11 +219,17 @@ def _handler_class(
                     return
                 try:
                     body = self._read_json()
-                    state.claim_session(str(body.get("component", "")))
+                    state.claim_session(
+                        str(body.get("component", "")),
+                        str(body.get("sessionNonce", "")),
+                    )
                 except (ProtocolError, ValueError) as exc:
                     self._send_error_json(400, "INVALID_REQUEST", str(exc))
                     return
-                self._send_json(200, {"token": token})
+                self._send_json(
+                    200,
+                    {"token": token, "leaseSeconds": state.lease_seconds},
+                )
                 return
             if not self._authorize():
                 return
@@ -187,9 +238,13 @@ def _handler_class(
             try:
                 body = self._read_json()
                 if self.path == "/v1/register":
-                    state.register(str(body.get("component", "")))
+                    state.register(
+                        str(body.get("component", "")),
+                        str(body.get("sessionNonce", "")),
+                    )
                 elif self.path == "/v1/result":
-                    state.complete(ProbeResult.from_dict(body))
+                    session_nonce = str(body.pop("sessionNonce", ""))
+                    state.complete(ProbeResult.from_dict(body), session_nonce)
                 else:
                     self._send_error_json(
                         404, "NOT_FOUND", "Unknown endpoint"
@@ -288,8 +343,11 @@ class LoopbackBridge:
     def __init__(self, allowed_origins: set[str]):
         if not allowed_origins:
             raise ValueError("At least one allowed origin is required")
-        self.state = BridgeState()
         self.token = secrets.token_urlsafe(32)
+        self.session_nonce = hashlib.sha256(
+            self.token.encode("utf-8")
+        ).hexdigest()
+        self.state = BridgeState(session_nonce=self.session_nonce)
         origins = frozenset(allowed_origins)
         self._server = ThreadingHTTPServer(
             ("127.0.0.1", 0),

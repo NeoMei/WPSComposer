@@ -44,6 +44,7 @@ class BaseComposer:
         self._visible = bool(visible)
         self._owns_app = False
         self._owns_doc = False
+        self._com_initialized = False
 
     # ---- subclass hooks ----
 
@@ -63,8 +64,10 @@ class BaseComposer:
 
     def _open(self):
         _require()
-        self._app = _dispatch(self._progids)
-        self._owns_app = True
+        dispatched = _dispatch(self._progids)
+        self._app = dispatched.app
+        self._owns_app = dispatched.owns_app
+        self._com_initialized = True
         try:
             self._app.Visible = -1 if self._visible else 0
         except Exception:
@@ -80,8 +83,8 @@ class BaseComposer:
             return self
         last = None
         for attempt in range(3):
-            app = self._open()
             try:
+                app = self._open()
                 if self._path:
                     self._doc = self._open_document(app, self._path, self._read_only)
                 else:
@@ -92,11 +95,13 @@ class BaseComposer:
                 # COM object whose collection property (Documents/Presentations/
                 # Workbooks) is not ready yet — re-dispatch and retry.
                 last = exc
-                _safe_quit(self._app)
-                self._app = None
+                self.close(save_changes=False)
                 if attempt == 2:
                     raise last
                 time.sleep(0.6)
+            except BaseException:
+                self.close(save_changes=False)
+                raise
         self._owns_doc = True
         return self
 
@@ -121,29 +126,36 @@ class BaseComposer:
         import win32com.client as win32
 
         pythoncom.CoInitialize()
-        last = None
-        app = None
-        for progid in cls._progids:
-            try:
-                app = win32.GetActiveObject(progid)
-                break
-            except Exception as exc:
-                last = exc
-        if app is None:
-            from ._dispatch import WPSUnavailable
-            raise WPSUnavailable(
-                f"No running WPS/Office application for {cls._progids}: {last}"
-            )
+        try:
+            last = None
+            app = None
+            for progid in cls._progids:
+                try:
+                    app = win32.GetActiveObject(progid)
+                    break
+                except Exception as exc:
+                    last = exc
+            if app is None:
+                from ._dispatch import WPSUnavailable
+                raise WPSUnavailable(
+                    f"No running WPS/Office application for {cls._progids}: {last}"
+                )
 
-        obj = cls()
-        obj._app = app
-        obj._doc = cls._active_document(app)
-        if obj._doc is None:
-            from ._dispatch import WPSUnavailable
-            raise WPSUnavailable("The application is running but has no active document.")
-        obj._owns_app = False
-        obj._owns_doc = False
-        return obj
+            obj = cls()
+            obj._app = app
+            obj._doc = cls._active_document(app)
+            if obj._doc is None:
+                from ._dispatch import WPSUnavailable
+                raise WPSUnavailable(
+                    "The application is running but has no active document."
+                )
+            obj._owns_app = False
+            obj._owns_doc = False
+            obj._com_initialized = True
+            return obj
+        except BaseException:
+            pythoncom.CoUninitialize()
+            raise
 
     def close(self, save_changes=False):
         """Release owned COM objects; attached user documents stay open."""
@@ -154,12 +166,18 @@ class BaseComposer:
                 except TypeError:
                     # PowerPoint Presentation.Close() takes no argument
                     self._doc.Close()
-            except Exception:
+            except BaseException:
                 pass
         if self._owns_app:
             _safe_quit(self._app)
         self._doc = None
         self._app = None
+        self._owns_doc = False
+        self._owns_app = False
+        if self._com_initialized:
+            self._com_initialized = False
+            import pythoncom
+            pythoncom.CoUninitialize()
 
     # ---- shared I/O ----
 

@@ -241,7 +241,11 @@ def inspect_macos(
                 raise
             except Exception as exc:
                 if not getattr(runtime, "registration_restored", True):
-                    recovery = runtime.runtime_dir / "registration-recovery"
+                    recovery = getattr(
+                        runtime,
+                        "recovery_dir",
+                        runtime.runtime_dir / "registration-recovery",
+                    )
                     raise _error(
                         str(source_path), component,
                         "REGISTRATION_RESTORE_FAILED",
@@ -330,7 +334,11 @@ def edit_macos(
                 raise
             except Exception as exc:
                 if not getattr(runtime, "registration_restored", True):
-                    recovery = runtime.runtime_dir / "registration-recovery"
+                    recovery = getattr(
+                        runtime,
+                        "recovery_dir",
+                        runtime.runtime_dir / "registration-recovery",
+                    )
                     raise _error(
                         str(source_path), component,
                         "REGISTRATION_RESTORE_FAILED",

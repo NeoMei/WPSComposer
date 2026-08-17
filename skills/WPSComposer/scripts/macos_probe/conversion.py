@@ -228,7 +228,11 @@ def convert_macos(
                 raise
             except Exception as exc:
                 if not getattr(runtime, "registration_restored", True):
-                    recovery = runtime.runtime_dir / "registration-recovery"
+                    recovery = getattr(
+                        runtime,
+                        "recovery_dir",
+                        runtime.runtime_dir / "registration-recovery",
+                    )
                     raise _error(
                         request,
                         "REGISTRATION_RESTORE_FAILED",

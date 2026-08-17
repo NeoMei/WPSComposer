@@ -40,7 +40,9 @@
   async function sendResult(session, result) {
     await request(session, "/v1/result", {
       method: "POST",
-      body: JSON.stringify(result)
+      body: JSON.stringify(Object.assign({}, result, {
+        sessionNonce: session.sessionNonce
+      }))
     });
   }
 
@@ -54,14 +56,20 @@
     // the token is handed out once by the bridge and kept in memory only.
     const sessionResponse2 = await request(bootstrap, "/v1/session", {
       method: "POST",
-      body: JSON.stringify({component: bootstrap.component})
+      body: JSON.stringify({
+        component: bootstrap.component,
+        sessionNonce: bootstrap.sessionNonce
+      })
     });
     const session = Object.assign({}, bootstrap, {
       token: sessionResponse2.body.token
     });
     await request(session, "/v1/register", {
       method: "POST",
-      body: JSON.stringify({component: session.component})
+      body: JSON.stringify({
+        component: session.component,
+        sessionNonce: session.sessionNonce
+      })
     });
 
     let failures = 0;
@@ -70,7 +78,8 @@
       try {
         next = await request(
           session,
-          `/v1/next?component=${encodeURIComponent(session.component)}`,
+          `/v1/next?component=${encodeURIComponent(session.component)}` +
+            `&sessionNonce=${encodeURIComponent(session.sessionNonce)}`,
           {method: "GET"}
         );
         failures = 0;
@@ -81,12 +90,18 @@
           try {
             const renewed = await request(session, "/v1/session", {
               method: "POST",
-              body: JSON.stringify({component: session.component})
+              body: JSON.stringify({
+                component: session.component,
+                sessionNonce: session.sessionNonce
+              })
             });
             session.token = renewed.body.token;
             await request(session, "/v1/register", {
               method: "POST",
-              body: JSON.stringify({component: session.component})
+              body: JSON.stringify({
+                component: session.component,
+                sessionNonce: session.sessionNonce
+              })
             });
             failures = 0;
             continue;

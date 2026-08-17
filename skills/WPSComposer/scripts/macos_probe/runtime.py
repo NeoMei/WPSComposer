@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from functools import partial
+import hashlib
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import platform
@@ -14,8 +17,10 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Thread
 from typing import BinaryIO, Optional
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -49,6 +54,15 @@ FIXTURE_NAMES = {
 }
 
 
+@dataclass(frozen=True)
+class ProcessIdentity:
+    """Stable identity used to revalidate one WPS process before signaling."""
+
+    pid: int
+    start_time: str
+    executable: str
+
+
 def _write_json(path: Path, payload: object) -> None:
     path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -61,6 +75,7 @@ def build_profile(
     profiles_root: Path,
     component: str,
     bridge_url: str,
+    session_nonce: str,
 ) -> Path:
     """Create one static add-in profile for the selected WPS component.
 
@@ -90,6 +105,7 @@ def build_profile(
         {
             "bridgeUrl": bridge_url,
             "component": component,
+            "sessionNonce": session_nonce,
         },
     )
     return profile
@@ -103,6 +119,8 @@ class RegistrationSnapshot:
     original: Optional[bytes]
     original_mode: Optional[int]
     recovery_dir: Path
+    managed_names: tuple[str, ...] = ()
+    managed_digest: Optional[str] = None
 
     @classmethod
     def capture(
@@ -123,6 +141,8 @@ class RegistrationSnapshot:
                 "path": str(target),
                 "existed": existed,
                 "mode": original_mode,
+                "managedNames": [],
+                "managedDigest": None,
             },
         )
         os.chmod(recovery / "registration.json", 0o600)
@@ -132,35 +152,103 @@ class RegistrationSnapshot:
             os.chmod(backup, 0o600)
         return cls(target, original, original_mode, recovery)
 
+    def record_managed_state(
+        self, names: tuple[str, ...], content: bytes
+    ) -> None:
+        """Persist the exact registration state owned by this session."""
+        self.managed_names = names
+        self.managed_digest = hashlib.sha256(content).hexdigest()
+        _write_json(
+            self.recovery_dir / "registration.json",
+            {
+                "path": str(self.path),
+                "existed": self.original is not None,
+                "mode": self.original_mode,
+                "managedNames": list(names),
+                "managedDigest": self.managed_digest,
+            },
+        )
+        os.chmod(self.recovery_dir / "registration.json", 0o600)
+
     def restore(self) -> None:
+        for _ in range(5):
+            current = self.path.read_bytes() if self.path.is_file() else None
+            current_digest = (
+                hashlib.sha256(current).hexdigest() if current is not None else None
+            )
+            if self.managed_digest is not None and current_digest == self.managed_digest:
+                restored = self.original
+            elif current is None:
+                # An external actor removed the file. Preserve that edit.
+                restored = None
+            else:
+                restored = self._without_managed_entries(current)
+            if restored is None:
+                if current is None:
+                    self._remove_recovery_files()
+                    return
+                if not self.path.is_file() or self.path.read_bytes() != current:
+                    continue
+                self.path.unlink()
+                self._remove_recovery_files()
+                return
+            if _atomic_write(
+                self.path,
+                restored,
+                self.original_mode,
+                expected=current,
+            ):
+                self._remove_recovery_files()
+                return
+        raise RuntimeError(
+            f"Registration changed repeatedly; recovery retained at {self.recovery_dir}"
+        )
+
+    def _without_managed_entries(self, current: bytes) -> bytes:
+        if not self.managed_names:
+            return current
+        try:
+            root = ET.fromstring(current)
+        except ET.ParseError as exc:
+            raise RuntimeError(
+                f"Registration changed to invalid XML; recovery retained at "
+                f"{self.recovery_dir}"
+            ) from exc
+        managed = set(self.managed_names)
+        for child in list(root):
+            if (
+                child.tag.rsplit("}", 1)[-1] == "jspluginonline"
+                and child.attrib.get("name") in managed
+            ):
+                root.remove(child)
+        return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+
+    def _replace_target(self, content: Optional[bytes]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        if self.original is None:
+        if content is None:
             self.path.unlink(missing_ok=True)
-            if self.path.exists():
-                raise RuntimeError(f"Failed to remove probe registration: {self.path}")
-        else:
-            temp_name: Optional[str] = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    mode="wb",
-                    dir=self.path.parent,
-                    prefix=".wpscomposer-restore-",
-                    delete=False,
-                ) as stream:
-                    stream.write(self.original)
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                    temp_name = stream.name
-                if self.original_mode is not None:
-                    os.chmod(temp_name, self.original_mode)
-                os.replace(temp_name, self.path)
-                temp_name = None
-            finally:
-                if temp_name is not None:
-                    Path(temp_name).unlink(missing_ok=True)
-            if self.path.read_bytes() != self.original:
-                raise RuntimeError(f"Registration restore verification failed: {self.path}")
-        self._remove_recovery_files()
+            return
+        temp_name: Optional[str] = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=self.path.parent,
+                prefix=".wpscomposer-restore-",
+                delete=False,
+            ) as stream:
+                stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+                temp_name = stream.name
+            if self.original_mode is not None:
+                os.chmod(temp_name, self.original_mode)
+            os.replace(temp_name, self.path)
+            temp_name = None
+        finally:
+            if temp_name is not None:
+                Path(temp_name).unlink(missing_ok=True)
+        if self.path.read_bytes() != content:
+            raise RuntimeError(f"Registration restore verification failed: {self.path}")
 
     def _remove_recovery_files(self) -> None:
         for name in ("publish.xml.original", "registration.json"):
@@ -198,8 +286,97 @@ class RegistrationSnapshot:
             backup.unlink(missing_ok=True)
             recovery.rmdir()
             return
-        snapshot = cls(target, original, meta.get("mode"), recovery)
+        snapshot = cls(
+            target,
+            original,
+            meta.get("mode"),
+            recovery,
+            tuple(meta.get("managedNames", ())),
+            meta.get("managedDigest"),
+        )
         snapshot.restore()
+
+
+_UNCONDITIONAL = object()
+
+
+def _atomic_write(
+    path: Path,
+    content: bytes,
+    mode: Optional[int],
+    *,
+    expected: object = _UNCONDITIONAL,
+) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name: Optional[str] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=path.parent, prefix=".wpscomposer-write-", delete=False
+        ) as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+            temp_name = stream.name
+        os.chmod(temp_name, mode if mode is not None else 0o600)
+        if expected is not _UNCONDITIONAL:
+            current = path.read_bytes() if path.is_file() else None
+            if current != expected:
+                return False
+        os.replace(temp_name, path)
+        temp_name = None
+        return True
+    finally:
+        if temp_name is not None:
+            Path(temp_name).unlink(missing_ok=True)
+
+
+def install_registration_entries(
+    snapshot: RegistrationSnapshot,
+    component_config: dict[str, dict[str, object]],
+    *,
+    session_nonce: str,
+) -> None:
+    """Merge this session's uniquely named add-ins into publish.xml."""
+    names = tuple(
+        f"wpscomposer-{session_nonce}-{component}"
+        for component in component_config
+    )
+    for _ in range(5):
+        existed = snapshot.path.is_file()
+        current = snapshot.path.read_bytes() if existed else None
+        source = current if current is not None else b"<jsplugins/>"
+        try:
+            root = ET.fromstring(source)
+        except ET.ParseError as exc:
+            raise RuntimeError(f"Invalid WPS registration XML: {snapshot.path}") from exc
+        # Persist ownership before the global file is changed so crash recovery
+        # can identify our entries even if the process dies during publication.
+        snapshot.record_managed_state(names, source)
+        for name, (component, config) in zip(names, component_config.items()):
+            ET.SubElement(
+                root,
+                "jspluginonline",
+                {
+                    "name": name,
+                    "type": str(config["addon_type"]),
+                    "url": f"http://127.0.0.1:{config['port']}/",
+                    "debug": "",
+                    "enable": "enable_dev",
+                    "install": "null",
+                },
+            )
+        content = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+        if _atomic_write(
+            snapshot.path,
+            content,
+            snapshot.original_mode,
+            expected=current,
+        ):
+            snapshot.record_managed_state(names, content)
+            return
+    raise RuntimeError(
+        f"WPS registration changed repeatedly: {snapshot.path}"
+    )
 
 
 def find_node(override: Optional[str] = None) -> Path:
@@ -316,32 +493,52 @@ def activation_command(
 
 def list_wps_pids(app_path: Path) -> set[int]:
     """Return PIDs whose command is exactly the selected WPS main executable."""
+    return set(list_wps_processes(app_path))
+
+
+def _parse_process_line(
+    raw_line: str, expected_executable: str
+) -> Optional[ProcessIdentity]:
+    fields = raw_line.strip().split(maxsplit=6)
+    if len(fields) != 7 or fields[6] != expected_executable:
+        return None
+    try:
+        pid = int(fields[0])
+    except ValueError:
+        return None
+    return ProcessIdentity(
+        pid=pid,
+        start_time=" ".join(fields[1:6]),
+        executable=fields[6],
+    )
+
+
+def list_wps_processes(app_path: Path) -> dict[int, ProcessIdentity]:
+    """Return verifiable identities for the selected WPS main executable."""
     executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
     result = subprocess.run(
-        ["ps", "-axo", "pid=,command="],
+        ["ps", "-axo", "pid=,lstart=,command="],
         check=True,
         capture_output=True,
         text=True,
         timeout=5,
     )
-    pids: set[int] = set()
+    processes: dict[int, ProcessIdentity] = {}
     for raw_line in result.stdout.splitlines():
-        fields = raw_line.strip().split(maxsplit=1)
-        if len(fields) == 2 and fields[1] == executable:
-            pids.add(int(fields[0]))
-    return pids
+        identity = _parse_process_line(raw_line, executable)
+        if identity is not None:
+            processes[identity.pid] = identity
+    return processes
 
 
-def owned_wps_pids(before: set[int], after: set[int]) -> set[int]:
-    """Identify WPS instances that appeared during this probe run."""
-    return after - before
-
-
-def _pid_elapsed_seconds(pid: int) -> Optional[float]:
-    """Elapsed seconds since the process started; None if it is gone."""
+def read_wps_process_identity(
+    pid: int, app_path: Path
+) -> Optional[ProcessIdentity]:
+    """Re-read one PID and return it only if it is still the selected WPS."""
+    executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
     try:
         result = subprocess.run(
-            ["ps", "-o", "etimes=", "-p", str(pid)],
+            ["ps", "-p", str(pid), "-o", "pid=,lstart=,command="],
             check=True,
             capture_output=True,
             text=True,
@@ -349,10 +546,16 @@ def _pid_elapsed_seconds(pid: int) -> Optional[float]:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    try:
-        return float(result.stdout.strip())
-    except ValueError:
-        return None
+    for raw_line in result.stdout.splitlines():
+        identity = _parse_process_line(raw_line, executable)
+        if identity is not None and identity.pid == pid:
+            return identity
+    return None
+
+
+def owned_wps_pids(before: set[int], after: set[int]) -> set[int]:
+    """Identify WPS instances that appeared during this probe run."""
+    return after - before
 
 
 def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
@@ -369,6 +572,33 @@ def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
     session = Path(tempfile.mkdtemp(prefix="session-", dir=parent))
     os.chmod(session, 0o700)
     return session
+
+
+class _QuietStaticHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+
+class StaticProfileServer:
+    """Side-effect-free static server for one add-in profile."""
+
+    def __init__(self, profile: Path, port: int):
+        handler = partial(_QuietStaticHandler, directory=str(profile))
+        self._server = ThreadingHTTPServer(("127.0.0.1", port), handler)
+        self._server.daemon_threads = True
+        self._thread = Thread(
+            target=self._server.serve_forever,
+            name=f"wpscomposer-addin-{port}",
+            daemon=True,
+        )
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def close(self) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+        self._thread.join(timeout=5)
 
 
 class ProbeRuntime:
@@ -389,41 +619,49 @@ class ProbeRuntime:
         self.runtime_dir = runtime_dir.resolve()
         self.bridge_url = bridge_url
         self.token = token
+        self.session_nonce = hashlib.sha256(token.encode("utf-8")).hexdigest()
         self.node_override = node_override
         self.publish_xml = publish_xml.expanduser().resolve()
         self.wps_app = wps_app.resolve()
         self.staging_root = staging_root.expanduser().resolve()
+        self.state_dir = self.staging_root.parent / ".wpscomposer-runtime"
+        self.recovery_dir = self.state_dir / "registration-recovery"
         self.staging_dir: Optional[Path] = None
         self.profiles: dict[str, Path] = {}
         self.fixtures: dict[str, Path] = {}
         self.logs: dict[str, Path] = {}
         self._processes: list[subprocess.Popen] = []
+        self._servers: list[StaticProfileServer] = []
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
-        self._wps_pids_before: Optional[set[int]] = None
-        self._entered_at: Optional[float] = None
+        self._wps_processes_before: Optional[dict[int, ProcessIdentity]] = None
+        self._owned_wps_processes: dict[int, ProcessIdentity] = {}
         self._runtime_lock = None
         self.registration_restored = True
 
     def __enter__(self) -> "ProbeRuntime":
-        self._runtime_lock = wps_runtime_lock(
-            self.staging_root.parent / ".wpscomposer-runtime.lock"
-        )
+        self._ensure_runtime_state_dir()
+        self._runtime_lock = wps_runtime_lock(self.state_dir / "runtime.lock")
         try:
             self._runtime_lock.__enter__()
         except Exception:
             self._runtime_lock = None
             raise
         try:
+            if self.recovery_dir.exists():
+                RegistrationSnapshot._recover_stale(self.recovery_dir)
             self._preflight()
-            self._entered_at = time.monotonic()
-            self._wps_pids_before = list_wps_pids(self.wps_app)
+            self._wps_processes_before = list_wps_processes(self.wps_app)
             self.runtime_dir.mkdir(parents=True, exist_ok=False)
             self.staging_dir = create_staging_session(self.staging_root)
         except Exception:
             self.close()
             raise
         return self
+
+    def _ensure_runtime_state_dir(self) -> None:
+        self.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        os.chmod(self.state_dir, 0o700)
 
     def __exit__(self, exc_type, exc, traceback) -> None:
         self.close()
@@ -445,15 +683,15 @@ class ProbeRuntime:
                 profiles_root,
                 component,
                 self.bridge_url,
+                self.session_nonce,
             )
         return dict(self.profiles)
 
     def start_servers(self) -> None:
         if set(self.profiles) != set(COMPONENT_CONFIG):
             raise RuntimeError("prepare_profiles() must run before start_servers()")
-        node = find_node(self.node_override or read_configured_node(self.probe_root))
-        cli = find_wpsjs_cli(self.probe_root)
-        recovery = self.runtime_dir / "registration-recovery"
+        self._ensure_runtime_state_dir()
+        recovery = self.recovery_dir
         self._snapshot = RegistrationSnapshot.capture(
             self.publish_xml, recovery
         )
@@ -464,33 +702,19 @@ class ProbeRuntime:
             flush=True,
         )
         try:
+            install_registration_entries(
+                self._snapshot,
+                COMPONENT_CONFIG,
+                session_nonce=self.session_nonce,
+            )
             for component, config in COMPONENT_CONFIG.items():
                 log_path = self.runtime_dir / f"wpsjs-{component}.log"
-                log_stream = log_path.open("ab")
-                self._log_streams.append(log_stream)
                 self.logs[component] = log_path
-                environment = os.environ.copy()
-                environment["PATH"] = (
-                    str(node.parent)
-                    + os.pathsep
-                    + environment.get("PATH", "")
+                server = StaticProfileServer(
+                    self.profiles[component], int(config["port"])
                 )
-                process = subprocess.Popen(
-                    [
-                        str(node),
-                        str(cli),
-                        "debug",
-                        "--server",
-                        "--port",
-                        str(config["port"]),
-                    ],
-                    cwd=self.profiles[component],
-                    env=environment,
-                    stdin=subprocess.DEVNULL,
-                    stdout=log_stream,
-                    stderr=subprocess.STDOUT,
-                )
-                self._processes.append(process)
+                server.start()
+                self._servers.append(server)
                 self._wait_for_server(component, int(config["port"]))
         except Exception:
             self.close()
@@ -499,12 +723,7 @@ class ProbeRuntime:
     def _wait_for_server(self, component: str, port: int) -> None:
         deadline = time.monotonic() + 15
         url = f"http://127.0.0.1:{port}/index.html"
-        process = self._processes[-1]
         while time.monotonic() < deadline:
-            if process.poll() is not None:
-                raise RuntimeError(
-                    f"wpsjs {component} exited early; see {self.logs[component]}"
-                )
             try:
                 with urlopen(url, timeout=1) as response:
                     if response.status == 200:
@@ -536,21 +755,11 @@ class ProbeRuntime:
         target = fixture_dir / name
         if not target.is_file():
             shutil.copy2(source, target)
-        command = activation_command(
-            self.wps_app,
-            target,
-            reuse_running=not bool(self._wps_pids_before),
-        )
-        try:
-            subprocess.run(command, check=True, timeout=15)
-        except subprocess.CalledProcessError:
-            if command[:2] != ["open", "-a"]:
-                raise
-            subprocess.run(
-                activation_command(self.wps_app, target, reuse_running=False),
-                check=True,
-                timeout=15,
-            )
+        command = activation_command(self.wps_app, target, reuse_running=False)
+        # LaunchServices does not return the spawned WPS PID. Even a single
+        # process appearing around `open -n` could be a concurrent user launch,
+        # so it is intentionally not claimed or later signaled.
+        subprocess.run(command, check=True, timeout=15)
         self.fixtures[component] = target
         return target
 
@@ -560,55 +769,46 @@ class ProbeRuntime:
             self._snapshot = None
             self.registration_restored = True
 
-    def _owned_wps_pids(
-        self, before: set[int], entered_at: Optional[float]
-    ) -> set[int]:
-        """WPS instances spawned during this run.
-
-        Age-based (not set-subtraction): a recycled PID from `before` still
-        counts if the process started after we entered, and a pre-run PID
-        that died and was recycled is excluded because it looks young only
-        if the new process really started during this run.
-        """
-        after = list_wps_pids(self.wps_app)
-        if entered_at is None:
-            return after - before
-        max_age = time.monotonic() - entered_at
-        return {
-            pid
-            for pid in after
-            if (age := _pid_elapsed_seconds(pid)) is not None
-            and age <= max_age
-        }
-
     def _terminate_owned_wps(self) -> None:
-        if self._wps_pids_before is None:
+        if not self._owned_wps_processes:
             return
-        before = self._wps_pids_before
-        entered_at = self._entered_at
-        self._wps_pids_before = None
-        owned = self._owned_wps_pids(before, entered_at)
-        for pid in sorted(owned):
+        owned = tuple(self._owned_wps_processes.values())
+        self._owned_wps_processes.clear()
+        term_signaled: list[ProcessIdentity] = []
+        for identity in sorted(owned, key=lambda item: item.pid):
+            if read_wps_process_identity(identity.pid, self.wps_app) != identity:
+                continue
             try:
-                os.kill(pid, signal.SIGTERM)
+                os.kill(identity.pid, signal.SIGTERM)
+                term_signaled.append(identity)
             except ProcessLookupError:
                 pass
-        if not owned:
+        if not term_signaled:
             return
         deadline = time.monotonic() + 5
+        remaining = term_signaled
         while time.monotonic() < deadline:
-            remaining = self._owned_wps_pids(before, entered_at)
+            remaining = [
+                identity
+                for identity in term_signaled
+                if read_wps_process_identity(identity.pid, self.wps_app) == identity
+            ]
             if not remaining:
                 return
             time.sleep(0.1)
-        for pid in sorted(remaining):
+        for identity in remaining:
+            if read_wps_process_identity(identity.pid, self.wps_app) != identity:
+                continue
             try:
-                os.kill(pid, signal.SIGKILL)
+                os.kill(identity.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
 
     def close(self) -> None:
         try:
+            for server in reversed(self._servers):
+                server.close()
+            self._servers.clear()
             for process in reversed(self._processes):
                 if process.poll() is None:
                     process.terminate()

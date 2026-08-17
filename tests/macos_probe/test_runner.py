@@ -114,9 +114,9 @@ def test_wait_for_artifact_handles_delayed_writer_flush(tmp_path: Path):
 
 
 def fake_component(bridge, component, command_count):
-    bridge.state.register(component)
+    bridge.state.register(component, bridge.session_nonce)
     for _ in range(command_count):
-        command = bridge.state.next(component, 2)
+        command = bridge.state.next(component, bridge.session_nonce, 2)
         assert command is not None
         if command.method == "probe_capabilities":
             value = {
@@ -151,7 +151,9 @@ def fake_component(bridge, component, command_count):
             value = {"path": str(path), "capabilities": {}}
             if path.suffix == ".pdf":
                 value["preset"] = "obsidian-reading"
-        bridge.state.complete(ProbeResult(command.id, True, value, None))
+        bridge.state.complete(
+            ProbeResult(command.id, True, value, None), bridge.session_nonce
+        )
 
 
 def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):
