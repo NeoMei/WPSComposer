@@ -804,6 +804,107 @@ def test_file_edit_close_failure_does_not_publish_and_retains_recovery_stage(
     assert composer.save_calls[0].is_file()
 
 
+def test_file_edit_single_publish_failure_retains_stage_on_original_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    failure = RuntimeError("simulated single publish failure")
+
+    def fail_publish(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(api, "publish_artifact", fail_publish)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    stage = composer.save_calls[0]
+    assert caught.value is failure
+    assert caught.value.recovery_paths == (str(stage),)
+    assert "recovery_paths" in str(caught.value)
+    assert composer.closed is True
+    assert stage.is_file()
+    assert not output.exists()
+
+
+def test_file_edit_group_publish_failure_retains_all_stages_on_original_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+    failure = RuntimeError("simulated group publish failure")
+
+    def fail_publish_group(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(api, "publish_artifact_group", fail_publish_group)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    export_pdf=pdf,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    stages = (*composer.save_calls, *composer.export_calls)
+    assert caught.value is failure
+    assert caught.value.recovery_paths == tuple(str(stage) for stage in stages)
+    assert "recovery_paths" in str(caught.value)
+    assert composer.closed is True
+    assert all(stage.is_file() for stage in stages)
+    assert not output.exists()
+    assert not pdf.exists()
+
+
+def test_file_edit_recovery_reporting_failure_does_not_replace_publish_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    failure = RuntimeError("authoritative publish failure")
+    real_exists = Path.exists
+
+    def fail_publish(*args, **kwargs):
+        raise failure
+
+    def fail_stage_exists(path):
+        if path in composer.save_calls:
+            raise OSError("simulated recovery reporting failure")
+        return real_exists(path)
+
+    monkeypatch.setattr(api, "publish_artifact", fail_publish)
+    monkeypatch.setattr(Path, "exists", fail_stage_exists)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert caught.value is failure
+    assert composer.save_calls[0].is_file()
+
+
 def test_edit_rejects_export_pdf_on_macos_before_bridge_or_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

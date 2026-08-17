@@ -724,6 +724,63 @@ def test_semantic_validator_rejects_unresolved_writer_blips(
         )
 
 
+def test_semantic_validator_rejects_non_ooxml_image_relationship_type(
+    tmp_path: Path,
+):
+    package = _write_semantic_package(tmp_path / "fake-image-type.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main" xmlns:a="http://schemas.openxmlformats.'
+            'org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/'
+            'officeDocument/2006/relationships"><w:body><w:drawing>'
+            '<a:blip r:embed="rId1"/></w:drawing></w:body></w:document>'
+        ),
+        "word/_rels/document.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/'
+            '2006/relationships"><Relationship Id="rId1" '
+            'Type="urn:not-ooxml/image" Target="media/image1.png"/>'
+            "</Relationships>"
+        ),
+        "word/media/image1.png": b"PNG",
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_image", {"imageId": "image-1"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="image structure"):
+        mac_generation._validate_generated_package(
+            package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_accepts_strict_image_relationship_type(tmp_path: Path):
+    package = _write_semantic_package(tmp_path / "strict-image-type.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main" xmlns:a="http://schemas.openxmlformats.'
+            'org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/'
+            'officeDocument/2006/relationships"><w:body><w:drawing>'
+            '<a:blip r:embed="rId1"/></w:drawing></w:body></w:document>'
+        ),
+        "word/_rels/document.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/'
+            '2006/relationships"><Relationship Id="rId1" Type="http://purl.'
+            'oclc.org/ooxml/officeDocument/relationships/image" '
+            'Target="media/image1.png"/></Relationships>'
+        ),
+        "word/media/image1.png": b"PNG",
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_image", {"imageId": "image-1"}),
+    ))
+
+    mac_generation._validate_generated_package(
+        package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+    )
+
+
 def test_semantic_validator_matches_presentation_images_to_logical_slide(
     tmp_path: Path,
 ):
@@ -806,6 +863,49 @@ def test_semantic_validator_accepts_logical_order_independent_of_part_name(
         GenerationOperation("slide.reset", {}),
         GenerationOperation("slide.add_title", {"title": "FIRST"}),
         GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    mac_generation._validate_generated_package(
+        package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+    )
+
+
+def test_semantic_validator_rejects_non_ooxml_slide_relationship_type(
+    tmp_path: Path,
+):
+    members = _presentation_members(["FIRST"])
+    members["ppt/_rels/presentation.xml.rels"] = members[
+        "ppt/_rels/presentation.xml.rels"
+    ].replace(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+        "urn:not-ooxml/slide",
+    )
+    package = _write_semantic_package(tmp_path / "fake-slide-type.pptx", members)
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide relationship"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_accepts_strict_slide_relationship_type(
+    tmp_path: Path,
+):
+    members = _presentation_members(["FIRST"])
+    members["ppt/_rels/presentation.xml.rels"] = members[
+        "ppt/_rels/presentation.xml.rels"
+    ].replace(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+        "http://purl.oclc.org/ooxml/officeDocument/relationships/slide",
+    )
+    package = _write_semantic_package(tmp_path / "strict-slide-type.pptx", members)
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
     ))
 
     mac_generation._validate_generated_package(

@@ -784,6 +784,35 @@ def _stage_composer_artifact(composer, destination, *, export_pdf=False):
     return staged
 
 
+def _report_recovery_paths(error, stages):
+    """Attach still-existing recovery stages without replacing *error*."""
+    try:
+        recovery_paths = tuple(
+            str(stage) for stage in stages if stage.exists()
+        )
+    except BaseException:
+        # Reporting is secondary: never replace the publication exception.
+        return
+    if not recovery_paths:
+        return
+    try:
+        error.recovery_paths = recovery_paths
+    except BaseException:
+        pass
+    try:
+        detail = f"recovery_paths={list(recovery_paths)!r}"
+        original_args = tuple(getattr(error, "args", ()))
+        original_message = str(error)
+        error.args = (
+            f"{original_message}; {detail}",
+            *original_args[1:],
+        )
+    except BaseException:
+        # Attribute or message decoration can fail for unusual exception
+        # implementations; the original exception must remain authoritative.
+        pass
+
+
 def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
          export_pdf=None, visible=False, atomic=True, stop_on_error=None,
          inspect_after=False, raise_on_error=False, overwrite=False):
@@ -1110,9 +1139,10 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 ) from close_exc
             raise
 
+        publication_attempted = completed and pending_publication is not None
         committed = False
         try:
-            if completed and pending_publication is not None:
+            if publication_attempted:
                 if pending_publication[0] == "single":
                     _kind, stage, target, replace = pending_publication
                     published = publish_artifact(
@@ -1128,13 +1158,17 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                     result["saved_path"] = str(published[0])
                     result["pdf_path"] = str(published[1])
                 committed = True
+        except BaseException as publish_exc:
+            _report_recovery_paths(publish_exc, owned_stages)
+            raise
         finally:
             cleanup_errors = []
-            for stage in owned_stages:
-                try:
-                    stage.unlink(missing_ok=True)
-                except OSError as cleanup_exc:
-                    cleanup_errors.append((stage, cleanup_exc))
+            if not publication_attempted or committed:
+                for stage in owned_stages:
+                    try:
+                        stage.unlink(missing_ok=True)
+                    except OSError as cleanup_exc:
+                        cleanup_errors.append((stage, cleanup_exc))
             if cleanup_errors:
                 retained = ", ".join(
                     str(stage) for stage, _exc in cleanup_errors

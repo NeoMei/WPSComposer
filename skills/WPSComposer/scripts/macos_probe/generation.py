@@ -65,6 +65,14 @@ RESOURCE_EXTENSIONS = {
     "image/tiff": frozenset({".tif", ".tiff"}),
 }
 RESOURCE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+IMAGE_RELATIONSHIP_TYPES = frozenset({
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+    "http://purl.oclc.org/ooxml/officeDocument/relationships/image",
+})
+SLIDE_RELATIONSHIP_TYPES = frozenset({
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+    "http://purl.oclc.org/ooxml/officeDocument/relationships/slide",
+})
 REMOTE_GENERATION_ERROR_CODES = frozenset(
     {
         "GENERATION_COMMAND_FAILED",
@@ -786,7 +794,7 @@ def _valid_image_reference_count(
         if (
             not relationship_id
             or relationship is None
-            or not relationship.attrib.get("Type", "").endswith("/image")
+            or relationship.attrib.get("Type") not in IMAGE_RELATIONSHIP_TYPES
         ):
             raise ArtifactValidationError(
                 f"Generated artifact has an invalid {structure_context}"
@@ -841,7 +849,7 @@ def _presentation_slide_parts(
         relationship = relationships.get(relationship_id)
         if (
             relationship is None
-            or not relationship.attrib.get("Type", "").endswith("/slide")
+            or relationship.attrib.get("Type") not in SLIDE_RELATIONSHIP_TYPES
         ):
             raise ArtifactValidationError(
                 "Generated presentation has an invalid slide relationship"
