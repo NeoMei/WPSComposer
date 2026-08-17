@@ -35,10 +35,10 @@ class FakeRuntime:
     def prepare_profiles(self):
         pass
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         pass
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         pass
 
 
@@ -113,7 +113,7 @@ def _run(
         patches or [{"target": "slide:1", "name": "Updated"}],
         fake_bridge,
         runtime,
-        2,
+        inspection.time.monotonic() + 2,
         atomic=atomic,
         raise_on_error=raise_on_error,
         overwrite=overwrite,
@@ -261,7 +261,7 @@ def test_run_edit_overwrite_failure_preserves_original_destination(
             [{"target": "slide:1", "name": "Updated"}],
             FakeBridge(),
             runtime,
-            2,
+            inspection.time.monotonic() + 2,
             atomic=True,
             raise_on_error=False,
             overwrite=True,

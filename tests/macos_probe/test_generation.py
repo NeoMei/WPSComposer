@@ -243,10 +243,10 @@ class FakeRuntime:
     def prepare_profiles(self):
         self.calls.append(("prepare_profiles",))
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         self.calls.append(("start_servers",))
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         self.calls.append(("activate_component", component))
 
 

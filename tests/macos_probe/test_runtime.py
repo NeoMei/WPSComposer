@@ -202,7 +202,7 @@ def test_runtime_removes_staging_session_after_success(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -226,7 +226,7 @@ def test_runtime_removes_staging_session_after_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -252,7 +252,7 @@ def test_runtime_surfaces_staging_cleanup_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -349,7 +349,7 @@ def test_runtime_close_terminates_only_wps_processes_created_by_probe(
     probe._owned_wps_processes = {201: first, 202: second}
     alive = {201: first, 202: second}
     monkeypatch.setattr(
-        runtime, "read_wps_process_identity", lambda pid, app: alive.get(pid)
+        runtime, "read_wps_process_identity", lambda pid, app, **kwargs: alive.get(pid)
     )
     signals = []
     monkeypatch.setattr(
@@ -384,7 +384,7 @@ def test_runtime_never_signals_user_wps_launched_during_run(monkeypatch, tmp_pat
     probe._owned_wps_processes = {owned.pid: owned}
     current = {owned.pid: owned, user.pid: user}
     monkeypatch.setattr(
-        runtime, "read_wps_process_identity", lambda pid, app: current.get(pid)
+        runtime, "read_wps_process_identity", lambda pid, app, **kwargs: current.get(pid)
     )
     signals = []
 
@@ -411,13 +411,13 @@ def test_runtime_kill_set_cannot_grow_during_term_grace(monkeypatch, tmp_path):
     owned = _identity(201)
     late_user = _identity(303)
     probe._owned_wps_processes = {owned.pid: owned}
-    clock = iter((0.0, 6.0))
-    monkeypatch.setattr(runtime.time, "monotonic", lambda: next(clock))
-    monkeypatch.setattr(runtime.time, "sleep", lambda _: None)
+    now = [0.0]
+    monkeypatch.setattr(runtime.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(runtime.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
     monkeypatch.setattr(
         runtime,
         "read_wps_process_identity",
-        lambda pid, app: {201: owned, 303: late_user}.get(pid),
+        lambda pid, app, **kwargs: {201: owned, 303: late_user}.get(pid),
     )
     signals = []
     monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
@@ -439,7 +439,7 @@ def test_runtime_does_not_signal_reused_pid(monkeypatch, tmp_path):
     monkeypatch.setattr(
         runtime,
         "read_wps_process_identity",
-        lambda pid, app: _identity(pid, "reused-start"),
+        lambda pid, app, **kwargs: _identity(pid, "reused-start"),
     )
     signals = []
     monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
@@ -458,7 +458,7 @@ def test_ambiguous_concurrent_wps_launch_is_not_claimed(monkeypatch, tmp_path):
         202: _identity(202),
     }
     observations = iter((before, after))
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: next(observations))
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: next(observations))
     monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: None)
 
     probe.activate_component("writer")
@@ -470,7 +470,7 @@ def test_single_new_pid_around_open_is_not_proof_of_ownership(monkeypatch, tmp_p
     probe = _probe_with_writer_fixture(tmp_path)
     user = _identity(202)
     observations = iter(({}, {user.pid: user}))
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: next(observations))
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: next(observations))
     monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: None)
 
     probe.activate_component("writer")
@@ -569,7 +569,7 @@ def test_stale_registration_recovers_across_random_runtime_roots_before_prefligh
         lambda: publish.read_bytes() == original
         or pytest.fail("recovery must happen before port preflight"),
     )
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
 
     with probe:
         pass
@@ -651,7 +651,7 @@ def test_activate_component_can_retry_one_missing_component(
     probe.staging_dir = tmp_path / "container" / "session-1"
     probe.staging_dir.mkdir(parents=True)
     commands = []
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     monkeypatch.setattr(
         runtime.subprocess,
         "run",
@@ -693,7 +693,7 @@ def test_activate_component_isolates_from_preexisting_wps_instance(
         return ["open", str(fixture)]
 
     monkeypatch.setattr(runtime, "activation_command", fake_activation_command)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: None)
 
     probe.activate_component("writer")
@@ -722,7 +722,7 @@ def test_activate_component_never_reuses_a_racing_user_wps(
     monkeypatch, tmp_path: Path
 ):
     probe = _probe_with_writer_fixture(tmp_path)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     commands = []
 
     def fake_run(command, **kwargs):
@@ -739,7 +739,7 @@ def test_activate_component_does_not_retry_an_isolated_command(
     monkeypatch, tmp_path: Path
 ):
     probe = _probe_with_writer_fixture(tmp_path)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     failure = subprocess.CalledProcessError(1, ["open", "-n"])
     commands = []
 
@@ -761,7 +761,7 @@ def test_activate_component_propagates_isolated_open_failure(
     monkeypatch, tmp_path: Path
 ):
     probe = _probe_with_writer_fixture(tmp_path)
-    monkeypatch.setattr(runtime, "list_wps_processes", lambda app: {})
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     failure = subprocess.CalledProcessError(2, ["open", "-n"])
     commands = []
 

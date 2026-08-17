@@ -275,15 +275,15 @@ class GenerationRuntime:
         self.calls.append("prepare_profiles")
         return dict(self.profiles)
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         self.calls.append("start_servers")
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         self.calls.append(("activate", component))
 
 
 def _runtime_factory(captured):
-    def factory(probe_root, runtime_dir, bridge_url, token):
+    def factory(probe_root, runtime_dir, bridge_url, token, *, deadline):
         runtime = GenerationRuntime(runtime_dir, [])
         captured.append(runtime)
         return runtime

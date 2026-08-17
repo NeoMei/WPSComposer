@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import time
 import zipfile
 
 import pytest
 
+from skills.WPSComposer.scripts import artifact_transport
 from skills.WPSComposer.scripts.artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
     publish_artifact,
     validate_office_package,
+    validate_before_deadline,
     validate_pdf,
 )
 from tests._pdf_fixture import write_minimal_pdf
@@ -232,3 +235,48 @@ def test_publish_restores_existing_output_when_final_validation_fails(tmp_path):
 
     assert caught.value.code == "FINAL_ARTIFACT_INVALID"
     assert destination.read_bytes() == original
+
+
+def test_publish_chunk_copy_stops_at_deadline_and_preserves_target(
+    tmp_path, monkeypatch
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new" * 1024 * 1024)
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    original = destination.read_bytes()
+    now = [10.0]
+
+    def ticking_clock():
+        value = now[0]
+        now[0] += 0.025
+        return value
+
+    monkeypatch.setattr(artifact_transport.time, "monotonic", ticking_clock)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=lambda path: None,
+            deadline=10.2,
+        )
+
+    assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
+    assert destination.read_bytes() == original
+    assert not list(tmp_path.glob(".wpscomposer-*.tmp"))
+
+
+def test_read_only_validator_is_bounded_by_absolute_deadline(tmp_path):
+    started = time.monotonic()
+
+    def blocked(_path):
+        time.sleep(0.25)
+
+    with pytest.raises(TimeoutError, match="validation deadline"):
+        validate_before_deadline(
+            blocked,
+            tmp_path / "artifact.pdf",
+            deadline=time.monotonic() + 0.02,
+        )
+
+    assert time.monotonic() - started < 0.15

@@ -19,6 +19,7 @@ from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
     publish_artifact,
+    validate_before_deadline,
     validate_office_package,
     validate_pdf,
 )
@@ -30,7 +31,7 @@ from ..generation_plan import (
 )
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
-from .runtime import ProbeRuntime
+from .runtime import ProbeRuntime, remaining, require_remaining
 from .templates import TemplateError, clone_template
 
 
@@ -386,17 +387,18 @@ def _wait_for_registration(
     deadline: float,
 ) -> None:
     for attempt in range(4):
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        budget = remaining(deadline)
+        if budget <= 0:
             bridge.wait_registered({component}, 0)
             return
         try:
-            bridge.wait_registered({component}, min(10, remaining))
+            bridge.wait_registered({component}, min(10, budget))
             return
         except TimeoutError:
-            if attempt == 3:
+            if attempt == 3 or remaining(deadline) <= 0:
+                bridge.wait_registered({component}, 0)
                 raise
-            runtime.activate_component(component)
+            runtime.activate_component(component, deadline=deadline)
 
 
 def _validate_marker_package(path: Path, format_name: str) -> None:
@@ -436,15 +438,24 @@ def _validate_marker_package(path: Path, format_name: str) -> None:
         )
 
 
-def _wait_for_marker(path: Path, format_name: str, timeout: float) -> None:
-    deadline = time.monotonic() + timeout
+def _wait_for_marker(
+    path: Path, format_name: str, *, deadline: float
+) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            _validate_marker_package(path, format_name)
+            validate_before_deadline(
+                lambda target: _validate_marker_package(target, format_name),
+                path,
+                deadline,
+            )
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -452,15 +463,18 @@ def _wait_for_marker(path: Path, format_name: str, timeout: float) -> None:
         time.sleep(min(0.05, remaining))
 
 
-def _wait_for_pdf(path: Path, timeout: float) -> None:
-    deadline = time.monotonic() + timeout
+def _wait_for_pdf(path: Path, *, deadline: float) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            validate_pdf(path)
+            validate_before_deadline(validate_pdf, path, deadline)
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -804,18 +818,26 @@ def _wait_for_generated_package(
     format_name: str,
     recorded: RecordedGeneration,
     template_digest: str,
-    timeout: float,
+    *,
+    deadline: float,
 ) -> None:
-    deadline = time.monotonic() + timeout
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            _validate_generated_package(
-                path, format_name, recorded, template_digest
+            validate_before_deadline(
+                lambda target: _validate_generated_package(
+                    target, format_name, recorded, template_digest
+                ),
+                path,
+                deadline,
             )
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -830,7 +852,7 @@ def _run_generation(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
     probe_root: Path,
-    timeout: float,
+    deadline: float,
     feasibility: bool,
 ) -> Path:
     is_pdf = request.format_name == "pdf"
@@ -840,7 +862,9 @@ def _run_generation(
             "STAGING_UNAVAILABLE",
             "WPS container staging session was not created",
         )
+    require_remaining(deadline)
     runtime.prepare_profiles()
+    require_remaining(deadline)
     policy = PathPolicy((runtime.staging_dir,))
     try:
         staged = policy.require_allowed(
@@ -853,11 +877,12 @@ def _run_generation(
             "Pinned WPS generation template could not be staged",
         ) from exc
     template_digest = _sha256(staged)
+    require_remaining(deadline)
     staged_pdf = policy.require_allowed(staged.with_suffix(".pdf")) if is_pdf else None
     resources = stage_generation_resources(request, recorded, runtime)
-    runtime.start_servers()
-    runtime.activate_component(request.component)
-    deadline = time.monotonic() + timeout
+    require_remaining(deadline)
+    runtime.start_servers(deadline=deadline)
+    runtime.activate_component(request.component, deadline=deadline)
     try:
         _wait_for_registration(bridge, runtime, request.component, deadline)
     except TimeoutError as exc:
@@ -876,15 +901,14 @@ def _run_generation(
     if is_pdf:
         command_params["outputFormat"] = "pdf"
         command_params["stagedPdfPath"] = str(staged_pdf)
+    require_remaining(deadline)
     command = bridge.issue(
         request.component,
         method,
         command_params,
     )
     try:
-        result = bridge.wait_result(
-            command.id, max(0.0, deadline - time.monotonic())
-        )
+        result = bridge.wait_result(command.id, remaining(deadline))
     except TimeoutError as exc:
         bridge.state.cancel(command.id)
         raise _error(
@@ -892,6 +916,7 @@ def _run_generation(
             "GENERATION_COMMAND_FAILED",
             "Timed out waiting for WPS generation",
         ) from exc
+    require_remaining(deadline)
     if not result.ok:
         details = dict(result.error or {})
         remote_code = _normalize_remote_error_code(details.get("code"))
@@ -944,23 +969,23 @@ def _run_generation(
         )
     try:
         if feasibility:
-            _wait_for_marker(staged, request.format_name, timeout)
+            _wait_for_marker(staged, request.format_name, deadline=deadline)
         elif is_pdf:
             _wait_for_generated_package(
                 staged,
                 "docx",
                 recorded,
                 template_digest,
-                timeout,
+                deadline=deadline,
             )
-            _wait_for_pdf(staged_pdf, timeout)
+            _wait_for_pdf(staged_pdf, deadline=deadline)
         else:
             _wait_for_generated_package(
                 staged,
                 request.format_name,
                 recorded,
                 template_digest,
-                timeout,
+                deadline=deadline,
             )
     except ArtifactValidationError as exc:
         raise _error(
@@ -970,23 +995,35 @@ def _run_generation(
         ) from exc
     try:
         if feasibility:
-            validator = lambda path: _validate_marker_package(
+            artifact_validator = lambda path: _validate_marker_package(
                 path, request.format_name
             )
         elif is_pdf:
-            validator = lambda path: validate_pdf(path)
+            artifact_validator = validate_pdf
         else:
-            validator = lambda path: _validate_generated_package(
+            artifact_validator = lambda path: _validate_generated_package(
                 path,
                 request.format_name,
                 recorded,
                 template_digest,
             )
+
+        def validator(path: Path) -> None:
+            try:
+                require_remaining(deadline)
+                validate_before_deadline(artifact_validator, path, deadline)
+                require_remaining(deadline)
+            except TimeoutError as exc:
+                raise ArtifactValidationError(
+                    "WPS generation deadline expired during artifact validation"
+                ) from exc
+
         published = publish_artifact(
             staged_pdf if is_pdf else staged,
             request.output,
             overwrite=request.overwrite,
             validator=validator,
+            deadline=deadline,
         )
         if is_pdf:
             staged.unlink(missing_ok=True)
@@ -1014,10 +1051,13 @@ def _execute_generation_plan(
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
     feasibility: bool = False,
+    deadline: Optional[float] = None,
 ) -> Path:
     """Execute one host-validated plan against a private template clone."""
     if timeout <= 0:
         raise ValueError("timeout must be positive")
+    if deadline is None:
+        deadline = time.monotonic() + timeout
     gates = MACOS_GENERATION_ENABLED if enabled is None else enabled
     if not bool(gates.get(request.format_name, False)):
         raise _error(
@@ -1047,6 +1087,7 @@ def _execute_generation_plan(
     if request.output.exists() and not request.overwrite:
         raise FileExistsError(f"Output already exists: {request.output}")
     recorded = _validate_production_recording(request, recorded)
+    require_remaining(deadline)
     method = METHODS[request.component]
 
     repository_root = Path(__file__).resolve().parents[4]
@@ -1057,11 +1098,13 @@ def _execute_generation_plan(
     runtime = None
     try:
         with bridge_factory(ORIGINS) as bridge:
+            require_remaining(deadline)
             runtime = runtime_factory(
                 probe_root,
                 runtime_root / "runtime",
                 bridge.url,
                 bridge.token,
+                deadline=deadline,
             )
             try:
                 with runtime:
@@ -1072,7 +1115,7 @@ def _execute_generation_plan(
                         bridge,
                         runtime,
                         probe_root,
-                        timeout,
+                        deadline,
                         feasibility,
                     )
             except GenerationError:
@@ -1120,6 +1163,7 @@ def execute_generation_plan(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
+    _deadline: Optional[float] = None,
 ) -> Path:
     """Execute a complete renderer plan through one private WPS runtime."""
     return _execute_generation_plan(
@@ -1130,6 +1174,7 @@ def execute_generation_plan(
         runtime_factory=runtime_factory,
         timeout=timeout,
         feasibility=False,
+        deadline=_deadline,
     )
 
 
@@ -1175,6 +1220,9 @@ def generate_macos(
     overwrite: bool = False,
 ) -> Path:
     """Record a public renderer and generate through the gated macOS backend."""
+    if timeout <= 0:
+        raise ValueError("timeout must be positive")
+    deadline = time.monotonic() + timeout
     normalized_format = str(format_name).lower().lstrip(".")
     component = FORMAT_COMPONENTS.get(normalized_format, "writer")
     request = GenerationRequest(
@@ -1237,4 +1285,5 @@ def generate_macos(
         bridge_factory=bridge_factory,
         runtime_factory=runtime_factory,
         timeout=timeout,
+        _deadline=deadline,
     )

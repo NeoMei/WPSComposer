@@ -52,6 +52,23 @@ FIXTURE_NAMES = {
     "presentation": "wppDemo.pptx",
     "spreadsheet": "etDemo.xlsx",
 }
+RUNTIME_LOCK_TIMEOUT = 120.0
+SERVER_STARTUP_TIMEOUT = 15.0
+ACTIVATION_TIMEOUT = 15.0
+CLEANUP_GRACE_SECONDS = 5.0
+
+
+def remaining(deadline: float) -> float:
+    """Return the non-negative budget left on one absolute monotonic deadline."""
+    return max(0.0, float(deadline) - time.monotonic())
+
+
+def require_remaining(deadline: float, message: str = "WPS deadline expired") -> float:
+    """Return remaining budget or fail before starting another blocking stage."""
+    budget = remaining(deadline)
+    if budget <= 0:
+        raise TimeoutError(message)
+    return budget
 
 
 @dataclass(frozen=True)
@@ -423,14 +440,20 @@ def read_configured_node(probe_root: Path) -> Optional[str]:
 
 
 @contextmanager
-def wps_runtime_lock(lock_path: Path, timeout: float = 120):
+def wps_runtime_lock(
+    lock_path: Path,
+    timeout: float = RUNTIME_LOCK_TIMEOUT,
+    *,
+    deadline: Optional[float] = None,
+):
     """Serialize WPS registration and fixed-port ownership across processes."""
     import fcntl
 
     target = lock_path.expanduser().resolve()
     target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     descriptor = os.open(target, os.O_CREAT | os.O_RDWR, 0o600)
-    deadline = time.monotonic() + timeout
+    if deadline is None:
+        deadline = time.monotonic() + timeout
     acquired = False
     try:
         while True:
@@ -439,11 +462,11 @@ def wps_runtime_lock(lock_path: Path, timeout: float = 120):
                 acquired = True
                 break
             except BlockingIOError:
-                if time.monotonic() >= deadline:
+                if remaining(deadline) <= 0:
                     raise TimeoutError(
                         "Timed out waiting for another WPSComposer session"
                     )
-                time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+                time.sleep(min(0.05, remaining(deadline)))
         yield
     finally:
         if acquired:
@@ -513,7 +536,9 @@ def _parse_process_line(
     )
 
 
-def list_wps_processes(app_path: Path) -> dict[int, ProcessIdentity]:
+def list_wps_processes(
+    app_path: Path, timeout: float = CLEANUP_GRACE_SECONDS
+) -> dict[int, ProcessIdentity]:
     """Return verifiable identities for the selected WPS main executable."""
     executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
     result = subprocess.run(
@@ -521,7 +546,7 @@ def list_wps_processes(app_path: Path) -> dict[int, ProcessIdentity]:
         check=True,
         capture_output=True,
         text=True,
-        timeout=5,
+        timeout=timeout,
     )
     processes: dict[int, ProcessIdentity] = {}
     for raw_line in result.stdout.splitlines():
@@ -532,7 +557,9 @@ def list_wps_processes(app_path: Path) -> dict[int, ProcessIdentity]:
 
 
 def read_wps_process_identity(
-    pid: int, app_path: Path
+    pid: int,
+    app_path: Path,
+    timeout: float = CLEANUP_GRACE_SECONDS,
 ) -> Optional[ProcessIdentity]:
     """Re-read one PID and return it only if it is still the selected WPS."""
     executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
@@ -542,7 +569,7 @@ def read_wps_process_identity(
             check=True,
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=max(0.001, timeout),
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -595,10 +622,16 @@ class StaticProfileServer:
     def start(self) -> None:
         self._thread.start()
 
-    def close(self) -> None:
-        self._server.shutdown()
+    def close(self, timeout: float = CLEANUP_GRACE_SECONDS) -> None:
+        shutdown = Thread(
+            target=self._server.shutdown,
+            name="wpscomposer-server-shutdown",
+            daemon=True,
+        )
+        shutdown.start()
+        shutdown.join(timeout=max(0.0, timeout))
         self._server.server_close()
-        self._thread.join(timeout=5)
+        self._thread.join(timeout=0)
 
 
 class ProbeRuntime:
@@ -614,6 +647,7 @@ class ProbeRuntime:
         publish_xml: Path = PUBLISH_XML,
         wps_app: Path = WPS_APP,
         staging_root: Path = WPS_STAGING_ROOT,
+        deadline: Optional[float] = None,
     ):
         self.probe_root = probe_root.resolve()
         self.runtime_dir = runtime_dir.resolve()
@@ -638,10 +672,17 @@ class ProbeRuntime:
         self._owned_wps_processes: dict[int, ProcessIdentity] = {}
         self._runtime_lock = None
         self.registration_restored = True
+        self.deadline = deadline
 
     def __enter__(self) -> "ProbeRuntime":
+        deadline = self.deadline
+        if deadline is None:
+            deadline = time.monotonic() + RUNTIME_LOCK_TIMEOUT
+            self.deadline = deadline
         self._ensure_runtime_state_dir()
-        self._runtime_lock = wps_runtime_lock(self.state_dir / "runtime.lock")
+        self._runtime_lock = wps_runtime_lock(
+            self.state_dir / "runtime.lock", deadline=deadline
+        )
         try:
             self._runtime_lock.__enter__()
         except BaseException:
@@ -650,10 +691,15 @@ class ProbeRuntime:
         try:
             if self.recovery_dir.exists():
                 RegistrationSnapshot._recover_stale(self.recovery_dir)
+            require_remaining(deadline)
             self._preflight()
-            self._wps_processes_before = list_wps_processes(self.wps_app)
+            self._wps_processes_before = list_wps_processes(
+                self.wps_app, timeout=require_remaining(deadline)
+            )
+            require_remaining(deadline)
             self.runtime_dir.mkdir(parents=True, exist_ok=False)
             self.staging_dir = create_staging_session(self.staging_root)
+            require_remaining(deadline)
         except BaseException:
             try:
                 self.close()
@@ -669,7 +715,14 @@ class ProbeRuntime:
         os.chmod(self.state_dir, 0o700)
 
     def __exit__(self, exc_type, exc, traceback) -> None:
-        self.close()
+        try:
+            self.close()
+        except BaseException:
+            if exc is None or not self.registration_restored:
+                raise
+            # Cleanup must not replace the operation's original timeout/error.
+            # Registration recovery remains the exception because it needs
+            # explicit operator action and Task 5 promises to surface it.
 
     def _preflight(self) -> None:
         if platform.system() != "Darwin":
@@ -692,10 +745,15 @@ class ProbeRuntime:
             )
         return dict(self.profiles)
 
-    def start_servers(self) -> None:
+    def start_servers(self, *, deadline: Optional[float] = None) -> None:
         if set(self.profiles) != set(COMPONENT_CONFIG):
             raise RuntimeError("prepare_profiles() must run before start_servers()")
+        if deadline is None:
+            deadline = self.deadline
+        if deadline is None:
+            deadline = time.monotonic() + len(COMPONENT_CONFIG) * SERVER_STARTUP_TIMEOUT
         self._ensure_runtime_state_dir()
+        require_remaining(deadline)
         recovery = self.recovery_dir
         self._snapshot = RegistrationSnapshot.capture(
             self.publish_xml, recovery
@@ -713,6 +771,7 @@ class ProbeRuntime:
                 session_nonce=self.session_nonce,
             )
             for component, config in COMPONENT_CONFIG.items():
+                require_remaining(deadline)
                 log_path = self.runtime_dir / f"wpsjs-{component}.log"
                 self.logs[component] = log_path
                 server = StaticProfileServer(
@@ -720,23 +779,35 @@ class ProbeRuntime:
                 )
                 server.start()
                 self._servers.append(server)
-                self._wait_for_server(component, int(config["port"]))
+                require_remaining(deadline)
+                self._wait_for_server(
+                    component, int(config["port"]), deadline
+                )
         except Exception:
-            self.close()
+            try:
+                self.close()
+            except Exception:
+                if not self.registration_restored:
+                    raise
             raise
 
-    def _wait_for_server(self, component: str, port: int) -> None:
-        deadline = time.monotonic() + 15
+    def _wait_for_server(
+        self, component: str, port: int, deadline: float
+    ) -> None:
         url = f"http://127.0.0.1:{port}/index.html"
-        while time.monotonic() < deadline:
+        while remaining(deadline) > 0:
             try:
-                with urlopen(url, timeout=1) as response:
+                with urlopen(
+                    url, timeout=min(1.0, require_remaining(deadline))
+                ) as response:
                     if response.status == 200:
                         return
             except (OSError, URLError):
-                time.sleep(0.1)
+                budget = remaining(deadline)
+                if budget > 0:
+                    time.sleep(min(0.1, budget))
         raise TimeoutError(
-            f"Timed out waiting for {component} add-in server; "
+            f"Timed out waiting for {component} add-in server before deadline; "
             f"see {self.logs[component]}"
         )
 
@@ -745,7 +816,9 @@ class ProbeRuntime:
             self.activate_component(component)
         return dict(self.fixtures)
 
-    def activate_component(self, component: str) -> Path:
+    def activate_component(
+        self, component: str, *, deadline: Optional[float] = None
+    ) -> Path:
         if component not in FIXTURE_NAMES:
             raise ValueError(f"Unknown component: {component}")
         if self.staging_dir is None:
@@ -764,7 +837,18 @@ class ProbeRuntime:
         # LaunchServices does not return the spawned WPS PID. Even a single
         # process appearing around `open -n` could be a concurrent user launch,
         # so it is intentionally not claimed or later signaled.
-        subprocess.run(command, check=True, timeout=15)
+        if deadline is None:
+            deadline = self.deadline
+        timeout = (
+            ACTIVATION_TIMEOUT
+            if deadline is None
+            else require_remaining(
+                deadline, "Timed out before WPS component activation"
+            )
+        )
+        subprocess.run(command, check=True, timeout=timeout)
+        if deadline is not None:
+            require_remaining(deadline, "Timed out during WPS component activation")
         self.fixtures[component] = target
         return target
 
@@ -774,14 +858,21 @@ class ProbeRuntime:
             self._snapshot = None
             self.registration_restored = True
 
-    def _terminate_owned_wps(self) -> None:
+    def _terminate_owned_wps(self, deadline: Optional[float] = None) -> None:
         if not self._owned_wps_processes:
             return
+        if deadline is None:
+            deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
         owned = tuple(self._owned_wps_processes.values())
         self._owned_wps_processes.clear()
         term_signaled: list[ProcessIdentity] = []
         for identity in sorted(owned, key=lambda item: item.pid):
-            if read_wps_process_identity(identity.pid, self.wps_app) != identity:
+            budget = remaining(deadline)
+            if budget <= 0:
+                break
+            if read_wps_process_identity(
+                identity.pid, self.wps_app, timeout=budget
+            ) != identity:
                 continue
             try:
                 os.kill(identity.pid, signal.SIGTERM)
@@ -790,29 +881,38 @@ class ProbeRuntime:
                 pass
         if not term_signaled:
             return
-        deadline = time.monotonic() + 5
-        remaining = term_signaled
+        remaining_processes = term_signaled
         while time.monotonic() < deadline:
-            remaining = [
-                identity
-                for identity in term_signaled
-                if read_wps_process_identity(identity.pid, self.wps_app) == identity
-            ]
-            if not remaining:
+            still_running = []
+            for identity in term_signaled:
+                budget = remaining(deadline)
+                if budget <= 0:
+                    break
+                if read_wps_process_identity(
+                    identity.pid, self.wps_app, timeout=budget
+                ) == identity:
+                    still_running.append(identity)
+            remaining_processes = still_running
+            if not remaining_processes:
                 return
-            time.sleep(0.1)
-        for identity in remaining:
-            if read_wps_process_identity(identity.pid, self.wps_app) != identity:
-                continue
-            try:
-                os.kill(identity.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+            budget = remaining(deadline)
+            if budget <= 0.1:
+                # These identities were revalidated in this iteration. Signal
+                # before the cleanup deadline instead of starting another
+                # potentially blocking identity lookup after it.
+                for identity in remaining_processes:
+                    try:
+                        os.kill(identity.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                return
+            time.sleep(min(0.1, budget))
 
     def close(self) -> None:
+        cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
         try:
             for server in reversed(self._servers):
-                server.close()
+                server.close(timeout=remaining(cleanup_deadline))
             self._servers.clear()
             for process in reversed(self._processes):
                 if process.poll() is None:
@@ -821,17 +921,19 @@ class ProbeRuntime:
                 if process.poll() is not None:
                     continue
                 try:
-                    process.wait(timeout=5)
+                    process.wait(timeout=remaining(cleanup_deadline))
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    process.wait(timeout=5)
+                    budget = remaining(cleanup_deadline)
+                    if budget > 0:
+                        process.wait(timeout=budget)
             self._processes.clear()
             for stream in self._log_streams:
                 stream.close()
             self._log_streams.clear()
         finally:
             try:
-                self._terminate_owned_wps()
+                self._terminate_owned_wps(cleanup_deadline)
             finally:
                 try:
                     self.restore_registration()

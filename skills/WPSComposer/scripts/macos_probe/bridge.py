@@ -18,6 +18,7 @@ from .models import (
 )
 
 MAX_BODY_BYTES = 1024 * 1024
+CLEANUP_GRACE_SECONDS = 5.0
 
 
 class BridgeState:
@@ -379,10 +380,16 @@ class LoopbackBridge:
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:
-        self._server.shutdown()
+        shutdown = Thread(
+            target=self._server.shutdown,
+            name="wpscomposer-bridge-shutdown",
+            daemon=True,
+        )
+        shutdown.start()
+        shutdown.join(timeout=CLEANUP_GRACE_SECONDS)
         self._server.server_close()
         if self._thread is not None:
-            self._thread.join(timeout=5)
+            self._thread.join(timeout=0)
 
     def issue(
         self, component: str, method: str, params: Mapping[str, Any]

@@ -93,10 +93,10 @@ class FakeRuntime:
     def prepare_profiles(self):
         self.calls.append(("prepare_profiles",))
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         self.calls.append(("start_servers",))
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         self.calls.append(("activate_component", component))
 
 
@@ -231,7 +231,7 @@ def test_registration_restore_failure_retains_durable_recovery(
     )
 
     class RecoveryRuntime(FakeRuntime):
-        def __init__(self, probe_root, runtime_dir, bridge_url, token):
+        def __init__(self, probe_root, runtime_dir, bridge_url, token, *, deadline):
             super().__init__(tmp_path / "container" / "session", [])
             self.runtime_dir = Path(runtime_dir)
 

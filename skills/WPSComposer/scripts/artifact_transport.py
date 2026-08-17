@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-import shutil
+from queue import Queue
 import tempfile
+import time
+from threading import Thread
 from typing import Callable
 import zipfile
 from xml.etree import ElementTree
@@ -28,6 +30,58 @@ _OFFICE_MEMBERS = {
     "xlsx": "xl/workbook.xml",
     "pptx": "ppt/presentation.xml",
 }
+_COPY_CHUNK_BYTES = 1024 * 1024
+
+
+def _require_deadline(deadline: float | None) -> None:
+    if deadline is not None and time.monotonic() >= deadline:
+        raise TimeoutError("Artifact transport deadline expired")
+
+
+def _copy_with_deadline(incoming, outgoing, deadline: float | None) -> None:
+    while True:
+        _require_deadline(deadline)
+        block = incoming.read(_COPY_CHUNK_BYTES)
+        _require_deadline(deadline)
+        if not block:
+            return
+        outgoing.write(block)
+        _require_deadline(deadline)
+
+
+def validate_before_deadline(
+    validator: Callable[[Path], None], path: Path, deadline: float
+) -> None:
+    """Run one read-only validator within the remaining public budget.
+
+    Validation may involve vendor parsers and compressed-package traversal
+    that cannot be interrupted cooperatively. A daemon worker bounds the
+    caller's wait; late read-only work cannot publish or mutate an artifact.
+    """
+    _require_deadline(deadline)
+    outcome: Queue[BaseException | None] = Queue(maxsize=1)
+
+    def run() -> None:
+        try:
+            validator(path)
+        except BaseException as exc:
+            outcome.put(exc)
+        else:
+            outcome.put(None)
+
+    worker = Thread(
+        target=run,
+        name="wpscomposer-artifact-validation",
+        daemon=True,
+    )
+    worker.start()
+    worker.join(timeout=max(0.0, deadline - time.monotonic()))
+    if worker.is_alive():
+        raise TimeoutError("Artifact validation deadline expired")
+    error = outcome.get_nowait()
+    if error is not None:
+        raise error
+    _require_deadline(deadline)
 
 
 def _require_regular_file(path: Path, format_name: str) -> Path:
@@ -134,17 +188,22 @@ def publish_artifact(
     *,
     overwrite: bool,
     validator: Callable[[Path], None],
+    deadline: float | None = None,
 ) -> Path:
     """Validate, copy locally, fsync, atomically replace, and revalidate."""
     source = Path(staged).expanduser().resolve()
     target = Path(destination).expanduser().resolve()
     try:
+        _require_deadline(deadline)
         validator(source)
+        _require_deadline(deadline)
     except ArtifactValidationError as exc:
         raise ArtifactTransportError(
             "STAGED_ARTIFACT_INVALID", str(exc)
         ) from exc
+    _require_deadline(deadline)
     target.parent.mkdir(parents=True, exist_ok=True)
+    _require_deadline(deadline)
     if target.exists() and not overwrite:
         raise FileExistsError(f"Output already exists: {target}")
 
@@ -161,17 +220,22 @@ def publish_artifact(
             ) as stream:
                 temporary = Path(stream.name)
                 with source.open("rb") as incoming:
-                    shutil.copyfileobj(incoming, stream)
+                    _copy_with_deadline(incoming, stream, deadline)
+                _require_deadline(deadline)
                 stream.flush()
+                _require_deadline(deadline)
                 os.fsync(stream.fileno())
-        except OSError as exc:
+                _require_deadline(deadline)
+        except (OSError, TimeoutError) as exc:
             raise ArtifactTransportError(
                 "ARTIFACT_PUBLISH_FAILED", str(exc)
             ) from exc
 
         try:
+            _require_deadline(deadline)
             validator(temporary)
-        except ArtifactValidationError as exc:
+            _require_deadline(deadline)
+        except (ArtifactValidationError, TimeoutError) as exc:
             raise ArtifactTransportError(
                 "ARTIFACT_PUBLISH_FAILED", str(exc)
             ) from exc
@@ -188,15 +252,20 @@ def publish_artifact(
                         ) as stream:
                             backup = Path(stream.name)
                             with target.open("rb") as existing:
-                                shutil.copyfileobj(existing, stream)
+                                _copy_with_deadline(existing, stream, deadline)
+                            _require_deadline(deadline)
                             stream.flush()
+                            _require_deadline(deadline)
                             os.fsync(stream.fileno())
-                    except OSError as exc:
+                            _require_deadline(deadline)
+                    except (OSError, TimeoutError) as exc:
                         raise ArtifactTransportError(
                             "ARTIFACT_PUBLISH_FAILED", str(exc)
                         ) from exc
+                _require_deadline(deadline)
                 os.replace(temporary, target)
             else:
+                _require_deadline(deadline)
                 os.link(temporary, target)
                 temporary.unlink()
         except FileExistsError:
@@ -208,7 +277,8 @@ def publish_artifact(
         temporary = None
         try:
             validator(target)
-        except ArtifactValidationError as exc:
+            _require_deadline(deadline)
+        except (ArtifactValidationError, TimeoutError) as exc:
             try:
                 if backup is not None:
                     os.replace(backup, target)
