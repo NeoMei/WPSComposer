@@ -12,6 +12,7 @@ from skills.WPSComposer.scripts import artifact_transport
 from skills.WPSComposer.scripts.artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    copy_file_before_deadline,
     publish_artifact,
     validate_office_package,
     validate_before_deadline,
@@ -30,6 +31,14 @@ def _write_package(path: Path, member: str) -> Path:
         package.writestr("[Content_Types].xml", "<Types />")
         package.writestr(member, f"<root><data>{'x' * 2048}</data></root>")
     return path
+
+
+def _accept_validator(_path: Path) -> None:
+    return None
+
+
+def _blocked_validator(_path: Path) -> None:
+    time.sleep(1)
 
 
 def test_validate_pdf_requires_signature_and_minimum_size(tmp_path: Path):
@@ -238,6 +247,66 @@ def test_publish_restores_existing_output_when_final_validation_fails(tmp_path):
     assert destination.read_bytes() == original
 
 
+def test_publish_restores_existing_output_for_unexpected_validator_exception(tmp_path):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new artifact")
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    original = destination.read_bytes()
+    replacement = staged.read_bytes()
+
+    def fail_only_after_replace(path):
+        target = Path(path).resolve()
+        if target == destination.resolve() and target.read_bytes() == replacement:
+            raise RuntimeError("parser crashed")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=fail_only_after_replace,
+        )
+
+    assert caught.value.code == "FINAL_ARTIFACT_INVALID"
+    assert destination.read_bytes() == original
+    assert not list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+
+
+def test_publish_retains_and_reports_backup_when_rollback_fails(
+    tmp_path, monkeypatch
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new artifact")
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    replacement = staged.read_bytes()
+    real_replace = os.replace
+    calls = 0
+
+    def fail_restore(source, target):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("restore blocked")
+        return real_replace(source, target)
+
+    def fail_only_after_replace(path):
+        target = Path(path).resolve()
+        if target == destination.resolve() and target.read_bytes() == replacement:
+            raise RuntimeError("parser crashed")
+
+    monkeypatch.setattr(os, "replace", fail_restore)
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=fail_only_after_replace,
+        )
+
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert len(backups) == 1
+    assert str(backups[0]) in str(caught.value)
+
+
 def test_publish_chunk_copy_stops_at_deadline_and_preserves_target(
     tmp_path, monkeypatch
 ):
@@ -270,12 +339,9 @@ def test_publish_chunk_copy_stops_at_deadline_and_preserves_target(
 def test_read_only_validator_is_bounded_by_absolute_deadline(tmp_path):
     started = time.monotonic()
 
-    def blocked(_path):
-        time.sleep(0.25)
-
     with pytest.raises(TimeoutError, match="validation deadline"):
         validate_before_deadline(
-            blocked,
+            _blocked_validator,
             tmp_path / "artifact.pdf",
             deadline=time.monotonic() + 0.02,
         )
@@ -292,7 +358,7 @@ def test_repeated_validator_timeouts_leave_no_worker_or_fd_growth(tmp_path):
     for _ in range(4):
         with pytest.raises(TimeoutError, match="validation deadline"):
             validate_before_deadline(
-                lambda _path: time.sleep(1),
+                _blocked_validator,
                 tmp_path / "artifact.pdf",
                 deadline=time.monotonic() + 0.01,
             )
@@ -304,3 +370,50 @@ def test_repeated_validator_timeouts_leave_no_worker_or_fd_growth(tmp_path):
     after_fds = len(list(Path("/dev/fd").iterdir()))
     assert after_threads == before_threads
     assert after_fds <= before_fds + 1
+
+
+def test_deadline_validator_uses_spawn_safe_worker_context(tmp_path, monkeypatch):
+    real_get_context = artifact_transport.multiprocessing.get_context
+    requested = []
+
+    def observed_get_context(method):
+        requested.append(method)
+        return real_get_context(method)
+
+    monkeypatch.setattr(
+        artifact_transport.multiprocessing, "get_context", observed_get_context
+    )
+
+    validate_before_deadline(
+        _accept_validator,
+        tmp_path / "artifact.pdf",
+        deadline=time.monotonic() + 2,
+    )
+
+    assert requested == ["spawn"]
+
+
+def test_copy_file_preserves_preexisting_target_on_exclusive_create_failure(tmp_path):
+    source = tmp_path / "source.bin"
+    target = tmp_path / "target.bin"
+    source.write_bytes(b"new")
+    target.write_bytes(b"approved-existing")
+
+    with pytest.raises(FileExistsError):
+        copy_file_before_deadline(
+            source, target, deadline=time.monotonic() + 1
+        )
+
+    assert target.read_bytes() == b"approved-existing"
+
+
+def test_copy_file_rejects_identical_source_and_target_without_deleting_it(tmp_path):
+    source = tmp_path / "source.bin"
+    source.write_bytes(b"approved-existing")
+
+    with pytest.raises(ValueError, match="different paths"):
+        copy_file_before_deadline(
+            source, source, deadline=time.monotonic() + 1
+        )
+
+    assert source.read_bytes() == b"approved-existing"

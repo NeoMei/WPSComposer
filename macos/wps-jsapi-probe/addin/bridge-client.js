@@ -41,7 +41,8 @@
     await request(session, "/v1/result", {
       method: "POST",
       body: JSON.stringify(Object.assign({}, result, {
-        sessionNonce: session.sessionNonce
+        component: session.component,
+        clientId: session.clientId
       }))
     });
   }
@@ -52,25 +53,45 @@
       throw new Error("session.json is unavailable");
     }
     const bootstrap = await sessionResponse.json();
-    // session.json carries no token (the profile dir is statically served);
-    // the token is handed out once by the bridge and kept in memory only.
-    const sessionResponse2 = await request(bootstrap, "/v1/session", {
-      method: "POST",
-      body: JSON.stringify({
-        component: bootstrap.component,
-        sessionNonce: bootstrap.sessionNonce
-      })
-    });
-    const session = Object.assign({}, bootstrap, {
-      token: sessionResponse2.body.token
-    });
+    const storageKey = `wpscomposer:${bootstrap.clientId}:token`;
+    let token = window.sessionStorage.getItem(storageKey);
+    if (!token) {
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      const capability = fragment.get("capability") || "";
+      const fragmentClient = fragment.get("clientId") || "";
+      const fragmentComponent = fragment.get("component") || "";
+      // Remove the one-time capability from the visible URL before making
+      // any network request. URL fragments are never sent to static HTTP.
+      window.history.replaceState(null, "", window.location.pathname);
+      if (fragmentClient !== bootstrap.clientId ||
+          fragmentComponent !== bootstrap.component || !capability) {
+        throw new Error("Bridge bootstrap capability is unavailable");
+      }
+      const claimed = await request(bootstrap, "/v1/session", {
+        method: "POST",
+        body: JSON.stringify({
+          component: bootstrap.component,
+          clientId: bootstrap.clientId,
+          capability
+        })
+      });
+      token = claimed.body.token;
+      window.sessionStorage.setItem(storageKey, token);
+    }
+    const session = Object.assign({}, bootstrap, {token});
     await request(session, "/v1/register", {
       method: "POST",
       body: JSON.stringify({
         component: session.component,
-        sessionNonce: session.sessionNonce
+        clientId: session.clientId
       })
     });
+    if (bootstrap.activationFixture &&
+        typeof window.WPSComposerProbe.closeActivationFixture === "function") {
+      window.WPSComposerProbe.closeActivationFixture(
+        bootstrap.activationFixture
+      );
+    }
 
     let failures = 0;
     while (true) {
@@ -79,35 +100,17 @@
         next = await request(
           session,
           `/v1/next?component=${encodeURIComponent(session.component)}` +
-            `&sessionNonce=${encodeURIComponent(session.sessionNonce)}`,
+            `&clientId=${encodeURIComponent(session.clientId)}`,
           {method: "GET"}
         );
         failures = 0;
       } catch (pollError) {
-        // Stale token (bridge restarted): re-claim and re-register once,
-        // otherwise back off and keep polling; the host owns the lifecycle.
+        // A bearer belongs to one bridge session. Never replay the consumed
+        // bootstrap capability after a restart; fail closed and let the host
+        // activate a newly registered profile.
         if (String(pollError && pollError.message).indexOf("HTTP 401") !== -1) {
-          try {
-            const renewed = await request(session, "/v1/session", {
-              method: "POST",
-              body: JSON.stringify({
-                component: session.component,
-                sessionNonce: session.sessionNonce
-              })
-            });
-            session.token = renewed.body.token;
-            await request(session, "/v1/register", {
-              method: "POST",
-              body: JSON.stringify({
-                component: session.component,
-                sessionNonce: session.sessionNonce
-              })
-            });
-            failures = 0;
-            continue;
-          } catch (renewError) {
-            console.error("Failed to renew bridge session", renewError);
-          }
+          window.sessionStorage.removeItem(storageKey);
+          throw pollError;
         }
         failures += 1;
         await sleep(Math.min(500 * failures, 5000));

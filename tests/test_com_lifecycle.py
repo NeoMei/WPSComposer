@@ -11,6 +11,8 @@ from skills.WPSComposer.scripts import _base, _dispatch
 class _App:
     def __init__(self):
         self.quit_calls = 0
+        self.Visible = -1
+        self.DisplayAlerts = -1
 
     def Quit(self):
         self.quit_calls += 1
@@ -89,6 +91,8 @@ def test_dispatch_fallback_is_shared_and_is_never_quit(monkeypatch):
         assert composer.app is app
 
     assert app.quit_calls == 0
+    assert app.Visible == -1
+    assert app.DisplayAlerts == -1
     assert calls == ["init", "uninit"]
 
 
@@ -183,3 +187,27 @@ def test_interrupted_document_open_still_releases_owned_app_and_apartment(monkey
 
     assert app.quit_calls == 1
     assert calls == ["init", "uninit"]
+
+
+def test_attached_save_copy_fails_before_rebinding_without_savecopyas(tmp_path):
+    save_as_calls = []
+
+    class AttachedDocument:
+        FullName = r"C:\\user\\original.docx"
+        SaveFormat = 12
+
+        def SaveCopyAs(self, path):
+            raise AttributeError("SaveCopyAs is unavailable")
+
+        def SaveAs(self, *args):
+            save_as_calls.append(args)
+
+    composer = _Composer()
+    composer._doc = AttachedDocument()
+    composer._owns_doc = False
+
+    with pytest.raises(RuntimeError, match="non-rebinding copy primitive"):
+        composer.save_copy(tmp_path / "copy.docx")
+
+    assert save_as_calls == []
+    assert composer.doc.FullName == r"C:\\user\\original.docx"

@@ -54,11 +54,15 @@ def copy_file_before_deadline(
     """Stage one file cooperatively and remove partial output on timeout."""
     source_path = Path(source).expanduser().resolve()
     target_path = Path(target).expanduser().resolve()
+    if source_path == target_path:
+        raise ValueError("Artifact source and target must be different paths")
     _require_deadline(deadline)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     _require_deadline(deadline)
+    created = False
     try:
         with source_path.open("rb") as incoming, target_path.open("xb") as outgoing:
+            created = True
             copy_stream_before_deadline(incoming, outgoing, deadline)
             _require_deadline(deadline)
             outgoing.flush()
@@ -69,7 +73,8 @@ def copy_file_before_deadline(
         _require_deadline(deadline)
         return target_path
     except BaseException:
-        target_path.unlink(missing_ok=True)
+        if created:
+            target_path.unlink(missing_ok=True)
         raise
 
 
@@ -94,15 +99,11 @@ def validate_before_deadline(
     """Run one read-only validator within the remaining public budget.
 
     Validation may involve vendor parsers and compressed-package traversal
-    that cannot be interrupted cooperatively. The macOS backend uses a forked
-    process so timeout can terminate and reap the parser with all of its FDs.
+    that cannot be interrupted cooperatively. A spawned worker avoids forking
+    the live multi-threaded bridge process and is available on Windows too.
     """
     _require_deadline(deadline)
-    if "fork" not in multiprocessing.get_all_start_methods():
-        raise RuntimeError(
-            "Deadline-bounded artifact validation requires POSIX fork support"
-        )
-    context = multiprocessing.get_context("fork")
+    context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
     worker = context.Process(
         target=_validation_process_entry,
@@ -335,16 +336,25 @@ def publish_artifact(
         try:
             validator(target)
             _require_deadline(deadline)
-        except (ArtifactValidationError, TimeoutError) as exc:
+        except BaseException as exc:
             try:
                 if backup is not None:
                     os.replace(backup, target)
                     backup = None
                 else:
                     target.unlink(missing_ok=True)
-            except OSError as restore_exc:
+            except BaseException as restore_exc:
+                recovery_path = backup
+                # Ownership transfers to the operator: never delete the only
+                # recovery copy after a failed rollback.
+                backup = None
+                recovery = (
+                    f"; previous artifact retained at {recovery_path}"
+                    if recovery_path is not None
+                    else ""
+                )
                 raise ArtifactTransportError(
-                    "ARTIFACT_PUBLISH_FAILED", str(restore_exc)
+                    "ARTIFACT_ROLLBACK_FAILED", f"{restore_exc}{recovery}"
                 ) from restore_exc
             raise ArtifactTransportError(
                 "FINAL_ARTIFACT_INVALID", str(exc)

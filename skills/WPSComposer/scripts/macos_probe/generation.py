@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 import hashlib
 import os
 from pathlib import Path
@@ -446,7 +447,7 @@ def _wait_for_marker(
     while True:
         try:
             validate_before_deadline(
-                lambda target: _validate_marker_package(target, format_name),
+                partial(_validate_marker_package, format_name=format_name),
                 path,
                 deadline,
             )
@@ -848,8 +849,11 @@ def _wait_for_generated_package(
     while True:
         try:
             validate_before_deadline(
-                lambda target: _validate_generated_package(
-                    target, format_name, recorded, template_digest
+                partial(
+                    _validate_generated_package,
+                    format_name=format_name,
+                    recorded=recorded,
+                    template_digest=template_digest,
                 ),
                 path,
                 deadline,
@@ -1020,17 +1024,17 @@ def _run_generation(
         ) from exc
     try:
         if feasibility:
-            artifact_validator = lambda path: _validate_marker_package(
-                path, request.format_name
+            artifact_validator = partial(
+                _validate_marker_package, format_name=request.format_name
             )
         elif is_pdf:
             artifact_validator = validate_pdf
         else:
-            artifact_validator = lambda path: _validate_generated_package(
-                path,
-                request.format_name,
-                recorded,
-                template_digest,
+            artifact_validator = partial(
+                _validate_generated_package,
+                format_name=request.format_name,
+                recorded=recorded,
+                template_digest=template_digest,
             )
 
         def validator(path: Path) -> None:

@@ -23,7 +23,10 @@ from pathlib import Path
 from threading import Thread
 from typing import BinaryIO, Optional
 from urllib.error import URLError
+from urllib.parse import urlencode
 from urllib.request import urlopen
+
+from .bridge import derive_client_credentials
 
 WPS_APP = Path("/Applications/wpsoffice.app")
 WPS_STAGING_ROOT = (
@@ -56,6 +59,17 @@ RUNTIME_LOCK_TIMEOUT = 120.0
 SERVER_STARTUP_TIMEOUT = 15.0
 ACTIVATION_TIMEOUT = 15.0
 CLEANUP_GRACE_SECONDS = 5.0
+
+
+class RuntimeCleanupError(RuntimeError):
+    """Aggregate failures after every owned runtime resource was attempted."""
+
+    def __init__(self, errors: list[BaseException]):
+        self.errors = tuple(errors)
+        summary = "; ".join(
+            f"{type(error).__name__}: {error}" for error in self.errors
+        )
+        super().__init__(f"WPS runtime cleanup failed: {summary}")
 
 
 def remaining(deadline: float) -> float:
@@ -92,13 +106,13 @@ def build_profile(
     profiles_root: Path,
     component: str,
     bridge_url: str,
-    session_nonce: str,
+    client_id: str,
 ) -> Path:
     """Create one static add-in profile for the selected WPS component.
 
-    The bridge token is deliberately NOT written here: this directory is
-    statically served by ``wpsjs debug --server``, so the add-in claims the
-    token from the bridge's ``/v1/session`` endpoint at startup.
+    No bootstrap capability is written here because the profile is served
+    over unauthenticated static HTTP. The capability arrives in the
+    registration URL fragment, which browsers do not send to that server.
     """
     if component not in COMPONENT_CONFIG:
         raise ValueError(f"Unknown component: {component}")
@@ -122,7 +136,7 @@ def build_profile(
         {
             "bridgeUrl": bridge_url,
             "component": component,
-            "sessionNonce": session_nonce,
+            "clientId": client_id,
         },
     )
     return profile
@@ -137,7 +151,9 @@ class RegistrationSnapshot:
     original_mode: Optional[int]
     recovery_dir: Path
     managed_names: tuple[str, ...] = ()
-    managed_digest: Optional[str] = None
+    transaction_phase: str = "captured"
+    prewrite_digest: Optional[str] = None
+    installed_digest: Optional[str] = None
 
     @classmethod
     def capture(
@@ -159,7 +175,9 @@ class RegistrationSnapshot:
                 "existed": existed,
                 "mode": original_mode,
                 "managedNames": [],
-                "managedDigest": None,
+                "transactionPhase": "captured",
+                "prewriteDigest": None,
+                "installedDigest": None,
             },
         )
         os.chmod(recovery / "registration.json", 0o600)
@@ -169,12 +187,17 @@ class RegistrationSnapshot:
             os.chmod(backup, 0o600)
         return cls(target, original, original_mode, recovery)
 
-    def record_managed_state(
-        self, names: tuple[str, ...], content: bytes
+    def _record_transaction(
+        self,
+        names: tuple[str, ...],
+        phase: str,
+        prewrite_digest: Optional[str],
+        installed_digest: Optional[str],
     ) -> None:
-        """Persist the exact registration state owned by this session."""
         self.managed_names = names
-        self.managed_digest = hashlib.sha256(content).hexdigest()
+        self.transaction_phase = phase
+        self.prewrite_digest = prewrite_digest
+        self.installed_digest = installed_digest
         _write_json(
             self.recovery_dir / "registration.json",
             {
@@ -182,10 +205,43 @@ class RegistrationSnapshot:
                 "existed": self.original is not None,
                 "mode": self.original_mode,
                 "managedNames": list(names),
-                "managedDigest": self.managed_digest,
+                "transactionPhase": phase,
+                "prewriteDigest": prewrite_digest,
+                "installedDigest": installed_digest,
             },
         )
         os.chmod(self.recovery_dir / "registration.json", 0o600)
+
+    def record_prewrite(self, names: tuple[str, ...], content: bytes) -> None:
+        """Record a source observation without claiming that it was installed."""
+        self._record_transaction(
+            names,
+            "prewrite",
+            hashlib.sha256(content).hexdigest(),
+            None,
+        )
+
+    def record_installing(
+        self, names: tuple[str, ...], source: bytes, installed: bytes
+    ) -> None:
+        """Record both digests before the compare-and-replace crash window."""
+        self._record_transaction(
+            names,
+            "installing",
+            hashlib.sha256(source).hexdigest(),
+            hashlib.sha256(installed).hexdigest(),
+        )
+
+    def record_installed(
+        self, names: tuple[str, ...], source: bytes, installed: bytes
+    ) -> None:
+        """Record the exact content successfully installed by this session."""
+        self._record_transaction(
+            names,
+            "installed",
+            hashlib.sha256(source).hexdigest(),
+            hashlib.sha256(installed).hexdigest(),
+        )
 
     def restore(self) -> None:
         for _ in range(5):
@@ -193,7 +249,22 @@ class RegistrationSnapshot:
             current_digest = (
                 hashlib.sha256(current).hexdigest() if current is not None else None
             )
-            if self.managed_digest is not None and current_digest == self.managed_digest:
+            if self.transaction_phase in {"captured", "prewrite"}:
+                # No global write was attempted, so the current bytes belong
+                # to the user or another registrar and must be left untouched.
+                self._remove_recovery_files()
+                return
+            if (
+                self.transaction_phase == "installing"
+                and current_digest == self.prewrite_digest
+            ):
+                # The compare-and-replace never committed.
+                self._remove_recovery_files()
+                return
+            if (
+                self.installed_digest is not None
+                and current_digest == self.installed_digest
+            ):
                 restored = self.original
             elif current is None:
                 # An external actor removed the file. Preserve that edit.
@@ -309,7 +380,9 @@ class RegistrationSnapshot:
             meta.get("mode"),
             recovery,
             tuple(meta.get("managedNames", ())),
-            meta.get("managedDigest"),
+            meta.get("transactionPhase", "installed"),
+            meta.get("prewriteDigest"),
+            meta.get("installedDigest", meta.get("managedDigest")),
         )
         snapshot.restore()
 
@@ -352,6 +425,7 @@ def install_registration_entries(
     component_config: dict[str, dict[str, object]],
     *,
     session_nonce: str,
+    client_credentials: dict[str, dict[str, str]],
 ) -> None:
     """Merge this session's uniquely named add-ins into publish.xml."""
     names = tuple(
@@ -368,28 +442,37 @@ def install_registration_entries(
             raise RuntimeError(f"Invalid WPS registration XML: {snapshot.path}") from exc
         # Persist ownership before the global file is changed so crash recovery
         # can identify our entries even if the process dies during publication.
-        snapshot.record_managed_state(names, source)
+        snapshot.record_prewrite(names, source)
         for name, (component, config) in zip(names, component_config.items()):
+            credentials = client_credentials[component]
+            fragment = urlencode(
+                {
+                    "component": component,
+                    "clientId": credentials["clientId"],
+                    "capability": credentials["capability"],
+                }
+            )
             ET.SubElement(
                 root,
                 "jspluginonline",
                 {
                     "name": name,
                     "type": str(config["addon_type"]),
-                    "url": f"http://127.0.0.1:{config['port']}/",
+                    "url": f"http://127.0.0.1:{config['port']}/#{fragment}",
                     "debug": "",
                     "enable": "enable_dev",
                     "install": "null",
                 },
             )
         content = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+        snapshot.record_installing(names, source, content)
         if _atomic_write(
             snapshot.path,
             content,
-            snapshot.original_mode,
+            0o600,
             expected=current,
         ):
-            snapshot.record_managed_state(names, content)
+            snapshot.record_installed(names, source, content)
             return
     raise RuntimeError(
         f"WPS registration changed repeatedly: {snapshot.path}"
@@ -503,13 +586,11 @@ def activation_command(
 ) -> list[str]:
     """Open the fixture document in WPS.
 
-    With ``reuse_running=True`` (default) and WPS already running, the fixture
-    is handed to the existing instance (opens as a new tab — no second WPS
-    app window, no second Dock icon). Falls back to an isolated ``open -n``
-    instance when WPS is not running or reuse is disabled, so a live WPS
-    session is never disturbed.
+    With ``reuse_running=True`` (default), LaunchServices reuses a running WPS
+    or starts the normal application instance. Only explicit isolation uses
+    ``open -n``; callers must not use that mode without an ownership handshake.
     """
-    if reuse_running and list_wps_pids(app_path):
+    if reuse_running:
         return ["open", "-a", str(app_path), str(fixture)]
     return ["open", "-n", "-a", str(app_path), str(fixture)]
 
@@ -654,6 +735,7 @@ class ProbeRuntime:
         self.bridge_url = bridge_url
         self.token = token
         self.session_nonce = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        self.client_credentials = derive_client_credentials(token)
         self.node_override = node_override
         self.publish_xml = publish_xml.expanduser().resolve()
         self.wps_app = wps_app.resolve()
@@ -670,6 +752,7 @@ class ProbeRuntime:
         self._snapshot: Optional[RegistrationSnapshot] = None
         self._wps_processes_before: Optional[dict[int, ProcessIdentity]] = None
         self._owned_wps_processes: dict[int, ProcessIdentity] = {}
+        self._activation_attempted: set[str] = set()
         self._runtime_lock = None
         self.registration_restored = True
         self.deadline = deadline
@@ -741,7 +824,7 @@ class ProbeRuntime:
                 profiles_root,
                 component,
                 self.bridge_url,
-                self.session_nonce,
+                self.client_credentials[component]["clientId"],
             )
         return dict(self.profiles)
 
@@ -769,6 +852,7 @@ class ProbeRuntime:
                 self._snapshot,
                 COMPONENT_CONFIG,
                 session_nonce=self.session_nonce,
+                client_credentials=self.client_credentials,
             )
             for component, config in COMPONENT_CONFIG.items():
                 require_remaining(deadline)
@@ -823,6 +907,12 @@ class ProbeRuntime:
             raise ValueError(f"Unknown component: {component}")
         if self.staging_dir is None:
             raise RuntimeError("ProbeRuntime must be entered before activation")
+        if component in self._activation_attempted:
+            existing = self.fixtures.get(component)
+            if existing is None:
+                raise RuntimeError(f"WPS activation already failed: {component}")
+            return existing
+        self._activation_attempted.add(component)
         resource_dir = self.probe_root / "node_modules/wpsjs/src/lib/res"
         fixture_dir = self.staging_dir / "fixtures"
         fixture_dir.mkdir(parents=True, exist_ok=True)
@@ -833,22 +923,50 @@ class ProbeRuntime:
         target = fixture_dir / name
         if not target.is_file():
             shutil.copy2(source, target)
-        command = activation_command(self.wps_app, target, reuse_running=False)
-        # LaunchServices does not return the spawned WPS PID. Even a single
-        # process appearing around `open -n` could be a concurrent user launch,
-        # so it is intentionally not claimed or later signaled.
-        if deadline is None:
-            deadline = self.deadline
-        timeout = (
-            ACTIVATION_TIMEOUT
-            if deadline is None
-            else require_remaining(
-                deadline, "Timed out before WPS component activation"
-            )
+        profile = self.profiles.get(component)
+        if profile is not None:
+            session_path = profile / "session.json"
+            session = json.loads(session_path.read_text(encoding="utf-8"))
+            session["activationFixture"] = str(target)
+            _write_json(session_path, session)
+        # Launch the selected executable directly: the returned child PID is
+        # an ownership proof that LaunchServices (`open -n`) cannot provide.
+        executable = self.wps_app / "Contents/MacOS/wpsoffice"
+        child = subprocess.Popen(
+            [str(executable), str(target)],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
         )
-        subprocess.run(command, check=True, timeout=timeout)
-        if deadline is not None:
-            require_remaining(deadline, "Timed out during WPS component activation")
+        if deadline is None:
+            identity_deadline = time.monotonic() + ACTIVATION_TIMEOUT
+        else:
+            identity_deadline = deadline
+        identity: Optional[ProcessIdentity] = None
+        while remaining(identity_deadline) > 0:
+            if child.poll() is not None:
+                break
+            identity = read_wps_process_identity(
+                child.pid,
+                self.wps_app,
+                timeout=min(0.25, require_remaining(identity_deadline)),
+            )
+            if identity is not None:
+                break
+            time.sleep(min(0.02, remaining(identity_deadline)))
+        if identity is None:
+            if child.poll() is None:
+                child.terminate()
+                try:
+                    child.wait(timeout=min(0.25, remaining(identity_deadline)))
+                except subprocess.TimeoutExpired:
+                    child.kill()
+            raise RuntimeError(
+                f"Could not prove ownership of WPS activation for {component}"
+            )
+        self._processes.append(child)
+        self._owned_wps_processes[identity.pid] = identity
         self.fixtures[component] = target
         return target
 
@@ -910,14 +1028,24 @@ class ProbeRuntime:
 
     def close(self) -> None:
         cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
-        try:
-            for server in reversed(self._servers):
+        errors: list[BaseException] = []
+        servers = tuple(reversed(self._servers))
+        self._servers.clear()
+        for server in servers:
+            try:
                 server.close(timeout=remaining(cleanup_deadline))
-            self._servers.clear()
-            for process in reversed(self._processes):
+            except BaseException as exc:
+                errors.append(exc)
+        processes = tuple(reversed(self._processes))
+        self._processes.clear()
+        for process in processes:
+            try:
                 if process.poll() is None:
                     process.terminate()
-            for process in reversed(self._processes):
+            except BaseException as exc:
+                errors.append(exc)
+        for process in processes:
+            try:
                 if process.poll() is not None:
                     continue
                 try:
@@ -927,29 +1055,39 @@ class ProbeRuntime:
                     budget = remaining(cleanup_deadline)
                     if budget > 0:
                         process.wait(timeout=budget)
-            self._processes.clear()
-            for stream in self._log_streams:
-                stream.close()
-            self._log_streams.clear()
-        finally:
+            except BaseException as exc:
+                errors.append(exc)
+        streams = tuple(self._log_streams)
+        self._log_streams.clear()
+        for stream in streams:
             try:
-                self._terminate_owned_wps(cleanup_deadline)
-            finally:
-                try:
-                    self.restore_registration()
-                finally:
-                    try:
-                        if self.staging_dir is not None:
-                            staging_dir = self.staging_dir
-                            self.staging_dir = None
-                            try:
-                                shutil.rmtree(staging_dir)
-                            except OSError as exc:
-                                raise RuntimeError(
-                                    "Failed to remove WPS staging session"
-                                ) from exc
-                    finally:
-                        if self._runtime_lock is not None:
-                            runtime_lock = self._runtime_lock
-                            self._runtime_lock = None
-                            runtime_lock.__exit__(None, None, None)
+                stream.close()
+            except BaseException as exc:
+                errors.append(exc)
+        try:
+            self._terminate_owned_wps(cleanup_deadline)
+        except BaseException as exc:
+            errors.append(exc)
+        try:
+            self.restore_registration()
+        except BaseException as exc:
+            errors.append(exc)
+        if self.staging_dir is not None:
+            staging_dir = self.staging_dir
+            self.staging_dir = None
+            try:
+                shutil.rmtree(staging_dir)
+            except BaseException as exc:
+                errors.append(
+                    RuntimeError("Failed to remove WPS staging session")
+                )
+                errors[-1].__cause__ = exc
+        if self._runtime_lock is not None:
+            runtime_lock = self._runtime_lock
+            self._runtime_lock = None
+            try:
+                runtime_lock.__exit__(None, None, None)
+            except BaseException as exc:
+                errors.append(exc)
+        if errors:
+            raise RuntimeCleanupError(errors)

@@ -108,7 +108,7 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
     ]
 
 
-def test_activation_subprocess_receives_only_deadline_remaining(
+def test_activation_ownership_handshake_receives_only_deadline_remaining(
     monkeypatch, tmp_path: Path
 ):
     clock = FakeClock()
@@ -127,15 +127,23 @@ def test_activation_subprocess_receives_only_deadline_remaining(
     probe.staging_dir.mkdir()
     observed = []
     monkeypatch.setattr(runtime.time, "monotonic", clock.monotonic)
-    monkeypatch.setattr(
-        runtime.subprocess,
-        "run",
-        lambda command, **kwargs: observed.append(kwargs["timeout"]),
-    )
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *a, **k: Child())
+
+    def identify(pid, app, **kwargs):
+        observed.append(kwargs["timeout"])
+        return runtime.ProcessIdentity(pid, "start", str(app / "Contents/MacOS/wpsoffice"))
+
+    monkeypatch.setattr(runtime, "read_wps_process_identity", identify)
 
     probe.activate_component("writer", deadline=100.4)
 
-    assert observed == [pytest.approx(0.4)]
+    assert observed == [pytest.approx(0.25)]
 
 
 def test_registration_retry_reuses_deadline_for_activation(monkeypatch):

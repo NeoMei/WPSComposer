@@ -9,6 +9,7 @@ snapshot produced by the add-in — without converting to PDF.
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 import shutil
 import tempfile
@@ -475,7 +476,7 @@ def _run_edit(
             try:
                 require_remaining(deadline)
                 validate_before_deadline(
-                    lambda target: validate_office_package(target, "pptx"),
+                    partial(validate_office_package, format_name="pptx"),
                     path,
                     deadline,
                 )

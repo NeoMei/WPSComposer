@@ -68,14 +68,15 @@ class BaseComposer:
         self._app = dispatched.app
         self._owns_app = dispatched.owns_app
         self._com_initialized = True
-        try:
-            self._app.Visible = -1 if self._visible else 0
-        except Exception:
-            pass
-        try:
-            self._app.DisplayAlerts = 0
-        except Exception:
-            pass
+        if self._owns_app:
+            try:
+                self._app.Visible = -1 if self._visible else 0
+            except Exception:
+                pass
+            try:
+                self._app.DisplayAlerts = 0
+            except Exception:
+                pass
         return self._app
 
     def __enter__(self):
@@ -225,8 +226,11 @@ class BaseComposer:
         try:
             self._doc.SaveCopyAs(p)
             return p
-        except Exception:
-            pass
+        except Exception as copy_exc:
+            if not self._owns_doc:
+                raise RuntimeError(
+                    "Attached document has no reliable non-rebinding copy primitive"
+                ) from copy_exc
         current = self._doc.FullName
         save_fmt = fmt
         if save_fmt is None:
@@ -235,7 +239,13 @@ class BaseComposer:
             except Exception:
                 save_fmt = self._native_fmt
         self.save(p, save_fmt)
-        self._doc.SaveAs(current, save_fmt)
+        try:
+            self._doc.SaveAs(current, save_fmt)
+        except BaseException as restore_exc:
+            raise RuntimeError(
+                f"Owned document copy was written to {p}, but rebinding to "
+                f"the original path failed: {current}"
+            ) from restore_exc
         return p
 
     # ---- properties ----

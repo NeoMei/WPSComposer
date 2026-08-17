@@ -1672,6 +1672,13 @@
   }
 
   window.WPSComposerProbe = {
+    closeActivationFixture: function (expectedPath) {
+      const presentation = Application.ActivePresentation;
+      if (presentation &&
+          String(presentation.FullName) === String(expectedPath)) {
+        presentation.Close();
+      }
+    },
     handleCommand: function (command) {
       const handler = handlers[command.method];
       if (!handler) {

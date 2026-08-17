@@ -32,6 +32,18 @@ def request(bridge, method, path, body=None, token=None, origin=None):
         return response.status, None if not raw else json.loads(raw)
 
 
+def claim_token(bridge, component, origin):
+    credentials = bridge.bootstrap_credentials(component)
+    _, body = request(
+        bridge,
+        "POST",
+        "/v1/session",
+        {"component": component, **credentials},
+        origin=origin,
+    )
+    return credentials["clientId"], body["token"]
+
+
 def test_bridge_rejects_missing_token():
     with LoopbackBridge({"http://127.0.0.1:3891"}) as bridge:
         with pytest.raises(HTTPError) as error:
@@ -39,36 +51,55 @@ def test_bridge_rejects_missing_token():
         assert error.value.code == 401
 
 
-def test_session_token_claim_is_reload_safe():
+def test_bootstrap_capability_is_one_time_and_bound_to_component_client():
     origin = "http://127.0.0.1:3891"
     with LoopbackBridge({origin}) as bridge:
+        credentials = bridge.bootstrap_credentials("writer")
         status, body = request(
             bridge, "POST", "/v1/session",
-            {"component": "writer"}, origin=origin,
+            {"component": "writer", **credentials}, origin=origin,
         )
         assert status == 200
-        assert body == {"token": bridge.token, "leaseSeconds": 15.0}
-        # re-claim is allowed so a reloaded add-in webview can recover
-        status, body = request(
-            bridge, "POST", "/v1/session",
-            {"component": "writer"}, origin=origin,
-        )
-        assert status == 200
-        assert body == {"token": bridge.token, "leaseSeconds": 15.0}
-        # invalid component is rejected
+        assert body["token"] != bridge.token
+        assert body["leaseSeconds"] == 15.0
+        # A capability is consumed after its first exchange.
         with pytest.raises(HTTPError) as error:
             request(
                 bridge, "POST", "/v1/session",
-                {"component": "bogus"}, origin=origin,
+                {"component": "writer", **credentials}, origin=origin,
             )
         assert error.value.code == 400
-        # unlisted origin is rejected
+        # A client token cannot cross its component/client binding.
         with pytest.raises(HTTPError) as error:
             request(
-                bridge, "POST", "/v1/session",
-                {"component": "presentation"}, origin="http://example.com",
+                bridge,
+                "POST",
+                "/v1/register",
+                {
+                    "component": "presentation",
+                    "clientId": credentials["clientId"],
+                },
+                body["token"],
+                origin,
             )
-        assert error.value.code == 403
+        assert error.value.code in {400, 403}
+
+
+def test_public_session_nonce_cannot_be_exchanged_for_bearer_token():
+    origin = "http://127.0.0.1:3891"
+    with LoopbackBridge({origin}) as bridge:
+        with pytest.raises(HTTPError) as error:
+            request(
+                bridge,
+                "POST",
+                "/v1/session",
+                {
+                    "component": "writer",
+                    "sessionNonce": bridge.session_nonce,
+                },
+                origin=origin,
+            )
+        assert error.value.code == 400
 
 
 def test_non_ascii_authorization_header_returns_401():
@@ -91,14 +122,16 @@ def test_non_ascii_authorization_header_returns_401():
 
 
 def test_bridge_rejects_unlisted_origin():
-    with LoopbackBridge({"http://127.0.0.1:3891"}) as bridge:
+    allowed = "http://127.0.0.1:3891"
+    with LoopbackBridge({allowed}) as bridge:
+        client_id, token = claim_token(bridge, "writer", allowed)
         with pytest.raises(HTTPError) as error:
             request(
                 bridge,
                 "POST",
                 "/v1/register",
-                {"component": "writer"},
-                bridge.token,
+                {"component": "writer", "clientId": client_id},
+                token,
                 "http://example.com",
             )
         assert error.value.code == 403
@@ -107,12 +140,13 @@ def test_bridge_rejects_unlisted_origin():
 def test_command_round_trip():
     origin = "http://127.0.0.1:3891"
     with LoopbackBridge({origin}) as bridge:
+        client_id, token = claim_token(bridge, "writer", origin)
         status, _ = request(
             bridge,
             "POST",
             "/v1/register",
-            {"component": "writer"},
-            bridge.token,
+            {"component": "writer", "clientId": client_id},
+            token,
             origin,
         )
         assert status == 204
@@ -122,8 +156,8 @@ def test_command_round_trip():
         status, payload = request(
             bridge,
             "GET",
-            "/v1/next?component=writer",
-            token=bridge.token,
+            f"/v1/next?component=writer&clientId={client_id}",
+            token=token,
             origin=origin,
         )
         assert status == 200
@@ -138,8 +172,10 @@ def test_command_round_trip():
                 "ok": True,
                 "value": {"saved": True},
                 "error": None,
+                "component": "writer",
+                "clientId": client_id,
             },
-            bridge.token,
+            token,
             origin,
         )
         assert status == 204
@@ -153,6 +189,16 @@ def test_wait_registered_reports_independent_components():
         "http://127.0.0.1:3893",
     }
     with LoopbackBridge(origins) as bridge, ThreadPoolExecutor() as pool:
+        claims = {
+            component: claim_token(
+                bridge, component, f"http://127.0.0.1:{port}"
+            )
+            for component, port in (
+                ("writer", 3891),
+                ("presentation", 3892),
+                ("spreadsheet", 3893),
+            )
+        }
         for component, port in (
             ("writer", 3891),
             ("presentation", 3892),
@@ -163,8 +209,8 @@ def test_wait_registered_reports_independent_components():
                 bridge,
                 "POST",
                 "/v1/register",
-                {"component": component},
-                bridge.token,
+                {"component": component, "clientId": claims[component][0]},
+                claims[component][1],
                 f"http://127.0.0.1:{port}",
             )
         bridge.wait_registered({"writer", "presentation", "spreadsheet"}, 2)
