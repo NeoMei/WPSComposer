@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import pickle
 from types import MappingProxyType
 import threading
 import time
@@ -686,6 +687,75 @@ def test_deadline_validator_rejects_unpicklable_callable_without_child_leak(
 
     after = {child.pid for child in artifact_transport.multiprocessing.active_children()}
     assert after == before
+
+
+def test_deadline_validator_normalizes_lambda_pickling_error_without_leaks(
+    tmp_path, monkeypatch
+):
+    before_children = {
+        child.pid for child in artifact_transport.multiprocessing.active_children()
+    }
+    before_fds = len(list(Path("/dev/fd").iterdir()))
+
+    def reject_local_callable(_value):
+        raise pickle.PicklingError("local lambda is not importable")
+
+    monkeypatch.setattr(
+        artifact_transport.ForkingPickler,
+        "dumps",
+        staticmethod(reject_local_callable),
+    )
+
+    with pytest.raises(TypeError, match="picklable callable or ValidatorSpec"):
+        validate_before_deadline(
+            lambda _path: None,
+            tmp_path / "artifact.pdf",
+            deadline=time.monotonic() + 2,
+        )
+
+    after_children = {
+        child.pid for child in artifact_transport.multiprocessing.active_children()
+    }
+    after_fds = len(list(Path("/dev/fd").iterdir()))
+    assert after_children == before_children
+    assert after_fds <= before_fds
+
+
+def test_deadline_validator_closes_pipe_when_process_construction_fails(
+    tmp_path, monkeypatch
+):
+    class Endpoint:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    receiver = Endpoint()
+    sender = Endpoint()
+
+    class FailedContext:
+        def Pipe(self, *, duplex):
+            assert duplex is False
+            return receiver, sender
+
+        def Process(self, **_kwargs):
+            raise OSError("constructor failed")
+
+    monkeypatch.setattr(
+        artifact_transport.multiprocessing,
+        "get_context",
+        lambda method: FailedContext(),
+    )
+
+    with pytest.raises(OSError, match="constructor failed"):
+        validate_before_deadline(
+            _accept_validator,
+            tmp_path / "artifact.pdf",
+            deadline=time.monotonic() + 2,
+        )
+
+    assert receiver.closed
+    assert sender.closed
 
 
 def test_deadline_validator_closes_pipe_when_spawn_start_fails(

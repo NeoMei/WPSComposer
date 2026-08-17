@@ -8,6 +8,7 @@ import multiprocessing
 from multiprocessing.reduction import ForkingPickler
 import os
 from pathlib import Path
+import pickle
 import sys
 import tempfile
 import time
@@ -175,19 +176,20 @@ def validate_before_deadline(
         raise TypeError("validator must be a picklable callable or ValidatorSpec")
     try:
         ForkingPickler.dumps((validator, Path(path)))
-    except (AttributeError, TypeError, ValueError) as exc:
+    except (pickle.PickleError, AttributeError, TypeError, ValueError) as exc:
         raise TypeError(
             "validator must be a picklable callable or ValidatorSpec"
         ) from exc
     context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
-    worker = context.Process(
-        target=_validation_process_entry,
-        args=(sender, validator, Path(path)),
-        name="wpscomposer-artifact-validation",
-        daemon=True,
-    )
+    worker = None
     try:
+        worker = context.Process(
+            target=_validation_process_entry,
+            args=(sender, validator, Path(path)),
+            name="wpscomposer-artifact-validation",
+            daemon=True,
+        )
         worker.start()
         sender.close()
         budget = max(0.0, deadline - time.monotonic())
@@ -214,7 +216,7 @@ def validate_before_deadline(
     finally:
         sender.close()
         receiver.close()
-        if worker.is_alive():
+        if worker is not None and worker.is_alive():
             worker.terminate()
             worker.join(timeout=0.25)
 
