@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    copy_file_before_deadline,
     publish_artifact,
     validate_before_deadline,
     validate_pdf,
@@ -135,7 +136,11 @@ def _run_conversion(
         runtime.staging_dir / "converted.pdf"
     )
     try:
-        shutil.copy2(request.source, staged_source)
+        copy_file_before_deadline(
+            request.source, staged_source, deadline=deadline
+        )
+    except TimeoutError:
+        raise
     except OSError as exc:
         raise _error(
             request,

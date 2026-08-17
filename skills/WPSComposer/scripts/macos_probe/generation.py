@@ -18,6 +18,7 @@ from xml.etree import ElementTree
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    copy_stream_before_deadline,
     publish_artifact,
     validate_before_deadline,
     validate_office_package,
@@ -495,15 +496,22 @@ def _sha256(path: Path) -> str:
 
 
 def _copy_generation_resource(
-    request: GenerationRequest, resource: GenerationResource, target: Path
+    request: GenerationRequest,
+    resource: GenerationResource,
+    target: Path,
+    *,
+    deadline: float,
 ) -> None:
+    require_remaining(deadline)
     target.parent.mkdir(parents=True, exist_ok=True)
+    require_remaining(deadline)
     temporary: Optional[Path] = None
     descriptor: Optional[int] = None
     try:
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
         descriptor = os.open(resource.source_path, flags)
         source_stat = os.fstat(descriptor)
+        require_remaining(deadline)
         if (
             not stat.S_ISREG(source_stat.st_mode)
             or source_stat.st_size > MAX_RESOURCE_BYTES
@@ -519,15 +527,23 @@ def _copy_generation_resource(
             temporary = Path(outgoing.name)
             with os.fdopen(descriptor, "rb") as incoming:
                 descriptor = None
-                shutil.copyfileobj(incoming, outgoing)
+                copy_stream_before_deadline(incoming, outgoing, deadline)
+            require_remaining(deadline)
             outgoing.flush()
+            require_remaining(deadline)
             os.fsync(outgoing.fileno())
+            require_remaining(deadline)
         if temporary.stat().st_size != source_stat.st_size:
             raise OSError("resource changed during staging")
+        require_remaining(deadline)
         os.chmod(temporary, 0o600)
+        require_remaining(deadline)
         os.link(temporary, target)
+        require_remaining(deadline)
         temporary.unlink()
         temporary = None
+    except TimeoutError:
+        raise
     except (OSError, ValueError) as exc:
         raise _error(
             request,
@@ -545,10 +561,13 @@ def stage_generation_resources(
     request: GenerationRequest,
     recorded: RecordedGeneration,
     runtime: ProbeRuntime,
+    *,
+    deadline: float,
 ) -> dict[str, str]:
     """Copy validated host resources into component-private locations."""
     manifest: dict[str, str] = {}
     for resource in recorded.resources:
+        require_remaining(deadline)
         safe_name = f"resource-{resource.id}{resource.source_path.suffix.lower()}"
         if request.component == "writer":
             try:
@@ -559,7 +578,9 @@ def stage_generation_resources(
                     "GENERATION_COMMAND_FAILED",
                     "Writer resource profile is unavailable",
                 ) from exc
-            _copy_generation_resource(request, resource, target)
+            _copy_generation_resource(
+                request, resource, target, deadline=deadline
+            )
             manifest[resource.id] = f"http://127.0.0.1:3889/{safe_name}"
         elif request.component == "presentation":
             if runtime.staging_dir is None:
@@ -569,7 +590,9 @@ def stage_generation_resources(
                     "WPS staging session is unavailable",
                 )
             target = runtime.staging_dir / "resources" / safe_name
-            _copy_generation_resource(request, resource, target)
+            _copy_generation_resource(
+                request, resource, target, deadline=deadline
+            )
             manifest[resource.id] = str(target.resolve())
         else:
             raise _error(
@@ -879,7 +902,9 @@ def _run_generation(
     template_digest = _sha256(staged)
     require_remaining(deadline)
     staged_pdf = policy.require_allowed(staged.with_suffix(".pdf")) if is_pdf else None
-    resources = stage_generation_resources(request, recorded, runtime)
+    resources = stage_generation_resources(
+        request, recorded, runtime, deadline=deadline
+    )
     require_remaining(deadline)
     runtime.start_servers(deadline=deadline)
     runtime.activate_component(request.component, deadline=deadline)

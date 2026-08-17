@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import threading
 import time
 import zipfile
 
@@ -280,3 +281,26 @@ def test_read_only_validator_is_bounded_by_absolute_deadline(tmp_path):
         )
 
     assert time.monotonic() - started < 0.15
+
+
+def test_repeated_validator_timeouts_leave_no_worker_or_fd_growth(tmp_path):
+    before_threads = {
+        thread.ident for thread in threading.enumerate() if thread.is_alive()
+    }
+    before_fds = len(list(Path("/dev/fd").iterdir()))
+
+    for _ in range(4):
+        with pytest.raises(TimeoutError, match="validation deadline"):
+            validate_before_deadline(
+                lambda _path: time.sleep(1),
+                tmp_path / "artifact.pdf",
+                deadline=time.monotonic() + 0.01,
+            )
+
+    time.sleep(0.02)
+    after_threads = {
+        thread.ident for thread in threading.enumerate() if thread.is_alive()
+    }
+    after_fds = len(list(Path("/dev/fd").iterdir()))
+    assert after_threads == before_threads
+    assert after_fds <= before_fds + 1

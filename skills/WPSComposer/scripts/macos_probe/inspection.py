@@ -19,6 +19,7 @@ from .._dispatch import WPSUnavailable
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    copy_file_before_deadline,
     publish_artifact,
     validate_before_deadline,
     validate_office_package,
@@ -140,7 +141,9 @@ def _run_inspection(
         runtime.staging_dir / f"source{source.suffix.lower()}"
     )
     try:
-        shutil.copy2(source, staged_source)
+        copy_file_before_deadline(source, staged_source, deadline=deadline)
+    except TimeoutError:
+        raise
     except OSError as exc:
         raise _error(
             str(source), component, "STAGING_SAVE_FAILED",
@@ -402,7 +405,9 @@ def _run_edit(
         runtime.staging_dir / f"output{output.suffix.lower()}"
     )
     try:
-        shutil.copy2(source, staged_source)
+        copy_file_before_deadline(source, staged_source, deadline=deadline)
+    except TimeoutError:
+        raise
     except OSError as exc:
         raise _error(str(source), component, "STAGING_SAVE_FAILED",
                      _redact_staging(str(exc), runtime.staging_dir)) from exc

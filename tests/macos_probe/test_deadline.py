@@ -8,6 +8,7 @@ import pytest
 
 from skills.WPSComposer.scripts import artifact_transport
 from skills.WPSComposer.scripts.generation_plan import (
+    GenerationResource,
     GenerationOperation,
     GenerationPlan,
     RecordedGeneration,
@@ -390,7 +391,9 @@ def test_pdf_generation_and_final_validators_reuse_public_deadline(
     monkeypatch.setattr(generation.time, "monotonic", clock.monotonic)
     monkeypatch.setattr(generation, "clone_template", lambda *args: staged)
     monkeypatch.setattr(generation, "_sha256", lambda path: "digest")
-    monkeypatch.setattr(generation, "stage_generation_resources", lambda *args: {})
+    monkeypatch.setattr(
+        generation, "stage_generation_resources", lambda *args, **kwargs: {}
+    )
     monkeypatch.setattr(
         generation,
         "_wait_for_generated_package",
@@ -410,6 +413,11 @@ def test_pdf_generation_and_final_validators_reuse_public_deadline(
 
     monkeypatch.setattr(generation, "publish_artifact", publish)
     monkeypatch.setattr(generation, "validate_pdf", lambda path: None)
+    monkeypatch.setattr(
+        generation,
+        "validate_before_deadline",
+        lambda validator, path, deadline: validator(path),
+    )
 
     result = generation._run_generation(
         request,
@@ -439,6 +447,11 @@ def test_pdf_validator_does_not_open_a_new_timeout_window(monkeypatch, tmp_path)
     monkeypatch.setattr(generation.time, "monotonic", clock.monotonic)
     monkeypatch.setattr(generation.time, "sleep", clock.sleep)
     monkeypatch.setattr(generation, "validate_pdf", invalid)
+    monkeypatch.setattr(
+        generation,
+        "validate_before_deadline",
+        lambda validator, path, deadline: validator(path),
+    )
 
     with pytest.raises(generation.ArtifactValidationError, match="not ready"):
         generation._wait_for_pdf(tmp_path / "artifact.pdf", deadline=101.0)
@@ -460,6 +473,11 @@ def test_conversion_pdf_readiness_uses_existing_deadline(monkeypatch, tmp_path):
     monkeypatch.setattr(conversion.time, "monotonic", clock.monotonic)
     monkeypatch.setattr(conversion.time, "sleep", clock.sleep)
     monkeypatch.setattr(conversion, "validate_pdf", invalid)
+    monkeypatch.setattr(
+        conversion,
+        "validate_before_deadline",
+        lambda validator, path, deadline: validator(path),
+    )
 
     with pytest.raises(conversion.ArtifactValidationError, match="not ready"):
         conversion._wait_for_pdf_artifact(
@@ -561,6 +579,11 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
     monkeypatch.setattr(conversion.time, "monotonic", clock.monotonic)
     monkeypatch.setattr(artifact_transport.time, "monotonic", clock.monotonic)
     monkeypatch.setattr(conversion, "validate_pdf", validating_pdf)
+    monkeypatch.setattr(
+        conversion,
+        "validate_before_deadline",
+        lambda validator, path, deadline: validator(path),
+    )
 
     result = conversion.convert_macos(
         request,
@@ -586,3 +609,136 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
     ]
     assert stages.count("pdf-validation") == 4
     assert stages[-1] == "cleanup-grace"
+
+
+def test_generation_resource_staging_stops_at_deadline_and_removes_partial(
+    monkeypatch, tmp_path: Path
+):
+    clock = FakeClock(10.0)
+    source = tmp_path / "large.png"
+    source.write_bytes(b"x" * (3 * 1024 * 1024))
+    request = GenerationRequest(tmp_path / "result.pptx", "presentation", "pptx")
+    recorded = RecordedGeneration(
+        GenerationPlan(
+            "presentation",
+            (
+                GenerationOperation("slide.reset", {}),
+                GenerationOperation("slide.add_blank", {}),
+                GenerationOperation(
+                    "slide.add_image", {"slide": 1, "imageId": "image-1"}
+                ),
+            ),
+        ),
+        (GenerationResource("image-1", source, "image/png"),),
+    )
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    fake_runtime = SimpleNamespace(staging_dir=staging, profiles={})
+
+    def ticking_clock():
+        value = clock.now
+        clock.advance(0.004)
+        return value
+
+    monkeypatch.setattr(runtime.time, "monotonic", ticking_clock)
+    monkeypatch.setattr(artifact_transport.time, "monotonic", ticking_clock)
+
+    with pytest.raises(TimeoutError):
+        generation.stage_generation_resources(
+            request, recorded, fake_runtime, deadline=10.02
+        )
+
+    assert source.stat().st_size == 3 * 1024 * 1024
+    assert not list((staging / "resources").glob("*"))
+
+
+@pytest.mark.parametrize("operation", ["conversion", "inspection", "edit"])
+def test_source_staging_stops_at_deadline_and_preserves_files(
+    monkeypatch, tmp_path: Path, operation: str
+):
+    clock = FakeClock(20.0)
+    suffix = "docx" if operation != "edit" else "pptx"
+    source = tmp_path / f"source.{suffix}"
+    source_bytes = b"s" * (3 * 1024 * 1024)
+    source.write_bytes(source_bytes)
+    output = tmp_path / ("result.pdf" if operation == "conversion" else "result.pptx")
+    output.write_bytes(b"approved-old-target")
+    staging = tmp_path / "staging"
+    staging.mkdir()
+
+    class Runtime:
+        staging_dir = staging
+
+        def prepare_profiles(self):
+            pass
+
+        def start_servers(self, *, deadline):
+            pass
+
+        def activate_component(self, component, *, deadline):
+            pass
+
+    class Bridge:
+        state = SimpleNamespace(cancel=lambda command_id: None)
+
+        def __init__(self):
+            self.commands = []
+
+        def wait_registered(self, expected, timeout):
+            pass
+
+        def issue(self, component, method, params):
+            self.commands.append(params)
+            return SimpleNamespace(id="unexpected")
+
+    bridge = Bridge()
+
+    def ticking_clock():
+        value = clock.now
+        clock.advance(0.003)
+        return value
+
+    monkeypatch.setattr(runtime.time, "monotonic", ticking_clock)
+    monkeypatch.setattr(artifact_transport.time, "monotonic", ticking_clock)
+
+    with pytest.raises(TimeoutError):
+        if operation == "conversion":
+            request = SimpleNamespace(
+                source=source,
+                output=output,
+                component="writer",
+                overwrite=True,
+            )
+            conversion._run_conversion(
+                request,
+                "convert_writer_pdf",
+                bridge,
+                Runtime(),
+                deadline=20.04,
+            )
+        elif operation == "inspection":
+            inspection._run_inspection(
+                source,
+                "writer",
+                "inspect_document",
+                bridge,
+                Runtime(),
+                deadline=20.04,
+            )
+        else:
+            inspection._run_edit(
+                source,
+                output,
+                "presentation",
+                "edit_presentation",
+                [{"target": "slide:1", "name": "Updated"}],
+                bridge,
+                Runtime(),
+                deadline=20.04,
+                overwrite=True,
+            )
+
+    assert source.read_bytes() == source_bytes
+    assert output.read_bytes() == b"approved-old-target"
+    assert bridge.commands == []
+    assert not list(staging.glob("source.*"))

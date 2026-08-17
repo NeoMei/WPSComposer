@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import multiprocessing
 import os
 from pathlib import Path
-from queue import Queue
 import tempfile
 import time
-from threading import Thread
 from typing import Callable
 import zipfile
 from xml.etree import ElementTree
@@ -38,7 +37,7 @@ def _require_deadline(deadline: float | None) -> None:
         raise TimeoutError("Artifact transport deadline expired")
 
 
-def _copy_with_deadline(incoming, outgoing, deadline: float | None) -> None:
+def copy_stream_before_deadline(incoming, outgoing, deadline: float | None) -> None:
     while True:
         _require_deadline(deadline)
         block = incoming.read(_COPY_CHUNK_BYTES)
@@ -49,39 +48,97 @@ def _copy_with_deadline(incoming, outgoing, deadline: float | None) -> None:
         _require_deadline(deadline)
 
 
+def copy_file_before_deadline(
+    source: Path, target: Path, *, deadline: float
+) -> Path:
+    """Stage one file cooperatively and remove partial output on timeout."""
+    source_path = Path(source).expanduser().resolve()
+    target_path = Path(target).expanduser().resolve()
+    _require_deadline(deadline)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    _require_deadline(deadline)
+    try:
+        with source_path.open("rb") as incoming, target_path.open("xb") as outgoing:
+            copy_stream_before_deadline(incoming, outgoing, deadline)
+            _require_deadline(deadline)
+            outgoing.flush()
+            _require_deadline(deadline)
+            os.fsync(outgoing.fileno())
+            _require_deadline(deadline)
+        os.chmod(target_path, 0o600)
+        _require_deadline(deadline)
+        return target_path
+    except BaseException:
+        target_path.unlink(missing_ok=True)
+        raise
+
+
+def _validation_process_entry(connection, validator, path: Path) -> None:
+    try:
+        validator(path)
+    except ArtifactValidationError as exc:
+        payload = ("artifact", str(exc))
+    except BaseException as exc:
+        payload = ("runtime", type(exc).__name__, str(exc))
+    else:
+        payload = ("ok",)
+    try:
+        connection.send(payload)
+    finally:
+        connection.close()
+
+
 def validate_before_deadline(
     validator: Callable[[Path], None], path: Path, deadline: float
 ) -> None:
     """Run one read-only validator within the remaining public budget.
 
     Validation may involve vendor parsers and compressed-package traversal
-    that cannot be interrupted cooperatively. A daemon worker bounds the
-    caller's wait; late read-only work cannot publish or mutate an artifact.
+    that cannot be interrupted cooperatively. The macOS backend uses a forked
+    process so timeout can terminate and reap the parser with all of its FDs.
     """
     _require_deadline(deadline)
-    outcome: Queue[BaseException | None] = Queue(maxsize=1)
-
-    def run() -> None:
-        try:
-            validator(path)
-        except BaseException as exc:
-            outcome.put(exc)
-        else:
-            outcome.put(None)
-
-    worker = Thread(
-        target=run,
+    if "fork" not in multiprocessing.get_all_start_methods():
+        raise RuntimeError(
+            "Deadline-bounded artifact validation requires POSIX fork support"
+        )
+    context = multiprocessing.get_context("fork")
+    receiver, sender = context.Pipe(duplex=False)
+    worker = context.Process(
+        target=_validation_process_entry,
+        args=(sender, validator, Path(path)),
         name="wpscomposer-artifact-validation",
         daemon=True,
     )
     worker.start()
-    worker.join(timeout=max(0.0, deadline - time.monotonic()))
-    if worker.is_alive():
-        raise TimeoutError("Artifact validation deadline expired")
-    error = outcome.get_nowait()
-    if error is not None:
-        raise error
-    _require_deadline(deadline)
+    sender.close()
+    try:
+        budget = max(0.0, deadline - time.monotonic())
+        if budget <= 0 or not receiver.poll(budget):
+            worker.terminate()
+            worker.join(timeout=0.25)
+            if worker.is_alive():
+                worker.kill()
+                worker.join(timeout=0.25)
+            raise TimeoutError("Artifact validation deadline expired")
+        payload = receiver.recv()
+        worker.join(timeout=0.25)
+        if worker.is_alive():
+            worker.terminate()
+            worker.join(timeout=0.25)
+        status = payload[0]
+        if status == "artifact":
+            raise ArtifactValidationError(payload[1])
+        if status == "runtime":
+            raise RuntimeError(
+                f"Artifact validator raised {payload[1]}: {payload[2]}"
+            )
+        _require_deadline(deadline)
+    finally:
+        receiver.close()
+        if worker.is_alive():
+            worker.terminate()
+            worker.join(timeout=0.25)
 
 
 def _require_regular_file(path: Path, format_name: str) -> Path:
@@ -220,7 +277,7 @@ def publish_artifact(
             ) as stream:
                 temporary = Path(stream.name)
                 with source.open("rb") as incoming:
-                    _copy_with_deadline(incoming, stream, deadline)
+                    copy_stream_before_deadline(incoming, stream, deadline)
                 _require_deadline(deadline)
                 stream.flush()
                 _require_deadline(deadline)
@@ -252,7 +309,7 @@ def publish_artifact(
                         ) as stream:
                             backup = Path(stream.name)
                             with target.open("rb") as existing:
-                                _copy_with_deadline(existing, stream, deadline)
+                                copy_stream_before_deadline(existing, stream, deadline)
                             _require_deadline(deadline)
                             stream.flush()
                             _require_deadline(deadline)
