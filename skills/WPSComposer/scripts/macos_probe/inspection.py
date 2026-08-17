@@ -16,6 +16,11 @@ import time
 from typing import Any, Callable, Optional
 
 from .._dispatch import WPSUnavailable
+from ..artifact_transport import (
+    ArtifactTransportError,
+    publish_artifact,
+    validate_office_package,
+)
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
 from .runtime import ProbeRuntime
@@ -45,12 +50,7 @@ INSPECTABLE = {
 
 # Formats that support edit through the JSAPI bridge.
 EDITABLE = {
-    ".ppt": ("presentation", "edit_presentation"),
     ".pptx": ("presentation", "edit_presentation"),
-    ".pptm": ("presentation", "edit_presentation"),
-    ".pps": ("presentation", "edit_presentation"),
-    ".ppsx": ("presentation", "edit_presentation"),
-    ".ppsm": ("presentation", "edit_presentation"),
 }
 
 
@@ -268,6 +268,9 @@ def edit_macos(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 120,
+    atomic: bool = True,
+    raise_on_error: bool = False,
+    overwrite: bool = False,
 ) -> dict[str, Any]:
     """Apply patches to an existing presentation through the WPS JSAPI bridge.
 
@@ -294,6 +297,11 @@ def edit_macos(
     output_path = (
         Path(output).expanduser().resolve() if output else source_path
     )
+    if output_path.suffix.lower() != ".pptx":
+        raise ValueError("macOS edit output must use '.pptx'")
+    in_place = output_path == source_path
+    if output_path.exists() and not in_place and not overwrite:
+        raise FileExistsError(f"Output already exists: {output_path}")
 
     repository_root = Path(__file__).resolve().parents[4]
     probe_root = repository_root / "macos/wps-jsapi-probe"
@@ -314,6 +322,9 @@ def edit_macos(
                     return _run_edit(
                         source_path, output_path, component, method,
                         patches, bridge, runtime, timeout,
+                        atomic=atomic,
+                        raise_on_error=raise_on_error,
+                        overwrite=overwrite or in_place,
                     )
             except InspectionError:
                 raise
@@ -345,6 +356,10 @@ def _run_edit(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
     timeout: float,
+    *,
+    atomic: bool = True,
+    raise_on_error: bool = False,
+    overwrite: bool = False,
 ) -> dict[str, Any]:
     if runtime.staging_dir is None:
         raise _error(str(source), component, "STAGING_UNAVAILABLE",
@@ -376,6 +391,8 @@ def _run_edit(
         "sourcePath": str(staged_source),
         "outputPath": str(staged_output),
         "patches": patches,
+        "atomic": bool(atomic),
+        "raiseOnError": bool(raise_on_error),
     })
     try:
         result = bridge.wait_result(
@@ -392,15 +409,89 @@ def _run_edit(
                          str(details.get("message") or "WPS edit failed"),
                          runtime.staging_dir))
     value = dict(result.value or {})
-    # Publish the edited file from staging to the user's output path.
-    reported = policy.require_allowed(str(value.get("path", "")))
+    reports = list(value.get("patches") or [])
+    if len(reports) != len(patches):
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            "WPS edit returned an incomplete patch report",
+        )
+    for report in reports:
+        if report.get("rejected"):
+            report["ok"] = False
+    failures = [report for report in reports if not report.get("ok")]
+    if failures and atomic:
+        return {"path": None, "patches": reports, "saved": False}
+    if failures and raise_on_error:
+        raise _error(
+            str(source), component, "PATCH_REJECTED",
+            f"{len(failures)} of {len(reports)} patch(es) failed",
+        )
+
+    # The bridge must report exactly the path reserved for this command. A
+    # merely in-root path could be the untouched staged source or stale output.
     try:
-        shutil.copy2(reported, output)
+        reported = policy.require_allowed(str(value.get("path", "")))
+    except ProtocolError as exc:
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            _redact_staging(str(exc), runtime.staging_dir),
+        ) from exc
+    if reported != staged_output:
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            "WPS edit reported an unexpected staged output path",
+        )
+
+    _wait_for_stable_edit_artifact(
+        staged_output, deadline, source=str(source), component=component
+    )
+    try:
+        published = publish_artifact(
+            staged_output,
+            output,
+            overwrite=overwrite,
+            validator=lambda path: validate_office_package(path, "pptx"),
+        )
+    except FileExistsError:
+        raise
+    except ArtifactTransportError as exc:
+        raise _error(str(source), component, exc.code, str(exc)) from exc
     except OSError as exc:
-        raise _error(str(source), component, "EDIT_COMMAND_FAILED",
-                     f"Failed to copy edited file: {exc}")
-    value["path"] = str(output)
+        raise _error(
+            str(source), component, "ARTIFACT_PUBLISH_FAILED", str(exc)
+        ) from exc
+    value["path"] = str(published)
+    value["saved"] = True
     return value
+
+
+def _wait_for_stable_edit_artifact(
+    path: Path,
+    deadline: float,
+    *,
+    source: str,
+    component: str,
+) -> None:
+    """Wait for two identical file observations within the existing deadline."""
+    previous = None
+    while True:
+        try:
+            stat = path.stat()
+            current = (stat.st_size, stat.st_mtime_ns)
+        except FileNotFoundError:
+            current = None
+        if current is not None and current == previous:
+            return
+        previous = current
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise _error(
+                source,
+                component,
+                "STAGED_ARTIFACT_INVALID",
+                "WPS edit output did not finish landing before the deadline",
+            )
+        time.sleep(min(0.05, remaining))
 
 
 def macos_inspection_available() -> bool:

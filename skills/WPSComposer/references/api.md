@@ -75,6 +75,7 @@ w.save_current()
 result = edit(
     "report.docx",
     output="report-revised.docx",
+    overwrite=False,
     export_pdf="report-revised.pdf",
     patches=[
         {"target": "paragraph:1", "font": {"size": 20, "bold": True}},
@@ -102,7 +103,7 @@ Common functions:
 | `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
 | `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
 | `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned |
+| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. A distinct existing output is rejected unless `overwrite=True` |
 | `apply_ops(composer, ops, atomic=True)` | Unified op executor (`set`/`insert`/`remove`/`move`/`clone`); raises `PatchError` in atomic mode |
 | `apply_patches(composer, patches, atomic=True)` | Back-compat wrapper: `set`-only patches, normalised to `apply_ops` |
 | `validate_op(op, kind=None)` | Validate one op dict against the schema; returns `{valid, error:{code,...}}` |
@@ -138,13 +139,18 @@ document is not saved (no file is written for `output=`, and `save_current()`
 is not called for the active document). Set `atomic=False` for the legacy
 best-effort behaviour that saves whatever succeeded.
 
-Caveat for the `path=None` (attach-active) workflow: atomic mode guarantees
-**no disk write** on failure, but the live WPS/Office window may still show
-the partially-applied in-memory edits, because COM formatting calls cannot be
-selectively rolled back without an undo stack. After a failed atomic `edit()`
-on the active document, re-inspect (`inspect()`) before retrying. With
-`output=` in attach mode the live document is saved in place and *output*
-receives a file copy — `SaveAs` would rebind the live window to the new path.
+For `path=None` (attach-active), an atomic request containing more than one
+operation is rejected **before the first mutation** because WPS/Office exposes
+no reliable rollback boundary for the live window. Use `atomic=False`
+explicitly for best-effort live mutation, or edit a file-backed copy. With
+`output=` in attach mode the live document keeps its binding and the output is
+published from a validated destination-local staging file.
+
+File-backed edits preserve the source document family. A distinct destination
+must not exist unless `overwrite=True`; successful saves are validated in a
+same-directory staging file and then atomically published. On macOS, editing is
+currently restricted to `.pptx` input and `.pptx` output so legacy, slideshow,
+and macro-enabled presentation semantics cannot be silently lost.
 
 ### Address grammar
 

@@ -71,7 +71,12 @@ grammar and patch fields.
 `{"ok": False, "errors": [...]}` instead of raising. `validate_target(target,
 kind)` checks a target against the grammar and suggests the closest valid form
 on a miss, and `patch_grammar(kind)` returns the grammar as data for agent
-discovery.
+discovery. A distinct existing output is rejected unless `overwrite=True`, and
+the output must remain in the source document family. File-backed results are
+validated and atomically published. Atomic attach-active batches containing
+more than one operation are rejected before mutation because the live host has
+no reliable rollback boundary. macOS editing currently supports verified
+`.pptx` input/output only.
 
 For **structural editing** (insert/remove/move/clone), pass `ops=` instead of
 (or alongside) `patches`. Each op carries a verb: `set` (formatting, == a
