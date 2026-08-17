@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from functools import partial
 import hashlib
 import os
 from pathlib import Path
@@ -22,6 +21,7 @@ from xml.etree import ElementTree
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    ValidatorSpec,
     copy_stream_before_deadline,
     publish_artifact,
     validate_before_deadline,
@@ -458,7 +458,7 @@ def _wait_for_marker(
     while True:
         try:
             validate_before_deadline(
-                partial(_validate_marker_package, format_name=format_name),
+                ValidatorSpec.from_callable(_validate_marker_package, format_name),
                 path,
                 deadline,
             )
@@ -480,7 +480,11 @@ def _wait_for_pdf(path: Path, *, deadline: float) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            validate_before_deadline(validate_pdf, path, deadline)
+            validate_before_deadline(
+                ValidatorSpec.from_callable(_validate_generation_pdf),
+                path,
+                deadline,
+            )
             return
         except ArtifactValidationError as exc:
             failure = exc
@@ -1144,6 +1148,41 @@ def _validate_generated_package(
                 )
 
 
+def _validate_generated_package_from_plan(
+    path: Path,
+    format_name: str,
+    raw_plan: dict,
+    template_digest: str,
+) -> None:
+    """Rebuild immutable recording state from a spawn-safe plain plan."""
+    component = raw_plan.get("component")
+    plan = validate_generation_plan(raw_plan, component)
+    _validate_generated_package(
+        path,
+        format_name,
+        RecordedGeneration(plan, ()),
+        template_digest,
+    )
+
+
+def _validate_generation_pdf(path: Path) -> None:
+    """Top-level indirection keeps PDF validation injectable in unit tests."""
+    validate_pdf(path)
+
+
+def _generated_validator_spec(
+    format_name: str,
+    recorded: RecordedGeneration,
+    template_digest: str,
+) -> ValidatorSpec:
+    return ValidatorSpec.from_callable(
+        _validate_generated_package_from_plan,
+        format_name,
+        recorded.plan.to_dict(),
+        template_digest,
+    )
+
+
 def _wait_for_generated_package(
     path: Path,
     format_name: str,
@@ -1156,11 +1195,8 @@ def _wait_for_generated_package(
     while True:
         try:
             validate_before_deadline(
-                partial(
-                    _validate_generated_package,
-                    format_name=format_name,
-                    recorded=recorded,
-                    template_digest=template_digest,
+                _generated_validator_spec(
+                    format_name, recorded, template_digest
                 ),
                 path,
                 deadline,
@@ -1331,17 +1367,18 @@ def _run_generation(
         ) from exc
     try:
         if feasibility:
-            artifact_validator = partial(
-                _validate_marker_package, format_name=request.format_name
+            artifact_validator = ValidatorSpec.from_callable(
+                _validate_marker_package, request.format_name
             )
         elif is_pdf:
-            artifact_validator = validate_pdf
+            artifact_validator = ValidatorSpec.from_callable(
+                _validate_generation_pdf
+            )
         else:
-            artifact_validator = partial(
-                _validate_generated_package,
-                format_name=request.format_name,
-                recorded=recorded,
-                template_digest=template_digest,
+            artifact_validator = _generated_validator_spec(
+                request.format_name,
+                recorded,
+                template_digest,
             )
 
         def validator(path: Path) -> None:

@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+import importlib
 import multiprocessing
+from multiprocessing.reduction import ForkingPickler
 import os
 from pathlib import Path
 import sys
 import tempfile
 import time
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, Union
 import zipfile
 from xml.etree import ElementTree
 
@@ -31,6 +34,70 @@ _OFFICE_MEMBERS = {
     "pptx": "ppt/presentation.xml",
 }
 _COPY_CHUNK_BYTES = 1024 * 1024
+
+
+def _require_plain_serializable(value: Any, *, path: str = "arguments") -> None:
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return
+    if isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _require_plain_serializable(item, path=f"{path}[{index}]")
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError(
+                    f"ValidatorSpec {path} must use string dictionary keys"
+                )
+            _require_plain_serializable(item, path=f"{path}.{key}")
+        return
+    raise TypeError(
+        f"ValidatorSpec {path} must contain only plain serializable values"
+    )
+
+
+@dataclass(frozen=True)
+class ValidatorSpec:
+    """Spawn-safe reference to a top-level validator and plain arguments."""
+
+    identifier: str
+    arguments: tuple[Any, ...] = ()
+
+    def __post_init__(self) -> None:
+        module_name, separator, function_name = self.identifier.partition(":")
+        if (
+            not separator
+            or not module_name
+            or not function_name.isidentifier()
+            or any(not part.isidentifier() for part in module_name.split("."))
+        ):
+            raise ValueError(
+                "ValidatorSpec identifier must be 'module:top_level_function'"
+            )
+        arguments = tuple(self.arguments)
+        _require_plain_serializable(arguments)
+        object.__setattr__(self, "arguments", arguments)
+
+    @classmethod
+    def from_callable(cls, validator: Callable, *arguments: Any) -> "ValidatorSpec":
+        module_name = getattr(validator, "__module__", "")
+        function_name = getattr(validator, "__qualname__", "")
+        if not module_name or not function_name or "." in function_name:
+            raise TypeError("ValidatorSpec requires a top-level callable")
+        return cls(f"{module_name}:{function_name}", tuple(arguments))
+
+    def resolve(self) -> Callable:
+        module_name, function_name = self.identifier.split(":", 1)
+        validator = getattr(importlib.import_module(module_name), function_name)
+        if not callable(validator):
+            raise TypeError(f"ValidatorSpec target is not callable: {self.identifier}")
+        return validator
+
+    def __call__(self, path: Path) -> None:
+        self.resolve()(Path(path), *self.arguments)
+
+
+Validator = Union[Callable[[Path], None], ValidatorSpec]
 
 
 def _require_deadline(deadline: float | None) -> None:
@@ -79,7 +146,7 @@ def copy_file_before_deadline(
         raise
 
 
-def _validation_process_entry(connection, validator, path: Path) -> None:
+def _validation_process_entry(connection, validator: Validator, path: Path) -> None:
     try:
         validator(path)
     except ArtifactValidationError as exc:
@@ -95,7 +162,7 @@ def _validation_process_entry(connection, validator, path: Path) -> None:
 
 
 def validate_before_deadline(
-    validator: Callable[[Path], None], path: Path, deadline: float
+    validator: Validator, path: Path, deadline: float
 ) -> None:
     """Run one read-only validator within the remaining public budget.
 
@@ -104,6 +171,14 @@ def validate_before_deadline(
     the live multi-threaded bridge process and is available on Windows too.
     """
     _require_deadline(deadline)
+    if not callable(validator):
+        raise TypeError("validator must be a picklable callable or ValidatorSpec")
+    try:
+        ForkingPickler.dumps((validator, Path(path)))
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise TypeError(
+            "validator must be a picklable callable or ValidatorSpec"
+        ) from exc
     context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
     worker = context.Process(
@@ -112,9 +187,9 @@ def validate_before_deadline(
         name="wpscomposer-artifact-validation",
         daemon=True,
     )
-    worker.start()
-    sender.close()
     try:
+        worker.start()
+        sender.close()
         budget = max(0.0, deadline - time.monotonic())
         if budget <= 0 or not receiver.poll(budget):
             worker.terminate()
@@ -137,6 +212,7 @@ def validate_before_deadline(
             )
         _require_deadline(deadline)
     finally:
+        sender.close()
         receiver.close()
         if worker.is_alive():
             worker.terminate()

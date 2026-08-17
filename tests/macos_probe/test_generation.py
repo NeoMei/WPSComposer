@@ -565,7 +565,7 @@ def test_generation_rejects_marker_only_in_content_root_text_without_publishing(
             format_name,
             plan,
             bridge=bridge,
-            timeout=0.02,
+            timeout=2,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -601,7 +601,9 @@ def test_generation_rejects_failed_or_invalid_results(
             "docx",
             WRITER_MARKER_PLAN,
             bridge=bridge,
-            timeout=0.02,
+            timeout=(
+                2 if expected_code == "STAGED_ARTIFACT_INVALID" else 0.02
+            ),
         )
     assert caught.value.code == expected_code
     assert not (tmp_path / "final.docx").exists()

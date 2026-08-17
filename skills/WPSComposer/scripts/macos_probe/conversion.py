@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    ValidatorSpec,
     copy_file_before_deadline,
     publish_artifact,
     validate_before_deadline,
@@ -40,6 +41,11 @@ METHODS = {
 
 # Enabled after two six-format WPS 12.1.26035 acceptance runs on 2026-07-18.
 MACOS_CONVERSION_ENABLED = True
+
+
+def _validate_conversion_pdf(path: Path) -> None:
+    """Top-level indirection keeps PDF validation injectable in unit tests."""
+    validate_pdf(path)
 
 
 def _error(
@@ -86,7 +92,11 @@ def _wait_for_pdf_artifact(path: Path, *, deadline: float) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            validate_before_deadline(validate_pdf, path, deadline)
+            validate_before_deadline(
+                ValidatorSpec.from_callable(_validate_conversion_pdf),
+                path,
+                deadline,
+            )
             return
         except ArtifactValidationError as exc:
             failure = exc
@@ -204,7 +214,11 @@ def _run_conversion(
         def validator(path: Path) -> None:
             try:
                 require_remaining(deadline)
-                validate_before_deadline(validate_pdf, path, deadline)
+                validate_before_deadline(
+                    ValidatorSpec.from_callable(_validate_conversion_pdf),
+                    path,
+                    deadline,
+                )
                 require_remaining(deadline)
             except TimeoutError as exc:
                 raise ArtifactValidationError(

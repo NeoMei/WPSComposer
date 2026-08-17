@@ -9,7 +9,6 @@ snapshot produced by the add-in — without converting to PDF.
 
 from __future__ import annotations
 
-from functools import partial
 from pathlib import Path
 import shutil
 import tempfile
@@ -20,6 +19,7 @@ from .._dispatch import WPSUnavailable
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    ValidatorSpec,
     copy_file_before_deadline,
     publish_artifact,
     validate_before_deadline,
@@ -56,6 +56,11 @@ INSPECTABLE = {
 EDITABLE = {
     ".pptx": ("presentation", "edit_presentation"),
 }
+
+
+def _validate_edited_presentation(path: Path) -> None:
+    """Top-level spawn target for edited PPTX validation."""
+    validate_office_package(path, "pptx")
 
 
 class InspectionError(RuntimeError):
@@ -476,7 +481,7 @@ def _run_edit(
             try:
                 require_remaining(deadline)
                 validate_before_deadline(
-                    partial(validate_office_package, format_name="pptx"),
+                    ValidatorSpec.from_callable(_validate_edited_presentation),
                     path,
                     deadline,
                 )

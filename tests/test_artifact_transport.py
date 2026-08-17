@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from types import MappingProxyType
 import threading
 import time
 import zipfile
@@ -12,6 +13,7 @@ from skills.WPSComposer.scripts import artifact_transport
 from skills.WPSComposer.scripts.artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    ValidatorSpec,
     copy_file_before_deadline,
     publish_artifact,
     validate_office_package,
@@ -644,6 +646,90 @@ def test_deadline_validator_uses_spawn_safe_worker_context(tmp_path, monkeypatch
     )
 
     assert requested == ["spawn"]
+
+
+def test_deadline_validator_accepts_spawn_safe_explicit_spec(tmp_path):
+    package = _write_package(tmp_path / "artifact.docx", "word/document.xml")
+    spec = ValidatorSpec.from_callable(validate_office_package, "docx")
+
+    validate_before_deadline(
+        spec,
+        package,
+        deadline=time.monotonic() + 2,
+    )
+
+
+def test_validator_spec_rejects_non_plain_arguments():
+    with pytest.raises(TypeError, match="plain serializable"):
+        ValidatorSpec.from_callable(
+            validate_office_package,
+            MappingProxyType({"format": "docx"}),
+        )
+
+
+def test_deadline_validator_rejects_unpicklable_callable_without_child_leak(
+    tmp_path,
+):
+    captured = MappingProxyType({"format": "pdf"})
+
+    def unpicklable(_path):
+        return captured
+
+    before = {child.pid for child in artifact_transport.multiprocessing.active_children()}
+
+    with pytest.raises(TypeError, match="picklable callable or ValidatorSpec"):
+        validate_before_deadline(
+            unpicklable,
+            tmp_path / "artifact.pdf",
+            deadline=time.monotonic() + 2,
+        )
+
+    after = {child.pid for child in artifact_transport.multiprocessing.active_children()}
+    assert after == before
+
+
+def test_deadline_validator_closes_pipe_when_spawn_start_fails(
+    tmp_path, monkeypatch
+):
+    class Endpoint:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    receiver = Endpoint()
+    sender = Endpoint()
+
+    class FailedProcess:
+        def start(self):
+            raise OSError("spawn unavailable")
+
+        def is_alive(self):
+            return False
+
+    class FailedContext:
+        def Pipe(self, *, duplex):
+            assert duplex is False
+            return receiver, sender
+
+        def Process(self, **_kwargs):
+            return FailedProcess()
+
+    monkeypatch.setattr(
+        artifact_transport.multiprocessing,
+        "get_context",
+        lambda method: FailedContext(),
+    )
+
+    with pytest.raises(OSError, match="spawn unavailable"):
+        validate_before_deadline(
+            _accept_validator,
+            tmp_path / "artifact.pdf",
+            deadline=time.monotonic() + 2,
+        )
+
+    assert receiver.closed
+    assert sender.closed
 
 
 def test_copy_file_preserves_preexisting_target_on_exclusive_create_failure(tmp_path):
