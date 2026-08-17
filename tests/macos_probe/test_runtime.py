@@ -288,6 +288,37 @@ def test_runtime_lock_serializes_overlapping_sessions(tmp_path: Path):
                 pass
 
 
+@posix_only
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_interrupted_runtime_enter_releases_lock_and_rethrows_original(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        staging_root=tmp_path / "container" / "WPSComposer",
+    )
+
+    def interrupt_preflight():
+        raise failure
+
+    monkeypatch.setattr(probe, "_preflight", interrupt_preflight)
+
+    with pytest.raises(type(failure)) as caught:
+        probe.__enter__()
+
+    assert caught.value is failure
+    assert probe._runtime_lock is None
+    assert probe.staging_dir is None
+    with runtime.wps_runtime_lock(probe.state_dir / "runtime.lock", timeout=0.1):
+        pass
+
+
 
 @posix_only
 def test_list_wps_pids_only_matches_exact_main_executable(monkeypatch):

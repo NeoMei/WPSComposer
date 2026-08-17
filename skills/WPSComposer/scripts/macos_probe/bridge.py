@@ -37,7 +37,7 @@ class BridgeState:
         self._clock = clock
         self._queues = {component: Queue() for component in COMPONENTS}
         self._registered: set[str] = set()
-        self._issued: set[str] = set()
+        self._issued: dict[str, str] = {}
         self._results: dict[str, ProbeResult] = {}
         self._completed: dict[str, ProbeResult] = {}
         self._canceled: set[str] = set()
@@ -50,12 +50,14 @@ class BridgeState:
         Re-claiming is allowed: the endpoint is loopback-only and
         origin-checked, and the add-in must be able to recover after a
         webview reload (its JS context loses the token on every reload).
+        This unauthenticated bootstrap does not create or renew a lease.
         """
         self._require_component(component)
         self._require_session(session_nonce)
         return True
 
     def register(self, component: str, session_nonce: str) -> None:
+        """Create or renew a lease after bearer-token authentication."""
         self._require_component(component)
         self._require_session(session_nonce)
         with self._condition:
@@ -72,13 +74,14 @@ class BridgeState:
                 raise ProtocolError(
                     f"Component has no fresh client lease: {component}"
                 )
-            self._issued.add(command.id)
+            self._issued[command.id] = component
         self._queues[component].put(command)
         return command
 
     def next(
         self, component: str, session_nonce: str, timeout: float = 10.0
     ) -> Optional[ProbeCommand]:
+        """Renew the authenticated polling client's lease and await work."""
         self._require_component(component)
         self._require_session(session_nonce)
         with self._condition:
@@ -91,11 +94,13 @@ class BridgeState:
             return None
 
     def complete(self, result: ProbeResult, session_nonce: str) -> None:
+        """Accept a known result and renew its component's client lease."""
         self._require_session(session_nonce)
         with self._condition:
             if result.id in self._canceled:
                 return
-            if result.id not in self._issued:
+            component = self._issued.get(result.id)
+            if component is None:
                 raise ProtocolError(f"Unknown result id: {result.id}")
             existing = self._completed.get(result.id)
             if existing is not None:
@@ -103,9 +108,11 @@ class BridgeState:
                     raise ProtocolError(
                         f"Conflicting duplicate result: {result.id}"
                     )
+                self._renew_lease_locked(component)
                 return
             self._completed[result.id] = result
             self._results[result.id] = result
+            self._renew_lease_locked(component)
             self._condition.notify_all()
 
     def cancel(self, command_id: str) -> None:
@@ -161,6 +168,10 @@ class BridgeState:
         for component in stale:
             self._last_seen.pop(component, None)
         return set(self._registered)
+
+    def _renew_lease_locked(self, component: str) -> None:
+        self._registered.add(component)
+        self._last_seen[component] = self._clock()
 
     def _require_session(self, session_nonce: str) -> None:
         try:

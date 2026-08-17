@@ -243,3 +243,24 @@ def test_bridge_rejects_client_from_an_old_session_nonce():
                 origin=origin,
             )
         assert error.value.code == 400
+
+
+def test_valid_result_renews_lease_for_next_command():
+    now = [10.0]
+    state = BridgeState(
+        session_nonce="session-a",
+        lease_seconds=5,
+        clock=lambda: now[0],
+    )
+    state.register("writer", "session-a")
+    first = state.issue("writer", "probe_capabilities", {})
+    assert state.next("writer", "session-a", timeout=0) == first
+
+    now[0] = 16.0
+    state.complete(
+        ProbeResult(first.id, True, {"supported": True}, None),
+        "session-a",
+    )
+
+    second = state.issue("writer", "smoke_docx", {})
+    assert second.component == "writer"

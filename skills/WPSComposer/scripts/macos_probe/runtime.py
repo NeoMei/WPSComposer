@@ -644,7 +644,7 @@ class ProbeRuntime:
         self._runtime_lock = wps_runtime_lock(self.state_dir / "runtime.lock")
         try:
             self._runtime_lock.__enter__()
-        except Exception:
+        except BaseException:
             self._runtime_lock = None
             raise
         try:
@@ -654,8 +654,13 @@ class ProbeRuntime:
             self._wps_processes_before = list_wps_processes(self.wps_app)
             self.runtime_dir.mkdir(parents=True, exist_ok=False)
             self.staging_dir = create_staging_session(self.staging_root)
-        except Exception:
-            self.close()
+        except BaseException:
+            try:
+                self.close()
+            except BaseException:
+                # Preserve the original interrupt/exit while close() exhausts
+                # its nested finally blocks, including lock release.
+                pass
             raise
         return self
 
