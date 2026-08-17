@@ -63,17 +63,22 @@ def _render_body(w, doc, preset):
     scheme = detect_numbering_scheme(doc.sections)
     numbering = NumberingState(scheme=scheme)
     first_section = True
+    title_heading_suppressed = False
     for section in doc.sections:
         # The first H1 is the document title: it is already rendered on the
         # cover page (via doc.title), so it must NOT appear in the body, in
         # the TOC, or take part in heading numbering.
         if (
-            first_section
+            not title_heading_suppressed
             and section.level == 1
             and section.has_heading
             and section.heading == doc.title
         ):
+            title_heading_suppressed = True
             first_section = False
+            _render_section(
+                w, section, preset, numbering, render_heading=False
+            )
             continue
         if section.level == 1 and not first_section:
             w.add_section()
@@ -107,12 +112,12 @@ def _render_title_page(w, doc, preset):
     w.add_page_break()
 
 
-def _render_section(w, section, preset, ns=None):
+def _render_section(w, section, preset, ns=None, *, render_heading=True):
     """Render a section with intelligent heading numbering.
 
     ns: NumberingState instance for auto-numbering. If None, no numbering.
     """
-    if section.has_heading:
+    if render_heading and section.has_heading:
         level = min(section.level, 6)
 
         # ---- Intelligent numbering ----

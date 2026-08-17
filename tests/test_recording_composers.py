@@ -273,7 +273,7 @@ def test_recording_slide_renderer_preserves_windows_pacing_and_closed_catalog(
         "slide.add_section",
         "slide.add_bullets",
         "slide.add_bullets",
-        "slide.add_blank",
+        "slide.add_bullets",
         "slide.add_table",
         "slide.add_blank",
         "slide.add_image",

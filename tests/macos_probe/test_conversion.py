@@ -5,6 +5,7 @@ import shutil
 from types import SimpleNamespace
 
 import pytest
+from tests._pdf_fixture import write_minimal_pdf
 
 from skills.WPSComposer.scripts.conversion import (
     ConversionError,
@@ -69,7 +70,7 @@ class FakeBridge:
                 {"code": self.error_code, "message": message},
             )
         output = Path(command.params["outputPath"])
-        output.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+        write_minimal_pdf(output)
         path = output if self.returned_path is None else self.returned_path
         return ProbeResult(command_id, True, {"path": str(path)}, None)
 

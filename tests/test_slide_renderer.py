@@ -6,6 +6,7 @@ from skills.WPSComposer.scripts.document_model import (
 )
 from skills.WPSComposer.scripts.renderers import slide_renderer
 from skills.WPSComposer.scripts.slide import SlideComposer
+from skills.WPSComposer.scripts.recording_composers import RecordingSlideComposer
 
 
 def test_slide_composer_exposes_public_slide_count():
@@ -72,3 +73,70 @@ def test_slide_renderer_uses_public_slide_count_for_table_and_image_slides():
 
     assert ("table", 1) in calls
     assert ("image", 2) in calls
+
+
+def test_slide_renderer_does_not_duplicate_title_h1_and_keeps_its_body():
+    from skills.WPSComposer.scripts.document_model import Paragraph, Span
+
+    document = StructuredDocument(
+        title="Title",
+        sections=[
+            Section(1, "Title", [Paragraph([Span("Intro must survive.")])]),
+        ],
+    )
+
+    recorded = slide_renderer.render(
+        document,
+        "ignored.pptx",
+        composer_factory=RecordingSlideComposer,
+    )
+    operations = [operation.to_dict() for operation in recorded.plan.operations]
+
+    assert [op["op"] for op in operations].count("slide.add_title") == 1
+    assert not any(op["op"] == "slide.add_section" for op in operations)
+    bullet_ops = [op for op in operations if op["op"] == "slide.add_bullets"]
+    assert [op["args"]["items"] for op in bullet_ops] == [["Intro must survive."]]
+
+
+def test_slide_renderer_paginates_all_table_rows():
+    rows = [[str(index)] for index in range(1, 13)]
+    document = StructuredDocument(
+        sections=[Section(2, "Metrics", [TableBlock(["n"], rows)])]
+    )
+
+    recorded = slide_renderer.render(
+        document,
+        "ignored.pptx",
+        composer_factory=RecordingSlideComposer,
+    )
+    tables = [
+        op.to_dict()["args"]["data"]
+        for op in recorded.plan.operations
+        if op.op == "slide.add_table"
+    ]
+
+    assert len(tables) == 2
+    assert all(data[0] == ["n"] for data in tables)
+    assert [row for data in tables for row in data[1:]] == rows
+
+
+def test_slide_renderer_uses_preset_table_colors():
+    from skills.WPSComposer.scripts.design_presets import PRESETS
+
+    document = StructuredDocument(
+        sections=[Section(2, "Metrics", [TableBlock(["n"], [["1"]])])]
+    )
+
+    recorded = slide_renderer.render(
+        document,
+        "ignored.pptx",
+        preset=PRESETS["tech"],
+        composer_factory=RecordingSlideComposer,
+    )
+    table = next(
+        op.to_dict()["args"]
+        for op in recorded.plan.operations
+        if op.op == "slide.add_table"
+    )
+
+    assert table["headerShade"] == PRESETS["tech"].get_color("primary")

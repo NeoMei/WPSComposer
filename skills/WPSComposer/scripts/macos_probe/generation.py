@@ -1176,11 +1176,14 @@ def generate_macos(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
+    overwrite: bool = False,
 ) -> Path:
     """Record a public renderer and generate through the gated macOS backend."""
     normalized_format = str(format_name).lower().lstrip(".")
     component = FORMAT_COMPONENTS.get(normalized_format, "writer")
-    request = GenerationRequest(Path(output), component, normalized_format)
+    request = GenerationRequest(
+        Path(output), component, normalized_format, overwrite=bool(overwrite)
+    )
     gates = MACOS_GENERATION_ENABLED if enabled is None else enabled
     if not bool(gates.get(normalized_format, False)):
         raise _error(

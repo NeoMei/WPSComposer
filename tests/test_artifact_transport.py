@@ -13,19 +13,18 @@ from skills.WPSComposer.scripts.artifact_transport import (
     validate_office_package,
     validate_pdf,
 )
+from tests._pdf_fixture import write_minimal_pdf
 
 
 def _write_pdf(path: Path, payload: bytes = b"x" * 2048) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(b"%PDF-1.7\n" + payload)
-    return path
+    return write_minimal_pdf(path, payload)
 
 
 def _write_package(path: Path, member: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(path, "w") as package:
         package.writestr("[Content_Types].xml", "<Types />")
-        package.writestr(member, "<root />" + "x" * 2048)
+        package.writestr(member, f"<root><data>{'x' * 2048}</data></root>")
     return path
 
 
@@ -36,6 +35,14 @@ def test_validate_pdf_requires_signature_and_minimum_size(tmp_path: Path):
     bad.write_bytes(b"not-a-pdf" + b"x" * 2048)
     with pytest.raises(ArtifactValidationError, match="Invalid PDF signature"):
         validate_pdf(bad)
+
+
+def test_validate_pdf_rejects_signature_prefixed_garbage(tmp_path: Path):
+    corrupt = tmp_path / "corrupt.pdf"
+    corrupt.write_bytes(b"%PDF-1.7\n" + b"not a PDF object graph" * 100)
+
+    with pytest.raises(ArtifactValidationError, match="Invalid PDF structure"):
+        validate_pdf(corrupt)
 
 
 @pytest.mark.parametrize(
@@ -57,6 +64,16 @@ def test_validate_office_package_requires_expected_member(
     )
     with pytest.raises(ArtifactValidationError, match=member):
         validate_office_package(incomplete, format_name)
+
+
+def test_validate_office_package_rejects_malformed_defining_xml(tmp_path: Path):
+    package_path = tmp_path / "corrupt.docx"
+    with zipfile.ZipFile(package_path, "w") as package:
+        package.writestr("[Content_Types].xml", "<Types />")
+        package.writestr("word/document.xml", "<broken>" + "x" * 2048)
+
+    with pytest.raises(ArtifactValidationError, match="malformed XML"):
+        validate_office_package(package_path, "docx")
 
 
 def test_publish_validates_staged_temporary_and_final_copies(
@@ -170,7 +187,9 @@ def test_publish_does_not_clobber_target_created_during_no_overwrite_race(
 ):
     staged = _write_pdf(tmp_path / "stage.pdf", b"staged" * 1024)
     destination = tmp_path / "result.pdf"
-    intruder = b"%PDF-1.7\n" + b"intruder" * 1024
+    intruder_path = write_minimal_pdf(tmp_path / "intruder.pdf", b"intruder")
+    intruder = intruder_path.read_bytes()
+    intruder_path.unlink()
     original_link = os.link
 
     def raced_link(source, target):

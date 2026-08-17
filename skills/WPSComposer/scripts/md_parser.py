@@ -94,6 +94,11 @@ def _parse_inline(text: str) -> List[Span]:
 
     Returns a list of Span objects preserving order.
     """
+    if _IMAGE_RE.search(text):
+        raise ValueError(
+            "Inline Markdown images are not supported; put the image on its own line."
+        )
+
     # First, protect code spans
     codes: List[tuple] = []
     for m in _INLINE_CODE_RE.finditer(text):
@@ -120,10 +125,6 @@ def _parse_inline(text: str) -> List[Span]:
             matches.append((m.start(), m.end(), "italic", m.group(1)))
         for m in _STRIKE_RE.finditer(remaining):
             matches.append((m.start(), m.end(), "strike", m.group(1)))
-        # Inline images degrade to their alt text (block-level images are
-        # handled separately); code spans still win by position
-        for m in _IMAGE_RE.finditer(remaining):
-            matches.append((m.start(), m.end(), "image", m.group(1)))
         # Link with title (tooltip) takes priority
         for m in _LINK_TITLE_RE.finditer(remaining):
             title = m.group(3) or ""
@@ -155,8 +156,6 @@ def _parse_inline(text: str) -> List[Span]:
             spans.append(Span(text=first[3], italic=True))
         elif mtype == "strike":
             spans.append(Span(text=first[3], strikethrough=True))
-        elif mtype == "image":
-            spans.append(Span(text=first[3]))
         elif mtype == "link":
             link_url = first[4]
             link_title = first[5] if len(first) > 5 else None
@@ -297,7 +296,9 @@ def _is_excalidraw_file(path: str) -> bool:
     return path.endswith('.excalidraw.md') or path.endswith('.excalidraw')
 
 
-def _parse_wikilink_image(line: str, base_dir: str = "") -> Optional[ExcalidrawBlock]:
+def _parse_wikilink_image(
+    line: str, base_dir: str = ""
+) -> Optional[ImageBlock | ExcalidrawBlock]:
     """Parse an Obsidian wikilink image reference.
     
     Returns an ExcalidrawBlock if it's an Excalidraw file,
@@ -316,7 +317,8 @@ def _parse_wikilink_image(line: str, base_dir: str = "") -> Optional[ExcalidrawB
     
     resolved_path = _resolve_image_path(path, base_dir)
     
-    return ExcalidrawBlock(
+    block_type = ExcalidrawBlock if _is_excalidraw_file(path) else ImageBlock
+    return block_type(
         path=resolved_path,
         alt=os.path.basename(path),
         width=width,

@@ -36,6 +36,22 @@ def test_split_rotate_extract_pages(tmp_path):
     assert PdfComposer.page_count(rotated) == 1
 
 
+@pytest.mark.parametrize("page", [0, -1, True, 2])
+def test_extract_pages_rejects_invalid_one_based_page_numbers(tmp_path, page):
+    src = _make_pdf(tmp_path / "src.pdf")
+
+    with pytest.raises(ValueError, match="page index"):
+        PdfComposer.extract_pages(src, [page], tmp_path / "out.pdf")
+
+
+@pytest.mark.parametrize("page", [0, -1, True, 2])
+def test_extract_text_rejects_invalid_one_based_page_numbers(tmp_path, page):
+    src = _make_pdf(tmp_path / "src.pdf")
+
+    with pytest.raises(ValueError, match="page index"):
+        PdfComposer.extract_text(src, pages=[page])
+
+
 def test_watermark_mixed_page_sizes(tmp_path):
     w = PdfWriter()
     w.add_blank_page(width=612, height=792)

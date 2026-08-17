@@ -43,11 +43,20 @@ def render(
             p.add_title_slide(doc.title, subtitle or None)
 
         # Content slides
+        title_heading_suppressed = False
         for section in doc.sections:
             if section.level == 1:
-                if section.has_heading:
+                is_cover_title = (
+                    not title_heading_suppressed
+                    and section.has_heading
+                    and section.heading == doc.title
+                )
+                if is_cover_title:
+                    title_heading_suppressed = True
+                if section.has_heading and not is_cover_title:
                     p.add_section_slide(section.heading)
-            elif section.level >= 2:
+                _render_section(p, section, preset)
+            elif section.level >= 2 or section.elements:
                 _render_section(p, section, preset)
 
         return p.save_pptx(output_path)
@@ -111,22 +120,34 @@ def _render_section(p: SlideComposer, section: Section, preset=None):
 
     # Table slides
     for table in tables:
-        try:
-            data = ([table.headers] if table.headers else []) + table.rows[:MAX_TABLE_ROWS]
-            cols = max(len(r) for r in data) if data else 0
-            if not cols:
-                continue
-            rows = len(data)
-            p.add_blank_slide()
-            idx = p.slide_count
-            p.add_table(
-                idx, rows, cols,
-                60, 120, 840, 380,
-                data,
-                header_shade="#4472C4", header_font="#FFFFFF", font_size=14,
-            )
-        except Exception:
-            pass
+        remaining_rows = list(table.rows)
+        page = 1
+        while remaining_rows or (page == 1 and table.headers):
+            chunk = remaining_rows[:MAX_TABLE_ROWS]
+            remaining_rows = remaining_rows[MAX_TABLE_ROWS:]
+            try:
+                data = ([table.headers] if table.headers else []) + chunk
+                cols = max(len(r) for r in data) if data else 0
+                if not cols:
+                    break
+                rows = len(data)
+                title = section.heading if section.has_heading else "Table"
+                if page > 1:
+                    title += " (continued)"
+                p.add_bullets_slide(title, [], title_size=24, body_size=18)
+                idx = p.slide_count
+                p.add_table(
+                    idx, rows, cols,
+                    60, 120, 840, 380,
+                    data,
+                    header_shade=(
+                        preset.get_color("primary") if preset else "#4472C4"
+                    ),
+                    header_font="#FFFFFF", font_size=14,
+                )
+            except Exception:
+                pass
+            page += 1
 
     # Image slides
     for img in images:

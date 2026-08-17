@@ -36,6 +36,7 @@ def render(doc: StructuredDocument, output_path: str,
         # Map each table section to a sheet
         sheet_index = 0
         table_idx = 0
+        used_names = set()
 
         for sec_idx, section in enumerate(doc.sections):
             for elem in section.elements:
@@ -47,13 +48,17 @@ def render(doc: StructuredDocument, output_path: str,
                 # Excel sheet names: 31 chars max, no []:*?/\
                 sheet_name = re.sub(r"[\[\]:*?/\\]", " ", sheet_name).strip()[:31]
                 sheet_name = sheet_name or f"Table{table_idx + 1}"
+                base_name = sheet_name
+                suffix_index = 2
+                while sheet_name.casefold() in used_names:
+                    suffix = f" ({suffix_index})"
+                    sheet_name = f"{base_name[:31 - len(suffix)]}{suffix}"
+                    suffix_index += 1
+                used_names.add(sheet_name.casefold())
 
                 if sheet_index == 0:
                     # Rename default sheet
-                    try:
-                        s.rename_sheet(1, sheet_name)
-                    except Exception:
-                        pass
+                    s.rename_sheet(1, sheet_name)
                 else:
                     s.add_sheet(sheet_name)
 

@@ -140,7 +140,12 @@ def validate_wps_slide(slide_obj, preset: DesignPreset) -> dict:
     try:
         shapes = slide_obj.Shapes
     except Exception:
-        return {"pass": True, "warnings": ["Cannot access slide shapes"], "score": 100}
+        return {
+            "pass": False,
+            "warnings": ["Cannot access slide shapes"],
+            "score": 0,
+            "status": "error",
+        }
 
     rules = preset.rules
     text_count = 0

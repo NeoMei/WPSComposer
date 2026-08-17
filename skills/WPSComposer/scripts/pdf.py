@@ -13,6 +13,21 @@ def _pdf_abs(path):
     return os.path.abspath(path)
 
 
+def _validate_page_indices(page_indices, page_count):
+    indices = list(page_indices)
+    for index in indices:
+        if (
+            isinstance(index, bool)
+            or not isinstance(index, int)
+            or index < 1
+            or index > page_count
+        ):
+            raise ValueError(
+                f"page index must be an integer from 1 to {page_count}: {index!r}"
+            )
+    return indices
+
+
 # ===========================================================================
 # WPS exposes KPDF.Application but its Dispatch blocks headless (GUI RPC),
 # so PDF *editing* uses pypdf/pdfplumber instead. PDF *generation* still goes
@@ -64,6 +79,7 @@ class PdfComposer:
         """Keep only 1-based page indices into a new PDF. Returns output path."""
         from pypdf import PdfReader, PdfWriter
         reader = PdfReader(_pdf_abs(input_path))
+        page_indices = _validate_page_indices(page_indices, len(reader.pages))
         w = PdfWriter()
         for idx in page_indices:
             w.add_page(reader.pages[idx - 1])
@@ -93,7 +109,11 @@ class PdfComposer:
         """Extract text. pages=None for all, else 1-based list. Returns str."""
         import pdfplumber
         with pdfplumber.open(_pdf_abs(input_path)) as pdf:
-            idxs = pages if pages is not None else range(1, len(pdf.pages) + 1)
+            idxs = (
+                _validate_page_indices(pages, len(pdf.pages))
+                if pages is not None
+                else range(1, len(pdf.pages) + 1)
+            )
             chunks = []
             for i in idxs:
                 txt = pdf.pages[i - 1].extract_text() or ""

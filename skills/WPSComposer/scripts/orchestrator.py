@@ -26,6 +26,12 @@ from .document_model import StructuredDocument
 from .design_presets import get_preset, list_presets, DesignPreset
 from .macos_probe.generation import GenerationError, generate_macos
 from .plugins import run_plugins
+from .artifact_transport import (
+    publish_artifact,
+    validate_office_package,
+    validate_pdf,
+)
+from .heading_numbering import detect_numbering_scheme
 
 
 def generate(
@@ -118,14 +124,17 @@ def generate(
             f"Output already exists: {output_path}. "
             f"Use overwrite=True to replace it."
         )
-    if output_path.exists() and overwrite:
-        output_path.unlink()
     output = str(output_path)
 
     # Route to renderer
     if sys.platform == "darwin":
         result = generate_macos(
-            doc, format, output_path, design_preset, timeout=timeout
+            doc,
+            format,
+            output_path,
+            design_preset,
+            timeout=timeout,
+            overwrite=overwrite,
         )
     elif sys.platform != "win32":
         component = {
@@ -141,37 +150,58 @@ def generate(
             backend="unsupported-platform",
             message=f"WPS generation is unavailable on platform {sys.platform}",
         )
-    elif format == "docx":
-        from .renderers.writer_renderer import render as _render
-
-        result = _render(doc, output, preset=design_preset)
-
-    elif format == "pptx":
-        from .renderers.slide_renderer import render as _render
-
-        result = _render(doc, output, preset=design_preset)
-
-    elif format == "xlsx":
-        from .renderers.sheet_renderer import render as _render
-
-        result = _render(doc, output, preset=design_preset)
-
-    elif format == "pdf":
-        from .renderers.writer_renderer import render as _writer_render
-        from .writer import WriterComposer
+    else:
         import tempfile
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_docx = os.path.join(tmpdir, f"{base_name}.docx")
-            _writer_render(doc, tmp_docx, preset=design_preset)
-            with WriterComposer() as w:
-                w._doc.Close(False)
-                w._doc = w._app.Documents.Open(tmp_docx)
-                result = w.export_pdf(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            dir=output_path.parent, prefix=".wpscomposer-generate-"
+        ) as tmpdir:
+            staged = Path(tmpdir) / f"artifact.{format}"
+            if format == "docx":
+                from .renderers.writer_renderer import render as _render
+
+                _render(doc, str(staged), preset=design_preset)
+            elif format == "pptx":
+                from .renderers.slide_renderer import render as _render
+
+                _render(doc, str(staged), preset=design_preset)
+            elif format == "xlsx":
+                from .renderers.sheet_renderer import render as _render
+
+                _render(doc, str(staged), preset=design_preset)
+            else:
+                from .renderers.writer_renderer import render as _writer_render
+                from .writer import WriterComposer
+
+                tmp_docx = os.path.join(tmpdir, f"{base_name}.docx")
+                _writer_render(doc, tmp_docx, preset=design_preset)
+                with WriterComposer() as w:
+                    w._doc.Close(False)
+                    w._doc = w._app.Documents.Open(tmp_docx)
+                    w.export_pdf(str(staged))
+
+            if format == "docx" and detect_numbering_scheme(doc.sections) == "chinese":
+                from .numbering_native import apply_native_numbering
+
+                apply_native_numbering(staged)
+            validator = (
+                validate_pdf
+                if format == "pdf"
+                else lambda path: validate_office_package(path, format)
+            )
+            result = publish_artifact(
+                staged, output_path, overwrite=overwrite, validator=validator
+            )
 
     # Convert plain-text heading numbers to native Word/WPS multi-level
     # numbering so renumbering stays automatic when headings change.
-    if format == "docx" and output_path.exists():
+    if (
+        sys.platform == "darwin"
+        and format == "docx"
+        and output_path.exists()
+        and detect_numbering_scheme(doc.sections) == "chinese"
+    ):
         try:
             from .numbering_native import apply_native_numbering
 

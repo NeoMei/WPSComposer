@@ -100,16 +100,18 @@ class SlideComposer(BaseComposer):
         try:
             tr = slide.Shapes.Title.TextFrame.TextRange
             tr.Text = title
-            tr.Font.Size = title_size
-            if title_color:
-                tr.Font.Color.RGB = hex_to_rgb_long(title_color)
+            self._apply_preset_font(
+                tr.Font, "title", title_size, title_color, default_size=40
+            )
         except Exception:
             pass
         if subtitle:
             try:
                 tr2 = slide.Shapes.Placeholders(2).TextFrame.TextRange
                 tr2.Text = subtitle
-                tr2.Font.Size = sub_size
+                self._apply_preset_font(
+                    tr2.Font, "subtitle", sub_size, None, default_size=20
+                )
             except Exception:
                 pass
         return idx
@@ -117,7 +119,9 @@ class SlideComposer(BaseComposer):
     def add_section_slide(self, title):
         slide, idx = self._new_slide(self.LAYOUT_SECTION)
         try:
-            slide.Shapes.Title.TextFrame.TextRange.Text = title
+            tr = slide.Shapes.Title.TextFrame.TextRange
+            tr.Text = title
+            self._apply_preset_font(tr.Font, "title", 32, None, default_size=32)
         except Exception:
             pass
         return idx
@@ -129,9 +133,9 @@ class SlideComposer(BaseComposer):
         try:
             tr = slide.Shapes.Title.TextFrame.TextRange
             tr.Text = title
-            tr.Font.Size = title_size
-            if title_color:
-                tr.Font.Color.RGB = hex_to_rgb_long(title_color)
+            self._apply_preset_font(
+                tr.Font, "title", title_size, title_color, default_size=32
+            )
         except Exception:
             pass
         try:
@@ -140,9 +144,9 @@ class SlideComposer(BaseComposer):
                 tr2.Text = "\r".join(body)
             else:
                 tr2.Text = body
-            tr2.Font.Size = body_size
-            if body_color:
-                tr2.Font.Color.RGB = hex_to_rgb_long(body_color)
+            self._apply_preset_font(
+                tr2.Font, "body", body_size, body_color, default_size=18
+            )
         except Exception:
             pass
         return idx
@@ -232,9 +236,19 @@ class SlideComposer(BaseComposer):
     def add_image(self, slide_index, path, left, top, width=None, height=None):
         slide = self._doc.Slides(slide_index)
         p = _abs(path)
-        if width and height:
+        for name, value in (("width", width), ("height", height)):
+            if value is not None and value <= 0:
+                raise ValueError(f"{name} must be positive")
+        if width is not None and height is not None:
             return slide.Shapes.AddPicture(p, False, True, left, top, width, height)
-        return slide.Shapes.AddPicture(p, False, True, left, top)
+        shape = slide.Shapes.AddPicture(p, False, True, left, top)
+        if width is not None or height is not None:
+            shape.LockAspectRatio = True
+            if width is not None:
+                shape.Width = width
+            else:
+                shape.Height = height
+        return shape
 
     def add_table(self, slide_index, rows, cols, left, top, width, height,
                   data, header_shade="#4472C4", header_font="#FFFFFF",
@@ -287,6 +301,7 @@ class SlideComposer(BaseComposer):
         from ._colors import resolve_color
         if not isinstance(preset, DesignPreset):
             raise TypeError("preset must be a DesignPreset instance")
+        self._design_preset = preset
 
         # Slide master background
         try:
@@ -297,21 +312,21 @@ class SlideComposer(BaseComposer):
         except Exception:
             pass
 
-        # Default text style on first slide (best-effort)
-        try:
-            slide = self._doc.Slides(1)
-            for shape in slide.Shapes:
-                try:
-                    if shape.HasTextFrame:
-                        tf = shape.TextFrame.TextRange
-                        if tf.Font.Size > 30:
-                            title_font = preset.get_font("title")
-                            tf.Font.Name = title_font[0]
-                            tf.Font.Color.RGB = hex_to_rgb_long(title_font[2])
-                except Exception:
-                    pass
-        except Exception:
-            pass
+    def _apply_preset_font(
+        self, font, role, requested_size, requested_color, *, default_size
+    ):
+        preset = getattr(self, "_design_preset", None)
+        if preset is None:
+            font.Size = requested_size
+            if requested_color:
+                font.Color.RGB = hex_to_rgb_long(requested_color)
+            return
+        family, preset_size, preset_color = preset.get_font(role)
+        font.Name = family
+        font.Size = (
+            preset_size if requested_size == default_size else requested_size
+        )
+        font.Color.RGB = hex_to_rgb_long(requested_color or preset_color)
 
     def apply_layout_template(self, layout, preset=None):
         """Apply a LayoutTemplate to the current slide.

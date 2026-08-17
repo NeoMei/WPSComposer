@@ -35,6 +35,7 @@ from skills.WPSComposer.scripts.macos_probe.generation import (
 )
 from skills.WPSComposer.scripts.macos_probe import generation as mac_generation
 from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
+from tests._pdf_fixture import write_minimal_pdf
 
 
 def _operation_text(plan):
@@ -59,6 +60,13 @@ def _rewrite_package(path, transform):
     with zipfile.ZipFile(path, "w") as destination:
         for name, data in contents.items():
             destination.writestr(name, data)
+
+
+def _write_minimal_package(path, member):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w") as package:
+        package.writestr("[Content_Types].xml", "<Types />")
+        package.writestr(member, f"<root><data>{'x' * 2048}</data></root>")
 
 
 def _write_semantic_artifact(path, format_name, plan, *, include_structure=True):
@@ -307,8 +315,8 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
             raise AssertionError(f"Darwin route imported {name}")
         return real_import(name, *args, **kwargs)
 
-    def fake_generate(doc, format_name, output, preset, *, timeout):
-        calls.append((doc, format_name, output, preset, timeout))
+    def fake_generate(doc, format_name, output, preset, *, timeout, overwrite):
+        calls.append((doc, format_name, output, preset, timeout, overwrite))
         return output
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
@@ -322,12 +330,13 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
 
     assert result == str(output.resolve())
     assert len(calls) == 1
-    doc, format_name, routed_output, preset, timeout = calls[0]
+    doc, format_name, routed_output, preset, timeout, overwrite = calls[0]
     assert isinstance(doc, StructuredDocument)
     assert format_name == "docx"
     assert routed_output == output.resolve()
     assert preset is None
     assert timeout == 600
+    assert overwrite is False
 
 
 def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
@@ -337,8 +346,8 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     monkeypatch.setattr(
         orchestrator,
         "generate_macos",
-        lambda doc, format_name, output, preset, *, timeout: calls.append(
-            (output, timeout)
+        lambda doc, format_name, output, preset, *, timeout, overwrite: calls.append(
+            (output, timeout, overwrite)
         ) or output,
     )
 
@@ -347,7 +356,7 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     )
 
     assert result == str((tmp_path / "document.pptx").resolve())
-    assert calls == [((tmp_path / "document.pptx").resolve(), 600)]
+    assert calls == [((tmp_path / "document.pptx").resolve(), 600, False)]
 
 
 def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
@@ -370,6 +379,39 @@ def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
 
     assert not backend_called
     assert output.read_bytes() == b"keep"
+
+
+def test_generate_overwrite_backend_failure_preserves_existing_output(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "report.docx"
+    output.write_bytes(b"keep old artifact")
+    observed = []
+
+    def fail_generate(doc, format_name, routed_output, preset, *, timeout, overwrite):
+        observed.append((Path(routed_output), overwrite))
+        raise GenerationError(
+            code="GENERATION_COMMAND_FAILED",
+            output=str(routed_output),
+            component="writer",
+            backend="test",
+            message="backend failed",
+        )
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
+    monkeypatch.setattr(orchestrator, "generate_macos", fail_generate)
+
+    with pytest.raises(GenerationError, match="backend failed"):
+        orchestrator.generate(
+            "# Report",
+            format="docx",
+            output=str(output),
+            source_is_text=True,
+            overwrite=True,
+        )
+
+    assert observed == [(output.resolve(), True)]
+    assert output.read_bytes() == b"keep old artifact"
 
 
 def test_generate_rejects_output_extension_mismatch_before_backend(
@@ -428,7 +470,10 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
     monkeypatch.setattr(
         writer_renderer,
         "render",
-        lambda doc, output, preset=None: calls.append((doc, output, preset))
+        lambda doc, output, preset=None: (
+            calls.append((doc, output, preset)),
+            _write_minimal_package(output, "word/document.xml"),
+        )[-1]
         or output,
     )
     monkeypatch.setattr(
@@ -447,7 +492,39 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
     assert result == str(output.resolve())
     assert len(calls) == 1
     assert isinstance(calls[0][0], StructuredDocument)
-    assert calls[0][1] == str(output.resolve())
+    assert Path(calls[0][1]).name == "artifact.docx"
+    assert Path(calls[0][1]).parent != output.parent
+
+
+def test_generate_does_not_apply_chinese_native_numbering_to_english_document(
+    monkeypatch, tmp_path
+):
+    from skills.WPSComposer.scripts import numbering_native
+    from skills.WPSComposer.scripts.renderers import writer_renderer
+
+    output = tmp_path / "english.docx"
+    calls = []
+
+    def fake_render(doc, path, preset=None):
+        _write_minimal_package(path, "word/document.xml")
+        return str(path)
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "win32")
+    monkeypatch.setattr(writer_renderer, "render", fake_render)
+    monkeypatch.setattr(
+        numbering_native,
+        "apply_native_numbering",
+        lambda path: calls.append(Path(path)),
+    )
+
+    orchestrator.generate(
+        "# Report\n\n## Details",
+        format="docx",
+        output=str(output),
+        source_is_text=True,
+    )
+
+    assert calls == []
 
 
 def test_generate_macos_checks_production_gate_before_recording(tmp_path):
@@ -958,7 +1035,7 @@ class PdfGenerationBridge(GenerationBridge):
         if self.mode == "count":
             plan = command.params["plan"]
             _write_semantic_artifact(staged_docx, "docx", plan)
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -969,7 +1046,7 @@ class PdfGenerationBridge(GenerationBridge):
                 None,
             )
         if self.mode == "bad-source-path":
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -992,7 +1069,7 @@ class PdfGenerationBridge(GenerationBridge):
             )
         if self.mode == "unchanged-docx":
             # Leave staged docx as template clone (unchanged)
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -1005,7 +1082,7 @@ class PdfGenerationBridge(GenerationBridge):
         # Default success
         plan = command.params["plan"]
         _write_semantic_artifact(staged_docx, "docx", plan)
-        staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+        write_minimal_pdf(staged_pdf)
         return ProbeResult(
             command_id, True,
             {

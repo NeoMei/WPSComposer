@@ -16,7 +16,6 @@ Built-in plugins:
 
 from __future__ import annotations
 
-import sys
 from typing import Callable, Dict, List, Optional
 
 # Plugin type: takes (content, base_dir) -> modified content
@@ -48,12 +47,8 @@ def get_plugin(name: str) -> Optional[PluginFunc]:
             plugin_func = getattr(module, f"{name}_plugin")
             register_plugin(name, plugin_func)
             return plugin_func
-        except (ImportError, AttributeError) as e:
-            print(
-                f"Error: Failed to load plugin '{name}': {e}",
-                file=sys.stderr,
-            )
-            return None
+        except (ImportError, AttributeError) as exc:
+            raise RuntimeError(f"Failed to load plugin '{name}'") from exc
     return plugin
 
 
@@ -83,12 +78,11 @@ def run_plugins(
     for name in plugin_names:
         plugin = get_plugin(name)
         if plugin is None:
-            print(
-                f"Error: Unknown plugin '{name}'. "
-                f"Available plugins: {list_plugins()}",
-                file=sys.stderr,
+            raise ValueError(
+                f"Unknown plugin '{name}'. Available plugins: {list_plugins()}"
             )
-            continue
         content = plugin(content, base_dir)
+        if not isinstance(content, str):
+            raise TypeError(f"Plugin '{name}' must return Markdown text")
 
     return content

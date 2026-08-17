@@ -15,6 +15,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -54,8 +55,10 @@ def excalidraw_plugin(content: str, base_dir: str) -> str:
             )
             continue
 
-        # Determine output PNG path (same directory as the Excalidraw file)
-        png_path = abs_path.parent / f"{abs_path.stem}.png"
+        # Render into a private cache directory.  Source-side PNG files may be
+        # user-owned exports and must never be overwritten implicitly.
+        render_dir = Path(tempfile.mkdtemp(prefix="wpscomposer-excalidraw-"))
+        png_path = render_dir / f"{abs_path.stem}.png"
 
         print(
             f"[excalidraw] Rendering {abs_path.name} -> {png_path.name}",

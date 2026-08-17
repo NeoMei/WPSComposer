@@ -184,6 +184,29 @@ def test_render_body_skips_document_title_section():
     ]
 
 
+def test_render_body_keeps_elements_from_document_title_section():
+    document = StructuredDocument(
+        title="Report",
+        sections=[
+            Section(
+                level=1,
+                heading="Report",
+                elements=[Paragraph([Span("Intro must survive.")])],
+            ),
+            Section(level=2, heading="Details", elements=[]),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+
+    writer_renderer._render_body(recorder, document, None)
+
+    operations = [operation.to_dict() for operation in recorder._operations]
+    headings = [op["args"]["text"] for op in operations if op["op"] == "writer.add_heading"]
+    paragraphs = [op["args"]["text"] for op in operations if op["op"] == "writer.add_paragraph"]
+    assert "Report" not in headings
+    assert "Intro must survive." in paragraphs
+
+
 def test_render_body_keeps_multiple_h1_without_cover_title():
     # Only the title-section is skipped; additional H1s still render.
     # Manual 第一章 / 第二章 prefixes are detected and kept as-is.

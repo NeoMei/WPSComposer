@@ -531,13 +531,14 @@ class WriterComposer(BaseComposer):
     # ---- text ----
     def add_heading_level(self, text, level=1, size=None, color=None,
                           line_spacing=None, space_after=None,
-                          line_spacing_rule=None):
+                          line_spacing_rule=None, bold=None):
         """Add a heading with proper Word outline level (1-6).
 
         Args:
             text: Heading text.
             level: 1-6 (H1-H6).
             size: Font size in points.
+            bold: Optional direct bold override.
             color: #RRGGBB hex or BGR int.
             line_spacing: Line spacing override. Points unless accompanied by
                 ``line_spacing_rule="multiple"``.
@@ -558,6 +559,8 @@ class WriterComposer(BaseComposer):
         # Optional direct overrides remain for backward-compatible low-level use.
         if size is not None:
             s.Font.Size = size
+        if bold is not None:
+            s.Font.Bold = bold
         if color is not None:
             s.Font.Color = hex_to_rgb_long(color)
         if line_spacing is not None or line_spacing_rule is not None:
@@ -577,6 +580,8 @@ class WriterComposer(BaseComposer):
                 para.Range.Style = self._doc.Styles(style_idx)
                 if size is not None:
                     para.Range.Font.Size = size
+                if bold is not None:
+                    para.Range.Font.Bold = bold
                 if color is not None:
                     para.Range.Font.Color = hex_to_rgb_long(color)
         except Exception:
@@ -585,7 +590,9 @@ class WriterComposer(BaseComposer):
 
     # Backward-compat aliases
     def add_heading(self, text, size=None, bold=True, color=None):
-        return self.add_heading_level(text, level=1, size=size, color=color)
+        return self.add_heading_level(
+            text, level=1, size=size, bold=bold, color=color
+        )
 
     def add_heading2(self, text, size=None, color=None):
         return self.add_heading_level(text, level=2, size=size, color=color)
