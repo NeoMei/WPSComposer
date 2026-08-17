@@ -154,6 +154,8 @@ class RegistrationSnapshot:
     transaction_phase: str = "captured"
     prewrite_digest: Optional[str] = None
     installed_digest: Optional[str] = None
+    prewrite_existed: Optional[bool] = None
+    prewrite: Optional[bytes] = None
 
     @classmethod
     def capture(
@@ -178,6 +180,7 @@ class RegistrationSnapshot:
                 "transactionPhase": "captured",
                 "prewriteDigest": None,
                 "installedDigest": None,
+                "prewriteExisted": None,
             },
         )
         os.chmod(recovery / "registration.json", 0o600)
@@ -208,16 +211,26 @@ class RegistrationSnapshot:
                 "transactionPhase": phase,
                 "prewriteDigest": prewrite_digest,
                 "installedDigest": installed_digest,
+                "prewriteExisted": self.prewrite_existed,
             },
         )
         os.chmod(self.recovery_dir / "registration.json", 0o600)
 
-    def record_prewrite(self, names: tuple[str, ...], content: bytes) -> None:
+    def record_prewrite(
+        self, names: tuple[str, ...], content: bytes, *, existed: bool = True
+    ) -> None:
         """Record a source observation without claiming that it was installed."""
+        self.prewrite_existed = existed
+        self.prewrite = content if existed else None
+        prewrite_path = self.recovery_dir / "publish.xml.prewrite"
+        if existed:
+            _atomic_write(prewrite_path, content, 0o600)
+        else:
+            prewrite_path.unlink(missing_ok=True)
         self._record_transaction(
             names,
             "prewrite",
-            hashlib.sha256(content).hexdigest(),
+            hashlib.sha256(content).hexdigest() if existed else None,
             None,
         )
 
@@ -228,7 +241,7 @@ class RegistrationSnapshot:
         self._record_transaction(
             names,
             "installing",
-            hashlib.sha256(source).hexdigest(),
+            self.prewrite_digest,
             hashlib.sha256(installed).hexdigest(),
         )
 
@@ -239,7 +252,7 @@ class RegistrationSnapshot:
         self._record_transaction(
             names,
             "installed",
-            hashlib.sha256(source).hexdigest(),
+            self.prewrite_digest,
             hashlib.sha256(installed).hexdigest(),
         )
 
@@ -265,7 +278,19 @@ class RegistrationSnapshot:
                 self.installed_digest is not None
                 and current_digest == self.installed_digest
             ):
-                restored = self.original
+                if self.prewrite_existed is True:
+                    if self.prewrite is None:
+                        raise RuntimeError(
+                            f"Registration prewrite base is missing; recovery "
+                            f"retained at {self.recovery_dir}"
+                        )
+                    restored = self.prewrite
+                elif self.prewrite_existed is False:
+                    restored = None
+                else:
+                    # Legacy recovery metadata did not persist the actual CAS
+                    # base. Merge-removal is safer than capture-time rollback.
+                    restored = self._without_managed_entries(current or b"")
             elif current is None:
                 # An external actor removed the file. Preserve that edit.
                 restored = None
@@ -339,7 +364,11 @@ class RegistrationSnapshot:
             raise RuntimeError(f"Registration restore verification failed: {self.path}")
 
     def _remove_recovery_files(self) -> None:
-        for name in ("publish.xml.original", "registration.json"):
+        for name in (
+            "publish.xml.original",
+            "publish.xml.prewrite",
+            "registration.json",
+        ):
             (self.recovery_dir / name).unlink(missing_ok=True)
         self.recovery_dir.rmdir()
 
@@ -364,6 +393,14 @@ class RegistrationSnapshot:
                 "inspect and remove it manually."
             )
         original = backup.read_bytes() if existed else None
+        prewrite_path = recovery / "publish.xml.prewrite"
+        prewrite_existed = meta.get("prewriteExisted")
+        if prewrite_existed is True and not prewrite_path.is_file():
+            raise RuntimeError(
+                f"Recovery metadata at {recovery} is missing its prewrite base; "
+                "inspect and remove it manually."
+            )
+        prewrite = prewrite_path.read_bytes() if prewrite_existed is True else None
         if (
             original is not None
             and target.is_file()
@@ -372,17 +409,20 @@ class RegistrationSnapshot:
             # crash before registration was ever modified: nothing to restore
             meta_path.unlink(missing_ok=True)
             backup.unlink(missing_ok=True)
+            prewrite_path.unlink(missing_ok=True)
             recovery.rmdir()
             return
         snapshot = cls(
-            target,
-            original,
-            meta.get("mode"),
-            recovery,
-            tuple(meta.get("managedNames", ())),
-            meta.get("transactionPhase", "installed"),
-            meta.get("prewriteDigest"),
-            meta.get("installedDigest", meta.get("managedDigest")),
+            path=target,
+            original=original,
+            original_mode=meta.get("mode"),
+            recovery_dir=recovery,
+            managed_names=tuple(meta.get("managedNames", ())),
+            transaction_phase=meta.get("transactionPhase", "installed"),
+            prewrite_digest=meta.get("prewriteDigest"),
+            installed_digest=meta.get("installedDigest", meta.get("managedDigest")),
+            prewrite_existed=prewrite_existed,
+            prewrite=prewrite,
         )
         snapshot.restore()
 
@@ -442,7 +482,7 @@ def install_registration_entries(
             raise RuntimeError(f"Invalid WPS registration XML: {snapshot.path}") from exc
         # Persist ownership before the global file is changed so crash recovery
         # can identify our entries even if the process dies during publication.
-        snapshot.record_prewrite(names, source)
+        snapshot.record_prewrite(names, source, existed=existed)
         for name, (component, config) in zip(names, component_config.items()):
             credentials = client_credentials[component]
             fragment = urlencode(

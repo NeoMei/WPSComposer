@@ -715,6 +715,51 @@ def test_registration_restore_merges_external_concurrent_changes(tmp_path: Path)
     assert names == {"original", "external"}
 
 
+def test_registration_restore_uses_latest_prewrite_base_after_external_change(
+    tmp_path: Path,
+):
+    publish = tmp_path / "publish.xml"
+    original = b"<jsplugins><original/></jsplugins>"
+    external = b'<jsplugins><original/><jspluginonline name="external"/></jsplugins>'
+    publish.write_bytes(original)
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    publish.write_bytes(external)
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+    snapshot.restore()
+
+    assert publish.read_bytes() == external
+
+
+@pytest.mark.parametrize("capture_existed", [True, False])
+def test_installed_crash_recovery_uses_latest_prewrite_base(
+    tmp_path: Path, capture_existed: bool
+):
+    publish = tmp_path / "publish.xml"
+    if capture_existed:
+        publish.write_bytes(b"<jsplugins><original/></jsplugins>")
+    recovery = tmp_path / "recovery"
+    snapshot = RegistrationSnapshot.capture(publish, recovery)
+    external = b'<jsplugins><jspluginonline name="external"/></jsplugins>'
+    publish.write_bytes(external)
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+    RegistrationSnapshot._recover_stale(recovery)
+
+    assert publish.read_bytes() == external
+    assert not recovery.exists()
+
+
 def test_registration_install_retries_concurrent_external_edit(
     monkeypatch, tmp_path: Path
 ):
@@ -726,7 +771,7 @@ def test_registration_install_retries_concurrent_external_edit(
 
     def racing_write(path, content, mode, *, expected=None):
         nonlocal raced
-        if not raced:
+        if not raced and path == publish:
             raced = True
             path.write_text(
                 '<jsplugins><original/><jspluginonline name="external"/></jsplugins>',
