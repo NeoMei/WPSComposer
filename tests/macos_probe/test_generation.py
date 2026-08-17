@@ -94,6 +94,55 @@ def _write_semantic_package(path: Path, members: dict[str, str]) -> Path:
     return path
 
 
+def _presentation_members(
+    slide_texts: list[str],
+    *,
+    order: list[str] | None = None,
+    targets: dict[str, str] | None = None,
+) -> dict[str, str]:
+    presentation = (
+        "http://schemas.openxmlformats.org/presentationml/2006/main"
+    )
+    relationships = (
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    )
+    package_relationships = (
+        "http://schemas.openxmlformats.org/package/2006/relationships"
+    )
+    drawing = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    order = order or [f"rId{index}" for index in range(1, len(slide_texts) + 1)]
+    targets = targets or {
+        f"rId{index}": f"slides/slide{index}.xml"
+        for index in range(1, len(slide_texts) + 1)
+    }
+    slide_ids = "".join(
+        f'<p:sldId id="{255 + index}" r:id="{relationship_id}"/>'
+        for index, relationship_id in enumerate(order, start=1)
+    )
+    relation_nodes = "".join(
+        '<Relationship '
+        f'Id="{relationship_id}" '
+        f'Type="{relationships}/slide" Target="{target}"/>'
+        for relationship_id, target in targets.items()
+    )
+    members = {
+        "ppt/presentation.xml": (
+            f'<p:presentation xmlns:p="{presentation}" xmlns:r="{relationships}">'
+            f"<p:sldIdLst>{slide_ids}</p:sldIdLst></p:presentation>"
+        ),
+        "ppt/_rels/presentation.xml.rels": (
+            f'<Relationships xmlns="{package_relationships}">'
+            f"{relation_nodes}</Relationships>"
+        ),
+    }
+    for index, text in enumerate(slide_texts, start=1):
+        members[f"ppt/slides/slide{index}.xml"] = (
+            f'<p:sld xmlns:p="{presentation}" xmlns:a="{drawing}">'
+            f"<a:t>{text}</a:t></p:sld>"
+        )
+    return members
+
+
 def _xml_with_root_marker(data: bytes) -> bytes:
     root = ElementTree.fromstring(data)
     root.text = (root.text or "") + MARKER
@@ -626,13 +675,95 @@ def test_semantic_validator_requires_every_planned_writer_image(tmp_path: Path):
         )
 
 
+@pytest.mark.parametrize(
+    ("blip", "relationship", "media"),
+    [
+        ("<a:blip/>", "", {}),
+        (
+            '<a:blip r:embed="rId1"/>',
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/'
+            'officeDocument/2006/relationships/hyperlink" '
+            'Target="media/image1.png"/>',
+            {"word/media/image1.png": b"PNG"},
+        ),
+        (
+            '<a:blip r:embed="rId1"/>',
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/'
+            'officeDocument/2006/relationships/image" '
+            'Target="media/missing.png"/>',
+            {},
+        ),
+    ],
+)
+def test_semantic_validator_rejects_unresolved_writer_blips(
+    tmp_path: Path, blip: str, relationship: str, media: dict[str, bytes]
+):
+    members = {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main" xmlns:a="http://schemas.openxmlformats.'
+            'org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/'
+            'officeDocument/2006/relationships"><w:body><w:drawing>'
+            f"{blip}</w:drawing></w:body></w:document>"
+        ),
+        "word/_rels/document.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/'
+            f'2006/relationships">{relationship}</Relationships>'
+        ),
+        **media,
+    }
+    package = _write_semantic_package(tmp_path / "unresolved.docx", members)
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation("writer.add_image", {"imageId": "image-1"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="image structure"):
+        mac_generation._validate_generated_package(
+            package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_matches_presentation_images_to_logical_slide(
+    tmp_path: Path,
+):
+    members = _presentation_members(["FIRST", "SECOND"])
+    members["ppt/slides/slide2.xml"] = members["ppt/slides/slide2.xml"].replace(
+        "</p:sld>",
+        '<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/'
+        '2006/relationships" r:embed="rIdImage"/></p:sld>',
+    )
+    members["ppt/slides/_rels/slide2.xml.rels"] = (
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/'
+        'relationships"><Relationship Id="rIdImage" Type="http://schemas.'
+        'openxmlformats.org/officeDocument/2006/relationships/image" '
+        'Target="../media/image1.png"/></Relationships>'
+    )
+    members["ppt/media/image1.png"] = b"PNG"
+    package = _write_semantic_package(tmp_path / "wrong-slide.pptx", members)
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+        GenerationOperation("slide.add_title", {"title": "SECOND"}),
+        GenerationOperation("slide.add_image", {
+            "slide": 1,
+            "imageId": "image-1",
+            "left": 0,
+            "top": 0,
+        }),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide 1 image structure"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
 def test_semantic_validator_aligns_presentation_content_by_slide(tmp_path: Path):
-    drawing = "http://schemas.openxmlformats.org/drawingml/2006/main"
-    package = _write_semantic_package(tmp_path / "swapped.pptx", {
-        "ppt/presentation.xml": "<p:presentation xmlns:p='urn:p'/>",
-        "ppt/slides/slide1.xml": f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'><a:t>SECOND</a:t></p:sld>",
-        "ppt/slides/slide2.xml": f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'><a:t>FIRST</a:t></p:sld>",
-    })
+    package = _write_semantic_package(
+        tmp_path / "swapped.pptx",
+        _presentation_members(["SECOND", "FIRST"]),
+    )
     plan = GenerationPlan("presentation", (
         GenerationOperation("slide.reset", {}),
         GenerationOperation("slide.add_title", {"title": "FIRST"}),
@@ -645,15 +776,81 @@ def test_semantic_validator_aligns_presentation_content_by_slide(tmp_path: Path)
         )
 
 
+def test_semantic_validator_uses_presentation_relationship_playback_order(
+    tmp_path: Path,
+):
+    package = _write_semantic_package(
+        tmp_path / "relationship-order.pptx",
+        _presentation_members(["FIRST", "SECOND"], order=["rId2", "rId1"]),
+    )
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+        GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide 1 content"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
+def test_semantic_validator_accepts_logical_order_independent_of_part_name(
+    tmp_path: Path,
+):
+    package = _write_semantic_package(
+        tmp_path / "logical-order.pptx",
+        _presentation_members(["SECOND", "FIRST"], order=["rId2", "rId1"]),
+    )
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+        GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    mac_generation._validate_generated_package(
+        package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+    )
+
+
+@pytest.mark.parametrize(
+    ("order", "targets"),
+    [
+        (["rId1", "rId1"], {"rId1": "slides/slide1.xml"}),
+        (["rId1", "rIdMissing"], {"rId1": "slides/slide1.xml"}),
+        (["rId1", "rId2"], {
+            "rId1": "slides/slide1.xml",
+            "rId2": "slides/missing.xml",
+        }),
+        (["rId1", "rId2"], {
+            "rId1": "slides/slide1.xml",
+            "rId2": "../../outside.xml",
+        }),
+    ],
+)
+def test_semantic_validator_rejects_invalid_presentation_slide_relationships(
+    tmp_path: Path, order: list[str], targets: dict[str, str]
+):
+    package = _write_semantic_package(
+        tmp_path / "invalid-relationships.pptx",
+        _presentation_members(["FIRST", "SECOND"], order=order, targets=targets),
+    )
+    plan = GenerationPlan("presentation", (
+        GenerationOperation("slide.reset", {}),
+        GenerationOperation("slide.add_title", {"title": "FIRST"}),
+        GenerationOperation("slide.add_title", {"title": "SECOND"}),
+    ))
+
+    with pytest.raises(ArtifactValidationError, match="slide relationship"):
+        mac_generation._validate_generated_package(
+            package, "pptx", RecordedGeneration(plan, ()), "not-the-digest"
+        )
+
+
 def test_semantic_validator_does_not_reuse_overlapping_slide_text(tmp_path: Path):
-    drawing = "http://schemas.openxmlformats.org/drawingml/2006/main"
-    package = _write_semantic_package(tmp_path / "overlap.pptx", {
-        "ppt/presentation.xml": "<p:presentation xmlns:p='urn:p'/>",
-        "ppt/slides/slide1.xml": (
-            f"<p:sld xmlns:p='urn:p' xmlns:a='{drawing}'>"
-            "<a:t>AA</a:t></p:sld>"
-        ),
-    })
+    package = _write_semantic_package(
+        tmp_path / "overlap.pptx", _presentation_members(["AA"])
+    )
     plan = GenerationPlan("presentation", (
         GenerationOperation("slide.reset", {}),
         GenerationOperation(

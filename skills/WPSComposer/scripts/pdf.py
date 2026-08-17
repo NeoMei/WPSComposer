@@ -69,6 +69,10 @@ def _write_pdf_stage(writer, target):
 def _write_and_publish_pdf(writer, output_path, overwrite):
     target = _pdf_target(output_path, overwrite)
     staged = _write_pdf_stage(writer, target)
+    return _publish_pdf_stage(staged, target, overwrite)
+
+
+def _publish_pdf_stage(staged, target, overwrite):
     try:
         return str(publish_artifact(
             staged,
@@ -118,20 +122,23 @@ class PdfComposer:
         reader = PdfReader(src)
         staged = []
         try:
-            targets = [
-                _pdf_target(
-                    os.path.join(odir, f"{base}-{i:03d}.pdf"), overwrite
-                )
-                for i in range(1, len(reader.pages) + 1)
-            ]
-            for page, target in zip(reader.pages, targets):
-                writer = PdfWriter()
-                try:
-                    writer.add_page(page)
-                except BaseException:
-                    writer.close()
-                    raise
-                staged.append(_write_pdf_stage(writer, target))
+            try:
+                targets = [
+                    _pdf_target(
+                        os.path.join(odir, f"{base}-{i:03d}.pdf"), overwrite
+                    )
+                    for i in range(1, len(reader.pages) + 1)
+                ]
+                for page, target in zip(reader.pages, targets):
+                    writer = PdfWriter()
+                    try:
+                        writer.add_page(page)
+                    except BaseException:
+                        writer.close()
+                        raise
+                    staged.append(_write_pdf_stage(writer, target))
+            finally:
+                reader.close()
             published = publish_artifact_group([
                 (stage, target, overwrite, validate_pdf)
                 for stage, target in zip(staged, targets)
@@ -140,7 +147,6 @@ class PdfComposer:
         finally:
             for stage in staged:
                 stage.unlink(missing_ok=True)
-            reader.close()
 
     @staticmethod
     def extract_pages(input_path, page_indices, output_path, *, overwrite=False):
@@ -148,18 +154,27 @@ class PdfComposer:
         from pypdf import PdfReader, PdfWriter
         _pdf_target(output_path, overwrite)
         reader = PdfReader(_pdf_abs(input_path))
+        staged = None
         try:
-            page_indices = _validate_page_indices(page_indices, len(reader.pages))
-            w = PdfWriter()
             try:
-                for idx in page_indices:
-                    w.add_page(reader.pages[idx - 1])
-            except BaseException:
-                w.close()
-                raise
-            return _write_and_publish_pdf(w, output_path, overwrite)
+                page_indices = _validate_page_indices(
+                    page_indices, len(reader.pages)
+                )
+                w = PdfWriter()
+                try:
+                    for idx in page_indices:
+                        w.add_page(reader.pages[idx - 1])
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
         finally:
-            reader.close()
+            if staged is not None:
+                staged.unlink(missing_ok=True)
 
     @staticmethod
     def rotate(input_path, angle, output_path, *, overwrite=False):
@@ -167,18 +182,25 @@ class PdfComposer:
         from pypdf import PdfReader, PdfWriter
         _pdf_target(output_path, overwrite)
         reader = PdfReader(_pdf_abs(input_path))
+        staged = None
         try:
-            w = PdfWriter()
             try:
-                for page in reader.pages:
-                    page.rotate(angle)
-                    w.add_page(page)
-            except BaseException:
-                w.close()
-                raise
-            return _write_and_publish_pdf(w, output_path, overwrite)
+                w = PdfWriter()
+                try:
+                    for page in reader.pages:
+                        page.rotate(angle)
+                        w.add_page(page)
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
         finally:
-            reader.close()
+            if staged is not None:
+                staged.unlink(missing_ok=True)
 
     @staticmethod
     def extract_text(input_path, pages=None):
@@ -247,20 +269,27 @@ class PdfComposer:
         src = _pdf_abs(input_path)
         _pdf_target(output_path, overwrite)
         reader = PdfReader(src)
+        staged = None
         try:
-            w = PdfWriter()
             try:
-                for page in reader.pages:
-                    pw = float(page.mediabox.width)
-                    ph = float(page.mediabox.height)
-                    watermark = PdfComposer._watermark_page(
-                        text, pw, ph, fontsize, opacity, angle
-                    )
-                    w.add_page(page)
-                    w.pages[-1].merge_page(watermark)
-            except BaseException:
-                w.close()
-                raise
-            return _write_and_publish_pdf(w, output_path, overwrite)
+                w = PdfWriter()
+                try:
+                    for page in reader.pages:
+                        pw = float(page.mediabox.width)
+                        ph = float(page.mediabox.height)
+                        watermark = PdfComposer._watermark_page(
+                            text, pw, ph, fontsize, opacity, angle
+                        )
+                        w.add_page(page)
+                        w.pages[-1].merge_page(watermark)
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
         finally:
-            reader.close()
+            if staged is not None:
+                staged.unlink(missing_ok=True)

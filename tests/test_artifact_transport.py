@@ -182,6 +182,72 @@ def test_group_publish_rolls_back_all_outputs_when_later_publish_fails(
     assert not list((tmp_path / "out").glob(".wpscomposer-group-backup-*.tmp"))
 
 
+def test_group_publish_cleans_partial_backup_when_backup_copy_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    staged = _write_pdf(tmp_path / "stage" / "result.pdf", b"new")
+    destination = _write_pdf(tmp_path / "out" / "result.pdf", b"secret-old")
+    original = destination.read_bytes()
+    real_copy = artifact_transport.copy_stream_before_deadline
+
+    def fail_backup_copy(incoming, outgoing, deadline):
+        if Path(outgoing.name).name.startswith(".wpscomposer-group-backup-"):
+            outgoing.write(b"secret-prefix")
+            raise OSError("simulated backup copy failure")
+        return real_copy(incoming, outgoing, deadline)
+
+    monkeypatch.setattr(
+        artifact_transport, "copy_stream_before_deadline", fail_backup_copy
+    )
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        artifact_transport.publish_artifact_group([
+            (staged, destination, True, validate_pdf),
+        ])
+
+    assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
+    assert destination.read_bytes() == original
+    assert not list((tmp_path / "out").glob(".wpscomposer-group-*.tmp"))
+    assert not list((tmp_path / "out").glob(".wpscomposer-group-backup-*.tmp"))
+
+
+def test_group_publish_reports_partial_backup_when_cleanup_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    staged = _write_pdf(tmp_path / "stage" / "result.pdf", b"new")
+    destination = _write_pdf(tmp_path / "out" / "result.pdf", b"secret-old")
+    real_copy = artifact_transport.copy_stream_before_deadline
+    real_unlink = Path.unlink
+    retained: list[Path] = []
+
+    def fail_backup_copy(incoming, outgoing, deadline):
+        if Path(outgoing.name).name.startswith(".wpscomposer-group-backup-"):
+            outgoing.write(b"secret-prefix")
+            raise OSError("simulated backup copy failure")
+        return real_copy(incoming, outgoing, deadline)
+
+    def fail_backup_cleanup(path, *args, **kwargs):
+        if path.name.startswith(".wpscomposer-group-backup-"):
+            retained.append(path.resolve())
+            raise PermissionError("simulated cleanup failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(
+        artifact_transport, "copy_stream_before_deadline", fail_backup_copy
+    )
+    monkeypatch.setattr(Path, "unlink", fail_backup_cleanup)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        artifact_transport.publish_artifact_group([
+            (staged, destination, True, validate_pdf),
+        ])
+
+    assert caught.value.code == "ARTIFACT_CLEANUP_FAILED"
+    assert len(retained) == 1
+    assert str(retained[0]) in str(caught.value)
+    assert retained[0].read_bytes() == b"secret-prefix"
+
+
 def test_group_publish_rolls_back_target_when_post_link_cleanup_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

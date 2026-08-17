@@ -8,12 +8,14 @@ from functools import partial
 import hashlib
 import os
 from pathlib import Path
+import posixpath
 import re
 import shutil
 import stat
 import tempfile
 import time
 from typing import Callable, Mapping, Optional
+from urllib.parse import unquote, urlsplit
 import zipfile
 from xml.etree import ElementTree
 
@@ -624,6 +626,16 @@ def _package_xml(path: Path) -> dict[str, ElementTree.Element]:
     return parsed
 
 
+def _package_members(path: Path) -> set[str]:
+    try:
+        with zipfile.ZipFile(path) as package:
+            return set(package.namelist())
+    except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+        raise ArtifactValidationError(
+            "Generated Office package members are invalid"
+        ) from exc
+
+
 def _expected_cell_text(value: object, component: str) -> Optional[str]:
     """Canonical visible text for a table cell, matching renderer semantics.
 
@@ -682,21 +694,172 @@ def _operation_expected_text(operation, component: str) -> list[str]:
     return values
 
 
-def _image_relationship_count(
-    xml: Mapping[str, ElementTree.Element], prefix: str
-) -> int:
-    relationship = (
+def _relationship_part_name(source_part: str) -> str:
+    directory, filename = posixpath.split(source_part)
+    return posixpath.join(directory, "_rels", f"{filename}.rels")
+
+
+def _relationships_for_part(
+    xml: Mapping[str, ElementTree.Element],
+    source_part: str,
+    context: str,
+) -> dict[str, ElementTree.Element]:
+    relationship_name = (
         "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
     )
-    count = 0
-    for name, root in xml.items():
-        if not name.startswith(prefix) or not name.endswith(".rels"):
-            continue
-        count += sum(
-            str(element.attrib.get("Type", "")).endswith("/image")
-            for element in root.iter(relationship)
+    root = xml.get(_relationship_part_name(source_part))
+    if root is None:
+        raise ArtifactValidationError(
+            f"Generated artifact is missing {context} relationships"
         )
-    return count
+    relationships = {}
+    for relationship in root.iter(relationship_name):
+        relationship_id = relationship.attrib.get("Id")
+        if not relationship_id or relationship_id in relationships:
+            raise ArtifactValidationError(
+                f"Generated artifact has an invalid {context} relationship ID"
+            )
+        relationships[relationship_id] = relationship
+    return relationships
+
+
+def _relationship_target_member(
+    source_part: str,
+    relationship: ElementTree.Element,
+    members: set[str],
+    context: str,
+    *,
+    required_prefix: str,
+) -> str:
+    if relationship.attrib.get("TargetMode", "Internal").lower() == "external":
+        raise ArtifactValidationError(
+            f"Generated artifact has an external {context} relationship"
+        )
+    raw_target = relationship.attrib.get("Target", "").replace("\\", "/")
+    parsed = urlsplit(raw_target)
+    if not raw_target or parsed.scheme or parsed.netloc or parsed.query or parsed.fragment:
+        raise ArtifactValidationError(
+            f"Generated artifact has an invalid {context} relationship target"
+        )
+    target_path = unquote(parsed.path)
+    if target_path.startswith("/"):
+        normalized = posixpath.normpath(target_path.lstrip("/"))
+    else:
+        normalized = posixpath.normpath(
+            posixpath.join(posixpath.dirname(source_part), target_path)
+        )
+    if (
+        normalized in {"", ".", ".."}
+        or normalized.startswith("../")
+        or not normalized.startswith(required_prefix)
+        or normalized not in members
+    ):
+        raise ArtifactValidationError(
+            f"Generated artifact has an invalid {context} relationship target"
+        )
+    return normalized
+
+
+def _valid_image_reference_count(
+    xml: Mapping[str, ElementTree.Element],
+    members: set[str],
+    source_part: str,
+    context: str,
+    *,
+    media_prefix: str,
+) -> int:
+    root = xml.get(source_part)
+    if root is None:
+        return 0
+    blip_name = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
+    embed_name = (
+        "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+    )
+    blips = list(root.iter(blip_name))
+    if not blips:
+        return 0
+    structure_context = f"{context} image structure"
+    relationships = _relationships_for_part(xml, source_part, structure_context)
+    for blip in blips:
+        relationship_id = blip.attrib.get(embed_name)
+        relationship = relationships.get(relationship_id or "")
+        if (
+            not relationship_id
+            or relationship is None
+            or not relationship.attrib.get("Type", "").endswith("/image")
+        ):
+            raise ArtifactValidationError(
+                f"Generated artifact has an invalid {structure_context}"
+            )
+        _relationship_target_member(
+            source_part,
+            relationship,
+            members,
+            structure_context,
+            required_prefix=media_prefix,
+        )
+    return len(blips)
+
+
+def _is_presentation_slide_part(name: str) -> bool:
+    return (
+        name.startswith("ppt/slides/")
+        and name.endswith(".xml")
+        and "/_rels/" not in name
+        and name.count("/") == 2
+    )
+
+
+def _presentation_slide_parts(
+    xml: Mapping[str, ElementTree.Element], members: set[str]
+) -> list[str]:
+    presentation_name = "ppt/presentation.xml"
+    presentation = xml.get(presentation_name)
+    if presentation is None:
+        raise ArtifactValidationError(
+            "Generated presentation is missing slide relationship metadata"
+        )
+    slide_id_name = (
+        "{http://schemas.openxmlformats.org/presentationml/2006/main}sldId"
+    )
+    relationship_id_name = (
+        "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+    )
+    relationships = _relationships_for_part(
+        xml, presentation_name, "presentation slide"
+    )
+    ordered = []
+    seen_ids = set()
+    seen_parts = set()
+    for slide_id in presentation.iter(slide_id_name):
+        relationship_id = slide_id.attrib.get(relationship_id_name)
+        if not relationship_id or relationship_id in seen_ids:
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship ID"
+            )
+        seen_ids.add(relationship_id)
+        relationship = relationships.get(relationship_id)
+        if (
+            relationship is None
+            or not relationship.attrib.get("Type", "").endswith("/slide")
+        ):
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship"
+            )
+        part = _relationship_target_member(
+            presentation_name,
+            relationship,
+            members,
+            "presentation slide",
+            required_prefix="ppt/slides/",
+        )
+        if not _is_presentation_slide_part(part) or part in seen_parts:
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship target"
+            )
+        seen_parts.add(part)
+        ordered.append(part)
+    return ordered
 
 
 def _whitespace_stripped(text: str) -> str:
@@ -822,24 +985,6 @@ def _presentation_expected_by_slide(recorded: RecordedGeneration) -> list[list[s
     return slides
 
 
-def _image_reference_count(
-    xml: Mapping[str, ElementTree.Element], format_name: str
-) -> int:
-    blip = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
-    names = (
-        ["word/document.xml"]
-        if format_name == "docx"
-        else [
-            name for name in xml
-            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
-        ]
-    )
-    return sum(
-        sum(1 for _ in xml[name].iter(blip))
-        for name in names if name in xml
-    )
-
-
 def _validate_generated_package(
     path: Path,
     format_name: str,
@@ -850,6 +995,7 @@ def _validate_generated_package(
     if _sha256(path) == template_digest:
         raise ArtifactValidationError("Generated artifact is an unchanged template")
     xml = _package_xml(path)
+    members = _package_members(path)
     expected = _expected_text(recorded)
     if format_name == "docx":
         word_paragraph = (
@@ -884,7 +1030,14 @@ def _validate_generated_package(
             operation.op == "writer.add_image"
             for operation in recorded.plan.operations
         )
-        if _image_reference_count(xml, format_name) < planned_images:
+        actual_images = _valid_image_reference_count(
+            xml,
+            members,
+            "word/document.xml",
+            "writer",
+            media_prefix="word/media/",
+        )
+        if actual_images != planned_images:
             raise ArtifactValidationError(
                 "Generated document is missing planned image structure"
             )
@@ -910,10 +1063,7 @@ def _validate_generated_package(
                 "Generated workbook has an unexpected worksheet count"
             )
     elif format_name == "pptx":
-        actual = sum(
-            name.startswith("ppt/slides/slide") and name.endswith(".xml")
-            for name in xml
-        )
+        actual = sum(_is_presentation_slide_part(name) for name in xml)
         planned = sum(
             operation.op
             in {
@@ -929,13 +1079,11 @@ def _validate_generated_package(
                 "Generated presentation has an unexpected slide count"
             )
         expected_slides = _presentation_expected_by_slide(recorded)
-        slide_names = sorted(
-            (
-                name for name in xml
-                if name.startswith("ppt/slides/slide") and name.endswith(".xml")
-            ),
-            key=lambda name: int(re.search(r"slide(\d+)\.xml$", name).group(1)),
-        )
+        slide_names = _presentation_slide_parts(xml, members)
+        if len(slide_names) != planned:
+            raise ArtifactValidationError(
+                "Generated presentation has an unexpected slide relationship count"
+            )
         drawing_text = (
             "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
         )
@@ -958,7 +1106,7 @@ def _validate_generated_package(
         actual_tables = sum(
             sum(1 for _ in root.iter(table_name))
             for name, root in xml.items()
-            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+            if _is_presentation_slide_part(name)
         )
         planned_tables = sum(
             operation.op == "slide.add_table"
@@ -968,14 +1116,24 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated presentation is missing planned table structure"
             )
-        planned_images = sum(
-            operation.op == "slide.add_image"
+        planned_images = Counter(
+            int(operation.args["slide"])
             for operation in recorded.plan.operations
+            if operation.op == "slide.add_image"
         )
-        if _image_reference_count(xml, format_name) < planned_images:
-            raise ArtifactValidationError(
-                "Generated presentation is missing planned image structure"
+        for slide_index, slide_name in enumerate(slide_names, start=1):
+            actual_images = _valid_image_reference_count(
+                xml,
+                members,
+                slide_name,
+                f"slide {slide_index}",
+                media_prefix="ppt/media/",
             )
+            if actual_images != planned_images[slide_index]:
+                raise ArtifactValidationError(
+                    "Generated presentation is missing planned "
+                    f"slide {slide_index} image structure"
+                )
 
 
 def _wait_for_generated_package(

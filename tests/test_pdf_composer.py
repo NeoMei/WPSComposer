@@ -202,3 +202,84 @@ def test_split_closes_reader_when_output_preflight_fails(tmp_path, monkeypatch):
         PdfComposer.split(source, output_dir)
 
     assert closed == [True]
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda src: PdfComposer.extract_pages(src, [1], src, overwrite=True),
+        lambda src: PdfComposer.rotate(src, 90, src, overwrite=True),
+        lambda src: PdfComposer.add_text_watermark(
+            src, "CONFIDENTIAL", src, overwrite=True
+        ),
+        lambda src: PdfComposer.split(
+            src, src.parent, stem="source", overwrite=True
+        ),
+    ],
+)
+def test_in_place_pdf_publish_closes_input_reader_before_replace(
+    tmp_path, monkeypatch, operation
+):
+    from pypdf import PdfReader
+    import skills.WPSComposer.scripts.artifact_transport as artifact_transport
+
+    source = Path(_make_pdf(tmp_path / "source-001.pdf")).resolve()
+    open_source_readers = 0
+    source_readers = set()
+    real_init = PdfReader.__init__
+    real_close = PdfReader.close
+    real_replace = artifact_transport.os.replace
+
+    def observed_init(self, *args, **kwargs):
+        nonlocal open_source_readers
+        real_init(self, *args, **kwargs)
+        if args and isinstance(args[0], (str, Path)):
+            if Path(args[0]).resolve() == source:
+                source_readers.add(id(self))
+                open_source_readers += 1
+
+    def observed_close(self):
+        nonlocal open_source_readers
+        try:
+            return real_close(self)
+        finally:
+            if id(self) in source_readers:
+                source_readers.remove(id(self))
+                open_source_readers -= 1
+
+    def windows_replace(stage, target):
+        if Path(target).resolve() == source:
+            assert open_source_readers == 0
+        return real_replace(stage, target)
+
+    monkeypatch.setattr(PdfReader, "__init__", observed_init)
+    monkeypatch.setattr(PdfReader, "close", observed_close)
+    monkeypatch.setattr(artifact_transport.os, "replace", windows_replace)
+
+    operation(source)
+
+    assert PdfComposer.page_count(source) == 1
+
+
+def test_in_place_pdf_close_failure_preserves_existing_input(tmp_path, monkeypatch):
+    from pypdf import PdfReader
+
+    source = Path(_make_pdf(tmp_path / "source.pdf")).resolve()
+    original = source.read_bytes()
+    real_close = PdfReader.close
+    failed = False
+
+    def fail_first_close(self):
+        nonlocal failed
+        real_close(self)
+        if not failed:
+            failed = True
+            raise RuntimeError("simulated reader close failure")
+
+    monkeypatch.setattr(PdfReader, "close", fail_first_close)
+
+    with pytest.raises(RuntimeError, match="reader close failure"):
+        PdfComposer.rotate(source, 90, source, overwrite=True)
+
+    assert source.read_bytes() == original
+    assert not list(tmp_path.glob(".wpscomposer-pdf-*.pdf"))

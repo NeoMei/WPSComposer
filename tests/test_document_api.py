@@ -685,6 +685,125 @@ def test_edit_publishes_valid_document_and_pdf_as_one_group(tmp_path: Path):
     assert pdf.is_file()
 
 
+def test_file_edit_closes_composer_before_publish_and_stage_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    events: list[str] = []
+    real_publish = api.publish_artifact
+    real_unlink = Path.unlink
+
+    def close(save_changes=False):
+        events.append("close")
+        composer.closed = True
+
+    def observed_publish(*args, **kwargs):
+        assert composer.closed
+        events.append("publish")
+        return real_publish(*args, **kwargs)
+
+    def windows_unlink(path, *args, **kwargs):
+        if path in composer.save_calls:
+            assert composer.closed
+            events.append("cleanup")
+        return real_unlink(path, *args, **kwargs)
+
+    composer.close = close
+    monkeypatch.setattr(api, "publish_artifact", observed_publish)
+    monkeypatch.setattr(Path, "unlink", windows_unlink)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert result["saved"] is True
+    assert events == ["close", "publish", "cleanup"]
+
+
+def test_file_edit_closes_composer_before_group_publish_and_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+    events: list[str] = []
+    real_publish_group = api.publish_artifact_group
+    real_unlink = Path.unlink
+
+    def close(save_changes=False):
+        events.append("close")
+        composer.closed = True
+
+    def observed_publish_group(*args, **kwargs):
+        assert composer.closed
+        events.append("publish")
+        return real_publish_group(*args, **kwargs)
+
+    def windows_unlink(path, *args, **kwargs):
+        if path in [*composer.save_calls, *composer.export_calls]:
+            assert composer.closed
+            events.append("cleanup")
+        return real_unlink(path, *args, **kwargs)
+
+    composer.close = close
+    monkeypatch.setattr(api, "publish_artifact_group", observed_publish_group)
+    monkeypatch.setattr(Path, "unlink", windows_unlink)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                export_pdf=pdf,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert result["saved"] is True
+    assert result["pdf_path"] == str(pdf.resolve())
+    assert events == ["close", "publish", "cleanup", "cleanup"]
+
+
+def test_file_edit_close_failure_does_not_publish_and_retains_recovery_stage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    publish_calls = []
+
+    def fail_close(save_changes=False):
+        raise RuntimeError("simulated COM close failure")
+
+    composer.close = fail_close
+    monkeypatch.setattr(
+        api, "publish_artifact", lambda *args, **kwargs: publish_calls.append(args)
+    )
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError, match="recovery artifacts retained"):
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert publish_calls == []
+    assert not output.exists()
+    assert len(composer.save_calls) == 1
+    assert composer.save_calls[0].is_file()
+
+
 def test_edit_rejects_export_pdf_on_macos_before_bridge_or_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

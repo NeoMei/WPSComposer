@@ -992,6 +992,10 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         except Exception:
             composer.close(save_changes=False)
             raise
+    owned_stages = []
+    pending_publication = None
+    completed = False
+    result = None
     try:
         if attached and output is not None:
             source_family = _normalize_kind(_kind_from_composer(composer))
@@ -1038,16 +1042,17 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 destination = output if output is not None else path
                 destination_path = Path(destination).expanduser().resolve()
                 source_path = Path(path).expanduser().resolve()
-                staged_document = None
-                staged_pdf = None
-                try:
-                    staged_document = _stage_composer_artifact(
-                        composer, destination_path
-                    )
-                    staged_pdf = _stage_composer_artifact(
-                        composer, pdf_output, export_pdf=True
-                    )
-                    published = publish_artifact_group([
+                staged_document = _stage_composer_artifact(
+                    composer, destination_path
+                )
+                owned_stages.append(staged_document)
+                staged_pdf = _stage_composer_artifact(
+                    composer, pdf_output, export_pdf=True
+                )
+                owned_stages.append(staged_pdf)
+                pending_publication = (
+                    "group",
+                    [
                         (
                             staged_document,
                             destination_path,
@@ -1055,32 +1060,31 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                             _validate_edited_artifact,
                         ),
                         (staged_pdf, pdf_output, overwrite, validate_pdf),
-                    ])
-                    saved_path = str(published[0])
-                    pdf_path = str(published[1])
-                finally:
-                    if staged_document is not None:
-                        staged_document.unlink(missing_ok=True)
-                    if staged_pdf is not None:
-                        staged_pdf.unlink(missing_ok=True)
+                    ],
+                )
+                saved_path = str(destination_path)
+                pdf_path = str(pdf_output)
             elif not attached and Path(path).expanduser().is_file():
                 destination = output if output is not None else path
-                in_place = (
-                    Path(destination).expanduser().resolve()
-                    == Path(path).expanduser().resolve()
+                destination_path = Path(destination).expanduser().resolve()
+                source_path = Path(path).expanduser().resolve()
+                staged_document = _stage_composer_artifact(
+                    composer, destination_path
                 )
-                saved_path = _save_edited_artifact(
-                    composer,
-                    destination,
-                    attached=False,
-                    overwrite=overwrite or in_place,
+                owned_stages.append(staged_document)
+                pending_publication = (
+                    "single",
+                    staged_document,
+                    destination_path,
+                    overwrite or destination_path == source_path,
                 )
+                saved_path = str(destination_path)
             else:
                 saved_path = composer.save(output) if output else composer.save_current()
             if export_pdf is None:
                 pdf_path = None
         after = composer.inspect_document() if inspect_after else None
-        return {
+        result = {
             "ok": not had_failures,
             "saved": saved_path is not None,
             "saved_path": saved_path,
@@ -1090,9 +1094,59 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
             "errors": errors,
             "before": before,
             "after": after,
+            "warnings": [],
         }
+        completed = True
+        return result
     finally:
-        composer.close(save_changes=False)
+        try:
+            composer.close(save_changes=False)
+        except BaseException as close_exc:
+            if owned_stages:
+                retained = ", ".join(str(stage) for stage in owned_stages)
+                raise RuntimeError(
+                    "Composer close failed; outputs were not published and "
+                    f"recovery artifacts retained at {retained}"
+                ) from close_exc
+            raise
+
+        committed = False
+        try:
+            if completed and pending_publication is not None:
+                if pending_publication[0] == "single":
+                    _kind, stage, target, replace = pending_publication
+                    published = publish_artifact(
+                        stage,
+                        target,
+                        overwrite=replace,
+                        validator=_validate_edited_artifact,
+                    )
+                    result["saved_path"] = str(published)
+                else:
+                    _kind, entries = pending_publication
+                    published = publish_artifact_group(entries)
+                    result["saved_path"] = str(published[0])
+                    result["pdf_path"] = str(published[1])
+                committed = True
+        finally:
+            cleanup_errors = []
+            for stage in owned_stages:
+                try:
+                    stage.unlink(missing_ok=True)
+                except OSError as cleanup_exc:
+                    cleanup_errors.append((stage, cleanup_exc))
+            if cleanup_errors:
+                retained = ", ".join(
+                    str(stage) for stage, _exc in cleanup_errors
+                )
+                message = (
+                    "Staging cleanup failed; recovery artifacts retained at "
+                    f"{retained}"
+                )
+                if committed:
+                    result["warnings"].append(message)
+                else:
+                    raise RuntimeError(message) from cleanup_errors[0][1]
 
 
 def snapshot_json(snapshot, *, indent=2):

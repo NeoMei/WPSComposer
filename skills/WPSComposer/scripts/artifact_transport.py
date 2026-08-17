@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing
 import os
 from pathlib import Path
+import sys
 import tempfile
 import time
 from typing import Callable, Iterable
@@ -451,6 +452,10 @@ def publish_artifact_group(
                         delete=False,
                     ) as stream:
                         backup = Path(stream.name)
+                        # Own the backup as soon as it exists.  A partial copy,
+                        # flush, or fsync failure must not orphan old document
+                        # bytes in the destination directory.
+                        backups[target] = backup
                         with target.open("rb") as existing:
                             copy_stream_before_deadline(existing, stream, None)
                         stream.flush()
@@ -459,8 +464,6 @@ def publish_artifact_group(
                     raise ArtifactTransportError(
                         "ARTIFACT_PUBLISH_FAILED", str(exc)
                     ) from exc
-                backups[target] = backup
-
         for local, (_staged, target, overwrite, _validator) in zip(prepared, entries):
             try:
                 if overwrite:
@@ -510,7 +513,20 @@ def publish_artifact_group(
             ) from publish_exc
         raise
     finally:
-        for local in prepared:
-            local.unlink(missing_ok=True)
-        for backup in backups.values():
-            backup.unlink(missing_ok=True)
+        active_error = sys.exc_info()[1]
+        cleanup_errors = []
+        for owned in [*prepared, *backups.values()]:
+            try:
+                owned.unlink(missing_ok=True)
+            except OSError as cleanup_exc:
+                cleanup_errors.append((owned, cleanup_exc))
+        if cleanup_errors:
+            retained = ", ".join(str(path) for path, _exc in cleanup_errors)
+            detail = "; ".join(str(exc) for _path, exc in cleanup_errors)
+            cleanup_error = ArtifactTransportError(
+                "ARTIFACT_CLEANUP_FAILED",
+                f"{detail}; recovery artifacts retained at {retained}",
+            )
+            if active_error is not None and not isinstance(active_error, Exception):
+                raise active_error from cleanup_error
+            raise cleanup_error from active_error
