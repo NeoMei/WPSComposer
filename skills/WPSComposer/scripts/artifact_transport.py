@@ -353,9 +353,17 @@ def publish_artifact(
                     if recovery_path is not None
                     else ""
                 )
-                raise ArtifactTransportError(
+                rollback_error = ArtifactTransportError(
                     "ARTIFACT_ROLLBACK_FAILED", f"{restore_exc}{recovery}"
-                ) from restore_exc
+                )
+                if not isinstance(exc, Exception):
+                    # Keep process-control semantics at the top of the chain
+                    # while retaining both rollback diagnostics and recovery.
+                    rollback_error.__cause__ = restore_exc
+                    raise exc from rollback_error
+                raise rollback_error from restore_exc
+            if not isinstance(exc, Exception):
+                raise
             raise ArtifactTransportError(
                 "FINAL_ARTIFACT_INVALID", str(exc)
             ) from exc

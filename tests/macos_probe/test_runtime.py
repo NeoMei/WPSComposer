@@ -849,6 +849,126 @@ def test_activate_component_launches_direct_owned_child(
     assert set(probe._owned_wps_processes) == {201}
 
 
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_activate_component_reaps_tracked_child_before_rethrowing_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            return 0
+
+        def kill(self):
+            events.append("kill")
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+
+    def interrupt_identity(*args, **kwargs):
+        assert probe._processes == [child]
+        raise failure
+
+    monkeypatch.setattr(runtime, "read_wps_process_identity", interrupt_identity)
+
+    with pytest.raises(type(failure)) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert events == ["terminate", "wait"]
+    assert probe._processes == []
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_activate_component_cleanup_error_does_not_mask_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+            raise OSError("terminate failed")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            return 0
+
+        def kill(self):
+            return None
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+    monkeypatch.setattr(
+        runtime,
+        "read_wps_process_identity",
+        lambda *args, **kwargs: (_ for _ in ()).throw(failure),
+    )
+
+    with pytest.raises(type(failure)) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert isinstance(caught.value.__cause__, runtime.RuntimeCleanupError)
+    assert events == ["terminate", "wait"]
+    assert probe._processes == []
+
+
+def test_activate_component_waits_again_after_killing_failed_handshake(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            if events.count("wait") == 1:
+                raise subprocess.TimeoutExpired("wpsoffice", timeout)
+            return -signal.SIGKILL
+
+        def kill(self):
+            events.append("kill")
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+    monkeypatch.setattr(runtime, "read_wps_process_identity", lambda *args, **kwargs: None)
+
+    with pytest.raises(RuntimeError, match="Could not prove ownership"):
+        probe.activate_component("writer", deadline=runtime.time.monotonic())
+
+    assert events == ["terminate", "wait", "kill", "wait"]
+    assert probe._processes == []
+
+
 def _probe_with_writer_fixture(tmp_path: Path) -> runtime.ProbeRuntime:
     probe_root = tmp_path / "probe"
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"

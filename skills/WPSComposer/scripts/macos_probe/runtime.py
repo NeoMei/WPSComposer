@@ -979,34 +979,70 @@ class ProbeRuntime:
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-        if deadline is None:
-            identity_deadline = time.monotonic() + ACTIVATION_TIMEOUT
-        else:
-            identity_deadline = deadline
-        identity: Optional[ProcessIdentity] = None
-        while remaining(identity_deadline) > 0:
-            if child.poll() is not None:
-                break
-            identity = read_wps_process_identity(
-                child.pid,
-                self.wps_app,
-                timeout=min(0.25, require_remaining(identity_deadline)),
-            )
-            if identity is not None:
-                break
-            time.sleep(min(0.02, remaining(identity_deadline)))
-        if identity is None:
-            if child.poll() is None:
+        try:
+            # Track the exact Popen handle before the first fallible ownership
+            # check so an interrupt cannot strand a child outside cleanup.
+            self._processes.append(child)
+            if deadline is None:
+                identity_deadline = time.monotonic() + ACTIVATION_TIMEOUT
+            else:
+                identity_deadline = deadline
+            identity: Optional[ProcessIdentity] = None
+            while remaining(identity_deadline) > 0:
+                if child.poll() is not None:
+                    break
+                identity = read_wps_process_identity(
+                    child.pid,
+                    self.wps_app,
+                    timeout=min(0.25, require_remaining(identity_deadline)),
+                )
+                if identity is not None:
+                    break
+                time.sleep(min(0.02, remaining(identity_deadline)))
+            if identity is None:
+                raise RuntimeError(
+                    f"Could not prove ownership of WPS activation for {component}"
+                )
+            self._owned_wps_processes[identity.pid] = identity
+        except BaseException as activation_exc:
+            cleanup_errors: list[BaseException] = []
+            reaped = False
+            try:
                 child.terminate()
+            except BaseException as cleanup_exc:
+                cleanup_errors.append(cleanup_exc)
+            try:
+                child.wait(timeout=CLEANUP_GRACE_SECONDS)
+                reaped = True
+            except subprocess.TimeoutExpired:
                 try:
-                    child.wait(timeout=min(0.25, remaining(identity_deadline)))
-                except subprocess.TimeoutExpired:
                     child.kill()
-            raise RuntimeError(
-                f"Could not prove ownership of WPS activation for {component}"
-            )
-        self._processes.append(child)
-        self._owned_wps_processes[identity.pid] = identity
+                except BaseException as cleanup_exc:
+                    cleanup_errors.append(cleanup_exc)
+                try:
+                    child.wait(timeout=CLEANUP_GRACE_SECONDS)
+                    reaped = True
+                except BaseException as cleanup_exc:
+                    cleanup_errors.append(cleanup_exc)
+            except BaseException as cleanup_exc:
+                cleanup_errors.append(cleanup_exc)
+                try:
+                    child.kill()
+                except BaseException as kill_exc:
+                    cleanup_errors.append(kill_exc)
+                try:
+                    child.wait(timeout=CLEANUP_GRACE_SECONDS)
+                    reaped = True
+                except BaseException as wait_exc:
+                    cleanup_errors.append(wait_exc)
+            if reaped:
+                try:
+                    self._processes.remove(child)
+                except ValueError:
+                    pass
+            if cleanup_errors:
+                raise activation_exc from RuntimeCleanupError(cleanup_errors)
+            raise
         self.fixtures[component] = target
         return target
 

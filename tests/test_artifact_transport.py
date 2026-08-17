@@ -388,6 +388,76 @@ def test_publish_restores_existing_output_for_unexpected_validator_exception(tmp
     assert not list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
 
 
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_publish_restores_existing_output_and_rethrows_control_exception(
+    tmp_path: Path, failure: BaseException
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new artifact")
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    original = destination.read_bytes()
+    replacement = staged.read_bytes()
+
+    def interrupt_only_after_replace(path):
+        target = Path(path).resolve()
+        if target == destination.resolve() and target.read_bytes() == replacement:
+            raise failure
+
+    with pytest.raises(type(failure)) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=interrupt_only_after_replace,
+        )
+
+    assert caught.value is failure
+    assert destination.read_bytes() == original
+    assert not list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_publish_retains_backup_and_interrupt_semantics_when_rollback_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: BaseException,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new artifact")
+    destination = _write_pdf(tmp_path / "result.pdf", b"old artifact")
+    replacement = staged.read_bytes()
+    real_replace = os.replace
+    calls = 0
+
+    def fail_restore(source, target):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("restore blocked")
+        return real_replace(source, target)
+
+    def interrupt_only_after_replace(path):
+        target = Path(path).resolve()
+        if target == destination.resolve() and target.read_bytes() == replacement:
+            raise failure
+
+    monkeypatch.setattr(os, "replace", fail_restore)
+    with pytest.raises(type(failure)) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=interrupt_only_after_replace,
+        )
+
+    assert caught.value is failure
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1
+    rollback_error = caught.value.__cause__
+    assert isinstance(rollback_error, ArtifactTransportError)
+    assert rollback_error.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert str(backups[0]) in str(rollback_error)
+    assert isinstance(rollback_error.__cause__, OSError)
+
+
 def test_publish_retains_and_reports_backup_when_rollback_fails(
     tmp_path, monkeypatch
 ):
