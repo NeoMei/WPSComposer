@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -48,14 +50,14 @@ def excalidraw_plugin(content: str, base_dir: str) -> str:
         # Resolve the Excalidraw file path
         abs_path = _resolve_excalidraw_path(excalidraw_rel_path, base_dir)
         if abs_path is None:
-            print(
-                f"[excalidraw] Warning: cannot find {excalidraw_rel_path}",
-                file=sys.stderr,
+            raise RuntimeError(
+                f"Excalidraw source not found: {excalidraw_rel_path}"
             )
-            continue
 
-        # Determine output PNG path (same directory as the Excalidraw file)
-        png_path = abs_path.parent / f"{abs_path.stem}.png"
+        # Render into a private cache directory.  Source-side PNG files may be
+        # user-owned exports and must never be overwritten implicitly.
+        render_dir = Path(tempfile.mkdtemp(prefix="wpscomposer-excalidraw-"))
+        png_path = render_dir / f"{abs_path.stem}.png"
 
         print(
             f"[excalidraw] Rendering {abs_path.name} -> {png_path.name}",
@@ -70,9 +72,9 @@ def excalidraw_plugin(content: str, base_dir: str) -> str:
             content = content.replace(full_match, new_ref)
             print(f"[excalidraw]   OK -> {new_ref}", file=sys.stderr)
         else:
-            print(
-                f"[excalidraw]   FAILED to render {abs_path.name}",
-                file=sys.stderr,
+            shutil.rmtree(render_dir, ignore_errors=True)
+            raise RuntimeError(
+                f"Failed to render Excalidraw file: {abs_path.name}"
             )
 
     return content

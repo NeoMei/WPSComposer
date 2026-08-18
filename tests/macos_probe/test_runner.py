@@ -5,6 +5,7 @@ import shutil
 import zipfile
 
 import pytest
+from tests._pdf_fixture import write_minimal_pdf
 
 from skills.WPSComposer.scripts.artifact_transport import ArtifactTransportError
 from skills.WPSComposer.scripts.macos_probe.bridge import LoopbackBridge
@@ -29,7 +30,7 @@ def test_validate_native_zip_artifacts(tmp_path: Path):
         path = tmp_path / f"smoke.{suffix}"
         with zipfile.ZipFile(path, "w") as package:
             package.writestr("[Content_Types].xml", "<Types />")
-            package.writestr(member, "x" * 2048)
+            package.writestr(member, f"<root><data>{'x' * 2048}</data></root>")
         validate_artifact(path, suffix)
 
 
@@ -82,7 +83,7 @@ def test_registration_retry_activates_only_missing_components():
 
 def test_validate_pdf_signature(tmp_path: Path):
     path = tmp_path / "smoke.pdf"
-    path.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+    write_minimal_pdf(path)
     validate_artifact(path, "pdf")
 
 
@@ -102,7 +103,9 @@ def test_wait_for_artifact_handles_delayed_writer_flush(tmp_path: Path):
         time.sleep(0.05)
         with zipfile.ZipFile(path, "w") as package:
             package.writestr("[Content_Types].xml", "<Types />")
-            package.writestr("word/document.xml", "x" * 2048)
+            package.writestr(
+                "word/document.xml", f"<root><data>{'x' * 2048}</data></root>"
+            )
 
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(write_later)
@@ -111,9 +114,9 @@ def test_wait_for_artifact_handles_delayed_writer_flush(tmp_path: Path):
 
 
 def fake_component(bridge, component, command_count):
-    bridge.state.register(component)
+    bridge.state.register(component, bridge.session_nonce)
     for _ in range(command_count):
-        command = bridge.state.next(component, 2)
+        command = bridge.state.next(component, bridge.session_nonce, 2)
         assert command is not None
         if command.method == "probe_capabilities":
             value = {
@@ -132,7 +135,7 @@ def fake_component(bridge, component, command_count):
             path = Path(command.params["outputPath"])
             path.parent.mkdir(parents=True, exist_ok=True)
             if path.suffix == ".pdf":
-                path.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+                write_minimal_pdf(path)
             else:
                 members = {
                     ".docx": "word/document.xml",
@@ -141,11 +144,16 @@ def fake_component(bridge, component, command_count):
                 }
                 with zipfile.ZipFile(path, "w") as package:
                     package.writestr("[Content_Types].xml", "<Types />")
-                    package.writestr(members[path.suffix], "x" * 2048)
+                    package.writestr(
+                        members[path.suffix],
+                        f"<root><data>{'x' * 2048}</data></root>",
+                    )
             value = {"path": str(path), "capabilities": {}}
             if path.suffix == ".pdf":
                 value["preset"] = "obsidian-reading"
-        bridge.state.complete(ProbeResult(command.id, True, value, None))
+        bridge.state.complete(
+            ProbeResult(command.id, True, value, None), bridge.session_nonce
+        )
 
 
 def test_execute_commands_keeps_four_outputs_independent(tmp_path: Path):

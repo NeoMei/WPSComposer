@@ -75,6 +75,7 @@ w.save_current()
 result = edit(
     "report.docx",
     output="report-revised.docx",
+    overwrite=False,
     export_pdf="report-revised.pdf",
     patches=[
         {"target": "paragraph:1", "font": {"size": 20, "bold": True}},
@@ -102,7 +103,7 @@ Common functions:
 | `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
 | `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
 | `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned |
+| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. Existing outputs require `overwrite=True`. With `export_pdf`, both artifacts are staged and validated before group publication with rollback; attached/macOS edit export is unsupported. |
 | `apply_ops(composer, ops, atomic=True)` | Unified op executor (`set`/`insert`/`remove`/`move`/`clone`); raises `PatchError` in atomic mode |
 | `apply_patches(composer, patches, atomic=True)` | Back-compat wrapper: `set`-only patches, normalised to `apply_ops` |
 | `validate_op(op, kind=None)` | Validate one op dict against the schema; returns `{valid, error:{code,...}}` |
@@ -138,13 +139,21 @@ document is not saved (no file is written for `output=`, and `save_current()`
 is not called for the active document). Set `atomic=False` for the legacy
 best-effort behaviour that saves whatever succeeded.
 
-Caveat for the `path=None` (attach-active) workflow: atomic mode guarantees
-**no disk write** on failure, but the live WPS/Office window may still show
-the partially-applied in-memory edits, because COM formatting calls cannot be
-selectively rolled back without an undo stack. After a failed atomic `edit()`
-on the active document, re-inspect (`inspect()`) before retrying. With
-`output=` in attach mode the live document is saved in place and *output*
-receives a file copy — `SaveAs` would rebind the live window to the new path.
+For `path=None` (attach-active), only a single `set` operation containing at
+most one leaf property is accepted in atomic mode. Composite patches and all
+structural operations are rejected **before the first mutation** because
+WPS/Office exposes no reliable rollback boundary for the live window. Use
+`atomic=False` explicitly for best-effort live mutation, or edit a file-backed
+copy. An existing `output=` is rejected before attaching unless
+`overwrite=True`; after attachment, its document family is validated before
+mutation. The live document keeps its binding and the output is published from
+a validated destination-local staging file.
+
+File-backed edits preserve the source document family. A distinct destination
+must not exist unless `overwrite=True`; successful saves are validated in a
+same-directory staging file and then atomically published. On macOS, editing is
+currently restricted to `.pptx` input and `.pptx` output so legacy, slideshow,
+and macro-enabled presentation semantics cannot be silently lost.
 
 ### Address grammar
 
@@ -152,7 +161,7 @@ receives a file copy — `SaveAs` would rebind the live window to the new path.
 |---|---|
 | Writer | `selection`, `paragraph:N`, `paragraph:@paraId=HEX` *(stable)*, `range:START-END`, `table:N/cell:R,C`, `shape:N`, `section:N` |
 | Sheet | `selection`, `sheet:N`, `sheet:N/cell:A1`, `sheet:N/range:A1:C20`, `sheet:N/shape:N`, `sheet:N/shape:@id=N` *(stable)*, `sheet:N/shape:@name=NAME` *(stable)*, `sheet:N/chart:N` |
-| Slide | `selection`, `presentation`, `slide:N`, `slide:N/shape:N`, `slide:N/shape:@id=N` *(stable)*, `slide:N/shape:@name=NAME` *(stable)*, `.../paragraph:N`, `.../paragraph:N/run:N`, `.../table/cell:R,C` |
+| Slide | `selection`, `presentation`, `slide:N`, `slide:N/shape:N`, `slide:N/shape:@id=N` *(stable)*, `slide:N/shape:@name=NAME` *(stable)*, `.../paragraph:N`, `.../paragraph:N/run:N`, `.../table/cell:R,C`; stable `@id` supports all three nested suffixes |
 
 All indices are 1-based. **Stable forms** (`@paraId` / `@id` / `@name`) survive
 structural edits between `inspect()` and `edit()` and are emitted by
@@ -400,13 +409,13 @@ Cross-platform pure-Python, no COM host. All methods static.
 
 | Method | Args | Notes |
 |---|---|---|
-| `merge(input_paths, output_path)` | list[str], str | concatenate PDFs |
-| `split(input_path, output_dir, stem=None)` | str,str | one-page PDFs |
-| `extract_pages(input_path, page_indices, output_path)` | str, list[int], str | 1-based indices |
-| `rotate(input_path, angle, output_path)` | str,{90,180,270},str | rotate all |
+| `merge(input_paths, output_path, *, overwrite=False)` | list[str], str | concatenate PDFs; explicit overwrite |
+| `split(input_path, output_dir, stem=None, *, overwrite=False)` | str,str | atomic one-page PDF set; explicit overwrite |
+| `extract_pages(input_path, page_indices, output_path, *, overwrite=False)` | str, list[int], str | 1-based indices; explicit overwrite |
+| `rotate(input_path, angle, output_path, *, overwrite=False)` | str,{90,180,270},str | rotate all; explicit overwrite |
 | `extract_text(input_path, pages=None)` | str, list[int]\|None | pdfplumber |
 | `page_count(input_path)` | str | returns int |
-| `add_text_watermark(...)` | ... | diagonal text watermark |
+| `add_text_watermark(..., *, overwrite=False)` | ... | diagonal text watermark; explicit overwrite |
 
 ---
 

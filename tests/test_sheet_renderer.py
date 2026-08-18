@@ -98,3 +98,32 @@ def test_sheet_renderer_preserves_windows_table_calls_with_injected_composer():
 def test_sheet_renderer_has_no_private_composer_access():
     source = Path(sheet_renderer.__file__).read_text(encoding="utf-8")
     assert "s._doc" not in source
+
+
+def test_sheet_renderer_makes_repeated_and_sanitized_names_unique():
+    document = StructuredDocument(
+        sections=[
+            Section(
+                2,
+                "Metrics/A",
+                [
+                    TableBlock(["A"], [["1"]]),
+                    TableBlock(["B"], [["2"]]),
+                ],
+            ),
+            Section(2, "Metrics:A", [TableBlock(["C"], [["3"]])]),
+        ]
+    )
+    recorder = RecordingSheetComposer()
+
+    recorded = sheet_renderer.render(
+        document, "ignored.xlsx", composer_factory=lambda: recorder
+    )
+    names = [
+        operation.args["name"]
+        for operation in recorded.plan.operations
+        if operation.op in {"sheet.rename", "sheet.add"}
+    ]
+
+    assert names == ["Metrics A", "Metrics A (2)", "Metrics A (3)"]
+    assert len({name.casefold() for name in names}) == len(names)

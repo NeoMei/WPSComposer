@@ -24,6 +24,10 @@ def test_methods_are_routed_to_one_component():
         "generate_writer_document": "writer",
         "generate_spreadsheet_workbook": "spreadsheet",
         "generate_presentation_deck": "presentation",
+        "inspect_presentation": "presentation",
+        "edit_presentation": "presentation",
+        "inspect_document": "writer",
+        "inspect_workbook": "spreadsheet",
     }
 
 

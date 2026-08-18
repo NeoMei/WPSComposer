@@ -10,12 +10,11 @@ from skills.WPSComposer.scripts.conversion import (
     ConversionError,
     convert_to_pdf,
 )
+from tests._pdf_fixture import write_minimal_pdf
 
 
 def _write_pdf(path: Path) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
-    return path
+    return write_minimal_pdf(path)
 
 
 @pytest.mark.parametrize(

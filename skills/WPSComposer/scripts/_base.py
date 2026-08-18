@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 
 from ._dispatch import _require, _dispatch, _safe_quit, _abs
 
@@ -28,6 +29,7 @@ class BaseComposer:
     _native_fmt = 0
     _pdf_fmt = 0
     _formats_by_extension = {}
+    _attached_save_copy_supported = False
 
     def __init__(self, path=None, read_only=False, visible=False):
         """Create a composer for a new or existing document.
@@ -44,6 +46,7 @@ class BaseComposer:
         self._visible = bool(visible)
         self._owns_app = False
         self._owns_doc = False
+        self._com_initialized = False
 
     # ---- subclass hooks ----
 
@@ -63,16 +66,19 @@ class BaseComposer:
 
     def _open(self):
         _require()
-        self._app = _dispatch(self._progids)
-        self._owns_app = True
-        try:
-            self._app.Visible = -1 if self._visible else 0
-        except Exception:
-            pass
-        try:
-            self._app.DisplayAlerts = 0
-        except Exception:
-            pass
+        dispatched = _dispatch(self._progids)
+        self._app = dispatched.app
+        self._owns_app = dispatched.owns_app
+        self._com_initialized = True
+        if self._owns_app:
+            try:
+                self._app.Visible = -1 if self._visible else 0
+            except Exception:
+                pass
+            try:
+                self._app.DisplayAlerts = 0
+            except Exception:
+                pass
         return self._app
 
     def __enter__(self):
@@ -80,8 +86,8 @@ class BaseComposer:
             return self
         last = None
         for attempt in range(3):
-            app = self._open()
             try:
+                app = self._open()
                 if self._path:
                     self._doc = self._open_document(app, self._path, self._read_only)
                 else:
@@ -92,11 +98,13 @@ class BaseComposer:
                 # COM object whose collection property (Documents/Presentations/
                 # Workbooks) is not ready yet — re-dispatch and retry.
                 last = exc
-                _safe_quit(self._app)
-                self._app = None
+                self.close(save_changes=False)
                 if attempt == 2:
                     raise last
                 time.sleep(0.6)
+            except BaseException:
+                self.close(save_changes=False)
+                raise
         self._owns_doc = True
         return self
 
@@ -121,29 +129,36 @@ class BaseComposer:
         import win32com.client as win32
 
         pythoncom.CoInitialize()
-        last = None
-        app = None
-        for progid in cls._progids:
-            try:
-                app = win32.GetActiveObject(progid)
-                break
-            except Exception as exc:
-                last = exc
-        if app is None:
-            from ._dispatch import WPSUnavailable
-            raise WPSUnavailable(
-                f"No running WPS/Office application for {cls._progids}: {last}"
-            )
+        try:
+            last = None
+            app = None
+            for progid in cls._progids:
+                try:
+                    app = win32.GetActiveObject(progid)
+                    break
+                except Exception as exc:
+                    last = exc
+            if app is None:
+                from ._dispatch import WPSUnavailable
+                raise WPSUnavailable(
+                    f"No running WPS/Office application for {cls._progids}: {last}"
+                )
 
-        obj = cls()
-        obj._app = app
-        obj._doc = cls._active_document(app)
-        if obj._doc is None:
-            from ._dispatch import WPSUnavailable
-            raise WPSUnavailable("The application is running but has no active document.")
-        obj._owns_app = False
-        obj._owns_doc = False
-        return obj
+            obj = cls()
+            obj._app = app
+            obj._doc = cls._active_document(app)
+            if obj._doc is None:
+                from ._dispatch import WPSUnavailable
+                raise WPSUnavailable(
+                    "The application is running but has no active document."
+                )
+            obj._owns_app = False
+            obj._owns_doc = False
+            obj._com_initialized = True
+            return obj
+        except BaseException:
+            pythoncom.CoUninitialize()
+            raise
 
     def close(self, save_changes=False):
         """Release owned COM objects; attached user documents stay open."""
@@ -154,12 +169,18 @@ class BaseComposer:
                 except TypeError:
                     # PowerPoint Presentation.Close() takes no argument
                     self._doc.Close()
-            except Exception:
+            except BaseException:
                 pass
         if self._owns_app:
             _safe_quit(self._app)
         self._doc = None
         self._app = None
+        self._owns_doc = False
+        self._owns_app = False
+        if self._com_initialized:
+            self._com_initialized = False
+            import pythoncom
+            pythoncom.CoUninitialize()
 
     # ---- shared I/O ----
 
@@ -206,9 +227,24 @@ class BaseComposer:
         p = _abs(path)
         try:
             self._doc.SaveCopyAs(p)
+            if not self._owns_doc and self.is_bound_to(p):
+                raise RuntimeError(
+                    "Attached document copy unexpectedly rebound the live "
+                    f"document; recovery path retained at {p}"
+                )
             return p
-        except Exception:
-            pass
+        except Exception as copy_exc:
+            if not self._owns_doc:
+                if self.is_bound_to(p):
+                    if isinstance(copy_exc, RuntimeError) and str(p) in str(copy_exc):
+                        raise
+                    raise RuntimeError(
+                        "Attached document copy failed after the live document "
+                        f"was rebound; recovery path retained at {p}"
+                    ) from copy_exc
+                raise RuntimeError(
+                    "Attached document has no reliable non-rebinding copy primitive"
+                ) from copy_exc
         current = self._doc.FullName
         save_fmt = fmt
         if save_fmt is None:
@@ -217,8 +253,27 @@ class BaseComposer:
             except Exception:
                 save_fmt = self._native_fmt
         self.save(p, save_fmt)
-        self._doc.SaveAs(current, save_fmt)
+        try:
+            self._doc.SaveAs(current, save_fmt)
+        except BaseException as restore_exc:
+            raise RuntimeError(
+                f"Owned document copy was written to {p}, but rebinding to "
+                f"the original path failed: {current}"
+            ) from restore_exc
         return p
+
+    def supports_attached_save_copy(self):
+        """Whether attached output copies have a proven non-rebinding primitive."""
+        return bool(self._attached_save_copy_supported)
+
+    def is_bound_to(self, path):
+        """Return whether the active host document is currently bound to *path*."""
+        try:
+            current = Path(os.path.abspath(os.fspath(self._doc.FullName)))
+            target = Path(os.path.abspath(os.fspath(path)))
+        except (AttributeError, TypeError, ValueError):
+            return False
+        return os.path.normcase(str(current)) == os.path.normcase(str(target))
 
     # ---- properties ----
 

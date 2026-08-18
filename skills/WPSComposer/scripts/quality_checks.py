@@ -139,17 +139,26 @@ def validate_wps_slide(slide_obj, preset: DesignPreset) -> dict:
 
     try:
         shapes = slide_obj.Shapes
+        shape_total = int(shapes.Count)
     except Exception:
-        return {"pass": True, "warnings": ["Cannot access slide shapes"], "score": 100}
+        return {
+            "pass": False,
+            "warnings": ["Cannot access slide shapes"],
+            "score": 0,
+            "status": "error",
+        }
 
     rules = preset.rules
     text_count = 0
     shape_count = 0
     title_count = 0
+    inspected_count = 0
+    inspection_failures = 0
 
-    for i in range(1, shapes.Count + 1):
+    for i in range(1, shape_total + 1):
         try:
             shape = shapes(i)
+            inspected_count += 1
             if shape.HasTextFrame and shape.TextFrame.HasText:
                 text_count += 1
                 try:
@@ -174,7 +183,20 @@ def validate_wps_slide(slide_obj, preset: DesignPreset) -> dict:
             else:
                 shape_count += 1
         except Exception:
-            shape_count += 1
+            inspection_failures += 1
+
+    if shape_total > 0 and inspected_count == 0:
+        return {
+            "pass": False,
+            "warnings": ["Cannot inspect any slide shapes"],
+            "score": 0,
+            "status": "error",
+        }
+    if inspection_failures:
+        warnings.append(
+            f"Cannot inspect {inspection_failures} of {shape_total} slide shapes"
+        )
+        score -= min(20, inspection_failures * 5)
 
     # Content density
     max_bullets = rules.get("max_bullets", 6)

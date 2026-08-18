@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+import zipfile
+
 import pytest
 
 from skills.WPSComposer.scripts import document_api as api
@@ -16,6 +19,7 @@ from skills.WPSComposer.scripts.document_api import (
     validate_op,
     validate_target,
 )
+from tests._pdf_fixture import write_minimal_pdf
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +51,8 @@ class FakeWriterComposer:
             raise ValueError("Unsupported Writer target: boom")
         if target == "explode":
             raise RuntimeError("COM host vanished")
+        if target == "rejected":
+            return {"accepted": [], "rejected": ["font.size"]}
         accepted = sorted(patch.keys())
         self.applied.append((target, patch))
         return {"accepted": accepted, "rejected": []}
@@ -56,6 +62,8 @@ class FakeWriterComposer:
         verb = op.get("op")
         if verb == "remove" and op.get("target") == "paragraph:404":
             raise ValueError("Unsupported Writer target: paragraph:404")
+        if verb == "remove" and op.get("target") == "paragraph:405":
+            return {"accepted": [], "rejected": ["remove"]}
         if verb == "insert":
             etype = op.get("type")
             self.applied.append(("insert", op))
@@ -78,6 +86,50 @@ class FakeWriterComposer:
 
     def close(self, save_changes=False):
         self.closed = True
+
+
+class PackageWriterComposer(FakeWriterComposer):
+    def __init__(self, *, corrupt=False, fail=False):
+        super().__init__()
+        self.corrupt = corrupt
+        self.fail = fail
+        self.save_calls = []
+
+    def save(self, path):
+        target = Path(path)
+        self.save_calls.append(target.resolve())
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if self.fail:
+            target.write_bytes(b"partial")
+            raise OSError("simulated save failure")
+        if self.corrupt:
+            target.write_bytes(b"not-an-ooxml-package")
+        else:
+            with zipfile.ZipFile(target, "w") as package:
+                package.writestr("[Content_Types].xml", "<Types />")
+                package.writestr(
+                    "word/document.xml",
+                    "<document><body>edited</body></document>",
+                )
+        self.saved = True
+        return str(target)
+
+
+class PackageAndPdfWriterComposer(PackageWriterComposer):
+    def __init__(self, *, pdf_failure=False):
+        super().__init__()
+        self.pdf_failure = pdf_failure
+        self.export_calls = []
+
+    def export_pdf(self, path):
+        target = Path(path)
+        self.export_calls.append(target.resolve())
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if self.pdf_failure:
+            target.write_bytes(b"PARTIAL")
+            raise OSError("simulated PDF export failure")
+        write_minimal_pdf(target, b"edited-pdf")
+        return str(target)
 
 
 # ---------------------------------------------------------------------------
@@ -182,6 +234,20 @@ def test_apply_patches_distinguishes_apply_failure_code():
     assert exc_info.value.reports[0]["error"]["code"] == "apply_failed"
 
 
+def test_apply_patches_rejected_report_is_atomic_failure():
+    composer = FakeWriterComposer()
+
+    with pytest.raises(PatchError) as exc_info:
+        apply_patches(
+            composer,
+            [{"target": "rejected", "font": {"size": 12}}],
+        )
+
+    report = exc_info.value.reports[0]
+    assert report["ok"] is False
+    assert report["rejected"] == ["font.size"]
+
+
 def test_apply_patches_best_effort_keeps_running():
     composer = FakeWriterComposer()
     reports = apply_patches(
@@ -268,10 +334,596 @@ def test_edit_best_effort_saves_partial():
             output="out.docx",
             atomic=False,
         )
-    assert result["ok"] is True             # not raised, best-effort
+    assert result["ok"] is False
     assert result["saved"] is True
     assert composer.saved is True
     assert any(not r["ok"] for r in result["patches"])
+    assert result["errors"] == [r for r in result["patches"] if not r["ok"]]
+
+
+def test_edit_atomic_rejected_report_blocks_save():
+    composer = FakeWriterComposer()
+
+    def fake_open(path, *, kind=None, read_only=False, visible=False):
+        return composer
+
+    with _Monkey(api, "open_document", fake_open):
+        result = api.edit(
+            "report.docx",
+            patches=[{"target": "rejected", "font": {"size": 12}}],
+            output="out.docx",
+        )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["errors"][0]["rejected"] == ["font.size"]
+    assert composer.saved is False
+
+
+def test_edit_attached_atomic_multi_op_rejected_before_first_mutation():
+    composer = FakeWriterComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        result = api.edit(
+            patches=[
+                {"target": "paragraph:1", "font": {"bold": True}},
+                {"target": "paragraph:2", "font": {"italic": True}},
+            ],
+            atomic=True,
+        )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["errors"][0]["error"]["code"] == "atomic_attached_batch_unsupported"
+    assert composer.applied == []
+    assert composer.saved is False
+
+
+def test_edit_attached_atomic_compound_patch_rejected_before_partial_mutation():
+    class CompoundPatchComposer(FakeWriterComposer):
+        def __init__(self):
+            super().__init__()
+            self.live = {}
+
+        def apply_format_patch(self, target, **patch):
+            self.live["bold"] = patch["font"]["bold"]
+            return {
+                "accepted": ["font.bold"],
+                "rejected": ["font.unsupported"],
+            }
+
+    composer = CompoundPatchComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        result = api.edit(
+            patches=[{
+                "target": "paragraph:1",
+                "font": {"bold": True, "unsupported": True},
+            }],
+            atomic=True,
+        )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["errors"][0]["error"]["code"] == "atomic_attached_batch_unsupported"
+    assert composer.live == {}
+    assert composer.applied == []
+
+
+def test_edit_rejects_cross_family_output_before_opening():
+    opened = []
+
+    def fake_open(*args, **kwargs):
+        opened.append(args)
+        return FakeWriterComposer()
+
+    with _Monkey(api, "open_document", fake_open):
+        with pytest.raises(ValueError, match="same document family"):
+            api.edit("report.docx", output="report.pptx", patches=[])
+
+    assert opened == []
+
+
+def test_edit_refuses_existing_output_without_overwrite_before_opening(
+    tmp_path: Path,
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"source")
+    output = tmp_path / "approved.docx"
+    output.write_bytes(b"approved")
+    opened = []
+
+    def fake_open(*args, **kwargs):
+        opened.append(args)
+        return FakeWriterComposer()
+
+    with _Monkey(api, "open_document", fake_open):
+        with pytest.raises(FileExistsError, match="Output already exists"):
+            api.edit(source, output=output, patches=[])
+
+    assert output.read_bytes() == b"approved"
+    assert opened == []
+
+
+def test_edit_attached_refuses_existing_output_before_attach_or_mutation(
+    tmp_path: Path,
+):
+    output = tmp_path / "approved.docx"
+    output.write_bytes(b"approved")
+    attach_calls = []
+
+    def fake_attach(kind=None):
+        attach_calls.append(kind)
+        return FakeWriterComposer()
+
+    with _Monkey(api, "attach_active", fake_attach):
+        with pytest.raises(FileExistsError, match="Output already exists"):
+            api.edit(
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert attach_calls == []
+    assert output.read_bytes() == b"approved"
+
+
+def test_edit_attached_rejects_cross_family_output_before_mutation(tmp_path: Path):
+    composer = FakeWriterComposer()
+    output = tmp_path / "wrong-family.pptx"
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(ValueError, match="same document family"):
+            api.edit(
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.applied == []
+    assert composer.saved is False
+    assert composer.closed is True
+
+
+def test_edit_attached_rejects_unsupported_save_copy_before_mutation(
+    tmp_path: Path,
+):
+    class NoCopyComposer(FakeWriterComposer):
+        def supports_attached_save_copy(self):
+            return False
+
+    composer = NoCopyComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(RuntimeError, match="non-rebinding copy primitive"):
+            api.edit(
+                output=tmp_path / "copy.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.applied == []
+    assert composer.closed is True
+
+
+def test_edit_attached_retains_stage_when_failed_copy_rebinds_live_document(
+    tmp_path: Path,
+):
+    class ReboundComposer(FakeWriterComposer):
+        bound_path = None
+        staged_path = None
+
+        def supports_attached_save_copy(self):
+            return True
+
+        def save_copy(self, path):
+            self.staged_path = Path(path).resolve()
+            with zipfile.ZipFile(self.staged_path, "w") as package:
+                package.writestr("[Content_Types].xml", "<Types />")
+                package.writestr("word/document.xml", "<document />")
+            self.bound_path = self.staged_path
+            raise RuntimeError(
+                f"live document remains bound to recovery path {self.staged_path}"
+            )
+
+        def is_bound_to(self, path):
+            return self.bound_path == Path(path).resolve()
+
+    composer = ReboundComposer()
+
+    with _Monkey(api, "attach_active", lambda kind=None: composer):
+        with pytest.raises(RuntimeError, match="recovery path"):
+            api.edit(
+                output=tmp_path / "copy.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert composer.staged_path.is_file()
+    assert not (tmp_path / "copy.docx").exists()
+
+
+def test_edit_saves_to_destination_local_stage_before_publish(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"source-placeholder")
+    output = tmp_path / "nested" / "edited.docx"
+    composer = PackageWriterComposer()
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        result = api.edit(
+            source,
+            output=output,
+            patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+        )
+
+    staged = composer.save_calls[0]
+    assert staged.parent == output.parent.resolve()
+    assert staged.suffix == ".docx"
+    assert staged != output.resolve()
+    assert not staged.exists()
+    assert Path(result["saved_path"]) == output.resolve()
+    assert output.is_file()
+
+
+def test_edit_overwrite_save_failure_preserves_existing_output(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"source-placeholder")
+    output = tmp_path / "approved.docx"
+    output.write_bytes(b"approved-original")
+    composer = PackageWriterComposer(fail=True)
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(OSError, match="simulated save failure"):
+            api.edit(
+                source,
+                output=output,
+                overwrite=True,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert output.read_bytes() == b"approved-original"
+
+
+def test_edit_corrupt_stage_does_not_replace_existing_output(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"source-placeholder")
+    output = tmp_path / "approved.docx"
+    output.write_bytes(b"approved-original")
+    composer = PackageWriterComposer(corrupt=True)
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(RuntimeError, match="STAGED|ZIP|small"):
+            api.edit(
+                source,
+                output=output,
+                overwrite=True,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert output.read_bytes() == b"approved-original"
+
+
+@pytest.mark.parametrize("export_name", ["result.docx", "result"])
+def test_edit_rejects_non_pdf_export_target_before_opening(
+    tmp_path: Path, export_name: str
+):
+    opened = []
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: opened.append(args)):
+        with pytest.raises(ValueError, match="export_pdf.*\\.pdf"):
+            api.edit(
+                tmp_path / "source.docx",
+                patches=[],
+                export_pdf=tmp_path / export_name,
+            )
+
+    assert opened == []
+
+
+def test_edit_refuses_existing_pdf_before_opening_or_mutation(tmp_path: Path):
+    approved = tmp_path / "approved.pdf"
+    approved.write_bytes(b"APPROVED-PDF")
+    opened = []
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: opened.append(args)):
+        with pytest.raises(FileExistsError, match="Output already exists"):
+            api.edit(
+                tmp_path / "source.docx",
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                export_pdf=approved,
+            )
+
+    assert approved.read_bytes() == b"APPROVED-PDF"
+    assert opened == []
+
+
+def test_edit_stages_both_outputs_before_publish_when_pdf_export_fails(
+    tmp_path: Path,
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "approved.docx"
+    pdf = tmp_path / "approved.pdf"
+    output.write_bytes(b"APPROVED-DOCX")
+    pdf.write_bytes(b"APPROVED-PDF")
+    composer = PackageAndPdfWriterComposer(pdf_failure=True)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(OSError, match="PDF export failure"):
+                api.edit(
+                    source,
+                    output=output,
+                    export_pdf=pdf,
+                    overwrite=True,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert output.read_bytes() == b"APPROVED-DOCX"
+    assert pdf.read_bytes() == b"APPROVED-PDF"
+    assert composer.save_calls[0] != output.resolve()
+    assert composer.export_calls[0] != pdf.resolve()
+    assert not composer.save_calls[0].exists()
+    assert not composer.export_calls[0].exists()
+
+
+def test_edit_publishes_valid_document_and_pdf_as_one_group(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                export_pdf=pdf,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert Path(result["saved_path"]) == output.resolve()
+    assert Path(result["pdf_path"]) == pdf.resolve()
+    assert output.is_file()
+    assert pdf.is_file()
+
+
+def test_file_edit_closes_composer_before_publish_and_stage_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    events: list[str] = []
+    real_publish = api.publish_artifact
+    real_unlink = Path.unlink
+
+    def close(save_changes=False):
+        events.append("close")
+        composer.closed = True
+
+    def observed_publish(*args, **kwargs):
+        assert composer.closed
+        events.append("publish")
+        return real_publish(*args, **kwargs)
+
+    def windows_unlink(path, *args, **kwargs):
+        if path in composer.save_calls:
+            assert composer.closed
+            events.append("cleanup")
+        return real_unlink(path, *args, **kwargs)
+
+    composer.close = close
+    monkeypatch.setattr(api, "publish_artifact", observed_publish)
+    monkeypatch.setattr(Path, "unlink", windows_unlink)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert result["saved"] is True
+    assert events == ["close", "publish", "cleanup"]
+
+
+def test_file_edit_closes_composer_before_group_publish_and_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+    events: list[str] = []
+    real_publish_group = api.publish_artifact_group
+    real_unlink = Path.unlink
+
+    def close(save_changes=False):
+        events.append("close")
+        composer.closed = True
+
+    def observed_publish_group(*args, **kwargs):
+        assert composer.closed
+        events.append("publish")
+        return real_publish_group(*args, **kwargs)
+
+    def windows_unlink(path, *args, **kwargs):
+        if path in [*composer.save_calls, *composer.export_calls]:
+            assert composer.closed
+            events.append("cleanup")
+        return real_unlink(path, *args, **kwargs)
+
+    composer.close = close
+    monkeypatch.setattr(api, "publish_artifact_group", observed_publish_group)
+    monkeypatch.setattr(Path, "unlink", windows_unlink)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            result = api.edit(
+                source,
+                output=output,
+                export_pdf=pdf,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert result["saved"] is True
+    assert result["pdf_path"] == str(pdf.resolve())
+    assert events == ["close", "publish", "cleanup", "cleanup"]
+
+
+def test_file_edit_close_failure_does_not_publish_and_retains_recovery_stage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    publish_calls = []
+
+    def fail_close(save_changes=False):
+        raise RuntimeError("simulated COM close failure")
+
+    composer.close = fail_close
+    monkeypatch.setattr(
+        api, "publish_artifact", lambda *args, **kwargs: publish_calls.append(args)
+    )
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError, match="recovery artifacts retained"):
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert publish_calls == []
+    assert not output.exists()
+    assert len(composer.save_calls) == 1
+    assert composer.save_calls[0].is_file()
+
+
+def test_file_edit_single_publish_failure_retains_stage_on_original_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    failure = RuntimeError("simulated single publish failure")
+
+    def fail_publish(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(api, "publish_artifact", fail_publish)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    stage = composer.save_calls[0]
+    assert caught.value is failure
+    assert caught.value.recovery_paths == (str(stage),)
+    assert "recovery_paths" in str(caught.value)
+    assert composer.closed is True
+    assert stage.is_file()
+    assert not output.exists()
+
+
+def test_file_edit_group_publish_failure_retains_all_stages_on_original_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    pdf = tmp_path / "edited.pdf"
+    composer = PackageAndPdfWriterComposer()
+    failure = RuntimeError("simulated group publish failure")
+
+    def fail_publish_group(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(api, "publish_artifact_group", fail_publish_group)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    export_pdf=pdf,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    stages = (*composer.save_calls, *composer.export_calls)
+    assert caught.value is failure
+    assert caught.value.recovery_paths == tuple(str(stage) for stage in stages)
+    assert "recovery_paths" in str(caught.value)
+    assert composer.closed is True
+    assert all(stage.is_file() for stage in stages)
+    assert not output.exists()
+    assert not pdf.exists()
+
+
+def test_file_edit_recovery_reporting_failure_does_not_replace_publish_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"SOURCE")
+    output = tmp_path / "edited.docx"
+    composer = PackageWriterComposer()
+    failure = RuntimeError("authoritative publish failure")
+    real_exists = Path.exists
+
+    def fail_publish(*args, **kwargs):
+        raise failure
+
+    def fail_stage_exists(path):
+        if path in composer.save_calls:
+            raise OSError("simulated recovery reporting failure")
+        return real_exists(path)
+
+    monkeypatch.setattr(api, "publish_artifact", fail_publish)
+    monkeypatch.setattr(Path, "exists", fail_stage_exists)
+
+    with _Monkey(api, "_com_available", lambda: True):
+        with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+            with pytest.raises(RuntimeError) as caught:
+                api.edit(
+                    source,
+                    output=output,
+                    patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+                )
+
+    assert caught.value is failure
+    assert composer.save_calls[0].is_file()
+
+
+def test_edit_rejects_export_pdf_on_macos_before_bridge_or_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    bridge_calls = []
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    from skills.WPSComposer.scripts.macos_probe import inspection
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection, "edit_macos", lambda *args, **kwargs: bridge_calls.append(args)
+    )
+
+    with pytest.raises(RuntimeError, match="export_pdf.*unsupported.*macOS"):
+        api.edit(
+            tmp_path / "source.pptx",
+            export_pdf=tmp_path / "out.pdf",
+            patches=[{"target": "slide:1", "fill": {"color": "#ffffff"}}],
+        )
+
+    assert bridge_calls == []
 
 
 def test_edit_raise_on_error_propagates_patch_error():
@@ -288,6 +940,22 @@ def test_edit_raise_on_error_propagates_patch_error():
                 output="out.docx",
                 raise_on_error=True,
             )
+    assert composer.saved is False
+
+
+def test_edit_best_effort_raise_on_error_still_does_not_save():
+    composer = FakeWriterComposer()
+
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(PatchError):
+            api.edit(
+                "report.docx",
+                patches=[{"target": "boom"}],
+                output="out.docx",
+                atomic=False,
+                raise_on_error=True,
+            )
+
     assert composer.saved is False
 
 
@@ -322,6 +990,9 @@ class _Monkey:
     ("slide:1/shape:@name=Title 1", "slide", "shape"),       # spaces in name
     ("sheet:2/shape:@id=5", "sheet", "shape"),
     ("sheet:2/shape:@name=My Logo!", "sheet", "shape"),
+    ("slide:1/shape:@id=7/paragraph:2", "slide", "paragraph"),
+    ("slide:1/shape:@id=7/paragraph:2/run:4", "slide", "run"),
+    ("slide:1/shape:@id=7/table/cell:2,3", "slide", "table_cell"),
 ])
 def test_validate_target_accepts_stable_id_forms(target, kind, element):
     info = validate_target(target, kind)
@@ -483,6 +1154,43 @@ def test_snapshot_to_patches_walks_nested_slide_shapes():
     }
 
 
+def test_snapshot_to_patches_preserves_stable_shape_nested_scope_and_indices():
+    snapshot = {
+        "kind": "slide",
+        "slides": [{"id": "slide:1", "shapes": [{
+            "id": "slide:1/shape:@id=7",
+            "index": 3,
+            "fill": {"color": "#111111"},
+            "paragraphs": [{
+                "id": "slide:1/shape:@id=7/paragraph:2",
+                "index": 2,
+                "paragraph": {"alignment": 2},
+                "runs": [{
+                    "id": "slide:1/shape:@id=7/paragraph:2/run:4",
+                    "index": 4,
+                    "font": {"bold": True},
+                }],
+            }],
+            "table": {"cells": [{
+                "id": "slide:1/shape:@id=7/table/cell:2,3",
+                "row": 2,
+                "column": 3,
+                "font": {"italic": True},
+            }]},
+        }]}],
+    }
+
+    assert snapshot_to_patches(snapshot) == [
+        {"target": "slide:1/shape:3", "fill": {"color": "#111111"}},
+        {"target": "slide:1/shape:3/paragraph:2",
+         "paragraph": {"alignment": 2}},
+        {"target": "slide:1/shape:3/paragraph:2/run:4",
+         "font": {"bold": True}},
+        {"target": "slide:1/shape:3/table/cell:2,3",
+         "font": {"italic": True}},
+    ]
+
+
 def test_snapshot_to_patches_skips_invalid_ids():
     # An id that matches no grammar form for the snapshot's kind is skipped.
     snapshot = {
@@ -638,6 +1346,19 @@ def test_apply_ops_structural_failure_is_atomic():
     assert reports[1]["error"]["code"] == "invalid_target"
 
 
+def test_apply_ops_structural_rejection_is_atomic_failure():
+    composer = FakeWriterComposer()
+
+    with pytest.raises(PatchError) as exc_info:
+        apply_ops(composer, [
+            {"op": "remove", "target": "paragraph:405"},
+        ])
+
+    report = exc_info.value.reports[0]
+    assert report["ok"] is False
+    assert report["rejected"] == ["remove"]
+
+
 def test_apply_ops_best_effort_continues_past_structural_failure():
     composer = FakeWriterComposer()
     reports = apply_ops(composer, [
@@ -697,3 +1418,154 @@ def test_edit_atomic_blocks_save_on_structural_failure():
     assert composer.saved is False
     assert result["errors"][0]["error"]["code"] == "invalid_target"
 
+
+def test_macos_atomic_mixed_ops_are_rejected_before_bridge_call(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    calls = []
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection,
+        "edit_macos",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    result = api.edit(
+        "deck.pptx",
+        output="revised.pptx",
+        ops=[
+            {"op": "set", "target": "slide:1", "name": "Updated"},
+            {"op": "remove", "target": "slide:2"},
+        ],
+        atomic=True,
+    )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["errors"][0]["error"]["code"] == "unsupported_operation"
+    assert calls == []
+
+
+def test_macos_route_forwards_atomic_error_and_overwrite_semantics(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    observed = {}
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+
+    def fake_edit(source, patches, output=None, **kwargs):
+        observed.update(kwargs)
+        return {
+            "path": output,
+            "saved": True,
+            "patches": [{"target": "slide:1", "ok": True}],
+        }
+
+    monkeypatch.setattr(inspection, "edit_macos", fake_edit)
+
+    result = api.edit(
+        "deck.pptx",
+        output="revised.pptx",
+        patches=[{"target": "slide:1", "name": "Updated"}],
+        atomic=False,
+        raise_on_error=True,
+        overwrite=True,
+    )
+
+    assert observed == {
+        "atomic": False,
+        "raise_on_error": True,
+        "overwrite": True,
+    }
+    assert result["saved"] is True
+
+
+def test_macos_best_effort_reports_dropped_structural_ops_as_errors(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection,
+        "edit_macos",
+        lambda *args, **kwargs: {
+            "path": "revised.pptx",
+            "saved": True,
+            "patches": [{"target": "slide:1", "ok": True}],
+        },
+    )
+
+    result = api.edit(
+        "deck.pptx",
+        output="revised.pptx",
+        ops=[
+            {"op": "set", "target": "slide:1", "name": "Updated"},
+            {"op": "remove", "target": "slide:2"},
+        ],
+        atomic=False,
+    )
+
+    assert result["ok"] is False
+    assert result["saved"] is True
+    assert result["errors"][0]["op"] == "remove"
+    assert result["errors"][0]["error"]["code"] == "unsupported_operation"
+
+
+def test_macos_best_effort_raise_on_error_rejects_before_bridge_publish(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    calls = []
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+    monkeypatch.setattr(
+        inspection,
+        "edit_macos",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+
+    with pytest.raises(PatchError) as caught:
+        api.edit(
+            "deck.pptx",
+            output="revised.pptx",
+            ops=[
+                {"op": "set", "target": "slide:1", "name": "Updated"},
+                {"op": "remove", "target": "slide:2"},
+            ],
+            atomic=False,
+            raise_on_error=True,
+        )
+
+    assert caught.value.errors[0]["error"]["code"] == "unsupported_operation"
+    assert calls == []
+
+
+def test_macos_best_effort_structural_only_returns_error_report(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+
+    result = api.edit(
+        "deck.pptx",
+        ops=[{"op": "remove", "target": "slide:2"}],
+        atomic=False,
+    )
+
+    assert result["ok"] is False
+    assert result["saved"] is False
+    assert result["ops"][0]["ok"] is False
+    assert result["errors"] == result["ops"]
+
+
+def test_macos_public_edit_rejects_legacy_presentation_before_com(monkeypatch):
+    from skills.WPSComposer.scripts.macos_probe import inspection
+
+    monkeypatch.setattr(api, "_com_available", lambda: False)
+    monkeypatch.setattr(inspection, "macos_inspection_available", lambda: True)
+
+    with pytest.raises(ValueError, match="macOS editing supports only '.pptx'"):
+        api.edit(
+            "legacy.pptm",
+            patches=[{"target": "slide:1", "name": "Updated"}],
+        )

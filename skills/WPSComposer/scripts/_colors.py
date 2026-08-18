@@ -52,8 +52,11 @@ _SEMANTIC_COLOR_MAP = {
     "light":         "light",
     "light_text":    "light",
     "bg":            "bg",
-    "white":         "bg",           # assuming light bg for now
     "gray":          "dark",         # maps to dark (gray variant)
+}
+
+_LITERAL_COLORS = {
+    "white": "#FFFFFF",
 }
 
 
@@ -75,6 +78,9 @@ def resolve_color(name: str, preset: Optional["DesignPreset"] = None) -> str:
     # Already a hex string
     if name.startswith("#"):
         return name
+
+    if name in _LITERAL_COLORS:
+        return _LITERAL_COLORS[name]
 
     # Resolve semantic name via preset
     role = _SEMANTIC_COLOR_MAP.get(name)

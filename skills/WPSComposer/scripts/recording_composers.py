@@ -180,6 +180,7 @@ class RecordingWriterComposer:
         line_spacing=None,
         space_after=None,
         line_spacing_rule=None,
+        bold=None,
     ):
         self._record(
             "writer.add_heading",
@@ -187,6 +188,7 @@ class RecordingWriterComposer:
                 text=str(text),
                 level=min(max(int(level), 1), 6),
                 size=size,
+                bold=bold,
                 color=color,
                 lineSpacing=line_spacing,
                 lineSpacingRule=line_spacing_rule,

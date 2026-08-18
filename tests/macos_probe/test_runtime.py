@@ -2,13 +2,18 @@ import json
 import os
 import signal
 import stat
+import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+from urllib.request import urlopen
 
 import pytest
 
 from skills.WPSComposer.scripts.macos_probe import runtime
 from skills.WPSComposer.scripts.macos_probe.runtime import (
     COMPONENT_CONFIG,
+    ProcessIdentity,
     RegistrationSnapshot,
     build_profile,
     find_node,
@@ -58,6 +63,7 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         tmp_path / "profiles",
         "writer",
         "http://127.0.0.1:45678",
+        "client-a",
     )
 
     package = json.loads((profile / "package.json").read_text())
@@ -66,7 +72,9 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
     assert session == {
         "bridgeUrl": "http://127.0.0.1:45678",
         "component": "writer",
+        "clientId": "client-a",
     }
+    assert "nonce" not in (profile / "session.json").read_text().lower()
     assert (profile / "component.js").read_text() == "writer.js"
 
 
@@ -75,31 +83,93 @@ def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
     original = b"<jsplugins><original/></jsplugins>\n"
     publish.write_bytes(original)
     snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
-    publish.write_bytes(b"changed")
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
     snapshot.restore()
     assert publish.read_bytes() == original
     assert not (tmp_path / "recovery").exists()
+
+
+def test_registration_injects_bootstrap_only_in_non_http_fragment(tmp_path: Path):
+    publish = tmp_path / "publish.xml"
+    publish.write_bytes(b"<jsplugins/>")
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    credentials = runtime.derive_client_credentials("private-root")
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="session-id",
+        client_credentials=credentials,
+    )
+
+    entry = next(iter(ET.parse(publish).getroot()))
+    url = urlsplit(entry.attrib["url"])
+    fragment = parse_qs(url.fragment)
+    assert url.query == ""
+    assert fragment == {
+        "component": ["writer"],
+        "clientId": [credentials["writer"]["clientId"]],
+        "capability": [credentials["writer"]["capability"]],
+    }
+    assert stat.S_IMODE(publish.stat().st_mode) == 0o600
+    snapshot.restore()
 
 
 def test_capture_recovers_stale_recovery_directory(tmp_path: Path):
     publish = tmp_path / "publish.xml"
     original = b"<jsplugins><original/></jsplugins>\n"
     publish.write_bytes(original)
-    RegistrationSnapshot.capture(publish, tmp_path / "recovery")
-    publish.write_bytes(b"crashed-mid-probe")
+    first = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    runtime.install_registration_entries(
+        first,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
     # next run: stale recovery dir is restored instead of failing
     snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
     assert publish.read_bytes() == original
-    publish.write_bytes(b"new-probe")
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-b",
+        client_credentials=runtime.derive_client_credentials("private-b"),
+    )
     snapshot.restore()
     assert publish.read_bytes() == original
     assert not (tmp_path / "recovery").exists()
 
 
+def test_stale_prewrite_recovery_preserves_current_external_registration(tmp_path):
+    publish = tmp_path / "publish.xml"
+    original = b"<jsplugins><original/></jsplugins>"
+    external = b'<jsplugins><original/><jspluginonline name="external"/></jsplugins>'
+    publish.write_bytes(original)
+    recovery = tmp_path / "recovery"
+    snapshot = RegistrationSnapshot.capture(publish, recovery)
+    publish.write_bytes(external)
+
+    snapshot.record_prewrite(("wpscomposer-nonce-a-writer",), external)
+    RegistrationSnapshot._recover_stale(recovery)
+
+    assert publish.read_bytes() == external
+    assert not recovery.exists()
+
+
 def test_registration_snapshot_removes_probe_created_file(tmp_path: Path):
     publish = tmp_path / "publish.xml"
     snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
-    publish.write_bytes(b"probe")
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
     snapshot.restore()
     assert not publish.exists()
     assert not (tmp_path / "recovery").exists()
@@ -139,7 +209,7 @@ def test_read_configured_node_uses_installer_runtime_file(tmp_path: Path):
 def test_component_activation_uses_a_fresh_wps_instance(tmp_path: Path):
     fixture = tmp_path / "fixture.pptx"
     command = runtime.activation_command(
-        Path("/Applications/wpsoffice.app"), fixture
+        Path("/Applications/wpsoffice.app"), fixture, reuse_running=False
     )
     assert command == [
         "open",
@@ -180,7 +250,7 @@ def test_runtime_removes_staging_session_after_success(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -204,7 +274,7 @@ def test_runtime_removes_staging_session_after_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -230,7 +300,7 @@ def test_runtime_surfaces_staging_cleanup_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     monkeypatch.setattr(runtime.ProbeRuntime, "_preflight", lambda self: None)
-    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set())
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
     probe = runtime.ProbeRuntime(
         tmp_path,
         tmp_path / "runtime",
@@ -266,14 +336,45 @@ def test_runtime_lock_serializes_overlapping_sessions(tmp_path: Path):
                 pass
 
 
+@posix_only
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_interrupted_runtime_enter_releases_lock_and_rethrows_original(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        staging_root=tmp_path / "container" / "WPSComposer",
+    )
+
+    def interrupt_preflight():
+        raise failure
+
+    monkeypatch.setattr(probe, "_preflight", interrupt_preflight)
+
+    with pytest.raises(type(failure)) as caught:
+        probe.__enter__()
+
+    assert caught.value is failure
+    assert probe._runtime_lock is None
+    assert probe.staging_dir is None
+    with runtime.wps_runtime_lock(probe.state_dir / "runtime.lock", timeout=0.1):
+        pass
+
+
 
 @posix_only
 def test_list_wps_pids_only_matches_exact_main_executable(monkeypatch):
     class Result:
         stdout = """\
- 101 /Applications/wpsoffice.app/Contents/MacOS/wpsoffice
- 102 /Applications/wpsoffice.app/Contents/MacOS/wpsoffice --flag
- 103 /Applications/wpsoffice.app/Contents/Frameworks/wpsoffice helper
+ 101 Mon Aug 18 01:00:00 2026 /Applications/wpsoffice.app/Contents/MacOS/wpsoffice
+ 102 Mon Aug 18 01:00:01 2026 /Applications/wpsoffice.app/Contents/MacOS/wpsoffice --flag
+ 103 Mon Aug 18 01:00:02 2026 /Applications/wpsoffice.app/Contents/Frameworks/wpsoffice helper
 """
 
     monkeypatch.setattr(runtime.subprocess, "run", lambda *args, **kwargs: Result())
@@ -291,14 +392,18 @@ def test_runtime_close_terminates_only_wps_processes_created_by_probe(
         "token",
         wps_app=tmp_path / "wpsoffice.app",
     )
-    probe._wps_pids_before = {101}
-    observed = iter(({101, 201, 202}, {101}))
-    monkeypatch.setattr(runtime, "list_wps_pids", lambda app: set(next(observed)))
+    first = _identity(201)
+    second = _identity(202)
+    probe._owned_wps_processes = {201: first, 202: second}
+    alive = {201: first, 202: second}
+    monkeypatch.setattr(
+        runtime, "read_wps_process_identity", lambda pid, app, **kwargs: alive.get(pid)
+    )
     signals = []
     monkeypatch.setattr(
         runtime.os,
         "kill",
-        lambda pid, action: signals.append((pid, action)),
+        lambda pid, action: (signals.append((pid, action)), alive.pop(pid, None)),
     )
 
     probe.close()
@@ -306,7 +411,390 @@ def test_runtime_close_terminates_only_wps_processes_created_by_probe(
     assert signals == [(201, signal.SIGTERM), (202, signal.SIGTERM)]
 
 
-def test_activate_component_can_retry_one_missing_component(
+def test_runtime_close_attempts_every_resource_and_aggregates_errors(tmp_path):
+    calls = []
+
+    class Resource:
+        def __init__(self, name, failure=None):
+            self.name = name
+            self.failure = failure
+
+        def close(self, *args, **kwargs):
+            calls.append(self.name)
+            if self.failure is not None:
+                raise self.failure
+
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe._servers = [Resource("server-good"), Resource("server-bad", OSError("port"))]
+    probe._log_streams = [Resource("stream-bad", OSError("fd")), Resource("stream-good")]
+
+    with pytest.raises(runtime.RuntimeCleanupError) as caught:
+        probe.close()
+
+    assert calls == ["server-bad", "server-good", "stream-bad", "stream-good"]
+    assert len(caught.value.errors) == 2
+    assert probe._servers == []
+    assert probe._log_streams == []
+
+
+def _identity(pid: int, started: str = "start-a") -> ProcessIdentity:
+    return ProcessIdentity(
+        pid=pid,
+        start_time=started,
+        executable="/Applications/wpsoffice.app/Contents/MacOS/wpsoffice",
+    )
+
+
+def _install_owned_activation(monkeypatch, commands, failure=None):
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            return None
+
+        def wait(self, timeout=None):
+            return 0
+
+        def kill(self):
+            return None
+
+    def popen(command, **kwargs):
+        commands.append(command)
+        if failure is not None:
+            raise failure
+        return Child()
+
+    monkeypatch.setattr(runtime.subprocess, "Popen", popen)
+    monkeypatch.setattr(
+        runtime,
+        "read_wps_process_identity",
+        lambda pid, app, **kwargs: _identity(pid),
+    )
+
+
+def test_runtime_never_signals_user_wps_launched_during_run(monkeypatch, tmp_path):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    owned = _identity(201)
+    user = _identity(202)
+    probe._owned_wps_processes = {owned.pid: owned}
+    current = {owned.pid: owned, user.pid: user}
+    monkeypatch.setattr(
+        runtime, "read_wps_process_identity", lambda pid, app, **kwargs: current.get(pid)
+    )
+    signals = []
+
+    def fake_kill(pid, action):
+        signals.append((pid, action))
+        if action == signal.SIGTERM:
+            current.pop(pid, None)
+
+    monkeypatch.setattr(runtime.os, "kill", fake_kill)
+
+    probe.close()
+
+    assert signals == [(201, signal.SIGTERM)]
+
+
+def test_runtime_kill_set_cannot_grow_during_term_grace(monkeypatch, tmp_path):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    owned = _identity(201)
+    late_user = _identity(303)
+    probe._owned_wps_processes = {owned.pid: owned}
+    now = [0.0]
+    monkeypatch.setattr(runtime.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(runtime.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(
+        runtime,
+        "read_wps_process_identity",
+        lambda pid, app, **kwargs: {201: owned, 303: late_user}.get(pid),
+    )
+    signals = []
+    monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
+
+    probe.close()
+
+    assert signals == [(201, signal.SIGTERM), (201, signal.SIGKILL)]
+
+
+def test_runtime_does_not_signal_reused_pid(monkeypatch, tmp_path):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe._owned_wps_processes = {201: _identity(201, "original-start")}
+    monkeypatch.setattr(
+        runtime,
+        "read_wps_process_identity",
+        lambda pid, app, **kwargs: _identity(pid, "reused-start"),
+    )
+    signals = []
+    monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
+
+    probe.close()
+
+    assert signals == []
+
+
+def test_ambiguous_concurrent_wps_launch_is_not_claimed(monkeypatch, tmp_path):
+    probe = _probe_with_writer_fixture(tmp_path)
+    before = {101: _identity(101)}
+    after = {
+        **before,
+        201: _identity(201),
+        202: _identity(202),
+    }
+    observations = iter((before, after))
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: next(observations))
+    commands = []
+    _install_owned_activation(monkeypatch, commands)
+
+    probe.activate_component("writer")
+
+    assert set(probe._owned_wps_processes) == {201}
+
+
+def test_single_new_pid_around_open_is_not_proof_of_ownership(monkeypatch, tmp_path):
+    probe = _probe_with_writer_fixture(tmp_path)
+    user = _identity(202)
+    observations = iter(({}, {user.pid: user}))
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: next(observations))
+    commands = []
+    _install_owned_activation(monkeypatch, commands)
+
+    probe.activate_component("writer")
+
+    assert set(probe._owned_wps_processes) == {201}
+
+
+def test_preexisting_young_wps_is_never_claimed_by_elapsed_age(monkeypatch, tmp_path):
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    preexisting = _identity(101)
+    probe._wps_processes_before = {101: preexisting}
+    probe._owned_wps_processes = {}
+    signals = []
+    monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
+
+    probe.close()
+
+    assert signals == []
+
+
+def test_start_servers_uses_side_effect_free_static_servers(
+    monkeypatch, tmp_path: Path
+):
+    def free_port():
+        with runtime.socket.socket() as sock:
+            sock.bind(("127.0.0.1", 0))
+            return sock.getsockname()[1]
+
+    configs = {
+        name: {**config, "port": free_port()}
+        for name, config in COMPONENT_CONFIG.items()
+    }
+    monkeypatch.setattr(runtime, "COMPONENT_CONFIG", configs)
+    monkeypatch.setattr(
+        runtime.subprocess,
+        "Popen",
+        lambda *args, **kwargs: pytest.fail("vendor wpsjs must not be launched"),
+    )
+    publish = tmp_path / "publish.xml"
+    publish.write_text("<jsplugins/>", encoding="utf-8")
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "random-runtime-a",
+        "http://127.0.0.1:45678",
+        "token",
+        publish_xml=publish,
+        staging_root=tmp_path / "stable" / "WPSComposer",
+    )
+    for component in configs:
+        profile = tmp_path / "profiles" / component
+        profile.mkdir(parents=True)
+        (profile / "index.html").write_text(component, encoding="utf-8")
+        probe.profiles[component] = profile
+
+    try:
+        probe.start_servers()
+        for component, config in configs.items():
+            with urlopen(f"http://127.0.0.1:{config['port']}/index.html") as response:
+                assert response.read().decode() == component
+    finally:
+        probe.close()
+
+
+def test_stale_registration_recovers_across_random_runtime_roots_before_preflight(
+    monkeypatch, tmp_path: Path
+):
+    publish = tmp_path / "publish.xml"
+    original = b"<jsplugins><original/></jsplugins>"
+    publish.write_bytes(original)
+    stable_root = tmp_path / "stable" / "WPSComposer"
+    recovery = stable_root.parent / ".wpscomposer-runtime/registration-recovery"
+    crashed = RegistrationSnapshot.capture(publish, recovery)
+    runtime.install_registration_entries(
+        crashed,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="crashed-session",
+        client_credentials=runtime.derive_client_credentials("private-crashed"),
+    )
+
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "different-random-runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        publish_xml=publish,
+        staging_root=stable_root,
+    )
+    monkeypatch.setattr(
+        probe,
+        "_preflight",
+        lambda: publish.read_bytes() == original
+        or pytest.fail("recovery must happen before port preflight"),
+    )
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+
+    with probe:
+        pass
+
+
+def test_registration_restore_merges_external_concurrent_changes(tmp_path: Path):
+    publish = tmp_path / "publish.xml"
+    publish.write_text(
+        '<jsplugins><jspluginonline name="original" url="http://old/"/></jsplugins>',
+        encoding="utf-8",
+    )
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+    tree = ET.parse(publish)
+    ET.SubElement(
+        tree.getroot(),
+        "jspluginonline",
+        {"name": "external", "url": "http://external/"},
+    )
+    tree.write(publish, encoding="utf-8", xml_declaration=True)
+
+    snapshot.restore()
+
+    names = {element.attrib.get("name") for element in ET.parse(publish).getroot()}
+    assert names == {"original", "external"}
+
+
+def test_registration_restore_uses_latest_prewrite_base_after_external_change(
+    tmp_path: Path,
+):
+    publish = tmp_path / "publish.xml"
+    original = b"<jsplugins><original/></jsplugins>"
+    external = b'<jsplugins><original/><jspluginonline name="external"/></jsplugins>'
+    publish.write_bytes(original)
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    publish.write_bytes(external)
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+    snapshot.restore()
+
+    assert publish.read_bytes() == external
+
+
+@pytest.mark.parametrize("capture_existed", [True, False])
+def test_installed_crash_recovery_uses_latest_prewrite_base(
+    tmp_path: Path, capture_existed: bool
+):
+    publish = tmp_path / "publish.xml"
+    if capture_existed:
+        publish.write_bytes(b"<jsplugins><original/></jsplugins>")
+    recovery = tmp_path / "recovery"
+    snapshot = RegistrationSnapshot.capture(publish, recovery)
+    external = b'<jsplugins><jspluginonline name="external"/></jsplugins>'
+    publish.write_bytes(external)
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+    RegistrationSnapshot._recover_stale(recovery)
+
+    assert publish.read_bytes() == external
+    assert not recovery.exists()
+
+
+def test_registration_install_retries_concurrent_external_edit(
+    monkeypatch, tmp_path: Path
+):
+    publish = tmp_path / "publish.xml"
+    publish.write_text("<jsplugins><original/></jsplugins>", encoding="utf-8")
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    original_write = runtime._atomic_write
+    raced = False
+
+    def racing_write(path, content, mode, *, expected=None):
+        nonlocal raced
+        if not raced and path == publish:
+            raced = True
+            path.write_text(
+                '<jsplugins><original/><jspluginonline name="external"/></jsplugins>',
+                encoding="utf-8",
+            )
+        if expected is None:
+            return original_write(path, content, mode)
+        return original_write(path, content, mode, expected=expected)
+
+    monkeypatch.setattr(runtime, "_atomic_write", racing_write)
+
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="nonce-a",
+        client_credentials=runtime.derive_client_credentials("private-a"),
+    )
+
+    names = {element.attrib.get("name") for element in ET.parse(publish).getroot()}
+    assert "external" in names
+
+
+def test_activate_component_does_not_relaunch_one_component(
     monkeypatch, tmp_path: Path
 ):
     probe_root = tmp_path / "probe"
@@ -323,11 +811,8 @@ def test_activate_component_can_retry_one_missing_component(
     probe.staging_dir = tmp_path / "container" / "session-1"
     probe.staging_dir.mkdir(parents=True)
     commands = []
-    monkeypatch.setattr(
-        runtime.subprocess,
-        "run",
-        lambda command, **kwargs: commands.append(command),
-    )
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+    _install_owned_activation(monkeypatch, commands)
 
     first = probe.activate_component("writer")
     second = probe.activate_component("writer")
@@ -335,7 +820,216 @@ def test_activate_component_can_retry_one_missing_component(
     assert first == second
     assert first.parent == probe.staging_dir / "fixtures"
     assert first.read_bytes() == b"fixture"
-    assert commands == [
-        runtime.activation_command(probe.wps_app, first),
-        runtime.activation_command(probe.wps_app, first),
-    ]
+    assert commands == [[str(probe.wps_app / "Contents/MacOS/wpsoffice"), str(first)]]
+
+
+def test_activate_component_launches_direct_owned_child(
+    monkeypatch, tmp_path: Path
+):
+    probe_root = tmp_path / "probe"
+    resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
+    resource_dir.mkdir(parents=True)
+    (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe.staging_dir = tmp_path / "container" / "session-1"
+    probe.staging_dir.mkdir(parents=True)
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+    commands = []
+    _install_owned_activation(monkeypatch, commands)
+
+    probe.activate_component("writer")
+
+    assert commands[0][0].endswith("Contents/MacOS/wpsoffice")
+    assert set(probe._owned_wps_processes) == {201}
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_activate_component_reaps_tracked_child_before_rethrowing_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            return 0
+
+        def kill(self):
+            events.append("kill")
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+
+    def interrupt_identity(*args, **kwargs):
+        assert probe._processes == [child]
+        raise failure
+
+    monkeypatch.setattr(runtime, "read_wps_process_identity", interrupt_identity)
+
+    with pytest.raises(type(failure)) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert events == ["terminate", "wait"]
+    assert probe._processes == []
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_activate_component_cleanup_error_does_not_mask_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    failure: BaseException,
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+            raise OSError("terminate failed")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            return 0
+
+        def kill(self):
+            return None
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+    monkeypatch.setattr(
+        runtime,
+        "read_wps_process_identity",
+        lambda *args, **kwargs: (_ for _ in ()).throw(failure),
+    )
+
+    with pytest.raises(type(failure)) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert isinstance(caught.value.__cause__, runtime.RuntimeCleanupError)
+    assert events == ["terminate", "wait"]
+    assert probe._processes == []
+
+
+def test_activate_component_waits_again_after_killing_failed_handshake(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    events = []
+
+    class Child:
+        pid = 201
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, timeout=None):
+            events.append("wait")
+            if events.count("wait") == 1:
+                raise subprocess.TimeoutExpired("wpsoffice", timeout)
+            return -signal.SIGKILL
+
+        def kill(self):
+            events.append("kill")
+
+    child = Child()
+    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *args, **kwargs: child)
+    monkeypatch.setattr(runtime, "read_wps_process_identity", lambda *args, **kwargs: None)
+
+    with pytest.raises(RuntimeError, match="Could not prove ownership"):
+        probe.activate_component("writer", deadline=runtime.time.monotonic())
+
+    assert events == ["terminate", "wait", "kill", "wait"]
+    assert probe._processes == []
+
+
+def _probe_with_writer_fixture(tmp_path: Path) -> runtime.ProbeRuntime:
+    probe_root = tmp_path / "probe"
+    resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
+    resource_dir.mkdir(parents=True)
+    (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+    )
+    probe.staging_dir = tmp_path / "container" / "session-1"
+    probe.staging_dir.mkdir(parents=True)
+    return probe
+
+
+def test_activate_component_does_not_use_launchservices_open(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+    commands = []
+
+    _install_owned_activation(monkeypatch, commands)
+
+    target = probe.activate_component("writer")
+
+    assert commands == [[str(probe.wps_app / "Contents/MacOS/wpsoffice"), str(target)]]
+
+
+def test_activate_component_does_not_retry_an_isolated_command(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+    failure = OSError("launch failed")
+    commands = []
+
+    _install_owned_activation(monkeypatch, commands, failure)
+
+    with pytest.raises(OSError) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert len(commands) == 1
+    assert commands[0][0].endswith("Contents/MacOS/wpsoffice")
+
+
+def test_activate_component_propagates_isolated_open_failure(
+    monkeypatch, tmp_path: Path
+):
+    probe = _probe_with_writer_fixture(tmp_path)
+    monkeypatch.setattr(runtime, "list_wps_processes", lambda app, **kwargs: {})
+    failure = OSError("launch failed")
+    commands = []
+
+    _install_owned_activation(monkeypatch, commands, failure)
+
+    with pytest.raises(OSError) as caught:
+        probe.activate_component("writer")
+
+    assert caught.value is failure
+    assert commands[0][0].endswith("Contents/MacOS/wpsoffice")

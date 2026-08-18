@@ -6,6 +6,7 @@ import pytest
 
 from skills.WPSComposer.scripts.conversion import ConversionError, ConversionRequest
 from skills.WPSComposer.scripts.windows_conversion import convert_windows
+from tests._pdf_fixture import write_minimal_pdf
 
 
 class FakeDocument:
@@ -14,7 +15,7 @@ class FakeDocument:
 
     @staticmethod
     def _write_pdf(path: str) -> None:
-        Path(path).write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+        write_minimal_pdf(Path(path))
 
     def ExportAsFixedFormat(self, *args):
         self.calls.append(("ExportAsFixedFormat", args))

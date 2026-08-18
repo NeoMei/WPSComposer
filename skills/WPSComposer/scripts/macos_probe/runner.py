@@ -456,7 +456,9 @@ def run_phase0(
             if runtime.registration_restored:
                 shutil.rmtree(runtime_root, ignore_errors=True)
             else:
-                report["recoveryDirectory"] = str(runtime_dir)
+                report["recoveryDirectory"] = str(
+                    getattr(runtime, "recovery_dir", runtime_dir)
+                )
         else:
             shutil.rmtree(runtime_root, ignore_errors=True)
 

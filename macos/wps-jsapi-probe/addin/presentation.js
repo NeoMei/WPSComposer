@@ -1604,6 +1604,8 @@
     var sourcePath = requirePath(params, "sourcePath");
     var outputPath = requirePath(params, "outputPath");
     var patches = params.patches || [];
+    var atomic = params.atomic !== false;
+    var raiseOnError = params.raiseOnError === true;
     var previousAlerts = Application.DisplayAlerts;
     var presentation = null;
     var failure = null;
@@ -1646,8 +1648,15 @@
           return {target: target, accepted: [], rejected: [], ok: false, error: String(e.message || e)};
         }
       });
+      var hasFailures = reports.some(function (report) { return report.ok !== true; });
+      if (atomic && hasFailures) {
+        return {path: null, patches: reports, saved: false};
+      }
+      if (raiseOnError && hasFailures) {
+        throw new Error("One or more presentation patches failed");
+      }
       presentation.SaveAs(outputPath, 24);
-      return {path: outputPath, patches: reports};
+      return {path: outputPath, patches: reports, saved: true};
     } catch (error) {
       failure = conversionError(error, "CONVERSION_COMMAND_FAILED");
       throw failure;
@@ -1663,6 +1672,13 @@
   }
 
   window.WPSComposerProbe = {
+    closeActivationFixture: function (expectedPath) {
+      const presentation = Application.ActivePresentation;
+      if (presentation &&
+          String(presentation.FullName) === String(expectedPath)) {
+        presentation.Close();
+      }
+    },
     handleCommand: function (command) {
       const handler = handlers[command.method];
       if (!handler) {

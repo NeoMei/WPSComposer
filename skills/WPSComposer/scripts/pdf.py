@@ -7,10 +7,81 @@ No COM dependency - cross-platform pure Python.
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import tempfile
+
+from .artifact_transport import (
+    publish_artifact,
+    publish_artifact_group,
+    validate_pdf,
+)
 
 
 def _pdf_abs(path):
     return os.path.abspath(path)
+
+
+def _validate_page_indices(page_indices, page_count):
+    indices = list(page_indices)
+    for index in indices:
+        if (
+            isinstance(index, bool)
+            or not isinstance(index, int)
+            or index < 1
+            or index > page_count
+        ):
+            raise ValueError(
+                f"page index must be an integer from 1 to {page_count}: {index!r}"
+            )
+    return indices
+
+
+def _pdf_target(path, overwrite):
+    target = Path(path).expanduser().resolve()
+    if target.suffix.lower() != ".pdf":
+        raise ValueError("PDF output path must use the '.pdf' suffix")
+    if target.exists() and not overwrite:
+        raise FileExistsError(f"Output already exists: {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def _write_pdf_stage(writer, target):
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=".wpscomposer-pdf-",
+        suffix=".pdf",
+    )
+    os.close(descriptor)
+    staged = Path(temporary_name)
+    try:
+        with staged.open("wb") as stream:
+            writer.write(stream)
+        validate_pdf(staged)
+        return staged
+    except BaseException:
+        staged.unlink(missing_ok=True)
+        raise
+    finally:
+        writer.close()
+
+
+def _write_and_publish_pdf(writer, output_path, overwrite):
+    target = _pdf_target(output_path, overwrite)
+    staged = _write_pdf_stage(writer, target)
+    return _publish_pdf_stage(staged, target, overwrite)
+
+
+def _publish_pdf_stage(staged, target, overwrite):
+    try:
+        return str(publish_artifact(
+            staged,
+            target,
+            overwrite=overwrite,
+            validator=validate_pdf,
+        ))
+    finally:
+        staged.unlink(missing_ok=True)
 
 
 # ===========================================================================
@@ -26,20 +97,21 @@ class PdfComposer:
     """
 
     @staticmethod
-    def merge(input_paths, output_path):
+    def merge(input_paths, output_path, *, overwrite=False):
         """Concatenate multiple PDFs into one. Returns output path."""
         from pypdf import PdfWriter
+        _pdf_target(output_path, overwrite)
         w = PdfWriter()
-        for p in input_paths:
-            w.append(_pdf_abs(p))
-        out = _pdf_abs(output_path)
-        with open(out, "wb") as fh:
-            w.write(fh)
-        w.close()
-        return out
+        try:
+            for p in input_paths:
+                w.append(_pdf_abs(p))
+        except BaseException:
+            w.close()
+            raise
+        return _write_and_publish_pdf(w, output_path, overwrite)
 
     @staticmethod
-    def split(input_path, output_dir, stem=None):
+    def split(input_path, output_dir, stem=None, *, overwrite=False):
         """Split a PDF into one-page PDFs. Returns list of output paths."""
         from pypdf import PdfReader, PdfWriter
         import os
@@ -48,52 +120,98 @@ class PdfComposer:
         os.makedirs(odir, exist_ok=True)
         base = stem or os.path.splitext(os.path.basename(src))[0]
         reader = PdfReader(src)
-        out = []
-        for i, page in enumerate(reader.pages, start=1):
-            w = PdfWriter()
-            w.add_page(page)
-            p = os.path.join(odir, f"{base}-{i:03d}.pdf")
-            with open(p, "wb") as fh:
-                w.write(fh)
-            w.close()
-            out.append(p)
-        return out
+        staged = []
+        try:
+            try:
+                targets = [
+                    _pdf_target(
+                        os.path.join(odir, f"{base}-{i:03d}.pdf"), overwrite
+                    )
+                    for i in range(1, len(reader.pages) + 1)
+                ]
+                for page, target in zip(reader.pages, targets):
+                    writer = PdfWriter()
+                    try:
+                        writer.add_page(page)
+                    except BaseException:
+                        writer.close()
+                        raise
+                    staged.append(_write_pdf_stage(writer, target))
+            finally:
+                reader.close()
+            published = publish_artifact_group([
+                (stage, target, overwrite, validate_pdf)
+                for stage, target in zip(staged, targets)
+            ])
+            return [str(path) for path in published]
+        finally:
+            for stage in staged:
+                stage.unlink(missing_ok=True)
 
     @staticmethod
-    def extract_pages(input_path, page_indices, output_path):
+    def extract_pages(input_path, page_indices, output_path, *, overwrite=False):
         """Keep only 1-based page indices into a new PDF. Returns output path."""
         from pypdf import PdfReader, PdfWriter
+        _pdf_target(output_path, overwrite)
         reader = PdfReader(_pdf_abs(input_path))
-        w = PdfWriter()
-        for idx in page_indices:
-            w.add_page(reader.pages[idx - 1])
-        out = _pdf_abs(output_path)
-        with open(out, "wb") as fh:
-            w.write(fh)
-        w.close()
-        return out
+        staged = None
+        try:
+            try:
+                page_indices = _validate_page_indices(
+                    page_indices, len(reader.pages)
+                )
+                w = PdfWriter()
+                try:
+                    for idx in page_indices:
+                        w.add_page(reader.pages[idx - 1])
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
+        finally:
+            if staged is not None:
+                staged.unlink(missing_ok=True)
 
     @staticmethod
-    def rotate(input_path, angle, output_path):
+    def rotate(input_path, angle, output_path, *, overwrite=False):
         """Rotate all pages. angle in {90, 180, 270}. Returns output path."""
         from pypdf import PdfReader, PdfWriter
+        _pdf_target(output_path, overwrite)
         reader = PdfReader(_pdf_abs(input_path))
-        w = PdfWriter()
-        for page in reader.pages:
-            page.rotate(angle)
-            w.add_page(page)
-        out = _pdf_abs(output_path)
-        with open(out, "wb") as fh:
-            w.write(fh)
-        w.close()
-        return out
+        staged = None
+        try:
+            try:
+                w = PdfWriter()
+                try:
+                    for page in reader.pages:
+                        page.rotate(angle)
+                        w.add_page(page)
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
+        finally:
+            if staged is not None:
+                staged.unlink(missing_ok=True)
 
     @staticmethod
     def extract_text(input_path, pages=None):
         """Extract text. pages=None for all, else 1-based list. Returns str."""
         import pdfplumber
         with pdfplumber.open(_pdf_abs(input_path)) as pdf:
-            idxs = pages if pages is not None else range(1, len(pdf.pages) + 1)
+            idxs = (
+                _validate_page_indices(pages, len(pdf.pages))
+                if pages is not None
+                else range(1, len(pdf.pages) + 1)
+            )
             chunks = []
             for i in idxs:
                 txt = pdf.pages[i - 1].extract_text() or ""
@@ -104,7 +222,11 @@ class PdfComposer:
     def page_count(input_path):
         """Return number of pages."""
         from pypdf import PdfReader
-        return len(PdfReader(_pdf_abs(input_path)).pages)
+        reader = PdfReader(_pdf_abs(input_path))
+        try:
+            return len(reader.pages)
+        finally:
+            reader.close()
 
     @staticmethod
     def _watermark_page(text, pw, ph, fontsize, opacity, angle):
@@ -140,21 +262,34 @@ class PdfComposer:
 
     @staticmethod
     def add_text_watermark(input_path, text, output_path,
-                            fontsize=50, opacity=0.15, angle=45):
+                            fontsize=50, opacity=0.15, angle=45,
+                            *, overwrite=False):
         """Stamp a diagonal text watermark on every page. Returns output path."""
         from pypdf import PdfReader, PdfWriter
         src = _pdf_abs(input_path)
-        out = _pdf_abs(output_path)
+        _pdf_target(output_path, overwrite)
         reader = PdfReader(src)
-        w = PdfWriter()
-        for page in reader.pages:
-            pw = float(page.mediabox.width)
-            ph = float(page.mediabox.height)
-            page.merge_page(
-                PdfComposer._watermark_page(text, pw, ph, fontsize, opacity, angle)
-            )
-            w.add_page(page)
-        with open(out, "wb") as fh:
-            w.write(fh)
-        w.close()
-        return out
+        staged = None
+        try:
+            try:
+                w = PdfWriter()
+                try:
+                    for page in reader.pages:
+                        pw = float(page.mediabox.width)
+                        ph = float(page.mediabox.height)
+                        watermark = PdfComposer._watermark_page(
+                            text, pw, ph, fontsize, opacity, angle
+                        )
+                        w.add_page(page)
+                        w.pages[-1].merge_page(watermark)
+                except BaseException:
+                    w.close()
+                    raise
+                target = _pdf_target(output_path, overwrite)
+                staged = _write_pdf_stage(w, target)
+            finally:
+                reader.close()
+            return _publish_pdf_stage(staged, target, overwrite)
+        finally:
+            if staged is not None:
+                staged.unlink(missing_ok=True)

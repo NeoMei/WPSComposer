@@ -747,6 +747,12 @@
     }
   }
   window.WPSComposerProbe = {
+    closeActivationFixture: function (expectedPath) {
+      const workbook = Application.ActiveWorkbook;
+      if (workbook && String(workbook.FullName) === String(expectedPath)) {
+        workbook.Close(false);
+      }
+    },
     handleCommand: function (command) {
       const handler = handlers[command.method];
       if (!handler) {

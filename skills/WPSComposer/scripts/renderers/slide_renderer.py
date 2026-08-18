@@ -9,7 +9,7 @@ from __future__ import annotations
 from ..document_model import (
     StructuredDocument, Section, Paragraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote, TaskList,
-    MathBlock,
+    ExcalidrawBlock, MathBlock,
 )
 from ..slide import SlideComposer
 from ..math_render import latex_to_unicode
@@ -29,10 +29,7 @@ def render(
         p.set_slide_size(960, 540)
 
         if preset:
-            try:
-                p.apply_design_preset(preset)
-            except Exception:
-                pass
+            p.apply_design_preset(preset)
 
         # Title slide
         if doc.title:
@@ -43,11 +40,20 @@ def render(
             p.add_title_slide(doc.title, subtitle or None)
 
         # Content slides
+        title_heading_suppressed = False
         for section in doc.sections:
             if section.level == 1:
-                if section.has_heading:
+                is_cover_title = (
+                    not title_heading_suppressed
+                    and section.has_heading
+                    and section.heading == doc.title
+                )
+                if is_cover_title:
+                    title_heading_suppressed = True
+                if section.has_heading and not is_cover_title:
                     p.add_section_slide(section.heading)
-            elif section.level >= 2:
+                _render_section(p, section, preset)
+            elif section.level >= 2 or section.elements:
                 _render_section(p, section, preset)
 
         return p.save_pptx(output_path)
@@ -55,87 +61,120 @@ def render(
 
 def _render_section(p: SlideComposer, section: Section, preset=None):
     """Render a content section, splitting long content across slides."""
-    bullets = []
-    tables = []
-    images = []
+    pending_bullets = []
 
-    for elem in section.elements:
+    def flush_bullets():
+        first = True
+        while pending_bullets:
+            chunk = pending_bullets[:MAX_BULLETS]
+            del pending_bullets[:MAX_BULLETS]
+            title = (
+                section.heading if section.has_heading and first
+                else "" if first
+                else "(continued)"
+            )
+            p.add_bullets_slide(
+                title, chunk,
+                title_size=28 if title != "(continued)" else 24,
+                body_size=18,
+            )
+            first = False
+
+    for position, elem in enumerate(section.elements, start=1):
         if isinstance(elem, Paragraph):
             text = _spans_to_text(elem.spans).strip()
             if text:
-                bullets.append(text)
+                pending_bullets.append(text)
         elif isinstance(elem, ListBlock):
             for item in elem.items:
                 text = _spans_to_text(item).strip()
                 if text:
-                    bullets.append(text)
+                    pending_bullets.append(text)
         elif isinstance(elem, TableBlock):
-            tables.append(elem)
+            flush_bullets()
+            _render_table(p, section, elem, preset, position)
         elif isinstance(elem, ImageBlock):
-            images.append(elem)
+            flush_bullets()
+            _render_image(p, elem, position)
+        elif isinstance(elem, ExcalidrawBlock):
+            flush_bullets()
+            raise RuntimeError(
+                "Excalidraw slide element at position "
+                f"{position} ({elem.path}) must be preprocessed with "
+                "plugins=['excalidraw'] before rendering"
+            )
         elif isinstance(elem, CodeBlock):
             code = elem.code.strip()
             if code:
-                bullets.append(code)
+                pending_bullets.append(code)
         elif isinstance(elem, TaskList):
             for text, checked in elem.items:
                 glyph = "☑" if checked else "☐"
-                bullets.append(f"{glyph} {text}".rstrip())
+                pending_bullets.append(f"{glyph} {text}".rstrip())
         elif isinstance(elem, BlockQuote):
             for para in elem.paragraphs:
                 text = _spans_to_text(para.spans).strip()
                 if text:
-                    bullets.append('"' + text + '"')
+                    pending_bullets.append('"' + text + '"')
         elif isinstance(elem, MathBlock):
             text = latex_to_unicode(elem.latex).strip()
             if text:
-                bullets.append(text)
+                pending_bullets.append(text)
 
-    if not bullets and not tables and not images:
-        return
+    flush_bullets()
 
-    # First bullet slide
-    first = bullets[:MAX_BULLETS]
-    if first:
-        p.add_bullets_slide(
-            section.heading if section.has_heading else "",
-            first, title_size=28, body_size=18,
-        )
 
-    # Overflow bullet slides
-    remaining = bullets[MAX_BULLETS:]
-    while remaining:
-        chunk = remaining[:MAX_BULLETS]
-        remaining = remaining[MAX_BULLETS:]
-        p.add_bullets_slide("(continued)", chunk, title_size=24, body_size=18)
-
-    # Table slides
-    for table in tables:
+def _render_table(p, section, table, preset, position):
+    remaining_rows = list(table.rows)
+    page = 1
+    while remaining_rows or (page == 1 and table.headers):
+        chunk = remaining_rows[:MAX_TABLE_ROWS]
+        remaining_rows = remaining_rows[MAX_TABLE_ROWS:]
+        data = ([table.headers] if table.headers else []) + chunk
+        cols = max(len(row) for row in data) if data else 0
+        if not cols:
+            break
+        rows = len(data)
+        title = section.heading if section.has_heading else "Table"
+        if page > 1:
+            title += " (continued)"
         try:
-            data = ([table.headers] if table.headers else []) + table.rows[:MAX_TABLE_ROWS]
-            cols = max(len(r) for r in data) if data else 0
-            if not cols:
-                continue
-            rows = len(data)
-            p.add_blank_slide()
-            idx = p.slide_count
+            p.add_bullets_slide(title, [], title_size=24, body_size=18)
             p.add_table(
-                idx, rows, cols,
+                p.slide_count, rows, cols,
                 60, 120, 840, 380,
                 data,
-                header_shade="#4472C4", header_font="#FFFFFF", font_size=14,
+                header_shade=(
+                    preset.get_color("primary") if preset else "#4472C4"
+                ),
+                header_font="#FFFFFF", font_size=14,
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(
+                f"table element at position {position} failed: {exc}"
+            ) from exc
+        page += 1
 
-    # Image slides
-    for img in images:
-        try:
-            p.add_blank_slide()
-            idx = p.slide_count
-            p.add_image(idx, img.path, 80, 100, 800, 400)
-        except Exception:
-            pass
+
+def _render_image(p, image, position):
+    try:
+        p.add_blank_slide()
+        width = image.width
+        height = image.height
+        if width is None and height is None:
+            width = 800
+        p.add_image(
+            p.slide_count,
+            image.path,
+            80,
+            100,
+            width=width,
+            height=height,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"image element at position {position} ({image.path}) failed: {exc}"
+        ) from exc
 
 
 def _spans_to_text(spans: list) -> str:

@@ -4,6 +4,8 @@
 
 WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS Office 生成高质量排版的 DOCX、PDF、XLSX、PPTX 文档。
 
+> 当前审计状态（2026-08-18）：生成、转换、检查和编辑链路已完成多轮完整审查；测试套件 **828 passed**。本轮加固覆盖原子发布与回滚、WPS 进程所有权、macOS JSAPI 会话认证、端到端超时、OOXML/PDF 语义校验以及跨进程验证器资源回收。
+
 ## ✨ 核心特性
 
 ### 🎨 专业排版
@@ -27,6 +29,13 @@ WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS
 - **Windows**：通过 COM 接口驱动 WPS Office / MS Office
 - **macOS**：通过 JSAPI 容器驱动 WPS Office
 - **统一 API**：相同的 Python 接口，跨平台一致体验
+
+### 🛡️ 交付安全
+- **原子产物发布**：DOCX、PPTX、XLSX、PDF 先写入同目录暂存文件，验证通过后再发布
+- **覆盖可恢复**：覆盖失败时回滚旧产物；恢复失败会明确报告并保留 recovery path
+- **语义验收**：除 ZIP/PDF 结构外，还校验 DOCX/PPTX 文本、播放顺序、图片关系与媒体完整性
+- **进程所有权**：只清理由当前会话明确拥有的 WPS 进程，不终止用户已有实例
+- **统一截止时间**：准备、激活、命令、验证、发布和清理共享同一端到端 timeout
 
 ## 🚀 快速开始
 
@@ -59,6 +68,29 @@ generate("slides.md", format="pptx", preset="business", output="slides.pptx")
 # 生成 XLSX 电子表格
 generate("data.md", format="xlsx", output="data.xlsx")
 ```
+
+### 转换、检查与编辑
+
+```python
+from skills.WPSComposer import convert_to_pdf, edit, inspect
+
+# 将现有 Office 文档转换为 PDF
+convert_to_pdf("report.docx", output="report.pdf", overwrite=True)
+
+# 读取现有文档的结构化快照
+snapshot = inspect("report.docx")
+
+# 通过稳定目标路径执行原子编辑；失败时不发布半成品
+edit(
+    "report.docx",
+    ops=[
+        {"op": "set", "target": "paragraph:1", "font": {"bold": True}},
+    ],
+    output="report-updated.docx",
+)
+```
+
+`edit()` 支持 DOCX、PPTX、XLSX 的文件编辑，也支持在明确选择文档类型后附加到活动文档。默认采用严格失败语义；批量操作、输出冲突或验证失败不会静默发布部分结果。
 
 ### 使用插件
 
@@ -309,15 +341,30 @@ pip install pywin32
 ## 🧪 测试
 
 ```bash
-# 运行测试
-pytest
+# 创建开发环境并安装依赖
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+
+# 运行完整测试
+.venv/bin/python -m pytest -q
 
 # 运行特定测试
-pytest tests/test_md_parser.py
-pytest tests/test_writer_renderer.py
+.venv/bin/python -m pytest tests/test_md_parser.py
+.venv/bin/python -m pytest tests/test_writer_renderer.py
 ```
 
+完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。macOS JSAPI 固定模板测试还需要运行 `python3 install.py` 安装锁定的运行时资源。
+
 ## 📝 更新日志
+
+### 2026-08-18 审计加固
+- 🔒 macOS bridge 改为一次性 capability 与按组件/客户端绑定的 bearer session
+- 🧭 WPS 子进程采用可证明所有权，清理前复核 PID、启动时间和可执行文件
+- ⏱️ 生成、转换、检查、编辑与发布共享端到端 deadline
+- 💾 单产物及多产物采用原子发布、覆盖回滚和 recovery path 语义
+- 🧾 强化 DOCX/PPTX/PDF 结构及内容语义验证，覆盖幻灯片真实播放顺序与图片关系
+- 🧩 修复 Markdown/Wikilink/Excalidraw/PPT 表格分页与内容顺序保全
+- 🧪 全量测试 828 项通过
 
 ### v0.7.1 (2026-08-12)
 - 🐛 文章标题（md 第一个 `#`）不再进入正文、目录和编号：仅渲染在封面，正文从第一节开始

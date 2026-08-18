@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import platform
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # ProgID fallback chains
@@ -79,6 +80,14 @@ class WPSUnavailable(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class DispatchResult:
+    """A COM application together with its application ownership."""
+
+    app: object
+    owns_app: bool
+
+
 def _require():
     """Verify Windows + pywin32 are available."""
     if platform.system() != "Windows":
@@ -100,23 +109,27 @@ def _dispatch(progids):
     import win32com.client as win32
     import pythoncom
     pythoncom.CoInitialize()
-    last = None
-    for pid in progids:
-        try:
+    try:
+        last = None
+        for pid in progids:
             try:
-                return win32.DispatchEx(pid)
+                return DispatchResult(win32.DispatchEx(pid), True)
             except Exception:
-                return win32.Dispatch(pid)
-        except Exception as e:
-            last = e
-    raise WPSUnavailable(f"No COM host for {progids}: {last}")
+                try:
+                    return DispatchResult(win32.Dispatch(pid), False)
+                except Exception as exc:
+                    last = exc
+        raise WPSUnavailable(f"No COM host for {progids}: {last}")
+    except BaseException:
+        pythoncom.CoUninitialize()
+        raise
 
 
 def _safe_quit(app):
     """Quit a COM app, swallowing any errors."""
     try:
         app.Quit()
-    except Exception:
+    except BaseException:
         pass
 
 

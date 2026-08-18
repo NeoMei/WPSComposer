@@ -35,9 +35,10 @@ from skills.WPSComposer.scripts.macos_probe.generation import (
 )
 from skills.WPSComposer.scripts.macos_probe import generation as mac_generation
 from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
+from tests._pdf_fixture import write_minimal_pdf
 
 
-def _operation_text(plan):
+def _operation_text_values(plan):
     values = []
     for operation in plan["operations"]:
         args = operation["args"]
@@ -49,7 +50,7 @@ def _operation_text(plan):
         for key in ("data", "values"):
             for row in args.get(key, []):
                 values.extend(str(item) for item in row if item is not None)
-    return " ".join(values) or "GENERATED_CONTENT"
+    return values or ["GENERATED_CONTENT"]
 
 
 def _rewrite_package(path, transform):
@@ -61,8 +62,15 @@ def _rewrite_package(path, transform):
             destination.writestr(name, data)
 
 
+def _write_minimal_package(path, member):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w") as package:
+        package.writestr("[Content_Types].xml", "<Types />")
+        package.writestr(member, f"<root><data>{'x' * 2048}</data></root>")
+
+
 def _write_semantic_artifact(path, format_name, plan, *, include_structure=True):
-    text = _operation_text(plan)
+    text_values = _operation_text_values(plan)
 
     def transform(contents):
         if format_name == "docx":
@@ -73,11 +81,14 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                     "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
                 )
             )
-            node.text = text
+            node.text = text_values[0]
+            word = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            body = root.find(f"{{{word}}}body")
+            for text in text_values[1:]:
+                paragraph = ElementTree.SubElement(body, f"{{{word}}}p")
+                run = ElementTree.SubElement(paragraph, f"{{{word}}}r")
+                ElementTree.SubElement(run, f"{{{word}}}t").text = text
             if include_structure:
-                body = root.find(
-                    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}body"
-                )
                 for operation in plan["operations"]:
                     if operation["op"] == "writer.add_table":
                         ElementTree.SubElement(
@@ -89,6 +100,21 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                 operation["op"] == "writer.add_image"
                 for operation in plan["operations"]
             ):
+                drawing = (
+                    "http://schemas.openxmlformats.org/drawingml/2006/main"
+                )
+                relationships = (
+                    "http://schemas.openxmlformats.org/officeDocument/2006/"
+                    "relationships"
+                )
+                document = ElementTree.fromstring(contents[name])
+                document_body = document.find(f"{{{word}}}body")
+                ElementTree.SubElement(
+                    document_body,
+                    f"{{{drawing}}}blip",
+                    {f"{{{relationships}}}embed": "rIdWPSComposerImage"},
+                )
+                contents[name] = ElementTree.tostring(document, encoding="utf-8")
                 rel_name = "word/_rels/document.xml.rels"
                 rel_root = ElementTree.fromstring(contents[rel_name])
                 ElementTree.SubElement(
@@ -110,8 +136,39 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                     "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t"
                 )
             )
-            node.text = text
+            node.text = text_values[0]
+            spreadsheet = (
+                "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+            )
+            for text in text_values[1:]:
+                item = ElementTree.SubElement(root, f"{{{spreadsheet}}}si")
+                ElementTree.SubElement(item, f"{{{spreadsheet}}}t").text = text
             contents[name] = ElementTree.tostring(root, encoding="utf-8")
+            worksheet_name = next(
+                name
+                for name in contents
+                if name.startswith("xl/worksheets/sheet") and name.endswith(".xml")
+            )
+            worksheet = ElementTree.fromstring(contents[worksheet_name])
+            sheet_data = worksheet.find(f"{{{spreadsheet}}}sheetData")
+            if sheet_data is None:
+                sheet_data = ElementTree.SubElement(
+                    worksheet, f"{{{spreadsheet}}}sheetData"
+                )
+            for index in range(1, len(text_values)):
+                row_number = 100 + index
+                row = ElementTree.SubElement(
+                    sheet_data, f"{{{spreadsheet}}}row", {"r": str(row_number)}
+                )
+                cell = ElementTree.SubElement(
+                    row,
+                    f"{{{spreadsheet}}}c",
+                    {"r": f"Z{row_number}", "t": "s"},
+                )
+                ElementTree.SubElement(cell, f"{{{spreadsheet}}}v").text = str(index)
+            contents[worksheet_name] = ElementTree.tostring(
+                worksheet, encoding="utf-8"
+            )
         else:
             slide_ops = {
                 "slide.add_title",
@@ -120,6 +177,53 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                 "slide.add_blank",
             }
             count = sum(op["op"] in slide_ops for op in plan["operations"])
+            presentation = (
+                "http://schemas.openxmlformats.org/presentationml/2006/main"
+            )
+            office_relationships = (
+                "http://schemas.openxmlformats.org/officeDocument/2006/"
+                "relationships"
+            )
+            package_relationships = (
+                "http://schemas.openxmlformats.org/package/2006/relationships"
+            )
+            presentation_root = ElementTree.fromstring(
+                contents["ppt/presentation.xml"]
+            )
+            slide_ids = presentation_root.find(f"{{{presentation}}}sldIdLst")
+            for slide_id in list(slide_ids):
+                slide_ids.remove(slide_id)
+            presentation_rels = ElementTree.fromstring(
+                contents["ppt/_rels/presentation.xml.rels"]
+            )
+            for relationship in list(presentation_rels):
+                if relationship.attrib.get("Type", "").endswith("/slide"):
+                    presentation_rels.remove(relationship)
+            for index in range(1, count + 1):
+                relationship_id = f"rIdWPSComposerSlide{index}"
+                ElementTree.SubElement(
+                    slide_ids,
+                    f"{{{presentation}}}sldId",
+                    {
+                        "id": str(255 + index),
+                        f"{{{office_relationships}}}id": relationship_id,
+                    },
+                )
+                ElementTree.SubElement(
+                    presentation_rels,
+                    f"{{{package_relationships}}}Relationship",
+                    {
+                        "Id": relationship_id,
+                        "Type": f"{office_relationships}/slide",
+                        "Target": f"slides/slide{index}.xml",
+                    },
+                )
+            contents["ppt/presentation.xml"] = ElementTree.tostring(
+                presentation_root, encoding="utf-8"
+            )
+            contents["ppt/_rels/presentation.xml.rels"] = ElementTree.tostring(
+                presentation_rels, encoding="utf-8"
+            )
             original = contents["ppt/slides/slide1.xml"]
             for name in list(contents):
                 if name.startswith("ppt/slides/slide") and name.endswith(".xml"):
@@ -131,7 +235,14 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                         "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
                     )
                 )
-                node.text = text
+                node.text = text_values[0]
+                drawing = (
+                    "http://schemas.openxmlformats.org/drawingml/2006/main"
+                )
+                for text in text_values[1:]:
+                    paragraph = ElementTree.SubElement(root, f"{{{drawing}}}p")
+                    run = ElementTree.SubElement(paragraph, f"{{{drawing}}}r")
+                    ElementTree.SubElement(run, f"{{{drawing}}}t").text = text
                 if include_structure and index == 1:
                     for operation in plan["operations"]:
                         if operation["op"] == "slide.add_table":
@@ -142,28 +253,47 @@ def _write_semantic_artifact(path, format_name, plan, *, include_structure=True)
                 contents[f"ppt/slides/slide{index}.xml"] = ElementTree.tostring(
                     root, encoding="utf-8"
                 )
-            if include_structure and any(
-                operation["op"] == "slide.add_image"
+            image_slides = [
+                operation["args"]["slide"]
                 for operation in plan["operations"]
-            ):
-                rel_name = "ppt/slides/_rels/slide1.xml.rels"
-                if rel_name in contents:
-                    rel_root = ElementTree.fromstring(contents[rel_name])
-                else:
-                    rel_root = ElementTree.Element(
-                        "{http://schemas.openxmlformats.org/package/2006/relationships}Relationships"
+                if operation["op"] == "slide.add_image"
+            ]
+            if include_structure:
+                for image_index, slide_index in enumerate(image_slides, start=1):
+                    slide_name = f"ppt/slides/slide{slide_index}.xml"
+                    rel_name = (
+                        f"ppt/slides/_rels/slide{slide_index}.xml.rels"
                     )
-                ElementTree.SubElement(
-                    rel_root,
-                    "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship",
-                    {
-                        "Id": "rIdWPSComposerImage",
-                        "Type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                        "Target": "../media/wpscomposer.png",
-                    },
-                )
-                contents[rel_name] = ElementTree.tostring(rel_root, encoding="utf-8")
-                contents["ppt/media/wpscomposer.png"] = b"image"
+                    relationship_id = f"rIdWPSComposerImage{image_index}"
+                    media_name = f"wpscomposer-{image_index}.png"
+                    slide = ElementTree.fromstring(contents[slide_name])
+                    ElementTree.SubElement(
+                        slide,
+                        f"{{{drawing}}}blip",
+                        {f"{{{office_relationships}}}embed": relationship_id},
+                    )
+                    contents[slide_name] = ElementTree.tostring(
+                        slide, encoding="utf-8"
+                    )
+                    if rel_name in contents:
+                        rel_root = ElementTree.fromstring(contents[rel_name])
+                    else:
+                        rel_root = ElementTree.Element(
+                            f"{{{package_relationships}}}Relationships"
+                        )
+                    ElementTree.SubElement(
+                        rel_root,
+                        f"{{{package_relationships}}}Relationship",
+                        {
+                            "Id": relationship_id,
+                            "Type": f"{office_relationships}/image",
+                            "Target": f"../media/{media_name}",
+                        },
+                    )
+                    contents[rel_name] = ElementTree.tostring(
+                        rel_root, encoding="utf-8"
+                    )
+                    contents[f"ppt/media/{media_name}"] = b"image"
 
     _rewrite_package(path, transform)
 
@@ -267,15 +397,15 @@ class GenerationRuntime:
         self.calls.append("prepare_profiles")
         return dict(self.profiles)
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         self.calls.append("start_servers")
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         self.calls.append(("activate", component))
 
 
 def _runtime_factory(captured):
-    def factory(probe_root, runtime_dir, bridge_url, token):
+    def factory(probe_root, runtime_dir, bridge_url, token, *, deadline):
         runtime = GenerationRuntime(runtime_dir, [])
         captured.append(runtime)
         return runtime
@@ -307,8 +437,8 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
             raise AssertionError(f"Darwin route imported {name}")
         return real_import(name, *args, **kwargs)
 
-    def fake_generate(doc, format_name, output, preset):
-        calls.append((doc, format_name, output, preset))
+    def fake_generate(doc, format_name, output, preset, *, timeout, overwrite):
+        calls.append((doc, format_name, output, preset, timeout, overwrite))
         return output
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
@@ -322,11 +452,13 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
 
     assert result == str(output.resolve())
     assert len(calls) == 1
-    doc, format_name, routed_output, preset = calls[0]
+    doc, format_name, routed_output, preset, timeout, overwrite = calls[0]
     assert isinstance(doc, StructuredDocument)
     assert format_name == "docx"
     assert routed_output == output.resolve()
     assert preset is None
+    assert timeout == 600
+    assert overwrite is False
 
 
 def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
@@ -336,7 +468,9 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     monkeypatch.setattr(
         orchestrator,
         "generate_macos",
-        lambda doc, format_name, output, preset: calls.append(output) or output,
+        lambda doc, format_name, output, preset, *, timeout, overwrite: calls.append(
+            (output, timeout, overwrite)
+        ) or output,
     )
 
     result = orchestrator.generate(
@@ -344,7 +478,7 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     )
 
     assert result == str((tmp_path / "document.pptx").resolve())
-    assert calls == [(tmp_path / "document.pptx").resolve()]
+    assert calls == [((tmp_path / "document.pptx").resolve(), 600, False)]
 
 
 def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
@@ -367,6 +501,39 @@ def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
 
     assert not backend_called
     assert output.read_bytes() == b"keep"
+
+
+def test_generate_overwrite_backend_failure_preserves_existing_output(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "report.docx"
+    output.write_bytes(b"keep old artifact")
+    observed = []
+
+    def fail_generate(doc, format_name, routed_output, preset, *, timeout, overwrite):
+        observed.append((Path(routed_output), overwrite))
+        raise GenerationError(
+            code="GENERATION_COMMAND_FAILED",
+            output=str(routed_output),
+            component="writer",
+            backend="test",
+            message="backend failed",
+        )
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
+    monkeypatch.setattr(orchestrator, "generate_macos", fail_generate)
+
+    with pytest.raises(GenerationError, match="backend failed"):
+        orchestrator.generate(
+            "# Report",
+            format="docx",
+            output=str(output),
+            source_is_text=True,
+            overwrite=True,
+        )
+
+    assert observed == [(output.resolve(), True)]
+    assert output.read_bytes() == b"keep old artifact"
 
 
 def test_generate_rejects_output_extension_mismatch_before_backend(
@@ -425,7 +592,10 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
     monkeypatch.setattr(
         writer_renderer,
         "render",
-        lambda doc, output, preset=None: calls.append((doc, output, preset))
+        lambda doc, output, preset=None: (
+            calls.append((doc, output, preset)),
+            _write_minimal_package(output, "word/document.xml"),
+        )[-1]
         or output,
     )
     monkeypatch.setattr(
@@ -444,7 +614,39 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
     assert result == str(output.resolve())
     assert len(calls) == 1
     assert isinstance(calls[0][0], StructuredDocument)
-    assert calls[0][1] == str(output.resolve())
+    assert Path(calls[0][1]).name == "artifact.docx"
+    assert Path(calls[0][1]).parent != output.parent
+
+
+def test_generate_does_not_apply_chinese_native_numbering_to_english_document(
+    monkeypatch, tmp_path
+):
+    from skills.WPSComposer.scripts import numbering_native
+    from skills.WPSComposer.scripts.renderers import writer_renderer
+
+    output = tmp_path / "english.docx"
+    calls = []
+
+    def fake_render(doc, path, preset=None):
+        _write_minimal_package(path, "word/document.xml")
+        return str(path)
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "win32")
+    monkeypatch.setattr(writer_renderer, "render", fake_render)
+    monkeypatch.setattr(
+        numbering_native,
+        "apply_native_numbering",
+        lambda path: calls.append(Path(path)),
+    )
+
+    orchestrator.generate(
+        "# Report\n\n## Details",
+        format="docx",
+        output=str(output),
+        source_is_text=True,
+    )
+
+    assert calls == []
 
 
 def test_generate_macos_checks_production_gate_before_recording(tmp_path):
@@ -803,7 +1005,7 @@ def test_production_generation_failures_cleanup_without_partial_output(
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory(runtimes),
-            timeout=0.02,
+            timeout=2 if code == "STAGED_ARTIFACT_INVALID" else 0.02,
         )
 
     assert caught.value.code == code
@@ -843,6 +1045,37 @@ def test_artifact_transport_internal_path_is_redacted(monkeypatch, tmp_path):
     assert not request.output.exists()
 
 
+def test_macos_final_validation_failure_keeps_restored_overwrite_target(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "final.docx"
+    output.write_bytes(b"restored old artifact")
+    request = GenerationRequest(
+        output, "writer", "docx", overwrite=True
+    )
+
+    def fail_after_restoring(*args, **kwargs):
+        output.write_bytes(b"restored old artifact")
+        raise ArtifactTransportError(
+            "FINAL_ARTIFACT_INVALID", "simulated final validation failure"
+        )
+
+    monkeypatch.setattr(mac_generation, "publish_artifact", fail_after_restoring)
+
+    with pytest.raises(GenerationError) as caught:
+        execute_generation_plan(
+            request,
+            _writer_recording(),
+            enabled={"docx": True},
+            bridge_factory=lambda origins: GenerationBridge(),
+            runtime_factory=_runtime_factory([]),
+            timeout=2,
+        )
+
+    assert caught.value.code == "FINAL_ARTIFACT_INVALID"
+    assert output.read_bytes() == b"restored old artifact"
+
+
 def test_semantic_validation_requires_all_representative_renderer_text(tmp_path):
     bridge = GenerationBridge("partial")
     request = GenerationRequest(tmp_path / "final.docx", "writer", "docx")
@@ -865,7 +1098,7 @@ def test_semantic_validation_requires_all_representative_renderer_text(tmp_path)
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory([]),
-            timeout=0.02,
+            timeout=2,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -924,7 +1157,7 @@ def test_writer_semantics_require_planned_structure(tmp_path, kind):
             enabled={"docx": True},
             bridge_factory=lambda origins: GenerationBridge("no-structure"),
             runtime_factory=_runtime_factory([]),
-            timeout=0.02,
+            timeout=2,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -955,7 +1188,7 @@ class PdfGenerationBridge(GenerationBridge):
         if self.mode == "count":
             plan = command.params["plan"]
             _write_semantic_artifact(staged_docx, "docx", plan)
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -966,7 +1199,7 @@ class PdfGenerationBridge(GenerationBridge):
                 None,
             )
         if self.mode == "bad-source-path":
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -989,7 +1222,7 @@ class PdfGenerationBridge(GenerationBridge):
             )
         if self.mode == "unchanged-docx":
             # Leave staged docx as template clone (unchanged)
-            staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+            write_minimal_pdf(staged_pdf)
             return ProbeResult(
                 command_id, True,
                 {
@@ -1002,7 +1235,7 @@ class PdfGenerationBridge(GenerationBridge):
         # Default success
         plan = command.params["plan"]
         _write_semantic_artifact(staged_docx, "docx", plan)
-        staged_pdf.write_bytes(b"%PDF-1.4\n" + b"x" * 1100)
+        write_minimal_pdf(staged_pdf)
         return ProbeResult(
             command_id, True,
             {

@@ -5,6 +5,7 @@ import shutil
 from types import SimpleNamespace
 
 import pytest
+from tests._pdf_fixture import write_minimal_pdf
 
 from skills.WPSComposer.scripts.conversion import (
     ConversionError,
@@ -69,7 +70,7 @@ class FakeBridge:
                 {"code": self.error_code, "message": message},
             )
         output = Path(command.params["outputPath"])
-        output.write_bytes(b"%PDF-1.7\n" + b"x" * 2048)
+        write_minimal_pdf(output)
         path = output if self.returned_path is None else self.returned_path
         return ProbeResult(command_id, True, {"path": str(path)}, None)
 
@@ -92,10 +93,10 @@ class FakeRuntime:
     def prepare_profiles(self):
         self.calls.append(("prepare_profiles",))
 
-    def start_servers(self):
+    def start_servers(self, *, deadline):
         self.calls.append(("start_servers",))
 
-    def activate_component(self, component):
+    def activate_component(self, component, *, deadline):
         self.calls.append(("activate_component", component))
 
 
@@ -230,7 +231,7 @@ def test_registration_restore_failure_retains_durable_recovery(
     )
 
     class RecoveryRuntime(FakeRuntime):
-        def __init__(self, probe_root, runtime_dir, bridge_url, token):
+        def __init__(self, probe_root, runtime_dir, bridge_url, token, *, deadline):
             super().__init__(tmp_path / "container" / "session", [])
             self.runtime_dir = Path(runtime_dir)
 

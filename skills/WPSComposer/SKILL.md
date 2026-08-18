@@ -71,7 +71,13 @@ grammar and patch fields.
 `{"ok": False, "errors": [...]}` instead of raising. `validate_target(target,
 kind)` checks a target against the grammar and suggests the closest valid form
 on a miss, and `patch_grammar(kind)` returns the grammar as data for agent
-discovery.
+discovery. A distinct existing output is rejected unless `overwrite=True`, and
+the output must remain in the source document family. File-backed results are
+validated and atomically published. In attach-active atomic mode, only one
+`set` operation containing at most one leaf property is accepted; composite
+patches and structural operations are rejected before mutation because the
+live host has no reliable rollback boundary. macOS editing currently supports
+verified `.pptx` input/output only.
 
 For **structural editing** (insert/remove/move/clone), pass `ops=` instead of
 (or alongside) `patches`. Each op carries a verb: `set` (formatting, == a
@@ -227,13 +233,16 @@ Dispatch blocks headless, so it's unsuitable for automation).
 
 ```python
 from skills.WPSComposer import PdfComposer
-PdfComposer.merge(["a.pdf","b.pdf"], "out.pdf")
+PdfComposer.merge(["a.pdf","b.pdf"], "out.pdf")  # overwrite=True to replace
 PdfComposer.split("in.pdf", "out_dir")            # one-page PDFs
 PdfComposer.extract_pages("in.pdf", [1,3], "out.pdf")  # keep pages 1 & 3
 PdfComposer.rotate("in.pdf", 90, "out.pdf")
 PdfComposer.add_text_watermark("in.pdf", "CONFIDENTIAL", "out.pdf")
 print(PdfComposer.extract_text("in.pdf"))           # via pdfplumber
 ```
+
+PDF outputs are staged and validated before atomic publication. Existing
+outputs are refused by default; pass `overwrite=True` explicitly to replace.
 
 ## Output discipline
 

@@ -16,9 +16,18 @@ import time
 from typing import Any, Callable, Optional
 
 from .._dispatch import WPSUnavailable
+from ..artifact_transport import (
+    ArtifactTransportError,
+    ArtifactValidationError,
+    ValidatorSpec,
+    copy_file_before_deadline,
+    publish_artifact,
+    validate_before_deadline,
+    validate_office_package,
+)
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
-from .runtime import ProbeRuntime
+from .runtime import ProbeRuntime, remaining, require_remaining
 
 
 ORIGINS = {
@@ -45,13 +54,13 @@ INSPECTABLE = {
 
 # Formats that support edit through the JSAPI bridge.
 EDITABLE = {
-    ".ppt": ("presentation", "edit_presentation"),
     ".pptx": ("presentation", "edit_presentation"),
-    ".pptm": ("presentation", "edit_presentation"),
-    ".pps": ("presentation", "edit_presentation"),
-    ".ppsx": ("presentation", "edit_presentation"),
-    ".ppsm": ("presentation", "edit_presentation"),
 }
+
+
+def _validate_edited_presentation(path: Path) -> None:
+    """Top-level spawn target for edited PPTX validation."""
+    validate_office_package(path, "pptx")
 
 
 class InspectionError(RuntimeError):
@@ -86,17 +95,18 @@ def _wait_for_registration(
     deadline: float,
 ) -> None:
     for attempt in range(4):
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        budget = remaining(deadline)
+        if budget <= 0:
             bridge.wait_registered({component}, 0)
             return
         try:
-            bridge.wait_registered({component}, min(10, remaining))
+            bridge.wait_registered({component}, min(10, budget))
             return
         except TimeoutError:
-            if attempt == 3:
+            if attempt == 3 or remaining(deadline) <= 0:
+                bridge.wait_registered({component}, 0)
                 raise
-            runtime.activate_component(component)
+            runtime.activate_component(component, deadline=deadline)
 
 
 def _redact_staging(message: str, staging_dir: Path) -> str:
@@ -109,7 +119,7 @@ def _run_inspection(
     method: str,
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
-    timeout: float,
+    deadline: float,
     *,
     include_text: bool = True,
     max_shapes: Optional[int] = None,
@@ -119,10 +129,11 @@ def _run_inspection(
             str(source), component, "STAGING_UNAVAILABLE",
             "WPS container staging session was not created",
         )
+    require_remaining(deadline)
     runtime.prepare_profiles()
-    runtime.start_servers()
-    runtime.activate_component(component)
-    deadline = time.monotonic() + timeout
+    require_remaining(deadline)
+    runtime.start_servers(deadline=deadline)
+    runtime.activate_component(component, deadline=deadline)
     try:
         _wait_for_registration(bridge, runtime, component, deadline)
     except TimeoutError as exc:
@@ -136,12 +147,15 @@ def _run_inspection(
         runtime.staging_dir / f"source{source.suffix.lower()}"
     )
     try:
-        shutil.copy2(source, staged_source)
+        copy_file_before_deadline(source, staged_source, deadline=deadline)
+    except TimeoutError:
+        raise
     except OSError as exc:
         raise _error(
             str(source), component, "STAGING_SAVE_FAILED",
             _redact_staging(str(exc), runtime.staging_dir),
         ) from exc
+    require_remaining(deadline)
 
     params: dict[str, Any] = {"sourcePath": str(staged_source)}
     if not include_text:
@@ -156,17 +170,17 @@ def _run_inspection(
         params["maxElements"] = limit
         params["maxCells"] = limit
 
+    require_remaining(deadline)
     command = bridge.issue(component, method, params)
     try:
-        result = bridge.wait_result(
-            command.id, max(0.0, deadline - time.monotonic())
-        )
+        result = bridge.wait_result(command.id, remaining(deadline))
     except TimeoutError as exc:
         bridge.state.cancel(command.id)
         raise _error(
             str(source), component, "INSPECTION_COMMAND_FAILED",
             _redact_staging(str(exc), runtime.staging_dir),
         ) from exc
+    require_remaining(deadline)
     if not result.ok:
         details = dict(result.error or {})
         raise _error(
@@ -202,6 +216,7 @@ def inspect_macos(
     _ = enabled  # parity with conversion_macos signature; not yet gated
     if timeout <= 0:
         raise ValueError("timeout must be positive")
+    deadline = time.monotonic() + timeout
     source_path = Path(source).expanduser().resolve()
     if not source_path.is_file():
         raise FileNotFoundError(f"Source file not found: {source_path}")
@@ -223,17 +238,19 @@ def inspect_macos(
     runtime = None
     try:
         with bridge_factory(ORIGINS) as bridge:
+            require_remaining(deadline)
             runtime = runtime_factory(
                 probe_root,
                 runtime_root / "runtime",
                 bridge.url,
                 bridge.token,
+                deadline=deadline,
             )
             try:
                 with runtime:
                     return _run_inspection(
                         source_path, component, method, bridge, runtime,
-                        timeout,
+                        deadline,
                         include_text=include_text,
                         max_shapes=max_shapes,
                     )
@@ -241,7 +258,11 @@ def inspect_macos(
                 raise
             except Exception as exc:
                 if not getattr(runtime, "registration_restored", True):
-                    recovery = runtime.runtime_dir / "registration-recovery"
+                    recovery = getattr(
+                        runtime,
+                        "recovery_dir",
+                        runtime.runtime_dir / "registration-recovery",
+                    )
                     raise _error(
                         str(source_path), component,
                         "REGISTRATION_RESTORE_FAILED",
@@ -268,6 +289,9 @@ def edit_macos(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 120,
+    atomic: bool = True,
+    raise_on_error: bool = False,
+    overwrite: bool = False,
 ) -> dict[str, Any]:
     """Apply patches to an existing presentation through the WPS JSAPI bridge.
 
@@ -277,6 +301,7 @@ def edit_macos(
     _ = enabled
     if timeout <= 0:
         raise ValueError("timeout must be positive")
+    deadline = time.monotonic() + timeout
     if not patches:
         raise ValueError("at least one patch is required")
     source_path = Path(source).expanduser().resolve()
@@ -294,6 +319,11 @@ def edit_macos(
     output_path = (
         Path(output).expanduser().resolve() if output else source_path
     )
+    if output_path.suffix.lower() != ".pptx":
+        raise ValueError("macOS edit output must use '.pptx'")
+    in_place = output_path == source_path
+    if output_path.exists() and not in_place and not overwrite:
+        raise FileExistsError(f"Output already exists: {output_path}")
 
     repository_root = Path(__file__).resolve().parents[4]
     probe_root = repository_root / "macos/wps-jsapi-probe"
@@ -303,23 +333,32 @@ def edit_macos(
     runtime = None
     try:
         with bridge_factory(ORIGINS) as bridge:
+            require_remaining(deadline)
             runtime = runtime_factory(
                 probe_root,
                 runtime_root / "runtime",
                 bridge.url,
                 bridge.token,
+                deadline=deadline,
             )
             try:
                 with runtime:
                     return _run_edit(
                         source_path, output_path, component, method,
-                        patches, bridge, runtime, timeout,
+                        patches, bridge, runtime, deadline,
+                        atomic=atomic,
+                        raise_on_error=raise_on_error,
+                        overwrite=overwrite or in_place,
                     )
             except InspectionError:
                 raise
             except Exception as exc:
                 if not getattr(runtime, "registration_restored", True):
-                    recovery = runtime.runtime_dir / "registration-recovery"
+                    recovery = getattr(
+                        runtime,
+                        "recovery_dir",
+                        runtime.runtime_dir / "registration-recovery",
+                    )
                     raise _error(
                         str(source_path), component,
                         "REGISTRATION_RESTORE_FAILED",
@@ -344,15 +383,20 @@ def _run_edit(
     patches: list,
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
-    timeout: float,
+    deadline: float,
+    *,
+    atomic: bool = True,
+    raise_on_error: bool = False,
+    overwrite: bool = False,
 ) -> dict[str, Any]:
     if runtime.staging_dir is None:
         raise _error(str(source), component, "STAGING_UNAVAILABLE",
                      "WPS container staging session was not created")
+    require_remaining(deadline)
     runtime.prepare_profiles()
-    runtime.start_servers()
-    runtime.activate_component(component)
-    deadline = time.monotonic() + timeout
+    require_remaining(deadline)
+    runtime.start_servers(deadline=deadline)
+    runtime.activate_component(component, deadline=deadline)
     try:
         _wait_for_registration(bridge, runtime, component, deadline)
     except TimeoutError as exc:
@@ -367,24 +411,28 @@ def _run_edit(
         runtime.staging_dir / f"output{output.suffix.lower()}"
     )
     try:
-        shutil.copy2(source, staged_source)
+        copy_file_before_deadline(source, staged_source, deadline=deadline)
+    except TimeoutError:
+        raise
     except OSError as exc:
         raise _error(str(source), component, "STAGING_SAVE_FAILED",
                      _redact_staging(str(exc), runtime.staging_dir)) from exc
 
+    require_remaining(deadline)
     command = bridge.issue(component, method, {
         "sourcePath": str(staged_source),
         "outputPath": str(staged_output),
         "patches": patches,
+        "atomic": bool(atomic),
+        "raiseOnError": bool(raise_on_error),
     })
     try:
-        result = bridge.wait_result(
-            command.id, max(0.0, deadline - time.monotonic())
-        )
+        result = bridge.wait_result(command.id, remaining(deadline))
     except TimeoutError as exc:
         bridge.state.cancel(command.id)
         raise _error(str(source), component, "EDIT_COMMAND_FAILED",
                      _redact_staging(str(exc), runtime.staging_dir)) from exc
+    require_remaining(deadline)
     if not result.ok:
         details = dict(result.error or {})
         raise _error(str(source), component, "EDIT_COMMAND_FAILED",
@@ -392,15 +440,105 @@ def _run_edit(
                          str(details.get("message") or "WPS edit failed"),
                          runtime.staging_dir))
     value = dict(result.value or {})
-    # Publish the edited file from staging to the user's output path.
-    reported = policy.require_allowed(str(value.get("path", "")))
+    reports = list(value.get("patches") or [])
+    if len(reports) != len(patches):
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            "WPS edit returned an incomplete patch report",
+        )
+    for report in reports:
+        if report.get("rejected"):
+            report["ok"] = False
+    failures = [report for report in reports if not report.get("ok")]
+    if failures and atomic:
+        return {"path": None, "patches": reports, "saved": False}
+    if failures and raise_on_error:
+        raise _error(
+            str(source), component, "PATCH_REJECTED",
+            f"{len(failures)} of {len(reports)} patch(es) failed",
+        )
+
+    # The bridge must report exactly the path reserved for this command. A
+    # merely in-root path could be the untouched staged source or stale output.
     try:
-        shutil.copy2(reported, output)
+        reported = policy.require_allowed(str(value.get("path", "")))
+    except ProtocolError as exc:
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            _redact_staging(str(exc), runtime.staging_dir),
+        ) from exc
+    if reported != staged_output:
+        raise _error(
+            str(source), component, "PROTOCOL_ERROR",
+            "WPS edit reported an unexpected staged output path",
+        )
+
+    _wait_for_stable_edit_artifact(
+        staged_output, deadline, source=str(source), component=component
+    )
+    try:
+        def validator(path: Path) -> None:
+            try:
+                require_remaining(deadline)
+                validate_before_deadline(
+                    ValidatorSpec.from_callable(_validate_edited_presentation),
+                    path,
+                    deadline,
+                )
+                require_remaining(deadline)
+            except TimeoutError as exc:
+                raise ArtifactValidationError(
+                    "WPS edit deadline expired during OOXML validation"
+                ) from exc
+
+        published = publish_artifact(
+            staged_output,
+            output,
+            overwrite=overwrite,
+            validator=validator,
+            deadline=deadline,
+        )
+    except FileExistsError:
+        raise
+    except ArtifactTransportError as exc:
+        raise _error(str(source), component, exc.code, str(exc)) from exc
     except OSError as exc:
-        raise _error(str(source), component, "EDIT_COMMAND_FAILED",
-                     f"Failed to copy edited file: {exc}")
-    value["path"] = str(output)
+        raise _error(
+            str(source), component, "ARTIFACT_PUBLISH_FAILED", str(exc)
+        ) from exc
+    value["path"] = str(published)
+    value["saved"] = True
     return value
+
+
+def _wait_for_stable_edit_artifact(
+    path: Path,
+    deadline: float,
+    *,
+    source: str,
+    component: str,
+) -> None:
+    """Wait for two identical file observations within the existing deadline."""
+    previous = None
+    while True:
+        try:
+            stat = path.stat()
+            current = (stat.st_size, stat.st_mtime_ns)
+        except FileNotFoundError:
+            current = None
+        if current is not None and current == previous:
+            require_remaining(deadline)
+            return
+        previous = current
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise _error(
+                source,
+                component,
+                "STAGED_ARTIFACT_INVALID",
+                "WPS edit output did not finish landing before the deadline",
+            )
+        time.sleep(min(0.05, remaining))
 
 
 def macos_inspection_available() -> bool:

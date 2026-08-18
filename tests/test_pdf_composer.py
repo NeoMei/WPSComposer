@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pypdf = pytest.importorskip("pypdf")
@@ -36,6 +38,22 @@ def test_split_rotate_extract_pages(tmp_path):
     assert PdfComposer.page_count(rotated) == 1
 
 
+@pytest.mark.parametrize("page", [0, -1, True, 2])
+def test_extract_pages_rejects_invalid_one_based_page_numbers(tmp_path, page):
+    src = _make_pdf(tmp_path / "src.pdf")
+
+    with pytest.raises(ValueError, match="page index"):
+        PdfComposer.extract_pages(src, [page], tmp_path / "out.pdf")
+
+
+@pytest.mark.parametrize("page", [0, -1, True, 2])
+def test_extract_text_rejects_invalid_one_based_page_numbers(tmp_path, page):
+    src = _make_pdf(tmp_path / "src.pdf")
+
+    with pytest.raises(ValueError, match="page index"):
+        PdfComposer.extract_text(src, pages=[page])
+
+
 def test_watermark_mixed_page_sizes(tmp_path):
     w = PdfWriter()
     w.add_blank_page(width=612, height=792)
@@ -47,3 +65,221 @@ def test_watermark_mixed_page_sizes(tmp_path):
     assert PdfComposer.page_count(out) == 2
     text = PdfComposer.extract_text(out)
     assert isinstance(text, str)
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda src, out: PdfComposer.merge([src], out, overwrite=True),
+        lambda src, out: PdfComposer.extract_pages(src, [1], out, overwrite=True),
+        lambda src, out: PdfComposer.rotate(src, 90, out, overwrite=True),
+        lambda src, out: PdfComposer.add_text_watermark(
+            src, "CONFIDENTIAL", out, overwrite=True
+        ),
+    ],
+)
+def test_single_pdf_writes_use_staging_and_preserve_existing_on_write_failure(
+    tmp_path, monkeypatch, operation
+):
+    src = _make_pdf(tmp_path / "source.pdf")
+    output = tmp_path / "approved.pdf"
+    output.write_bytes(b"APPROVED-PDF")
+    real_write = PdfWriter.write
+    write_paths = []
+
+    def partial_then_fail(self, stream):
+        write_paths.append(Path(stream.name).resolve())
+        stream.write(b"PARTIAL")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(PdfWriter, "write", partial_then_fail)
+    with pytest.raises(OSError, match="disk full"):
+        operation(src, output)
+    monkeypatch.setattr(PdfWriter, "write", real_write)
+
+    assert output.read_bytes() == b"APPROVED-PDF"
+    assert len(write_paths) == 1
+    assert write_paths[0].parent == output.parent.resolve()
+    assert write_paths[0] != output.resolve()
+    assert not write_paths[0].exists()
+
+
+def test_pdf_output_refuses_existing_file_without_explicit_overwrite(tmp_path):
+    src = _make_pdf(tmp_path / "source.pdf")
+    output = tmp_path / "approved.pdf"
+    output.write_bytes(b"APPROVED-PDF")
+
+    with pytest.raises(FileExistsError, match="Output already exists"):
+        PdfComposer.rotate(src, 90, output)
+
+    assert output.read_bytes() == b"APPROVED-PDF"
+
+
+def test_split_stages_entire_set_before_publish_and_preserves_existing_on_failure(
+    tmp_path, monkeypatch
+):
+    writer = PdfWriter()
+    writer.add_blank_page(width=612, height=792)
+    writer.add_blank_page(width=612, height=792)
+    source = tmp_path / "source.pdf"
+    with source.open("wb") as stream:
+        writer.write(stream)
+    writer.close()
+    output_dir = tmp_path / "pages"
+    output_dir.mkdir()
+    first = output_dir / "part-001.pdf"
+    second = output_dir / "part-002.pdf"
+    first.write_bytes(b"APPROVED-ONE")
+    second.write_bytes(b"APPROVED-TWO")
+    originals = (first.read_bytes(), second.read_bytes())
+    real_write = PdfWriter.write
+    writes = 0
+
+    def fail_second_stage(self, stream):
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            stream.write(b"PARTIAL")
+            raise OSError("second page failed")
+        return real_write(self, stream)
+
+    monkeypatch.setattr(PdfWriter, "write", fail_second_stage)
+
+    with pytest.raises(OSError, match="second page failed"):
+        PdfComposer.split(source, output_dir, stem="part", overwrite=True)
+
+    assert (first.read_bytes(), second.read_bytes()) == originals
+    assert not list(output_dir.glob(".wpscomposer-pdf-*"))
+
+
+def test_pdf_reader_and_writer_close_when_page_copy_fails(tmp_path, monkeypatch):
+    from pypdf import PdfReader
+
+    source = _make_pdf(tmp_path / "source.pdf")
+    closed = {"reader": 0, "writer": 0}
+    real_reader_close = PdfReader.close
+    real_writer_close = PdfWriter.close
+
+    def close_reader(self):
+        closed["reader"] += 1
+        return real_reader_close(self)
+
+    def close_writer(self):
+        closed["writer"] += 1
+        return real_writer_close(self)
+
+    monkeypatch.setattr(PdfReader, "close", close_reader)
+    monkeypatch.setattr(PdfWriter, "close", close_writer)
+    monkeypatch.setattr(
+        PdfWriter, "add_page", lambda self, page: (_ for _ in ()).throw(
+            RuntimeError("page copy failed")
+        )
+    )
+
+    with pytest.raises(RuntimeError, match="page copy failed"):
+        PdfComposer.rotate(source, 90, tmp_path / "out.pdf")
+
+    assert closed == {"reader": 1, "writer": 1}
+
+
+def test_split_closes_reader_when_output_preflight_fails(tmp_path, monkeypatch):
+    from pypdf import PdfReader
+
+    source = _make_pdf(tmp_path / "source.pdf")
+    output_dir = tmp_path / "pages"
+    output_dir.mkdir()
+    (output_dir / "source-001.pdf").write_bytes(b"APPROVED")
+    closed = []
+    real_close = PdfReader.close
+
+    def observed_close(self):
+        closed.append(True)
+        return real_close(self)
+
+    monkeypatch.setattr(PdfReader, "close", observed_close)
+
+    with pytest.raises(FileExistsError):
+        PdfComposer.split(source, output_dir)
+
+    assert closed == [True]
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda src: PdfComposer.extract_pages(src, [1], src, overwrite=True),
+        lambda src: PdfComposer.rotate(src, 90, src, overwrite=True),
+        lambda src: PdfComposer.add_text_watermark(
+            src, "CONFIDENTIAL", src, overwrite=True
+        ),
+        lambda src: PdfComposer.split(
+            src, src.parent, stem="source", overwrite=True
+        ),
+    ],
+)
+def test_in_place_pdf_publish_closes_input_reader_before_replace(
+    tmp_path, monkeypatch, operation
+):
+    from pypdf import PdfReader
+    import skills.WPSComposer.scripts.artifact_transport as artifact_transport
+
+    source = Path(_make_pdf(tmp_path / "source-001.pdf")).resolve()
+    open_source_readers = 0
+    source_readers = set()
+    real_init = PdfReader.__init__
+    real_close = PdfReader.close
+    real_replace = artifact_transport.os.replace
+
+    def observed_init(self, *args, **kwargs):
+        nonlocal open_source_readers
+        real_init(self, *args, **kwargs)
+        if args and isinstance(args[0], (str, Path)):
+            if Path(args[0]).resolve() == source:
+                source_readers.add(id(self))
+                open_source_readers += 1
+
+    def observed_close(self):
+        nonlocal open_source_readers
+        try:
+            return real_close(self)
+        finally:
+            if id(self) in source_readers:
+                source_readers.remove(id(self))
+                open_source_readers -= 1
+
+    def windows_replace(stage, target):
+        if Path(target).resolve() == source:
+            assert open_source_readers == 0
+        return real_replace(stage, target)
+
+    monkeypatch.setattr(PdfReader, "__init__", observed_init)
+    monkeypatch.setattr(PdfReader, "close", observed_close)
+    monkeypatch.setattr(artifact_transport.os, "replace", windows_replace)
+
+    operation(source)
+
+    assert PdfComposer.page_count(source) == 1
+
+
+def test_in_place_pdf_close_failure_preserves_existing_input(tmp_path, monkeypatch):
+    from pypdf import PdfReader
+
+    source = Path(_make_pdf(tmp_path / "source.pdf")).resolve()
+    original = source.read_bytes()
+    real_close = PdfReader.close
+    failed = False
+
+    def fail_first_close(self):
+        nonlocal failed
+        real_close(self)
+        if not failed:
+            failed = True
+            raise RuntimeError("simulated reader close failure")
+
+    monkeypatch.setattr(PdfReader, "close", fail_first_close)
+
+    with pytest.raises(RuntimeError, match="reader close failure"):
+        PdfComposer.rotate(source, 90, source, overwrite=True)
+
+    assert source.read_bytes() == original
+    assert not list(tmp_path.glob(".wpscomposer-pdf-*.pdf"))

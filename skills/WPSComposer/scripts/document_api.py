@@ -27,8 +27,17 @@ from __future__ import annotations
 import difflib
 import json
 import os
+from pathlib import Path
 import re
+import tempfile
 
+from .artifact_transport import (
+    ArtifactValidationError,
+    publish_artifact,
+    publish_artifact_group,
+    validate_office_package,
+    validate_pdf,
+)
 from .writer import WriterComposer
 from .sheet import SheetComposer
 from .slide import SlideComposer
@@ -154,6 +163,15 @@ PATCH_GRAMMAR = {
          "a shape by its stable Shape.Id (preferred over positional)"),
         ("slide:N/shape:@name=NAME", r"slide:(\d+)/shape:@name=(.+)", "shape",
          "a shape by Name"),
+        ("slide:N/shape:@id=N/paragraph:N",
+         r"slide:(\d+)/shape:@id=(\d+)/paragraph:(\d+)", "paragraph",
+         "a paragraph inside a shape addressed by stable Shape.Id"),
+        ("slide:N/shape:@id=N/paragraph:N/run:N",
+         r"slide:(\d+)/shape:@id=(\d+)/paragraph:(\d+)/run:(\d+)", "run",
+         "a run inside a shape addressed by stable Shape.Id"),
+        ("slide:N/shape:@id=N/table/cell:R,C",
+         r"slide:(\d+)/shape:@id=(\d+)/table/cell:(\d+),(\d+)", "table_cell",
+         "a table cell inside a shape addressed by stable Shape.Id"),
         ("slide:N/shape:N/paragraph:N",
          r"slide:(\d+)/shape:(\d+)/paragraph:(\d+)", "paragraph",
          "a text paragraph inside a shape"),
@@ -301,6 +319,7 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
     wanted = tuple(dimensions)
     patches = []
     seen = set()
+    stable_shape_positions = {}
 
     # Snapshot keys the host exposes read-only; replaying them always lands
     # in `rejected`. (Fill.Type and ZOrderPosition are read-only in the
@@ -311,16 +330,24 @@ def snapshot_to_patches(snapshot, *, dimensions=("font", "paragraph", "fill")):
         # Stable ids (@paraId/@id/@name) are document-specific; replaying them
         # on another document cannot resolve. Rewrite to the positional form
         # using the element's index when one is available.
+        nested = re.fullmatch(
+            r"(slide:\d+/shape:@id=\d+)(/.+)", element_id
+        )
+        if nested and nested.group(1) in stable_shape_positions:
+            return stable_shape_positions[nested.group(1)] + nested.group(2)
         index = node.get("index")
         if not (isinstance(index, int) and index > 0):
             return element_id
         if re.fullmatch(r"paragraph:@paraId=[0-9A-Fa-f]+", element_id):
             return f"paragraph:{index}"
-        match = re.fullmatch(
-            r"((?:slide|sheet):\d+/shape:)@(?:id|name)=.+", element_id
+        stable_shape = re.fullmatch(
+            r"((?:slide|sheet):\d+/shape:)"
+            r"(?:@id=\d+|@name=[^/]+)", element_id
         )
-        if match:
-            return f"{match.group(1)}{index}"
+        if stable_shape:
+            positional = f"{stable_shape.group(1)}{index}"
+            stable_shape_positions[element_id] = positional
+            return positional
         return element_id
 
     def visit(node):
@@ -524,7 +551,13 @@ def apply_ops(composer, ops, *, atomic=True):
                 report = {"index": index, "op": verb,
                           "target": op.get("target"),
                           "ok": True, **result}
+                if report.get("rejected"):
+                    report["ok"] = False
             reports.append(report)
+            if not report.get("ok") and atomic:
+                raise PatchError(reports)
+        except PatchError:
+            raise
         except ValueError as exc:
             reports.append(_error_report(index, op.get("target") or op.get("type"), exc, kind))
             if atomic:
@@ -621,9 +654,168 @@ def _error_report(index, target, exc, kind):
     return report
 
 
+def _document_family(path, kind=None):
+    """Return the Writer/Sheet/Slide family selected for *path*."""
+    cls = composer_for_path(path, kind)
+    if cls is WriterComposer:
+        return "writer"
+    if cls is SheetComposer:
+        return "sheet"
+    if cls is SlideComposer:
+        return "slide"
+    raise ValueError(f"Unsupported document family for {path!r}")
+
+
+def _failed_edit_result(reports, *, warnings=None):
+    return {
+        "ok": False,
+        "saved": False,
+        "saved_path": None,
+        "pdf_path": None,
+        "ops": reports,
+        "patches": reports,
+        "errors": [report for report in reports if not report.get("ok")],
+        "warnings": list(warnings or []),
+        "before": None,
+        "after": None,
+    }
+
+
+def _mutation_primitive_count(value):
+    """Count independently applied leaf values in a patch payload."""
+    if isinstance(value, dict):
+        return sum(_mutation_primitive_count(item) for item in value.values())
+    return 1
+
+
+def _attached_atomic_is_single_primitive(ops):
+    if not ops:
+        return True
+    if len(ops) != 1 or not isinstance(ops[0], dict):
+        return False
+    op = ops[0]
+    if op.get("op", "set") != "set":
+        return False
+    payload = {
+        key: value for key, value in op.items()
+        if key not in {"op", "target"}
+    }
+    return _mutation_primitive_count(payload) <= 1
+
+
+def _validate_edited_artifact(path):
+    target = Path(path).expanduser().resolve()
+    suffix = target.suffix.lower()
+    if suffix in {".docx", ".xlsx", ".pptx"}:
+        validate_office_package(target, suffix[1:])
+        return
+    try:
+        if not target.is_file() or target.stat().st_size == 0:
+            raise ArtifactValidationError(
+                f"Edited artifact is missing or empty: {target}"
+            )
+    except FileNotFoundError as exc:
+        raise ArtifactValidationError(
+            f"Edited artifact is missing: {target}"
+        ) from exc
+
+
+def _save_edited_artifact(composer, destination, *, attached, overwrite):
+    """Save beside the destination, validate, then atomically publish."""
+    target = Path(destination).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=".wpscomposer-edit-",
+        suffix=target.suffix,
+    )
+    os.close(descriptor)
+    staged = Path(temporary_name)
+    staged.unlink()
+    try:
+        if attached:
+            composer.save_copy(str(staged))
+        else:
+            composer.save(str(staged))
+        published = publish_artifact(
+            staged,
+            target,
+            overwrite=overwrite,
+            validator=_validate_edited_artifact,
+        )
+        return str(published)
+    finally:
+        retain_staged = False
+        if attached:
+            binding_check = getattr(composer, "is_bound_to", None)
+            if callable(binding_check):
+                try:
+                    retain_staged = bool(binding_check(staged))
+                except BaseException:
+                    # If the host binding cannot be queried, preserve the only
+                    # possible recovery copy instead of deleting a live target.
+                    retain_staged = staged.exists()
+        if not retain_staged:
+            staged.unlink(missing_ok=True)
+
+
+def _stage_composer_artifact(composer, destination, *, export_pdf=False):
+    """Write one composer artifact beside its destination without publishing."""
+    target = Path(destination).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=".wpscomposer-edit-",
+        suffix=target.suffix,
+    )
+    os.close(descriptor)
+    staged = Path(temporary_name)
+    staged.unlink()
+    try:
+        if export_pdf:
+            composer.export_pdf(str(staged))
+            validate_pdf(staged)
+        else:
+            composer.save(str(staged))
+            _validate_edited_artifact(staged)
+    except BaseException:
+        staged.unlink(missing_ok=True)
+        raise
+    return staged
+
+
+def _report_recovery_paths(error, stages):
+    """Attach still-existing recovery stages without replacing *error*."""
+    try:
+        recovery_paths = tuple(
+            str(stage) for stage in stages if stage.exists()
+        )
+    except BaseException:
+        # Reporting is secondary: never replace the publication exception.
+        return
+    if not recovery_paths:
+        return
+    try:
+        error.recovery_paths = recovery_paths
+    except BaseException:
+        pass
+    try:
+        detail = f"recovery_paths={list(recovery_paths)!r}"
+        original_args = tuple(getattr(error, "args", ()))
+        original_message = str(error)
+        error.args = (
+            f"{original_message}; {detail}",
+            *original_args[1:],
+        )
+    except BaseException:
+        # Attribute or message decoration can fail for unusual exception
+        # implementations; the original exception must remain authoritative.
+        pass
+
+
 def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
          export_pdf=None, visible=False, atomic=True, stop_on_error=None,
-         inspect_after=False, raise_on_error=False):
+         inspect_after=False, raise_on_error=False, overwrite=False):
     """Inspect/edit/save a file or the active document in one agent call.
 
     Accepts two equivalent inputs:
@@ -643,7 +835,16 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     structured result carries ``ok=False`` plus an ``errors`` list. Set
     ``atomic=False`` to keep the old best-effort behaviour (save whatever
     succeeded). ``raise_on_error=True`` re-raises the :class:`PatchError` for
-    callers that prefer exceptions over structured results.
+    callers that prefer exceptions over structured results. A distinct
+    *output* must not already exist unless ``overwrite=True``; publication is
+    destination-local and atomic. Output formats must remain in the source
+    document family.
+
+    Atomic composite edits are rejected before mutation when attaching to a
+    live document because WPS/Office exposes no reliable rollback boundary
+    there. Only a single ``set`` operation containing at most one leaf property
+    is provably one mutation primitive. Use ``atomic=False`` explicitly for
+    best effort, or edit a file-backed staging copy.
 
     .. note:: structural ops (insert/remove/move/clone) shift positional ids
        of later siblings. Address subsequent ops by stable id
@@ -658,42 +859,146 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     if ops:
         combined.extend(ops)
 
+    attached = path is None
+    if export_pdf is not None:
+        pdf_output = Path(export_pdf).expanduser().resolve()
+        if pdf_output.suffix.lower() != ".pdf":
+            raise ValueError("edit export_pdf target must use the '.pdf' suffix")
+        if pdf_output.exists() and not overwrite:
+            raise FileExistsError(f"Output already exists: {pdf_output}")
+        if attached:
+            raise RuntimeError(
+                "edit export_pdf is unsupported for attached documents because "
+                "the host cannot guarantee non-rebinding export"
+            )
+    if attached and output is not None:
+        output_path = os.path.abspath(os.fspath(output))
+        if os.path.exists(output_path) and not overwrite:
+            raise FileExistsError(f"Output already exists: {output_path}")
+
+    if path is not None and output is not None:
+        source_family = _document_family(path, kind)
+        output_family = _document_family(output)
+        if output_family != source_family:
+            raise ValueError(
+                "edit output must use the same document family as the source "
+                f"({source_family}); got {output_family}"
+            )
+        source_path = os.path.abspath(os.fspath(path))
+        output_path = os.path.abspath(os.fspath(output))
+        if output_path != source_path and os.path.exists(output_path) and not overwrite:
+            raise FileExistsError(f"Output already exists: {output_path}")
+
+    if attached and atomic and not _attached_atomic_is_single_primitive(combined):
+        reports = [{
+            "index": 0,
+            "ok": False,
+            "error": {
+                "code": "atomic_attached_batch_unsupported",
+                "message": (
+                    "Atomic composite edits of an attached live document are "
+                    "unsupported because the host has no reliable rollback"
+                ),
+            },
+        }]
+        if raise_on_error:
+            raise PatchError(reports)
+        return _failed_edit_result(reports)
+
     # macOS / non-COM host: route presentation edits through the JSAPI bridge.
     # Only the ``set`` verb (formatting patches) is supported on macOS;
     # structural ops still require Windows COM.
     if path is not None and not _com_available():
+        if export_pdf is not None:
+            raise RuntimeError(
+                "edit export_pdf is unsupported on macOS; edit and PDF "
+                "conversion must be requested as separate operations"
+            )
         ext = os.path.splitext(os.fspath(path))[1].lower()
         from .macos_probe.inspection import EDITABLE, edit_macos, macos_inspection_available
-        if macos_inspection_available() and ext in EDITABLE:
-            set_patches = [p for p in combined if p.get("op") == "set"]
-            dropped = [p for p in combined if p.get("op") != "set"]
+        inspection_available = macos_inspection_available()
+        if (
+            inspection_available
+            and _document_family(path, kind) == "slide"
+            and ext not in EDITABLE
+        ):
+            raise ValueError(
+                f"macOS editing supports only '.pptx' input; got {ext!r}"
+            )
+        if inspection_available and ext in EDITABLE:
+            set_entries = [
+                (index, item) for index, item in enumerate(combined)
+                if item.get("op") == "set"
+            ]
+            dropped_entries = [
+                (index, item) for index, item in enumerate(combined)
+                if item.get("op") != "set"
+            ]
             warnings = (
-                [f"{len(dropped)} structural op(s) dropped: "
+                [f"{len(dropped_entries)} structural op(s) dropped: "
                  "insert/remove/move/clone require Windows COM. "
                  "Only 'set' patches are applied on macOS."]
-                if dropped else []
+                if dropped_entries else []
             )
-            if set_patches:
+            dropped_reports = [
+                {
+                    "index": index,
+                    "op": item.get("op"),
+                    "target": item.get("target"),
+                    "ok": False,
+                    "error": {
+                        "code": "unsupported_operation",
+                        "message": (
+                            f"macOS presentation editing does not support "
+                            f"{item.get('op')!r} operations"
+                        ),
+                    },
+                }
+                for index, item in dropped_entries
+            ]
+            if dropped_reports and (atomic or raise_on_error):
+                if raise_on_error:
+                    raise PatchError(dropped_reports)
+                return _failed_edit_result(dropped_reports, warnings=warnings)
+            if set_entries:
                 bridge_patches = [
                     {k: v for k, v in p.items() if k != "op"}
-                    for p in set_patches
+                    for _index, p in set_entries
                 ]
                 result = edit_macos(
                     os.fspath(path), bridge_patches, output=output,
+                    atomic=atomic,
+                    raise_on_error=raise_on_error,
+                    overwrite=overwrite,
                 )
+                set_reports = list(result.get("patches", []))
+                for report, (index, _item) in zip(set_reports, set_entries):
+                    report.setdefault("index", index)
+                    report.setdefault("op", "set")
+                    if report.get("rejected"):
+                        report["ok"] = False
+                reports = sorted(
+                    set_reports + dropped_reports,
+                    key=lambda report: report.get("index", len(combined)),
+                )
+                errors = [report for report in reports if not report.get("ok")]
+                if errors and raise_on_error:
+                    raise PatchError(reports)
                 return {
-                    "ok": all(p.get("ok") for p in result.get("patches", [])),
-                    "saved": True,
+                    "ok": not errors,
+                    "saved": bool(result.get("saved", result.get("path"))),
                     "saved_path": result.get("path"),
                     "pdf_path": None,
-                    "ops": result.get("patches", []),
-                    "patches": result.get("patches", []),
-                    "errors": [p for p in result.get("patches", []) if not p.get("ok")],
+                    "ops": reports,
+                    "patches": reports,
+                    "errors": errors,
                     "warnings": warnings,
                     "before": None,
                     "after": None,
                 }
             # Nothing to do: no patches, or only structural ops.
+            if dropped_reports:
+                return _failed_edit_result(dropped_reports, warnings=warnings)
             return {
                 "ok": not warnings,
                 "saved": False,
@@ -707,7 +1012,6 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 "after": None,
             }
 
-    attached = path is None
     if attached:
         composer = attach_active(kind)
     else:
@@ -717,7 +1021,24 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         except Exception:
             composer.close(save_changes=False)
             raise
+    owned_stages = []
+    pending_publication = None
+    completed = False
+    result = None
     try:
+        if attached and output is not None:
+            source_family = _normalize_kind(_kind_from_composer(composer))
+            output_family = _document_family(output)
+            if source_family and output_family != source_family:
+                raise ValueError(
+                    "edit output must use the same document family as the "
+                    f"attached {source_family} document; got {output_family}"
+                )
+            capability = getattr(composer, "supports_attached_save_copy", None)
+            if callable(capability) and not capability():
+                raise RuntimeError(
+                    "Attached document has no reliable non-rebinding copy primitive"
+                )
         before = composer.inspect_document() if inspect_after else None
         op_failed = False
         try:
@@ -728,7 +1049,11 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
             if raise_on_error:
                 raise
 
-        if op_failed and atomic:
+        errors = [report for report in reports if not report.get("ok")]
+        had_failures = bool(errors)
+        if had_failures and raise_on_error:
+            raise PatchError(reports)
+        if had_failures and atomic:
             saved_path = None
             pdf_path = None
         else:
@@ -736,24 +1061,126 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 # SaveAs on an attached document would rebind the user's live
                 # document to the new path; save_copy avoids that (WPS
                 # Writer/Presentation SaveCopyAs is broken — see _base.py).
-                saved_path = composer.save_copy(output)
+                saved_path = _save_edited_artifact(
+                    composer,
+                    output,
+                    attached=True,
+                    overwrite=overwrite,
+                )
+            elif not attached and export_pdf is not None:
+                destination = output if output is not None else path
+                destination_path = Path(destination).expanduser().resolve()
+                source_path = Path(path).expanduser().resolve()
+                staged_document = _stage_composer_artifact(
+                    composer, destination_path
+                )
+                owned_stages.append(staged_document)
+                staged_pdf = _stage_composer_artifact(
+                    composer, pdf_output, export_pdf=True
+                )
+                owned_stages.append(staged_pdf)
+                pending_publication = (
+                    "group",
+                    [
+                        (
+                            staged_document,
+                            destination_path,
+                            overwrite or destination_path == source_path,
+                            _validate_edited_artifact,
+                        ),
+                        (staged_pdf, pdf_output, overwrite, validate_pdf),
+                    ],
+                )
+                saved_path = str(destination_path)
+                pdf_path = str(pdf_output)
+            elif not attached and Path(path).expanduser().is_file():
+                destination = output if output is not None else path
+                destination_path = Path(destination).expanduser().resolve()
+                source_path = Path(path).expanduser().resolve()
+                staged_document = _stage_composer_artifact(
+                    composer, destination_path
+                )
+                owned_stages.append(staged_document)
+                pending_publication = (
+                    "single",
+                    staged_document,
+                    destination_path,
+                    overwrite or destination_path == source_path,
+                )
+                saved_path = str(destination_path)
             else:
                 saved_path = composer.save(output) if output else composer.save_current()
-            pdf_path = composer.export_pdf(export_pdf) if export_pdf else None
+            if export_pdf is None:
+                pdf_path = None
         after = composer.inspect_document() if inspect_after else None
-        return {
-            "ok": not op_failed,
+        result = {
+            "ok": not had_failures,
             "saved": saved_path is not None,
             "saved_path": saved_path,
             "pdf_path": pdf_path,
             "ops": reports,
             "patches": reports,  # back-compat alias; prefer "ops"
-            "errors": [r for r in reports if not r.get("ok")] if op_failed else [],
+            "errors": errors,
             "before": before,
             "after": after,
+            "warnings": [],
         }
+        completed = True
+        return result
     finally:
-        composer.close(save_changes=False)
+        try:
+            composer.close(save_changes=False)
+        except BaseException as close_exc:
+            if owned_stages:
+                retained = ", ".join(str(stage) for stage in owned_stages)
+                raise RuntimeError(
+                    "Composer close failed; outputs were not published and "
+                    f"recovery artifacts retained at {retained}"
+                ) from close_exc
+            raise
+
+        publication_attempted = completed and pending_publication is not None
+        committed = False
+        try:
+            if publication_attempted:
+                if pending_publication[0] == "single":
+                    _kind, stage, target, replace = pending_publication
+                    published = publish_artifact(
+                        stage,
+                        target,
+                        overwrite=replace,
+                        validator=_validate_edited_artifact,
+                    )
+                    result["saved_path"] = str(published)
+                else:
+                    _kind, entries = pending_publication
+                    published = publish_artifact_group(entries)
+                    result["saved_path"] = str(published[0])
+                    result["pdf_path"] = str(published[1])
+                committed = True
+        except BaseException as publish_exc:
+            _report_recovery_paths(publish_exc, owned_stages)
+            raise
+        finally:
+            cleanup_errors = []
+            if not publication_attempted or committed:
+                for stage in owned_stages:
+                    try:
+                        stage.unlink(missing_ok=True)
+                    except OSError as cleanup_exc:
+                        cleanup_errors.append((stage, cleanup_exc))
+            if cleanup_errors:
+                retained = ", ".join(
+                    str(stage) for stage, _exc in cleanup_errors
+                )
+                message = (
+                    "Staging cleanup failed; recovery artifacts retained at "
+                    f"{retained}"
+                )
+                if committed:
+                    result["warnings"].append(message)
+                else:
+                    raise RuntimeError(message) from cleanup_errors[0][1]
 
 
 def snapshot_json(snapshot, *, indent=2):

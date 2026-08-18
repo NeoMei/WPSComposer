@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from skills.WPSComposer import parse
-from skills.WPSComposer.scripts.document_model import Paragraph, TableBlock, TaskList
+import pytest
+
+from skills.WPSComposer.scripts.document_model import (
+    ExcalidrawBlock,
+    ImageBlock,
+    Paragraph,
+    TableBlock,
+    TaskList,
+)
 
 
 def test_parse_preserves_heading_task_list_and_table():
@@ -66,3 +74,33 @@ def test_table_starting_with_separator_row_has_no_literal_dash_headers():
     (table,) = document.sections[0].elements
     assert table.headers == []
     assert table.rows == [["a", "b"]]
+
+
+def test_plain_wikilink_image_is_not_modeled_as_excalidraw(tmp_path):
+    document = parse("![[photo.png|320x200]]", base_dir=str(tmp_path))
+
+    (image,) = document.sections[0].elements
+    assert isinstance(image, ImageBlock)
+    assert not isinstance(image, ExcalidrawBlock)
+    assert image.path == str((tmp_path / "photo.png").resolve())
+    assert (image.width, image.height) == (320, 200)
+
+
+def test_inline_markdown_image_is_rejected_instead_of_losing_the_image():
+    with pytest.raises(ValueError, match="Inline Markdown images are not supported"):
+        parse("Before ![chart](chart.png) after")
+
+
+def test_image_syntax_inside_inline_code_is_literal_text():
+    document = parse("Example: `![literal](not-an-image.png)`")
+
+    (paragraph,) = document.sections[0].elements
+    assert paragraph.plain_text == "Example: ![literal](not-an-image.png)"
+    assert paragraph.spans[-1].code is True
+
+
+def test_escaped_inline_image_syntax_is_not_rejected():
+    document = parse(r"Example: \![literal](not-an-image.png)")
+
+    (paragraph,) = document.sections[0].elements
+    assert paragraph.plain_text == r"Example: \![literal](not-an-image.png)"

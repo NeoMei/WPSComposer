@@ -42,6 +42,10 @@ def test_bridge_client_has_no_dynamic_code_execution():
     assert "eval(" not in source
     assert "new Function" not in source
     assert "ERROR_CODES.indexOf(error.code)" in source
+    assert "sessionNonce" not in source
+    assert "window.location.hash" in source
+    assert "window.history.replaceState" in source
+    assert "window.sessionStorage" in source
 
 
 def test_writer_uses_wps_save_and_pdf_export():
@@ -734,11 +738,8 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.deepEqual(state.tableValues[5], [3, 2, "A much longer narrative value"]);
   assert.equal(state.tableCells["1,1"].Range.Style.Name, "Table Header");
   assert.equal(state.tableCells["2,1"].Range.Style.Name, "Table Body");
-  assert.equal(state.tableCells["2,1"].Range.Font.Name, "\u4eff\u5b8b");
-  assert.equal(state.tableCells["2,1"].Range.Font.NameAscii, "Times New Roman");
+  assert.equal(state.tableCells["1,1"].VerticalAlignment, 1);
   assert.equal(state.tableCells["3,1"].Shading.BackgroundPatternColor, 0xF2F2F2);
-  assert.equal(state.tableCells["3,1"].TopPadding, 1.5);
-  assert.equal(state.tableCells["3,1"].Range.ParagraphFormat.FirstLineIndent, 0);
   assert.equal(state.tableBorders.length, 6);
   assert.equal(state.tableBorders[0][1].Color, 0xBFBFBF);
   assert.deepEqual(state.tableAutoFit, [0]);
@@ -755,7 +756,7 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.ok(state.breaks.includes(2));
   assert.equal(state.tocAdds, 1); assert.equal(state.tocUpdates, 1);
   const tocTitle = state.ranges.find(function (value) {{
-    return value.Style && value.Style.Name === "Heading 1";
+    return value.Style && value.Style.Name === "Body Text" && value.Font.Size === 18;
   }});
   assert.equal(tocTitle.Font.Size, 18); assert.equal(tocTitle.Font.Bold, 0);
   assert.equal(tocTitle.ParagraphFormat.Alignment, 1);

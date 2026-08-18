@@ -2,23 +2,29 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 import hashlib
 import os
 from pathlib import Path
+import posixpath
 import re
 import shutil
 import stat
 import tempfile
 import time
 from typing import Callable, Mapping, Optional
+from urllib.parse import unquote, urlsplit
 import zipfile
 from xml.etree import ElementTree
 
 from ..artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
+    ValidatorSpec,
+    copy_stream_before_deadline,
     publish_artifact,
+    validate_before_deadline,
     validate_office_package,
     validate_pdf,
 )
@@ -30,7 +36,7 @@ from ..generation_plan import (
 )
 from .bridge import LoopbackBridge
 from .models import PathPolicy, ProtocolError
-from .runtime import ProbeRuntime
+from .runtime import ProbeRuntime, remaining, require_remaining
 from .templates import TemplateError, clone_template
 
 
@@ -59,6 +65,14 @@ RESOURCE_EXTENSIONS = {
     "image/tiff": frozenset({".tif", ".tiff"}),
 }
 RESOURCE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+IMAGE_RELATIONSHIP_TYPES = frozenset({
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+    "http://purl.oclc.org/ooxml/officeDocument/relationships/image",
+})
+SLIDE_RELATIONSHIP_TYPES = frozenset({
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+    "http://purl.oclc.org/ooxml/officeDocument/relationships/slide",
+})
 REMOTE_GENERATION_ERROR_CODES = frozenset(
     {
         "GENERATION_COMMAND_FAILED",
@@ -386,17 +400,18 @@ def _wait_for_registration(
     deadline: float,
 ) -> None:
     for attempt in range(4):
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        budget = remaining(deadline)
+        if budget <= 0:
             bridge.wait_registered({component}, 0)
             return
         try:
-            bridge.wait_registered({component}, min(10, remaining))
+            bridge.wait_registered({component}, min(10, budget))
             return
         except TimeoutError:
-            if attempt == 3:
+            if attempt == 3 or remaining(deadline) <= 0:
+                bridge.wait_registered({component}, 0)
                 raise
-            runtime.activate_component(component)
+            runtime.activate_component(component, deadline=deadline)
 
 
 def _validate_marker_package(path: Path, format_name: str) -> None:
@@ -436,15 +451,24 @@ def _validate_marker_package(path: Path, format_name: str) -> None:
         )
 
 
-def _wait_for_marker(path: Path, format_name: str, timeout: float) -> None:
-    deadline = time.monotonic() + timeout
+def _wait_for_marker(
+    path: Path, format_name: str, *, deadline: float
+) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            _validate_marker_package(path, format_name)
+            validate_before_deadline(
+                ValidatorSpec.from_callable(_validate_marker_package, format_name),
+                path,
+                deadline,
+            )
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -452,15 +476,22 @@ def _wait_for_marker(path: Path, format_name: str, timeout: float) -> None:
         time.sleep(min(0.05, remaining))
 
 
-def _wait_for_pdf(path: Path, timeout: float) -> None:
-    deadline = time.monotonic() + timeout
+def _wait_for_pdf(path: Path, *, deadline: float) -> None:
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            validate_pdf(path)
+            validate_before_deadline(
+                ValidatorSpec.from_callable(_validate_generation_pdf),
+                path,
+                deadline,
+            )
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -481,15 +512,22 @@ def _sha256(path: Path) -> str:
 
 
 def _copy_generation_resource(
-    request: GenerationRequest, resource: GenerationResource, target: Path
+    request: GenerationRequest,
+    resource: GenerationResource,
+    target: Path,
+    *,
+    deadline: float,
 ) -> None:
+    require_remaining(deadline)
     target.parent.mkdir(parents=True, exist_ok=True)
+    require_remaining(deadline)
     temporary: Optional[Path] = None
     descriptor: Optional[int] = None
     try:
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
         descriptor = os.open(resource.source_path, flags)
         source_stat = os.fstat(descriptor)
+        require_remaining(deadline)
         if (
             not stat.S_ISREG(source_stat.st_mode)
             or source_stat.st_size > MAX_RESOURCE_BYTES
@@ -505,15 +543,23 @@ def _copy_generation_resource(
             temporary = Path(outgoing.name)
             with os.fdopen(descriptor, "rb") as incoming:
                 descriptor = None
-                shutil.copyfileobj(incoming, outgoing)
+                copy_stream_before_deadline(incoming, outgoing, deadline)
+            require_remaining(deadline)
             outgoing.flush()
+            require_remaining(deadline)
             os.fsync(outgoing.fileno())
+            require_remaining(deadline)
         if temporary.stat().st_size != source_stat.st_size:
             raise OSError("resource changed during staging")
+        require_remaining(deadline)
         os.chmod(temporary, 0o600)
+        require_remaining(deadline)
         os.link(temporary, target)
+        require_remaining(deadline)
         temporary.unlink()
         temporary = None
+    except TimeoutError:
+        raise
     except (OSError, ValueError) as exc:
         raise _error(
             request,
@@ -531,10 +577,13 @@ def stage_generation_resources(
     request: GenerationRequest,
     recorded: RecordedGeneration,
     runtime: ProbeRuntime,
+    *,
+    deadline: float,
 ) -> dict[str, str]:
     """Copy validated host resources into component-private locations."""
     manifest: dict[str, str] = {}
     for resource in recorded.resources:
+        require_remaining(deadline)
         safe_name = f"resource-{resource.id}{resource.source_path.suffix.lower()}"
         if request.component == "writer":
             try:
@@ -545,7 +594,9 @@ def stage_generation_resources(
                     "GENERATION_COMMAND_FAILED",
                     "Writer resource profile is unavailable",
                 ) from exc
-            _copy_generation_resource(request, resource, target)
+            _copy_generation_resource(
+                request, resource, target, deadline=deadline
+            )
             manifest[resource.id] = f"http://127.0.0.1:3889/{safe_name}"
         elif request.component == "presentation":
             if runtime.staging_dir is None:
@@ -555,7 +606,9 @@ def stage_generation_resources(
                     "WPS staging session is unavailable",
                 )
             target = runtime.staging_dir / "resources" / safe_name
-            _copy_generation_resource(request, resource, target)
+            _copy_generation_resource(
+                request, resource, target, deadline=deadline
+            )
             manifest[resource.id] = str(target.resolve())
         else:
             raise _error(
@@ -583,6 +636,16 @@ def _package_xml(path: Path) -> dict[str, ElementTree.Element]:
     ) as exc:
         raise ArtifactValidationError("Generated Office package XML is invalid") from exc
     return parsed
+
+
+def _package_members(path: Path) -> set[str]:
+    try:
+        with zipfile.ZipFile(path) as package:
+            return set(package.namelist())
+    except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
+        raise ArtifactValidationError(
+            "Generated Office package members are invalid"
+        ) from exc
 
 
 def _expected_cell_text(value: object, component: str) -> Optional[str]:
@@ -614,89 +677,324 @@ def _expected_cell_text(value: object, component: str) -> Optional[str]:
 def _expected_text(recorded: RecordedGeneration) -> list[str]:
     values: list[str] = []
     for operation in recorded.plan.operations:
-        args = operation.args
-        for key in ("text", "title", "subtitle"):
-            value = args.get(key)
-            if isinstance(value, str) and value:
-                values.append(value)
-        items = args.get("items")
-        if isinstance(items, tuple):
-            values.extend(str(item) for item in items if str(item))
-        for key in ("data", "values"):
-            rows = args.get(key)
-            if isinstance(rows, tuple):
-                for row in rows:
-                    if isinstance(row, tuple):
-                        values.extend(
-                            text
-                            for item in row
-                            if (text := _expected_cell_text(
-                                item, recorded.plan.component
-                            ))
-                            is not None
-                        )
-    return list(dict.fromkeys(values))
+        values.extend(
+            _operation_expected_text(operation, recorded.plan.component)
+        )
+    return values
 
 
-def _visible_package_text(
-    xml: Mapping[str, ElementTree.Element], format_name: str
-) -> str:
-    if format_name == "docx":
-        roots = [xml.get("word/document.xml")]
-        qname = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
-    elif format_name == "xlsx":
-        roots = [
-            root
-            for name, root in xml.items()
-            if name == "xl/sharedStrings.xml"
-            or name.startswith("xl/worksheets/sheet") and name.endswith(".xml")
-        ]
-        qname = None
-    else:
-        roots = [
-            root
-            for name, root in xml.items()
-            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
-        ]
-        qname = "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
-    chunks: list[str] = []
-    for root in roots:
-        if root is None:
-            continue
-        if qname is None:
-            chunks.extend(text for text in root.itertext() if text)
-        else:
-            chunks.extend(element.text or "" for element in root.iter(qname))
-    return " ".join(chunks)
+def _operation_expected_text(operation, component: str) -> list[str]:
+    values: list[str] = []
+    args = operation.args
+    for key in ("text", "title", "subtitle"):
+        value = args.get(key)
+        if isinstance(value, str) and value:
+            values.append(value)
+    items = args.get("items")
+    if isinstance(items, tuple):
+        values.extend(str(item) for item in items if str(item))
+    for key in ("data", "values"):
+        rows = args.get(key)
+        if isinstance(rows, tuple):
+            for row in rows:
+                if isinstance(row, tuple):
+                    values.extend(
+                        text
+                        for item in row
+                        if (text := _expected_cell_text(item, component)) is not None
+                    )
+    return values
 
 
-def _image_relationship_count(
-    xml: Mapping[str, ElementTree.Element], prefix: str
-) -> int:
-    relationship = (
+def _relationship_part_name(source_part: str) -> str:
+    directory, filename = posixpath.split(source_part)
+    return posixpath.join(directory, "_rels", f"{filename}.rels")
+
+
+def _relationships_for_part(
+    xml: Mapping[str, ElementTree.Element],
+    source_part: str,
+    context: str,
+) -> dict[str, ElementTree.Element]:
+    relationship_name = (
         "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
     )
-    count = 0
-    for name, root in xml.items():
-        if not name.startswith(prefix) or not name.endswith(".rels"):
-            continue
-        count += sum(
-            str(element.attrib.get("Type", "")).endswith("/image")
-            for element in root.iter(relationship)
+    root = xml.get(_relationship_part_name(source_part))
+    if root is None:
+        raise ArtifactValidationError(
+            f"Generated artifact is missing {context} relationships"
         )
-    return count
+    relationships = {}
+    for relationship in root.iter(relationship_name):
+        relationship_id = relationship.attrib.get("Id")
+        if not relationship_id or relationship_id in relationships:
+            raise ArtifactValidationError(
+                f"Generated artifact has an invalid {context} relationship ID"
+            )
+        relationships[relationship_id] = relationship
+    return relationships
+
+
+def _relationship_target_member(
+    source_part: str,
+    relationship: ElementTree.Element,
+    members: set[str],
+    context: str,
+    *,
+    required_prefix: str,
+) -> str:
+    if relationship.attrib.get("TargetMode", "Internal").lower() == "external":
+        raise ArtifactValidationError(
+            f"Generated artifact has an external {context} relationship"
+        )
+    raw_target = relationship.attrib.get("Target", "").replace("\\", "/")
+    parsed = urlsplit(raw_target)
+    if not raw_target or parsed.scheme or parsed.netloc or parsed.query or parsed.fragment:
+        raise ArtifactValidationError(
+            f"Generated artifact has an invalid {context} relationship target"
+        )
+    target_path = unquote(parsed.path)
+    if target_path.startswith("/"):
+        normalized = posixpath.normpath(target_path.lstrip("/"))
+    else:
+        normalized = posixpath.normpath(
+            posixpath.join(posixpath.dirname(source_part), target_path)
+        )
+    if (
+        normalized in {"", ".", ".."}
+        or normalized.startswith("../")
+        or not normalized.startswith(required_prefix)
+        or normalized not in members
+    ):
+        raise ArtifactValidationError(
+            f"Generated artifact has an invalid {context} relationship target"
+        )
+    return normalized
+
+
+def _valid_image_reference_count(
+    xml: Mapping[str, ElementTree.Element],
+    members: set[str],
+    source_part: str,
+    context: str,
+    *,
+    media_prefix: str,
+) -> int:
+    root = xml.get(source_part)
+    if root is None:
+        return 0
+    blip_name = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
+    embed_name = (
+        "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+    )
+    blips = list(root.iter(blip_name))
+    if not blips:
+        return 0
+    structure_context = f"{context} image structure"
+    relationships = _relationships_for_part(xml, source_part, structure_context)
+    for blip in blips:
+        relationship_id = blip.attrib.get(embed_name)
+        relationship = relationships.get(relationship_id or "")
+        if (
+            not relationship_id
+            or relationship is None
+            or relationship.attrib.get("Type") not in IMAGE_RELATIONSHIP_TYPES
+        ):
+            raise ArtifactValidationError(
+                f"Generated artifact has an invalid {structure_context}"
+            )
+        _relationship_target_member(
+            source_part,
+            relationship,
+            members,
+            structure_context,
+            required_prefix=media_prefix,
+        )
+    return len(blips)
+
+
+def _is_presentation_slide_part(name: str) -> bool:
+    return (
+        name.startswith("ppt/slides/")
+        and name.endswith(".xml")
+        and "/_rels/" not in name
+        and name.count("/") == 2
+    )
+
+
+def _presentation_slide_parts(
+    xml: Mapping[str, ElementTree.Element], members: set[str]
+) -> list[str]:
+    presentation_name = "ppt/presentation.xml"
+    presentation = xml.get(presentation_name)
+    if presentation is None:
+        raise ArtifactValidationError(
+            "Generated presentation is missing slide relationship metadata"
+        )
+    slide_id_name = (
+        "{http://schemas.openxmlformats.org/presentationml/2006/main}sldId"
+    )
+    relationship_id_name = (
+        "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+    )
+    relationships = _relationships_for_part(
+        xml, presentation_name, "presentation slide"
+    )
+    ordered = []
+    seen_ids = set()
+    seen_parts = set()
+    for slide_id in presentation.iter(slide_id_name):
+        relationship_id = slide_id.attrib.get(relationship_id_name)
+        if not relationship_id or relationship_id in seen_ids:
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship ID"
+            )
+        seen_ids.add(relationship_id)
+        relationship = relationships.get(relationship_id)
+        if (
+            relationship is None
+            or relationship.attrib.get("Type") not in SLIDE_RELATIONSHIP_TYPES
+        ):
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship"
+            )
+        part = _relationship_target_member(
+            presentation_name,
+            relationship,
+            members,
+            "presentation slide",
+            required_prefix="ppt/slides/",
+        )
+        if not _is_presentation_slide_part(part) or part in seen_parts:
+            raise ArtifactValidationError(
+                "Generated presentation has an invalid slide relationship target"
+            )
+        seen_parts.add(part)
+        ordered.append(part)
+    return ordered
 
 
 def _whitespace_stripped(text: str) -> str:
-    """Remove all whitespace so run-boundary segmentation cannot break matches.
-
-    ``_visible_package_text`` joins per-element ``itertext`` chunks with spaces,
-    so a paragraph stored across several ``<w:r>`` runs gains spaces the source
-    text never had. Stripping whitespace from both sides lets an expected string
-    still match the reassembled visible text. Run segmentation is a storage
-    artifact, not real content, so dropping it is safe for a presence check.
-    """
+    """Normalize insignificant whitespace around OOXML run boundaries."""
     return re.sub(r"\s+", "", text)
+
+
+def _normalized_expected_counts(values: list[str]) -> Counter:
+    return Counter(
+        normalized
+        for value in values
+        if (normalized := _whitespace_stripped(value))
+    )
+
+
+def _structured_text_items(
+    root: ElementTree.Element | None,
+    container_name: str,
+    text_name: str,
+) -> list[str]:
+    if root is None:
+        return []
+    containers = list(root.iter(container_name))
+    if containers:
+        return [
+            "".join(node.text or "" for node in container.iter(text_name))
+            for container in containers
+        ]
+    # Small synthetic packages and malformed vendor output may omit the normal
+    # paragraph wrapper. Keep each text node distinct rather than joining the
+    # whole document and allowing one node to satisfy several expectations.
+    return [node.text or "" for node in root.iter(text_name)]
+
+
+def _require_structured_text_counts(
+    values: list[str], actual_items: list[str], context: str
+) -> None:
+    expected = [
+        normalized
+        for value in values
+        if (normalized := _whitespace_stripped(value))
+    ]
+    actual = [
+        normalized
+        for value in actual_items
+        if (normalized := _whitespace_stripped(value))
+    ]
+    candidates = [
+        [index for index, item in enumerate(actual) if value in item]
+        for value in expected
+    ]
+    matched_expected = [-1] * len(actual)
+
+    def assign(expected_index: int, visited: set[int]) -> bool:
+        for actual_index in candidates[expected_index]:
+            if actual_index in visited:
+                continue
+            visited.add(actual_index)
+            previous = matched_expected[actual_index]
+            if previous == -1 or assign(previous, visited):
+                matched_expected[actual_index] = expected_index
+                return True
+        return False
+
+    order = sorted(
+        range(len(expected)),
+        key=lambda index: (len(candidates[index]), -len(expected[index])),
+    )
+    if any(not assign(index, set()) for index in order):
+        raise ArtifactValidationError(
+            f"Generated artifact is missing {context} content count"
+        )
+
+
+def _spreadsheet_cell_text(xml: Mapping[str, ElementTree.Element]) -> list[str]:
+    namespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    shared = []
+    shared_root = xml.get("xl/sharedStrings.xml")
+    if shared_root is not None:
+        for item in shared_root.iter(f"{{{namespace}}}si"):
+            shared.append("".join(
+                text.text or "" for text in item.iter(f"{{{namespace}}}t")
+            ))
+    values = []
+    for name, root in sorted(xml.items()):
+        if not (name.startswith("xl/worksheets/sheet") and name.endswith(".xml")):
+            continue
+        for cell in root.iter(f"{{{namespace}}}c"):
+            cell_type = cell.attrib.get("t")
+            if cell_type == "inlineStr":
+                value = "".join(
+                    text.text or "" for text in cell.iter(f"{{{namespace}}}t")
+                )
+            else:
+                value_node = cell.find(f"{{{namespace}}}v")
+                value = "" if value_node is None else value_node.text or ""
+                if cell_type == "s" and value:
+                    try:
+                        value = shared[int(value)]
+                    except (IndexError, ValueError):
+                        value = ""
+            if value:
+                values.append(value)
+    return values
+
+
+def _presentation_expected_by_slide(recorded: RecordedGeneration) -> list[list[str]]:
+    slides: list[list[str]] = []
+    creates = {
+        "slide.add_title", "slide.add_section", "slide.add_bullets", "slide.add_blank"
+    }
+    for operation in recorded.plan.operations:
+        if operation.op in creates:
+            slides.append(_operation_expected_text(
+                operation, recorded.plan.component
+            ))
+        elif operation.op == "slide.add_table":
+            slide_index = int(operation.args.get("slide", 0) or 0)
+            if 1 <= slide_index <= len(slides):
+                slides[slide_index - 1].extend(_operation_expected_text(
+                    operation, recorded.plan.component
+                ))
+    return slides
 
 
 def _validate_generated_package(
@@ -709,15 +1007,22 @@ def _validate_generated_package(
     if _sha256(path) == template_digest:
         raise ArtifactValidationError("Generated artifact is an unchanged template")
     xml = _package_xml(path)
-    visible_text = _whitespace_stripped(_visible_package_text(xml, format_name))
+    members = _package_members(path)
     expected = _expected_text(recorded)
-    if expected and not all(
-        _whitespace_stripped(value) in visible_text for value in expected
-    ):
-        raise ArtifactValidationError(
-            "Generated artifact is missing representative renderer content"
-        )
     if format_name == "docx":
+        word_paragraph = (
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p"
+        )
+        word_text = (
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+        )
+        _require_structured_text_counts(
+            expected,
+            _structured_text_items(
+                xml.get("word/document.xml"), word_paragraph, word_text
+            ),
+            "writer",
+        )
         document = xml.get("word/document.xml")
         table_name = (
             "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tbl"
@@ -733,15 +1038,32 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated document is missing planned table structure"
             )
-        planned_images = any(
+        planned_images = sum(
             operation.op == "writer.add_image"
             for operation in recorded.plan.operations
         )
-        if planned_images and _image_relationship_count(xml, "word/_rels/") < 1:
+        actual_images = _valid_image_reference_count(
+            xml,
+            members,
+            "word/document.xml",
+            "writer",
+            media_prefix="word/media/",
+        )
+        if actual_images != planned_images:
             raise ArtifactValidationError(
                 "Generated document is missing planned image structure"
             )
     elif format_name == "xlsx":
+        actual_values = Counter(
+            normalized
+            for value in _spreadsheet_cell_text(xml)
+            if (normalized := _whitespace_stripped(value))
+        )
+        for value, required in _normalized_expected_counts(expected).items():
+            if actual_values[value] < required:
+                raise ArtifactValidationError(
+                    "Generated workbook is missing spreadsheet content count"
+                )
         workbook = xml.get("xl/workbook.xml")
         namespace = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet"
         actual = 0 if workbook is None else sum(1 for _ in workbook.iter(namespace))
@@ -753,10 +1075,7 @@ def _validate_generated_package(
                 "Generated workbook has an unexpected worksheet count"
             )
     elif format_name == "pptx":
-        actual = sum(
-            name.startswith("ppt/slides/slide") and name.endswith(".xml")
-            for name in xml
-        )
+        actual = sum(_is_presentation_slide_part(name) for name in xml)
         planned = sum(
             operation.op
             in {
@@ -771,13 +1090,35 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated presentation has an unexpected slide count"
             )
+        expected_slides = _presentation_expected_by_slide(recorded)
+        slide_names = _presentation_slide_parts(xml, members)
+        if len(slide_names) != planned:
+            raise ArtifactValidationError(
+                "Generated presentation has an unexpected slide relationship count"
+            )
+        drawing_text = (
+            "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+        )
+        drawing_paragraph = (
+            "{http://schemas.openxmlformats.org/drawingml/2006/main}p"
+        )
+        for index, (name, slide_expected) in enumerate(
+            zip(slide_names, expected_slides), start=1
+        ):
+            _require_structured_text_counts(
+                slide_expected,
+                _structured_text_items(
+                    xml[name], drawing_paragraph, drawing_text
+                ),
+                f"slide {index}",
+            )
         table_name = (
             "{http://schemas.openxmlformats.org/drawingml/2006/main}tbl"
         )
         actual_tables = sum(
             sum(1 for _ in root.iter(table_name))
             for name, root in xml.items()
-            if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+            if _is_presentation_slide_part(name)
         )
         planned_tables = sum(
             operation.op == "slide.add_table"
@@ -787,16 +1128,59 @@ def _validate_generated_package(
             raise ArtifactValidationError(
                 "Generated presentation is missing planned table structure"
             )
-        planned_images = any(
-            operation.op == "slide.add_image"
+        planned_images = Counter(
+            int(operation.args["slide"])
             for operation in recorded.plan.operations
+            if operation.op == "slide.add_image"
         )
-        if planned_images and _image_relationship_count(
-            xml, "ppt/slides/_rels/"
-        ) < 1:
-            raise ArtifactValidationError(
-                "Generated presentation is missing planned image structure"
+        for slide_index, slide_name in enumerate(slide_names, start=1):
+            actual_images = _valid_image_reference_count(
+                xml,
+                members,
+                slide_name,
+                f"slide {slide_index}",
+                media_prefix="ppt/media/",
             )
+            if actual_images != planned_images[slide_index]:
+                raise ArtifactValidationError(
+                    "Generated presentation is missing planned "
+                    f"slide {slide_index} image structure"
+                )
+
+
+def _validate_generated_package_from_plan(
+    path: Path,
+    format_name: str,
+    raw_plan: dict,
+    template_digest: str,
+) -> None:
+    """Rebuild immutable recording state from a spawn-safe plain plan."""
+    component = raw_plan.get("component")
+    plan = validate_generation_plan(raw_plan, component)
+    _validate_generated_package(
+        path,
+        format_name,
+        RecordedGeneration(plan, ()),
+        template_digest,
+    )
+
+
+def _validate_generation_pdf(path: Path) -> None:
+    """Top-level indirection keeps PDF validation injectable in unit tests."""
+    validate_pdf(path)
+
+
+def _generated_validator_spec(
+    format_name: str,
+    recorded: RecordedGeneration,
+    template_digest: str,
+) -> ValidatorSpec:
+    return ValidatorSpec.from_callable(
+        _validate_generated_package_from_plan,
+        format_name,
+        recorded.plan.to_dict(),
+        template_digest,
+    )
 
 
 def _wait_for_generated_package(
@@ -804,18 +1188,26 @@ def _wait_for_generated_package(
     format_name: str,
     recorded: RecordedGeneration,
     template_digest: str,
-    timeout: float,
+    *,
+    deadline: float,
 ) -> None:
-    deadline = time.monotonic() + timeout
     failure: Optional[ArtifactValidationError] = None
     while True:
         try:
-            _validate_generated_package(
-                path, format_name, recorded, template_digest
+            validate_before_deadline(
+                _generated_validator_spec(
+                    format_name, recorded, template_digest
+                ),
+                path,
+                deadline,
             )
             return
         except ArtifactValidationError as exc:
             failure = exc
+        except TimeoutError:
+            if failure is not None:
+                raise failure
+            raise
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             assert failure is not None
@@ -830,7 +1222,7 @@ def _run_generation(
     bridge: LoopbackBridge,
     runtime: ProbeRuntime,
     probe_root: Path,
-    timeout: float,
+    deadline: float,
     feasibility: bool,
 ) -> Path:
     is_pdf = request.format_name == "pdf"
@@ -840,7 +1232,9 @@ def _run_generation(
             "STAGING_UNAVAILABLE",
             "WPS container staging session was not created",
         )
+    require_remaining(deadline)
     runtime.prepare_profiles()
+    require_remaining(deadline)
     policy = PathPolicy((runtime.staging_dir,))
     try:
         staged = policy.require_allowed(
@@ -853,11 +1247,14 @@ def _run_generation(
             "Pinned WPS generation template could not be staged",
         ) from exc
     template_digest = _sha256(staged)
+    require_remaining(deadline)
     staged_pdf = policy.require_allowed(staged.with_suffix(".pdf")) if is_pdf else None
-    resources = stage_generation_resources(request, recorded, runtime)
-    runtime.start_servers()
-    runtime.activate_component(request.component)
-    deadline = time.monotonic() + timeout
+    resources = stage_generation_resources(
+        request, recorded, runtime, deadline=deadline
+    )
+    require_remaining(deadline)
+    runtime.start_servers(deadline=deadline)
+    runtime.activate_component(request.component, deadline=deadline)
     try:
         _wait_for_registration(bridge, runtime, request.component, deadline)
     except TimeoutError as exc:
@@ -876,15 +1273,14 @@ def _run_generation(
     if is_pdf:
         command_params["outputFormat"] = "pdf"
         command_params["stagedPdfPath"] = str(staged_pdf)
+    require_remaining(deadline)
     command = bridge.issue(
         request.component,
         method,
         command_params,
     )
     try:
-        result = bridge.wait_result(
-            command.id, max(0.0, deadline - time.monotonic())
-        )
+        result = bridge.wait_result(command.id, remaining(deadline))
     except TimeoutError as exc:
         bridge.state.cancel(command.id)
         raise _error(
@@ -892,6 +1288,7 @@ def _run_generation(
             "GENERATION_COMMAND_FAILED",
             "Timed out waiting for WPS generation",
         ) from exc
+    require_remaining(deadline)
     if not result.ok:
         details = dict(result.error or {})
         remote_code = _normalize_remote_error_code(details.get("code"))
@@ -944,23 +1341,23 @@ def _run_generation(
         )
     try:
         if feasibility:
-            _wait_for_marker(staged, request.format_name, timeout)
+            _wait_for_marker(staged, request.format_name, deadline=deadline)
         elif is_pdf:
             _wait_for_generated_package(
                 staged,
                 "docx",
                 recorded,
                 template_digest,
-                timeout,
+                deadline=deadline,
             )
-            _wait_for_pdf(staged_pdf, timeout)
+            _wait_for_pdf(staged_pdf, deadline=deadline)
         else:
             _wait_for_generated_package(
                 staged,
                 request.format_name,
                 recorded,
                 template_digest,
-                timeout,
+                deadline=deadline,
             )
     except ArtifactValidationError as exc:
         raise _error(
@@ -970,33 +1367,42 @@ def _run_generation(
         ) from exc
     try:
         if feasibility:
-            validator = lambda path: _validate_marker_package(
-                path, request.format_name
+            artifact_validator = ValidatorSpec.from_callable(
+                _validate_marker_package, request.format_name
             )
         elif is_pdf:
-            validator = lambda path: validate_pdf(path)
+            artifact_validator = ValidatorSpec.from_callable(
+                _validate_generation_pdf
+            )
         else:
-            validator = lambda path: _validate_generated_package(
-                path,
+            artifact_validator = _generated_validator_spec(
                 request.format_name,
                 recorded,
                 template_digest,
             )
+
+        def validator(path: Path) -> None:
+            try:
+                require_remaining(deadline)
+                validate_before_deadline(artifact_validator, path, deadline)
+                require_remaining(deadline)
+            except TimeoutError as exc:
+                raise ArtifactValidationError(
+                    "WPS generation deadline expired during artifact validation"
+                ) from exc
+
         published = publish_artifact(
             staged_pdf if is_pdf else staged,
             request.output,
             overwrite=request.overwrite,
             validator=validator,
+            deadline=deadline,
         )
         if is_pdf:
             staged.unlink(missing_ok=True)
             staged_pdf.unlink(missing_ok=True)
         return published
     except ArtifactTransportError as exc:
-        if exc.code == "FINAL_ARTIFACT_INVALID":
-            # the published artifact failed validation; never leave it behind
-            # (with overwrite=True it has already replaced the user's file)
-            request.output.unlink(missing_ok=True)
         message = {
             "STAGED_ARTIFACT_INVALID": "Staged WPS artifact is invalid",
             "ARTIFACT_PUBLISH_FAILED": "Generated artifact could not be published",
@@ -1018,10 +1424,13 @@ def _execute_generation_plan(
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
     feasibility: bool = False,
+    deadline: Optional[float] = None,
 ) -> Path:
     """Execute one host-validated plan against a private template clone."""
     if timeout <= 0:
         raise ValueError("timeout must be positive")
+    if deadline is None:
+        deadline = time.monotonic() + timeout
     gates = MACOS_GENERATION_ENABLED if enabled is None else enabled
     if not bool(gates.get(request.format_name, False)):
         raise _error(
@@ -1051,6 +1460,7 @@ def _execute_generation_plan(
     if request.output.exists() and not request.overwrite:
         raise FileExistsError(f"Output already exists: {request.output}")
     recorded = _validate_production_recording(request, recorded)
+    require_remaining(deadline)
     method = METHODS[request.component]
 
     repository_root = Path(__file__).resolve().parents[4]
@@ -1061,11 +1471,13 @@ def _execute_generation_plan(
     runtime = None
     try:
         with bridge_factory(ORIGINS) as bridge:
+            require_remaining(deadline)
             runtime = runtime_factory(
                 probe_root,
                 runtime_root / "runtime",
                 bridge.url,
                 bridge.token,
+                deadline=deadline,
             )
             try:
                 with runtime:
@@ -1076,7 +1488,7 @@ def _execute_generation_plan(
                         bridge,
                         runtime,
                         probe_root,
-                        timeout,
+                        deadline,
                         feasibility,
                     )
             except GenerationError:
@@ -1124,6 +1536,7 @@ def execute_generation_plan(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
+    _deadline: Optional[float] = None,
 ) -> Path:
     """Execute a complete renderer plan through one private WPS runtime."""
     return _execute_generation_plan(
@@ -1134,6 +1547,7 @@ def execute_generation_plan(
         runtime_factory=runtime_factory,
         timeout=timeout,
         feasibility=False,
+        deadline=_deadline,
     )
 
 
@@ -1176,11 +1590,17 @@ def generate_macos(
     bridge_factory: Callable = LoopbackBridge,
     runtime_factory: Callable = ProbeRuntime,
     timeout: float = 600,
+    overwrite: bool = False,
 ) -> Path:
     """Record a public renderer and generate through the gated macOS backend."""
+    if timeout <= 0:
+        raise ValueError("timeout must be positive")
+    deadline = time.monotonic() + timeout
     normalized_format = str(format_name).lower().lstrip(".")
     component = FORMAT_COMPONENTS.get(normalized_format, "writer")
-    request = GenerationRequest(Path(output), component, normalized_format)
+    request = GenerationRequest(
+        Path(output), component, normalized_format, overwrite=bool(overwrite)
+    )
     gates = MACOS_GENERATION_ENABLED if enabled is None else enabled
     if not bool(gates.get(normalized_format, False)):
         raise _error(
@@ -1238,4 +1658,5 @@ def generate_macos(
         bridge_factory=bridge_factory,
         runtime_factory=runtime_factory,
         timeout=timeout,
+        _deadline=deadline,
     )
