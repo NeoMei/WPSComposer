@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from functools import partial
 import hashlib
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import platform
@@ -20,10 +18,8 @@ import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from threading import Thread
 from typing import BinaryIO, Optional
 from urllib.error import URLError
-from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from .bridge import derive_client_credentials
@@ -107,12 +103,12 @@ def build_profile(
     component: str,
     bridge_url: str,
     client_id: str,
+    capability: str,
 ) -> Path:
     """Create one static add-in profile for the selected WPS component.
 
-    No bootstrap capability is written here because the profile is served
-    over unauthenticated static HTTP. The capability arrives in the
-    registration URL fragment, which browsers do not send to that server.
+    The short-lived, component-bound capability is written only into this
+    private runtime profile and removed with the staging session.
     """
     if component not in COMPONENT_CONFIG:
         raise ValueError(f"Unknown component: {component}")
@@ -137,6 +133,7 @@ def build_profile(
             "bridgeUrl": bridge_url,
             "component": component,
             "clientId": client_id,
+            "capability": capability,
         },
     )
     return profile
@@ -467,9 +464,12 @@ def install_registration_entries(
     session_nonce: str,
     client_credentials: dict[str, dict[str, str]],
 ) -> None:
-    """Merge this session's uniquely named add-ins into publish.xml."""
+    """Merge this session's authorized add-ins into publish.xml."""
+    # WPS authorizes add-ins by the stable package/profile name stored in
+    # authaddin.json. Session isolation belongs in the private runtime profile,
+    # not in the registration name or URL.
     names = tuple(
-        f"wpscomposer-{session_nonce}-{component}"
+        f"wpscomposer-phase0-{component}"
         for component in component_config
     )
     for _ in range(5):
@@ -480,25 +480,26 @@ def install_registration_entries(
             root = ET.fromstring(source)
         except ET.ParseError as exc:
             raise RuntimeError(f"Invalid WPS registration XML: {snapshot.path}") from exc
+        # Replace stale entries with the same authorized profile name. The
+        # runtime lock serializes sessions, while the profile capability remains
+        # unique to this bridge session.
+        for element in tuple(root):
+            if (
+                element.tag.rsplit("}", 1)[-1] == "jspluginonline"
+                and element.attrib.get("name") in names
+            ):
+                root.remove(element)
         # Persist ownership before the global file is changed so crash recovery
         # can identify our entries even if the process dies during publication.
         snapshot.record_prewrite(names, source, existed=existed)
         for name, (component, config) in zip(names, component_config.items()):
-            credentials = client_credentials[component]
-            fragment = urlencode(
-                {
-                    "component": component,
-                    "clientId": credentials["clientId"],
-                    "capability": credentials["capability"],
-                }
-            )
             ET.SubElement(
                 root,
                 "jspluginonline",
                 {
                     "name": name,
                     "type": str(config["addon_type"]),
-                    "url": f"http://127.0.0.1:{config['port']}/#{fragment}",
+                    "url": f"http://127.0.0.1:{config['port']}/",
                     "debug": "",
                     "enable": "enable_dev",
                     "install": "null",
@@ -722,39 +723,6 @@ def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
     return session
 
 
-class _QuietStaticHandler(SimpleHTTPRequestHandler):
-    def log_message(self, format: str, *args: object) -> None:
-        return
-
-
-class StaticProfileServer:
-    """Side-effect-free static server for one add-in profile."""
-
-    def __init__(self, profile: Path, port: int):
-        handler = partial(_QuietStaticHandler, directory=str(profile))
-        self._server = ThreadingHTTPServer(("127.0.0.1", port), handler)
-        self._server.daemon_threads = True
-        self._thread = Thread(
-            target=self._server.serve_forever,
-            name=f"wpscomposer-addin-{port}",
-            daemon=True,
-        )
-
-    def start(self) -> None:
-        self._thread.start()
-
-    def close(self, timeout: float = CLEANUP_GRACE_SECONDS) -> None:
-        shutdown = Thread(
-            target=self._server.shutdown,
-            name="wpscomposer-server-shutdown",
-            daemon=True,
-        )
-        shutdown.start()
-        shutdown.join(timeout=max(0.0, timeout))
-        self._server.server_close()
-        self._thread.join(timeout=0)
-
-
 class ProbeRuntime:
     """Owns temporary add-in profiles and the child wpsjs servers."""
 
@@ -787,7 +755,6 @@ class ProbeRuntime:
         self.fixtures: dict[str, Path] = {}
         self.logs: dict[str, Path] = {}
         self._processes: list[subprocess.Popen] = []
-        self._servers: list[StaticProfileServer] = []
         self._log_streams: list[BinaryIO] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
         self._wps_processes_before: Optional[dict[int, ProcessIdentity]] = None
@@ -865,6 +832,7 @@ class ProbeRuntime:
                 component,
                 self.bridge_url,
                 self.client_credentials[component]["clientId"],
+                self.client_credentials[component]["capability"],
             )
         return dict(self.profiles)
 
@@ -875,6 +843,8 @@ class ProbeRuntime:
             deadline = self.deadline
         if deadline is None:
             deadline = time.monotonic() + len(COMPONENT_CONFIG) * SERVER_STARTUP_TIMEOUT
+        node = find_node(self.node_override or read_configured_node(self.probe_root))
+        cli = find_wpsjs_cli(self.probe_root)
         self._ensure_runtime_state_dir()
         require_remaining(deadline)
         recovery = self.recovery_dir
@@ -898,11 +868,30 @@ class ProbeRuntime:
                 require_remaining(deadline)
                 log_path = self.runtime_dir / f"wpsjs-{component}.log"
                 self.logs[component] = log_path
-                server = StaticProfileServer(
-                    self.profiles[component], int(config["port"])
+                log_stream = log_path.open("ab")
+                self._log_streams.append(log_stream)
+                environment = os.environ.copy()
+                environment["PATH"] = (
+                    str(node.parent)
+                    + os.pathsep
+                    + environment.get("PATH", "")
                 )
-                server.start()
-                self._servers.append(server)
+                process = subprocess.Popen(
+                    [
+                        str(node),
+                        str(cli),
+                        "debug",
+                        "--server",
+                        "--port",
+                        str(config["port"]),
+                    ],
+                    cwd=self.profiles[component],
+                    env=environment,
+                    stdin=subprocess.DEVNULL,
+                    stdout=log_stream,
+                    stderr=subprocess.STDOUT,
+                )
+                self._processes.append(process)
                 require_remaining(deadline)
                 self._wait_for_server(
                     component, int(config["port"]), deadline
@@ -920,6 +909,11 @@ class ProbeRuntime:
     ) -> None:
         url = f"http://127.0.0.1:{port}/index.html"
         while remaining(deadline) > 0:
+            process = self._processes[-1]
+            if process.poll() is not None:
+                raise RuntimeError(
+                    f"wpsjs {component} exited early; see {self.logs[component]}"
+                )
             try:
                 with urlopen(
                     url, timeout=min(1.0, require_remaining(deadline))
@@ -969,80 +963,20 @@ class ProbeRuntime:
             session = json.loads(session_path.read_text(encoding="utf-8"))
             session["activationFixture"] = str(target)
             _write_json(session_path, session)
-        # Launch the selected executable directly: the returned child PID is
-        # an ownership proof that LaunchServices (`open -n`) cannot provide.
-        executable = self.wps_app / "Contents/MacOS/wpsoffice"
-        child = subprocess.Popen(
-            [str(executable), str(target)],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
+        if deadline is None:
+            deadline = self.deadline
+        timeout = (
+            ACTIVATION_TIMEOUT
+            if deadline is None
+            else require_remaining(deadline, "Timed out before WPS activation")
         )
-        try:
-            # Track the exact Popen handle before the first fallible ownership
-            # check so an interrupt cannot strand a child outside cleanup.
-            self._processes.append(child)
-            if deadline is None:
-                identity_deadline = time.monotonic() + ACTIVATION_TIMEOUT
-            else:
-                identity_deadline = deadline
-            identity: Optional[ProcessIdentity] = None
-            while remaining(identity_deadline) > 0:
-                if child.poll() is not None:
-                    break
-                identity = read_wps_process_identity(
-                    child.pid,
-                    self.wps_app,
-                    timeout=min(0.25, require_remaining(identity_deadline)),
-                )
-                if identity is not None:
-                    break
-                time.sleep(min(0.02, remaining(identity_deadline)))
-            if identity is None:
-                raise RuntimeError(
-                    f"Could not prove ownership of WPS activation for {component}"
-                )
-            self._owned_wps_processes[identity.pid] = identity
-        except BaseException as activation_exc:
-            cleanup_errors: list[BaseException] = []
-            reaped = False
-            try:
-                child.terminate()
-            except BaseException as cleanup_exc:
-                cleanup_errors.append(cleanup_exc)
-            try:
-                child.wait(timeout=CLEANUP_GRACE_SECONDS)
-                reaped = True
-            except subprocess.TimeoutExpired:
-                try:
-                    child.kill()
-                except BaseException as cleanup_exc:
-                    cleanup_errors.append(cleanup_exc)
-                try:
-                    child.wait(timeout=CLEANUP_GRACE_SECONDS)
-                    reaped = True
-                except BaseException as cleanup_exc:
-                    cleanup_errors.append(cleanup_exc)
-            except BaseException as cleanup_exc:
-                cleanup_errors.append(cleanup_exc)
-                try:
-                    child.kill()
-                except BaseException as kill_exc:
-                    cleanup_errors.append(kill_exc)
-                try:
-                    child.wait(timeout=CLEANUP_GRACE_SECONDS)
-                    reaped = True
-                except BaseException as wait_exc:
-                    cleanup_errors.append(wait_exc)
-            if reaped:
-                try:
-                    self._processes.remove(child)
-                except ValueError:
-                    pass
-            if cleanup_errors:
-                raise activation_exc from RuntimeCleanupError(cleanup_errors)
-            raise
+        subprocess.run(
+            activation_command(self.wps_app, target),
+            check=True,
+            timeout=timeout,
+        )
+        if deadline is not None:
+            require_remaining(deadline, "Timed out during WPS activation")
         self.fixtures[component] = target
         return target
 
@@ -1105,13 +1039,6 @@ class ProbeRuntime:
     def close(self) -> None:
         cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
         errors: list[BaseException] = []
-        servers = tuple(reversed(self._servers))
-        self._servers.clear()
-        for server in servers:
-            try:
-                server.close(timeout=remaining(cleanup_deadline))
-            except BaseException as exc:
-                errors.append(exc)
         processes = tuple(reversed(self._processes))
         self._processes.clear()
         for process in processes:

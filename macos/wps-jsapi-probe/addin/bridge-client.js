@@ -53,31 +53,19 @@
       throw new Error("session.json is unavailable");
     }
     const bootstrap = await sessionResponse.json();
-    const storageKey = `wpscomposer:${bootstrap.clientId}:token`;
-    let token = window.sessionStorage.getItem(storageKey);
-    if (!token) {
-      const fragment = new URLSearchParams(window.location.hash.slice(1));
-      const capability = fragment.get("capability") || "";
-      const fragmentClient = fragment.get("clientId") || "";
-      const fragmentComponent = fragment.get("component") || "";
-      // Remove the one-time capability from the visible URL before making
-      // any network request. URL fragments are never sent to static HTTP.
-      window.history.replaceState(null, "", window.location.pathname);
-      if (fragmentClient !== bootstrap.clientId ||
-          fragmentComponent !== bootstrap.component || !capability) {
-        throw new Error("Bridge bootstrap capability is unavailable");
-      }
-      const claimed = await request(bootstrap, "/v1/session", {
-        method: "POST",
-        body: JSON.stringify({
-          component: bootstrap.component,
-          clientId: bootstrap.clientId,
-          capability
-        })
-      });
-      token = claimed.body.token;
-      window.sessionStorage.setItem(storageKey, token);
+    const capability = bootstrap.capability || "";
+    if (!capability) {
+      throw new Error("Bridge bootstrap capability is unavailable");
     }
+    const claimed = await request(bootstrap, "/v1/session", {
+      method: "POST",
+      body: JSON.stringify({
+        component: bootstrap.component,
+        clientId: bootstrap.clientId,
+        capability
+      })
+    });
+    const token = claimed.body.token;
     const session = Object.assign({}, bootstrap, {token});
     await request(session, "/v1/register", {
       method: "POST",
@@ -109,7 +97,6 @@
         // bootstrap capability after a restart; fail closed and let the host
         // activate a newly registered profile.
         if (String(pollError && pollError.message).indexOf("HTTP 401") !== -1) {
-          window.sessionStorage.removeItem(storageKey);
           throw pollError;
         }
         failures += 1;

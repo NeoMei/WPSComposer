@@ -43,9 +43,10 @@ def test_bridge_client_has_no_dynamic_code_execution():
     assert "new Function" not in source
     assert "ERROR_CODES.indexOf(error.code)" in source
     assert "sessionNonce" not in source
-    assert "window.location.hash" in source
-    assert "window.history.replaceState" in source
-    assert "window.sessionStorage" in source
+    assert "bootstrap.capability" in source
+    assert "window.location.hash" not in source
+    assert "window.history.replaceState" not in source
+    assert "window.sessionStorage" not in source
 
 
 def test_writer_uses_wps_save_and_pdf_export():
