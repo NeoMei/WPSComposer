@@ -161,11 +161,11 @@ The registration path was absent before every real run:
 ABSENT
 ```
 
-It was also absent after partial artifact generation, command failure, timeout,
-and an interrupted run. Probe-created WPS processes were identified as the exact PID difference
-from the pre-run WPS process snapshot and terminated without touching
-pre-existing instances. Temporary recovery directories were removed only after
-registration verification succeeded.
+The runtime restores the exact pre-run registration bytes after partial artifact
+generation, command failure, timeout, and interruption. WPS is activated through
+LaunchServices and is not force-terminated; the add-in closes only its activation
+fixture, while the runtime reaps its own `wpsjs` server processes. Temporary
+recovery directories are removed only after registration verification succeeds.
 
 If a crash bypasses normal cleanup:
 

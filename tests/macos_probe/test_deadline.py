@@ -62,15 +62,13 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
     clock = FakeClock()
     calls: list[tuple[str, float]] = []
 
-    class Server:
-        def __init__(self, _profile, port):
-            self.port = port
+    class Process:
+        def poll(self):
+            return 0
 
-        def start(self):
-            clock.advance(0.34)
-
-        def close(self, timeout=0):
-            pass
+    def popen(*args, **kwargs):
+        clock.advance(0.34)
+        return Process()
 
     probe = runtime.ProbeRuntime(
         tmp_path,
@@ -80,12 +78,15 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
         publish_xml=tmp_path / "publish.xml",
         staging_root=tmp_path / "stable" / "WPSComposer",
     )
+    probe.runtime_dir.mkdir()
     for component in runtime.COMPONENT_CONFIG:
         profile = tmp_path / component
         profile.mkdir()
         probe.profiles[component] = profile
 
-    monkeypatch.setattr(runtime, "StaticProfileServer", Server)
+    monkeypatch.setattr(runtime.subprocess, "Popen", popen)
+    monkeypatch.setattr(runtime, "find_node", lambda override=None: Path("/node"))
+    monkeypatch.setattr(runtime, "find_wpsjs_cli", lambda root: Path("/wpsjs"))
     monkeypatch.setattr(
         runtime.RegistrationSnapshot,
         "capture",
@@ -108,7 +109,7 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
     ]
 
 
-def test_activation_ownership_handshake_receives_only_deadline_remaining(
+def test_launchservices_receives_only_deadline_remaining(
     monkeypatch, tmp_path: Path
 ):
     clock = FakeClock()
@@ -127,23 +128,15 @@ def test_activation_ownership_handshake_receives_only_deadline_remaining(
     probe.staging_dir.mkdir()
     observed = []
     monkeypatch.setattr(runtime.time, "monotonic", clock.monotonic)
-    class Child:
-        pid = 201
 
-        def poll(self):
-            return None
-
-    monkeypatch.setattr(runtime.subprocess, "Popen", lambda *a, **k: Child())
-
-    def identify(pid, app, **kwargs):
+    def launch(command, **kwargs):
         observed.append(kwargs["timeout"])
-        return runtime.ProcessIdentity(pid, "start", str(app / "Contents/MacOS/wpsoffice"))
 
-    monkeypatch.setattr(runtime, "read_wps_process_identity", identify)
+    monkeypatch.setattr(runtime.subprocess, "run", launch)
 
     probe.activate_component("writer", deadline=100.4)
 
-    assert observed == [pytest.approx(0.25)]
+    assert observed == [pytest.approx(0.4)]
 
 
 def test_registration_retry_reuses_deadline_for_activation(monkeypatch):
