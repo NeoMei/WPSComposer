@@ -38,10 +38,56 @@ _HYBRID_PATTERNS = {
     "Heading 4": re.compile(r"^关键工法\d{1,3}[：:]\s*"),
 }
 _STYLE_LEVELS = {
+    "Heading 1": "0",
     "Heading 2": "1",
     "Heading 3": "2",
     "Heading 4": "3",
 }
+
+_NUMBERING_CHILD_ORDER = (
+    "numPicBullet",
+    "abstractNum",
+    "num",
+    "numIdMacAtCleanup",
+)
+_PPR_CHILD_ORDER = (
+    "pStyle",
+    "keepNext",
+    "keepLines",
+    "pageBreakBefore",
+    "framePr",
+    "widowControl",
+    "numPr",
+    "suppressLineNumbers",
+    "pBdr",
+    "shd",
+    "tabs",
+    "suppressAutoHyphens",
+    "kinsoku",
+    "wordWrap",
+    "overflowPunct",
+    "topLinePunct",
+    "autoSpaceDE",
+    "autoSpaceDN",
+    "bidi",
+    "adjustRightInd",
+    "snapToGrid",
+    "spacing",
+    "ind",
+    "contextualSpacing",
+    "mirrorIndents",
+    "suppressOverlap",
+    "jc",
+    "textDirection",
+    "textAlignment",
+    "textboxTightWrap",
+    "outlineLvl",
+    "divId",
+    "cnfStyle",
+    "rPr",
+    "sectPr",
+    "pPrChange",
+)
 
 
 def _parse(data: bytes) -> ET.Element:
@@ -94,29 +140,50 @@ def _ensure_ppr(element: ET.Element) -> ET.Element:
     return ppr
 
 
+def _local_name(element: ET.Element) -> str:
+    return element.tag.rsplit("}", 1)[-1]
+
+
+def _insert_in_schema_order(
+    parent: ET.Element, child: ET.Element, order: tuple[str, ...]
+) -> int:
+    """Insert *child* before the first known particle that must follow it."""
+    rank = {name: index for index, name in enumerate(order)}
+    child_rank = rank[_local_name(child)]
+    for index, existing in enumerate(parent):
+        existing_rank = rank.get(_local_name(existing))
+        if existing_rank is not None and existing_rank > child_rank:
+            parent.insert(index, child)
+            return index
+    parent.append(child)
+    return len(parent) - 1
+
+
 def _set_numpr(ppr: ET.Element, ilvl: str, num_id: str) -> bool:
     current = ppr.find(f"{{{W}}}numPr")
+    values_match = False
+    original_index = None
     if current is not None:
         level = current.find(f"{{{W}}}ilvl")
         number = current.find(f"{{{W}}}numId")
-        if (
+        values_match = (
             level is not None
             and level.get(_attr("val")) == ilvl
             and number is not None
             and number.get(_attr("val")) == num_id
-        ):
-            return False
+        )
+        original_index = list(ppr).index(current)
         ppr.remove(current)
-    numpr = ET.Element(f"{{{W}}}numPr")
-    level = ET.SubElement(numpr, f"{{{W}}}ilvl")
-    level.set(_attr("val"), ilvl)
-    number = ET.SubElement(numpr, f"{{{W}}}numId")
-    number.set(_attr("val"), num_id)
-    children = list(ppr)
-    pstyle = ppr.find(f"{{{W}}}pStyle")
-    index = children.index(pstyle) + 1 if pstyle is not None else 0
-    ppr.insert(index, numpr)
-    return True
+    if values_match:
+        numpr = current
+    else:
+        numpr = ET.Element(f"{{{W}}}numPr")
+        level = ET.SubElement(numpr, f"{{{W}}}ilvl")
+        level.set(_attr("val"), ilvl)
+        number = ET.SubElement(numpr, f"{{{W}}}numId")
+        number.set(_attr("val"), num_id)
+    index = _insert_in_schema_order(ppr, numpr, _PPR_CHILD_ORDER)
+    return not values_match or original_index != index
 
 
 def _next_id(root: ET.Element, tag: str, attribute: str, preferred: str) -> str:
@@ -144,11 +211,11 @@ def _add_level(
     node.set(_attr("ilvl"), str(level))
     start = ET.SubElement(node, f"{{{W}}}start")
     start.set(_attr("val"), "1")
+    fmt = ET.SubElement(node, f"{{{W}}}numFmt")
+    fmt.set(_attr("val"), number_format)
     if never_restart:
         restart = ET.SubElement(node, f"{{{W}}}lvlRestart")
         restart.set(_attr("val"), "0")
-    fmt = ET.SubElement(node, f"{{{W}}}numFmt")
-    fmt.set(_attr("val"), number_format)
     if legal:
         ET.SubElement(node, f"{{{W}}}isLgl")
     label = ET.SubElement(node, f"{{{W}}}lvlText")
@@ -160,7 +227,7 @@ def _add_level(
 def _append_definition(
     numbering: ET.Element, abstract_id: str, num_id: str, scheme: str
 ) -> None:
-    abstract = ET.SubElement(numbering, f"{{{W}}}abstractNum")
+    abstract = ET.Element(f"{{{W}}}abstractNum")
     abstract.set(_attr("abstractNumId"), abstract_id)
     nsid = ET.SubElement(abstract, f"{{{W}}}nsid")
     nsid.set(_attr("val"), _NSID)
@@ -182,10 +249,12 @@ def _append_definition(
         _add_level(abstract, 1, "chineseCounting", "第%2节")
         _add_level(abstract, 2, "chineseCounting", "%3、")
         _add_level(abstract, 3, "chineseCounting", "（%4）")
-    number = ET.SubElement(numbering, f"{{{W}}}num")
+    _insert_in_schema_order(numbering, abstract, _NUMBERING_CHILD_ORDER)
+    number = ET.Element(f"{{{W}}}num")
     number.set(_attr("numId"), num_id)
     reference = ET.SubElement(number, f"{{{W}}}abstractNumId")
     reference.set(_attr("val"), abstract_id)
+    _insert_in_schema_order(numbering, number, _NUMBERING_CHILD_ORDER)
 
 
 def _owned_ids(numbering: ET.Element) -> tuple[str, str] | None:
@@ -310,7 +379,7 @@ def apply_native_numbering(docx_path: str) -> bool:
             level = str(int(heading[-1]) - 1)
             changed |= _set_numpr(ppr, level, num_id)
             changed = True
-        elif heading != "Heading 1":
+        else:
             changed |= _set_numpr(ppr, "0", "0")
 
     if not any(

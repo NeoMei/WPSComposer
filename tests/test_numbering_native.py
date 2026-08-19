@@ -125,6 +125,10 @@ def _has_numpr(element, ilvl):
     )
 
 
+def _child_names(element):
+    return [child.tag.rsplit("}", 1)[-1] for child in element]
+
+
 def test_strips_plain_text_prefixes(tmp_path):
     docx = tmp_path / "doc.docx"
     _make_docx(docx)
@@ -146,11 +150,26 @@ def test_binds_heading_styles_to_levels(tmp_path):
         s.get(f"{{{W}}}styleId"): s
         for s in styles.iter(f"{{{W}}}style")
     }
+    assert _has_numpr(by_id["26"], "0")
     assert _has_numpr(by_id["27"], "1")
     assert _has_numpr(by_id["28"], "2")
     assert _has_numpr(by_id["29"], "3")
-    # Heading 1 style stays unbound (目录-style titles must not number)
-    assert by_id["26"].find(f"{{{W}}}pPr/{{{W}}}numPr") is None
+
+
+def test_inserts_style_numpr_at_its_schema_position(tmp_path):
+    docx = tmp_path / "doc.docx"
+    _make_docx(docx)
+    apply_native_numbering(docx)
+
+    styles = ET.fromstring(_read(docx, "word/styles.xml"))
+    heading2 = next(
+        style
+        for style in styles.iter(f"{{{W}}}style")
+        if style.get(f"{{{W}}}styleId") == "27"
+    )
+    ppr = heading2.find(f"{{{W}}}pPr")
+
+    assert _child_names(ppr) == ["keepNext", "numPr", "spacing"]
 
 
 def test_binds_heading1_paragraph_that_had_chapter_prefix(tmp_path):
@@ -165,7 +184,41 @@ def test_binds_heading1_paragraph_that_had_chapter_prefix(tmp_path):
     ]
     numbered = [p for p in h1 if _has_numpr(p, "0")]
     assert len(numbered) == 1            # only 第一章 … gets level-0 binding
-    assert h1[1].find(f"{{{W}}}pPr/{{{W}}}numPr") is None  # 目  录 not
+    suppressed = h1[1].find(
+        f"{{{W}}}pPr/{{{W}}}numPr/{{{W}}}numId"
+    )
+    assert suppressed is not None
+    assert suppressed.get(f"{{{W}}}val") == "0"  # 目  录 stays unnumbered
+
+
+def test_directly_suppresses_unnumbered_heading1_preface(tmp_path):
+    docx = tmp_path / "doc.docx"
+    _make_docx(docx)
+    with zipfile.ZipFile(docx) as source:
+        members = {name: source.read(name) for name in source.namelist()}
+    members["word/document.xml"] = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:document xmlns:w="' + W + '"><w:body>'
+        '<w:p><w:pPr><w:pStyle w:val="26"/></w:pPr>'
+        '<w:r><w:t>编制说明</w:t></w:r></w:p>'
+        '<w:p><w:pPr><w:pStyle w:val="26"/></w:pPr>'
+        '<w:r><w:t>第一章 编制依据</w:t></w:r></w:p>'
+        '</w:body></w:document>'
+    ).encode("utf-8")
+    with zipfile.ZipFile(docx, "w", zipfile.ZIP_DEFLATED) as destination:
+        for name, payload in members.items():
+            destination.writestr(name, payload)
+
+    apply_native_numbering(docx)
+
+    document = ET.fromstring(_read(docx, "word/document.xml"))
+    preface, chapter = list(document.iter(f"{{{W}}}p"))
+    preface_num_id = preface.find(
+        f"{{{W}}}pPr/{{{W}}}numPr/{{{W}}}numId"
+    )
+    assert preface_num_id is not None
+    assert preface_num_id.get(f"{{{W}}}val") == "0"
+    assert _has_numpr(chapter, "0")
 
 
 def test_injects_numbering_part_and_registrations(tmp_path):
@@ -204,8 +257,21 @@ def test_merges_native_heading_numbering_into_existing_numbering_part(tmp_path):
     }
     assert "0" in abstract_ids  # unrelated list preserved
     assert len(abstract_ids) == 2
+    assert _child_names(numbering) == [
+        "abstractNum", "abstractNum", "num", "num"
+    ]
+    existing_num = next(
+        node
+        for node in numbering.findall(f"{{{W}}}num")
+        if node.get(f"{{{W}}}numId") == "1"
+    )
+    assert existing_num.find(f"{{{W}}}abstractNumId").get(f"{{{W}}}val") == "0"
     assert "知识库应用价值与材料清单" in _texts(docx)[0][1]
     assert not _texts(docx)[0][1].startswith("第一章")
+
+    first_numbering = _read(docx, "word/numbering.xml")
+    assert apply_native_numbering(docx) is False
+    assert _read(docx, "word/numbering.xml") == first_numbering
 
 
 def test_accepts_lowercase_builtin_heading_style_names(tmp_path):
@@ -229,7 +295,7 @@ def test_accepts_lowercase_builtin_heading_style_names(tmp_path):
     assert sum(
         p.find(f"{{{W}}}pPr/{{{W}}}numPr") is not None
         for p in root.iter(f"{{{W}}}p")
-    ) == 4
+    ) == 5
 
 
 def test_preserves_hybrid_chapter_decimal_heading_appearance_with_native_links(tmp_path):
@@ -272,6 +338,16 @@ def test_preserves_hybrid_chapter_decimal_heading_appearance_with_native_links(t
     assert 'w:lvlText w:val="%1.%2.%3"' in numbering
     assert 'w:lvlText w:val="关键工法%4："' in numbering
     assert "w:isLgl" in numbering
+
+    numbering_root = ET.fromstring(numbering)
+    key_method_level = next(
+        level
+        for level in numbering_root.iter(f"{{{W}}}lvl")
+        if level.get(f"{{{W}}}ilvl") == "3"
+    )
+    assert _child_names(key_method_level)[:3] == [
+        "start", "numFmt", "lvlRestart"
+    ]
 
     root = ET.fromstring(_read(docx, "word/document.xml"))
     paragraphs = list(root.iter(f"{{{W}}}p"))

@@ -36,7 +36,11 @@ Run:
 
 ```bash
 .venv/bin/python - <<'PY'
-import json, pathlib, tomllib
+import json, pathlib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 root = pathlib.Path('.')
 pyproject = tomllib.loads((root / 'pyproject.toml').read_text())
 plugin = json.loads((root / '.codex-plugin/plugin.json').read_text())
@@ -144,7 +148,11 @@ git switch master
 git pull --ff-only origin master
 gh pr view 3 --json state,mergedAt,mergeCommit,url
 .venv/bin/python - <<'PY'
-import json, pathlib, tomllib
+import json, pathlib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 root = pathlib.Path('.')
 pyproject = tomllib.loads((root / 'pyproject.toml').read_text())
 plugin = json.loads((root / '.codex-plugin/plugin.json').read_text())
