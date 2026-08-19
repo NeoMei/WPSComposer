@@ -13,7 +13,7 @@ def test_plugin_manifest_matches_bundle_layout():
     )
 
     assert manifest["name"] == "wps-composer"
-    assert manifest["version"] == "0.7.1"
+    assert manifest["version"] == "0.7.2"
     assert manifest["skills"] == "./skills/"
     assert (ROOT / manifest["skills"]).is_dir()
     assert (ROOT / "skills" / "WPSComposer" / "SKILL.md").is_file()
