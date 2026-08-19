@@ -689,7 +689,14 @@ def _operation_expected_text(operation, component: str) -> list[str]:
     for key in ("text", "title", "subtitle"):
         value = args.get(key)
         if isinstance(value, str) and value:
-            values.append(value)
+            if component == "writer" and key == "text" and "\r" in value:
+                # The Writer renderer coalesces consecutive same-style
+                # paragraphs into one operation for performance. WPS expands
+                # the carriage returns back into separate w:p elements, so
+                # semantic validation must count those paragraphs separately.
+                values.extend(part for part in value.split("\r") if part)
+            else:
+                values.append(value)
     items = args.get("items")
     if isinstance(items, tuple):
         values.extend(str(item) for item in items if str(item))

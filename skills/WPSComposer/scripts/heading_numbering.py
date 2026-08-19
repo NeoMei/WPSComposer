@@ -25,6 +25,7 @@ _MANUAL_PATTERNS = [
     re.compile(r"^Chapter\s+\d+", re.IGNORECASE),
     re.compile(r"^Section\s+\d+", re.IGNORECASE),
     re.compile(r"^第[\u4e00-\u9fff]{1,3}[篇章节卷]\s*"),      # 第一篇/第一章/第一节
+    re.compile(r"^关键工法\s*\d{1,3}[：:]\s*"),               # 关键工法01：
     re.compile(r"^附录\s*[A-Z]?\s*"),                          # 附录 / 附录A
     re.compile(r"^[A-Z]\.\d+(\.\d+)*\s+"),                 # A.1 / B.2.3
     re.compile(r"^[A-Z]-\d+\s+"),                             # D-01 / F-03

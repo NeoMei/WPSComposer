@@ -28,6 +28,7 @@ _STYLE_KEYS = {
     "space_after": "spaceAfter",
     "left_border": "leftBorder",
     "border_color": "borderColor",
+    "keep_together": "keepTogether",
     "keep_with_next": "keepWithNext",
     "outline_level": "outlineLevel",
 }
@@ -309,8 +310,11 @@ class RecordingWriterComposer:
     def add_page_break(self):
         self._record("writer.add_page_break")
 
-    def add_section(self):
-        self._record("writer.add_section")
+    def add_section(self, landscape=None):
+        self._record(
+            "writer.add_section",
+            **_without_none(landscape=landscape),
+        )
 
     def add_horizontal_line(self):
         self._record("writer.add_horizontal_line")

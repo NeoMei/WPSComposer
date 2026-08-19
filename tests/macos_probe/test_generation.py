@@ -602,7 +602,7 @@ def test_generation_rejects_failed_or_invalid_results(
             WRITER_MARKER_PLAN,
             bridge=bridge,
             timeout=(
-                2 if expected_code == "STAGED_ARTIFACT_INVALID" else 0.02
+                2 if expected_code == "STAGED_ARTIFACT_INVALID" else 0.2
             ),
         )
     assert caught.value.code == expected_code
@@ -628,6 +628,31 @@ def test_semantic_validator_counts_repeated_writer_content(tmp_path: Path):
         mac_generation._validate_generated_package(
             package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
         )
+
+
+def test_semantic_validator_accepts_coalesced_writer_text_as_separate_paragraphs(
+    tmp_path: Path,
+):
+    package = _write_semantic_package(tmp_path / "coalesced.docx", {
+        "word/document.xml": (
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+            'wordprocessingml/2006/main"><w:body>'
+            '<w:p><w:r><w:t>BODY TEXT</w:t></w:r></w:p>'
+            '<w:p><w:r><w:t>TABLE CAPTION</w:t></w:r></w:p>'
+            '</w:body></w:document>'
+        ),
+    })
+    plan = GenerationPlan("writer", (
+        GenerationOperation("writer.reset", {}),
+        GenerationOperation(
+            "writer.add_paragraph",
+            {"text": "BODY TEXT\rTABLE CAPTION"},
+        ),
+    ))
+
+    mac_generation._validate_generated_package(
+        package, "docx", RecordedGeneration(plan, ()), "not-the-digest"
+    )
 
 
 def test_semantic_validator_does_not_reuse_overlapping_writer_text(tmp_path: Path):

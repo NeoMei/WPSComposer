@@ -562,7 +562,8 @@ const state = {
   text: [], breaks: [], styleNames: [], tableValues: [], imagePaths: [],
   colors: [], tableCells: {}, tableBorders: [], imageParagraph: null,
   ranges: [], tableAutoFit: [], tocRange: null,
-  fieldAdds: 0, fieldUpdates: 0, tocAdds: 0, tocUpdates: 0, rangeCalls: 0
+  fieldAdds: 0, fieldUpdates: 0, tocAdds: 0, tocUpdates: 0, rangeCalls: 0,
+  trailingDeletes: 0
 };
 function font() { return {set Color(value) {state.colors.push(value);}}; }
 function paragraphFormat() {
@@ -605,6 +606,11 @@ const table = {
   AutoFitBehavior(value) {state.tableAutoFit.push(value);}
 };
 const footerRange = {Font: font(), ParagraphFormat: paragraphFormat(), Text: "", Collapse() {state.footerCollapsed = true;}};
+const documentSection = {
+  PageSetup: {},
+  Headers: {Item() {return {Range: {Text: ""}};}},
+  Footers: {Item() {return {Range: footerRange};}}
+};
 const document = {
   saveCalls: 0, saveAsCalls: 0, closeArgument: null,
   Content: {Text: "template", End: 0},
@@ -621,10 +627,7 @@ const document = {
       return {Width: 640, Height: 480, Range: {End: 1, ParagraphFormat: state.imageParagraph}};
     }
   },
-  Sections: {Item() {return {
-    Headers: {Item() {return {Range: {Text: ""}};}},
-    Footers: {Item() {return {Range: footerRange};}}
-  };}},
+  Sections: {Count: 1, Item() {return documentSection;}},
   TablesOfContents: {
     Count: 1,
     Add(ownerRange) {state.tocAdds += 1; state.tocRange = ownerRange;},
@@ -633,6 +636,13 @@ const document = {
   Fields: {
     Add() {state.fieldAdds += 1;},
     Update() {state.fieldUpdates += 1;}
+  },
+  Paragraphs: {
+    Count: 2,
+    Item(index) {
+      assert.equal(index, 2);
+      return {Range: {Text: "\r", Delete() {state.trailingDeletes += 1;}}};
+    }
   },
   Save() {this.saveCalls += 1;},
   SaveAs() {this.saveAsCalls += 1;},
@@ -705,7 +715,7 @@ def test_writer_generation_executes_all_operations_with_document_owned_ranges():
             "args": {"imageId": "image-1", "width": 240, "inline": True, "preserveAspect": True},
         },
         {"op": "writer.add_page_break", "args": {}},
-        {"op": "writer.add_section", "args": {}},
+        {"op": "writer.add_section", "args": {"landscape": True}},
         {"op": "writer.add_horizontal_line", "args": {}},
         {"op": "writer.insert_toc", "args": {"title": "Contents"}},
         {"op": "writer.set_page_number", "args": {}},
@@ -739,6 +749,13 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.deepEqual(state.tableValues[5], [3, 2, "A much longer narrative value"]);
   assert.equal(state.tableCells["1,1"].Range.Style.Name, "Table Header");
   assert.equal(state.tableCells["2,1"].Range.Style.Name, "Table Body");
+  Object.values(state.tableCells).forEach(function (cell) {{
+    assert.equal(cell.Range.ParagraphFormat.FirstLineIndent, 0);
+    assert.equal(cell.Range.ParagraphFormat.LeftIndent, 0);
+    assert.equal(cell.Range.ParagraphFormat.RightIndent, 0);
+    assert.equal(cell.Range.ParagraphFormat.SpaceBefore, 0);
+    assert.equal(cell.Range.ParagraphFormat.SpaceAfter, 0);
+  }});
   assert.equal(state.tableCells["1,1"].VerticalAlignment, 1);
   assert.equal(state.tableCells["3,1"].Shading.BackgroundPatternColor, 0xF2F2F2);
   assert.equal(state.tableBorders.length, 6);
@@ -752,9 +769,13 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.equal(state.imageParagraph.Alignment, 1);
   assert.equal(state.imageParagraph.KeepWithNext, -1);
   assert.equal(state.imageParagraph.SpaceAfter, 0);
+  assert.ok(state.ranges.some(function (value) {{
+    return value.ParagraphFormat.KeepWithNext === 0;
+  }}));
   assert.ok(state.text.filter(function (value) {{return value === "\\r";}}).length >= 2);
   assert.equal(state.breaks.filter(function (value) {{return value === 7;}}).length, 2);
   assert.ok(state.breaks.includes(2));
+  assert.equal(document.Sections.Item(document.Sections.Count).PageSetup.Orientation, 1);
   assert.equal(state.tocAdds, 1); assert.equal(state.tocUpdates, 1);
   const tocTitle = state.ranges.find(function (value) {{
     return value.Style && value.Style.Name === "Body Text" && value.Font.Size === 18;
@@ -764,6 +785,45 @@ eval(fs.readFileSync({path}, "utf8"));
   assert.equal(tocTitle.ParagraphFormat.LineSpacing, 18);
   assert.equal(tocTitle.ParagraphFormat.SpaceAfter, 5);
   assert.equal(state.fieldAdds, 1); assert.equal(state.fieldUpdates, 1);
+  assert.equal(state.trailingDeletes, 1);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_writer_table_width_uses_current_section_after_mixed_orientation():
+    path = json.dumps(str((ROOT / "writer.js").resolve()))
+    operations = [{
+        "op": "writer.add_table",
+        "args": {
+            "rows": 3,
+            "cols": 2,
+            "data": [["Item", "Narrative"], ["A", "short"], ["B", "longer"]],
+            "autoFit": True,
+        },
+    }]
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+{_writer_generation_stub()}
+document.PageSetup.PageWidth = -9999999;
+document.PageSetup.LeftMargin = -9999999;
+document.PageSetup.RightMargin = -9999999;
+documentSection.PageSetup.PageWidth = 612;
+documentSection.PageSetup.LeftMargin = 90;
+documentSection.PageSetup.RightMargin = 91;
+eval(fs.readFileSync({path}, "utf8"));
+(async function () {{
+  await window.WPSComposerProbe.handleCommand({{
+    method: "generate_writer_document",
+    params: {{
+      stagedPath: "/staged/generated.docx",
+      resources: {{}},
+      plan: {{component: "writer", operations: {json.dumps(operations)}}}
+    }}
+  }});
+  assert.ok(Math.abs(tableColumns[0].Width + tableColumns[1].Width - 431) < 0.01);
 }})().catch(function (error) {{console.error(error); process.exit(1);}});
 """
     _run_node_script(script)
