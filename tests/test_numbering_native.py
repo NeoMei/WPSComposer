@@ -172,6 +172,33 @@ def test_inserts_style_numpr_at_its_schema_position(tmp_path):
     assert _child_names(ppr) == ["keepNext", "numPr", "spacing"]
 
 
+def test_inserts_missing_style_ppr_between_metadata_and_rpr(tmp_path):
+    docx = tmp_path / "doc.docx"
+    _make_docx(docx)
+    with zipfile.ZipFile(docx) as source:
+        members = {name: source.read(name) for name in source.namelist()}
+    members["word/styles.xml"] = members["word/styles.xml"].replace(
+        b'<w:name w:val="Heading 2"/><w:pPr><w:keepNext/>'
+        b'<w:spacing w:after="100"/></w:pPr>',
+        b'<w:name w:val="Heading 2"/><w:rsid w:val="12345678"/>'
+        b'<w:rPr><w:b/></w:rPr>',
+    )
+    with zipfile.ZipFile(docx, "w", zipfile.ZIP_DEFLATED) as destination:
+        for name, payload in members.items():
+            destination.writestr(name, payload)
+
+    apply_native_numbering(docx)
+
+    styles = ET.fromstring(_read(docx, "word/styles.xml"))
+    heading2 = next(
+        style
+        for style in styles.iter(f"{{{W}}}style")
+        if style.get(f"{{{W}}}styleId") == "27"
+    )
+    assert _child_names(heading2) == ["name", "rsid", "pPr", "rPr"]
+    assert _has_numpr(heading2, "1")
+
+
 def test_binds_heading1_paragraph_that_had_chapter_prefix(tmp_path):
     docx = tmp_path / "doc.docx"
     _make_docx(docx)

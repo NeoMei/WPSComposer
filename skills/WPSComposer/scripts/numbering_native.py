@@ -136,7 +136,25 @@ def _ensure_ppr(element: ET.Element) -> ET.Element:
     ppr = element.find(f"{{{W}}}pPr")
     if ppr is None:
         ppr = ET.Element(f"{{{W}}}pPr")
-        element.insert(0, ppr)
+        if element.tag == f"{{{W}}}style":
+            following = {
+                f"{{{W}}}rPr",
+                f"{{{W}}}tblPr",
+                f"{{{W}}}trPr",
+                f"{{{W}}}tcPr",
+                f"{{{W}}}tblStylePr",
+            }
+            index = next(
+                (
+                    index
+                    for index, child in enumerate(element)
+                    if child.tag in following
+                ),
+                len(element),
+            )
+            element.insert(index, ppr)
+        else:
+            element.insert(0, ppr)
     return ppr
 
 
