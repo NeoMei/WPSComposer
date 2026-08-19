@@ -57,6 +57,26 @@ class _InjectedComposer:
         return output_path
 
 
+def _operation_dicts(recorder):
+    return [operation.to_dict() for operation in recorder._operations]
+
+
+def _section_args(operations):
+    return [
+        operation["args"]
+        for operation in operations
+        if operation["op"] == "writer.add_section"
+    ]
+
+
+def _assert_no_adjacent_section_operations(operations):
+    assert all(
+        first["op"] != "writer.add_section"
+        or second["op"] != "writer.add_section"
+        for first, second in zip(operations, operations[1:])
+    )
+
+
 def test_writer_renderer_accepts_an_injected_composer_factory():
     document = StructuredDocument()
     composer = _InjectedComposer()
@@ -209,7 +229,7 @@ def test_render_body_preserves_key_method_prefix_for_native_numbering_pass():
     assert heads[-1] == "关键工法01：削坡与回填筑坡"
 
 
-def test_writer_renderer_wraps_wide_png_in_landscape_sections(tmp_path):
+def test_writer_renderer_leaves_a_document_end_wide_png_in_landscape(tmp_path):
     image = tmp_path / "wide.png"
     image.write_bytes(
         b"\x89PNG\r\n\x1a\n"
@@ -231,7 +251,7 @@ def test_writer_renderer_wraps_wide_png_in_landscape_sections(tmp_path):
 
     writer_renderer._render_body(recorder, document, None)
 
-    operations = [operation.to_dict() for operation in recorder._operations]
+    operations = _operation_dicts(recorder)
     image_index = next(
         index
         for index, operation in enumerate(operations)
@@ -241,10 +261,112 @@ def test_writer_renderer_wraps_wide_png_in_landscape_sections(tmp_path):
         "op": "writer.add_section",
         "args": {"landscape": True},
     }
-    assert operations[image_index + 2] == {
+    assert _section_args(operations) == [{}, {"landscape": True}]
+    _assert_no_adjacent_section_operations(operations)
+
+
+def test_wide_png_followed_by_chapter_reuses_portrait_section_break(tmp_path):
+    image = tmp_path / "wide.png"
+    image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + b"\x00\x00\x00\rIHDR"
+        + struct.pack(">II", 1600, 800)
+    )
+    document = StructuredDocument(
+        title="图示报告",
+        sections=[
+            Section(level=1, heading="图示报告"),
+            Section(
+                level=1,
+                heading="第一章 进度计划",
+                elements=[ImageBlock(path=str(image), alt="进度图")],
+            ),
+            Section(level=1, heading="第二章 实施方案"),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+
+    writer_renderer._render_body(recorder, document, None)
+
+    operations = _operation_dicts(recorder)
+    assert _section_args(operations) == [
+        {},
+        {"landscape": True},
+        {"landscape": False},
+    ]
+    _assert_no_adjacent_section_operations(operations)
+    second_chapter = next(
+        index
+        for index, operation in enumerate(operations)
+        if operation["op"] == "writer.add_heading"
+        and operation["args"]["text"] == "第二章 实施方案"
+    )
+    assert operations[second_chapter - 1] == {
         "op": "writer.add_section",
         "args": {"landscape": False},
     }
+
+
+def test_consecutive_wide_pngs_share_one_landscape_section(tmp_path):
+    images = []
+    for name in ("first.png", "second.png"):
+        image = tmp_path / name
+        image.write_bytes(
+            b"\x89PNG\r\n\x1a\n"
+            + b"\x00\x00\x00\rIHDR"
+            + struct.pack(">II", 1600, 800)
+        )
+        images.append(image)
+    document = StructuredDocument(
+        title="图示报告",
+        sections=[
+            Section(level=1, heading="图示报告"),
+            Section(
+                level=1,
+                heading="第一章 进度计划",
+                elements=[
+                    ImageBlock(path=str(images[0]), alt="图一"),
+                    ImageBlock(path=str(images[1]), alt="图二"),
+                ],
+            ),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+
+    writer_renderer._render_body(recorder, document, None)
+
+    operations = _operation_dicts(recorder)
+    assert _section_args(operations) == [{}, {"landscape": True}]
+    assert sum(op["op"] == "writer.add_image" for op in operations) == 2
+    _assert_no_adjacent_section_operations(operations)
+
+
+def test_local_portrait_png_ihdr_overrides_wide_display_dimensions(tmp_path):
+    image = tmp_path / "portrait.png"
+    image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + b"\x00\x00\x00\rIHDR"
+        + struct.pack(">II", 800, 1200)
+    )
+    block = ImageBlock(
+        path=str(image), alt="portrait", width=400, height=200
+    )
+
+    assert writer_renderer._image_is_landscape(block) is False
+
+
+def test_local_wide_png_ihdr_overrides_square_display_dimensions(tmp_path):
+    image = tmp_path / "wide.png"
+    image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + b"\x00\x00\x00\rIHDR"
+        + struct.pack(">II", 1600, 800)
+    )
+    block = ImageBlock(
+        path=str(image), alt="wide", width=300, height=300
+    )
+
+    assert writer_renderer._image_is_landscape(block) is True
 
 
 def test_writer_body_styles_keep_paragraphs_together_before_chapter_breaks():

@@ -36,6 +36,25 @@ MARGIN_RIGHT = 90
 COVER_TOP_SPACING = 260
 
 
+class _WriterSectionState:
+    """Track orientation so one break can also serve a chapter boundary."""
+
+    def __init__(self):
+        self.landscape = False
+
+    def ensure_orientation(self, w, landscape):
+        if self.landscape == landscape:
+            return False
+        w.add_section(landscape=landscape)
+        self.landscape = landscape
+        return True
+
+    def start_chapter(self, w):
+        boundary_produced = self.ensure_orientation(w, False)
+        if not boundary_produced:
+            w.add_section()
+
+
 def render(doc, output_path, preset=None, composer_factory=WriterComposer):
     """Render StructuredDocument to a professionally styled DOCX."""
     with composer_factory() as w:
@@ -67,6 +86,7 @@ def _render_body(w, doc, preset):
     first_section = True
     title_heading_suppressed = False
     numbered_hierarchy_started = False
+    section_state = _WriterSectionState()
     for section in doc.sections:
         # The first H1 is the document title: it is already rendered on the
         # cover page (via doc.title), so it must NOT appear in the body, in
@@ -80,18 +100,29 @@ def _render_body(w, doc, preset):
             title_heading_suppressed = True
             first_section = False
             _render_section(
-                w, section, preset, numbering, render_heading=False
+                w,
+                section,
+                preset,
+                numbering,
+                render_heading=False,
+                section_state=section_state,
             )
             continue
         if section.level == 1 and not first_section:
-            w.add_section()
+            section_state.start_chapter(w)
         first_section = False
         section_numbering = (
             numbering
             if numbered_hierarchy_started or section.level == 1
             else None
         )
-        _render_section(w, section, preset, section_numbering)
+        _render_section(
+            w,
+            section,
+            preset,
+            section_numbering,
+            section_state=section_state,
+        )
         if section.level == 1 and section.has_heading:
             numbered_hierarchy_started = True
 
@@ -122,12 +153,17 @@ def _render_title_page(w, doc, preset):
     w.add_page_break()
 
 
-def _render_section(w, section, preset, ns=None, *, render_heading=True):
+def _render_section(
+    w, section, preset, ns=None, *, render_heading=True, section_state=None
+):
     """Render a section with intelligent heading numbering.
 
     ns: NumberingState instance for auto-numbering. If None, no numbering.
     """
+    if section_state is None:
+        section_state = _WriterSectionState()
     if render_heading and section.has_heading:
+        section_state.ensure_orientation(w, False)
         level = min(section.level, 6)
 
         # ---- Intelligent numbering ----
@@ -153,6 +189,7 @@ def _render_section(w, section, preset, ns=None, *, render_heading=True):
         # One op inserts every coalesced paragraph (\r-separated) and the
         # style applies to the whole range — a large win over per-paragraph
         # WPS API calls on big documents.
+        section_state.ensure_orientation(w, False)
         w.add_paragraph("\r".join(text for text, _ in pending), style=pending[0][1])
         pending.clear()
 
@@ -172,13 +209,25 @@ def _render_section(w, section, preset, ns=None, *, render_heading=True):
             pending.append((elem.plain_text, style_name))
         else:
             _flush_pending()
-            _render_element(w, elem, preset, is_first_after_heading=is_first_elem)
+            _render_element(
+                w,
+                elem,
+                preset,
+                is_first_after_heading=is_first_elem,
+                section_state=section_state,
+            )
         is_first_elem = False
     _flush_pending()
 
 
-def _render_element(w, elem, preset, is_first_after_heading=False):
+def _render_element(
+    w, elem, preset, is_first_after_heading=False, section_state=None
+):
     """Dispatch element rendering with style awareness."""
+    if section_state is None:
+        section_state = _WriterSectionState()
+    if not isinstance(elem, ImageBlock):
+        section_state.ensure_orientation(w, False)
     if isinstance(elem, MDParagraph):
         _render_paragraph(w, elem, is_first_after_heading)
     elif isinstance(elem, ListBlock):
@@ -190,7 +239,7 @@ def _render_element(w, elem, preset, is_first_after_heading=False):
     elif isinstance(elem, CodeBlock):
         _render_code(w, elem)
     elif isinstance(elem, ImageBlock):
-        _render_image(w, elem)
+        _render_image(w, elem, section_state)
     elif isinstance(elem, ExcalidrawBlock):
         _render_excalidraw(w, elem)
     elif isinstance(elem, MathBlock):
@@ -286,10 +335,9 @@ def _render_code(w, block):
 # ---------------------------------------------------------------------------
 
 
-def _render_image(w, img):
+def _render_image(w, img, section_state):
     landscape = _image_is_landscape(img)
-    if landscape:
-        w.add_section(landscape=True)
+    section_state.ensure_orientation(w, landscape)
     try:
         w.add_image_block(
             img.path,
@@ -305,25 +353,23 @@ def _render_image(w, img):
             w.add_styled_paragraph(img.alt, "Image Caption")
     except Exception:
         w.add_styled_paragraph(f"[Image: {img.alt or img.path}]", "Image Caption")
-    finally:
-        if landscape:
-            w.add_section(landscape=False)
 
 
 def _image_is_landscape(img) -> bool:
-    """Use explicit dimensions or a PNG header to identify wide diagrams."""
-    width, height = img.width, img.height
+    """Use a local PNG's IHDR, falling back to display dimensions."""
+    width = height = None
+    try:
+        with open(img.path, "rb") as handle:
+            header = handle.read(24)
+        if (
+            header[:8] == b"\x89PNG\r\n\x1a\n"
+            and header[12:16] == b"IHDR"
+        ):
+            width, height = struct.unpack(">II", header[16:24])
+    except (OSError, struct.error):
+        pass
     if not (width and height):
-        try:
-            with open(img.path, "rb") as handle:
-                header = handle.read(24)
-            if (
-                header[:8] == b"\x89PNG\r\n\x1a\n"
-                and header[12:16] == b"IHDR"
-            ):
-                width, height = struct.unpack(">II", header[16:24])
-        except (OSError, struct.error):
-            return False
+        width, height = img.width, img.height
     return bool(width and height and width / height >= 1.25)
 
 
