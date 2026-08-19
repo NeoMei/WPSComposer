@@ -159,6 +159,7 @@
     }
     setWriterValue(format, "SpaceBefore", args.spaceBefore);
     setWriterValue(format, "SpaceAfter", args.spaceAfter);
+    setWriterValue(format, "KeepTogether", args.keepTogether);
     setWriterValue(format, "KeepWithNext", args.keepWithNext);
     setWriterValue(format, "OutlineLevel", args.outlineLevel);
   }
@@ -400,12 +401,19 @@
         if (style) {
           cell.Range.Style = style;
         }
-        // Cell padding/valign are per-cell WPS calls with table-wide
-        // constant values — set valign once for the header row only and
-        // skip padding entirely (defaults render fine) to keep the
-        // per-cell cost at 2 calls on big tables.
+        // Do not rely on a named style to cancel the body paragraph indent.
+        // WPS can retain the previous paragraph's direct formatting when a
+        // table is inserted, especially in long documents. Direct zeroes are
+        // the cross-template layout contract for table-cell paragraphs.
+        const paragraph = cell.Range.ParagraphFormat;
+        paragraph.FirstLineIndent = 0;
+        paragraph.LeftIndent = 0;
+        paragraph.RightIndent = 0;
+        paragraph.SpaceBefore = 0;
+        paragraph.SpaceAfter = 0;
+        paragraph.LineSpacingRule = 0;
+        cell.VerticalAlignment = 1;
         if (row === 0) {
-          cell.VerticalAlignment = 1;
           setWriterValue(cell.Range.Font, "Color", writerColor(args.headerColor));
           setWriterValue(cell.Shading, "BackgroundPatternColor", writerColor(args.shadeHeader));
         } else if (args.bandedRows && row % 2 === 0) {
@@ -424,7 +432,20 @@
     let inferredWidths = false;
     let availableWidth = null;
     if (args.autoFit && !columnWidths.length) {
-      const pageSetup = document.PageSetup;
+      let pageSetup = document.PageSetup;
+      const currentSection = document.Sections
+        ? writerCollectionItem(document.Sections, document.Sections.Count)
+        : null;
+      const sectionSetup = currentSection && currentSection.PageSetup;
+      if (
+        sectionSetup
+        && Number.isFinite(Number(sectionSetup.PageWidth))
+        && Number.isFinite(Number(sectionSetup.LeftMargin))
+        && Number.isFinite(Number(sectionSetup.RightMargin))
+        && Number(sectionSetup.PageWidth) > 0
+      ) {
+        pageSetup = sectionSetup;
+      }
       availableWidth = Math.max(
         72,
         Number(pageSetup.PageWidth) - Number(pageSetup.LeftMargin) - Number(pageSetup.RightMargin)
@@ -532,14 +553,24 @@
     if (typeof afterImage.InsertAfter === "function") {
       afterImage.InsertAfter("\r");
     }
+    const trailing = writerEndRange(document);
+    if (trailing.ParagraphFormat) {
+      trailing.ParagraphFormat.KeepWithNext = 0;
+    }
   }
 
   function addWriterPageBreak(document) {
     writerEndRange(document).InsertBreak(7);
   }
 
-  function addWriterSection(document) {
+  function addWriterSection(document, args) {
     writerEndRange(document).InsertBreak(2);
+    if (Object.prototype.hasOwnProperty.call(args, "landscape")) {
+      const section = writerCollectionItem(document.Sections, document.Sections.Count);
+      if (section && section.PageSetup) {
+        section.PageSetup.Orientation = args.landscape ? 1 : 0;
+      }
+    }
   }
 
   function addWriterHorizontalLine(document) {
@@ -632,7 +663,7 @@
     "writer.add_table": {required: ["rows", "cols", "data"], allowed: ["rows", "cols", "data", "shadeHeader", "headerColor", "fontSize", "columnWidths", "alignments", "bandedRows", "autoFit", "repeatHeader", "borderColor"]},
     "writer.add_image": {required: ["imageId"], allowed: ["imageId", "width", "height", "maxWidth", "maxHeight", "wrap", "inline", "preserveAspect", "alt"]},
     "writer.add_page_break": {required: [], allowed: []},
-    "writer.add_section": {required: [], allowed: []},
+    "writer.add_section": {required: [], allowed: ["landscape"]},
     "writer.add_horizontal_line": {required: [], allowed: []},
     "writer.insert_toc": {required: ["title"], allowed: ["title"]},
     "writer.set_page_number": {required: [], allowed: []},
@@ -756,7 +787,7 @@
       leftIndent: "number", rightIndent: "number", lineSpacing: "number",
       lineSpacingRule: "string", spaceBefore: "number", spaceAfter: "number",
       shading: "string", leftBorder: "boolean", borderColor: "string",
-      keepWithNext: "boolean", outlineLevel: "integer"
+      keepTogether: "boolean", keepWithNext: "boolean", outlineLevel: "integer"
     };
     styles.forEach(function (style) {
       validateWriterNestedObject(style, ["name"], fields, "writer style");
@@ -972,6 +1003,21 @@
     return operations.length;
   }
 
+  function trimWriterTrailingEmptyParagraph(document) {
+    if (!document.Paragraphs || Number(document.Paragraphs.Count) <= 1) {
+      return;
+    }
+    const paragraph = writerCollectionItem(
+      document.Paragraphs,
+      document.Paragraphs.Count
+    );
+    const range = paragraph && paragraph.Range;
+    const text = range && range.Text !== undefined ? String(range.Text) : "";
+    if (range && text.replace(/[\s\r\n\u0007]/g, "") === "" && typeof range.Delete === "function") {
+      range.Delete();
+    }
+  }
+
   function generateWriterDocument(params) {
     const stagedPath = requirePath(params, "stagedPath");
     const outputFormat = params.outputFormat === "pdf" ? "pdf" : "docx";
@@ -986,6 +1032,7 @@
       Application.DisplayAlerts = 0;
       document = Application.Documents.Open(stagedPath, false, false);
       const applied = executeWriterOperations(document, params.plan, params.resources || {});
+      trimWriterTrailingEmptyParagraph(document);
       document.Save();
       if (outputFormat === "pdf") {
         document.ExportAsFixedFormat(stagedPdfPath, 17, false, 0, 0);

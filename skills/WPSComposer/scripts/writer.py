@@ -509,8 +509,11 @@ class WriterComposer(BaseComposer):
         ps.PageHeight = height
 
     # ---- sections (independent page layout, e.g. landscape insert) ----
-    def add_section(self):
+    def add_section(self, landscape=None):
         self.selection.InsertBreak(2)  # wdSectionBreakNextPage
+        if landscape is not None:
+            section = self._doc.Sections(self._doc.Sections.Count)
+            section.PageSetup.Orientation = 1 if landscape else 0
 
     # ---- header / footer ----
     def set_header(self, text):
@@ -811,6 +814,12 @@ class WriterComposer(BaseComposer):
         widths = list(col_widths or [])
         inferred_widths = False
         page_setup = self._doc.PageSetup
+        try:
+            page_setup = self._doc.Sections(
+                self._doc.Sections.Count
+            ).PageSetup
+        except Exception:
+            pass
         available_width = max(
             72.0,
             float(page_setup.PageWidth)

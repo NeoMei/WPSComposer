@@ -253,18 +253,31 @@ verification; do not make that PDF an automatic public companion output.
 ## Native heading numbering (docx)
 
 Generated DOCX files carry **native Word/WPS multi-level heading numbering**
-instead of plain-text number prefixes: `第一章` → `第一节` → `一、` → `（一）`
-(chineseCounting, auto-reset per level). Reordering, inserting, or deleting
-headings in WPS renumbers the whole document automatically, and new headings
-styled as Heading 2/3/4 continue the numbering. The document title (`#`) is
-rendered as "第一章"; TOC-style titles ("目  录") stay unnumbered.
+instead of plain-text number prefixes. Both the formal Chinese hierarchy
+(`第一章` → `第一节` → `一、` → `（一）`) and the bid-document hybrid hierarchy
+(`第一章` → `1.1` → `1.1.1` → `关键工法01`) are preserved visually and linked
+to one native list. Reordering, inserting, or deleting headings in WPS
+renumbers the document automatically. The document title and intentionally
+unnumbered headings stay unnumbered.
 
 Implemented as a post-generation pass (`scripts/numbering_native.py`,
 `apply_native_numbering()`) hooked into `orchestrator.generate()` for the
 `docx` format. It strips plain-text prefixes from Heading 1-4 paragraphs,
-injects `word/numbering.xml`, binds Heading 2-4 styles to levels 1-3
-(style-level `numPr`), and binds Heading 1 chapter paragraphs to level 0
-per-paragraph. Idempotent and never blocks a successful generation.
+merges a WPSComposer-owned definition into `word/numbering.xml` without
+discarding existing list definitions, and binds the heading hierarchy with
+native `numPr` links. It accepts both `Heading 1` and `heading 1` built-in
+style names. Idempotent and never blocks a successful generation.
+
+Writer tables have an explicit cell-format contract on both Windows and
+macOS: first-line, left, and right paragraph indents are zero; before/after
+spacing is zero; cells are vertically centered; and requested per-column
+left/center/right alignment is retained. Do not rely only on inherited named
+styles for these properties.
+
+Wide PNG diagrams whose actual width/height ratio is at least 1.25 are placed
+in their own landscape Writer section; the following content resumes in a
+portrait section. The rule is driven by the image header, not by a filename or
+project-specific figure number.
 
 Document title handling: the first H1 (the Markdown document title) is
 rendered on the cover page only — it does **not** appear in the body, is

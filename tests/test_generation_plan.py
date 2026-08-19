@@ -54,6 +54,7 @@ VALID_OPERATION_ARGS = {
                 "shading": "#FFFFFF",
                 "leftBorder": False,
                 "borderColor": "#CCCCCC",
+                "keepTogether": True,
                 "outlineLevel": 1,
             }
         ]
@@ -123,7 +124,7 @@ VALID_OPERATION_ARGS = {
         "alt": "Chart",
     },
     "writer.add_page_break": {},
-    "writer.add_section": {},
+    "writer.add_section": {"landscape": True},
     "writer.add_horizontal_line": {},
     "writer.insert_toc": {"title": "Table of Contents"},
     "writer.set_page_number": {},

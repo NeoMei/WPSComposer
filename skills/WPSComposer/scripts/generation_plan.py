@@ -370,6 +370,7 @@ _STYLE_SCHEMA = _schema(
     shading=_string,
     leftBorder=_boolean,
     borderColor=_color,
+    keepTogether=_boolean,
     keepWithNext=_boolean,
     outlineLevel=_integer,
 )
@@ -527,7 +528,7 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             alt=_nullable_string,
         ),
         "writer.add_page_break": _schema(),
-        "writer.add_section": _schema(),
+        "writer.add_section": _schema(landscape=_boolean),
         "writer.add_horizontal_line": _schema(),
         "writer.insert_toc": _schema(("title",), title=_string),
         "writer.set_page_number": _schema(),

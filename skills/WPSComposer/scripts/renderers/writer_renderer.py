@@ -9,6 +9,8 @@ Key improvement over inline formatting:
 
 from __future__ import annotations
 
+import struct
+
 from ..document_model import (
     StructuredDocument, Section, Span, Paragraph as MDParagraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
@@ -64,6 +66,7 @@ def _render_body(w, doc, preset):
     numbering = NumberingState(scheme=scheme)
     first_section = True
     title_heading_suppressed = False
+    numbered_hierarchy_started = False
     for section in doc.sections:
         # The first H1 is the document title: it is already rendered on the
         # cover page (via doc.title), so it must NOT appear in the body, in
@@ -83,7 +86,14 @@ def _render_body(w, doc, preset):
         if section.level == 1 and not first_section:
             w.add_section()
         first_section = False
-        _render_section(w, section, preset, numbering)
+        section_numbering = (
+            numbering
+            if numbered_hierarchy_started or section.level == 1
+            else None
+        )
+        _render_section(w, section, preset, section_numbering)
+        if section.level == 1 and section.has_heading:
+            numbered_hierarchy_started = True
 
 
 def _apply_preset_to_styles(w, preset):
@@ -277,6 +287,9 @@ def _render_code(w, block):
 
 
 def _render_image(w, img):
+    landscape = _image_is_landscape(img)
+    if landscape:
+        w.add_section(landscape=True)
     try:
         w.add_image_block(
             img.path,
@@ -292,6 +305,26 @@ def _render_image(w, img):
             w.add_styled_paragraph(img.alt, "Image Caption")
     except Exception:
         w.add_styled_paragraph(f"[Image: {img.alt or img.path}]", "Image Caption")
+    finally:
+        if landscape:
+            w.add_section(landscape=False)
+
+
+def _image_is_landscape(img) -> bool:
+    """Use explicit dimensions or a PNG header to identify wide diagrams."""
+    width, height = img.width, img.height
+    if not (width and height):
+        try:
+            with open(img.path, "rb") as handle:
+                header = handle.read(24)
+            if (
+                header[:8] == b"\x89PNG\r\n\x1a\n"
+                and header[12:16] == b"IHDR"
+            ):
+                width, height = struct.unpack(">II", header[16:24])
+        except (OSError, struct.error):
+            return False
+    return bool(width and height and width / height >= 1.25)
 
 
 # ---------------------------------------------------------------------------

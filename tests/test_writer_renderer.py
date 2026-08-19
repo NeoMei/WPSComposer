@@ -1,4 +1,5 @@
 from pathlib import Path
+import struct
 
 from skills.WPSComposer.scripts.document_model import (
     CodeBlock,
@@ -13,6 +14,7 @@ from skills.WPSComposer.scripts.document_model import (
 from skills.WPSComposer.scripts.design_presets import PRESETS
 from skills.WPSComposer.scripts.generation_plan import validate_generation_plan
 from skills.WPSComposer.scripts.recording_composers import RecordingWriterComposer
+from skills.WPSComposer.scripts.reference_styles import STYLES
 from skills.WPSComposer.scripts.renderers import writer_renderer
 from skills.WPSComposer.scripts.writer import WriterComposer
 
@@ -157,7 +159,7 @@ def test_writer_renderer_has_no_com_or_private_composer_access():
     assert "._reset_selection_to_normal" not in text
 
 
-def test_render_body_skips_document_title_section():
+def test_render_body_skips_title_and_leaves_pre_chapter_headings_unnumbered():
     # The first H1 equals doc.title (rendered on the cover page): it must
     # not appear in the body, in the TOC, or take part in numbering.
     document = StructuredDocument(
@@ -177,11 +179,77 @@ def test_render_body_skips_document_title_section():
         if op.op == "writer.add_heading"
     ]
     assert "第一章 知识库应用价值与材料清单（建议稿）" not in heads
-    # Body headings renumber from the first level without the title
+    # A preface before the first chapter is outside the numbered hierarchy.
     assert heads == [
-        "第一节 核心组织机制：部门文档柜",
-        "一、 制度法规一键查询",
+        "核心组织机制：部门文档柜",
+        "制度法规一键查询",
     ]
+
+
+def test_render_body_preserves_key_method_prefix_for_native_numbering_pass():
+    document = StructuredDocument(
+        title="技术标",
+        sections=[
+            Section(level=1, heading="技术标"),
+            Section(level=1, heading="第三章 施工方案"),
+            Section(level=2, heading="3.4 工程专项施工方法"),
+            Section(level=3, heading="3.4.1 安全隐患消除工程"),
+            Section(level=4, heading="关键工法01：削坡与回填筑坡"),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+
+    writer_renderer._render_body(recorder, document, None)
+
+    heads = [
+        op.args["text"]
+        for op in recorder._operations
+        if op.op == "writer.add_heading"
+    ]
+    assert heads[-1] == "关键工法01：削坡与回填筑坡"
+
+
+def test_writer_renderer_wraps_wide_png_in_landscape_sections(tmp_path):
+    image = tmp_path / "wide.png"
+    image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + b"\x00\x00\x00\rIHDR"
+        + struct.pack(">II", 3040, 2240)
+    )
+    document = StructuredDocument(
+        title="图示报告",
+        sections=[
+            Section(level=1, heading="图示报告"),
+            Section(
+                level=1,
+                heading="第一章 进度计划",
+                elements=[ImageBlock(path=str(image), alt="图08 总进度横道图")],
+            ),
+        ],
+    )
+    recorder = RecordingWriterComposer()
+
+    writer_renderer._render_body(recorder, document, None)
+
+    operations = [operation.to_dict() for operation in recorder._operations]
+    image_index = next(
+        index
+        for index, operation in enumerate(operations)
+        if operation["op"] == "writer.add_image"
+    )
+    assert operations[image_index - 1] == {
+        "op": "writer.add_section",
+        "args": {"landscape": True},
+    }
+    assert operations[image_index + 2] == {
+        "op": "writer.add_section",
+        "args": {"landscape": False},
+    }
+
+
+def test_writer_body_styles_keep_paragraphs_together_before_chapter_breaks():
+    assert STYLES["BodyText"]["keep_together"] is True
+    assert STYLES["FirstParagraph"]["keep_together"] is True
 
 
 def test_render_body_keeps_elements_from_document_title_section():

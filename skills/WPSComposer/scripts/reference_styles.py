@@ -77,6 +77,7 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "line_spacing_rule": "one_and_half",
         "space_before": 0,
         "space_after": 0,
+        "keep_together": True,
     },
 
     "FirstParagraph": {
@@ -87,6 +88,7 @@ STYLES: Dict[str, Dict[str, Any]] = {
         "space_before": 0,
         "space_after": 0,
         "line_spacing_rule": "one_and_half",
+        "keep_together": True,
     },
 
     "Compact": {
@@ -247,4 +249,3 @@ def get_heading_style(level: int) -> dict:
     if level not in HEADING_STYLE_MAP:
         level = 6
     return HEADING_STYLE_MAP[level]
-
