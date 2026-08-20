@@ -5,7 +5,7 @@
 - 设计日期：2026-08-20
 - 目标版本：0.8.0
 - 适用范围：Writer DOCX 生成与 WPS 原生 PDF 导出
-- 设计状态：用户确认后经四轮实现可行性与反例复审修订
+- 设计状态：用户确认后经五轮实现可行性与反例复审修订
 - 参考基准：`1011决策即服务：基于图谱的招投标数据挖掘与AI决策系统构建(2).pdf`
 
 ## 背景
@@ -151,6 +151,26 @@ Markdown
 解析标准 Markdown、frontmatter 和长文档块指令。不得推断平台能力或直接
 选择降级策略。普通可见文本在进入语义模型前统一规范化为 Unicode NFC；
 代码块原文保持不变，并在语义节点中标记 `normalization: none`。
+块指令的顶层识别和属性词法只实现一次，执行器不重复解析 Markdown。
+
+### `frontmatter_parser.py`
+
+新增受限 YAML 1.2 数据子集解析器，独立实施字节、键数、深度、重复键、
+tag/anchor/alias/merge key 和标量类型边界。它只返回 JSON 可序列化值和结构化
+问题，不构造任意 Python 对象，不负责 WPS 排版。
+
+### `unicode_text.py` 与 `bookmark_ids.py`
+
+`unicode_text.py` 保存内置 Unicode 15.1.0 属性表，统一字素簇、东亚宽度、
+`Script=Han` 和规范化辅助函数。`bookmark_ids.py` 只根据已验证的外部 ID 生成
+确定性 WPS 书签映射。两者都属于平台无关语义层，Windows 和 macOS 执行器
+不得各自维护表或重新哈希。
+
+### `resource_staging.py`
+
+新增跨平台资源复制、媒体预检、规范化、内容清单、私有定位映射、租约和
+跨版本 janitor。它不生成 Writer 操作，只返回逻辑资源 ID、受控清单、私有
+传输映射和预计降级；执行器仅校验并消费其结果。
 
 ### 长文档策略模块
 
@@ -198,7 +218,54 @@ Markdown
 
 ## Markdown 公开契约
 
+### 块指令词法
+
+0.8.0 的所有 `:::` 块共用同一词法，必须在 `md_parser.py` 中一次性解析：
+
+- 开始行必须位于列 0，形式为 `:::<name>` 或 `:::<name> {<attributes>}`，行尾
+  只允许空白；`name` 必须匹配 `^[a-z][a-z0-9-]{0,31}$`；
+- 结束行必须是列 0 的独立 `:::`，除行尾空白外不得有其他字符；
+- 只有位于顶层 Markdown、不在围栏代码块、缩进代码块、引用或列表项内的
+  开始/结束行才具有指令语义；其他位置的 `:::` 原样作为普通内容；
+- 0.8.0 不支持块指令嵌套。已知块内再出现顶层开始行时，内层块按可读
+  纯文本保留，外层节点加入 `NESTED_DIRECTIVE_UNSUPPORTED` 块级降级；
+- 文件结束时仍未闭合的块不得吞掉后续文本；从开始行到文件末尾按可读普通
+  内容保留，并在开始位置加入 `DIRECTIVE_UNCLOSED` 块级降级。
+
+属性字符串使用以下唯一语法：
+
+- 可选公开 ID 写为 `#<id>`，在同一开始行中最多出现一次；
+- 键必须匹配 `^[a-z][a-z0-9_]{0,31}$` 并使用单个 `=` 赋值，重复键不得后值覆盖前值；
+- 值只能是使用 JSON 反斜线转义的双引号字符串，或匹配
+  `^[A-Za-z0-9._:/+%-]+$` 的无引号 token；中文、空格和引号必须放在双引号内；
+- 双引号值解码后不得含 U+0000-U+001F、U+007F-U+009F 控制字符或
+  U+D800-U+DFFF 孤立代理码点；换行、制表、NUL 和非 Unicode scalar value 等
+  必须在词法验证阶段拒绝，不得进入 WPS 字段、路径或可见题注；
+- 解析后的普通文本属性统一 NFC；属性不执行 Markdown、WPS 字段代码、环境变量
+  或模板替换；
+- 已知指令的重复 ID/键、非法转义、未知属性或其他词法错误使用
+  `DIRECTIVE_SYNTAX_INVALID` 降级：保留块体可读内容，不执行部分属性，不把同一
+  输入交给两个平台各自宽容解析。
+
+未知 `name` 遵循现有“未识别块保留原始内容并显示不支持指令”规则，不使用
+`DIRECTIVE_SYNTAX_INVALID`；词法合法与功能是否受支持必须分开判定。
+
 ### 文档配置
+
+frontmatter 只在文件第一行是独立 `---` 且在后续 64 KiB UTF-8 字节内遇到第二个独立
+`---` 时识别。内容使用受限 YAML 1.2 数据子集：根必须是 mapping，最多 256 个
+键、最大嵌套深度 8；值只允许 null、布尔、数字、字符串、这些值的列表，或
+仅使用字符串键的递归 mapping。键数上限按全部层级合计，列表元素也计入同一
+256 节点上限。
+禁止显式标签、自定义类型、anchor、alias、merge key、复合键和重复键；不得构造
+Python 对象或自动解析日期对象。字符串同样拒绝控制字符和孤立代理码点，普通
+可见文本进入语义模型前统一 NFC。
+
+存在闭合边界但超限或语法无效时，该区域仍按 frontmatter 处理而不把原始元数据
+回显到正文；使用全部缺省值继续，并生成文档级 `FRONTMATTER_INVALID` 降级提示。
+只有开头 `---` 但在 64 KiB 内没有闭合边界时，不把其猜测为部分元数据；
+整份输入按普通 Markdown 保留并生成 `FRONTMATTER_UNCLOSED` 文档级降级提示。
+两个平台只接收解析后的 JSON 语义值，不得各自解析 YAML。
 
 ```yaml
 ---
@@ -679,6 +746,11 @@ evidence
 
 ### 目录
 
+- 正文目录标题默认为与 0.7.2 兼容的“目  录”；目录、图目录和表目录的
+  自身标题都必须使用 WPS 原生 API 创建的专用非大纲样式，不使用 Heading 1-6，
+  不绑定标题编号，也不进入任何 TOC/图表清单；
+- 专用目录标题样式通过稳定内部样式 ID 访问，大纲级别必须是“正文文本”；
+  不得依赖“TOC Heading”、“目录标题”等本地化显示名称；
 - TOC 1：11pt、单倍行距、段前 3pt、段后 0；
 - TOC 2/3：10.5pt、单倍行距、段前段后 0；
 - 唯一一次紧凑重排的下限为 TOC 1 10.5pt、TOC 2/3 10pt、全部段前段后 0；
@@ -878,7 +950,10 @@ open final staged DOCX
 共 4 轮，不得触发新的外部 notice-only patch。初次生成、完整重排和
 notice-only patch 都使用同一收敛算法，不得因 pass 类型不同简化刷新
 步骤。字段结果在哈希前统一 NFC 和换行符，但不删除对用户可见的空白；
-收敛快照只保存稳定键、哈希、计数和页码，不记录字段可见文本。
+结果哈希固定使用 SHA-256。收敛快照只保存稳定键、哈希、计数和页码，
+不记录字段可见文本；该快照只存活于 `finalize_fields` 执行期间并在结束后释放。
+`FIELD_REFRESH_UNSTABLE` 的 evidence 只能记录轮次、字段数、目录页数和文档页数，
+不得包含字段结果哈希或稳定键。
 
 ### 执行前能力握手
 
@@ -909,15 +984,34 @@ schema 哈希使用按键排序、无多余空白的 UTF-8 JSON 规范化结果�
   macOS 都使用该副本，不得让 WPS 在预检后重新打开用户原路径；
 - 生成计划的操作参数仍只包含逻辑资源 ID；受控资源清单按键排序、
   无多余空白的 UTF-8 JSON 规范化形式计算 SHA-256，其版本和摘要必须与计划
-  信封中的 `resourceManifestVersion` 和 `resourceManifestDigest` 一致。执行器
-  通过该清单获得 staging 副本，并在插入前重新核对长度和哈希。清单版本
+  信封中的 `resourceManifestVersion` 和 `resourceManifestDigest` 一致。清单条目只允许
+  `resourceId`、`sourceSha256`、`payloadSha256`、`byteLength`、`mediaType` 和
+  `normalizerId`；不得包含原始路径、staging 路径、随机目录名或时间戳。
+- `sourceSha256` 针对用户原始字节，`payloadSha256` 针对最终交给 WPS 的原样或
+  规范化副本；`normalizerId` 固定记录未转换、EXIF 方向、GIF 首帧、TIFF 首页
+  等受控算法版本。同一完整生成、重排和 notice-only patch 必须复用首次
+  产生的同一清单和 payload，不重新读取或规范化原资源。
+- `resourceManifestDigest` 是当次执行绑定，不是语义计划身份。M1 的“同一输入
+  生成同一语义计划”比较操作图、逻辑资源 ID、`sourceSha256` 和
+  `normalizerId`，明确排除清单摘要、`payloadSha256` 和任何 staging 定位器。
+  哈希和清单只保存于当次运行内存/私有 staging，不进入普通日志或
+  `GenerationIssue.evidence`；
+- 随机 staging 路径只存在于独立的进程内 `resourceId -> stagingLocator` 传输映射中，
+  不参与清单摘要、语义计划快照或诊断输出。执行器先校验清单摘要，再通过
+  该私有映射打开 staging 副本，并在插入前重新核对长度和 `payloadSha256`。
+  清单版本
   或摘要不匹配时以 `RESOURCE_MANIFEST_MISMATCH` 终止，副本不匹配时以
   `STAGED_RESOURCE_CHANGED` 终止；两者都是致命错误，不降级为未知内容；
 - 计划中每个逻辑资源 ID 必须在清单中恰好出现一次，清单也不得包含计划未引用的
   额外条目；缺失、重复或多余条目属于 `RESOURCE_MANIFEST_MISMATCH`，必须在
   启动 WPS 之前拒绝；
-- 资源 staging 在成功、可恢复降级、致命失败和超时后都必须删除；崩溃遗留
-  由下次启动的同版本 janitor 按专用目录标记和最长 24 小时存活期清理。
+- 资源 staging 在成功、可恢复降级、致命失败和超时后都必须删除；每个活动目录
+  带有进程所有权与心跳租约。崩溃遗留由下次启动的稳定跨版本 janitor 清理；
+  janitor 只能处理带 WPSComposer 专用标记、已超过 24 小时且无存活进程/有效
+  租约的明确子目录，不得按版本号限制清理，也不得扫描或删除用户原目录。
+  活动或未超时目录正常跳过；无法枚举专用根目录、验证标记或删除已确认
+  过期孤儿目录时，在创建新 staging 前以 `STAGING_JANITOR_FAILED` 致命终止，
+  不允许静默累积客户资源副本；
   允许保留的失败恢复副本只能是已验证的暂存产物，不包含原始资源副本；
 - 缺失、类型不支持或预检已确认损坏的资源不进入 `GenerationResource`，而
   根据节点 placement 直接生成行内、块级或文档级降级操作；
@@ -985,10 +1079,17 @@ CropBox 必须先规范化到同一坐标系。文本 `range` 使用节点所声
 - 外部语义 ID 必须映射为合法、确定且无冲突的内部书签名；用户输入不得
   直接成为 WPS 书签或字段代码。
 
-内部书签名固定为 `wpsc_<kind>_<24位SHA256>`，其中 `kind` 只能是受控短码
-`fig`、`tab`、`eq`、`ref`、`head` 或 `para`。完整外部 ID 与书签的映射保留
-在内部结果中；哈希碰撞按规范化文档顺序追加确定性两位后缀。书签名必须
-保持 ASCII 且不超过 40 个字符。
+内部书签名固定为 `wpsc_<kind>_<24-lowercase-hex>`，其中 `kind` 只能是受控
+短码 `fig`、`tab`、`eq`、`ref`、`head` 或 `para`。语义验证先收集全部可引用外部
+ID，按其 UTF-8 字节序升序分配书签，不使用文档出现顺序。第 `attempt` 个候选的
+哈希输入固定为 UTF-8 `kind + NUL + external_id + NUL + decimal(attempt)`，使用
+SHA-256 小写十六进制的前 24 位；`attempt` 从 0 开始，候选名已占用时递增，
+最多尝试 256 次。
+
+完整外部 ID 与书签的映射只保留在当次内部语义/执行结果中，不进入普通
+诊断日志。书签名必须保持 ASCII、以字母开头且不超过 40 个字符。256 次
+候选仍无法唯一时，该目标保留可见内容但取消引用能力，相关引用按未解析
+处理，并生成文档级 `BOOKMARK_NAME_COLLISION` 降级提示。
 
 “WPS 原生等价结构”是指由 WPS API 创建、可在 WPS 中继续编辑，并且在
 保存、重新打开和字段刷新后仍保持显示内容、更新行为和引用目标的对象或
@@ -1010,9 +1111,9 @@ CropBox 必须先规范化到同一坐标系。文本 `range` 使用节点所声
    插入、移动、删除、重开后可自动重编号；
 7. 原生分页符、分节页码格式、重新起始编号，以及首个、中部和末尾
    横向对象的临时方向节生命周期；
-8. TOC 1/2/3 样式修改，且不依赖本地化显示名称；
+8. TOC 1/2/3 样式修改与非大纲目录标题样式，且不依赖本地化显示名称；
 9. `SEQ` 题注字段、图目录和表目录；
-10. 交叉引用字段和安全书签映射；
+10. 交叉引用字段，以及与文档位置无关的安全书签映射和碰撞重试；
 11. Office Math 或 WPS 原生公式对象，以及无边框布局容器；
 12. 单页与跨页节点的
     `node_id -> sections/page_span/range/fragments` 分页定位快照；
@@ -1037,8 +1138,11 @@ CropBox 必须先规范化到同一坐标系。文本 `range` 使用节点所声
 
 以下问题必须继续生成：
 
+- 已知块指令词法无效、未闭合或发生不支持的嵌套；
+- frontmatter 无效、超限或未闭合；
 - 已识别布局配置值无效、重复/不支持的前置块内容或非空分页块；
 - 标题前缀冲突、编号层级缺失或语义图表题注缺失；
+- 内部书签名在受控重试后仍无法唯一；
 - 已声明图片不存在、损坏或插入失败；
 - 公式对象创建失败；
 - 表格无法按请求样式排版；
@@ -1072,7 +1176,8 @@ CropBox 必须先规范化到同一坐标系。文本 `range` 使用节点所声
 - WPS 未安装、无法启动或 COM/JSAPI 不可用；
 - Windows 无法获得或证明专属长文档 WPS 实例所有权；
 - generation protocol 或执行器能力不匹配；
-- 资源清单版本或摘要不匹配，私有 staging 无法创建或写入，或已校验
+- staging janitor 无法处理已确认过期孤儿目录，资源清单版本或摘要不匹配，
+  私有 staging 无法创建或写入，或已校验
   资源副本在执行前发生变化；
 - 必需字段刷新或重新分页 API 缺失、抛错或返回无效状态；
 - WPS 保存失败；
@@ -1214,7 +1319,8 @@ Windows 由主进程监督专属 worker。达到 deadline 后先发送协作取�
 
 ### M1：长文档语义核心
 
-实现 Markdown 扩展、摘要/关键词/显式分页契约、明确缺省值、语义模型、
+实现受限 frontmatter、Markdown 块指令词法、摘要/关键词/显式分页契约、
+明确缺省值、语义模型、
 资源预检、ID/引用解析、书签
 安全映射、NFC/UTF-16 范围、降级 placement、公式子集验证、排版策略和
 generation protocol v2 闭合计划。使用 recording composer 验证，不启动
@@ -1268,7 +1374,8 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 4. 故意缺图、组合图局部失败、题注缺失、非法表格合并、重复前置块、
    标题层级跳跃、引用错误和公式失败的降级文档；
 5. 不带 frontmatter 的短普通 Markdown，用于验证 `auto` 缺省行为；
-6. 含 emoji、扩展汉字、混合字体、长页眉和多种图片格式的协议边界文档。
+6. 含 emoji、扩展汉字、混合字体、长页眉、代码块内 `:::`、非法属性转义、
+   frontmatter 重复键/alias/未闭合和多种图片格式的协议边界文档。
 
 每份夹具在 Windows 和 macOS 上验证：
 
@@ -1277,6 +1384,9 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 - WPS 导出 PDF 的页面数量和页面边界；
 - 封面、无封面标题、原生标题编号和目录收录边界；
 - 摘要与关键词的前置位置、重复块的正文保留，以及显式分页不改变分节语义；
+- 块指令的顶层识别、JSON 属性转义、未闭合/嵌套降级和代码块字面保留；
+- frontmatter 限额、重复键、标签/alias 拒绝、未闭合保内容和不回显有效边界内的
+  无效元数据；
 - `chinese-formal`、`decimal` 和 `hybrid-bid` 的 H1-H4 可见格式、原生链接
   与重排行为；
 - 标题层级跳跃时不生成 `0.1` 类伪编号，且原有标题与 TOC 语义不丢失；
@@ -1284,9 +1394,11 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 - 首个、中部和末尾横向对象的方向、节边界、页码连续性和空白页；
 - 长页眉的 64/32 显示单位截取边界、emoji 字素完整性和双平台文本一致性；
 - 目录密度、孤立标题和空白页；
+- 目录、图目录和表目录的自身标题不出现在任何目录字段结果中；
 - 图片 DPI、题注位置和表格跨页；
 - 超高单行和垂直合并组的可读拆分与原位降级提示；
 - 参考文献首次出现顺序、重复引用复用和未引用条目配置；
+- 外部 ID 书签名在章节移动前后保持一致，且人工碰撞夹具按固定重试规则降级；
 - PDF 问题与稳定 `node_id` 的映射，包括跨页表格的逐页 fragment；
 - NFC/UTF-16 range、point 坐标和 notice placement；
 - 实际字体、字体替代状态和跨平台分页容差；
@@ -1297,8 +1409,8 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 短普通 Markdown 不承担长文档性能指标。
 
 另外维护协议不匹配、能力缺失、PDF/Pillow 依赖缺失、Windows 专属实例
-不可用、超时恢复和危险公式命令拒绝测试；这些是失败场景，不生成公开验收
-文档。
+不可用、超时恢复、过期 staging 清理失败和危险公式命令拒绝测试；这些是
+失败场景，不生成公开验收文档。
 
 ## 兼容性和迁移
 
@@ -1332,7 +1444,8 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 9. 默认新引擎和 legacy 逃生路径分别通过验收；
 10. PDF 分析核心依赖在全新安装环境可用；
 11. Pillow 图片预检和允许媒体类型在全新安装环境可用；
-12. Windows 专属 worker 和 macOS bridge 均通过安全超时恢复；
+12. Windows 专属 worker、macOS bridge 和跨版本 staging janitor 均通过安全
+    超时/崩溃恢复；
 13. 50-100 页性能夹具在两个基准平台满足 600 秒预算；
 14. PPTX/XLSX 生成计划回归快照无变化；
 15. 无关未跟踪文件、本地锁文件和客户文档不进入提交或发布包。
@@ -1347,8 +1460,8 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 - `skills/WPSComposer/SKILL.md`：真实能力、平台边界和生成流程；
 - `skills/WPSComposer/references/api.md`：正确公共导入和 Markdown 契约；
 - 新增 `docs/longform-markdown.md`；
-- 新增长文档运行依赖、Windows 专属 worker、字体矩阵、range/坐标协议和公式
-  子集说明；
+- 新增长文档运行依赖、受限 frontmatter/块指令词法、Unicode 数据版本、资源
+  staging/janitor、Windows 专属 worker、字体矩阵、range/坐标协议和公式子集说明；
 - Windows 与 macOS 真实验收记录；
 - 版本发布说明和迁移说明。
 
@@ -1357,8 +1470,11 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 ## 安全和隐私
 
 - 图片和附件只能通过受控资源清单进入计划；
+- frontmatter 和块指令只使用已定义的受限数据/属性语法，不构造对象或执行字段代码；
 - Windows 和 macOS 资源都必须复制到本次生成的私有 staging，执行器
   只读取已校验副本；
+- 资源内容哈希、清单和字段结果哈希不进入普通日志或 issue evidence；
+- 过期私有 staging 只由验证标记、所有权和租约后的跨版本 janitor 清理；
 - 诊断信息不得泄露路径、token、环境变量或调用栈；
 - 产物继续使用暂存、验证、原子发布和回滚；
 - 局部降级不得绕过最终结构验证；
@@ -1379,6 +1495,18 @@ generation protocol v2 闭合计划。使用 recording composer 验证，不启�
 缓解：执行前比较 protocol version、semantic version、操作 schema 哈希和
 必需能力位；不匹配时在 WPS 修改文档前失败；安装器按一个版本单元更新
 Python 包和 add-in。
+
+### Markdown 解析器差异或恶意元数据
+
+缓解：块指令只在平台无关 `md_parser.py` 中按顶层词法解析；frontmatter 使用
+有尺寸、深度和类型上限的受限 YAML 数据子集，拒绝 tag、anchor、alias 和重复键；
+执行器只消费 JSON 语义计划，不触碰 Markdown 或 YAML。
+
+### 资源清单不稳定或 staging 遗留
+
+缓解：内容清单排除所有路径和时间戳，语义计划身份与当次 payload 绑定分离；
+完整生成复用同一副本；资源根目录使用所有权/心跳租约和跨版本 janitor，清理失败
+在新建 staging 前致命终止。
 
 ### Windows COM 阻塞或错误连接用户实例
 
