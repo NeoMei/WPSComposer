@@ -115,7 +115,13 @@ def build_profile(
     config = COMPONENT_CONFIG[component]
     profile = profiles_root / component
     profile.mkdir(parents=True, exist_ok=False)
-    for name in ("index.html", "manifest.xml", "ribbon.xml", "bridge-client.js"):
+    for name in (
+        "index.html",
+        "manifest.xml",
+        "ribbon.xml",
+        "bridge-client.js",
+        "writer-longform-m0.js",
+    ):
         shutil.copy2(assets / name, profile / name)
     shutil.copy2(assets / str(config["script"]), profile / "component.js")
     _write_json(

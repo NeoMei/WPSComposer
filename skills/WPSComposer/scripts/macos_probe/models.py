@@ -22,6 +22,7 @@ METHOD_COMPONENT = {
     "edit_presentation": "presentation",
     "inspect_document": "writer",
     "inspect_workbook": "spreadsheet",
+    "probe_longform_m0": "writer",
 }
 
 

@@ -1339,7 +1339,8 @@
     "smoke_pdf": savePdf,
     "convert_writer_pdf": convertWriterPdf,
     "generate_writer_document": generateWriterDocument,
-    "inspect_document": inspectDocument
+    "inspect_document": inspectDocument,
+    "probe_longform_m0": function (params) { return window.WPSComposerLongformM0.run(params); }
   };
 
 

@@ -31,8 +31,10 @@
 - Create `skills/WPSComposer/scripts/longform_m0/__main__.py` — explicit `--platform macos|windows|verify` CLI.
 - Create `macos/wps-jsapi-probe/addin/writer-longform-m0.js` — isolated Writer JSAPI probe implementation.
 - Modify `macos/wps-jsapi-probe/addin/index.html` — load the isolated probe module before `writer.js`.
+- Modify `macos/wps-jsapi-probe/addin/bridge-client.js` — preserve typed protocol and resource-manifest mismatch errors.
 - Modify `macos/wps-jsapi-probe/addin/writer.js` — register exactly one typed `probe_longform_m0` handler.
 - Modify `skills/WPSComposer/scripts/macos_probe/models.py` — route the new method to Writer.
+- Modify `skills/WPSComposer/scripts/macos_probe/runtime.py` — copy the isolated probe asset into every private add-in profile.
 - Create `tests/longform_m0/test_contracts.py` — evidence and matrix contract tests.
 - Create `tests/longform_m0/test_host_checks.py` — PDF/artifact/dependency tests.
 - Create `tests/longform_m0/test_macos.py` — bridge orchestration, cleanup, and error tests with fakes.
@@ -227,9 +229,12 @@ git commit -m "Validate longform M0 native evidence"
 
 **Files:**
 - Modify: `skills/WPSComposer/scripts/macos_probe/models.py`
+- Modify: `skills/WPSComposer/scripts/macos_probe/runtime.py`
 - Modify: `tests/macos_probe/test_models.py`
+- Modify: `tests/macos_probe/test_runtime.py`
 - Create: `macos/wps-jsapi-probe/addin/writer-longform-m0.js`
 - Modify: `macos/wps-jsapi-probe/addin/index.html`
+- Modify: `macos/wps-jsapi-probe/addin/bridge-client.js`
 - Modify: `macos/wps-jsapi-probe/addin/writer.js`
 - Create: `tests/longform_m0/test_addin_assets.py`
 
@@ -260,9 +265,9 @@ const M0_KEYS = [
 
 Reject protocol versions other than `2`, manifest versions other than `1`, non-empty resource entries, a manifest digest that is not SHA-256 hex, unknown keys, paths not already validated by the host bridge, and a probe version other than `0.8.0-m0.1`. Run the negative handshake before opening or resetting a document.
 
-- [ ] **Step 4: Implement the shared JS probe helpers**
+- [ ] **Step 4: Implement the shared JS envelope helpers**
 
-Provide closed helpers for collection access, safe property reads, bounded attempts, checkpoint cleanup, field result snapshots, UTF-16 offsets, section/page snapshots, and redacted errors. Every helper returns only numbers, booleans, enums, counts, and stable capability-local labels.
+Provide closed helpers for exact-key comparison, typed protocol failure, path-shape validation, empty-manifest digest binding, and a non-native scaffold result. The scaffold result must state that the native probe has not run and cannot satisfy the platform evidence contract.
 
 - [ ] **Step 5: Run static tests**
 
@@ -300,7 +305,7 @@ Expected: collection fails for the missing `longform_m0.macos` module.
 
 - [ ] **Step 3: Implement native document construction and lifecycle**
 
-The JS probe must create all test content through Writer JSAPI, save the staged DOCX, close it, reopen it, refresh fields, save again, export the staged PDF, and close only its own document. Record `reopened` and `refreshed` only after the final object-count and field-result snapshots match the expected probe-local invariants.
+The JS probe must add closed helpers for collection access, safe property reads, bounded attempts, checkpoint cleanup, field result snapshots, UTF-16 offsets, section/page snapshots, and redacted errors. It must then create all test content through Writer JSAPI, save the staged DOCX, close it, reopen it, refresh fields, save again, export the staged PDF, and close only its own document. Record `reopened` and `refreshed` only after the final object-count and field-result snapshots match the expected probe-local invariants.
 
 - [ ] **Step 4: Implement the capability checks exactly**
 
@@ -498,4 +503,3 @@ git commit -m "Record longform M0 gate result"
 - No task changes the public API or begins M1.
 - Protocol, staging, privacy, timeout, field convergence, pagination fragments, and visual inspection all have executable acceptance steps.
 - The plan contains no unresolved implementation placeholders.
-

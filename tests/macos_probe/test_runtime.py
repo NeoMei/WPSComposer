@@ -52,6 +52,7 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         "manifest.xml",
         "ribbon.xml",
         "bridge-client.js",
+        "writer-longform-m0.js",
         "writer.js",
     ):
         (assets / name).write_text(name, encoding="utf-8")
@@ -76,6 +77,9 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
     }
     assert "nonce" not in (profile / "session.json").read_text().lower()
     assert (profile / "component.js").read_text() == "writer.js"
+    assert (profile / "writer-longform-m0.js").read_text() == (
+        "writer-longform-m0.js"
+    )
 
 
 def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
