@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -231,7 +232,7 @@ def test_attached_save_copy_reports_recovery_path_if_host_rebinds_then_fails(
     composer._owns_doc = False
     recovery = tmp_path / "copy.docx"
 
-    with pytest.raises(RuntimeError, match=str(recovery.resolve())):
+    with pytest.raises(RuntimeError, match=re.escape(str(recovery.resolve()))):
         composer.save_copy(recovery)
 
     assert composer.is_bound_to(recovery)

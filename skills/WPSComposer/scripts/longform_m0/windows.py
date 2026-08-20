@@ -122,7 +122,7 @@ def _read_windows_identity(pid: int) -> Optional[ProcessIdentity]:
         executable = ntpath.normcase(
             ntpath.normpath(str(win32process.GetModuleFileNameEx(handle, 0)))
         )
-        created = win32process.GetProcessTimes(handle)[0]
+        created = win32process.GetProcessTimes(handle)["CreationTime"]
         created_ns = int(float(created.timestamp()) * 1_000_000_000)
         parent_pid = _read_parent_pid(int(pid))
         return ProcessIdentity(
@@ -150,8 +150,8 @@ def _snapshot_wps_pids(
             "-NoProfile",
             "-NonInteractive",
             "-Command",
-            "Get-Process -Name wps -ErrorAction SilentlyContinue | "
-            "ForEach-Object {[Console]::WriteLine($_.Id)}",
+            "@(Get-Process -Name wps -ErrorAction SilentlyContinue).Id | "
+            "ForEach-Object {[Console]::WriteLine($_)}",
         ],
         check=True,
         capture_output=True,
@@ -246,8 +246,16 @@ def _dispatch_owned_application(
 ) -> OwnedApplication:
     """Create and prove one dedicated WPS COM server without Dispatch fallback."""
     app = client.DispatchEx("kwps.Application")
+    helper_document = None
     try:
-        hwnd = int(app.Hwnd)
+        try:
+            helper_document = app.Documents.Add()
+            window = app.ActiveWindow
+        except BaseException:
+            window = None
+        if window is None:
+            raise WindowsOwnershipError("WPS window did not become available")
+        hwnd = int(window.Hwnd)
         pid = hwnd_pid(hwnd)
         if isinstance(pid, bool) or not isinstance(pid, int) or pid <= 0:
             raise WindowsOwnershipError("WPS HWND did not resolve to a PID")
@@ -256,6 +264,11 @@ def _dispatch_owned_application(
         identity = read_identity(pid)
         if identity is None or identity.pid != pid:
             raise WindowsOwnershipError("WPS process identity is unavailable")
+        try:
+            if helper_document is not None:
+                helper_document.Close(0)
+        except BaseException:
+            pass
         return OwnedApplication(app=app, identity=identity)
     except BaseException:
         try:
@@ -876,7 +889,8 @@ def _com_append(document: Any, value: str) -> Any:
     insertion = _com_end_range(document)
     start = int(insertion.Start)
     insertion.InsertAfter(str(value) + "\r")
-    return document.Range(start, start + len(str(value)))
+    units = len(str(value).encode("utf-16-le")) // 2
+    return document.Range(start, start + units)
 
 
 def _com_marker(capability_id: int) -> str:
@@ -960,7 +974,7 @@ def _com_fonts(application: Any, document: Any) -> Mapping[str, Any]:
     ]
     choices = []
     for preferred in (
-        ("SimSun", "Songti SC", "STSong"),
+        ("SimSun", "FmlSong", "Songti SC", "STSong"),
         ("Times New Roman", "Times"),
         ("Consolas", "Courier New", "Courier"),
     ):
@@ -1003,6 +1017,8 @@ def _com_coordinates(document: Any) -> Mapping[str, Any]:
     shape.TextFrame.MarginTop = 0
     shape.TextFrame.MarginBottom = 0
     shape.TextFrame.TextRange.Text = "M0XY5"
+    shape.Line.Weight = 0.75
+    shape.Line.ForeColor.RGB = 0
     paragraph = _com_append(document, "COORD")
     paragraph.Font.Size = 1
     paragraph.ParagraphFormat.SpaceBefore = 0

@@ -28,7 +28,11 @@ def test_dispatch_owned_application_requires_new_dispatch_ex_identity():
     )
 
     calls = []
-    app = SimpleNamespace(Hwnd=9001)
+    window = SimpleNamespace(Hwnd=9001)
+    app = SimpleNamespace(
+        Documents=SimpleNamespace(Add=lambda: SimpleNamespace(Close=lambda _: None)),
+        ActiveWindow=window,
+    )
     client = SimpleNamespace(
         DispatchEx=lambda progid: calls.append(("DispatchEx", progid)) or app,
         Dispatch=lambda progid: pytest.fail("shared Dispatch must never run"),
@@ -65,7 +69,14 @@ def test_dispatch_owned_application_fails_without_provable_new_process(identity)
         if identity is None
         else ProcessIdentity(202, r"C:\wps.exe", 1, 100)
     )
-    client = SimpleNamespace(DispatchEx=lambda progid: SimpleNamespace(Hwnd=7))
+    client = SimpleNamespace(
+        DispatchEx=lambda progid: SimpleNamespace(
+            Documents=SimpleNamespace(
+                Add=lambda: SimpleNamespace(Close=lambda _: None)
+            ),
+            ActiveWindow=SimpleNamespace(Hwnd=7),
+        )
+    )
 
     with pytest.raises(WindowsOwnershipError):
         _dispatch_owned_application(
@@ -279,6 +290,16 @@ def test_worker_balances_com_reports_ownership_and_quits_only_owned_app(
         def Quit(self):
             calls.append("quit")
 
+        @property
+        def Documents(self):
+            return SimpleNamespace(
+                Add=lambda: SimpleNamespace(Close=lambda _: None)
+            )
+
+        @property
+        def ActiveWindow(self):
+            return SimpleNamespace(Hwnd=44)
+
     app = App()
     identity = ProcessIdentity(202, r"C:\wps.exe", 99, 101)
     client = SimpleNamespace(
@@ -343,6 +364,8 @@ def test_worker_interrupt_still_quits_owned_app_and_uninitializes(tmp_path: Path
         Quit=lambda: calls.append("quit"),
         Visible=-1,
         DisplayAlerts=-1,
+        Documents=SimpleNamespace(Add=lambda: SimpleNamespace(Close=lambda _: None)),
+        ActiveWindow=SimpleNamespace(Hwnd=44),
     )
     identity = ProcessIdentity(202, r"C:\wps.exe", 99, 101)
     native = SimpleNamespace(
@@ -417,6 +440,8 @@ def test_worker_publishes_result_before_quit_and_waits_for_supervisor_ack(
         Quit=lambda: calls.append("quit"),
         Visible=-1,
         DisplayAlerts=-1,
+        Documents=SimpleNamespace(Add=lambda: SimpleNamespace(Close=lambda _: None)),
+        ActiveWindow=SimpleNamespace(Hwnd=44),
     )
     identity = windows.ProcessIdentity(202, r"C:\wps.exe", 99, 101)
     native = SimpleNamespace(
@@ -516,7 +541,7 @@ def test_read_windows_identity_uses_executable_creation_and_parent(monkeypatch):
     )
     win32process = SimpleNamespace(
         GetModuleFileNameEx=lambda handle, module: r"C:\WPS\wps.exe",
-        GetProcessTimes=lambda handle: (Created(), None, None, None),
+        GetProcessTimes=lambda handle: {"CreationTime": Created()},
     )
     monkeypatch.setitem(sys.modules, "win32api", win32api)
     monkeypatch.setitem(sys.modules, "win32process", win32process)

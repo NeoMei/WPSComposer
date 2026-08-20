@@ -221,9 +221,15 @@ def snapshot_pdf_markers(
     with pdfplumber.open(str(target)) as plumber_pdf:
         for page_number, page in enumerate(plumber_pdf.pages, start=1):
             characters = list(page.chars)
-            flattened = "".join(
-                str(character.get("text", "")) for character in characters
-            )
+            # pdfplumber emits some zero-width glyphs (e.g. ZWJ) with empty
+            # text; keep a 1:1 map from flattened text offsets to characters
+            # so markers after such glyphs still slice correctly.
+            indexed = [
+                (character, index)
+                for index, character in enumerate(characters)
+                if str(character.get("text", ""))
+            ]
+            flattened = "".join(character.get("text", "") for character, _ in indexed)
             for label, marker in markers.items():
                 if found[label] is not None:
                     continue
@@ -232,7 +238,10 @@ def snapshot_pdf_markers(
                     continue
                 # WPS/PDFPlumber emits one entry per Unicode scalar for the
                 # fixed ASCII markers used by this probe.
-                hit = characters[offset : offset + len(marker)]
+                hit = [
+                    character
+                    for character, _ in indexed[offset : offset + len(marker)]
+                ]
                 if len(hit) != len(marker):
                     continue
                 values = [
