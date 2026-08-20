@@ -5,6 +5,7 @@ import unicodedata
 
 import pytest
 
+from skills.WPSComposer.scripts.longform import frontmatter_parser as parser
 from skills.WPSComposer.scripts.longform.frontmatter_parser import (
     FRONTMATTER_INVALID,
     FRONTMATTER_UNCLOSED,
@@ -117,6 +118,21 @@ def test_closing_marker_may_end_exactly_at_64_kib() -> None:
     assert result.body == "Body\n"
 
 
+def test_boundary_search_does_not_split_the_unbounded_document() -> None:
+    class NoWholeDocumentSplit(str):
+        def splitlines(self, *args: object, **kwargs: object) -> list[str]:
+            raise AssertionError("boundary search split the whole document")
+
+    text = NoWholeDocumentSplit("---\ntitle: value\n" + ("x" * 2_000_000))
+
+    result = parse_frontmatter_document(text)
+
+    assert result.values == {}
+    assert result.issues == (FRONTMATTER_UNCLOSED,)
+    assert result.boundary is None
+    assert result.body is text
+
+
 @pytest.mark.parametrize(
     "frontmatter",
     [
@@ -189,10 +205,10 @@ def test_enforces_maximum_depth_of_eight() -> None:
     assert invalid.issues == (FRONTMATTER_INVALID,)
 
 
-def test_enforces_256_total_mapping_entries_or_list_elements() -> None:
-    valid_mapping = "".join(f"key_{index}: value\n" for index in range(256))
+def test_enforces_256_total_ast_nodes() -> None:
+    valid_mapping = "".join(f"key_{index}: value\n" for index in range(127))
     invalid_mapping = valid_mapping + "overflow: value\n"
-    valid_list = "items:\n" + "".join("  - value\n" for _ in range(255))
+    valid_list = "items:\n" + "".join("  - value\n" for _ in range(253))
     invalid_list = valid_list + "  - overflow\n"
 
     assert parse_frontmatter_document(_document(valid_mapping)).issues == ()
@@ -203,6 +219,75 @@ def test_enforces_256_total_mapping_entries_or_list_elements() -> None:
     assert parse_frontmatter_document(_document(invalid_list)).issues == (
         FRONTMATTER_INVALID,
     )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "0x_",
+        "0o_",
+        "._",
+        "1e_",
+        "1__0",
+        "0x__1",
+        "1e+_",
+        "0x",
+        "0o",
+        "1e",
+        ".",
+        "9" * 5_000,
+    ],
+)
+def test_malformed_or_oversized_numeric_scalars_fail_closed(value: str) -> None:
+    result = parse_frontmatter_document(_document(f"value: {value}\n"))
+
+    assert result.values == {}
+    assert result.issues == (FRONTMATTER_INVALID,)
+
+
+def test_composition_produces_nodes_before_scalar_value_construction() -> None:
+    root = parser._compose_frontmatter_nodes(
+        "date: 2026-08-20\noptions: {toc: true}\n"
+    )
+
+    assert isinstance(root, parser._MappingNode)
+    assert isinstance(root.entries[0].key, parser._ScalarNode)
+    assert isinstance(root.entries[0].value, parser._ScalarNode)
+    assert root.entries[0].value.source == "2026-08-20"
+    parser._validate_composed_node(root)
+    assert parser._construct_frontmatter_values(root) == {
+        "date": "2026-08-20",
+        "options": {"toc": True},
+    }
+
+
+@pytest.mark.parametrize(
+    ("source", "unsafe_type"),
+    [
+        ("title: !unknown true\n", "_TaggedNode"),
+        ("title: &shared true\n", "_AnchoredNode"),
+        ("title: *shared\n", "_AliasNode"),
+    ],
+)
+def test_unsafe_nodes_are_composed_then_rejected_before_construction(
+    monkeypatch: pytest.MonkeyPatch, source: str, unsafe_type: str
+) -> None:
+    root = parser._compose_frontmatter_nodes(source)
+    assert isinstance(root, parser._MappingNode)
+    assert type(root.entries[0].value).__name__ == unsafe_type
+
+    constructed = False
+
+    def fail_if_constructed(node: object) -> dict[str, object]:
+        nonlocal constructed
+        constructed = True
+        raise AssertionError("unsafe AST reached value construction")
+
+    monkeypatch.setattr(parser, "_construct_frontmatter_values", fail_if_constructed)
+    result = parse_frontmatter_document(_document(source))
+
+    assert result.issues == (FRONTMATTER_INVALID,)
+    assert constructed is False
 
 
 def test_normalizes_all_string_keys_and_values_to_nfc() -> None:
