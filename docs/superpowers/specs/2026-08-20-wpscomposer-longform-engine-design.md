@@ -5,7 +5,7 @@
 - 设计日期：2026-08-20
 - 目标版本：0.8.0
 - 适用范围：Writer DOCX 生成与 WPS 原生 PDF 导出
-- 设计状态：用户确认后经实现可行性复审修订
+- 设计状态：用户确认后经两轮实现可行性与反例复审修订
 - 参考基准：`1011决策即服务：基于图谱的招投标数据挖掘与AI决策系统构建(2).pdf`
 
 ## 背景
@@ -148,7 +148,8 @@ Markdown
 ### `md_parser.py`
 
 解析标准 Markdown、frontmatter 和长文档块指令。不得推断平台能力或直接
-选择降级策略。
+选择降级策略。普通可见文本在进入语义模型前统一规范化为 Unicode NFC；
+代码块原文保持不变，并在语义节点中标记 `normalization: none`。
 
 ### 长文档策略模块
 
@@ -169,6 +170,17 @@ Markdown
 
 实现 Windows COM 原生 Writer 原语。不得解析 Markdown 或复制共享策略。
 
+### `windows_writer_worker.py`
+
+新增独立 worker 进程执行 DOCX/PDF 长文档计划。worker 只能使用
+`DispatchEx` 或经 M0 证明具有独立进程所有权的等价创建方式，必须记录自己
+拥有的 WPS 进程标识。长文档路径不得退回可能连接用户交互实例的普通
+`Dispatch`。无法证明专属实例所有权时，在修改文档前抛出
+`WINDOWS_DEDICATED_HOST_UNAVAILABLE`。
+
+现有低层 Composer API 可以维持兼容 fallback，但不得被新默认长文档路径
+调用。主进程只负责计划验证、监督、超时、结果接收和原子发布。
+
 ### `macos/wps-jsapi-probe/addin/writer.js`
 
 实现 macOS JSAPI 原生 Writer 原语。操作参数和失败语义必须与共享计划
@@ -188,6 +200,7 @@ Markdown
 ```yaml
 ---
 title: 决策即服务
+short_title: 决策即服务
 author: 张三
 date: 2026-08-20
 header: 决策即服务：招投标数据分析
@@ -204,15 +217,22 @@ title_page: false
 缺省值必须确定且跨平台一致：
 
 - `title`：优先使用 frontmatter；否则使用第一个 H1；仍不存在则为空；
-- `title_page: auto`：存在作者或日期时生成，否则不生成；显式布尔值优先；
-- `toc: auto`：正文中可收录的 H1-H3 标题达到 3 个时生成，否则不生成；
+- `title_page: auto`：标题非空且存在作者或日期时生成，否则不生成；显式
+  布尔值优先；
+- `toc: auto`：正文中可收录的 H1-H3 标题达到 3 个，并且去除 Markdown
+  控制符、frontmatter 与空白后的正文达到 3000 个 Unicode code point 时
+  生成，否则不生成；
 - `figure_index: false`；
 - `table_index: false`；
-- `header`：默认使用文档标题；标题为空时不生成正文页眉文字；
+- `caption_numbering: auto`：对象之前存在已编号 H1 时使用章节式编号，否则
+  使用全局连续编号；未编号 H1 不重置图、表或公式序列；
+- `header`：优先使用显式值，其次使用 `short_title`，最后使用文档标题；
+  标题为空时不生成正文页眉文字；
 - `layout_engine: longform`：仅 DOCX/PDF 生效。
 
 `auto` 只依赖语义模型，不依赖平台、字体测量或首次分页结果，保证同一输入
-在两个平台选择相同的文档结构。
+在两个平台选择相同的文档结构。自动页眉必须保持单行；在 9pt 下仍超过
+正文宽度时使用带省略号的显示文本并记录 warning，不修改文档正式标题。
 
 ### 题注图像
 
@@ -241,6 +261,11 @@ title_page: false
 `layout` 首版只支持 `stack` 和 `columns`；`columns` 只允许两张图片。整个
 组合共享一个原生题注和编号。更多图片、独立子题注和任意网格不进入 0.8.0。
 
+0.8.0 确定支持 PNG、JPEG、TIFF、BMP 和 GIF。GIF 只取第一帧并生成
+`ANIMATION_FLATTENED` 降级提示。SVG 必须在 M0 证明两个平台都能由 WPS
+原生插入、保存和导出后才进入允许清单；否则按不支持资源在原位置降级，
+不得静默调用非 WPS 栅格化备用链。
+
 ### 语义表格
 
 ```markdown
@@ -255,7 +280,10 @@ title_page: false
 academic 默认三线表，business、consultant、tech 和 proposal 默认克制网格。
 `orientation` 支持 `portrait` 和 `landscape`。`merges` 使用以分号分隔的 A1
 范围，例如 `A1:B1;A2:A3`；被覆盖单元格必须为空，冲突、越界或非矩形合并
-在语义验证阶段形成原位置降级节点。未声明 `merges` 时按普通矩形表生成。
+在语义验证阶段形成原位置降级节点。合并范围不得重叠，也不得跨越重复表头
+与正文边界。表头内部只允许横向合并。正文纵向合并必须作为不可拆分行组；
+若该行组高于一页，降级为未合并网格并显示提示。未声明 `merges` 时按普通
+矩形表生成。
 
 ### 编号公式
 
@@ -269,6 +297,12 @@ CN(x,y)=|N(x)\cap N(y)|
 无边框表格只允许作为“公式居中、编号右对齐”的布局容器，不能替代数学
 对象。Unicode 文本或图片只能作为运行期降级，不能计入原生能力通过。
 
+首版公式输入是受限 LaTeX 数学子集，支持常用上下标、分式、根式、求和、
+积分、矩阵、括号和希腊字母。单个公式最长 10000 个 Unicode code point，
+花括号嵌套不超过 64 层。禁止自定义宏、包声明、文件读写、`\input`、
+`\include`、`\write`、shell escape 和外部资源引用。未知命令在语义
+预检阶段产生公式降级节点，不交给 WPS 猜测执行。
+
 ### 交叉引用
 
 ```markdown
@@ -276,8 +310,8 @@ CN(x,y)=|N(x)\cap N(y)|
 计算方式见 {{ref:eq:common-neighbors}}。
 ```
 
-引用显示文本由目标类型和当前编号生成。未解析引用在原位置显示可读的
-降级标记，不静默删除。
+引用显示文本由目标类型和当前编号生成。未解析引用使用同一段落内的
+`InlineDegradationSpan` 显示可读占位，不插入块级提示框，也不静默删除。
 
 ### 参考文献
 
@@ -326,6 +360,10 @@ CN(x,y)=|N(x)\cap N(y)|
 - 与对象的同页约束；
 - 目录收录策略。
 
+章节式图、表和公式编号绑定最近的已编号 H1 原生列表值。文档没有已编号
+H1，或对象位于第一个已编号 H1 之前时，使用全局序号。附录只有在标题编号
+策略明确产生附录标签时才使用该标签；不得从标题文字猜测“附录”。
+
 ### 公式对象
 
 - 稳定 ID；
@@ -355,15 +393,27 @@ message
 fallback
 recoverable
 page
+placement
+confidence
+evidence
 ```
 
-`page` 在分页前可以为空，最终执行后由分页定位快照补充。`message` 不得包含
-绝对路径、环境变量、token、密钥或调用栈。
+`page` 在分页前可以为空，最终执行后由分页定位快照补充。`evidence` 只保存
+可序列化的页码、bbox、字号、DPI、字段状态和阈值，不保存客户正文。
+`message` 和 `evidence` 不得包含绝对路径、环境变量、token、密钥或调用栈。
 
-用户显式声明的图、表、公式和引用 ID 在语义模型中原样保留。普通标题、
-段落和列表项使用规范化文档遍历顺序生成内部 ID，例如 `para:2:17`；同一份
-规范化输入必须得到相同 ID。第二次重排和 notice-only patch 必须复用首次
-分配的 ID，不得根据新页码重新编号。
+`placement` 只能是：
+
+- `inline`：引用、文献引用和行内公式，在原段落中显示；
+- `block`：图片、表格、块公式和其他独立对象，在原块位置显示；
+- `document`：字体替换等影响整份文档的问题，放在标题页之后、首个目录或
+  正文之前的“生成质量提示”区域。
+
+用户显式声明的图、表、公式和引用 ID 在语义模型中原样保留，但不得使用
+保留前缀 `__wpsc_`。普通标题、段落和列表项使用规范化文档遍历顺序生成
+内部 ID，例如 `__wpsc_para:2:17`；显式 ID 和内部 ID 使用不同命名空间。
+同一份规范化输入必须得到相同 ID。第二次重排和 notice-only patch 必须
+复用首次分配的 ID，不得根据新页码重新编号。
 
 ## 默认排版规范
 
@@ -386,6 +436,27 @@ page
 - 1.5 倍行距；
 - 段前段后 0；
 - preset 可以改变字体气质，但必须维持正文可读性和页面密度。
+
+### 字体能力与跨平台等价
+
+排版策略使用逻辑字体角色，不把平台字体显示名称直接散落到 renderer：
+
+- `body_cjk`：Windows 首选宋体，macOS 首选 Songti SC 或经 M0 验证的华文宋体；
+- `heading_cjk`：Windows 首选黑体，macOS 首选 Heiti SC 或经 M0 验证的华文黑体；
+- `latin`：首选 Times New Roman，缺失时使用经 M0 验证的 Times；
+- `mono`：Windows 首选 Consolas，macOS 首选 Menlo。
+
+能力握手必须通过 WPS 实际字体集合，而不是只检查操作系统字体目录。最终
+保存后重新读取正文、标题、表格、题注和代码样式的实际字体，并检查 PDF
+使用的字体名称。使用上述已批准的平台等价字体不构成降级；落入 WPS 未知
+替代字体时产生 `FONT_SUBSTITUTED` 文档级降级提示，但仍继续输出。
+
+双平台 PDF 验收要求页面尺寸、边距、分节数和方向完全一致；当两个平台使用
+不同的已批准等价字体时，总页数差不得超过 `max(1, ceil(较大页数 * 2%))`，
+对应章节首页页码差不得超过 1，且任一平台都不得出现溢出、孤立标题、题注
+分离或额外空白页。两个平台实际使用同一字体文件时以页数完全一致为目标；
+若 WPS 布局引擎差异仍落在上述容差内，可在验收记录说明后通过，不把字节
+或绝对分页相同当作跨平台语义等价的前提。
 
 ### 标题
 
@@ -508,7 +579,9 @@ page
 - `writer.insert_figure_index`
 - `writer.insert_table_index`
 - `writer.add_bibliography`
+- `writer.add_inline_degradation`
 - `writer.add_degradation_notice`
+- `writer.add_document_quality_notice`
 - `writer.finalize_fields`
 
 `writer.add_captioned_figure` 同时承载单图和首版最多两图的组合；是否并排由
@@ -523,27 +596,49 @@ page
 - 稳定错误码；
 - Windows 和 macOS 等价测试。
 
-计划状态机固定为：
+完整生成计划状态机固定为：
 
 ```text
 reset
-  -> configure document/front matter/styles/sections
-  -> render content nodes
+  -> configure document and styles
+  -> configure and render front matter
+  -> [configure one section -> render that section's content nodes]*
   -> insert indexes and bibliography
-  -> finalize_fields exactly once
+  -> finalize_fields
 ```
 
 - `reset` 必须唯一且位于首位；
+- `configure_section` 必须与对应内容交错出现，不能在文档开头一次性配置所有
+  分节；
 - 每个语义内容节点 ID 必须在计划中恰好出现一次；复合操作使用顶层
-  `nodeId`，批量普通段落允许使用 `args.segments[]` 记录各子节点的
-  `nodeId`、字符起点和长度；
+  `nodeId`，批量普通段落使用 `args.segments[]` 记录各子节点；
 - 交叉引用目标必须在语义验证阶段已解析为稳定 `nodeId`；
-- `finalize_fields` 必须唯一且位于最后；
+- `finalize_fields` 在每个完整生成计划中必须唯一且位于最后；
 - 阶段越界、重复终结或终结后追加内容属于计划无效，不得启动 WPS。
 
 批量段落只是一项性能传输优化，不能丢失子节点定位。执行器必须把每个
 segment 还原为独立 WPS 段落范围；第二次生成可以改变批次边界，但不能改变
-语义节点 ID。
+语义节点 ID。每个 segment 固定包含 `nodeId`、`text`、`normalization` 和
+`utf16Length`；普通文本的 `normalization` 必须是 `nfc`，代码节点可以是
+`none`。wire offset 和 WPS Range 均使用 UTF-16 code unit，范围使用半开
+区间 `[start, end)`，段落间 `\r` 计 1 个 code unit。执行器必须按声明的
+normalization 重新计算并核对 `utf16Length`，不接受 Python code point 数
+代替 wire 长度。
+
+notice-only patch 使用独立状态机，不执行 `reset`：
+
+```text
+open final staged DOCX
+  -> patch inline/block/document notices at mapped node ids
+  -> finalize_fields
+  -> read final pagination_map and refresh issue pages
+  -> save
+  -> export PDF
+```
+
+`finalize_fields` 是“每个执行 pass 恰好一次”，不是整份文档生命周期只能
+调用一次。初次生成、唯一一次完整重排和可选 notice-only patch 分别刷新
+字段，确保提示引起的分页变化反映到 TOC、图表清单和页码中。
 
 ### 执行前能力握手
 
@@ -553,7 +648,10 @@ Python 主机在任何 WPS 文档变更之前读取执行器的：
 - `semanticVersion`；
 - 支持的操作目录及其 schema 哈希；
 - 原生能力位，包括多级编号、分节页码、TOC 样式、题注、交叉引用、公式
-  和分页定位快照。
+  和分页定位快照；
+- `rangeEncoding: utf16`、`textNormalization: nfc-with-raw-code`、坐标系版本、
+  允许媒体类型和字体能力摘要；
+- Windows 额外报告专属实例所有权能力，macOS 额外报告 bridge/add-in 版本。
 
 任一必需值不匹配时抛出 `PROTOCOL_VERSION_MISMATCH` 或
 `EXECUTOR_CAPABILITY_MISSING`，不执行 `reset`，也不自动切换 legacy。插件
@@ -565,14 +663,18 @@ schema 哈希使用按键排序、无多余空白的 UTF-8 JSON 规范化结果�
 
 - 语义规范化阶段先验证资源存在性、类型、大小和可解码性；
 - 缺失、类型不支持或预检已确认损坏的资源不进入 `GenerationResource`，而
-  直接在原节点生成 `writer.add_degradation_notice`；
+  根据节点 placement 直接生成行内、块级或文档级降级操作；
 - 通过预检但在 WPS 插入时失败的资源，由复合操作按白名单错误码执行一次
   fallback 并继续；
 - 可恢复复合操作开始前必须记录插入范围和相关对象计数；失败后先删除该操作
   已产生的局部范围和对象，再插入 fallback；局部恢复验证失败立即升级为
   `LOCAL_MUTATION_ROLLBACK_FAILED` 致命错误；
-- `writer.add_degradation_notice` 的内部 fallback 固定为“样式提示框 -> 普通
-  带错误码段落”；连普通段落都无法写入时视为 Writer 引擎不可用并终止；
+- `writer.add_inline_degradation` 的 fallback 是同一段落内的带方括号纯文本；
+- `writer.add_degradation_notice` 的 fallback 是“样式提示框 -> 普通带错误码
+  段落”；
+- `writer.add_document_quality_notice` 放在固定“生成质量提示”区域，不得插入
+  标题、目录字段或页眉页脚内部；
+- 上述最简文本 fallback 仍无法写入时视为 Writer 引擎不可用并终止；
 - 平台执行器不得捕获所有异常后继续；未知异常、引擎异常和保存异常必须
   终止。
 
@@ -593,6 +695,13 @@ ExecutionOutcome
 `range` 对文本节点必需，`bounds` 对图、表和公式等视觉对象必需；不适用的
 字段可以为空。一次重排后必须重新生成最终 `pagination_map`，旧映射不得
 复用。
+
+定位协议统一使用：页码从 1 开始；长度单位为 point；`bounds` 是页面局部的
+`[x0, y0, x1, y1]`，原点位于页面左上角；PDF 的 Rotation、MediaBox 和
+CropBox 必须先规范化到同一坐标系。文本 `range` 使用节点所声明 normalization
+之后文本在整个 WPS 主文档 story 中的 UTF-16 半开区间。页眉、页脚、脚注
+等其他 story 必须使用独立 story 标识和局部 range。WPS 快照与 PDF 坐标映射
+误差超过 1pt 时不得自动执行位置修复，只能降为低置信度检查结果。
 
 ## WPS 原生语义原则
 
@@ -620,24 +729,31 @@ ExecutionOutcome
 公式布局使用的无边框表格可以是等价布局结构，但表格中的公式内容仍必须
 是 Office Math 或 WPS 原生公式对象，才算原生公式能力通过。
 
-## macOS 原生能力可行性门
+## 双平台原生能力可行性门
 
-正式实现前必须在真实 macOS WPS 中验证：
+正式实现前必须分别在真实 Windows WPS 和 macOS WPS 中验证：
 
 1. generation protocol v2 能力握手和版本拒绝；
-2. H1-H4 原生关联多级编号，插入、移动、删除、重开后可自动重编号；
-3. 分节页码格式和重新起始编号；
-4. TOC 1/2/3 样式修改，且不依赖本地化显示名称；
-5. `SEQ` 题注字段；
-6. 图目录和表目录；
-7. 交叉引用字段和安全书签映射；
-8. Office Math 或 WPS 原生公式对象，以及无边框布局容器；
-9. `node_id -> page/range/bounds` 分页定位快照；
-10. 可恢复复合操作的局部清理、fallback 插入和后续操作继续执行。
+2. Windows 专属 WPS 实例所有权、worker 超时和仅终止自有进程；
+3. 字体枚举、逻辑字体映射、实际字体快照和 PDF 字体结果；
+4. NFC/原样代码两种 normalization、UTF-16 range 与包含 emoji、扩展汉字的
+   批量段落定位；
+5. point、左上角原点和 PDF page box 规范化后的坐标映射；
+6. H1-H4 原生关联多级编号，插入、移动、删除、重开后可自动重编号；
+7. 分节页码格式和重新起始编号；
+8. TOC 1/2/3 样式修改，且不依赖本地化显示名称；
+9. `SEQ` 题注字段、图目录和表目录；
+10. 交叉引用字段和安全书签映射；
+11. Office Math 或 WPS 原生公式对象，以及无边框布局容器；
+12. `node_id -> page/range/bounds` 分页定位快照；
+13. 可恢复复合操作的局部清理、fallback 插入和后续操作继续执行；
+14. notice-only patch 后重新刷新字段、保存和导出；
+15. SVG 原生插入、保存和导出；失败则明确排除 SVG，而不是阻断其他格式。
 
-每项都必须验证保存、关闭、重新打开、字段刷新后的结果。不得转为静态
-OOXML 拼补。无法形成跨平台等价语义的能力不得进入 0.8.0。M0 是明确的
-go/no-go 门；M0 未全部通过前不得开始 M1 正式实现。
+第 1-14 项按适用平台全部必需；其中涉及文档内容的能力还必须验证保存、
+关闭、重新打开和字段刷新后的结果。第 15 项是允许媒体类型的可选能力门。
+不得转为静态 OOXML 拼补。任一必需能力无法形成跨平台等价语义时不得进入
+0.8.0。M0 是明确的 go/no-go 门；必需项未全部通过前不得开始 M1 正式实现。
 
 ## 错误与降级模型
 
@@ -660,30 +776,33 @@ go/no-go 门；M0 未全部通过前不得开始 M1 正式实现。
 处理顺序固定为：
 
 1. 语义或资源预检可以提前确认的问题，直接把原节点规范化为
-   `DegradationNotice`；
+   对应 placement 的降级节点；
 2. 运行期问题先尝试原生排版；
 3. 仅对白名单错误执行一次确定性的简化排版；
-4. 简化仍失败时，在同一 `node_id` 位置插入 `DegradationNotice`；
+4. 简化仍失败时，在同一 `node_id` 位置插入行内、块级或文档级提示；
 5. 继续后续内容，并将 issue 加入内部 `GenerationOutcome`。
 
-降级标记采用专业的浅黄色或浅灰色提示框，包含稳定错误码、对象名称、
-可读原因和实际降级方式。
+行内降级使用短方括号文本和克制底色；块级降级使用专业的浅黄色或浅灰色
+提示框；文档级降级使用统一“生成质量提示”区域。所有可见提示只包含稳定
+错误码、对象名称、可读原因和实际降级方式。
 
 信息性 warning 不自动污染文档正文。只有内容缺失、对象不可读、引用不可
-解析或排版问题会导致用户误解时，才插入可见 `DegradationNotice`。无法在
-PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一次重排。
+解析或排版问题会导致用户误解时，才插入可见提示。首次 PDF 检查发现的
+确定性修复进入唯一一次完整重排；最终 PDF 检查仍存在的 degraded 问题只
+进入一次 notice-only patch，不再重排正文。
 
 ### 引擎级致命问题
 
 以下情况立即终止：
 
 - WPS 未安装、无法启动或 COM/JSAPI 不可用；
+- Windows 无法获得或证明专属长文档 WPS 实例所有权；
 - generation protocol 或执行器能力不匹配；
 - WPS 保存失败；
 - 注册恢复失败；
 - DOCX 或 PDF 结构无效；
 - 内部 PDF 无法导出；
-- 必需的 PDF 分析组件不可用；
+- 必需的 PDF 或图片质量分析组件不可用；
 - 原子发布或回滚失败。
 
 致命错误不得启动非 WPS 备用生成器，也不得把不完整文件伪装为成功产物。
@@ -715,9 +834,11 @@ PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一�
 9. 只有可确定修复的问题才触发唯一一次重排；
 10. 重排后重新生成分页定位快照，并执行最终 PDF 质量检查；
 11. 最终检查仍存在的 `degraded` 问题只允许执行一次原位置 notice patch，
-    随后保存并重新导出 PDF；不得再次重排正文；
+    patch 内再次执行 `finalize_fields`，随后保存并重新导出 PDF；不得再次
+    重排正文；
 12. 对 notice patch 后的 DOCX/PDF 执行结构、页面边界和标记存在性验证；
-    新增视觉偏差只记录到同一节点 issue，不再进入循环；
+    使用最终分页定位快照更新 issue 页码；新增视觉偏差只记录到同一节点
+    issue，不再进入循环；
 13. 原子发布请求格式；请求 PDF 时复用最终已验收 PDF，不重复导出；
 14. 删除内部证据和暂存文件。
 
@@ -747,6 +868,12 @@ PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一�
 - `warning`：可读且不影响语义的质量偏差；
 - `info`：自然稀疏页面等无需修复的观察项。
 
+每项 PDF 检查还必须给出 `confidence: high|medium|low` 和可复核 evidence。
+结构解析、明确页面边界越界和已映射对象 bbox 可以是 high；依赖文本抽取
+顺序或字体启发式的结果最多是 medium；无法获得矢量文字边界的图表标签
+判断是 low。只有 high 可以触发重排或自动降级，medium 只能生成 warning，
+low 只能生成 info 并进入人工视觉验收清单。
+
 非预期空白页、对象溢出和题注分离先执行一次确定性修复。修复后仍存在时，
 只要 DOCX/PDF 结构有效，就按可恢复问题继续输出，并在对应节点或最近的前置
 语义节点加入降级说明；不得把视觉问题擅自升级为引擎级致命错误。
@@ -773,6 +900,8 @@ PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一�
 
 - `pypdf>=4` 和 `pdfplumber>=0.11` 从可选 PDF 编辑依赖提升为 DOCX/PDF
   长文档质量门的核心运行依赖；`reportlab` 仍只服务 PDF 编辑功能；
+- `Pillow>=10` 是栅格图片签名、完整解码、像素尺寸、DPI 和 GIF 帧数预检的
+  核心运行依赖；
 - 缺失必需分析组件时必须在启动 WPS 前失败；
 - 公开 `timeout` 覆盖资源预检、两次以内完整生成、一次 notice-only patch、
   三次以内 PDF 导出、验证和发布的完整生命周期，默认仍为 600 秒；
@@ -782,12 +911,18 @@ PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一�
 - 超时后必须恢复 WPS 注册和 ScreenUpdating，清理暂存文件，并且不得发布
   部分产物。
 
+Windows 由主进程监督专属 worker。达到 deadline 后先发送协作取消并给予
+最多 5 秒清理窗口；仍未退出时只终止已证明由该 worker 创建的进程树。无法
+证明 WPS 进程所有权时不得强杀，且该环境不得通过 M0 硬超时能力门。macOS
+继续使用 loopback bridge deadline，并验证注册恢复。两个平台都必须以真实
+超时夹具证明不会关闭或修改用户原有的 WPS 窗口和文档。
+
 ## 里程碑
 
-### M0：macOS 原生能力探针
+### M0：双平台原生能力探针
 
-验证协议握手、原生关联多级编号、分节页码、TOC 样式、题注、图表目录、
-交叉引用、原生公式内容和分页定位快照。产出能力矩阵、真实 DOCX/PDF 和
+在 Windows 和 macOS 分别验证上述第 1-14 项必需能力，并评估第 15 项 SVG
+可选能力。产出能力矩阵、真实 DOCX/PDF、字体与坐标快照、超时恢复记录和
 截图证据，不进入正式 API。
 
 通过标准：每项 0.8.0 能力在 Windows 与 macOS 都有 WPS 原生实现路径，
@@ -797,8 +932,9 @@ PDF 检测后直接修改原产物；必须更新语义节点并执行唯一一�
 ### M1：长文档语义核心
 
 实现 Markdown 扩展、明确缺省值、语义模型、资源预检、ID/引用解析、书签
-安全映射、排版策略和 generation protocol v2 闭合计划。使用 recording
-composer 验证，不启动真实 WPS。
+安全映射、NFC/UTF-16 范围、降级 placement、公式子集验证、排版策略和
+generation protocol v2 闭合计划。使用 recording composer 验证，不启动
+真实 WPS。
 
 通过标准：同一输入稳定生成相同语义计划；缺省内容不报错；声明资源失败
 产生降级节点；计划阶段顺序、节点唯一性和失败策略均能在启动 WPS 前验证。
@@ -812,15 +948,16 @@ composer 验证，不启动真实 WPS。
 
 ### M3：图、表与交叉引用
 
-实现原生题注、章节式编号、图表清单、三线表、图片策略和交叉引用。
+实现原生题注、章节式与全局编号、图表清单、三线表、受约束合并、图片格式
+策略和交叉引用。
 
 通过标准：移动、插入或删除图表后，WPS 更新字段即可重编号；图题和表题
 不与对象分离。
 
 ### M4：公式、参考文献与降级系统
 
-实现公式编号、公式引用、参考文献样式、引用序号、执行器白名单恢复、局部
-降级和文档内提示。
+实现公式编号、公式引用、参考文献样式、引用序号、执行器白名单恢复、行内、
+块级和文档级降级提示。
 
 通过标准：所有局部故障都生成有效产物；所有引擎级故障立即终止。
 
@@ -834,13 +971,14 @@ composer 验证，不启动真实 WPS。
 
 ## 验收夹具
 
-至少维护五类真实夹具：
+至少维护六类真实夹具：
 
 1. 样例风格的密集学术报告；
 2. 含宽图、长表和多章节的技术方案；
 3. 含混合原生编号的技术标；
 4. 故意缺图、引用错误和公式失败的降级文档；
-5. 不带 frontmatter 的短普通 Markdown，用于验证 `auto` 缺省行为。
+5. 不带 frontmatter 的短普通 Markdown，用于验证 `auto` 缺省行为；
+6. 含 emoji、扩展汉字、混合字体、长页眉和多种图片格式的协议边界文档。
 
 每份夹具在 Windows 和 macOS 上验证：
 
@@ -851,14 +989,17 @@ composer 验证，不启动真实 WPS。
 - 目录密度、孤立标题和空白页；
 - 图片 DPI、题注位置和表格跨页；
 - PDF 问题与稳定 `node_id` 的映射；
+- NFC/UTF-16 range、point 坐标和 notice placement；
+- 实际字体、字体替代状态和跨平台分页容差；
 - 两个平台语义结果一致；
 - 代表性页面人工截图检查。
 
 另将第 2 类夹具扩展为 50-100 页性能版本，验证阶段耗时和 600 秒总预算；
 短普通 Markdown 不承担长文档性能指标。
 
-另外维护协议不匹配、能力缺失、PDF 分析依赖缺失和超时恢复测试；这些是
-失败场景，不生成公开验收文档。
+另外维护协议不匹配、能力缺失、PDF/Pillow 依赖缺失、Windows 专属实例
+不可用、超时恢复和危险公式命令拒绝测试；这些是失败场景，不生成公开验收
+文档。
 
 ## 兼容性和迁移
 
@@ -882,16 +1023,18 @@ composer 验证，不启动真实 WPS。
 2. Windows 与 macOS 使用相同语义版本；
 3. 全部平台无关测试通过；
 4. Windows 和 macOS 真实 WPS 验收通过；
-5. 五类验收夹具全部通过结构与 PDF 质量门；
+5. 六类验收夹具全部通过结构与 PDF 质量门；
 6. README、SKILL、API 参考和长文档语法文档同步；
 7. 插件清单和 Python 包版本一致；
 8. Python 主机、Windows 执行器与 macOS add-in 的 protocol v2 版本和能力
    清单一致；
 9. 默认新引擎和 legacy 逃生路径分别通过验收；
 10. PDF 分析核心依赖在全新安装环境可用；
-11. 50-100 页性能夹具在两个基准平台满足 600 秒预算；
-12. PPTX/XLSX 生成计划回归快照无变化；
-13. 未跟踪的 `uv.lock` 和客户文档不进入提交或发布包。
+11. Pillow 图片预检和允许媒体类型在全新安装环境可用；
+12. Windows 专属 worker 和 macOS bridge 均通过安全超时恢复；
+13. 50-100 页性能夹具在两个基准平台满足 600 秒预算；
+14. PPTX/XLSX 生成计划回归快照无变化；
+15. 未跟踪的 `uv.lock` 和客户文档不进入提交或发布包。
 
 任一平台未通过，不得宣称 0.8.0 长文档能力完成，也不得只发布另一平台。
 
@@ -903,6 +1046,8 @@ composer 验证，不启动真实 WPS。
 - `skills/WPSComposer/SKILL.md`：真实能力、平台边界和生成流程；
 - `skills/WPSComposer/references/api.md`：正确公共导入和 Markdown 契约；
 - 新增 `docs/longform-markdown.md`；
+- 新增长文档运行依赖、Windows 专属 worker、字体矩阵、range/坐标协议和公式
+  子集说明；
 - Windows 与 macOS 真实验收记录；
 - 版本发布说明和迁移说明。
 
@@ -916,11 +1061,13 @@ composer 验证，不启动真实 WPS。
 - 产物继续使用暂存、验证、原子发布和回滚；
 - 局部降级不得绕过最终结构验证；
 - 不联网获取缺失图片、公式或参考文献；
+- 公式解析不得执行宏、文件访问、shell 命令或外部资源加载；
+- notice evidence 不得保存客户正文或原始资源路径；
 - 不把客户内容写入仓库验收夹具。
 
 ## 风险与缓解
 
-### macOS WPS API 缺失
+### 任一平台 WPS API 缺失
 
 缓解：M0 作为 go/no-go 门先行；允许 WPS 原生等价结构，不允许 OOXML
 拼补。无等价能力则不进入 M1，也不进入 0.8.0。
@@ -930,6 +1077,24 @@ composer 验证，不启动真实 WPS。
 缓解：执行前比较 protocol version、semantic version、操作 schema 哈希和
 必需能力位；不匹配时在 WPS 修改文档前失败；安装器按一个版本单元更新
 Python 包和 add-in。
+
+### Windows COM 阻塞或错误连接用户实例
+
+缓解：长文档只在受监督的专属 worker 和已证明所有权的 WPS 实例中执行；
+禁止默认链路使用普通 `Dispatch` fallback；超时只终止自有进程树。无法证明
+实例所有权即不通过 M0。
+
+### 字体缺失导致分页漂移
+
+缓解：使用逻辑字体角色、WPS 字体枚举和已批准的平台等价矩阵；保存后核对
+实际字体和 PDF 字体；未知替代生成文档级提示；用明确页数和章节锚点容差
+验收，而不是假设字体名称写入成功。
+
+### Unicode range 或坐标系不一致
+
+缓解：统一 NFC、UTF-16 半开区间、1-based 页码、point 和左上角 page-local
+bbox；使用 emoji、扩展汉字、Rotation 和 CropBox 夹具；映射误差超过 1pt 时
+禁止自动修复。
 
 ### 跨平台字段刷新差异
 
