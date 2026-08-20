@@ -202,6 +202,84 @@ def snapshot_pdf(path: Path) -> dict[str, Any]:
     }
 
 
+def snapshot_pdf_markers(
+    path: Path, markers: Mapping[str, str]
+) -> dict[str, Any]:
+    """Locate fixed probe markers without returning their extracted text."""
+    require_probe_dependencies()
+    if not isinstance(markers, Mapping) or any(
+        not isinstance(label, str)
+        or not label
+        or not isinstance(marker, str)
+        or not marker
+        for label, marker in markers.items()
+    ):
+        raise ValueError("PDF marker requests must be non-empty strings")
+    target = Path(path).expanduser().resolve()
+    validate_pdf(target)
+    found: dict[str, Any] = {label: None for label in markers}
+    with pdfplumber.open(str(target)) as plumber_pdf:
+        for page_number, page in enumerate(plumber_pdf.pages, start=1):
+            characters = list(page.chars)
+            flattened = "".join(
+                str(character.get("text", "")) for character in characters
+            )
+            for label, marker in markers.items():
+                if found[label] is not None:
+                    continue
+                offset = flattened.find(marker)
+                if offset < 0:
+                    continue
+                # WPS/PDFPlumber emits one entry per Unicode scalar for the
+                # fixed ASCII markers used by this probe.
+                hit = characters[offset : offset + len(marker)]
+                if len(hit) != len(marker):
+                    continue
+                values = [
+                    tuple(
+                        float(character[name])
+                        for name in ("x0", "top", "x1", "bottom")
+                    )
+                    for character in hit
+                ]
+                if any(
+                    not math.isfinite(value)
+                    for coordinates in values
+                    for value in coordinates
+                ):
+                    raise ValueError("PDF marker bounds must be finite")
+                found[label] = {
+                    "physicalPage": page_number,
+                    "bbox": [
+                        min(value[0] for value in values),
+                        min(value[1] for value in values),
+                        max(value[2] for value in values),
+                        max(value[3] for value in values),
+                    ],
+                }
+                marker_box = found[label]["bbox"]
+                containing_frames = []
+                for rectangle in getattr(page, "rects", ()):
+                    frame = [
+                        float(rectangle[name])
+                        for name in ("x0", "top", "x1", "bottom")
+                    ]
+                    if (
+                        frame[0] <= marker_box[0]
+                        and frame[1] <= marker_box[1]
+                        and frame[2] >= marker_box[2]
+                        and frame[3] >= marker_box[3]
+                    ):
+                        containing_frames.append(frame)
+                if containing_frames:
+                    found[label]["frameBBox"] = min(
+                        containing_frames,
+                        key=lambda frame: (frame[2] - frame[0])
+                        * (frame[3] - frame[1]),
+                    )
+    return found
+
+
 def validate_native_artifacts(docx_path: Path, pdf_path: Path) -> dict[str, Any]:
     """Validate native WPS outputs and return redaction-safe structural data."""
     require_probe_dependencies()

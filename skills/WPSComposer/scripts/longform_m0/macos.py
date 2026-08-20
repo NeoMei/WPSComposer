@@ -30,10 +30,24 @@ from .contracts import (
     write_canonical_json,
 )
 
-EMPTY_MANIFEST = {
+SVG_FIXTURE = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" '
+    'viewBox="0 0 120 60"><rect width="120" height="60" fill="#E8F0FE"/>'
+    '<text x="12" y="36" font-size="16">M0 SVG</text></svg>'
+)
+RESOURCE_MANIFEST = {
     "version": RESOURCE_MANIFEST_VERSION,
-    "entries": [],
-    "digest": "a6a20076da005b27c9afc3a5d5b2457798c0ac817d1abc38b2fee4398ac3f133",
+    "entries": [
+        {
+            "resourceId": "m0-static-svg",
+            "sourceSha256": "924f47ebd7a4c22393defac4103818aedced9f5dd0630bf27e1d6aa7ad30cbfc",
+            "payloadSha256": "924f47ebd7a4c22393defac4103818aedced9f5dd0630bf27e1d6aa7ad30cbfc",
+            "byteLength": 185,
+            "mediaType": "image/svg+xml",
+            "normalizerId": "identity-svg-m0-v1",
+        }
+    ],
+    "digest": "3516239310e9d6c0d9a736e816661d57d7e5378e334cfb4f03454bb3da0fc4ae",
 }
 ORIGINS = {
     "http://127.0.0.1:3889",
@@ -169,6 +183,7 @@ def _complete_evidence(
     capabilities: list[dict[str, Any]],
     failures: list[dict[str, Any]],
     artifacts: Mapping[str, Any],
+    coordinate_snapshot: Mapping[str, Any],
     wps_version: str,
 ) -> dict[str, Any]:
     artifact_names = [artifacts["docx"]["name"], artifacts["pdf"]["name"]]
@@ -192,6 +207,56 @@ def _complete_evidence(
             if not isinstance(metrics, dict):
                 raise _M0Error("PROTOCOL_ERROR", "native capability metrics are invalid")
             metrics["hostPdfSnapshot"] = artifacts["pdf"]["snapshot"]
+    capabilities_by_id = {item["id"]: item for item in capabilities}
+
+    def host_failure(capability_id: int, reason: str) -> None:
+        capability = capabilities_by_id[capability_id]
+        capability["status"] = "failed"
+        capability["checks"] = ["native-attempted", "host-validated"]
+        capability["metrics"]["hostValidation"] = reason
+        if not any(
+            failure.get("capabilityId") == capability_id
+            for failure in failures
+            if isinstance(failure, Mapping)
+        ):
+            failures.append(
+                {"code": "HOST_VALIDATION_FAILED", "capabilityId": capability_id}
+            )
+
+    pdf_fonts = artifacts["pdf"]["snapshot"]["fonts"]
+    capabilities_by_id[3]["metrics"]["pdfFontCount"] = len(pdf_fonts)
+    if capabilities_by_id[3]["status"] == "passed" and not pdf_fonts:
+        host_failure(3, "pdf-fonts-empty")
+
+    coordinate_capability = capabilities_by_id[5]
+    coordinate_metrics = coordinate_capability["metrics"]
+    coordinate_metrics.pop("pdfAgreementPending", None)
+    coordinate_metrics["hostCoordinateSnapshot"] = copy.deepcopy(
+        coordinate_snapshot
+    )
+    paragraph = coordinate_snapshot.get("paragraph")
+    shape = coordinate_snapshot.get("shape")
+    try:
+        errors = [
+            abs(float(coordinate_metrics["paragraphX"]) - float(paragraph["bbox"][0])),
+            abs(float(coordinate_metrics["paragraphY"]) - float(paragraph["bbox"][1])),
+            abs(
+                float(coordinate_metrics["shapeX"])
+                - float(shape["frameBBox"][0])
+            ),
+            abs(
+                float(coordinate_metrics["shapeY"])
+                - float(shape["frameBBox"][1])
+            ),
+        ]
+        maximum_error = max(errors)
+    except (KeyError, TypeError, ValueError, OverflowError):
+        maximum_error = None
+    coordinate_metrics["pdfAgreementMaxError"] = maximum_error
+    if coordinate_capability["status"] == "passed" and (
+        maximum_error is None or maximum_error > 1.0
+    ):
+        host_failure(5, "coordinate-error-over-1pt")
     if capability_ids != set(range(1, 16)):
         raise _M0Error("PROTOCOL_ERROR", "native capability ids are incomplete")
     raw = {
@@ -277,6 +342,9 @@ def run_macos_probe(
                     )
                 staged_docx = (runtime.staging_dir / "longform-m0.docx").resolve()
                 staged_pdf = (runtime.staging_dir / "longform-m0.pdf").resolve()
+                staged_svg = (runtime.staging_dir / "longform-m0.svg").resolve()
+                staged_svg.write_text(SVG_FIXTURE, encoding="utf-8")
+                staged_svg.chmod(0o600)
                 runtime.prepare_profiles()
                 runtime.start_servers(deadline=deadline)
                 runtime.activate_components()
@@ -285,12 +353,14 @@ def run_macos_probe(
                     "writer",
                     "probe_longform_m0",
                     {
-                        "manifest": copy.deepcopy(EMPTY_MANIFEST),
+                        "manifest": copy.deepcopy(RESOURCE_MANIFEST),
+                        "expectedWpsVersion": wps_version,
                         "probeVersion": PROBE_VERSION,
                         "protocolVersion": PROTOCOL_VERSION,
                         "resourceManifestVersion": RESOURCE_MANIFEST_VERSION,
                         "stagedDocxPath": str(staged_docx),
                         "stagedPdfPath": str(staged_pdf),
+                        "stagedSvgPath": str(staged_svg),
                     },
                 )
                 try:
@@ -329,8 +399,16 @@ def run_macos_probe(
         artifact_evidence = host_checks.validate_native_artifacts(
             final_docx, final_pdf
         )
+        coordinate_snapshot = host_checks.snapshot_pdf_markers(
+            final_pdf,
+            {"paragraph": "COORD", "shape": "M0XY5"},
+        )
         raw = _complete_evidence(
-            capabilities, failures, artifact_evidence, wps_version
+            capabilities,
+            failures,
+            artifact_evidence,
+            coordinate_snapshot,
+            wps_version,
         )
         host_checks.validate_evidence_privacy(raw)
         validate_platform_evidence(raw)

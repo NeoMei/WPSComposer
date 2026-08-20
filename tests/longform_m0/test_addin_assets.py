@@ -16,8 +16,9 @@ from skills.WPSComposer.scripts.macos_probe.models import (
 
 ROOT = Path("macos/wps-jsapi-probe/addin")
 EMPTY_MANIFEST_DIGEST = (
-    "a6a20076da005b27c9afc3a5d5b2457798c0ac817d1abc38b2fee4398ac3f133"
+    "3516239310e9d6c0d9a736e816661d57d7e5378e334cfb4f03454bb3da0fc4ae"
 )
+SVG_SHA256 = "924f47ebd7a4c22393defac4103818aedced9f5dd0630bf27e1d6aa7ad30cbfc"
 
 
 def run_node(script: str) -> None:
@@ -35,13 +36,24 @@ def valid_params() -> dict:
         "manifest": {
             "version": 1,
             "digest": EMPTY_MANIFEST_DIGEST,
-            "entries": [],
+            "entries": [
+                {
+                    "resourceId": "m0-static-svg",
+                    "sourceSha256": SVG_SHA256,
+                    "payloadSha256": SVG_SHA256,
+                    "byteLength": 185,
+                    "mediaType": "image/svg+xml",
+                    "normalizerId": "identity-svg-m0-v1",
+                }
+            ],
         },
         "probeVersion": "0.8.0-m0.1",
         "protocolVersion": 2,
         "resourceManifestVersion": 1,
+        "expectedWpsVersion": "12.1.fake",
         "stagedDocxPath": "/staged/probe.docx",
         "stagedPdfPath": "/staged/probe.pdf",
+        "stagedSvgPath": "/staged/probe.svg",
     }
 
 
@@ -78,6 +90,49 @@ def test_longform_asset_has_no_dynamic_execution_or_network_access():
     assert "window.WPSComposerLongformM0" in source
 
 
+def test_native_probe_has_closed_lifecycle_and_all_capability_assays():
+    source = (ROOT / "writer-longform-m0.js").read_text(encoding="utf-8")
+
+    for required in (
+        "Application.Documents.Add()",
+        "SaveAs2(envelope.stagedDocxPath, 12)",
+        "Application.Documents.Open(envelope.stagedDocxPath",
+        "document.Fields.Update()",
+        "ExportAsFixedFormat(envelope.stagedPdfPath, 17",
+        "Application.DisplayAlerts = previousAlerts",
+        "Application.ScreenUpdating = previousScreenUpdating",
+        "InlineShapes.AddPicture(envelope.stagedSvgPath",
+        "TablesOfContents.Add",
+        "TablesOfFigures.Add",
+        "OMaths.Add",
+        "ApplyListTemplateWithLevel",
+    ):
+        assert required in source
+    assert source.count("\n    assay(document, capabilities,") == 13
+    assert "for (let capabilityId = 3; capabilityId <= 15" in source
+
+
+def test_numbering_assay_checks_exact_schemes_and_real_mutations():
+    source = (ROOT / "writer-longform-m0.js").read_text(encoding="utf-8")
+
+    for expected_format in (
+        '"第%1章"',
+        '"第%2节"',
+        '"%3、"',
+        '"（%4）"',
+        '"%1.%2.%3.%4"',
+        '"关键工法%4："',
+    ):
+        assert expected_format in source
+    assert "numberingSnapshotMatches(document)" in source
+    assert "range.ListFormat.ListLevelNumber = level" in source
+    assert source.count("style: 253") == 2
+    assert "listLevel.Legal" not in source
+    assert ".Cut()" in source
+    assert ".Paste()" in source
+    assert "mutationRenumberChecks: 3" in source
+
+
 def test_writer_registers_exactly_one_typed_longform_handler():
     writer = (ROOT / "writer.js").read_text(encoding="utf-8")
 
@@ -101,7 +156,7 @@ global.window = {{}};
 eval(fs.readFileSync({asset}, "utf8"));
 const validated = window.WPSComposerLongformM0.validateEnvelope({params});
 assert.equal(validated.protocolVersion, 2);
-assert.equal(validated.manifest.entries.length, 0);
+    assert.equal(validated.manifest.entries.length, 1);
 """
 
     run_node(script)
@@ -113,6 +168,7 @@ assert.equal(validated.manifest.entries.length, 0);
         ({"protocolVersion": 1}, "PROTOCOL_MISMATCH"),
         ({"resourceManifestVersion": 2}, "PROTOCOL_MISMATCH"),
         ({"probeVersion": "0.8.0-m0.invalid"}, "PROTOCOL_MISMATCH"),
+        ({"expectedWpsVersion": ""}, "PROTOCOL_MISMATCH"),
         ({"unexpected": True}, "PROTOCOL_MISMATCH"),
         ({"stagedDocxPath": ""}, "PROTOCOL_MISMATCH"),
         (
@@ -120,7 +176,7 @@ assert.equal(validated.manifest.entries.length, 0);
                 "manifest": {
                     "version": 1,
                     "digest": "c" * 64,
-                    "entries": [],
+                    "entries": valid_params()["manifest"]["entries"],
                 }
             },
             "RESOURCE_MANIFEST_MISMATCH",

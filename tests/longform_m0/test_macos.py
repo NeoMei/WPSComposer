@@ -12,8 +12,8 @@ from pypdf import PdfWriter
 from skills.WPSComposer.scripts.macos_probe.models import ProbeResult
 from skills.WPSComposer.scripts.longform_m0 import host_checks
 from skills.WPSComposer.scripts.longform_m0.macos import (
-    EMPTY_MANIFEST,
     MacosM0Failed,
+    RESOURCE_MANIFEST,
     run_macos_probe,
 )
 
@@ -97,6 +97,9 @@ class FakeBridge:
                 {"code": "PROTOCOL_MISMATCH", "message": "bad protocol"},
             )
         assert self.params is not None
+        assert Path(self.params["stagedSvgPath"]).read_text(encoding="utf-8").startswith(
+            '<svg xmlns="http://www.w3.org/2000/svg"'
+        )
         docx = Path(self.params["stagedDocxPath"])
         pdf = Path(self.params["stagedPdfPath"])
         write_docx(docx)
@@ -181,11 +184,20 @@ def run_fake(tmp_path: Path) -> Path:
     )
 
 
-def test_empty_manifest_is_canonical_and_digest_bound():
-    assert EMPTY_MANIFEST == {
+def test_svg_manifest_is_canonical_and_digest_bound():
+    assert RESOURCE_MANIFEST == {
         "version": 1,
-        "entries": [],
-        "digest": "a6a20076da005b27c9afc3a5d5b2457798c0ac817d1abc38b2fee4398ac3f133",
+        "entries": [
+            {
+                "resourceId": "m0-static-svg",
+                "sourceSha256": "924f47ebd7a4c22393defac4103818aedced9f5dd0630bf27e1d6aa7ad30cbfc",
+                "payloadSha256": "924f47ebd7a4c22393defac4103818aedced9f5dd0630bf27e1d6aa7ad30cbfc",
+                "byteLength": 185,
+                "mediaType": "image/svg+xml",
+                "normalizerId": "identity-svg-m0-v1",
+            }
+        ],
+        "digest": "3516239310e9d6c0d9a736e816661d57d7e5378e334cfb4f03454bb3da0fc4ae",
     }
 
 
@@ -225,7 +237,10 @@ def test_success_publishes_two_artifacts_and_restores_runtime(tmp_path: Path):
     assert runtime.staging_dir is not None and not runtime.staging_dir.exists()
     bridge = FakeBridge.instances[0]
     assert bridge.closed
-    assert bridge.params["manifest"] == EMPTY_MANIFEST
+    assert bridge.params["manifest"] == RESOURCE_MANIFEST
+    assert bridge.params["expectedWpsVersion"] == "12.1.fake"
+    assert evidence["capabilities"][2]["status"] == "failed"
+    assert evidence["capabilities"][4]["status"] == "failed"
 
 
 @pytest.mark.parametrize(

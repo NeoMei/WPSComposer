@@ -160,6 +160,42 @@ def test_snapshot_pdf_uses_bounds_but_never_returns_text(monkeypatch, tmp_path: 
     assert "body" not in repr(snapshot)
 
 
+def test_snapshot_pdf_markers_returns_only_page_and_bbox(monkeypatch, tmp_path: Path):
+    pdf = write_pdf(tmp_path / "probe.pdf")
+
+    class FakePage:
+        chars = [
+            {"text": "X", "x0": 70, "x1": 76, "top": 72, "bottom": 83},
+            {"text": "Y", "x0": 76, "x1": 82, "top": 72, "bottom": 83},
+            {"text": "5", "x0": 82, "x1": 88, "top": 72, "bottom": 83},
+        ]
+        rects = [
+            {"x0": 70, "x1": 190, "top": 70, "bottom": 106},
+        ]
+
+    class FakePdf:
+        pages = [FakePage()]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return None
+
+    monkeypatch.setattr(host_checks.pdfplumber, "open", lambda _: FakePdf())
+
+    snapshot = host_checks.snapshot_pdf_markers(pdf, {"shape": "XY5"})
+
+    assert snapshot == {
+        "shape": {
+            "physicalPage": 1,
+            "bbox": [70.0, 72.0, 88.0, 83.0],
+            "frameBBox": [70.0, 70.0, 190.0, 106.0],
+        }
+    }
+    assert "XY5" not in repr(snapshot)
+
+
 @pytest.mark.parametrize(
     "value",
     [
