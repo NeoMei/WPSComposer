@@ -98,6 +98,7 @@ def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
     assert not (tmp_path / "recovery").exists()
 
 
+@posix_only
 def test_registration_uses_stable_authorized_origin_without_secret(tmp_path: Path):
     publish = tmp_path / "publish.xml"
     publish.write_bytes(b"<jsplugins/>")
@@ -529,6 +530,7 @@ def test_runtime_never_signals_user_wps_launched_during_run(monkeypatch, tmp_pat
     assert signals == [(201, signal.SIGTERM)]
 
 
+@posix_only
 def test_runtime_kill_set_cannot_grow_during_term_grace(monkeypatch, tmp_path):
     probe = runtime.ProbeRuntime(
         tmp_path,
@@ -597,6 +599,7 @@ def test_preexisting_young_wps_is_never_claimed_by_elapsed_age(monkeypatch, tmp_
     assert signals == []
 
 
+@posix_only
 def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: Path):
     commands = []
 
@@ -643,6 +646,7 @@ def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: P
     ]
 
 
+@posix_only
 def test_stale_registration_recovers_across_random_runtime_roots_before_preflight(
     monkeypatch, tmp_path: Path
 ):

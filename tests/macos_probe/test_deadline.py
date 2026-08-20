@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
+import os
 
 import pytest
 
@@ -37,6 +38,9 @@ class FakeClock:
         self.advance(seconds)
 
 
+@pytest.mark.skipif(
+    os.name != "posix", reason="runtime lock uses POSIX-only fcntl"
+)
 def test_runtime_lock_uses_caller_absolute_deadline(monkeypatch, tmp_path: Path):
     clock = FakeClock()
     attempts = 0

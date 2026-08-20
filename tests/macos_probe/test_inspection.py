@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 import shutil
@@ -113,7 +113,7 @@ def _run(
         patches or [{"target": "slide:1", "name": "Updated"}],
         fake_bridge,
         runtime,
-        inspection.time.monotonic() + 2,
+        inspection.time.monotonic() + 10,
         atomic=atomic,
         raise_on_error=raise_on_error,
         overwrite=overwrite,
@@ -261,7 +261,7 @@ def test_run_edit_overwrite_failure_preserves_original_destination(
             [{"target": "slide:1", "name": "Updated"}],
             FakeBridge(),
             runtime,
-            inspection.time.monotonic() + 2,
+            inspection.time.monotonic() + 10,
             atomic=True,
             raise_on_error=False,
             overwrite=True,

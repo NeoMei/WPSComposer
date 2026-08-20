@@ -76,6 +76,8 @@ def test_dependency_gate_accepts_installed_core_packages():
     )
 
 
+# mode-bit assertions apply to POSIX filesystems only
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode assertions")
 def test_prepare_evidence_directory_creates_private_empty_directory(tmp_path: Path):
     output = tmp_path / "evidence"
 
@@ -86,6 +88,7 @@ def test_prepare_evidence_directory_creates_private_empty_directory(tmp_path: Pa
     assert prepared.stat().st_mode & 0o777 == 0o700
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode assertions")
 def test_prepare_evidence_directory_rejects_prior_entries(tmp_path: Path):
     output = tmp_path / "evidence"
     output.mkdir()

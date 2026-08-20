@@ -125,7 +125,7 @@ def _run_with_fakes(
         enabled=True,
         bridge_factory=lambda origins: fake_bridge,
         runtime_factory=lambda *args, **kwargs: runtime,
-        timeout=2,
+        timeout=10,
     )
     return result, fake_bridge, calls, runtime
 

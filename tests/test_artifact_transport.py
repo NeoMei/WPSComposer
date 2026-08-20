@@ -605,6 +605,10 @@ def test_read_only_validator_is_bounded_by_absolute_deadline(tmp_path):
     assert time.monotonic() - started < 0.15
 
 
+# /dev/fd enumeration is POSIX-only
+@pytest.mark.skipif(
+    os.name != "posix", reason="/dev/fd fd-growth check is POSIX-only"
+)
 def test_repeated_validator_timeouts_leave_no_worker_or_fd_growth(tmp_path):
     before_threads = {
         thread.ident for thread in threading.enumerate() if thread.is_alive()
@@ -689,6 +693,9 @@ def test_deadline_validator_rejects_unpicklable_callable_without_child_leak(
     assert after == before
 
 
+@pytest.mark.skipif(
+    os.name != "posix", reason="/dev/fd fd-growth check is POSIX-only"
+)
 def test_deadline_validator_normalizes_lambda_pickling_error_without_leaks(
     tmp_path, monkeypatch
 ):

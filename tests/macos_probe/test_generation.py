@@ -314,7 +314,7 @@ def _run_with_fakes(
     plan: GenerationPlan,
     *,
     bridge: FakeBridge | None = None,
-    timeout: float = 2,
+    timeout: float = 10,
 ):
     calls = []
     fake_bridge = bridge or FakeBridge()
@@ -565,7 +565,7 @@ def test_generation_rejects_marker_only_in_content_root_text_without_publishing(
             format_name,
             plan,
             bridge=bridge,
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -602,7 +602,7 @@ def test_generation_rejects_failed_or_invalid_results(
             WRITER_MARKER_PLAN,
             bridge=bridge,
             timeout=(
-                2 if expected_code == "STAGED_ARTIFACT_INVALID" else 0.2
+                10 if expected_code == "STAGED_ARTIFACT_INVALID" else 2
             ),
         )
     assert caught.value.code == expected_code

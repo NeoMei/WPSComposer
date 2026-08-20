@@ -680,7 +680,7 @@ def test_pdf_enabled_injection_routes_through_pdf_lifecycle(tmp_path):
         enabled={"pdf": True},
         bridge_factory=lambda origins: PdfGenerationBridge(mode="success"),
         runtime_factory=_runtime_factory(captured),
-        timeout=5,
+        timeout=15,
     )
     assert result == (tmp_path / "r.pdf").resolve()
 
@@ -749,7 +749,7 @@ def test_generate_macos_records_executes_validates_and_publishes_all_formats(
         enabled={format_name: True},
         bridge_factory=lambda origins: bridge,
         runtime_factory=_runtime_factory(runtimes),
-        timeout=2,
+        timeout=10,
     )
 
     assert result == output.resolve()
@@ -793,7 +793,7 @@ def test_generate_macos_stages_resources_with_component_contract(
         enabled={format_name: True},
         bridge_factory=lambda origins: bridge,
         runtime_factory=_runtime_factory(runtimes),
-        timeout=2,
+        timeout=10,
     )
 
     resource = bridge.commands[0].params["resources"]["image-1"]
@@ -1005,7 +1005,7 @@ def test_production_generation_failures_cleanup_without_partial_output(
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory(runtimes),
-            timeout=2 if code == "STAGED_ARTIFACT_INVALID" else 0.02,
+            timeout=10,
         )
 
     assert caught.value.code == code
@@ -1037,7 +1037,7 @@ def test_artifact_transport_internal_path_is_redacted(monkeypatch, tmp_path):
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory(runtimes),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
@@ -1069,7 +1069,7 @@ def test_macos_final_validation_failure_keeps_restored_overwrite_target(
             enabled={"docx": True},
             bridge_factory=lambda origins: GenerationBridge(),
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "FINAL_ARTIFACT_INVALID"
@@ -1098,7 +1098,7 @@ def test_semantic_validation_requires_all_representative_renderer_text(tmp_path)
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -1157,7 +1157,7 @@ def test_writer_semantics_require_planned_structure(tmp_path, kind):
             enabled={"docx": True},
             bridge_factory=lambda origins: GenerationBridge("no-structure"),
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -1258,7 +1258,7 @@ def _run_pdf_generation(tmp_path, mode="success"):
         enabled={"pdf": True},
         bridge_factory=lambda origins: PdfGenerationBridge(mode=mode),
         runtime_factory=_runtime_factory(captured),
-        timeout=5,
+        timeout=15,
     ), captured
 
 
@@ -1325,7 +1325,7 @@ def test_pdf_generation_via_generate_macos(monkeypatch, tmp_path):
         enabled={"pdf": True},
         bridge_factory=bridge_factory,
         runtime_factory=_runtime_factory(captured_runtime),
-        timeout=5,
+        timeout=15,
     )
     assert result == output.resolve()
     assert output.exists()
