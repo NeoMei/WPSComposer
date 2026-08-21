@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 import os
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
@@ -16,6 +16,12 @@ from .document_model import (
     StructuredDocument, Section, Span, Paragraph,
     ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
     HorizontalRule, TaskList, ExcalidrawBlock, MathBlock,
+)
+from .longform.md_parser_longform import (
+    LONGFORM_DIRECTIVE_UNKNOWN,
+    LONGFORM_DUPLICATE_FRONT_BLOCK,
+    LONGFORM_FRONTMATTER_VALUE_IGNORED,
+    parse_longform,
 )
 
 
@@ -364,49 +370,34 @@ def _plain_text(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
-    """Parse Markdown text into a StructuredDocument.
+def _detect_first_h1(lines: List[str]) -> str:
+    """Return the first H1 heading text outside code fences, or empty."""
+    in_fence = False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _HEADING_RE.match(line)
+        if m and m.group(1) == "#":
+            return m.group(2).strip()
+    return ""
 
-    Args:
-        md_text: Raw Markdown string.
-        base_dir: Directory for resolving relative image paths.
 
-    Returns:
-        A StructuredDocument ready for rendering.
+def _parse_block_lines(
+    lines: List[str],
+    base_dir: str,
+    sections: Optional[List[Section]] = None,
+    current_section: Optional[Section] = None,
+) -> Tuple[List[Section], Optional[Section]]:
+    """Parse a list of Markdown lines into sections and elements.
+
+    This is the legacy block parser extracted so it can be reused for
+    literal Markdown regions inside a long-form document.
     """
-    lines = md_text.split("\n")
-    doc = StructuredDocument()
-
-    # --- YAML frontmatter ---
-    if lines and lines[0].strip() == "---":
-        end_idx = 1
-        while end_idx < len(lines) and lines[end_idx].strip() != "---":
-            end_idx += 1
-        if end_idx < len(lines):
-            fm_lines = lines[1:end_idx]
-            # require at least one key: value line, otherwise the --- pair
-            # is just two horizontal rules and the content must be kept
-            if any(re.match(r"^\s*[\w.-]+\s*:\s*\S", l) for l in fm_lines):
-                _parse_frontmatter(fm_lines, doc)
-                lines = lines[end_idx + 1:]
-
-    # Auto-detect title from first H1
-    if not doc.title:
-        in_fence = False
-        for line in lines:
-            if line.strip().startswith("```"):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
-            m = _HEADING_RE.match(line)
-            if m and m.group(1) == "#":
-                doc.title = m.group(2).strip()
-                break
-
-    # --- Block-level parsing ---
-    sections: List[Section] = []
-    current_section: Optional[Section] = None
+    if sections is None:
+        sections = []
     i = 0
 
     while i < len(lines):
@@ -600,12 +591,70 @@ def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
         current_section = _ensure_section(current_section, sections)
         current_section.elements.append(Paragraph(spans=spans))
 
-    # Build document
+
+    return sections, current_section
+
+
+def parse_markdown(md_text: str, base_dir: str = "", longform: bool = False) -> StructuredDocument:
+    """Parse Markdown text into a StructuredDocument.
+
+    Args:
+        md_text: Raw Markdown string.
+        base_dir: Directory for resolving relative image paths.
+        longform: If True, use the long-form semantic parser that recognises
+            block directives, restricted frontmatter, abstract/keywords/etc.
+            If False (default), legacy behaviour is preserved exactly.
+
+    Returns:
+        A StructuredDocument ready for rendering.
+    """
+    if not longform:
+        return _parse_legacy(md_text, base_dir=base_dir)
+    return _parse_longform(md_text, base_dir=base_dir)
+
+
+def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Legacy alias for parse_markdown(..., longform=False)."""
+    return parse_markdown(md_text, base_dir=base_dir, longform=False)
+
+
+def _parse_legacy(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Legacy parser path — unchanged behaviour for existing callers."""
+    lines = md_text.split("\n")
+    doc = StructuredDocument()
+
+    # --- YAML frontmatter ---
+    if lines and lines[0].strip() == "---":
+        end_idx = 1
+        while end_idx < len(lines) and lines[end_idx].strip() != "---":
+            end_idx += 1
+        if end_idx < len(lines):
+            fm_lines = lines[1:end_idx]
+            if any(re.match(r"^\s*[\w.-]+\s*:\s*\S", l) for l in fm_lines):
+                _parse_frontmatter(fm_lines, doc)
+                lines = lines[end_idx + 1:]
+
+    if not doc.title:
+        doc.title = _detect_first_h1(lines)
+
+    sections, _ = _parse_block_lines(lines, base_dir=base_dir)
+
     if not doc.title and sections and sections[0].has_heading:
         doc.title = sections[0].heading
 
     doc.sections = sections
     return doc
+
+
+def _parse_longform(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Long-form parser path with block directives and restricted frontmatter."""
+    return parse_longform(
+        md_text,
+        base_dir,
+        _parse_inline,
+        _parse_block_lines,
+        _detect_first_h1,
+    )
 
 
 def _ensure_section(current: Optional[Section], sections: List[Section]) -> Section:

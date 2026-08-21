@@ -122,6 +122,81 @@ class TaskList:
 
 
 # ---------------------------------------------------------------------------
+# Long-form semantic blocks (M1)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class DocumentIssue:
+    """A deterministic, serializable planned degradation or issue."""
+    code: str
+    message: str
+    placement: str = "block"  # "inline" | "block" | "document"
+
+
+@dataclass
+class AbstractBlock:
+    """Document abstract — one or more paragraphs."""
+    paragraphs: List[Paragraph] = field(default_factory=list)
+
+    @property
+    def plain_text(self) -> str:
+        return " ".join(p.plain_text for p in self.paragraphs if p.plain_text)
+
+
+@dataclass
+class KeywordsBlock:
+    """Document keywords."""
+    keywords: List[str] = field(default_factory=list)
+
+
+@dataclass
+class PageBreakBlock:
+    """Explicit page break directive."""
+    pass
+
+
+@dataclass
+class SemanticTableBlock:
+    """A captioned, referenceable table."""
+    identifier: Optional[str] = None
+    caption: str = ""
+    headers: List[str] = field(default_factory=list)
+    rows: List[List[str]] = field(default_factory=list)
+    alignments: List[str] = field(default_factory=list)
+
+
+@dataclass
+class FigureBlock:
+    """A captioned, referenceable figure containing one or more images."""
+    identifier: Optional[str] = None
+    caption: str = ""
+    images: List[ImageBlock] = field(default_factory=list)
+    layout: str = "stack"  # "stack" | "side-by-side"
+
+
+@dataclass
+class FormulaBlock:
+    """A numbered display formula."""
+    identifier: Optional[str] = None
+    source: str = ""  # raw LaTeX / formula source
+    number: Optional[str] = None
+
+
+@dataclass
+class ReferenceListBlock:
+    """A list of bibliography/reference entries."""
+    entries: List[str] = field(default_factory=list)
+    identifier: Optional[str] = None
+
+
+@dataclass
+class DegradationBlock:
+    """Inline/block placeholder for a deterministic planned degradation."""
+    issue: DocumentIssue = field(default_factory=lambda: DocumentIssue("", ""))
+    fallback_text: str = ""
+
+
+# ---------------------------------------------------------------------------
 # Section — a heading + its content
 # ---------------------------------------------------------------------------
 
@@ -147,6 +222,10 @@ class StructuredDocument:
     title: str = ""
     metadata: Dict[str, str] = field(default_factory=dict)
     sections: List[Section] = field(default_factory=list)
+    longform: bool = False
+    issues: List[DocumentIssue] = field(default_factory=list)
+    abstract: Optional[AbstractBlock] = None
+    keywords: Optional[KeywordsBlock] = None
 
     @property
     def all_tables(self) -> List[TableBlock]:
