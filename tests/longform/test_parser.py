@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import dataclasses
 
 from skills.WPSComposer.scripts.document_model import (
     AbstractBlock,
@@ -315,32 +316,53 @@ Text.
     )
 
 
+
+
 def test_legacy_and_longform_false_produce_identical_document() -> None:
     md = """---
 title: Report
+author: "Neo Mei"
+date: 2026-08-21
 ---
-# Heading
+# Heading 1
 
-Paragraph.
+Paragraph with **bold** and *italic*.
+
+## Heading 2
+
+- Item one
+- Item two
+
+Text with inline math: $x^2 + y^2 = z^2$.
+
+```
+print("hello")
+```
 
 | A | B |
 | --- | --- |
 | 1 | 2 |
+
+> A blockquote line.
+
+![Diagram](diagram.png)
+
+![[wikilink.png|300x200]]
+
+See also [[Page Link]].
 """
     legacy = parse(md)
     longform_false = parse_markdown(md, longform=False)
 
-    assert legacy.title == longform_false.title
-    assert len(legacy.sections) == len(longform_false.sections)
-    for s1, s2 in zip(legacy.sections, longform_false.sections):
-        assert s1.level == s2.level
-        assert s1.heading == s2.heading
-        assert len(s1.elements) == len(s2.elements)
-        for e1, e2 in zip(s1.elements, s2.elements):
-            assert type(e1) == type(e2)
+    assert dataclasses.asdict(legacy) == dataclasses.asdict(longform_false)
 
 
 def test_parse_is_exact_alias_for_longform_false() -> None:
+    md = """# H1
+
+Paragraph **bold**.
+"""
+    assert parse(md).title == parse_markdown(md, longform=False).title
     md = """# H1
 
 Paragraph **bold**.

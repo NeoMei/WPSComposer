@@ -9,7 +9,17 @@ from ..document_model import (
     PageBreakBlock, SemanticTableBlock, FigureBlock, FormulaBlock,
     ReferenceListBlock, DegradationBlock,
 )
-from .frontmatter_parser import parse_frontmatter_document
+from .frontmatter_parser import (
+    parse_frontmatter_document,
+    FRONTMATTER_INVALID,
+    FRONTMATTER_UNCLOSED,
+)
+
+
+_FRONTMATTER_ISSUE_MESSAGES = {
+    FRONTMATTER_INVALID: "Frontmatter block is invalid or contains unsupported syntax.",
+    FRONTMATTER_UNCLOSED: "Frontmatter block is unclosed (missing closing '---').",
+}
 from .directives import (
     scan_block_directives, BlockDirective,
     DIRECTIVE_SYNTAX_INVALID, DIRECTIVE_UNCLOSED, NESTED_DIRECTIVE_UNSUPPORTED,
@@ -98,7 +108,11 @@ def parse_longform(
 
     fm_result = parse_frontmatter_document(md_text)
     for issue in fm_result.issues:
-        doc.issues.append(DocumentIssue(code=issue, message=issue, placement="document"))
+        doc.issues.append(DocumentIssue(
+            code=issue,
+            message=_FRONTMATTER_ISSUE_MESSAGES.get(issue, issue),
+            placement="document",
+        ))
     body = fm_result.body
 
     if "title" in fm_result.values and isinstance(fm_result.values["title"], str):
