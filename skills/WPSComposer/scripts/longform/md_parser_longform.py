@@ -27,7 +27,7 @@ from .directives import (
 
 
 LONGFORM_DIRECTIVE_UNKNOWN = "LONGFORM_DIRECTIVE_UNKNOWN"
-LONGFORM_DUPLICATE_FRONT_BLOCK = "LONGFORM_DUPLICATE_FRONT_BLOCK"
+DUPLICATE_FRONT_MATTER_BLOCK = "DUPLICATE_FRONT_MATTER_BLOCK"
 LONGFORM_FRONTMATTER_VALUE_IGNORED = "LONGFORM_FRONTMATTER_VALUE_IGNORED"
 
 
@@ -230,7 +230,7 @@ def _handle_abstract_directive(
         ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
         ctx.current_section.elements.append(DegradationBlock(
             issue=DocumentIssue(
-                code=LONGFORM_DUPLICATE_FRONT_BLOCK,
+                code=DUPLICATE_FRONT_MATTER_BLOCK,
                 message="Duplicate abstract block; only the first is used.",
                 placement="block",
             ),
@@ -262,7 +262,7 @@ def _handle_keywords_directive(
         ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
         ctx.current_section.elements.append(DegradationBlock(
             issue=DocumentIssue(
-                code=LONGFORM_DUPLICATE_FRONT_BLOCK,
+                code=DUPLICATE_FRONT_MATTER_BLOCK,
                 message="Duplicate keywords block; only the first is used.",
                 placement="block",
             ),

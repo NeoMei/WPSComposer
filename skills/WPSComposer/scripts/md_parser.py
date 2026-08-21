@@ -19,7 +19,7 @@ from .document_model import (
 )
 from .longform.md_parser_longform import (
     LONGFORM_DIRECTIVE_UNKNOWN,
-    LONGFORM_DUPLICATE_FRONT_BLOCK,
+    DUPLICATE_FRONT_MATTER_BLOCK,
     LONGFORM_FRONTMATTER_VALUE_IGNORED,
     parse_longform,
 )

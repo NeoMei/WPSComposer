@@ -145,7 +145,7 @@ b
     degradations = [b for b in blocks if isinstance(b, DegradationBlock)]
     assert len(degradations) >= 2
     codes = {d.issue.code for d in degradations}
-    assert "LONGFORM_DUPLICATE_FRONT_BLOCK" in codes
+    assert "DUPLICATE_FRONT_MATTER_BLOCK" in codes
 
 
 # ---------------------------------------------------------------------------
