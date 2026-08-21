@@ -159,6 +159,7 @@ class PageBreakBlock:
 class SemanticTableBlock:
     """A captioned, referenceable table."""
     identifier: Optional[str] = None
+    node_id: Optional[str] = None
     caption: str = ""
     headers: List[str] = field(default_factory=list)
     rows: List[List[str]] = field(default_factory=list)
@@ -169,6 +170,7 @@ class SemanticTableBlock:
 class FigureBlock:
     """A captioned, referenceable figure containing one or more images."""
     identifier: Optional[str] = None
+    node_id: Optional[str] = None
     caption: str = ""
     images: List[ImageBlock] = field(default_factory=list)
     layout: str = "stack"  # "stack" | "side-by-side"
@@ -178,6 +180,7 @@ class FigureBlock:
 class FormulaBlock:
     """A numbered display formula."""
     identifier: Optional[str] = None
+    node_id: Optional[str] = None
     source: str = ""  # raw LaTeX / formula source
     number: Optional[str] = None
 
@@ -186,6 +189,7 @@ class FormulaBlock:
 class ReferenceListBlock:
     """A list of bibliography/reference entries."""
     entries: List[str] = field(default_factory=list)
+    node_id: Optional[str] = None
     identifier: Optional[str] = None
 
 
@@ -193,6 +197,7 @@ class ReferenceListBlock:
 class DegradationBlock:
     """Inline/block placeholder for a deterministic planned degradation."""
     issue: DocumentIssue = field(default_factory=lambda: DocumentIssue("", ""))
+    node_id: Optional[str] = None
     fallback_text: str = ""
 
 
@@ -206,6 +211,10 @@ class Section:
     level: int                          # 1=H1, 2=H2, ..., 0=implied (no heading)
     heading: str = ""
     elements: List[Any] = field(default_factory=list)
+    node_id: Optional[str] = None
+    numbering: str = "auto"             # "auto" | "none" | scheme name
+    numbering_scheme: Optional[str] = None
+    preface: bool = False
 
     @property
     def has_heading(self) -> bool:
@@ -222,6 +231,7 @@ class StructuredDocument:
     title: str = ""
     metadata: Dict[str, str] = field(default_factory=dict)
     sections: List[Section] = field(default_factory=list)
+    config: Dict[str, Any] = field(default_factory=dict)
     longform: bool = False
     issues: List[DocumentIssue] = field(default_factory=list)
     abstract: Optional[AbstractBlock] = None
