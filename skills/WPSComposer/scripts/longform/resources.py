@@ -68,6 +68,7 @@ class ResourceDegradation:
     code: str
     message: str
     fallback_text: str
+    source_path: str
 
 
 @dataclass(frozen=True)
@@ -199,6 +200,7 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
                     code=error_code,
                     message=f"Resource path rejected: {source_path}",
                     fallback_text=f"[{error_code}] {source_path}",
+                    source_path=normalized_source_path,
                 )
             )
             continue
@@ -214,6 +216,7 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
                     code=RESOURCE_MEDIA_TYPE_UNSUPPORTED,
                     message=f"Unsupported media type for resource: {source_path}",
                     fallback_text=f"[{RESOURCE_MEDIA_TYPE_UNSUPPORTED}] {source_path}",
+                    source_path=normalized_source_path,
                 )
             )
             continue
@@ -226,8 +229,9 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
                 ResourceDegradation(
                     node_id=node_id,
                     code=code,
-                    message=f"Could not read resource {source_path}: {exc}",
+                    message=f"Could not read resource {source_path}: {code}",
                     fallback_text=f"[{code}] {source_path}",
+                    source_path=normalized_source_path,
                 )
             )
             continue

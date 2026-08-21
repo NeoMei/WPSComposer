@@ -56,6 +56,8 @@ class RecordingWriterComposer:
         self._operations = []
         self._resources = []
         self._resource_ids = {}
+        self._protocol_version = 1
+        self._resource_manifest_digest = "sha256:" + "0" * 64
 
     def __enter__(self):
         self._record("writer.reset")
@@ -66,6 +68,33 @@ class RecordingWriterComposer:
 
     def _record(self, op, **args):
         self._operations.append(GenerationOperation(op, args))
+
+    def _record_v2(self, op, *, node_id=None, failure_policy=None, **args):
+        if op in {
+            "writer.configure_front_matter",
+            "writer.configure_section",
+            "writer.configure_toc_styles",
+            "writer.add_captioned_figure",
+            "writer.add_semantic_table",
+            "writer.add_equation",
+            "writer.add_cross_reference",
+            "writer.insert_figure_index",
+            "writer.insert_table_index",
+            "writer.add_bibliography",
+            "writer.add_inline_degradation",
+            "writer.add_degradation_notice",
+            "writer.add_document_quality_notice",
+            "writer.finalize_fields",
+        }:
+            self._protocol_version = 2
+        self._operations.append(
+            GenerationOperation(
+                op,
+                {key: value for key, value in args.items() if value is not None},
+                node_id=node_id,
+                failure_policy=failure_policy,
+            )
+        )
 
     def set_margins(self, top, bottom, left, right):
         self._record(
@@ -331,8 +360,140 @@ class RecordingWriterComposer:
     def update_fields(self):
         self._record("writer.update_fields")
 
+    def configure_front_matter(self, *, title=None, short_title=None, author=None, date=None, header=None, title_page=None):
+        self._record_v2(
+            "writer.configure_front_matter",
+            title=title,
+            shortTitle=short_title,
+            author=author,
+            date=date,
+            header=header,
+            titlePage=title_page,
+        )
+
+    def configure_section(self, *, landscape=None, page_size=None, margins=None):
+        self._record_v2(
+            "writer.configure_section",
+            landscape=landscape,
+            pageSize=page_size,
+            margins=margins,
+        )
+
+    def configure_toc_styles(self, *, tocTitle=None, levels=None, includeFigureIndex=None, includeTableIndex=None, figureIndexTitle=None, tableIndexTitle=None):
+        self._record_v2(
+            "writer.configure_toc_styles",
+            tocTitle=tocTitle,
+            levels=levels,
+            includeFigureIndex=includeFigureIndex,
+            includeTableIndex=includeTableIndex,
+            figureIndexTitle=figureIndexTitle,
+            tableIndexTitle=tableIndexTitle,
+        )
+
+    def add_captioned_figure(self, *, node_id, caption, children, layout="stack", columns=None, failure_policy=None):
+        self._record_v2(
+            "writer.add_captioned_figure",
+            node_id=node_id,
+            caption=caption,
+            children=children,
+            layout=layout,
+            columns=columns,
+            failure_policy=failure_policy,
+        )
+
+    def add_semantic_table(self, *, node_id, caption, headers, rows, alignments=None, style=None, orientation=None, failure_policy=None):
+        self._record_v2(
+            "writer.add_semantic_table",
+            node_id=node_id,
+            caption=caption,
+            headers=headers,
+            rows=rows,
+            alignments=alignments,
+            style=style,
+            orientation=orientation,
+            failure_policy=failure_policy,
+        )
+
+    def add_equation(self, *, node_id, source, number=None, fallback_text=None, failure_policy=None):
+        self._record_v2(
+            "writer.add_equation",
+            node_id=node_id,
+            source=source,
+            number=number,
+            fallbackText=fallback_text,
+            failure_policy=failure_policy,
+        )
+
+    def add_cross_reference(self, *, node_id, target_id, kind, fallback_text, failure_policy=None):
+        self._record_v2(
+            "writer.add_cross_reference",
+            node_id=node_id,
+            targetId=target_id,
+            kind=kind,
+            fallbackText=fallback_text,
+            failure_policy=failure_policy,
+        )
+
+    def insert_figure_index(self, *, title=None):
+        self._record_v2("writer.insert_figure_index", title=title)
+
+    def insert_table_index(self, *, title=None):
+        self._record_v2("writer.insert_table_index", title=title)
+
+    def add_bibliography(self, *, node_id, entries, style="numbered", failure_policy=None):
+        self._record_v2(
+            "writer.add_bibliography",
+            node_id=node_id,
+            entries=entries,
+            style=style,
+            failure_policy=failure_policy,
+        )
+
+    def add_inline_degradation(self, *, node_id, code, message, fallback_text, failure_policy=None):
+        self._record_v2(
+            "writer.add_inline_degradation",
+            node_id=node_id,
+            code=code,
+            message=message,
+            fallbackText=fallback_text,
+            failure_policy=failure_policy,
+        )
+
+    def add_degradation_notice(self, *, node_id, code, message, fallback_text, placement="block", failure_policy=None):
+        self._record_v2(
+            "writer.add_degradation_notice",
+            node_id=node_id,
+            code=code,
+            message=message,
+            fallbackText=fallback_text,
+            placement=placement,
+            failure_policy=failure_policy,
+        )
+
+    def add_document_quality_notice(self, *, notices):
+        self._record_v2(
+            "writer.add_document_quality_notice",
+            notices=notices,
+        )
+
+    def finalize_fields(self, *, max_rounds=3):
+        self._record_v2(
+            "writer.finalize_fields",
+            maxRounds=max_rounds,
+        )
+
     def save_docx(self, path):
-        plan = GenerationPlan("writer", tuple(self._operations))
+        if self._protocol_version == 2:
+            plan = GenerationPlan(
+                "writer",
+                tuple(self._operations),
+                protocol_version=2,
+                semantic_version="longform-1",
+                resource_manifest_version=1,
+                resource_manifest_digest=self._resource_manifest_digest,
+            )
+        else:
+            plan = GenerationPlan("writer", tuple(self._operations))
         validated = validate_generation_plan(plan.to_dict(), "writer")
         return RecordedGeneration(validated, tuple(self._resources))
 

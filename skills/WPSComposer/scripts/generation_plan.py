@@ -73,6 +73,42 @@ ALLOWED_OPERATIONS = MappingProxyType(
     }
 )
 
+PROTOCOL_VERSION_V2 = 2
+SEMANTIC_VERSION_LONGFORM = "longform-1"
+RESOURCE_MANIFEST_VERSION = 1
+
+_V2_ENVELOPE_KEYS = frozenset({
+    "component",
+    "operations",
+    "protocolVersion",
+    "semanticVersion",
+    "resourceManifestVersion",
+    "resourceManifestDigest",
+})
+
+_LONGFORM_WRITER_OPERATIONS = frozenset(
+    {
+        "writer.configure_front_matter",
+        "writer.configure_section",
+        "writer.configure_toc_styles",
+        "writer.add_page_break",
+        "writer.add_captioned_figure",
+        "writer.add_semantic_table",
+        "writer.add_equation",
+        "writer.add_cross_reference",
+        "writer.insert_figure_index",
+        "writer.insert_table_index",
+        "writer.add_bibliography",
+        "writer.add_inline_degradation",
+        "writer.add_degradation_notice",
+        "writer.add_document_quality_notice",
+        "writer.finalize_fields",
+    }
+)
+
+
+
+
 
 class OperationPlanError(ValueError):
     """Raised when a generation operation plan violates the closed protocol."""
@@ -98,27 +134,51 @@ def _thaw(value: Any) -> Any:
 class GenerationOperation:
     op: str
     args: Mapping[str, Any]
+    node_id: Optional[str] = None
+    failure_policy: Optional[Mapping[str, Any]] = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "args", _freeze(dict(self.args)))
+        if self.failure_policy is not None:
+            object.__setattr__(
+                self, "failure_policy", _freeze(dict(self.failure_policy))
+            )
 
     def to_dict(self) -> dict[str, Any]:
-        return {"op": self.op, "args": _thaw(self.args)}
+        result: dict[str, Any] = {"op": self.op, "args": _thaw(self.args)}
+        if self.node_id is not None:
+            result["nodeId"] = self.node_id
+        if self.failure_policy is not None:
+            result["failurePolicy"] = _thaw(self.failure_policy)
+        return result
 
 
 @dataclass(frozen=True)
 class GenerationPlan:
     component: str
     operations: tuple[GenerationOperation, ...]
+    protocol_version: Optional[int] = None
+    semantic_version: Optional[str] = None
+    resource_manifest_version: Optional[int] = None
+    resource_manifest_digest: Optional[str] = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "operations", tuple(self.operations))
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "component": self.component,
             "operations": [operation.to_dict() for operation in self.operations],
         }
+        if self.protocol_version is not None:
+            result["protocolVersion"] = self.protocol_version
+        if self.semantic_version is not None:
+            result["semanticVersion"] = self.semantic_version
+        if self.resource_manifest_version is not None:
+            result["resourceManifestVersion"] = self.resource_manifest_version
+        if self.resource_manifest_digest is not None:
+            result["resourceManifestDigest"] = self.resource_manifest_digest
+        return result
 
 
 @dataclass(frozen=True)
@@ -600,8 +660,158 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
 )
 
 
+
+_FAILURE_POLICY_SCHEMA = _schema(
+    ("mode",),
+    mode=_string,
+    recoverableCodes=_STRING_LIST,
+    fallback=_string,
+)
+
+
+def _failure_policy(value: Any, path: str) -> None:
+    _validate_object(value, path, _FAILURE_POLICY_SCHEMA)
+    if value["mode"] not in ("fail", "degrade"):
+        _invalid(f"{path}.mode", "fail or degrade")
+    if value["mode"] == "degrade":
+        if not value.get("recoverableCodes") or not value.get("fallback"):
+            raise OperationPlanError(
+                f"{path}: degrade requires recoverableCodes and fallback"
+            )
+
+
+_NOTICE_ITEM_SCHEMA = _schema(
+    ("code", "message", "fallbackText", "placement"),
+    code=_string,
+    message=_string,
+    fallbackText=_string,
+    placement=_string,
+)
+
+
+def _notice_item(value: Any, path: str) -> None:
+    _validate_object(value, path, _NOTICE_ITEM_SCHEMA)
+
+
+_PLANNED_DEGRADATION_SCHEMA = _schema(
+    ("code", "message", "fallback", "placement"),
+    code=_string,
+    message=_string,
+    fallback=_string,
+    placement=_string,
+)
+
+_FIGURE_CHILD_SCHEMA = _schema(
+    ("nodeId",),
+    nodeId=_string,
+    resourceId=_nullable_string,
+    plannedDegradation=_PLANNED_DEGRADATION_SCHEMA,
+)
+
+
+def _figure_child(value: Any, path: str) -> None:
+    _validate_object(value, path, _FIGURE_CHILD_SCHEMA)
+
+_LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
+    "writer.configure_front_matter": _schema(
+        (),
+        title=_nullable_string,
+        shortTitle=_nullable_string,
+        author=_nullable_string,
+        date=_nullable_string,
+        header=_nullable_string,
+        titlePage=_boolean,
+    ),
+    "writer.configure_section": _schema(
+        (),
+        landscape=_boolean,
+        pageSize=_string,
+        margins=_schema(
+            ("top", "bottom", "left", "right"),
+            top=_number,
+            bottom=_number,
+            left=_number,
+            right=_number,
+        ),
+    ),
+    "writer.configure_toc_styles": _schema(
+        (),
+        tocTitle=_nullable_string,
+        levels=_integer,
+        includeFigureIndex=_boolean,
+        includeTableIndex=_boolean,
+        figureIndexTitle=_nullable_string,
+        tableIndexTitle=_nullable_string,
+    ),
+    "writer.add_captioned_figure": _schema(
+        ("caption", "children", "layout"),
+        caption=_string,
+        children=_list_of(_figure_child),
+        layout=_string,
+        columns=_integer,
+    ),
+    "writer.add_semantic_table": _schema(
+        ("caption", "headers", "rows"),
+        caption=_string,
+        headers=_STRING_LIST,
+        rows=_list_of(_STRING_LIST),
+        alignments=_STRING_LIST,
+        style=_string,
+        orientation=_string,
+    ),
+    "writer.add_equation": _schema(
+        ("source",),
+        source=_string,
+        number=_nullable_string,
+        fallbackText=_string,
+    ),
+    "writer.add_cross_reference": _schema(
+        ("targetId", "kind", "fallbackText"),
+        targetId=_string,
+        kind=_string,
+        fallbackText=_string,
+    ),
+    "writer.insert_figure_index": _schema(
+        (),
+        title=_nullable_string,
+    ),
+    "writer.insert_table_index": _schema(
+        (),
+        title=_nullable_string,
+    ),
+    "writer.add_bibliography": _schema(
+        ("entries",),
+        entries=_STRING_LIST,
+        style=_string,
+    ),
+    "writer.add_inline_degradation": _schema(
+        ("code", "message", "fallbackText"),
+        code=_string,
+        message=_string,
+        fallbackText=_string,
+    ),
+    "writer.add_degradation_notice": _schema(
+        ("code", "message", "fallbackText", "placement"),
+        code=_string,
+        message=_string,
+        fallbackText=_string,
+        placement=_string,
+    ),
+    "writer.add_document_quality_notice": _schema(
+        ("notices",),
+        notices=_list_of(_notice_item),
+    ),
+    "writer.finalize_fields": _schema(
+        (),
+        maxRounds=_integer,
+    ),
+}
+
+
 def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
-    schema = _OPERATION_ARG_SCHEMAS[op]
+    schema = _OPERATION_ARG_SCHEMAS.get(op) or _LONGFORM_OPERATION_ARG_SCHEMAS.get(op)
+    if schema is None:
+        raise OperationPlanError(f"unknown operation schema: {op}")
     _validate_object(args, f"{op}.args", schema)
     _validate_table_shape(op, args)
 
@@ -709,16 +919,44 @@ def validate_generation_plan(
 
     if not isinstance(raw, Mapping):
         raise OperationPlanError("generation plan must be an object")
-    if set(raw) != {"component", "operations"}:
-        raise OperationPlanError(
-            "generation plan must contain exactly component and operations"
-        )
     if component not in ALLOWED_OPERATIONS:
         raise OperationPlanError(f"unsupported component: {component}")
     if raw.get("component") != component:
         raise OperationPlanError(
             f"component mismatch: expected {component}, got {raw.get('component')}"
         )
+
+    protocol_version = raw.get("protocolVersion")
+    is_v2 = protocol_version == PROTOCOL_VERSION_V2
+
+    if is_v2:
+        if set(raw) != _V2_ENVELOPE_KEYS:
+            missing = _V2_ENVELOPE_KEYS - set(raw)
+            extra = set(raw) - _V2_ENVELOPE_KEYS
+            details = []
+            if missing:
+                details.append(f"missing: {', '.join(sorted(missing))}")
+            if extra:
+                details.append(f"extra: {', '.join(sorted(extra))}")
+            raise OperationPlanError(
+                "generation plan must match protocol v2 envelope: " + "; ".join(details)
+            )
+        if raw.get("semanticVersion") != SEMANTIC_VERSION_LONGFORM:
+            raise OperationPlanError(
+                f"semanticVersion must be {SEMANTIC_VERSION_LONGFORM!r}"
+            )
+        if raw.get("resourceManifestVersion") != RESOURCE_MANIFEST_VERSION:
+            raise OperationPlanError(
+                f"resourceManifestVersion must be {RESOURCE_MANIFEST_VERSION}"
+            )
+        if not isinstance(raw.get("resourceManifestDigest"), str):
+            raise OperationPlanError("resourceManifestDigest must be a string")
+    else:
+        if set(raw) != {"component", "operations"}:
+            raise OperationPlanError(
+                "generation plan must contain exactly component and operations"
+            )
+
     operations = raw.get("operations")
     if not isinstance(operations, list):
         raise OperationPlanError("operations must be a list")
@@ -735,24 +973,83 @@ def validate_generation_plan(
     normalized = json.loads(serialized.decode("utf-8"))
 
     parsed = []
-    allowed = ALLOWED_OPERATIONS[component]
+    allowed_v1 = ALLOWED_OPERATIONS[component]
+    allowed_v2 = _LONGFORM_WRITER_OPERATIONS if component == "writer" else frozenset()
     for operation in normalized["operations"]:
         if not isinstance(operation, dict):
             raise OperationPlanError("operation must be an object")
-        if set(operation) != {"op", "args"}:
-            raise OperationPlanError("operation must contain exactly op and args")
-        op = operation.get("op")
-        if not isinstance(op, str):
+        op_name = operation.get("op")
+        if not isinstance(op_name, str):
             raise OperationPlanError("operation op must be a string")
-        if op not in allowed:
-            raise OperationPlanError(f"unsupported operation: {op}")
+        if is_v2:
+            allowed = allowed_v1 | allowed_v2
+        else:
+            allowed = allowed_v1
+            if set(operation) != {"op", "args"}:
+                raise OperationPlanError(
+                    "operation must contain exactly op and args"
+                )
+        required_keys = {"op", "args"}
+        unknown = set(operation) - required_keys - {"nodeId", "failurePolicy"}
+        if unknown:
+            raise OperationPlanError(
+                f"operation contains unknown keys: {', '.join(sorted(unknown))}"
+            )
+        if not required_keys <= set(operation):
+            raise OperationPlanError("operation must contain op and args")
+        if op_name not in allowed:
+            raise OperationPlanError(f"unsupported operation: {op_name}")
+
+        node_id = operation.get("nodeId")
+        if node_id is not None and not isinstance(node_id, str):
+            raise OperationPlanError("operation nodeId must be a string")
+        if (
+            is_v2
+            and op_name in _LONGFORM_OPERATION_ARG_SCHEMAS
+            and not node_id
+            and op_name
+            not in {
+                "writer.finalize_fields",
+                "writer.insert_figure_index",
+                "writer.insert_table_index",
+                "writer.add_document_quality_notice",
+                "writer.configure_front_matter",
+                "writer.configure_section",
+                "writer.configure_toc_styles",
+            }
+        ):
+            raise OperationPlanError(f"{op_name} requires a nodeId")
+
+        failure_policy = operation.get("failurePolicy")
+        if failure_policy is not None:
+            _failure_policy(failure_policy, f"{op_name}.failurePolicy")
+        if not is_v2 and failure_policy is not None:
+            raise OperationPlanError("failurePolicy is only allowed in protocol v2")
+
         args = operation.get("args")
         if not isinstance(args, dict):
             raise OperationPlanError("operation args must be an object")
-        if op.endswith(".add_table") or op == "sheet.write_table":
+        if op_name.endswith(".add_table") or op_name == "sheet.write_table":
             if _table_cell_count(args) > MAX_TABLE_CELLS:
                 raise OperationPlanError("table exceeds 10,000 cells")
-        _validate_image_args(op, args)
-        _validate_operation_args(op, args)
-        parsed.append(GenerationOperation(op, dict(args)))
+        _validate_image_args(op_name, args)
+        _validate_operation_args(op_name, args)
+        parsed.append(
+            GenerationOperation(
+                op_name,
+                dict(args),
+                node_id=node_id,
+                failure_policy=failure_policy,
+            )
+        )
+
+    if is_v2:
+        return GenerationPlan(
+            component,
+            tuple(parsed),
+            protocol_version=normalized["protocolVersion"],
+            semantic_version=normalized["semanticVersion"],
+            resource_manifest_version=normalized["resourceManifestVersion"],
+            resource_manifest_digest=normalized["resourceManifestDigest"],
+        )
     return GenerationPlan(component, tuple(parsed))
