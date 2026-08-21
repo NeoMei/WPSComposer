@@ -114,3 +114,52 @@ def test_shorten_display_units_preserves_grapheme_boundaries() -> None:
     assert shortened == "abc\u2026"
     assert display_units(shortened) == 5
 
+
+
+
+# Regression tests for unicode_text.py fixes
+
+
+def test_hangul_syllable_plus_final_jamo_is_one_cluster() -> None:
+    # 가 (U+AC00, LV syllable) + ㄱ (U+11A8, T jamo) must stay as one grapheme cluster.
+    cluster = "각"
+    assert display_units(cluster) == 2
+
+
+def test_hangul_lvt_syllable_keeps_final_jamo() -> None:
+    # 각 (U+AC01, LVT syllable) is internally treated as LVT, so adding another T is illegal
+    # but the boundary after 각 is still a Hangul boundary.  Just verify it counts as one cluster.
+    assert display_units("각") == 2
+
+
+def test_thai_prepend_stays_with_following_consonant() -> None:
+    # เ (U+0E40, Prepend) + ก (U+0E01, Thai consonant) is one visual cluster.
+    assert display_units("เก") == 1
+
+
+def test_mc_spacing_mark_attaches_to_previous_base() -> None:
+    # क (U+0915, Devanagari consonant) + ◌़ (U+093C, SpacingMark) is one cluster.
+    assert display_units("क़") == 1
+
+
+def test_zwnj_attaches_to_previous_base_as_extend() -> None:
+    # ZWNJ (U+200C) is Extend, so it joins the preceding base but does not bridge to the next base.
+    assert display_units("a‌") == 1
+    assert display_units("a‌b") == 2
+
+
+def test_eaw_table_is_self_contained_no_runtime_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    # If _east_asian_width fell back to unicodedata.east_asian_width, this patch would break it.
+    def broken_eaw(_codepoint: str) -> str:
+        raise AssertionError("must not call runtime EAW")
+
+    monkeypatch.setattr(unicodedata, "east_asian_width", broken_eaw)
+    from skills.WPSComposer.scripts.longform import unicode_text as fresh
+
+    assert fresh.display_units("中文") == 4
+    assert fresh.display_units("Hello") == 5
+    assert fresh._east_asian_width(0x4E00) == "W"
+    assert fresh._east_asian_width(0x30000) == "W"
+    assert fresh._east_asian_width(0xFF01) == "F"
+    assert fresh._east_asian_width(0x2026) == "A"
+    assert fresh._east_asian_width(0x0041) == "N"
