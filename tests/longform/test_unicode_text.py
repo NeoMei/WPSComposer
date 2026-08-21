@@ -132,14 +132,20 @@ def test_hangul_lvt_syllable_keeps_final_jamo() -> None:
     assert display_units("각") == 2
 
 
+def test_hangul_lvt_plus_final_jamo_is_one_cluster() -> None:
+    # U+AC01 (각, Hangul_LVT) + U+11A8 (jongseong kiyeok, Hangul_T) must not break.
+    # Per UAX #29 GB8: Hangul_LVT x Hangul_T, so this stays a single grapheme cluster.
+    assert display_units("각ᆨ") == 2
+
+
 def test_thai_prepend_stays_with_following_consonant() -> None:
     # เ (U+0E40, Prepend) + ก (U+0E01, Thai consonant) is one visual cluster.
     assert display_units("เก") == 1
 
 
 def test_mc_spacing_mark_attaches_to_previous_base() -> None:
-    # क (U+0915, Devanagari consonant) + ◌़ (U+093C, SpacingMark) is one cluster.
-    assert display_units("क़") == 1
+    # क (U+0915, Devanagari consonant) + ा (U+093E, SpacingMark) is one cluster.
+    assert display_units("का") == 1
 
 
 def test_zwnj_attaches_to_previous_base_as_extend() -> None:
