@@ -301,6 +301,21 @@ def test_invalid_boolean_config_falls_back_and_emits_config_value_invalid() -> N
     assert any(i.code == CONFIG_VALUE_INVALID for i in result.issues)
 
 
+
+
+def test_missing_title_page_and_toc_use_auto_without_config_value_invalid() -> None:
+    md = """---
+title: Report
+---
+# Intro
+
+Body text.
+"""
+    result = normalize_longform_document(_doc_from_markdown(md))
+    assert result.config.title_page is False
+    assert result.config.toc is False
+    assert not any(i.code == CONFIG_VALUE_INVALID for i in result.issues)
+
 def test_invalid_heading_numbering_enum_falls_back_to_auto() -> None:
     doc = _doc_from_markdown("---\nheading_numbering: fancy\n---\n# Intro\n")
     result = normalize_longform_document(doc)
@@ -355,12 +370,13 @@ def test_duplicate_explicit_id_loses_reference_capability() -> None:
 """
     result = normalize_longform_document(_doc_from_markdown(md))
     refs = result.references["fig:dup"]
-    # Only the first figure is the reference target.
     blocks = [
         e for s in result.document.sections for e in s.elements if isinstance(e, FigureBlock)
     ]
-    target_ids = [refs["node_id"]]
-    assert blocks[0].node_id in target_ids
+    # Only the first figure is the reference target; the duplicate loses capability.
+    assert blocks[0].node_id == refs["node_id"]
+    assert blocks[1].node_id != refs["node_id"]
+    assert blocks[1].node_id.startswith("__wpsc_fig")
 
 
 def test_unresolved_ref_emits_issue() -> None:
@@ -399,9 +415,10 @@ Claim {{cite:chen2025}}.
 
 def test_to_json_is_byte_stable_across_two_calls() -> None:
     doc = _doc_from_markdown("# Title\n\nParagraph.\n")
-    result = normalize_longform_document(doc)
-    snapshot1 = json.dumps(result.to_json(), ensure_ascii=False, separators=(",", ":"))
-    snapshot2 = json.dumps(result.to_json(), ensure_ascii=False, separators=(",", ":"))
+    result1 = normalize_longform_document(doc)
+    result2 = normalize_longform_document(doc)
+    snapshot1 = json.dumps(result1.to_json(), ensure_ascii=False, separators=(",", ":"))
+    snapshot2 = json.dumps(result2.to_json(), ensure_ascii=False, separators=(",", ":"))
     assert snapshot1 == snapshot2
     assert isinstance(snapshot1.encode("utf-8"), bytes)
 

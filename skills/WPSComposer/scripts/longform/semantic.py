@@ -527,7 +527,7 @@ def _build_config(
 
     # title_page
     raw_title_page = doc.metadata.get("title_page", "")
-    if _is_auto(raw_title_page):
+    if _is_auto(raw_title_page) or not str(raw_title_page).strip():
         config.title_page = bool(config.title and (config.author or config.date))
     else:
         parsed = _parse_bool(raw_title_page)
@@ -550,7 +550,7 @@ def _build_config(
 
     # toc
     raw_toc = doc.metadata.get("toc", "")
-    if _is_auto(raw_toc):
+    if _is_auto(raw_toc) or not str(raw_toc).strip():
         heading_count = sum(
             1
             for s in doc.sections
