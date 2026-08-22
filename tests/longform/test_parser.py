@@ -315,6 +315,43 @@ E = mc^2
     assert formula.source == "E = mc^2"
 
 
+@pytest.mark.parametrize("directive_name", ["formula", "equation"])
+def test_formula_directive_aliases_preserve_fallback_declaration_and_raw_source(
+    directive_name: str,
+) -> None:
+    md = (
+        f':::{directive_name} {{#eq:energy fallback_image="assets\\/formula.png"}}\n'
+        + "  E = mc^2  \n"
+        + ":::\n"
+    )
+    doc = parse_markdown(md, longform=True)
+
+    formula = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, FormulaBlock)
+    )
+    assert formula.identifier == "eq:energy"
+    assert formula.fallback_image == "assets/formula.png"
+    assert formula.source == "  E = mc^2  "
+    assert formula.raw_source == "  E = mc^2  \n"
+
+
+def test_empty_formula_fallback_image_is_preserved_without_becoming_a_resource() -> None:
+    doc = parse_markdown(
+        ':::equation {#eq:empty fallback_image=""}\nx + y\n:::\n',
+        longform=True,
+    )
+    formula = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, FormulaBlock)
+    )
+    assert formula.fallback_image == ""
+
+
 def test_references_directive_collects_entries() -> None:
     md = """# Back matter
 
@@ -328,6 +365,22 @@ def test_references_directive_collects_entries() -> None:
     blocks = [e for s in doc.sections for e in s.elements]
     refs = next(b for b in blocks if isinstance(b, ReferenceListBlock))
     assert refs.entries == ["[1] Author, Title.", "[2] Another, Book."]
+
+
+@pytest.mark.parametrize("directive_name", ["references", "bibliography"])
+def test_bibliography_directive_aliases_preserve_raw_source(
+    directive_name: str,
+) -> None:
+    md = f":::{directive_name}\n[id] Entry text.  \nmalformed raw line\n:::\n"
+    doc = parse_markdown(md, longform=True)
+    refs = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, ReferenceListBlock)
+    )
+    assert refs.entries == ["[id] Entry text.", "malformed raw line"]
+    assert refs.raw_source == "[id] Entry text.  \nmalformed raw line\n"
 
 
 # ---------------------------------------------------------------------------

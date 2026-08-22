@@ -197,6 +197,57 @@ def test_document_starting_with_landscape_is_not_reordered() -> None:
     assert skeleton.sections[1].link_to_previous_footer is True
 
 
+def test_bibliography_is_last_and_continues_arabic_numbering() -> None:
+    from skills.WPSComposer.scripts.md_parser import parse_markdown
+    from skills.WPSComposer.scripts.longform.semantic import normalize_longform_document
+
+    markdown = """# First
+
+Body.
+
+# Wide
+
+:::table {#tab:wide caption="Wide" orientation="landscape"}
+| A |
+|---|
+| 1 |
+:::
+
+# Last
+
+More body.
+
+:::bibliography
+[a] Entry A.
+:::
+"""
+    result = normalize_longform_document(parse_markdown(markdown, longform=True))
+    policy = _policy_from_config(result.config)
+    skeleton = build_page_policy(result.document, result.config, policy)
+
+    assert _role_names(skeleton) == ["body", "landscape", "body", "bibliography"]
+    bibliography = skeleton.sections[-1]
+    assert bibliography.page_number_format == "continue"
+    assert bibliography.start_page_number is None
+    assert bibliography.restart_numbering is False
+    assert bibliography.has_header is True
+    assert bibliography.has_footer is True
+    assert bibliography.link_to_previous_header is True
+    assert bibliography.link_to_previous_footer is True
+
+
+def test_empty_bibliography_does_not_create_a_page_section() -> None:
+    from skills.WPSComposer.scripts.md_parser import parse_markdown
+    from skills.WPSComposer.scripts.longform.semantic import normalize_longform_document
+
+    result = normalize_longform_document(
+        parse_markdown("Body.\n\n:::bibliography\n:::\n", longform=True)
+    )
+    policy = _policy_from_config(result.config)
+    skeleton = build_page_policy(result.document, result.config, policy)
+    assert "bibliography" not in _role_names(skeleton)
+
+
 # ---------------------------------------------------------------------------
 # Header shortening
 # ---------------------------------------------------------------------------

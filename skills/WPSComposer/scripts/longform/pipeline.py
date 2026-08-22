@@ -25,6 +25,7 @@ from .resources import (
     PreflightResource,
     ResourcePreflight,
     preflight_resources,
+    validate_formula_resource_bindings,
 )
 from .semantic import SemanticResult, normalize_longform_document
 
@@ -108,6 +109,7 @@ def _build_executor_resources(
     preflight: ResourcePreflight,
 ) -> tuple[PreparedLongformResource, ...]:
     """Bind accepted normalized payloads to the private executor contract."""
+    validate_formula_resource_bindings(preflight)
     resources: list[PreparedLongformResource] = []
     for resource in preflight.resources:
         resources.append(
@@ -157,7 +159,7 @@ def execute_longform_plan(
         resources = ()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class LongformBuild:
     """Result of building a long-form generation plan offline."""
 
@@ -167,6 +169,14 @@ class LongformBuild:
     plan: GenerationPlan
     issues: Tuple[DocumentIssue, ...]
     base_dir: str = ""
+
+    def __repr__(self) -> str:
+        return (
+            "LongformBuild("
+            f"section_count={len(self.semantic.document.sections)}, "
+            f"resource_count={len(self.preflight.resources)}, "
+            f"issue_count={len(self.issues)}, protocol_version={self.plan.protocol_version})"
+        )
 
     def resource_source_map(self) -> dict[str, str]:
         """Private staging transport map: resource id -> source path.

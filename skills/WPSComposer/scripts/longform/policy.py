@@ -124,6 +124,7 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
         "front_matter": {"format": "roman", "start_page_number": 1, "restart": True},
         "body": {"format": "arabic", "start_page_number": 1, "restart": True},
         "landscape": {"format": "continue", "start_page_number": None, "restart": False},
+        "bibliography": {"format": "continue", "start_page_number": None, "restart": False},
     }
     return LongformPolicy(
         title=config.title,
@@ -156,7 +157,7 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
         toc_title="目录",
         figure_index_title="图目录",
         table_index_title="表目录",
-        page_roles=("cover", "front_matter", "body", "landscape"),
+        page_roles=("cover", "front_matter", "body", "landscape", "bibliography"),
         section_numbering_rules=section_numbering_rules,
         header_text=header_text,
         header_overflow_text=header_overflow_text,

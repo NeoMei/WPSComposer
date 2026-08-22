@@ -22,6 +22,7 @@ from ..document_model import (
     DegradationBlock,
     ExcalidrawBlock,
     FigureBlock,
+    FormulaBlock,
     ImageBlock,
     Section,
 )
@@ -36,6 +37,8 @@ RESOURCE_TOO_LARGE = "RESOURCE_TOO_LARGE"
 RESOURCE_PIXEL_LIMIT_EXCEEDED = "RESOURCE_PIXEL_LIMIT_EXCEEDED"
 RESOURCE_SIDE_LIMIT_EXCEEDED = "RESOURCE_SIDE_LIMIT_EXCEEDED"
 MULTIFRAME_FLATTENED = "MULTIFRAME_FLATTENED"
+FORMULA_FALLBACK_IMAGE_UNAVAILABLE = "FORMULA_FALLBACK_IMAGE_UNAVAILABLE"
+FORMULA_RESOURCE_BINDING_INVALID = "FORMULA_RESOURCE_BINDING_INVALID"
 
 MAX_RESOURCE_BYTES = 50 * 1024 * 1024
 MAX_IMAGE_PIXELS = 80_000_000
@@ -139,8 +142,8 @@ class PreflightResource:
 
     resource_id: str
     source_path: str = field(repr=False, compare=False)
-    source_sha256: str
-    payload_sha256: str
+    source_sha256: str = field(repr=False)
+    payload_sha256: str = field(repr=False)
     byte_length: int
     media_type: str
     normalizer_id: str
@@ -156,8 +159,8 @@ class PreparedLongformResource:
 
     id: str
     media_type: str
-    source_sha256: str
-    payload_sha256: str
+    source_sha256: str = field(repr=False)
+    payload_sha256: str = field(repr=False)
     normalizer_id: str
     payload_bytes: bytes = field(repr=False, compare=False)
     image_profile: ImageProfile
@@ -174,13 +177,27 @@ class ResourceDegradation:
     source_path: str = field(repr=False, compare=False)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class ResourcePreflight:
     """Result of resource preflight."""
 
     resources: list[PreflightResource] = field(default_factory=list)
     degradations: list[ResourceDegradation] = field(default_factory=list)
     manifest: dict[str, Any] = field(default_factory=dict)
+    formula_bindings: dict[str, str] = field(
+        default_factory=dict, repr=False
+    )
+    formula_resource_ids: frozenset[str] = field(
+        default_factory=frozenset, repr=False
+    )
+
+    def __repr__(self) -> str:
+        return (
+            "ResourcePreflight("
+            f"resource_count={len(self.resources)}, "
+            f"degradation_count={len(self.degradations)}, "
+            f"manifest_version={self.manifest.get('version', '1')!r})"
+        )
 
 
 def _sha256(data: bytes) -> str:
@@ -229,9 +246,16 @@ def _resolve_resource_path(source_path: str, base_dir: str) -> tuple[Optional[Pa
     return resolved, None
 
 
-def _scan_nodes(nodes: list[Any]) -> list[tuple[str, Optional[str]]]:
-    """Collect (path, node_id) pairs from arbitrary document nodes."""
-    results: list[tuple[str, Optional[str]]] = []
+@dataclass(frozen=True)
+class _ResourceUse:
+    path: str
+    node_id: Optional[str]
+    formula_fallback: bool = False
+
+
+def _scan_nodes(nodes: list[Any]) -> list[_ResourceUse]:
+    """Collect declared resource uses from arbitrary document nodes."""
+    results: list[_ResourceUse] = []
     stack = list(nodes)
     while stack:
         node = stack.pop()
@@ -239,12 +263,23 @@ def _scan_nodes(nodes: list[Any]) -> list[tuple[str, Optional[str]]]:
             stack.extend(reversed(node.elements))
         elif isinstance(node, FigureBlock):
             stack.extend(reversed(node.images))
+        elif isinstance(node, FormulaBlock):
+            if node.fallback_image:
+                results.append(_ResourceUse(
+                    node.fallback_image,
+                    node.node_id,
+                    formula_fallback=True,
+                ))
         elif isinstance(node, ImageBlock):
             if node.path:
-                results.append((node.path, getattr(node, "node_id", None)))
+                results.append(_ResourceUse(
+                    node.path, getattr(node, "node_id", None)
+                ))
         elif isinstance(node, ExcalidrawBlock):
             if node.path:
-                results.append((node.path, getattr(node, "node_id", None)))
+                results.append(_ResourceUse(
+                    node.path, getattr(node, "node_id", None)
+                ))
     return results
 
 
@@ -638,6 +673,41 @@ def _degradation(
     )
 
 
+def _formula_degradation(
+    node_id: Optional[str], source_path: str
+) -> ResourceDegradation:
+    return ResourceDegradation(
+        node_id=node_id,
+        code=FORMULA_FALLBACK_IMAGE_UNAVAILABLE,
+        message=(
+            "Formula fallback image is unavailable; editable native math "
+            "will still be attempted."
+        ),
+        fallback_text=(
+            "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]"
+        ),
+        source_path=source_path,
+    )
+
+
+def validate_formula_resource_bindings(preflight: ResourcePreflight) -> None:
+    """Reject orphaned or multiply-bound private formula resources."""
+    accepted_ids = {resource.resource_id for resource in preflight.resources}
+    formula_ids = set(preflight.formula_resource_ids)
+    bound_ids = list(preflight.formula_bindings.values())
+    valid_node_ids = all(
+        isinstance(node_id, str) and bool(node_id)
+        for node_id in preflight.formula_bindings
+    )
+    if (
+        not valid_node_ids
+        or len(bound_ids) != len(set(bound_ids))
+        or set(bound_ids) != formula_ids
+        or not formula_ids.issubset(accepted_ids)
+    ):
+        raise ValueError(FORMULA_RESOURCE_BINDING_INVALID)
+
+
 def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
     """Preflight file resources referenced by document nodes.
 
@@ -646,22 +716,68 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
     """
     resources: list[PreflightResource] = []
     degradations: list[ResourceDegradation] = []
+    formula_bindings: dict[str, str] = {}
+    formula_resource_ids: set[str] = set()
     seen_paths: set[str] = set()
+    accepted_by_path: dict[str, PreflightResource] = {}
+    rejected_paths: set[str] = set()
 
     base = Path(base_dir).resolve()
+    uses = _scan_nodes(nodes)
+    formula_groups: dict[str, list[_ResourceUse]] = {}
+    for use in uses:
+        if use.formula_fallback:
+            normalized = use.path.replace(os.sep, "/")
+            resolved, error_code = _resolve_resource_path(use.path, str(base))
+            group_key = (
+                f"resolved:{resolved}"
+                if resolved is not None and error_code is None
+                else f"declaration:{normalized}"
+            )
+            formula_groups.setdefault(group_key, []).append(use)
+    duplicate_formula_uses = {
+        (use.node_id, use.path.replace(os.sep, "/"))
+        for group in formula_groups.values()
+        if len(group) > 1
+        for use in group
+    }
 
-    for source_path, node_id in _scan_nodes(nodes):
+    for use in uses:
+        source_path = use.path
+        node_id = use.node_id
         if not source_path:
             continue
 
         normalized_source_path = source_path.replace(os.sep, "/")
+        if use.formula_fallback and (
+            (node_id, normalized_source_path) in duplicate_formula_uses
+            or not node_id
+        ):
+            degradations.append(
+                _formula_degradation(node_id, normalized_source_path)
+            )
+            continue
         if normalized_source_path in seen_paths:
+            if use.formula_fallback:
+                accepted = accepted_by_path.get(normalized_source_path)
+                if accepted is not None:
+                    formula_bindings[node_id] = accepted.resource_id
+                    formula_resource_ids.add(accepted.resource_id)
+                elif normalized_source_path in rejected_paths:
+                    degradations.append(
+                        _formula_degradation(node_id, normalized_source_path)
+                    )
             continue
         seen_paths.add(normalized_source_path)
 
         resolved, error_code = _resolve_resource_path(source_path, str(base))
         if error_code:
-            degradations.append(_degradation(node_id, error_code, normalized_source_path))
+            rejected_paths.add(normalized_source_path)
+            degradations.append(
+                _formula_degradation(node_id, normalized_source_path)
+                if use.formula_fallback
+                else _degradation(node_id, error_code, normalized_source_path)
+            )
             continue
 
         if resolved is None:
@@ -672,31 +788,44 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
                 data = source.read(MAX_RESOURCE_BYTES + 1)
         except OSError as exc:
             code = RESOURCE_READ_FAILED if exc.errno in {13} else RESOURCE_NOT_FOUND
-            degradations.append(_degradation(node_id, code, normalized_source_path))
+            rejected_paths.add(normalized_source_path)
+            degradations.append(
+                _formula_degradation(node_id, normalized_source_path)
+                if use.formula_fallback
+                else _degradation(node_id, code, normalized_source_path)
+            )
             continue
 
         if len(data) > MAX_RESOURCE_BYTES:
+            rejected_paths.add(normalized_source_path)
             degradations.append(
-                _degradation(node_id, RESOURCE_TOO_LARGE, normalized_source_path)
+                _formula_degradation(node_id, normalized_source_path)
+                if use.formula_fallback
+                else _degradation(node_id, RESOURCE_TOO_LARGE, normalized_source_path)
             )
             continue
 
         try:
             media_type, normalizer_id, payload, profile, multiframe = _prepare_payload(data)
         except _ResourceRejected as rejected:
+            rejected_paths.add(normalized_source_path)
             degradations.append(
-                _degradation(node_id, rejected.code, normalized_source_path)
+                _formula_degradation(node_id, normalized_source_path)
+                if use.formula_fallback
+                else _degradation(node_id, rejected.code, normalized_source_path)
             )
             continue
         if len(payload) > MAX_RESOURCE_BYTES:
+            rejected_paths.add(normalized_source_path)
             degradations.append(
-                _degradation(node_id, RESOURCE_TOO_LARGE, normalized_source_path)
+                _formula_degradation(node_id, normalized_source_path)
+                if use.formula_fallback
+                else _degradation(node_id, RESOURCE_TOO_LARGE, normalized_source_path)
             )
             continue
 
         source_digest = _sha256(data)
-        resources.append(
-            PreflightResource(
+        accepted = PreflightResource(
                 resource_id=_resource_id_for_path(normalized_source_path),
                 source_path=normalized_source_path,
                 source_sha256=source_digest,
@@ -707,18 +836,26 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
                 image_profile=profile,
                 payload_bytes=payload,
             )
-        )
+        resources.append(accepted)
+        accepted_by_path[normalized_source_path] = accepted
+        if use.formula_fallback:
+            formula_bindings[node_id] = accepted.resource_id
+            formula_resource_ids.add(accepted.resource_id)
         if multiframe:
             degradations.append(
                 _degradation(node_id, MULTIFRAME_FLATTENED, normalized_source_path)
             )
 
     manifest = _build_manifest(resources)
-    return ResourcePreflight(
+    result = ResourcePreflight(
         resources=resources,
         degradations=degradations,
         manifest=manifest,
+        formula_bindings=formula_bindings,
+        formula_resource_ids=frozenset(formula_resource_ids),
     )
+    validate_formula_resource_bindings(result)
+    return result
 
 
 __all__ = [
@@ -732,6 +869,8 @@ __all__ = [
     "RESOURCE_PIXEL_LIMIT_EXCEEDED",
     "RESOURCE_SIDE_LIMIT_EXCEEDED",
     "MULTIFRAME_FLATTENED",
+    "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+    "FORMULA_RESOURCE_BINDING_INVALID",
     "MAX_RESOURCE_BYTES",
     "MAX_IMAGE_PIXELS",
     "MAX_IMAGE_SIDE",
@@ -741,4 +880,5 @@ __all__ = [
     "ResourceDegradation",
     "ResourcePreflight",
     "preflight_resources",
+    "validate_formula_resource_bindings",
 ]

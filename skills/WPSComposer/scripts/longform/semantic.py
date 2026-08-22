@@ -16,7 +16,9 @@ from typing import Any, Optional
 
 from ..document_model import (
     AbstractBlock,
+    BibliographyEntry,
     CodeBlock,
+    CitationRun,
     DegradationBlock,
     DocumentIssue,
     ExcalidrawBlock,
@@ -36,10 +38,13 @@ from ..document_model import (
     SemanticTableBlock,
     Span,
     CrossReferenceRun,
+    InlineDegradationRun,
     StructuredDocument,
     TableBlock,
+    TableCellDegradation,
     TaskList,
 )
+from .native_math import NativeMathConversionError, convert_restricted_latex
 from .bookmark_ids import (
     BOOKMARK_COLLISION_UNRESOLVED,
     BOOKMARK_NAME_COLLISION,
@@ -65,6 +70,7 @@ INVALID_EXPLICIT_ID = "INVALID_EXPLICIT_ID"
 ABSTRACT_CONTENT_DEGRADED = "ABSTRACT_CONTENT_DEGRADED"
 PAGE_BREAK_CONTENT_DEGRADED = "PAGE_BREAK_CONTENT_DEGRADED"
 PAGE_ROLE_RESOLUTION_FAILED = "PAGE_ROLE_RESOLUTION_FAILED"
+BIBLIOGRAPHY_ENTRY_MALFORMED = "BIBLIOGRAPHY_ENTRY_MALFORMED"
 
 _VALID_BOOL = frozenset({"true", "false", "yes", "no", "1", "0"})
 _VALID_CAPTION_NUMBERING = frozenset({"auto", "chapter", "global"})
@@ -153,9 +159,19 @@ class SemanticResult:
 
 def _canonical_value(value: Any) -> Any:
     """Recursively convert dataclasses/dicts/lists to deterministic JSON."""
+    if isinstance(value, FormulaBlock):
+        # The local fallback declaration is private resource input. It is
+        # intentionally absent from semantic diagnostics and snapshots.
+        return {
+            field.name: _canonical_value(getattr(value, field.name))
+            for field in sorted(dataclasses.fields(value), key=lambda item: item.name)
+            if field.name not in {"fallback_image", "raw_source"}
+        }
     if dataclasses.is_dataclass(value):
-        d = dataclasses.asdict(value)
-        return {k: _canonical_value(v) for k, v in sorted(d.items())}
+        return {
+            field.name: _canonical_value(getattr(value, field.name))
+            for field in sorted(dataclasses.fields(value), key=lambda item: item.name)
+        }
     if isinstance(value, (list, tuple)):
         return [_canonical_value(v) for v in value]
     if isinstance(value, dict):
@@ -664,40 +680,54 @@ def _build_config(
 def _collect_explicit_targets(
     doc: StructuredDocument, issues: list[DocumentIssue]
 ) -> tuple[dict[str, tuple[str, str]], list[str]]:
-    """Collect explicit reference targets: id -> (kind, node_id)."""
+    """Collect every explicit ID in semantic source order.
+
+    The namespace is shared by headings, bibliography entries, figures,
+    tables, and formulas. The first valid declaration is the only target;
+    later declarations retain readable content and carry a node-local issue.
+    """
     targets: dict[str, tuple[str, str]] = {}
     seen: set[str] = set()
+    bibliography_declaration_counter = 0
 
-    def register(identifier: str, kind: str, node_id: str) -> None:
+    def register(identifier: str, kind: str, node_id: str) -> Optional[DocumentIssue]:
         if not identifier:
-            return
+            return None
         if identifier.startswith(_RESERVED_ID_PREFIX) or not _valid_explicit_id(
             identifier
         ):
-            issues.append(
-                _issue(
-                    INVALID_EXPLICIT_ID,
-                    f"Invalid explicit ID '{identifier}' for {kind} block.",
-                    placement="block",
-                )
+            issue = _issue(
+                INVALID_EXPLICIT_ID,
+                f"Invalid explicit ID '{identifier}' for {kind} block.",
+                placement="block",
             )
-            return
+            issues.append(issue)
+            return issue
         if identifier in seen:
-            issues.append(
-                _issue(
-                    DUPLICATE_EXPLICIT_ID,
-                    f"Duplicate explicit ID '{identifier}'.",
-                    placement="block",
-                )
+            issue = _issue(
+                DUPLICATE_EXPLICIT_ID,
+                f"Duplicate explicit ID '{identifier}'.",
+                placement="block",
             )
-            return
+            issues.append(issue)
+            return issue
         seen.add(identifier)
         targets[identifier] = (kind, node_id)
+        return None
 
     sec_counter = 0
     for section in doc.sections:
         sec_counter += 1
-        if section.node_id is None:
+        explicit_section_id = (
+            section.node_id
+            if section.node_id and not section.node_id.startswith(_RESERVED_ID_PREFIX)
+            else None
+        )
+        if explicit_section_id is not None:
+            section.target_degradation = register(
+                explicit_section_id, "sec", explicit_section_id
+            )
+        elif section.node_id is None:
             section.node_id = f"__wpsc_sec:{sec_counter}"
         counters: dict[str, int] = {}
         for elem in section.elements:
@@ -707,56 +737,76 @@ def _collect_explicit_targets(
 
             if isinstance(elem, FigureBlock):
                 if elem.identifier:
-                    if _valid_explicit_id(elem.identifier) and elem.identifier not in seen:
-                        register(elem.identifier, "fig", elem.identifier)
+                    degradation = register(elem.identifier, "fig", elem.identifier)
+                    elem.target_degradation = degradation
+                    if degradation is None:
                         elem.node_id = elem.identifier
                     else:
-                        if elem.identifier in seen:
-                            issues.append(_issue(DUPLICATE_EXPLICIT_ID, f"Duplicate explicit ID '{elem.identifier}'.", placement="block"))
-                        elif not _valid_explicit_id(elem.identifier):
-                            register(elem.identifier, "fig", "")
                         elem.node_id = next_id("fig")
                 elif elem.node_id is None:
                     elem.node_id = next_id("fig")
             elif isinstance(elem, SemanticTableBlock):
                 if elem.identifier:
-                    if _valid_explicit_id(elem.identifier) and elem.identifier not in seen:
-                        register(elem.identifier, "tab", elem.identifier)
+                    degradation = register(elem.identifier, "tab", elem.identifier)
+                    elem.target_degradation = degradation
+                    if degradation is None:
                         elem.node_id = elem.identifier
                     else:
-                        if elem.identifier in seen:
-                            issues.append(_issue(DUPLICATE_EXPLICIT_ID, f"Duplicate explicit ID '{elem.identifier}'.", placement="block"))
-                        elif not _valid_explicit_id(elem.identifier):
-                            register(elem.identifier, "tab", "")
                         elem.node_id = next_id("tab")
                 elif elem.node_id is None:
                     elem.node_id = next_id("tab")
             elif isinstance(elem, FormulaBlock):
                 if elem.identifier:
-                    if _valid_explicit_id(elem.identifier) and elem.identifier not in seen:
-                        register(elem.identifier, "eq", elem.identifier)
+                    degradation = register(elem.identifier, "eq", elem.identifier)
+                    elem.target_degradation = degradation
+                    if degradation is None:
                         elem.node_id = elem.identifier
                     else:
-                        if elem.identifier in seen:
-                            issues.append(_issue(DUPLICATE_EXPLICIT_ID, f"Duplicate explicit ID '{elem.identifier}'.", placement="block"))
-                        elif not _valid_explicit_id(elem.identifier):
-                            register(elem.identifier, "eq", "")
                         elem.node_id = next_id("eq")
                 elif elem.node_id is None:
                     elem.node_id = next_id("eq")
             elif isinstance(elem, ReferenceListBlock):
                 if elem.identifier:
-                    if _valid_explicit_id(elem.identifier) and elem.identifier not in seen:
-                        register(elem.identifier, "ref", elem.identifier)
+                    degradation = register(elem.identifier, "ref", elem.identifier)
+                    elem.target_degradation = degradation
+                    if degradation is None:
                         elem.node_id = elem.identifier
                     else:
-                        if elem.identifier in seen:
-                            issues.append(_issue(DUPLICATE_EXPLICIT_ID, f"Duplicate explicit ID '{elem.identifier}'.", placement="block"))
-                        elif not _valid_explicit_id(elem.identifier):
-                            register(elem.identifier, "ref", "")
                         elem.node_id = next_id("ref")
                 elif elem.node_id is None:
                     elem.node_id = next_id("ref")
+                candidates = _parse_bibliography_entries(elem.entries)
+                setattr(elem, "_bibliography_candidates", candidates)
+                for candidate in candidates:
+                    if candidate.identifier is None:
+                        degradation = DegradationBlock(
+                            issue=_issue(
+                                BIBLIOGRAPHY_ENTRY_MALFORMED,
+                                "Bibliography entry is malformed; readable source was retained.",
+                                placement="block",
+                            ),
+                            node_id=f"{elem.node_id}/degradation:{candidate.source_index}",
+                            fallback_text=candidate.raw,
+                        )
+                        candidate.degradation = degradation
+                        issues.append(degradation.issue)
+                        continue
+                    bibliography_declaration_counter += 1
+                    candidate.declaration_index = bibliography_declaration_counter
+                    candidate.node_id = (
+                        f"{elem.node_id}/entry:{candidate.declaration_index}"
+                    )
+                    candidate.target_degradation = register(
+                        candidate.identifier, "ref", candidate.node_id
+                    )
+                    if candidate.target_degradation is not None:
+                        candidate.degradation = DegradationBlock(
+                            issue=candidate.target_degradation,
+                            node_id=(
+                                f"{elem.node_id}/degradation:{candidate.source_index}"
+                            ),
+                            fallback_text=candidate.raw,
+                        )
             elif isinstance(elem, PageBreakBlock) and elem.node_id is None:
                 elem.node_id = next_id("pb")
             elif isinstance(elem, DegradationBlock) and elem.node_id is None:
@@ -765,72 +815,85 @@ def _collect_explicit_targets(
     return targets, list(seen)
 
 
+@dataclass
+class _BibliographyCandidate:
+    identifier: Optional[str]
+    text: str
+    raw: str
+    source_index: int
+    declaration_index: int = 0
+    node_id: str = ""
+    target_degradation: Optional[DocumentIssue] = None
+    degradation: Optional[DegradationBlock] = None
+
+
 def _parse_bibliography_entries(
-    entries: list[str], issues: list[DocumentIssue]
-) -> list[tuple[str, str]]:
-    """Parse bibliography entries into (id, text) pairs."""
-    parsed: list[tuple[str, str]] = []
-    current_id: Optional[str] = None
-    current_text_parts: list[str] = []
-
-    def flush() -> None:
-        nonlocal current_id
-        if current_id is not None:
-            parsed.append((current_id, " ".join(current_text_parts).strip()))
-            current_id = None
-            current_text_parts.clear()
-
-    for raw in entries:
-        line = raw.rstrip()
-        stripped = line.strip()
+    entries: list[str],
+) -> list[_BibliographyCandidate]:
+    """Parse entries without discarding any malformed visible source."""
+    parsed: list[_BibliographyCandidate] = []
+    declaration_index = 0
+    index = 0
+    while index < len(entries):
+        raw = entries[index].rstrip()
+        stripped = raw.strip()
+        source_index = index + 1
+        index += 1
         if not stripped:
             continue
 
-        yaml_id = re.match(r"^[-*]\s+id:\s*(\S+)(?:\s+text:\s*(.*))?$", stripped)
+        yaml_id = re.match(
+            r"^[-*]\s+id:\s*(\S+)(?:\s+text:\s*(.*))?$", stripped
+        )
         if yaml_id:
-            flush()
-            current_id = yaml_id.group(1)
-            if yaml_id.group(2):
-                current_text_parts.append(yaml_id.group(2).strip())
-            continue
-
-        text_only = re.match(r"^text:\s*(.*)$", stripped)
-        if text_only and current_id is not None:
-            current_text_parts.append(text_only.group(1).strip())
+            identifier = normalize_visible_text(yaml_id.group(1).strip())
+            text_parts = [yaml_id.group(2).strip()] if yaml_id.group(2) else []
+            raw_parts = [raw]
+            if index < len(entries):
+                text_only = re.match(r"^\s*text:\s*(.*)$", entries[index])
+                if text_only:
+                    raw_parts.append(entries[index].rstrip())
+                    text_parts.append(text_only.group(1).strip())
+                    index += 1
+            declaration_index += 1
+            text = " ".join(part for part in text_parts if part).strip()
+            if identifier and text:
+                parsed.append(_BibliographyCandidate(
+                    identifier, text, "\n".join(raw_parts), source_index,
+                    declaration_index,
+                ))
+            else:
+                parsed.append(_BibliographyCandidate(
+                    None, "", "\n".join(raw_parts), source_index
+                ))
             continue
 
         bracket = re.match(r"^\[([^\]]+)\]\s*(.*)$", stripped)
-        if bracket:
-            flush()
-            current_id = bracket.group(1)
-            current_text_parts.append(bracket.group(2).strip())
-            continue
-
         simple = re.match(r"^(\S+?):\s+(.*)$", stripped)
-        if simple:
-            flush()
-            current_id = simple.group(1)
-            current_text_parts.append(simple.group(2).strip())
-            continue
-
-        if current_id is not None:
-            current_text_parts.append(stripped)
-
-    flush()
+        match = bracket or simple
+        if match and match.group(1).strip() and match.group(2).strip():
+            declaration_index += 1
+            parsed.append(_BibliographyCandidate(
+                normalize_visible_text(match.group(1).strip()),
+                normalize_visible_text(match.group(2).strip()),
+                raw,
+                source_index,
+                declaration_index,
+            ))
+        else:
+            parsed.append(_BibliographyCandidate(None, "", raw, source_index))
     return parsed
 
 
 def _scan_inline_references(
     doc: StructuredDocument,
 ) -> tuple[tuple[str, str], ...]:
-    """Collect unique ref/cite requests in first semantic-source order."""
+    """Collect ref/cite requests in first visible semantic-source order."""
     requested: list[tuple[str, str]] = []
-    seen: set[tuple[str, str]] = set()
 
     def add_request(kind: str, target_id: str) -> None:
         request = (kind, normalize_visible_text(target_id.strip()))
-        if request not in seen:
-            seen.add(request)
+        if request[1]:
             requested.append(request)
 
     def scan_spans(spans: list[Span]) -> None:
@@ -839,7 +902,7 @@ def _scan_inline_references(
                 continue
             if span.cross_reference is not None:
                 add_request("ref", span.cross_reference.target_id)
-            for match in _REFERENCE_OR_CITATION_RE.finditer(span.text):
+            for match in _iter_visible_markers(span.text):
                 add_request(match.group(1), match.group(2))
 
     def scan_element(elem: Any) -> None:
@@ -863,11 +926,6 @@ def _scan_inline_references(
             for row in elem.rows:
                 for cell in row:
                     scan_spans([Span(text=cell)])
-        elif isinstance(elem, FigureBlock):
-            for img in elem.images:
-                scan_spans([Span(text=img.alt)])
-        elif isinstance(elem, DegradationBlock):
-            scan_spans([Span(text=elem.fallback_text)])
         elif isinstance(elem, PageBreakBlock):
             for para in elem.content:
                 scan_element(para)
@@ -883,63 +941,78 @@ def _scan_inline_references(
     return tuple(requested)
 
 
+_LITERAL_INLINE_RE = re.compile(
+    r"`[^`]*`|\$[^$]*\$|!\[[^\]]*\]\([^)]*\)"
+)
+
+
+def _iter_visible_markers(text: str):
+    """Yield markers outside code, inline math, and image-alt literals."""
+    literal_ranges = [match.span() for match in _LITERAL_INLINE_RE.finditer(text)]
+    for match in _REFERENCE_OR_CITATION_RE.finditer(text):
+        if any(start <= match.start() < end for start, end in literal_ranges):
+            continue
+        slash_count = 0
+        cursor = match.start() - 1
+        while cursor >= 0 and text[cursor] == "\\":
+            slash_count += 1
+            cursor -= 1
+        if slash_count % 2:
+            continue
+        yield match
+
+
 def _build_references(
     doc: StructuredDocument,
     targets: dict[str, tuple[str, str]],
     bookmarks: BookmarkMapResult,
     issues: list[DocumentIssue],
+    config: LongformConfig,
 ) -> dict[str, dict[str, Any]]:
     """Resolve cross-references and citations against collected targets."""
     references: dict[str, dict[str, Any]] = {}
 
-    # Bibliography entries are declared inside ReferenceListBlock elements.
-    bib_entries: dict[str, str] = {}
+    bibliography_candidates: list[_BibliographyCandidate] = []
     for section in doc.sections:
         for elem in section.elements:
             if isinstance(elem, ReferenceListBlock):
-                for bid, btext in _parse_bibliography_entries(
-                    elem.entries, issues
-                ):
-                    if bid in bib_entries:
-                        issues.append(
-                            _issue(
-                                DUPLICATE_EXPLICIT_ID,
-                                f"Duplicate bibliography ID '{bid}'.",
-                                placement="block",
-                            )
-                        )
-                        continue
-                    bib_entries[bid] = btext
-                    if _valid_explicit_id(bid):
-                        references[bid] = {
-                            "cited": False,
-                            "kind": "ref",
-                            "node_id": bid,
-                            "text": btext,
-                        }
-                    else:
-                        issues.append(
-                            _issue(
-                                INVALID_EXPLICIT_ID,
-                                f"Invalid bibliography ID '{bid}'.",
-                                placement="block",
-                            )
-                        )
-
-    # Add figure/table/formula targets to references map.
-    for identifier, (kind, node_id) in targets.items():
-        bookmark_name = bookmarks.mapping.get(identifier)
-        if bookmark_name is None:
+                bibliography_candidates.extend(
+                    candidate
+                    for candidate in getattr(elem, "_bibliography_candidates", ())
+                    if candidate.identifier is not None
+                )
+    for candidate in bibliography_candidates:
+        if candidate.target_degradation is not None:
             continue
-        references[identifier] = {
-            "bookmark_name": bookmark_name,
-            "kind": kind,
-            "node_id": node_id,
+        references[candidate.identifier] = {
+            "cited": False,
+            "declaration_index": candidate.declaration_index,
+            "kind": "ref",
+            "node_id": candidate.node_id,
+            "number": None,
+            "text": candidate.text,
         }
 
+    # Add object and explicit-section targets from the same global namespace.
+    for identifier, (kind, node_id) in targets.items():
+        if kind == "ref":
+            continue
+        reference = {"kind": kind, "node_id": node_id}
+        bookmark_name = bookmarks.mapping.get(identifier)
+        if bookmark_name is not None:
+            reference["bookmark_name"] = bookmark_name
+        references[identifier] = reference
+
+    next_number = 1
+    reported: set[tuple[str, str]] = set()
     for request_kind, target_id in _scan_inline_references(doc):
         if request_kind == "ref":
-            if target_id not in references:
+            target = references.get(target_id)
+            if target is None or target.get("kind") not in {"fig", "tab", "eq"} or not target.get("bookmark_name"):
+                request_key = (request_kind, target_id)
+                if request_key in reported:
+                    continue
+                reported.add(request_key)
                 issues.append(
                     _issue(
                         REFERENCE_UNRESOLVED,
@@ -947,27 +1020,132 @@ def _build_references(
                         placement="inline",
                     )
                 )
-            elif references[target_id]["kind"] == "ref":
+        else:
+            target = references.get(target_id)
+            if target is not None and target.get("kind") == "ref":
+                target["cited"] = True
+                if target["number"] is None:
+                    target["number"] = next_number
+                    next_number += 1
+                continue
+            request_key = (request_kind, target_id)
+            if request_key not in reported:
+                reported.add(request_key)
                 issues.append(
                     _issue(
                         REFERENCE_UNRESOLVED,
-                        f"Cross-reference target '{target_id}' is a bibliography "
-                        "entry, not a figure/table/equation.",
+                        f"Citation target '{target_id}' was not found.",
                         placement="inline",
                     )
                 )
-        elif target_id in references:
-            references[target_id]["cited"] = True
-        else:
-            issues.append(
-                _issue(
-                    REFERENCE_UNRESOLVED,
-                    f"Citation target '{target_id}' was not found.",
-                    placement="inline",
-                )
+
+    if config.bibliography_include_uncited:
+        for candidate in sorted(
+            bibliography_candidates, key=lambda item: item.declaration_index
+        ):
+            target = references.get(candidate.identifier)
+            if target is not None and target.get("kind") == "ref" and target["number"] is None:
+                target["number"] = next_number
+                next_number += 1
+
+    ordered_entries = sorted(
+        (
+            BibliographyEntry(
+                identifier=identifier,
+                node_id=value["node_id"],
+                text=value["text"],
+                number=value["number"],
+                declaration_index=value["declaration_index"],
+                cited=bool(value["cited"]),
             )
+            for identifier, value in references.items()
+            if value.get("kind") == "ref" and value.get("number") is not None
+        ),
+        key=lambda entry: entry.number,
+    )
+    by_node = {entry.node_id: entry for entry in ordered_entries}
+    reference_blocks: list[ReferenceListBlock] = []
+    for section in doc.sections:
+        for elem in section.elements:
+            if not isinstance(elem, ReferenceListBlock):
+                continue
+            reference_blocks.append(elem)
+            candidates = getattr(elem, "_bibliography_candidates", ())
+            if any(entry.cited for entry in ordered_entries):
+                resolved: list[Any] = [
+                    entry for entry in ordered_entries
+                    if any(candidate.node_id == entry.node_id for candidate in candidates)
+                ]
+                resolved.extend(
+                    candidate.degradation
+                    for candidate in candidates
+                    if candidate.degradation is not None
+                )
+            else:
+                resolved = []
+                for candidate in candidates:
+                    entry = by_node.get(candidate.node_id)
+                    if entry is not None:
+                        resolved.append(entry)
+                    elif candidate.degradation is not None:
+                        resolved.append(candidate.degradation)
+            elem.resolved_items = resolved
+
+    # Structured bibliography entries have one global numeric order even when
+    # authors used multiple alias blocks. Keep local malformed/duplicate
+    # degradations in their declaring blocks, but place all final entries in
+    # the first visible bibliography block.
+    if reference_blocks and any(entry.cited for entry in ordered_entries):
+        local_degradations = [
+            [item for item in block.resolved_items if isinstance(item, DegradationBlock)]
+            for block in reference_blocks
+        ]
+        for block, degradations in zip(reference_blocks, local_degradations):
+            block.resolved_items = degradations
+        reference_blocks[0].resolved_items = (
+            list(ordered_entries) + local_degradations[0]
+        )
 
     return references
+
+
+def _move_bibliography_to_back_matter(doc: StructuredDocument) -> None:
+    """Move non-empty bibliography blocks to one final isolated page role."""
+    bibliography_blocks: list[ReferenceListBlock] = []
+    retained_sections: list[Section] = []
+    for section in doc.sections:
+        retained_elements: list[Any] = []
+        section_had_bibliography = False
+        for element in section.elements:
+            if isinstance(element, ReferenceListBlock):
+                section_had_bibliography = True
+                if element.target_degradation is not None:
+                    element.resolved_items.insert(0, DegradationBlock(
+                        issue=element.target_degradation,
+                        node_id=f"{element.node_id}/target-degradation",
+                        fallback_text="Bibliography target capability was disabled.",
+                    ))
+                if element.resolved_items:
+                    bibliography_blocks.append(element)
+            else:
+                retained_elements.append(element)
+        section.elements = retained_elements
+        if section.elements or section.has_heading:
+            # A heading that introduced only bibliography content belongs to
+            # back matter and must not leave an empty body section.
+            if not section.elements and section_had_bibliography:
+                continue
+            retained_sections.append(section)
+    if bibliography_blocks:
+        retained_sections.append(Section(
+            level=0,
+            heading="",
+            elements=bibliography_blocks,
+            node_id="__wpsc_sec:bibliography",
+            numbering="none",
+            page_role="bibliography",
+        ))
+    doc.sections = retained_sections
 
 
 def _map_bookmarks_from_targets(
@@ -988,6 +1166,28 @@ def _map_bookmarks_from_targets(
     return BookmarkMapResult(
         mapping=combined_mapping, issues=tuple(combined_issues)
     )
+
+
+def _normalize_formulas(
+    doc: StructuredDocument, issues: list[DocumentIssue]
+) -> None:
+    """Attach only converter-issued native descriptors to formula nodes."""
+    for section in doc.sections:
+        for element in section.elements:
+            if not isinstance(element, FormulaBlock):
+                continue
+            try:
+                element.native_math = convert_restricted_latex(element.source)
+                element.content_degradation = None
+            except NativeMathConversionError as error:
+                issue = _issue(
+                    error.code,
+                    "Formula cannot use editable native math; readable source was retained.",
+                    placement="block",
+                )
+                element.native_math = None
+                element.content_degradation = issue
+                issues.append(issue)
 
 
 def _caption_reference_targets(
@@ -1162,46 +1362,90 @@ def _split_slot_references(
 ) -> None:
     if slot.node_id is None:
         return
-    occurrence = 0
+    reference_occurrence = 0
+    citation_occurrence = 0
     normalized_spans: list[Span] = []
     for span in slot.spans:
-        if span.code or span.math or not _REF_RE.search(span.text):
+        matches = list(_iter_visible_markers(span.text))
+        if span.code or span.math or not matches:
             normalized_spans.append(span)
             continue
 
         cursor = 0
-        for match in _REF_RE.finditer(span.text):
+        for match in matches:
             if match.start() > cursor:
                 normalized_spans.append(
                     dataclasses.replace(
                         span,
                         text=span.text[cursor:match.start()],
                         cross_reference=None,
+                        citation=None,
+                        inline_degradation=None,
                     )
                 )
-            occurrence += 1
-            target_id = normalize_visible_text(match.group(1).strip())
+            kind = match.group(1)
+            target_id = normalize_visible_text(match.group(2).strip())
             target = references.get(target_id)
-            resolved = target is not None and target.get("kind") in {
-                "fig", "tab", "eq"
-            }
-            run = CrossReferenceRun(
-                node_id=f"{slot.node_id}/ref:{occurrence}",
-                target_id=target_id,
-                target_node_id=(target["node_id"] if resolved else None),
-                target_kind=(target["kind"] if resolved else None),
-                bookmark_name=(
-                    target["bookmark_name"] if resolved else None
-                ),
-                fallback_text=fallback_text,
-            )
-            normalized_spans.append(
-                dataclasses.replace(
+            if kind == "ref":
+                reference_occurrence += 1
+                resolved = (
+                    target is not None
+                    and target.get("kind") in {"fig", "tab", "eq"}
+                    and bool(target.get("bookmark_name"))
+                )
+                run = CrossReferenceRun(
+                    node_id=f"{slot.node_id}/ref:{reference_occurrence}",
+                    target_id=target_id,
+                    target_node_id=(target["node_id"] if resolved else None),
+                    target_kind=(target["kind"] if resolved else None),
+                    bookmark_name=(target["bookmark_name"] if resolved else None),
+                    fallback_text=fallback_text,
+                )
+                normalized_spans.append(dataclasses.replace(
                     span,
                     text=fallback_text,
                     cross_reference=run,
+                    citation=None,
+                    inline_degradation=None,
+                ))
+            else:
+                citation_occurrence += 1
+                node_id = f"{slot.node_id}/cite:{citation_occurrence}"
+                resolved = (
+                    target is not None
+                    and target.get("kind") == "ref"
+                    and isinstance(target.get("number"), int)
                 )
-            )
+                if resolved:
+                    citation_text = f"[{target['number']}]"
+                    normalized_spans.append(dataclasses.replace(
+                        span,
+                        text=citation_text,
+                        cross_reference=None,
+                        citation=CitationRun(
+                            node_id=node_id,
+                            target_id=target_id,
+                            target_node_id=target["node_id"],
+                            number=target["number"],
+                            fallback_text=citation_text,
+                        ),
+                        inline_degradation=None,
+                    ))
+                else:
+                    citation_text = (
+                        "[REFERENCE_UNRESOLVED 引用目标未解析]"
+                    )
+                    normalized_spans.append(dataclasses.replace(
+                        span,
+                        text=citation_text,
+                        cross_reference=None,
+                        citation=None,
+                        inline_degradation=InlineDegradationRun(
+                            node_id=node_id,
+                            code=REFERENCE_UNRESOLVED,
+                            fallback_text=citation_text,
+                        ),
+                    ))
             cursor = match.end()
         if cursor < len(span.text):
             normalized_spans.append(
@@ -1209,6 +1453,8 @@ def _split_slot_references(
                     span,
                     text=span.text[cursor:],
                     cross_reference=None,
+                    citation=None,
+                    inline_degradation=None,
                 )
             )
     slot.replace_spans(normalized_spans)
@@ -1225,6 +1471,67 @@ def _split_cross_reference_spans(
     for section in doc.sections:
         for slot in _iter_paragraph_slots(section):
             _split_slot_references(slot, references, fallback_text)
+
+
+def _resolve_table_citation_text(
+    text: str,
+    references: dict[str, dict[str, Any]],
+) -> tuple[str, bool]:
+    pieces: list[str] = []
+    cursor = 0
+    degraded = False
+    for match in _iter_visible_markers(text):
+        if match.group(1) != "cite":
+            continue
+        pieces.append(text[cursor:match.start()])
+        target_id = normalize_visible_text(match.group(2).strip())
+        target = references.get(target_id)
+        if (
+            target is not None
+            and target.get("kind") == "ref"
+            and isinstance(target.get("number"), int)
+        ):
+            pieces.append(f"[{target['number']}]")
+        else:
+            pieces.append("[REFERENCE_UNRESOLVED 引用目标未解析]")
+            degraded = True
+        cursor = match.end()
+    if not pieces:
+        return text, False
+    pieces.append(text[cursor:])
+    return "".join(pieces), degraded
+
+
+def _resolve_table_citations(
+    doc: StructuredDocument, references: dict[str, dict[str, Any]]
+) -> None:
+    fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]"
+    for section in doc.sections:
+        for element in section.elements:
+            if not isinstance(element, (TableBlock, SemanticTableBlock)):
+                continue
+            element.cell_degradations = []
+            for column, cell in enumerate(element.headers, start=1):
+                resolved, degraded = _resolve_table_citation_text(cell, references)
+                element.headers[column - 1] = resolved
+                if degraded:
+                    element.cell_degradations.append(TableCellDegradation(
+                        row=1,
+                        column=column,
+                        code=REFERENCE_UNRESOLVED,
+                        fallback_text=fallback,
+                    ))
+            for row_index, row in enumerate(element.rows, start=2):
+                for column, cell in enumerate(row, start=1):
+                    resolved, degraded = _resolve_table_citation_text(cell, references)
+                    row[column - 1] = resolved
+                    if degraded:
+                        element.cell_degradations.append(TableCellDegradation(
+                            row=row_index,
+                            column=column,
+                            code=REFERENCE_UNRESOLVED,
+                            fallback_text=fallback,
+                        ))
 
 
 def _plain_text_from_element(elem: Any) -> str:
@@ -1388,11 +1695,12 @@ def _apply_page_role_metadata(
     """Attach page roles to the document and each content section."""
     for section in doc.sections:
         section.outline_level = section.level
-        section.page_role = (
-            "landscape"
-            if getattr(section, "orientation", None) == "landscape"
-            else "body"
-        )
+        if section.page_role != "bibliography":
+            section.page_role = (
+                "landscape"
+                if getattr(section, "orientation", None) == "landscape"
+                else "body"
+            )
 
     try:
         from .policy import build_policy
@@ -1445,10 +1753,10 @@ def normalize_longform_document(
         if config.heading_numbering == "auto":
             config.heading_numbering = selected_scheme
 
-        _apply_page_role_metadata(doc, config, issues)
         _derive_header(config, issues)
 
         targets, _explicit_ids = _collect_explicit_targets(doc, issues)
+        _normalize_formulas(doc, issues)
         reference_targets = _caption_reference_targets(doc, targets, issues)
         bookmarks = _map_bookmarks_from_targets(reference_targets)
         for bookmark_issue in bookmarks.issues:
@@ -1468,12 +1776,15 @@ def normalize_longform_document(
         _apply_caption_bindings(doc, config, reference_targets, bookmarks)
         if doc.abstract is not None:
             doc.abstract = _normalize_abstract(doc.abstract, issues)
-        references = _build_references(
-            doc, reference_targets, bookmarks, issues
-        )
         _assign_paragraph_ids(doc)
+        references = _build_references(
+            doc, targets, bookmarks, issues, config
+        )
         _split_cross_reference_spans(doc, references)
+        _resolve_table_citations(doc, references)
         _scan_page_breaks(doc.sections, issues)
+        _move_bibliography_to_back_matter(doc)
+        _apply_page_role_metadata(doc, config, issues)
 
         # Store resolved config on the document for downstream consumers.
         doc.config = _canonical_value(config.to_json())
@@ -1507,6 +1818,7 @@ def normalize_longform_document(
 
 __all__ = [
     "ABSTRACT_CONTENT_DEGRADED",
+    "BIBLIOGRAPHY_ENTRY_MALFORMED",
     "CAPTION_MISSING",
     "CONFIG_VALUE_INVALID",
     "DUPLICATE_EXPLICIT_ID",

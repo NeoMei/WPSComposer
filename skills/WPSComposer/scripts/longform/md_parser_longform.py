@@ -486,6 +486,8 @@ def _handle_formula_directive(
     ctx.current_section.elements.append(FormulaBlock(
         identifier=directive.identifier,
         source=source,
+        raw_source=directive.body,
+        fallback_image=directive.attributes.get("fallback_image"),
     ))
     return ctx.current_section
 
@@ -505,6 +507,7 @@ def _handle_references_directive(
     ctx.current_section.elements.append(ReferenceListBlock(
         identifier=directive.identifier,
         entries=entries,
+        raw_source=directive.body,
     ))
     return ctx.current_section
 
@@ -515,6 +518,8 @@ _DIRECTIVE_HANDLERS = {
     "page-break": _handle_page_break_directive,
     "table": _handle_table_directive,
     "figure": _handle_figure_directive,
+    "equation": _handle_formula_directive,
     "formula": _handle_formula_directive,
+    "bibliography": _handle_references_directive,
     "references": _handle_references_directive,
 }

@@ -35,6 +35,24 @@ class CrossReferenceRun:
     fallback_text: str
 
 
+@dataclass(frozen=True)
+class CitationRun:
+    """One deterministic numeric citation occurrence."""
+    node_id: str
+    target_id: str
+    target_node_id: str
+    number: int
+    fallback_text: str
+
+
+@dataclass(frozen=True)
+class InlineDegradationRun:
+    """A same-paragraph visible degradation occurrence."""
+    node_id: str
+    code: str
+    fallback_text: str
+
+
 @dataclass
 class Span:
     """A formatted text span within a paragraph."""
@@ -47,6 +65,8 @@ class Span:
     link_title: Optional[str] = None  # tooltip
     math: str = ""  # raw LaTeX for inline math ($...$); empty = not math
     cross_reference: Optional[CrossReferenceRun] = None
+    citation: Optional[CitationRun] = None
+    inline_degradation: Optional[InlineDegradationRun] = None
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +103,7 @@ class TableBlock:
     headers: List[str] = field(default_factory=list)
     rows: List[List[str]] = field(default_factory=list)
     alignments: List[str] = field(default_factory=list)  # "left"/"center"/"right" per column
+    cell_degradations: List["TableCellDegradation"] = field(default_factory=list)
 
 
 @dataclass
@@ -199,6 +220,15 @@ class TableMerge:
             raise ValueError("table merge must cover at least two cells")
 
 
+@dataclass(frozen=True)
+class TableCellDegradation:
+    """One coded fallback retained in its owning table cell."""
+    row: int
+    column: int
+    code: str
+    fallback_text: str
+
+
 @dataclass
 class SemanticTableBlock:
     """A captioned, referenceable table."""
@@ -213,6 +243,8 @@ class SemanticTableBlock:
     merge_spec: str = ""
     repeat_header: bool = True
     caption_binding: Optional[CaptionBinding] = None
+    cell_degradations: List[TableCellDegradation] = field(default_factory=list)
+    target_degradation: Optional[DocumentIssue] = None
 
 
 @dataclass
@@ -228,9 +260,10 @@ class FigureBlock:
     kind: str = "auto"
     columns: Optional[int] = None
     caption_binding: Optional[CaptionBinding] = None
+    target_degradation: Optional[DocumentIssue] = None
 
 
-@dataclass
+@dataclass(repr=False)
 class FormulaBlock:
     """A numbered display formula."""
     identifier: Optional[str] = None
@@ -238,6 +271,38 @@ class FormulaBlock:
     source: str = ""  # raw LaTeX / formula source
     number: Optional[str] = None
     caption_binding: Optional[CaptionBinding] = None
+    raw_source: str = ""
+    fallback_image: Optional[str] = field(default=None, repr=False)
+    native_math: Optional[Any] = None
+    content_degradation: Optional[DocumentIssue] = None
+    target_degradation: Optional[DocumentIssue] = None
+
+    def __post_init__(self) -> None:
+        if self.native_math is not None:
+            from .longform.native_math import NativeMathDescriptor
+            if not isinstance(self.native_math, NativeMathDescriptor):
+                raise TypeError(
+                    "native_math must be a converter-issued NativeMathDescriptor"
+                )
+
+    def __repr__(self) -> str:
+        descriptor = "present" if self.native_math is not None else "none"
+        return (
+            "FormulaBlock("
+            f"identifier={self.identifier!r}, node_id={self.node_id!r}, "
+            f"source=<{len(self.source)} chars>, native_math={descriptor})"
+        )
+
+
+@dataclass(frozen=True)
+class BibliographyEntry:
+    """One normalized bibliography declaration in final numeric order."""
+    identifier: str
+    node_id: str
+    text: str
+    number: int
+    declaration_index: int
+    cited: bool
 
 
 @dataclass
@@ -246,6 +311,9 @@ class ReferenceListBlock:
     entries: List[str] = field(default_factory=list)
     node_id: Optional[str] = None
     identifier: Optional[str] = None
+    raw_source: str = ""
+    resolved_items: List[Any] = field(default_factory=list)
+    target_degradation: Optional[DocumentIssue] = None
 
 
 @dataclass
@@ -272,6 +340,7 @@ class Section:
     preface: bool = False
     outline_level: int = 0
     page_role: Optional[str] = None
+    target_degradation: Optional[DocumentIssue] = None
 
     @property
     def has_heading(self) -> bool:

@@ -79,12 +79,14 @@ def _has_front_matter(doc: StructuredDocument, policy: LongformPolicy) -> bool:
 
 def _section_role(section: Any) -> str:
     """Return the page role for a document section."""
+    if getattr(section, "page_role", None) == "bibliography":
+        return "bibliography"
     return "landscape" if getattr(section, "orientation", None) == "landscape" else "body"
 
 
 def _content_role(role: str) -> bool:
     """Return True if *role* is a content role that may carry headers/footers."""
-    return role in {"body", "landscape"}
+    return role in {"body", "landscape", "bibliography"}
 
 
 def _group_sections(sections: list) -> list[tuple[str, list]]:
@@ -167,6 +169,18 @@ def build_page_policy(
                     _role_policy(
                         policy,
                         "landscape",
+                        has_header=True,
+                        has_footer=True,
+                        header_text=policy.header_text,
+                        link_to_previous_header=link,
+                        link_to_previous_footer=link,
+                    )
+                )
+            elif role == "bibliography":
+                sections.append(
+                    _role_policy(
+                        policy,
+                        "bibliography",
                         has_header=True,
                         has_footer=True,
                         header_text=policy.header_text,
