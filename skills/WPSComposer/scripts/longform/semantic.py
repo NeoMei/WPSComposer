@@ -81,6 +81,7 @@ _RESERVED_ID_PREFIX = "__wpsc_"
 
 _REF_RE = re.compile(r"\{\{ref:([^}]+)\}\}")
 _CITE_RE = re.compile(r"\{\{cite:([^}]+)\}\}")
+_REFERENCE_OR_CITATION_RE = re.compile(r"\{\{(ref|cite):([^}]+)\}\}")
 
 _CHINESE_NUMERAL_CHARS = set(
     "零〇一二三四五六七八九十百千万两"
@@ -820,53 +821,53 @@ def _parse_bibliography_entries(
 
 
 def _scan_inline_references(
-    doc: StructuredDocument, issues: list[DocumentIssue]
-) -> tuple[set[str], set[str]]:
-    """Scan visible text for {{ref:...}} and {{cite:...}} markers."""
-    refs: set[str] = set()
-    cites: set[str] = set()
+    doc: StructuredDocument,
+) -> tuple[tuple[str, str], ...]:
+    """Collect unique ref/cite requests in first semantic-source order."""
+    requested: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
 
-    def scan_spans(spans: list[Span], collector: set[str], pattern: re.Pattern) -> None:
+    def add_request(kind: str, target_id: str) -> None:
+        request = (kind, normalize_visible_text(target_id.strip()))
+        if request not in seen:
+            seen.add(request)
+            requested.append(request)
+
+    def scan_spans(spans: list[Span]) -> None:
         for span in spans:
             if span.code or span.math:
                 continue
-            for m in pattern.finditer(span.text):
-                collector.add(normalize_visible_text(m.group(1).strip()))
+            if span.cross_reference is not None:
+                add_request("ref", span.cross_reference.target_id)
+            for match in _REFERENCE_OR_CITATION_RE.finditer(span.text):
+                add_request(match.group(1), match.group(2))
 
     def scan_element(elem: Any) -> None:
         if isinstance(elem, Paragraph):
-            scan_spans(elem.spans, refs, _REF_RE)
-            scan_spans(elem.spans, cites, _CITE_RE)
+            scan_spans(elem.spans)
         elif isinstance(elem, ListBlock):
             for item in elem.items:
-                scan_spans(item, refs, _REF_RE)
-                scan_spans(item, cites, _CITE_RE)
+                scan_spans(item)
         elif isinstance(elem, (AbstractBlock, BlockQuote)):
             for para in elem.paragraphs:
                 scan_element(para)
         elif isinstance(elem, TableBlock):
             for cell in elem.headers:
-                scan_spans([Span(text=cell)], refs, _REF_RE)
-                scan_spans([Span(text=cell)], cites, _CITE_RE)
+                scan_spans([Span(text=cell)])
             for row in elem.rows:
                 for cell in row:
-                    scan_spans([Span(text=cell)], refs, _REF_RE)
-                    scan_spans([Span(text=cell)], cites, _CITE_RE)
+                    scan_spans([Span(text=cell)])
         elif isinstance(elem, SemanticTableBlock):
             for cell in elem.headers:
-                scan_spans([Span(text=cell)], refs, _REF_RE)
-                scan_spans([Span(text=cell)], cites, _CITE_RE)
+                scan_spans([Span(text=cell)])
             for row in elem.rows:
                 for cell in row:
-                    scan_spans([Span(text=cell)], refs, _REF_RE)
-                    scan_spans([Span(text=cell)], cites, _CITE_RE)
+                    scan_spans([Span(text=cell)])
         elif isinstance(elem, FigureBlock):
             for img in elem.images:
-                scan_spans([Span(text=img.alt)], refs, _REF_RE)
-                scan_spans([Span(text=img.alt)], cites, _CITE_RE)
+                scan_spans([Span(text=img.alt)])
         elif isinstance(elem, DegradationBlock):
-            scan_spans([Span(text=elem.fallback_text)], refs, _REF_RE)
-            scan_spans([Span(text=elem.fallback_text)], cites, _CITE_RE)
+            scan_spans([Span(text=elem.fallback_text)])
         elif isinstance(elem, PageBreakBlock):
             for para in elem.content:
                 scan_element(para)
@@ -879,7 +880,7 @@ def _scan_inline_references(
     for section in doc.sections:
         scan_element(section)
 
-    return refs, cites
+    return tuple(requested)
 
 
 def _build_references(
@@ -936,36 +937,32 @@ def _build_references(
             "node_id": node_id,
         }
 
-    requested_refs, requested_cites = _scan_inline_references(doc, issues)
-
-    for ref_id in requested_refs:
-        if ref_id not in references:
-            issues.append(
-                _issue(
-                    REFERENCE_UNRESOLVED,
-                    f"Cross-reference target '{ref_id}' was not found.",
-                    placement="inline",
+    for request_kind, target_id in _scan_inline_references(doc):
+        if request_kind == "ref":
+            if target_id not in references:
+                issues.append(
+                    _issue(
+                        REFERENCE_UNRESOLVED,
+                        f"Cross-reference target '{target_id}' was not found.",
+                        placement="inline",
+                    )
                 )
-            )
-        elif references[ref_id]["kind"] == "ref":
-            # References are bibliography entries, not figure/table/equation.
-            issues.append(
-                _issue(
-                    REFERENCE_UNRESOLVED,
-                    f"Cross-reference target '{ref_id}' is a bibliography entry, "
-                    f"not a figure/table/equation.",
-                    placement="inline",
+            elif references[target_id]["kind"] == "ref":
+                issues.append(
+                    _issue(
+                        REFERENCE_UNRESOLVED,
+                        f"Cross-reference target '{target_id}' is a bibliography "
+                        "entry, not a figure/table/equation.",
+                        placement="inline",
+                    )
                 )
-            )
-
-    for cite_id in requested_cites:
-        if cite_id in references:
-            references[cite_id]["cited"] = True
+        elif target_id in references:
+            references[target_id]["cited"] = True
         else:
             issues.append(
                 _issue(
                     REFERENCE_UNRESOLVED,
-                    f"Citation target '{cite_id}' was not found.",
+                    f"Citation target '{target_id}' was not found.",
                     placement="inline",
                 )
             )
@@ -1315,12 +1312,31 @@ def _normalize_abstract(
     """Keep allowed abstract children and degrade disallowed ones in place."""
     normalized: list[Paragraph] = []
     seen_disallowed = False
+    paragraph_ordinal = 0
+
+    def append_paragraph(paragraph: Paragraph) -> None:
+        nonlocal paragraph_ordinal
+        paragraph_ordinal += 1
+        paragraph.node_id = f"__wpsc_para:0:{paragraph_ordinal}"
+        normalized.append(paragraph)
+
     for elem in abstract.raw_elements:
-        if isinstance(elem, (Paragraph, ListBlock)):
-            normalized.extend(_paragraphs_from_element(elem))
+        if isinstance(elem, Paragraph):
+            append_paragraph(elem)
+        elif isinstance(elem, ListBlock):
+            elem.item_node_ids = []
+            for item in elem.items:
+                paragraph_ordinal += 1
+                node_id = f"__wpsc_para:0:{paragraph_ordinal}"
+                elem.item_node_ids.append(node_id)
+                if "".join(span.text for span in item).strip():
+                    normalized.append(
+                        Paragraph(spans=list(item), node_id=node_id)
+                    )
         else:
             seen_disallowed = True
-            normalized.extend(_paragraphs_from_element(elem))
+            for paragraph in _paragraphs_from_element(elem):
+                append_paragraph(paragraph)
     if seen_disallowed:
         issues.append(
             _issue(

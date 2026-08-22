@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 from unittest.mock import patch
 
 from skills.WPSComposer.scripts.document_model import (
@@ -324,3 +329,98 @@ Abstract {{ref:fig:a}}.
         if "item_node_ids" in element
     )
     assert list_json["item_node_ids"] == ["__wpsc_para:1:1"]
+
+
+def test_issue_order_and_semantic_json_are_stable_across_hash_seeds() -> None:
+    source = r'''
+import json
+from skills.WPSComposer.scripts.md_parser import parse_markdown
+from skills.WPSComposer.scripts.longform.semantic import normalize_longform_document
+
+markdown = """:::abstract
+Abstract {{ref:abs-z}} then {{cite:abs-c}}.
+:::
+
+- List {{ref:list-b}} then {{cite:list-d}}.
+
+Ordinary {{ref:body-a}} then {{cite:body-e}}.
+"""
+result = normalize_longform_document(parse_markdown(markdown, longform=True))
+print(json.dumps(result.to_json(), ensure_ascii=False, separators=(",", ":")))
+'''
+    repo_root = Path(__file__).resolve().parents[2]
+    outputs = []
+    for seed in ("1", "777"):
+        env = os.environ.copy()
+        env["PYTHONHASHSEED"] = seed
+        completed = subprocess.run(
+            [sys.executable, "-c", source],
+            cwd=repo_root,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        outputs.append(completed.stdout.encode("utf-8"))
+
+    assert outputs[0] == outputs[1]
+    payload = json.loads(outputs[0])
+    messages = [
+        issue["message"]
+        for issue in payload["issues"]
+        if issue["code"] == REFERENCE_UNRESOLVED
+    ]
+    assert messages == [
+        "Cross-reference target 'abs-z' was not found.",
+        "Citation target 'abs-c' was not found.",
+        "Cross-reference target 'list-b' was not found.",
+        "Citation target 'list-d' was not found.",
+        "Cross-reference target 'body-a' was not found.",
+        "Citation target 'body-e' was not found.",
+    ]
+
+
+def test_abstract_raw_list_ids_align_without_duplicate_reference_runs() -> None:
+    markdown = """:::abstract
+- First {{ref:fig:a}}.
+- Second `{{ref:fig:a}}` and {{ref:missing}}.
+:::
+
+:::figure {#fig:a caption="A"}
+![a](a.png)
+:::
+"""
+    parsed = parse_markdown(markdown, longform=True)
+    first = normalize_longform_document(parsed)
+    second = normalize_longform_document(parsed)
+
+    assert first.to_json() == second.to_json()
+    abstract = first.document.abstract
+    assert abstract is not None
+    raw_list = next(
+        element for element in abstract.raw_elements if isinstance(element, ListBlock)
+    )
+    assert raw_list.item_node_ids == [
+        "__wpsc_para:0:1",
+        "__wpsc_para:0:2",
+    ]
+    assert [paragraph.node_id for paragraph in abstract.paragraphs] == raw_list.item_node_ids
+
+    raw_runs = [
+        span.cross_reference
+        for item in raw_list.items
+        for span in item
+        if span.cross_reference is not None
+    ]
+    normalized_runs = [
+        span.cross_reference
+        for paragraph in abstract.paragraphs
+        for span in paragraph.spans
+        if span.cross_reference is not None
+    ]
+    assert raw_runs == []
+    assert [run.node_id for run in normalized_runs] == [
+        "__wpsc_para:0:1/ref:1",
+        "__wpsc_para:0:2/ref:1",
+    ]
+    assert normalize_longform_document(first.document).to_json() == first.to_json()
