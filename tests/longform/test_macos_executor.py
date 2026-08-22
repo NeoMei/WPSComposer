@@ -7,13 +7,13 @@ executor outcome validation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Mapping, Optional, Tuple
-
+import hashlib
 import json
 import subprocess
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Mapping, Optional, Tuple
 
 import pytest
 
@@ -62,7 +62,7 @@ class FakeLoopbackBridge:
         self.commands: list[FakeBridgeCommand] = []
         self._result = result or FakeBridgeResult(value={
             "outputPath": "/staged/output.docx",
-            "appliedOperations": 3,
+            "appliedOperations": 4,
             "issueCodes": [],
             "paginationMap": {"version": "M2-stub", "nodes": []},
             "fieldSnapshots": [
@@ -94,7 +94,25 @@ def project_root() -> Path:
     return Path(__file__).parents[2]
 
 
-def make_simple_plan() -> GenerationPlan:
+def _manifest_digest(resources=()) -> str:
+    entries = [{
+        "resourceId": resource.id,
+        "sourceSha256": resource.source_sha256,
+        "payloadSha256": resource.payload_sha256,
+        "byteLength": len(resource.payload_bytes),
+        "mediaType": resource.media_type,
+        "normalizerId": resource.normalizer_id,
+    } for resource in resources]
+    canonical = json.dumps(
+        {"version": "1", "entries": sorted(entries, key=lambda item: item["resourceId"])},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(canonical).hexdigest()
+
+
+def make_simple_plan(resources=()) -> GenerationPlan:
     return GenerationPlan(
         component="writer",
         operations=(
@@ -127,7 +145,7 @@ def make_simple_plan() -> GenerationPlan:
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=_manifest_digest(resources),
     )
 
 
@@ -171,15 +189,18 @@ def test_execute_stages_resources_in_command_params(tmp_staging: Path):
     bridge = FakeLoopbackBridge()
     executor = MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_staging))
     plan = make_simple_plan()
+    payload = b"PNG"
+    payload_hash = hashlib.sha256(payload).hexdigest()
     resource = PreparedLongformResource(
         id="image-1",
         media_type="image/png",
-        source_sha256="a" * 64,
-        payload_sha256="a" * 64,
+        source_sha256=payload_hash,
+        payload_sha256=payload_hash,
         normalizer_id="none-v1",
-        payload_bytes=b"PNG",
+        payload_bytes=payload,
         image_profile=ImageProfile(1, 1, None, None, 1, "PNG", False),
     )
+    plan = make_simple_plan((resource,))
     executor.execute(plan, (resource,))
 
     params = bridge.commands[0].params
@@ -191,14 +212,14 @@ def test_execute_returns_outcome_from_add_in_result(tmp_staging: Path):
     from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
     result = FakeBridgeResult(value={
         "outputPath": "/staged/final.docx",
-        "appliedOperations": 5,
+        "appliedOperations": 4,
         "issueCodes": [
-            {"code": "DEGRADED", "message": "x", "placement": "document", "nodeId": "n:1"},
+            {"code": "BIBLIOGRAPHY_INSERT_FAILED", "message": "x", "placement": "document", "nodeId": "doc:reset"},
         ],
         "paginationMap": {
             "version": "M2-stub",
             "nodes": [
-                {"nodeId": "sec:1", "pageStart": 1, "pageEnd": 1, "fragments": [{"page": 1}]},
+                {"nodeId": "doc:reset", "fragments": [{"page": 1}]},
             ],
         },
         "fieldSnapshots": [
@@ -211,15 +232,19 @@ def test_execute_returns_outcome_from_add_in_result(tmp_staging: Path):
     plan = make_simple_plan()
     outcome = executor.execute(plan, ())
 
-    assert outcome.staged_artifact == "/staged/final.docx"
+    assert outcome.staged_artifact == bridge.commands[0].params["outputPath"]
     assert len(outcome.issues) == 1
-    assert outcome.issues[0].code == "DEGRADED"
+    assert outcome.issues[0].code == "BIBLIOGRAPHY_INSERT_FAILED"
     assert outcome.pagination_map.version == "M2-stub"
     assert len(outcome.pagination_map.nodes) == 1
-    assert outcome.pagination_map.nodes[0].node_id == "sec:1"
+    assert outcome.pagination_map.nodes[0].node_id == "doc:reset"
 
 
 def _remote_snapshot(hash_value: str, total_pages: int) -> dict[str, Any]:
+    if len(hash_value) != 64 or any(
+        character not in "0123456789abcdef" for character in hash_value
+    ):
+        hash_value = hashlib.sha256(hash_value.encode("utf-8")).hexdigest()
     return FieldSnapshot(
         stable_key=("doc:finalize", "PAGE", 0),
         field_category="page",
@@ -238,6 +263,7 @@ def test_execute_consumes_complete_unstable_history_and_deduplicates_remote_issu
 
     result = FakeBridgeResult(value={
         "outputPath": "/staged/final.docx",
+        "appliedOperations": 4,
         "issueCodes": [{
             "code": "FIELD_REFRESH_UNSTABLE",
             "message": "remote unstable",
@@ -270,6 +296,7 @@ def test_execute_rejects_remote_history_that_mutated_after_convergence(
 
     result = FakeBridgeResult(value={
         "outputPath": "/staged/final.docx",
+        "appliedOperations": 4,
         "issueCodes": [],
         "fieldSnapshots": [
             _remote_snapshot("same", 1),
@@ -297,6 +324,7 @@ def test_execute_uses_validated_stable_history_over_stale_remote_unstable_issue(
 
     result = FakeBridgeResult(value={
         "outputPath": "/staged/final.docx",
+        "appliedOperations": 4,
         "issueCodes": [{
             "code": "FIELD_REFRESH_UNSTABLE",
             "message": "stale marker",
@@ -331,8 +359,11 @@ def test_execute_raises_dedicated_host_error_when_bridge_missing(tmp_staging: Pa
     assert exc_info.value.code == MACOS_DEDICATED_HOST_UNAVAILABLE
 
 
-def test_execute_records_bridge_command_failure_as_issue(tmp_staging: Path):
-    from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
+def test_execute_treats_bridge_command_failure_as_fatal(tmp_staging: Path):
+    from skills.WPSComposer.scripts.longform.macos_executor import (
+        MacOSLongformExecutor,
+        MacOSLongformExecutorError,
+    )
     result = FakeBridgeResult(
         ok=False,
         error={"code": "GENERATION_COMMAND_FAILED", "message": "add-in crashed"},
@@ -340,9 +371,8 @@ def test_execute_records_bridge_command_failure_as_issue(tmp_staging: Path):
     bridge = FakeLoopbackBridge(result=result)
     executor = MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_staging))
     plan = make_simple_plan()
-    outcome = executor.execute(plan, ())
-
-    assert any(issue.code == "GENERATION_COMMAND_FAILED" for issue in outcome.issues)
+    with pytest.raises(MacOSLongformExecutorError, match="Execution aborted"):
+        executor.execute(plan, ())
 
 
 def test_execute_validates_plan_before_sending(tmp_staging: Path):
@@ -610,20 +640,20 @@ const blankRange = {{
   Text: "",
   ParagraphFormat: {{ Alignment: 0 }},
   Collapse: function() {{}},
-  Fields: {{ Add: function() {{}} }}
+  Fields: {{ Count: 0, Add: function() {{}} }}
 }};
 const blankFooterRange = {{
   Text: "",
   ParagraphFormat: {{ Alignment: 0 }},
   Collapse: function() {{}},
-  Fields: {{ Add: function() {{}} }},
+  Fields: {{ Count: 0, Add: function() {{}} }},
   PageNumbers: {{ RestartNumberingAtSection: false, StartingNumber: 1, NumberStyle: 0 }}
 }};
 const header = {{ Range: blankRange }};
 const footer = {{ Range: blankFooterRange }};
 const section = {{
-  Headers: {{ Item: function() {{ return header; }} }},
-  Footers: {{ Item: function() {{ return footer; }} }}
+  Headers: {{ Count: 1, Item: function() {{ return header; }} }},
+  Footers: {{ Count: 1, Item: function() {{ return footer; }} }}
 }};
 const document = {{
   _wpscFirstSectionConfigured: false,
@@ -632,6 +662,8 @@ const document = {{
   Sections: {{ Count: 1, Item: function() {{ return section; }} }},
   TablesOfContents: {{ Count: 0, Item: function(i) {{}}, Add: function() {{}} }},
   TablesOfFigures: {{ Count: 0, Item: function(i) {{}} }},
+  Bookmarks: {{ Count: 0 }},
+  Repaginate: function() {{}},
   Fields: {{ Update: function() {{ updateCount += 1; convergenceEvents.push("mutation"); }} }},
   ComputeStatistics: function() {{ convergenceEvents.push("snapshot"); return 1; }},
   SaveAs2: function() {{ saveCount += 1; convergenceEvents.push("save"); assert.ok(updateCount > 0, "Fields.Update must run before SaveAs2"); }},
@@ -682,6 +714,9 @@ const document = {{
   Content: {{ End: 0, Text: "" }},
   TablesOfContents: {{ Count: 0, Item: function() {{}} }},
   TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
+  Sections: {{ Count: 0, Item: function() {{}} }},
+  Bookmarks: {{ Count: 0 }},
+  Repaginate: function() {{}},
   Fields: {{ Update: function() {{ mutationCount += 1; }} }},
   ComputeStatistics: function() {{ return pages[snapshotCount++]; }},
   SaveAs2: function() {{}},
@@ -702,7 +737,7 @@ const result = window.WPSComposerLongformV2.run({{
 assert.equal(mutationCount, 3);
 assert.equal(snapshotCount, 4);
 assert.equal(result.fieldSnapshots.length, 4);
-assert.equal(result.fieldSnapshots[3].totalPages, 4);
+assert.equal(result.fieldSnapshots[3][0].totalPages, 4);
 assert.equal(result.issueCodes.filter(function(issue) {{ return issue.code === "FIELD_REFRESH_UNSTABLE"; }}).length, 1);
 """
     path = Path(tempfile.mkdtemp()) / "field_contract_unstable_test.js"
@@ -726,6 +761,8 @@ function makeDocument() {{
     Content: {{ End: 0, Text: "" }},
     TablesOfContents: {{ Count: 0, Item: function() {{}} }},
     TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
+    Bookmarks: {{ Count: 0 }},
+    Repaginate: function() {{}},
     Fields: {{ Update: function() {{
       updateCount += 1;
       if (failWithSecret) throw new Error("/private/image.png WPSC_SECRET visible text");

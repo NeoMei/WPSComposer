@@ -57,6 +57,10 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         "writer.js",
     ):
         (assets / name).write_text(name, encoding="utf-8")
+    from skills.WPSComposer.scripts.macos_probe.templates import (
+        write_addin_asset_manifest,
+    )
+    write_addin_asset_manifest(assets)
 
     profile = build_profile(
         assets,

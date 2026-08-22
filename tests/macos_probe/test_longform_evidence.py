@@ -29,19 +29,33 @@ class FakeBridge:
 
     def issue(self, component: str, method: str, params: dict[str, Any]):
         command_id = f"cmd-{len(self._commands)}"
-        self._commands.append({"component": component, "method": method, "params": params, "id": command_id})
+        self._commands.append({
+            "component": component,
+            "method": method,
+            "params": params,
+            "id": command_id,
+        })
         self._output_paths[command_id] = str(params.get("outputPath", self._artifact))
+
         class Command:
             id = command_id
+
         return Command()
 
     def wait_result(self, command_id: str, timeout: float) -> ProbeResult:
         output_path = self._output_paths.get(command_id, str(self._artifact))
         _make_minimal_docx(Path(output_path))
+        command = next(item for item in self._commands if item["id"] == command_id)
+        applied_operations = len(command["params"]["plan"]["operations"])
         return ProbeResult(
             id=command_id,
             ok=True,
-            value={"outputPath": output_path, "appliedOperations": 12, "issueCodes": [], "paginationMap": {"version": "M2-stub", "nodes": []}},
+            value={
+                "outputPath": output_path,
+                "appliedOperations": applied_operations,
+                "issueCodes": [],
+                "paginationMap": {"version": "M2-stub", "nodes": []},
+            },
             error=None,
         )
 
@@ -141,7 +155,7 @@ def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
     fixture = report["fixtures"][0]
     assert fixture["fixture"] == "plain_short"
     assert fixture["status"] == "passed"
-    assert fixture["appliedOperations"] == 12
+    assert fixture["appliedOperations"] == 9
     assert Path(fixture["artifact"]).is_file()
     assert report["wpsVersion"] != "unknown"
     assert runtime._activated == ["writer"]

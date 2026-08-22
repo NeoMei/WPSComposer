@@ -112,6 +112,9 @@ def build_profile(
     """
     if component not in COMPONENT_CONFIG:
         raise ValueError(f"Unknown component: {component}")
+    from .templates import verify_addin_assets
+
+    verify_addin_assets(assets)
     config = COMPONENT_CONFIG[component]
     profile = profiles_root / component
     profile.mkdir(parents=True, exist_ok=False)

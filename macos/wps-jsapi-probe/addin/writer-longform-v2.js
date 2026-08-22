@@ -2,12 +2,20 @@
   "use strict";
 
   const LONGFORM_DEFERRED = {
-    "writer.add_captioned_figure": ["IMAGE_INSERT_FAILED", "notice"],
-    "writer.add_semantic_table": ["TABLE_INSERT_FAILED", "notice"],
-    "writer.add_equation": ["EQUATION_INSERT_FAILED", "inline"],
-    "writer.add_bibliography": ["BIBLIOGRAPHY_INSERT_FAILED", "notice"],
-    "writer.add_cross_reference": ["CROSS_REFERENCE_FAILED", "inline"]
+    "writer.add_bibliography": ["BIBLIOGRAPHY_INSERT_FAILED", "notice"]
   };
+
+  const NATIVE_SEQUENCE_KIND = Object.freeze({
+    WPSC_FIG: "SEQ_FIG",
+    WPSC_TAB: "SEQ_TAB",
+    WPSC_EQ: "SEQ_EQ"
+  });
+  const RECOVERABLE_TABLE_CODES = Object.freeze({
+    TABLE_STYLE_APPLY_FAILED: true,
+    TABLE_MERGE_APPLY_FAILED: true,
+    TABLE_ROW_FORCED_SPLIT: true,
+    TABLE_INSERT_FAILED: true
+  });
 
   function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key);
@@ -298,11 +306,11 @@
           footer.Range.Collapse(0);
           footer.Range.Fields.Add(footer.Range, 33);
         } catch (error) {
-          // ignore
+          throw nativeError("FIELD_REFRESH_FAILED");
         }
       }
     } catch (error) {
-      // ignore
+      throw nativeError("FIELD_REFRESH_FAILED");
     }
   }
 
@@ -345,13 +353,22 @@
     }
   }
 
-  function insertTocWithStyles(document, args) {
+  function insertTocWithStyles(document, args, resources, context) {
+    void resources;
     const density = args.density || document._wpscTocDensity || {};
+    let toc;
     try {
-      document.TablesOfContents.Add(endRange(document), true, 1, args.levels || 3);
+      toc = document.TablesOfContents.Add(endRange(document), true, 1, args.levels || 3);
     } catch (error) {
-      // ignore
+      throw nativeError("FIELD_REFRESH_FAILED");
     }
+    trackNativeField(
+      document,
+      context && context.ownerNodeId ? context.ownerNodeId : "doc:toc",
+      "TOC",
+      toc,
+      "index"
+    );
     ["toc1", "toc2", "toc3"].forEach(function (key, index) {
       try {
         const style = getStyle(document, "TOC " + (index + 1));
@@ -376,56 +393,791 @@
     });
   }
 
-  function insertFigureIndex(document, args) {
+  function nativeError(code) {
+    const error = new Error(code);
+    error.code = code;
+    return error;
+  }
+
+  function currentPosition(document) {
+    const range = endRange(document);
+    return safeNumber(range && range.Start, safeNumber(range && range.End, 0));
+  }
+
+  function insertInlineText(document, value, targetRange) {
+    const text = safeString(value);
+    const range = targetRange || endRange(document);
+    if (typeof range.InsertAfter === "function") range.InsertAfter(text);
+    else range.Text = text;
+    return range;
+  }
+
+  function nativeFields(document) {
+    if (!Array.isArray(document._wpscNativeFields)) document._wpscNativeFields = [];
+    return document._wpscNativeFields;
+  }
+
+  function trackNativeField(document, ownerNodeId, fieldKind, native, category) {
+    nativeFields(document).push({
+      ownerNodeId: ownerNodeId || "doc:native",
+      fieldKind: fieldKind,
+      native: native,
+      category: category
+    });
+    return native;
+  }
+
+  function addNativeField(document, code, ownerNodeId, fieldKind, category, failureCode) {
+    let field;
     try {
-      document.TablesOfFigures.Add(endRange(document), "Figure");
+      field = document.Fields.Add(endRange(document), -1, code, true);
     } catch (error) {
-      // ignore
+      throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+    }
+    return trackNativeField(document, ownerNodeId, fieldKind, field, category);
+  }
+
+  function validateNumbering(numbering) {
+    if (!numbering || !hasOwn(NATIVE_SEQUENCE_KIND, numbering.sequenceId)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (numbering.mode !== "global" && numbering.mode !== "chapter") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (numbering.mode === "chapter" &&
+        (numbering.chapterStyleLevel !== 1 || numbering.resetLevel !== 1)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
     }
   }
 
-  function insertTableIndex(document, args) {
+  function addNativeNumberShell(document, numbering, bookmarkName, ownerNodeId) {
+    validateNumbering(numbering);
+    insertInlineText(document, numbering.prefix);
+    const numberStart = currentPosition(document);
+    if (numbering.mode === "chapter") {
+      addNativeField(document, "STYLEREF 1 \\s", ownerNodeId, "STYLEREF", "numbering");
+      insertInlineText(document, "-");
+    }
+    const sequenceCode = "SEQ " + numbering.sequenceId + " \\* ARABIC" +
+      (numbering.mode === "chapter" ? " \\s 1" : "");
+    addNativeField(
+      document,
+      sequenceCode,
+      ownerNodeId,
+      NATIVE_SEQUENCE_KIND[numbering.sequenceId],
+      "numbering"
+    );
+    const numberEnd = currentPosition(document);
+    if (bookmarkName !== undefined && bookmarkName !== null) {
+      if (!/^wpsc_(fig|tab|eq)_[a-z0-9]{24}$/.test(bookmarkName)) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+      try {
+        document.Bookmarks.Add(bookmarkName, document.Range(numberStart, numberEnd));
+      } catch (error) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+    }
+    if (numbering.suffix) insertInlineText(document, numbering.suffix);
+    return {start: numberStart, end: numberEnd};
+  }
+
+  function addNativeCaption(document, args, ownerNodeId, keepWithNext) {
+    const start = currentPosition(document);
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, ownerNodeId);
+    if (args.caption) insertInlineText(document, " " + safeString(args.caption));
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 1;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+      paragraph.ParagraphFormat.KeepWithNext = keepWithNext ? -1 : 0;
+    }
+    insertInlineText(document, "\r");
+    return paragraph;
+  }
+
+  function rollbackMutation(document, start, end) {
     try {
-      document.TablesOfFigures.Add(endRange(document), "Table");
+      const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
+      if (stop > start) document.Range(start, stop).Delete();
     } catch (error) {
-      // ignore
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
   }
 
-  function finalizeFields(document, args) {
-    for (let i = 1; i <= document.TablesOfContents.Count; i += 1) {
-      document.TablesOfContents.Item(i).Update();
-    }
-    for (let i = 1; i <= document.TablesOfFigures.Count; i += 1) {
-      document.TablesOfFigures.Item(i).Update();
-    }
-    document.Fields.Update();
+  function addExplicitOrientationSection(document, landscape) {
+    const range = endRange(document);
+    if (typeof range.InsertBreak === "function") range.InsertBreak(2);
+    const sections = document.Sections;
+    const section = sections ? collectionItem(sections, sections.Count) : null;
+    const setup = section && section.PageSetup ? section.PageSetup : document.PageSetup;
+    if (!setup) throw nativeError("EXECUTION_ABORTED");
+    setup.Orientation = landscape ? 1 : 0;
   }
 
-  function buildFieldSnapshot(document, roundIndex) {
-    const totalPages = Number(document.ComputeStatistics(2)) || 1;
-    const tocPageCount = Number(document.TablesOfContents.Count) || 0;
-    return {
+  function addFigureChild(document, child, locator, ownerNodeId, targetRange) {
+    const start = currentPosition(document);
+    let shape;
+    try {
+      shape = document.InlineShapes.AddPicture(locator, false, true, targetRange || endRange(document));
+    } catch (error) {
+      rollbackMutation(document, start);
+      throw nativeError("IMAGE_INSERT_FAILED");
+    }
+    try {
+      shape.Width = safeNumber(child.displayWidthPt, shape.Width);
+      shape.Height = safeNumber(child.displayHeightPt, shape.Height);
+      if (hasOwn(shape, "AlternativeText")) shape.AlternativeText = ownerNodeId || "";
+      if (shape.Range && shape.Range.ParagraphFormat) {
+        shape.Range.ParagraphFormat.Alignment = 1;
+        shape.Range.ParagraphFormat.KeepTogether = -1;
+        shape.Range.ParagraphFormat.KeepWithNext = -1;
+      }
+      insertInlineText(document, "\r", targetRange || null);
+      return shape;
+    } catch (error) {
+      rollbackMutation(document, start);
+      throw error;
+    }
+  }
+
+  function addFigureNotice(document, code) {
+    addDegradationNotice(document, {
+      code: code,
+      fallbackText: "[" + code + "]",
+      placement: "block"
+    });
+  }
+
+  function renderFigureStack(document, children, resources, context, retryOnce) {
+    let degraded = false;
+    children.forEach(function (child) {
+      if (child.plannedDegradation) {
+        const planned = child.plannedDegradation;
+        addDegradationNotice(document, {
+          code: planned.code,
+          fallbackText: planned.fallback,
+          placement: planned.placement || "block"
+        });
+        context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: planned.code});
+        appendIssueOnce(context.issues, {
+          code: planned.code,
+          message: "Figure child used its planned fallback",
+          placement: planned.placement || "block",
+          nodeId: context.ownerNodeId
+        });
+        degraded = true;
+        return;
+      }
+      const locator = resources[child.resourceId];
+      if (typeof locator !== "string" || locator.length === 0) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+      try {
+        addFigureChild(document, child, locator, context.ownerNodeId, null);
+        context.childResults.push({nodeId: child.nodeId, status: "applied"});
+      } catch (error) {
+        if (error.code !== "IMAGE_INSERT_FAILED") throw error;
+        if (retryOnce) {
+          try {
+            addFigureChild(document, child, locator, context.ownerNodeId, null);
+            context.childResults.push({nodeId: child.nodeId, status: "applied"});
+            degraded = true;
+            return;
+          } catch (retryError) {
+            if (retryError.code !== "IMAGE_INSERT_FAILED") throw retryError;
+          }
+        }
+        addFigureNotice(document, "IMAGE_INSERT_FAILED");
+        context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: "IMAGE_INSERT_FAILED"});
+        degraded = true;
+      }
+    });
+    return degraded;
+  }
+
+  function createFigureColumns(document, children, resources, context) {
+    let table;
+    try {
+      table = document.Tables.Add(endRange(document), 1, 3);
+      [children[0].displayWidthPt, 12, children[1].displayWidthPt].forEach(function (width, index) {
+        const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
+        if (typeof column.SetWidth === "function") column.SetWidth(width, 0);
+        else column.Width = width;
+      });
+      for (let borderId = -6; borderId <= -1; borderId += 1) {
+        table.Borders(borderId).LineStyle = 0;
+      }
+      if (table.Range && table.Range.ParagraphFormat) {
+        table.Range.ParagraphFormat.KeepTogether = -1;
+        table.Range.ParagraphFormat.KeepWithNext = -1;
+      }
+    } catch (error) {
+      throw nativeError("IMAGE_INSERT_FAILED");
+    }
+    children.forEach(function (child, index) {
+      const locator = resources[child.resourceId];
+      if (typeof locator !== "string" || locator.length === 0) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+      const cell = table.Cell(1, index === 0 ? 1 : 3);
+      addFigureChild(document, child, locator, context.ownerNodeId, cell.Range);
+    });
+    return table;
+  }
+
+  function addCaptionedFigureNative(document, args, resources, context) {
+    if (args.keepWithCaption !== true) throw nativeError("EXECUTION_ABORTED");
+    const landscape = args.orientation === "landscape";
+    if (landscape) addExplicitOrientationSection(document, true);
+    let degraded = false;
+    try {
+      if (args.layout === "columns") {
+        const start = currentPosition(document);
+        try {
+          createFigureColumns(document, args.children, resources, context);
+          args.children.forEach(function (child) {
+            context.childResults.push({nodeId: child.nodeId, status: "applied"});
+          });
+          insertInlineText(document, "\r");
+        } catch (error) {
+          if (error.code !== "IMAGE_INSERT_FAILED") throw error;
+          rollbackMutation(document, start);
+          degraded = renderFigureStack(document, args.children, resources, context, false) || true;
+        }
+      } else {
+        degraded = renderFigureStack(document, args.children, resources, context, true);
+      }
+      if (degraded) appendIssueOnce(context.issues, {
+        code: "IMAGE_INSERT_FAILED",
+        message: "Figure used deterministic stack recovery",
+        placement: "block",
+        nodeId: context.ownerNodeId
+      });
+      addNativeCaption(document, args, context.ownerNodeId, false);
+    } finally {
+      if (landscape) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function tableBorder(table, id) {
+    if (typeof table.Borders === "function") return table.Borders(id);
+    return collectionItem(table.Borders, id);
+  }
+
+  function tableRows(table, index) {
+    if (typeof table.Rows === "function") return table.Rows(index);
+    return collectionItem(table.Rows, index);
+  }
+
+  function applyTableBorders(table, spec) {
+    const mapping = {top: -1, left: -2, bottom: -3, right: -4, insideHorizontal: -5, insideVertical: -6};
+    Object.keys(mapping).forEach(function (name) {
+      const points = safeNumber(spec[name], 0);
+      const border = tableBorder(table, mapping[name]);
+      border.LineStyle = points === 0 ? 0 : 1;
+      if (points !== 0) border.LineWidth = points === 1.5 ? 12 : (points === 0.75 ? 6 : 2);
+    });
+    const headerPoints = safeNumber(spec.headerBottom, 0);
+    const headerBorder = tableBorder(tableRows(table, 1), -3);
+    headerBorder.LineStyle = headerPoints === 0 ? 0 : 1;
+    if (headerPoints !== 0) headerBorder.LineWidth = headerPoints === 1.5 ? 12 : (headerPoints === 0.75 ? 6 : 2);
+  }
+
+  function createNativeTable(document, args) {
+    const data = [args.headers].concat(args.rows || []);
+    let table;
+    try {
+      table = document.Tables.Add(endRange(document), data.length, args.headers.length);
+    } catch (error) {
+      throw nativeError("TABLE_INSERT_FAILED");
+    }
+    const alignmentCodes = {left: 0, center: 1, right: 2};
+    try {
+      data.forEach(function (row, rowIndex) {
+        row.forEach(function (value, columnIndex) {
+          const cell = table.Cell(rowIndex + 1, columnIndex + 1);
+          cell.Range.Text = safeString(value);
+          const format = cell.Range.ParagraphFormat;
+          format.FirstLineIndent = safeNumber(args.cellIndentPt, 0);
+          format.LeftIndent = 0;
+          format.RightIndent = 0;
+          format.Alignment = alignmentCodes[args.alignments[columnIndex]];
+        });
+      });
+      table.Rows.AllowBreakAcrossPages = args.allowRowSplit ? -1 : 0;
+      if (args.repeatHeader) tableRows(table, 1).HeadingFormat = -1;
+      applyTableBorders(table, args.borderSpec);
+    } catch (error) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
+    try {
+      (args.merges || []).forEach(function (merge) {
+        table.Cell(merge.top, merge.left).Merge(table.Cell(merge.bottom, merge.right));
+      });
+    } catch (error) {
+      throw nativeError("TABLE_MERGE_APPLY_FAILED");
+    }
+    insertInlineText(document, "\r");
+    return table;
+  }
+
+  function gridTableArgs(args) {
+    const clone = Object.assign({}, args);
+    clone.borderSpec = {
+      top: 0.75, bottom: 0.75, headerBottom: 0.75,
+      left: 0.75, right: 0.75, insideHorizontal: 0.75, insideVertical: 0.75
+    };
+    clone.merges = [];
+    clone.allowRowSplit = true;
+    return clone;
+  }
+
+  function tableOverflowGroup(table, merges) {
+    for (let index = 0; index < (merges || []).length; index += 1) {
+      const merge = merges[index];
+      if (merge.top < 2 || merge.bottom <= merge.top) continue;
+      const first = table.Cell(merge.top, merge.left).Range;
+      const last = table.Cell(merge.bottom, merge.right).Range;
+      if (safeNumber(first.Information(3), 0) !== safeNumber(last.Information(3), 0)) return true;
+    }
+    return false;
+  }
+
+  function addTableTextFallback(document, args) {
+    [args.headers].concat(args.rows || []).forEach(function (row) {
+      insertInlineText(document, row.map(safeString).join(" | ") + "\r");
+    });
+  }
+
+  function addNativeTableNotice(document, code) {
+    const start = currentPosition(document);
+    addDegradationNotice(document, {code: code, fallbackText: "", placement: "block"});
+    const range = document.Range(start, currentPosition(document));
+    if (range.ParagraphFormat) {
+      range.ParagraphFormat.KeepTogether = -1;
+      range.ParagraphFormat.KeepWithNext = -1;
+    }
+  }
+
+  function addSemanticTableNative(document, args, resources, context) {
+    void resources;
+    if (args.keepCaptionWithFirstRow !== true) throw nativeError("EXECUTION_ABORTED");
+    const landscape = args.orientation === "landscape";
+    if (landscape) addExplicitOrientationSection(document, true);
+    try {
+      addNativeCaption(document, args, context.ownerNodeId, true);
+      (args.plannedDegradation || []).forEach(function (planned) {
+        addNativeTableNotice(document, planned.code);
+        appendIssueOnce(context.issues, {
+          code: planned.code,
+          message: "Table used its planned fallback",
+          placement: planned.placement || "block",
+          nodeId: context.ownerNodeId
+        });
+      });
+      const tableStart = currentPosition(document);
+      let table;
+      let effectiveMerges = args.merges || [];
+      try {
+        table = createNativeTable(document, args);
+      } catch (error) {
+        if (!RECOVERABLE_TABLE_CODES[error.code]) throw error;
+        rollbackMutation(document, tableStart);
+        addNativeTableNotice(document, error.code);
+        const gridStart = currentPosition(document);
+        try {
+          table = createNativeTable(document, gridTableArgs(args));
+          effectiveMerges = [];
+          appendIssueOnce(context.issues, {
+            code: error.code,
+            message: "Table used deterministic grid fallback",
+            placement: "block",
+            nodeId: context.ownerNodeId
+          });
+        } catch (gridError) {
+          if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
+          rollbackMutation(document, gridStart);
+          addTableTextFallback(document, args);
+          appendIssueOnce(context.issues, {
+            code: "TABLE_INSERT_FAILED",
+            message: "Table used deterministic text fallback",
+            placement: "block",
+            nodeId: context.ownerNodeId
+          });
+          return;
+        }
+      }
+      if (tableOverflowGroup(table, effectiveMerges)) {
+        rollbackMutation(document, tableStart);
+        addNativeTableNotice(document, "TABLE_ROW_FORCED_SPLIT");
+        appendIssueOnce(context.issues, {
+          code: "TABLE_ROW_FORCED_SPLIT",
+          message: "Vertical merge group rendered as splittable grid",
+          placement: "block",
+          nodeId: context.ownerNodeId
+        });
+        const gridStart = currentPosition(document);
+        try {
+          createNativeTable(document, gridTableArgs(args));
+        } catch (gridError) {
+          if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
+          rollbackMutation(document, gridStart);
+          addTableTextFallback(document, args);
+          appendIssueOnce(context.issues, {
+            code: "TABLE_INSERT_FAILED",
+            message: "Overflow grid used deterministic text fallback",
+            placement: "block",
+            nodeId: context.ownerNodeId
+          });
+        }
+      }
+    } finally {
+      if (landscape) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function addEquationNumberNative(document, args, resources, context) {
+    void resources;
+    const start = currentPosition(document);
+    insertInlineText(document, args.source || args.fallbackText || "");
+    insertInlineText(document, "\t");
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 2;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function addCrossReferenceParagraph(document, args, resources, context) {
+    void resources;
+    let degraded = false;
+    (args.runs || []).forEach(function (run) {
+      if (run.type === "text") {
+        insertInlineText(document, run.text);
+        return;
+      }
+      insertInlineText(document, run.prefix);
+      const start = currentPosition(document);
+      try {
+        addNativeField(
+          document,
+          "REF " + run.bookmarkName + " \\h",
+          context.ownerNodeId,
+          "REF",
+          "reference",
+          "CROSS_REFERENCE_FAILED"
+        );
+      } catch (error) {
+        if (error.code !== "CROSS_REFERENCE_FAILED") throw error;
+        rollbackMutation(document, start);
+        insertInlineText(document, run.fallbackText);
+        degraded = true;
+      }
+      if (run.suffix) insertInlineText(document, run.suffix);
+    });
+    insertInlineText(document, "\r");
+    if (degraded) appendIssueOnce(context.issues, {
+      code: "CROSS_REFERENCE_FAILED",
+      message: "Cross-reference used inline fallback",
+      placement: "inline",
+      nodeId: context.ownerNodeId
+    });
+  }
+
+  function insertCaptionIndexNative(document, args, resources, context) {
+    void resources;
+    if (args.sequenceId !== "WPSC_FIG" && args.sequenceId !== "WPSC_TAB") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (args.title) {
+      const title = insertText(document, args.title, args.titleStyleId, {});
+      if (title.range && title.range.ParagraphFormat) title.range.ParagraphFormat.OutlineLevel = 10;
+    }
+    let index;
+    try {
+      index = document.TablesOfFigures.Add(endRange(document), args.sequenceId);
+    } catch (error) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    trackNativeField(
+      document,
+      context.ownerNodeId,
+      args.sequenceId === "WPSC_FIG" ? "TOF_FIG" : "TOF_TAB",
+      index,
+      "index"
+    );
+    insertInlineText(document, "\r");
+  }
+
+  function insertFigureIndex(document, args, resources, context) {
+    if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
+    document.TablesOfFigures.Add(endRange(document), "Figure");
+  }
+
+  function insertTableIndex(document, args, resources, context) {
+    if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
+    document.TablesOfFigures.Add(endRange(document), "Table");
+  }
+
+  function updateTrackedFields(document, kinds) {
+    nativeFields(document).forEach(function (entry) {
+      if (kinds[entry.fieldKind]) entry.native.Update();
+    });
+  }
+
+  function requiredCollectionCount(collection) {
+    if (!collection) throw nativeError("FIELD_REFRESH_FAILED");
+    const count = Number(collection.Count);
+    if (!Number.isInteger(count) || count < 0) throw nativeError("FIELD_REFRESH_FAILED");
+    return count;
+  }
+
+  function repaginateAndUpdateNumbering(document) {
+    if (typeof document.Repaginate !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    document.Repaginate();
+    const tracked = nativeFields(document);
+    updateTrackedFields(document, {STYLEREF: true, SEQ_FIG: true, SEQ_TAB: true, SEQ_EQ: true});
+    // Compatibility for M1/M2 plans that predate tracked native fields.
+    if (tracked.length === 0) {
+      if (!document.Fields || typeof document.Fields.Update !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+      document.Fields.Update();
+    }
+  }
+
+  function refreshBookmarksAndReferences(document) {
+    requiredCollectionCount(document.Bookmarks);
+    updateTrackedFields(document, {REF: true});
+  }
+
+  function refreshIndexes(document) {
+    const tocCount = requiredCollectionCount(document.TablesOfContents);
+    const figureCount = requiredCollectionCount(document.TablesOfFigures);
+    for (let index = 1; index <= tocCount; index += 1) {
+      collectionItem(document.TablesOfContents, index).Update();
+    }
+    for (let index = 1; index <= figureCount; index += 1) {
+      collectionItem(document.TablesOfFigures, index).Update();
+    }
+  }
+
+  function sectionPageFields(document) {
+    const entries = [];
+    const sectionCount = requiredCollectionCount(document.Sections);
+    for (let sectionIndex = 1; sectionIndex <= sectionCount; sectionIndex += 1) {
+      const section = collectionItem(document.Sections, sectionIndex);
+      ["Headers", "Footers"].forEach(function (storyName) {
+        const stories = section && section[storyName];
+        const storyCount = requiredCollectionCount(stories);
+        for (let storyIndex = 1; storyIndex <= storyCount; storyIndex += 1) {
+          const story = collectionItem(stories, storyIndex);
+          if (story && (story.Exists === false || story.Exists === 0)) continue;
+          const fields = story && story.Range && story.Range.Fields;
+          const fieldCount = requiredCollectionCount(fields);
+          for (let fieldIndex = 1; fieldIndex <= fieldCount; fieldIndex += 1) {
+            const native = collectionItem(fields, fieldIndex);
+            const code = safeString(native && native.Code && native.Code.Text)
+              .trim().toUpperCase().split(/\s+/, 1)[0];
+            if (code === "PAGE" || code === "NUMPAGES") {
+              entries.push({
+                ownerNodeId: "section:" + sectionIndex + "/" + storyName.toLowerCase() + ":" + storyIndex,
+                fieldKind: code,
+                native: native,
+                category: "page"
+              });
+            }
+          }
+        }
+      });
+    }
+    return entries;
+  }
+
+  function repaginateAndUpdatePageFields(document) {
+    if (typeof document.Repaginate !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    document.Repaginate();
+    updateTrackedFields(document, {PAGE: true, NUMPAGES: true});
+    const tracked = new Set(nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "PAGE" || entry.fieldKind === "NUMPAGES";
+    }).map(function (entry) { return entry.native; }));
+    sectionPageFields(document).forEach(function (entry) {
+      if (!tracked.has(entry.native)) entry.native.Update();
+    });
+  }
+
+  const SHA256_CONSTANTS = Object.freeze([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ]);
+
+  function utf8Bytes(text) {
+    const bytes = [];
+    for (let index = 0; index < text.length; index += 1) {
+      let codePoint = text.charCodeAt(index);
+      if (codePoint >= 0xd800 && codePoint <= 0xdbff) {
+        const next = text.charCodeAt(index + 1);
+        if (next >= 0xdc00 && next <= 0xdfff) {
+          codePoint = 0x10000 + ((codePoint - 0xd800) << 10) + (next - 0xdc00);
+          index += 1;
+        } else {
+          codePoint = 0xfffd;
+        }
+      } else if (codePoint >= 0xdc00 && codePoint <= 0xdfff) {
+        codePoint = 0xfffd;
+      }
+      if (codePoint <= 0x7f) bytes.push(codePoint);
+      else if (codePoint <= 0x7ff) {
+        bytes.push(0xc0 | (codePoint >>> 6), 0x80 | (codePoint & 0x3f));
+      } else if (codePoint <= 0xffff) {
+        bytes.push(0xe0 | (codePoint >>> 12), 0x80 | ((codePoint >>> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+      } else {
+        bytes.push(0xf0 | (codePoint >>> 18), 0x80 | ((codePoint >>> 12) & 0x3f),
+          0x80 | ((codePoint >>> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+      }
+    }
+    return bytes;
+  }
+
+  function rotateRight(value, bits) {
+    return (value >>> bits) | (value << (32 - bits));
+  }
+
+  function hashVisible(value) {
+    const text = safeString(value).replace(/\r\n?/g, "\n").normalize("NFC");
+    const bytes = utf8Bytes(text);
+    const bitLength = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    const high = Math.floor(bitLength / 0x100000000);
+    const low = bitLength >>> 0;
+    for (let shift = 24; shift >= 0; shift -= 8) bytes.push((high >>> shift) & 0xff);
+    for (let shift = 24; shift >= 0; shift -= 8) bytes.push((low >>> shift) & 0xff);
+
+    const state = [
+      0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+      0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    ];
+    const words = new Array(64);
+    for (let offset = 0; offset < bytes.length; offset += 64) {
+      for (let index = 0; index < 16; index += 1) {
+        const base = offset + index * 4;
+        words[index] = ((bytes[base] << 24) | (bytes[base + 1] << 16) |
+          (bytes[base + 2] << 8) | bytes[base + 3]) >>> 0;
+      }
+      for (let index = 16; index < 64; index += 1) {
+        const left = words[index - 15];
+        const right = words[index - 2];
+        const sigma0 = rotateRight(left, 7) ^ rotateRight(left, 18) ^ (left >>> 3);
+        const sigma1 = rotateRight(right, 17) ^ rotateRight(right, 19) ^ (right >>> 10);
+        words[index] = (words[index - 16] + sigma0 + words[index - 7] + sigma1) >>> 0;
+      }
+      let a = state[0]; let b = state[1]; let c = state[2]; let d = state[3];
+      let e = state[4]; let f = state[5]; let g = state[6]; let h = state[7];
+      for (let index = 0; index < 64; index += 1) {
+        const bigSigma1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
+        const choice = (e & f) ^ (~e & g);
+        const temp1 = (h + bigSigma1 + choice + SHA256_CONSTANTS[index] + words[index]) >>> 0;
+        const bigSigma0 = rotateRight(a, 2) ^ rotateRight(a, 13) ^ rotateRight(a, 22);
+        const majority = (a & b) ^ (a & c) ^ (b & c);
+        const temp2 = (bigSigma0 + majority) >>> 0;
+        h = g; g = f; f = e; e = (d + temp1) >>> 0;
+        d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+      }
+      state[0] = (state[0] + a) >>> 0; state[1] = (state[1] + b) >>> 0;
+      state[2] = (state[2] + c) >>> 0; state[3] = (state[3] + d) >>> 0;
+      state[4] = (state[4] + e) >>> 0; state[5] = (state[5] + f) >>> 0;
+      state[6] = (state[6] + g) >>> 0; state[7] = (state[7] + h) >>> 0;
+    }
+    return state.map(function (word) { return word.toString(16).padStart(8, "0"); }).join("");
+  }
+
+  function nativeVisibleResult(native) {
+    if (native && native.Result && native.Result.Text !== undefined) return native.Result.Text;
+    if (native && native.Range && native.Range.Text !== undefined) return native.Range.Text;
+    return "";
+  }
+
+  function nativeRangePageSpan(native) {
+    const range = native && native.Range;
+    const start = Number(range && range.Start);
+    const end = Number(range && range.End);
+    if (!Number.isInteger(start) || !Number.isInteger(end) || end < start) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (end === start) return 1;
+    const first = typeof range.Duplicate === "function" ? range.Duplicate() : range.Duplicate;
+    const last = typeof range.Duplicate === "function" ? range.Duplicate() : range.Duplicate;
+    if (!first || !last || typeof first.SetRange !== "function" ||
+        typeof last.SetRange !== "function" || typeof first.Information !== "function" ||
+        typeof last.Information !== "function") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    first.SetRange(start, start);
+    last.SetRange(end - 1, end - 1);
+    const firstPage = Number(first.Information(3));
+    const lastPage = Number(last.Information(3));
+    if (!Number.isInteger(firstPage) || !Number.isInteger(lastPage)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return Math.max(1, lastPage - firstPage + 1);
+  }
+
+  function snapshotFields(document) {
+    if (typeof document.ComputeStatistics !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    const totalPages = Number(document.ComputeStatistics(2));
+    if (!Number.isFinite(totalPages) || totalPages < 0) throw nativeError("FIELD_REFRESH_FAILED");
+    requiredCollectionCount(document.TablesOfContents);
+    requiredCollectionCount(document.TablesOfFigures);
+    const tocPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOC";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const figureIndexPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOF_FIG";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const tableIndexPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOF_TAB";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const ordinals = {};
+    const snapshotEntries = nativeFields(document).concat(sectionPageFields(document));
+    const snapshots = snapshotEntries.map(function (entry) {
+      const identity = entry.ownerNodeId + "\u0000" + entry.fieldKind;
+      const ordinal = ordinals[identity] || 0;
+      ordinals[identity] = ordinal + 1;
+      return {
+        stableKey: [entry.ownerNodeId, entry.fieldKind, ordinal],
+        fieldCategory: entry.category,
+        resultHash: hashVisible(nativeVisibleResult(entry.native)),
+        tocPageCount: tocPageCount,
+        figureIndexPageCount: figureIndexPageCount,
+        tableIndexPageCount: tableIndexPageCount,
+        totalPages: totalPages
+      };
+    });
+    if (snapshots.length === 0) snapshots.push({
       stableKey: ["doc:finalize", "PAGE", 0],
       fieldCategory: "page",
-      resultHash: String(totalPages) + "-" + String(tocPageCount),
+      resultHash: hashVisible(String(totalPages) + "-" + String(tocPageCount)),
       tocPageCount: tocPageCount,
-      figureIndexPageCount: 0,
-      tableIndexPageCount: 0,
+      figureIndexPageCount: figureIndexPageCount,
+      tableIndexPageCount: tableIndexPageCount,
       totalPages: totalPages
-    };
+    });
+    snapshots.sort(function (left, right) {
+      return JSON.stringify(left.stableKey).localeCompare(JSON.stringify(right.stableKey));
+    });
+    return snapshots;
   }
 
   function fieldSnapshotSignature(snapshot) {
-    return JSON.stringify([
-      snapshot.stableKey,
-      snapshot.fieldCategory,
-      snapshot.resultHash,
-      snapshot.tocPageCount,
-      snapshot.figureIndexPageCount,
-      snapshot.tableIndexPageCount,
-      snapshot.totalPages
-    ]);
+    return JSON.stringify(snapshot);
   }
 
   function appendIssueOnce(issues, issue) {
@@ -438,61 +1190,69 @@
   }
 
   function unstableFieldIssue(snapshot, rounds) {
+    const representative = snapshot.length ? snapshot[snapshot.length - 1] : {
+      tocPageCount: 0, figureIndexPageCount: 0, tableIndexPageCount: 0, totalPages: 0
+    };
     return {
       code: "FIELD_REFRESH_UNSTABLE",
       message: "Field refresh did not converge after " + rounds + " rounds; " +
-        "fields=1, toc_pages=" + snapshot.tocPageCount +
-        ", figure_index_pages=" + snapshot.figureIndexPageCount +
-        ", table_index_pages=" + snapshot.tableIndexPageCount +
-        ", total_pages=" + snapshot.totalPages,
+        "fields=" + snapshot.length + ", toc_pages=" + representative.tocPageCount +
+        ", figure_index_pages=" + representative.figureIndexPageCount +
+        ", table_index_pages=" + representative.tableIndexPageCount +
+        ", total_pages=" + representative.totalPages,
       placement: "document"
     };
   }
 
-  function runFieldConvergence(document, operations, issues) {
-    let fieldSnapshots = [];
-    operations.forEach(function (operation) {
-      if (operation.op === "writer.finalize_fields") {
-        const rawMaxRounds = operation.args && operation.args.maxRounds !== undefined
-          ? operation.args.maxRounds
-          : 3;
-        if (!Number.isInteger(rawMaxRounds) || rawMaxRounds < 1 || rawMaxRounds > 3) {
-          const boundError = new Error("Native field maxRounds must be an integer from 1 through 3");
-          boundError.code = "FIELD_REFRESH_CONTRACT_INVALID";
-          throw boundError;
-        }
-        let failed = false;
-        let converged = false;
-        let previousSignature = null;
-        try {
-          for (let round = 0; round < rawMaxRounds; round += 1) {
-            finalizeFields(document, operation.args);
-            const snapshot = buildFieldSnapshot(document, round);
-            fieldSnapshots.push(snapshot);
-            const signature = fieldSnapshotSignature(snapshot);
-            if (previousSignature !== null && signature === previousSignature) {
-              converged = true;
-              break;
-            }
-            previousSignature = signature;
-          }
-          if (!converged) {
-            // The diagnostic snapshot after the mutation bound is read-only.
-            const frozen = buildFieldSnapshot(document, rawMaxRounds);
-            fieldSnapshots.push(frozen);
-            appendIssueOnce(issues, unstableFieldIssue(frozen, rawMaxRounds + 1));
-          }
-        } catch (error) {
-          failed = true;
-        }
-        if (failed) {
-          const fieldError = new Error("Required native field API failed");
-          fieldError.code = "FIELD_REFRESH_FAILED";
-          throw fieldError;
-        }
+  function nativeFieldAdapter(document) {
+    return {
+      repaginateAndUpdateNumbering: function () { repaginateAndUpdateNumbering(document); },
+      refreshBookmarksAndReferences: function () { refreshBookmarksAndReferences(document); },
+      refreshIndexes: function () { refreshIndexes(document); },
+      repaginateAndUpdatePageFields: function () { repaginateAndUpdatePageFields(document); },
+      snapshotFields: function () { return snapshotFields(document); }
+    };
+  }
+
+  function runNativeFieldConvergence(adapter, rawMaxRounds, issues) {
+    if (!Number.isInteger(rawMaxRounds) || rawMaxRounds < 1 || rawMaxRounds > 3) {
+      const boundError = nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      throw boundError;
+    }
+    const fieldSnapshots = [];
+    let previousSignature = null;
+    try {
+      for (let round = 0; round < rawMaxRounds; round += 1) {
+        adapter.repaginateAndUpdateNumbering();
+        adapter.refreshBookmarksAndReferences();
+        adapter.refreshIndexes();
+        adapter.repaginateAndUpdatePageFields();
+        const snapshot = adapter.snapshotFields();
+        fieldSnapshots.push(snapshot);
+        const signature = fieldSnapshotSignature(snapshot);
+        if (previousSignature !== null && signature === previousSignature) return fieldSnapshots;
+        previousSignature = signature;
       }
+      const frozen = adapter.snapshotFields();
+      fieldSnapshots.push(frozen);
+      appendIssueOnce(issues, unstableFieldIssue(frozen, rawMaxRounds + 1));
+      return fieldSnapshots;
+    } catch (error) {
+      if (error && error.code === "FIELD_REFRESH_CONTRACT_INVALID") throw error;
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+  }
+
+  function runFieldConvergence(document, operations, issues) {
+    const finalizers = operations.filter(function (operation) {
+      return operation.op === "writer.finalize_fields";
     });
-    return fieldSnapshots;
+    if (finalizers.length === 0) return [];
+    if (finalizers.length !== 1) throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    const operation = finalizers[0];
+    const maxRounds = operation.args && operation.args.maxRounds !== undefined
+      ? operation.args.maxRounds : 3;
+    return runNativeFieldConvergence(nativeFieldAdapter(document), maxRounds, issues);
   }
 
   function addInlineDegradation(document, args) {
@@ -539,6 +1299,10 @@
     "writer.insert_toc_with_styles": insertTocWithStyles,
     "writer.insert_figure_index": insertFigureIndex,
     "writer.insert_table_index": insertTableIndex,
+    "writer.add_captioned_figure": addCaptionedFigureNative,
+    "writer.add_semantic_table": addSemanticTableNative,
+    "writer.add_equation": addEquationNumberNative,
+    "writer.add_cross_reference": addCrossReferenceParagraph,
     // runFieldConvergence is the sole owner; operation dispatch is a no-op.
     "writer.finalize_fields": function () {},
     "writer.add_inline_degradation": addInlineDegradation,
@@ -546,13 +1310,13 @@
     "writer.add_document_quality_notice": addDocumentQualityNotice
   };
 
-  function runOperation(document, operation, resources, issues) {
+  function runOperation(document, operation, resources, issues, childResults) {
     const opName = operation.op;
     const deferred = LONGFORM_DEFERRED[opName];
     if (deferred) {
-      issues.push({
+      appendIssueOnce(issues, {
         code: deferred[0],
-        message: opName + " is deferred to fallback in M2",
+        message: opName + " is deferred to fallback",
         placement: "document",
         nodeId: operation.nodeId
       });
@@ -578,39 +1342,54 @@
       });
       return;
     }
+    const context = {
+      ownerNodeId: operation.nodeId || null,
+      issues: issues,
+      childResults: childResults
+    };
     try {
-      handler(document, operation.args);
+      handler(document, operation.args || {}, resources || {}, context);
     } catch (error) {
+      if (error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED") {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
       const policy = operation.failurePolicy || {};
       if (policy.mode === "fail") {
-        error.code = "EXECUTION_ABORTED";
-        throw error;
+        throw nativeError("EXECUTION_ABORTED");
       }
       if (policy.mode === "degrade") {
-        issues.push({
-          code: policy.recoverableCodes && policy.recoverableCodes[0] || "EXECUTION_FAILED",
-          message: opName + " degraded: " + error,
-          placement: "document",
-          nodeId: operation.nodeId
-        });
-        try {
-          addDegradationNotice(document, {
-            code: "EXECUTION_FAILED",
-            message: opName + " degraded",
-            fallbackText: operation.args.fallbackText || String(error),
-            placement: operation.args.placement || "block"
+        const code = error && error.code;
+        const allowed = Array.isArray(policy.recoverableCodes) &&
+          policy.recoverableCodes.indexOf(code) !== -1;
+        if (allowed) {
+          appendIssueOnce(issues, {
+            code: code,
+            message: opName + " used its declared fallback",
+            placement: opName === "writer.add_cross_reference" ? "inline" : "block",
+            nodeId: operation.nodeId
           });
-        } catch (fallbackError) {
-          // ignore
+          try {
+            if (opName === "writer.add_cross_reference") {
+              addInlineDegradation(document, {
+                fallbackText: (operation.args.runs || []).map(function (run) {
+                  return run.type === "text" ? run.text : run.fallbackText;
+                }).join("")
+              });
+            } else {
+              addDegradationNotice(document, {
+                code: code,
+                fallbackText: operation.args.fallbackText || operation.args.source || operation.args.caption || "",
+                placement: operation.args.placement || "block"
+              });
+            }
+          } catch (fallbackError) {
+            throw nativeError("DEGRADATION_FALLBACK_FAILED");
+          }
+          return;
         }
-      } else {
-        issues.push({
-          code: "EXECUTION_FAILED",
-          message: opName + " failed: " + error,
-          placement: "document",
-          nodeId: operation.nodeId
-        });
       }
+      throw nativeError(error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED"
+        ? "LOCAL_MUTATION_ROLLBACK_FAILED" : "EXECUTION_ABORTED");
     }
   }
 
@@ -627,6 +1406,27 @@
     return { version: "M2-stub", nodes: nodes };
   }
 
+  function validatePrivateResourceMap(plan, resources) {
+    if (!resources || typeof resources !== "object" || Array.isArray(resources)) {
+      throw nativeError("RESOURCE_HASH_MISMATCH");
+    }
+    const expected = {};
+    (plan.operations || []).forEach(function (operation) {
+      if (operation.op !== "writer.add_captioned_figure") return;
+      (operation.args.children || []).forEach(function (child) {
+        if (child.resourceId) expected[child.resourceId] = true;
+      });
+    });
+    Object.keys(expected).forEach(function (resourceId) {
+      if (typeof resources[resourceId] !== "string" || resources[resourceId].length === 0) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+    });
+    Object.keys(resources).forEach(function (resourceId) {
+      if (!expected[resourceId]) throw nativeError("RESOURCE_HASH_MISMATCH");
+    });
+  }
+
   function run(params) {
     const plan = params.plan;
     const outputPath = params.outputPath;
@@ -636,8 +1436,10 @@
     let document = null;
     let appliedCount = 0;
     const issues = [];
+    const childResults = [];
 
     try {
+      validatePrivateResourceMap(plan, resources);
       Application.DisplayAlerts = 0;
       Application.ScreenUpdating = false;
       document = Application.Documents.Add();
@@ -645,13 +1447,17 @@
 
       const operations = plan.operations || [];
       operations.forEach(function (operation) {
-        runOperation(document, operation, resources, issues);
+        runOperation(document, operation, resources, issues, childResults);
         appliedCount += 1;
       });
 
       const fieldSnapshots = runFieldConvergence(document, operations, issues);
 
-      document.SaveAs2(outputPath, 12);
+      try {
+        document.SaveAs2(outputPath, 12);
+      } catch (error) {
+        throw nativeError("SAVE_FAILED");
+      }
       document.Close(0);
       document = null;
       return {
@@ -659,7 +1465,8 @@
         appliedOperations: appliedCount,
         issueCodes: issues,
         paginationMap: buildPaginationMap(operations),
-        fieldSnapshots: fieldSnapshots
+        fieldSnapshots: fieldSnapshots,
+        childResults: childResults
       };
     } catch (error) {
       if (document !== null) {
@@ -683,5 +1490,23 @@
     }
   }
 
-  window.WPSComposerLongformV2 = Object.freeze({ run, OPERATIONS: Object.keys(OPERATIONS) });
+  window.WPSComposerLongformV2 = Object.freeze({
+    run: run,
+    OPERATIONS: Object.keys(OPERATIONS),
+    __test: Object.freeze({
+      addNativeNumberShell: addNativeNumberShell,
+      createFigureColumns: createFigureColumns,
+      addCaptionedFigureNative: addCaptionedFigureNative,
+      addSemanticTableNative: addSemanticTableNative,
+      addEquationNumberNative: addEquationNumberNative,
+      addCrossReferenceParagraph: addCrossReferenceParagraph,
+      insertCaptionIndexNative: insertCaptionIndexNative,
+      createNativeTable: createNativeTable,
+      nativeFieldAdapter: nativeFieldAdapter,
+      runNativeFieldConvergence: runNativeFieldConvergence,
+      hashVisible: hashVisible,
+      rollbackMutation: rollbackMutation,
+      runOperation: runOperation
+    })
+  });
 }());
