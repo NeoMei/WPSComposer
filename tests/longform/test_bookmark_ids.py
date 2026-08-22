@@ -9,9 +9,15 @@ from skills.WPSComposer.scripts.longform.bookmark_ids import (
     BOOKMARK_COLLISION_UNRESOLVED,
     BOOKMARK_ID_INVALID,
     BOOKMARK_KIND_INVALID,
+    BOOKMARK_NAME_COLLISION,
     BookmarkMapResult,
     map_bookmarks,
 )
+
+
+def test_collision_issue_uses_m3_public_code() -> None:
+    assert BOOKMARK_COLLISION_UNRESOLVED == "BOOKMARK_COLLISION_UNRESOLVED"
+    assert BOOKMARK_NAME_COLLISION == "BOOKMARK_NAME_COLLISION"
 
 
 def _expected_name(kind: str, external_id: str, attempt: int = 0) -> str:
@@ -116,4 +122,3 @@ def test_bookmark_name_format_is_ascii_and_24_hex() -> None:
     assert len(suffix) == 24
     assert suffix == suffix.lower()
     assert set(suffix).issubset(set("0123456789abcdef"))
-

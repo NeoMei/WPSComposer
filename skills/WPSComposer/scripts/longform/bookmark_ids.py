@@ -15,6 +15,7 @@ from typing import Iterable
 
 BOOKMARK_ID_INVALID = "BOOKMARK_ID_INVALID"
 BOOKMARK_KIND_INVALID = "BOOKMARK_KIND_INVALID"
+BOOKMARK_NAME_COLLISION = "BOOKMARK_NAME_COLLISION"
 BOOKMARK_COLLISION_UNRESOLVED = "BOOKMARK_COLLISION_UNRESOLVED"
 
 _VALID_KINDS = frozenset({"fig", "tab", "eq", "ref", "head", "para"})
@@ -80,6 +81,7 @@ def map_bookmarks(external_ids: Iterable[str], kind: str) -> BookmarkMapResult:
 
 __all__ = [
     "BOOKMARK_COLLISION_UNRESOLVED",
+    "BOOKMARK_NAME_COLLISION",
     "BOOKMARK_ID_INVALID",
     "BOOKMARK_KIND_INVALID",
     "BookmarkMapResult",

@@ -23,6 +23,7 @@ from ..document_model import (
     FigureBlock,
     FormulaBlock,
     BlockQuote,
+    CaptionBinding,
     HorizontalRule,
     ImageBlock,
     KeywordsBlock,
@@ -34,11 +35,17 @@ from ..document_model import (
     Section,
     SemanticTableBlock,
     Span,
+    CrossReferenceRun,
     StructuredDocument,
     TableBlock,
     TaskList,
 )
-from .bookmark_ids import BookmarkMapResult, map_bookmarks
+from .bookmark_ids import (
+    BOOKMARK_COLLISION_UNRESOLVED,
+    BOOKMARK_NAME_COLLISION,
+    BookmarkMapResult,
+    map_bookmarks,
+)
 from .unicode_text import (
     contains_han,
     display_units,
@@ -52,6 +59,7 @@ HEADING_PREFIX_AMBIGUOUS = "HEADING_PREFIX_AMBIGUOUS"
 HEADING_LEVEL_GAP = "HEADING_LEVEL_GAP"
 TITLE_MISSING = "TITLE_MISSING"
 REFERENCE_UNRESOLVED = "REFERENCE_UNRESOLVED"
+CAPTION_MISSING = "CAPTION_MISSING"
 DUPLICATE_EXPLICIT_ID = "DUPLICATE_EXPLICIT_ID"
 INVALID_EXPLICIT_ID = "INVALID_EXPLICIT_ID"
 ABSTRACT_CONTENT_DEGRADED = "ABSTRACT_CONTENT_DEGRADED"
@@ -823,7 +831,7 @@ def _scan_inline_references(
             if span.code or span.math:
                 continue
             for m in pattern.finditer(span.text):
-                collector.add(m.group(1).strip())
+                collector.add(normalize_visible_text(m.group(1).strip()))
 
     for section in sections:
         for elem in section.elements:
@@ -865,6 +873,10 @@ def _scan_inline_references(
                 scan_spans(
                     [Span(text=elem.fallback_text)], cites, _CITE_RE
                 )
+            elif isinstance(elem, PageBreakBlock):
+                for para in elem.content:
+                    scan_spans(para.spans, refs, _REF_RE)
+                    scan_spans(para.spans, cites, _CITE_RE)
 
     return refs, cites
 
@@ -872,7 +884,7 @@ def _scan_inline_references(
 def _build_references(
     doc: StructuredDocument,
     targets: dict[str, tuple[str, str]],
-    explicit_ids: list[str],
+    bookmarks: BookmarkMapResult,
     issues: list[DocumentIssue],
 ) -> dict[str, dict[str, Any]]:
     """Resolve cross-references and citations against collected targets."""
@@ -914,7 +926,11 @@ def _build_references(
 
     # Add figure/table/formula targets to references map.
     for identifier, (kind, node_id) in targets.items():
+        bookmark_name = bookmarks.mapping.get(identifier)
+        if bookmark_name is None:
+            continue
         references[identifier] = {
+            "bookmark_name": bookmark_name,
             "kind": kind,
             "node_id": node_id,
         }
@@ -978,17 +994,191 @@ def _map_bookmarks_from_targets(
     )
 
 
-def _update_caption_numbering(
-    config: LongformConfig, sections: list[Section]
+def _caption_reference_targets(
+    doc: StructuredDocument,
+    targets: dict[str, tuple[str, str]],
+    issues: list[DocumentIssue],
+) -> dict[str, tuple[str, str]]:
+    """Return explicit object targets eligible for a native number bookmark."""
+    eligible: dict[str, tuple[str, str]] = {}
+    for section in doc.sections:
+        for element in section.elements:
+            kind: Optional[str] = None
+            indexable = True
+            if isinstance(element, FigureBlock):
+                kind = "fig"
+                element.caption = _normalize_text(element.caption)
+                indexable = bool(element.caption)
+            elif isinstance(element, SemanticTableBlock):
+                kind = "tab"
+                element.caption = _normalize_text(element.caption)
+                indexable = bool(element.caption)
+            elif isinstance(element, FormulaBlock):
+                kind = "eq"
+            else:
+                continue
+
+            if not indexable:
+                issues.append(
+                    _issue(
+                        CAPTION_MISSING,
+                        f"{kind} block has no non-empty caption; numbering and "
+                        "cross-reference capability were disabled.",
+                        placement="block",
+                    )
+                )
+                continue
+
+            identifier = element.identifier
+            if (
+                identifier
+                and targets.get(identifier) == (kind, element.node_id)
+            ):
+                eligible[identifier] = (kind, element.node_id)
+    return eligible
+
+
+def _apply_caption_bindings(
+    doc: StructuredDocument,
+    config: LongformConfig,
+    targets: dict[str, tuple[str, str]],
+    bookmarks: BookmarkMapResult,
 ) -> None:
-    """Update auto caption numbering once heading numbering is resolved."""
-    if config.caption_numbering != "auto":
-        return
-    has_numbered_h1 = any(
-        s.level == 1 and s.numbering not in ("none", "auto")
-        for s in sections
-    )
-    config.caption_numbering = "chapter" if has_numbered_h1 else "global"
+    """Resolve chapter/global numbering on each object in source order."""
+    current_chapter_node_id: Optional[str] = None
+    for section in doc.sections:
+        if (
+            section.level == 1
+            and section.numbering not in ("none", "auto")
+        ):
+            current_chapter_node_id = section.node_id
+
+        for element in section.elements:
+            if isinstance(element, FigureBlock):
+                kind = "fig"
+                indexable = bool(element.caption)
+            elif isinstance(element, SemanticTableBlock):
+                kind = "tab"
+                indexable = bool(element.caption)
+            elif isinstance(element, FormulaBlock):
+                kind = "eq"
+                indexable = True
+            else:
+                continue
+
+            chapter_mode = (
+                config.caption_numbering in {"auto", "chapter"}
+                and current_chapter_node_id is not None
+            )
+            mode = "chapter" if chapter_mode else "global"
+            chapter_node_id = current_chapter_node_id if chapter_mode else None
+
+            identifier = element.identifier
+            bookmark_name = None
+            if (
+                identifier
+                and indexable
+                and targets.get(identifier) == (kind, element.node_id)
+            ):
+                bookmark_name = bookmarks.mapping.get(identifier)
+            element.caption_binding = CaptionBinding(
+                mode=mode,
+                chapter_node_id=chapter_node_id,
+                bookmark_name=bookmark_name,
+                indexable=indexable,
+                referenceable=bookmark_name is not None,
+            )
+
+
+def _iter_paragraphs(element: Any):
+    if isinstance(element, Paragraph):
+        yield element
+    elif isinstance(element, (AbstractBlock, BlockQuote)):
+        yield from element.paragraphs
+    elif isinstance(element, PageBreakBlock):
+        yield from element.content
+    elif isinstance(element, Section):
+        for child in element.elements:
+            yield from _iter_paragraphs(child)
+
+
+def _assign_paragraph_ids(sections: list[Section]) -> None:
+    """Assign deterministic traversal IDs to paragraph-bearing blocks."""
+    for section_index, section in enumerate(sections, start=1):
+        ordinal = 0
+        for element in section.elements:
+            for paragraph in _iter_paragraphs(element):
+                ordinal += 1
+                if paragraph.node_id is None:
+                    paragraph.node_id = (
+                        f"__wpsc_para:{section_index}:{ordinal}"
+                    )
+
+
+def _split_cross_reference_spans(
+    sections: list[Section], references: dict[str, dict[str, Any]]
+) -> None:
+    """Replace non-code/math reference markers with typed inline runs."""
+    fallback_text = normalize_visible_text("引用目标未解析")
+    for section in sections:
+        for element in section.elements:
+            for paragraph in _iter_paragraphs(element):
+                if paragraph.node_id is None:
+                    continue
+                occurrence = 0
+                normalized_spans: list[Span] = []
+                for span in paragraph.spans:
+                    if span.code or span.math or not _REF_RE.search(span.text):
+                        normalized_spans.append(span)
+                        continue
+
+                    cursor = 0
+                    for match in _REF_RE.finditer(span.text):
+                        if match.start() > cursor:
+                            normalized_spans.append(
+                                dataclasses.replace(
+                                    span,
+                                    text=span.text[cursor:match.start()],
+                                    cross_reference=None,
+                                )
+                            )
+                        occurrence += 1
+                        target_id = normalize_visible_text(
+                            match.group(1).strip()
+                        )
+                        target = references.get(target_id)
+                        resolved = target is not None and target.get("kind") in {
+                            "fig", "tab", "eq"
+                        }
+                        run = CrossReferenceRun(
+                            node_id=f"{paragraph.node_id}/ref:{occurrence}",
+                            target_id=target_id,
+                            target_node_id=(
+                                target["node_id"] if resolved else None
+                            ),
+                            target_kind=(target["kind"] if resolved else None),
+                            bookmark_name=(
+                                target["bookmark_name"] if resolved else None
+                            ),
+                            fallback_text=fallback_text,
+                        )
+                        normalized_spans.append(
+                            dataclasses.replace(
+                                span,
+                                text=fallback_text,
+                                cross_reference=run,
+                            )
+                        )
+                        cursor = match.end()
+                    if cursor < len(span.text):
+                        normalized_spans.append(
+                            dataclasses.replace(
+                                span,
+                                text=span.text[cursor:],
+                                cross_reference=None,
+                            )
+                        )
+                paragraph.spans = normalized_spans
 
 
 def _plain_text_from_element(elem: Any) -> str:
@@ -1180,14 +1370,32 @@ def normalize_longform_document(
         _apply_page_role_metadata(doc, config, issues)
         _derive_header(config, issues)
 
-        targets, explicit_ids = _collect_explicit_targets(doc, issues)
-        references = _build_references(doc, targets, explicit_ids, issues)
-        bookmarks = _map_bookmarks_from_targets(targets)
+        targets, _explicit_ids = _collect_explicit_targets(doc, issues)
+        reference_targets = _caption_reference_targets(doc, targets, issues)
+        bookmarks = _map_bookmarks_from_targets(reference_targets)
+        for bookmark_issue in bookmarks.issues:
+            semantic_issue = (
+                BOOKMARK_NAME_COLLISION
+                if bookmark_issue == BOOKMARK_COLLISION_UNRESOLVED
+                else bookmark_issue
+            )
+            issues.append(
+                _issue(
+                    semantic_issue,
+                    "A deterministic bookmark name could not be allocated; "
+                    "cross-reference capability was disabled for that target.",
+                    placement="block",
+                )
+            )
+        _apply_caption_bindings(doc, config, reference_targets, bookmarks)
+        references = _build_references(
+            doc, reference_targets, bookmarks, issues
+        )
+        _assign_paragraph_ids(doc.sections)
+        _split_cross_reference_spans(doc.sections, references)
         if doc.abstract is not None:
             doc.abstract = _normalize_abstract(doc.abstract, issues)
         _scan_page_breaks(doc.sections, issues)
-
-        _update_caption_numbering(config, doc.sections)
 
         # Store resolved config on the document for downstream consumers.
         doc.config = _canonical_value(config.to_json())
@@ -1221,6 +1429,7 @@ def normalize_longform_document(
 
 __all__ = [
     "ABSTRACT_CONTENT_DEGRADED",
+    "CAPTION_MISSING",
     "CONFIG_VALUE_INVALID",
     "DUPLICATE_EXPLICIT_ID",
     "HEADER_SHORTENED",

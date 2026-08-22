@@ -214,6 +214,46 @@ def test_figure_directive_captures_image_and_caption() -> None:
     assert fig.images[0].alt == "Diagram"
 
 
+def test_figure_directive_preserves_m3_layout_attributes() -> None:
+    md = """:::figure {#fig:diagram caption="Diagram" width="360pt" orientation="landscape" kind="screenshot" layout="columns" columns="2"}
+![A](a.png)
+![B](b.png)
+:::
+"""
+    doc = parse_markdown(md, longform=True)
+    fig = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, FigureBlock)
+    )
+    assert fig.width == "360pt"
+    assert fig.orientation == "landscape"
+    assert fig.kind == "screenshot"
+    assert fig.layout == "columns"
+    assert fig.columns == 2
+
+
+def test_table_directive_preserves_m3_table_attributes() -> None:
+    md = """:::table {#tab:data caption="Data" style="three-line" orientation="landscape" merges="A1:B1;A2:A3" repeat_header="false"}
+| A | B |
+|---|---|
+| 1 | 2 |
+:::
+"""
+    doc = parse_markdown(md, longform=True)
+    table = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, SemanticTableBlock)
+    )
+    assert table.style == "three-line"
+    assert table.orientation == "landscape"
+    assert table.merge_spec == "A1:B1;A2:A3"
+    assert table.repeat_header is False
+
+
 def test_formula_directive_captures_latex_source_and_identifier() -> None:
     md = """# Math
 

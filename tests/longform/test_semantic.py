@@ -151,7 +151,14 @@ caption_numbering: auto
 :::
 """
     result = normalize_longform_document(_doc_from_markdown(md))
-    assert result.config.caption_numbering == "chapter"
+    assert result.config.caption_numbering == "auto"
+    figure = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, FigureBlock)
+    )
+    assert figure.caption_binding.mode == "chapter"
 
 
 def test_caption_numbering_auto_selects_global_without_numbered_h1() -> None:
@@ -166,7 +173,14 @@ heading_numbering: none
 :::
 """
     result = normalize_longform_document(_doc_from_markdown(md))
-    assert result.config.caption_numbering == "global"
+    assert result.config.caption_numbering == "auto"
+    figure = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, FigureBlock)
+    )
+    assert figure.caption_binding.mode == "global"
 
 
 # ---------------------------------------------------------------------------
@@ -445,4 +459,3 @@ def test_to_json_reference_mapping_is_sorted_by_key() -> None:
     result = normalize_longform_document(_doc_from_markdown(md))
     refs = result.to_json()["references"]
     assert list(refs.keys()) == sorted(refs.keys())
-

@@ -184,6 +184,19 @@ def _collect_elements(parse_block_lines, lines: List[str], base_dir: str = "") -
     return elements
 
 
+def _positive_int_attribute(value: Optional[str]) -> Optional[int]:
+    if value is None or not value.isdigit():
+        return None
+    parsed = int(value)
+    return parsed if parsed > 0 else None
+
+
+def _bool_attribute(value: Optional[str], default: bool) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() not in {"false", "no", "0", "off"}
+
+
 def parse_longform(
     md_text: str,
     base_dir: str,
@@ -424,6 +437,12 @@ def _handle_table_directive(
         headers=table.headers,
         rows=table.rows,
         alignments=table.alignments,
+        style=directive.attributes.get("style", ""),
+        orientation=orientation,
+        merge_spec=directive.attributes.get("merges", ""),
+        repeat_header=_bool_attribute(
+            directive.attributes.get("repeat_header"), True
+        ),
     ))
     return ctx.current_section
 
@@ -448,6 +467,10 @@ def _handle_figure_directive(
         caption=directive.attributes.get("caption", ""),
         images=images,
         layout=directive.attributes.get("layout", "stack"),
+        width=directive.attributes.get("width", "auto"),
+        orientation=orientation,
+        kind=directive.attributes.get("kind", "auto"),
+        columns=_positive_int_attribute(directive.attributes.get("columns")),
     ))
     return ctx.current_section
 

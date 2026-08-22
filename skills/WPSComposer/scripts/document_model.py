@@ -14,6 +14,27 @@ from typing import List, Optional, Dict, Any
 # Inline formatting
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class CaptionBinding:
+    """Resolved native-caption policy for one semantic object."""
+    mode: str
+    chapter_node_id: Optional[str]
+    bookmark_name: Optional[str]
+    indexable: bool
+    referenceable: bool
+
+
+@dataclass(frozen=True)
+class CrossReferenceRun:
+    """One deterministic inline cross-reference occurrence."""
+    node_id: str
+    target_id: str
+    target_node_id: Optional[str]
+    target_kind: Optional[str]
+    bookmark_name: Optional[str]
+    fallback_text: str
+
+
 @dataclass
 class Span:
     """A formatted text span within a paragraph."""
@@ -25,6 +46,7 @@ class Span:
     link: Optional[str] = None   # URL
     link_title: Optional[str] = None  # tooltip
     math: str = ""  # raw LaTeX for inline math ($...$); empty = not math
+    cross_reference: Optional[CrossReferenceRun] = None
 
 
 # ---------------------------------------------------------------------------
@@ -36,6 +58,7 @@ class Paragraph:
     """A paragraph with optional inline formatting spans."""
     spans: List[Span] = field(default_factory=list)
     align: int = 0  # 0=left, 1=center, 2=right
+    node_id: Optional[str] = None
 
     @property
     def plain_text(self) -> str:
@@ -166,6 +189,11 @@ class SemanticTableBlock:
     headers: List[str] = field(default_factory=list)
     rows: List[List[str]] = field(default_factory=list)
     alignments: List[str] = field(default_factory=list)
+    style: str = ""
+    orientation: str = "portrait"
+    merge_spec: str = ""
+    repeat_header: bool = True
+    caption_binding: Optional[CaptionBinding] = None
 
 
 @dataclass
@@ -176,6 +204,11 @@ class FigureBlock:
     caption: str = ""
     images: List[ImageBlock] = field(default_factory=list)
     layout: str = "stack"  # "stack" | "side-by-side"
+    width: str = "auto"
+    orientation: str = "portrait"
+    kind: str = "auto"
+    columns: Optional[int] = None
+    caption_binding: Optional[CaptionBinding] = None
 
 
 @dataclass
@@ -185,6 +218,7 @@ class FormulaBlock:
     node_id: Optional[str] = None
     source: str = ""  # raw LaTeX / formula source
     number: Optional[str] = None
+    caption_binding: Optional[CaptionBinding] = None
 
 
 @dataclass
