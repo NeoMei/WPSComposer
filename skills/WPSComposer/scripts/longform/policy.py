@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .semantic import LongformConfig
+from .unicode_text import shorten_display_units
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,12 @@ class LongformPolicy:
     toc_title: str
     figure_index_title: str
     table_index_title: str
+    page_roles: tuple[str, ...]
+    section_numbering_rules: dict[str, dict[str, Any]]
+    header_text: str
+    header_overflow_text: str
+    footer_text: str
+    toc_density: dict[str, Any]
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -74,11 +81,33 @@ class LongformPolicy:
             "toc_title": self.toc_title,
             "figure_index_title": self.figure_index_title,
             "table_index_title": self.table_index_title,
+            "page_roles": self.page_roles,
+            "section_numbering_rules": self.section_numbering_rules,
+            "header_text": self.header_text,
+            "header_overflow_text": self.header_overflow_text,
+            "footer_text": self.footer_text,
+            "toc_density": self.toc_density,
         }
 
 
 def build_policy(config: LongformConfig) -> LongformPolicy:
     """Build a deterministic policy from a resolved semantic configuration."""
+    header_text = shorten_display_units(config.header or "", 64)
+    header_overflow_text = shorten_display_units(config.header or "", 32)
+    toc_density = {
+        "min_font_size_pt": {"toc1": 10.5, "toc2": 10.0, "toc3": 10.0},
+        "normal_font_size_pt": {"toc1": 11.0, "toc2": 10.5, "toc3": 10.5},
+        "min_space_before_pt": {"toc1": 0.0, "toc2": 0.0, "toc3": 0.0},
+        "normal_space_before_pt": {"toc1": 3.0, "toc2": 0.0, "toc3": 0.0},
+        "min_space_after_pt": {"toc1": 0.0, "toc2": 0.0, "toc3": 0.0},
+        "normal_space_after_pt": {"toc1": 0.0, "toc2": 0.0, "toc3": 0.0},
+    }
+    section_numbering_rules = {
+        "cover": {"format": "none", "start_page_number": None, "restart": False},
+        "front_matter": {"format": "roman", "start_page_number": 1, "restart": True},
+        "body": {"format": "arabic", "start_page_number": 1, "restart": True},
+        "landscape": {"format": "continue", "start_page_number": None, "restart": False},
+    }
     return LongformPolicy(
         title=config.title,
         short_title=config.short_title,
@@ -110,8 +139,13 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
         toc_title="目录",
         figure_index_title="图目录",
         table_index_title="表目录",
+        page_roles=("cover", "front_matter", "body", "landscape"),
+        section_numbering_rules=section_numbering_rules,
+        header_text=header_text,
+        header_overflow_text=header_overflow_text,
+        footer_text="",
+        toc_density=toc_density,
     )
 
 
 __all__ = ["LongformPolicy", "build_policy"]
-
