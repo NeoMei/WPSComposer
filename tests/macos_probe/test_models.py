@@ -29,6 +29,7 @@ def test_methods_are_routed_to_one_component():
         "inspect_document": "writer",
         "inspect_workbook": "spreadsheet",
         "probe_longform_m0": "writer",
+        "generate_longform_document": "writer",
     }
 
 

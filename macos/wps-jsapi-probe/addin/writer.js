@@ -1333,6 +1333,20 @@
     };
   }
 
+
+  async function generateLongformDocument(params) {
+    if (!window.WPSComposerLongformV2 || typeof window.WPSComposerLongformV2.run !== "function") {
+      throw new Error("WPSComposer longform v2 add-in is not loaded");
+    }
+    if (!params.plan || typeof params.plan !== "object") {
+      throw generationError(new Error("plan is required"), "OPERATION_PLAN_INVALID");
+    }
+    if (!params.outputPath || typeof params.outputPath !== "string") {
+      throw generationError(new Error("outputPath is required"), "OPERATION_PLAN_INVALID");
+    }
+    return window.WPSComposerLongformV2.run(params);
+  }
+
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_docx": saveDocx,
@@ -1340,7 +1354,8 @@
     "convert_writer_pdf": convertWriterPdf,
     "generate_writer_document": generateWriterDocument,
     "inspect_document": inspectDocument,
-    "probe_longform_m0": function (params) { return window.WPSComposerLongformM0.run(params); }
+    "probe_longform_m0": function (params) { return window.WPSComposerLongformM0.run(params); },
+    "generate_longform_document": generateLongformDocument
   };
 
 

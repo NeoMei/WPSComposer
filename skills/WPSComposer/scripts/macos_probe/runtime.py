@@ -121,6 +121,7 @@ def build_profile(
         "ribbon.xml",
         "bridge-client.js",
         "writer-longform-m0.js",
+        "writer-longform-v2.js",
     ):
         shutil.copy2(assets / name, profile / name)
     shutil.copy2(assets / str(config["script"]), profile / "component.js")

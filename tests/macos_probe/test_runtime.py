@@ -53,6 +53,7 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         "ribbon.xml",
         "bridge-client.js",
         "writer-longform-m0.js",
+        "writer-longform-v2.js",
         "writer.js",
     ):
         (assets / name).write_text(name, encoding="utf-8")
@@ -79,6 +80,9 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
     assert (profile / "component.js").read_text() == "writer.js"
     assert (profile / "writer-longform-m0.js").read_text() == (
         "writer-longform-m0.js"
+    )
+    assert (profile / "writer-longform-v2.js").read_text() == (
+        "writer-longform-v2.js"
     )
 
 
