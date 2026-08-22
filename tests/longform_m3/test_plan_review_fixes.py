@@ -137,11 +137,17 @@ def test_whole_plan_mode_rejects_m3_figure_with_unsafe_legacy_figure() -> None:
 
 
 def test_positive_whole_plan_m2_compatibility_is_safe() -> None:
-    plan = validate_generation_plan(_envelope([_legacy_figure(), _legacy_reference()]), "writer")
-    assert [op.op for op in plan.operations] == ["writer.add_captioned_figure", "writer.add_cross_reference"]
+    plan = validate_generation_plan(
+        _envelope([_legacy_figure(), _legacy_reference(), _finalize()]), "writer"
+    )
+    assert [op.op for op in plan.operations] == [
+        "writer.add_captioned_figure",
+        "writer.add_cross_reference",
+        "writer.finalize_fields",
+    ]
     fatal = _legacy_figure()
     fatal["failurePolicy"] = {"mode": "fail"}
-    validate_generation_plan(_envelope([fatal]), "writer")
+    validate_generation_plan(_envelope([fatal, _finalize()]), "writer")
 
 
 def test_legacy_figure_child_cannot_mix_resource_and_degradation() -> None:
@@ -300,3 +306,88 @@ def test_table_style_and_border_policy_cannot_diverge() -> None:
     table["args"]["borderSpec"]["insideVertical"] = 0.75
     with pytest.raises(OperationPlanError, match="borderSpec|three-line"):
         validate_generation_plan(_envelope([table, _finalize()]), "writer")
+
+
+def _m3_figure_index() -> dict:
+    return {
+        "op": "writer.insert_figure_index", "nodeId": "doc:figure-index",
+        "args": {"title": "图目录", "sequenceId": "WPSC_FIG", "titleStyleId": "WPSC_INDEX_TITLE"},
+    }
+
+
+def _configure(role: str, node_id: str) -> dict:
+    return {
+        "op": "writer.configure_section", "nodeId": node_id,
+        "args": {"role": role},
+    }
+
+
+def test_native_index_must_be_inside_front_matter_section() -> None:
+    operations = [
+        _configure("body", "doc:body"),
+        _m3_figure_index(),
+        _m3_figure(),
+        _finalize(),
+    ]
+    with pytest.raises(OperationPlanError, match="front.?matter|index"):
+        validate_generation_plan(_envelope(operations), "writer")
+
+
+def test_native_index_requires_one_nonempty_indexable_target() -> None:
+    empty = _m3_figure()
+    empty["args"].pop("bookmarkName")
+    empty["args"].update(caption="", indexable=False, referenceable=False)
+    operations = [
+        _configure("front_matter", "doc:front"),
+        _m3_figure_index(),
+        _configure("body", "doc:body"),
+        empty,
+        _finalize(),
+    ]
+    with pytest.raises(OperationPlanError, match="indexable|caption|target"):
+        validate_generation_plan(_envelope(operations), "writer")
+
+
+def test_native_index_kind_occurs_at_most_once() -> None:
+    operations = [
+        _configure("front_matter", "doc:front"),
+        _m3_figure_index(), copy.deepcopy(_m3_figure_index()),
+        _configure("body", "doc:body"),
+        _m3_figure(),
+        _finalize(),
+    ]
+    operations[2]["nodeId"] = "doc:figure-index-duplicate"
+    with pytest.raises(OperationPlanError, match="duplicate|at most one|index"):
+        validate_generation_plan(_envelope(operations), "writer")
+
+
+def test_bookmark_name_is_globally_owned_by_one_target() -> None:
+    second = _m3_figure(node_id="fig:two", bookmark=FIG_BOOKMARK)
+    second["args"]["children"][0]["resourceId"] = "image-2"
+    with pytest.raises(OperationPlanError, match="bookmark|owner|unique"):
+        validate_generation_plan(_envelope([_m3_figure(), second, _finalize()]), "writer")
+
+
+@pytest.mark.parametrize(("field", "value"), [("allowRowSplit", True), ("cellIndentPt", 1.0)])
+def test_initial_table_descriptor_cannot_preapply_forced_split(field: str, value: object) -> None:
+    table = _m3_table()
+    table["args"][field] = value
+    with pytest.raises(OperationPlanError, match=field):
+        validate_generation_plan(_envelope([table, _finalize()]), "writer")
+
+
+def test_pure_text_v2_plan_rejects_arbitrary_degradation_policy() -> None:
+    paragraph = {
+        "op": "writer.add_paragraph", "nodeId": "para:text", "args": {"text": "body"},
+        "failurePolicy": {"mode": "degrade", "recoverableCodes": ["ANY_ERROR"], "fallback": "continue"},
+    }
+    with pytest.raises(OperationPlanError, match="failurePolicy|recoverable|fatal"):
+        validate_generation_plan(_envelope([paragraph, _finalize()]), "writer")
+
+
+def test_pure_text_v2_plan_requires_finalizer_last() -> None:
+    paragraph = {"op": "writer.add_paragraph", "nodeId": "para:text", "args": {"text": "body"}}
+    with pytest.raises(OperationPlanError, match="finalize"):
+        validate_generation_plan(_envelope([paragraph]), "writer")
+    with pytest.raises(OperationPlanError, match="last"):
+        validate_generation_plan(_envelope([_finalize(), paragraph]), "writer")

@@ -809,10 +809,15 @@ def test_validate_generation_plan_accepts_planned_degradation_in_figure_child():
                     ],
                     "layout": "stack",
                 },
-            }
+            },
+            {
+                "op": "writer.finalize_fields",
+                "nodeId": "doc:finalize",
+                "args": {"maxRounds": 3},
+            },
         ],
     }
     plan = validate_generation_plan(raw, "writer")
-    assert len(plan.operations) == 1
+    assert len(plan.operations) == 2
     child = plan.operations[0].args["children"][0]
     assert child["plannedDegradation"]["code"] == "RESOURCE_NOT_FOUND"

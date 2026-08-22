@@ -34,6 +34,14 @@ from skills.WPSComposer.scripts.longform.windows_executor import (
 )
 
 
+def _finalize_operation() -> GenerationOperation:
+    return GenerationOperation(
+        op="writer.finalize_fields",
+        args={"maxRounds": 3},
+        node_id="doc:finalize",
+    )
+
+
 # -----------------------------------------------------------------------------
 # Mocks
 # -----------------------------------------------------------------------------
@@ -566,7 +574,7 @@ def test_dedicated_host_unavailable_without_dispatch(monkeypatch):
     executor = WindowsLongformExecutor()
     plan = GenerationPlan(
         component="writer",
-        operations=(GenerationOperation(op="writer.reset", args={}),),
+        operations=(GenerationOperation(op="writer.reset", args={}), _finalize_operation()),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -603,7 +611,7 @@ def test_no_shared_dispatch_fallback(monkeypatch):
     executor = WindowsLongformExecutor()
     plan = GenerationPlan(
         component="writer",
-        operations=(GenerationOperation(op="writer.reset", args={}),),
+        operations=(GenerationOperation(op="writer.reset", args={}), _finalize_operation()),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -627,7 +635,7 @@ def test_staged_artifact_path_is_inside_staging_dir(tmp_path, fake_composer):
     )
     plan = GenerationPlan(
         component="writer",
-        operations=(GenerationOperation(op="writer.reset", args={}),),
+        operations=(GenerationOperation(op="writer.reset", args={}), _finalize_operation()),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -700,7 +708,7 @@ def test_deferred_ops_emit_stable_issues_and_fallbacks(executor, fake_composer):
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -734,7 +742,7 @@ def test_index_placeholders_are_inserted(executor, fake_composer):
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -772,16 +780,9 @@ def test_degrade_policy_runs_fallback_and_records_issue(
             )
         else:
             new_ops.append(op)
-    plan = GenerationPlan(
-        component="writer",
-        operations=tuple(new_ops),
-        protocol_version=2,
-        semantic_version="longform-1",
-        resource_manifest_version=1,
-        resource_manifest_digest=simple_plan.resource_manifest_digest,
-    )
-    outcome = executor.execute(plan, ())
-    assert any(issue.code == "EXECUTION_FAILED" for issue in outcome.issues)
+    paragraph = next(op for op in new_ops if op.op == "writer.add_paragraph")
+    executor._run_op(fake_composer, paragraph)
+    assert any(issue.code == "EXECUTION_FAILED" for issue in executor._issues)
     assert any(call.name == "add_degradation_notice" for call in fake_composer.primitives)
 
 
@@ -803,8 +804,6 @@ def test_fail_policy_aborts_execution(
                     node_id=op.node_id,
                     failure_policy={
                         "mode": "fail",
-                        "recoverableCodes": [],
-                        "fallback": "notice",
                     },
                 )
             )
@@ -860,7 +859,7 @@ def test_explicit_degradation_notices_dispatch(executor, fake_composer):
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -902,7 +901,7 @@ def test_ensure_styles_converts_list_of_mappings_to_dict(executor, fake_composer
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -947,7 +946,7 @@ def test_configure_section_without_margins_passes_none(executor, fake_composer):
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
@@ -999,7 +998,7 @@ def test_set_header_footer_uses_schema_keys(executor, fake_composer):
     ]
     plan = GenerationPlan(
         component="writer",
-        operations=tuple(ops),
+        operations=tuple([*ops, _finalize_operation()]),
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,

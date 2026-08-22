@@ -817,6 +817,36 @@ def _validate_m2_failure_policy(
         _invalid(f"{op}.failurePolicy", "exact legacy recovery allowlist and fallback")
 
 
+def _validate_v2_failure_policy(
+    op: str,
+    value: Optional[Mapping[str, Any]],
+    native_mode: str,
+) -> None:
+    """Reject recovery policies outside the closed longform-v2 allowlist."""
+    if value is None:
+        return
+    if value.get("mode") == "fail":
+        if set(value) != {"mode"}:
+            _invalid(f"{op}.failurePolicy", "fatal policy containing only mode=fail")
+        return
+
+    expected = _M3_EXISTING_LOCAL_FAILURE_POLICIES.get(op)
+    if expected is None:
+        expected = (
+            _M3_FAILURE_POLICIES.get(op)
+            if native_mode == "m3"
+            else _M2_FAILURE_POLICIES.get(op)
+        )
+    if expected is None:
+        _invalid(f"{op}.failurePolicy", "fatal policy or exact named recovery")
+    codes, fallback = expected
+    if (
+        tuple(value.get("recoverableCodes", ())) != codes
+        or value.get("fallback") != fallback
+    ):
+        _invalid(f"{op}.failurePolicy", "exact recovery allowlist and fallback")
+
+
 _NOTICE_ITEM_SCHEMA = _schema(
     ("code", "message", "fallbackText", "placement"),
     code=_string,
@@ -1379,6 +1409,10 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
             _invalid(f"{op}.args.rows", "rectangular rows matching headers")
         if args["keepCaptionWithFirstRow"] is not True:
             _invalid(f"{op}.args.keepCaptionWithFirstRow", "true")
+        if args["allowRowSplit"] is not False:
+            _invalid(f"{op}.args.allowRowSplit", "false in the initial descriptor")
+        if args["cellIndentPt"] != 0.0:
+            _invalid(f"{op}.args.cellIndentPt", "0.0 in the initial descriptor")
         expected_borders = (
             {
                 "top": 1.5,
@@ -1702,6 +1736,7 @@ def validate_generation_plan(
         if is_v2:
             _validate_m3_failure_policy(op_name, failure_policy, native_mode)
             _validate_m2_failure_policy(op_name, failure_policy, native_mode)
+            _validate_v2_failure_policy(op_name, failure_policy, native_mode)
         parsed.append(
             GenerationOperation(
                 op_name,
@@ -1712,6 +1747,7 @@ def validate_generation_plan(
         )
 
     if is_v2:
+        _validate_v2_plan_lifecycle(normalized["operations"])
         if native_mode == "m3":
             _validate_m3_plan_state(normalized["operations"])
         else:
@@ -1727,11 +1763,15 @@ def validate_generation_plan(
     return GenerationPlan(component, tuple(parsed))
 
 
-def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
-    """Enforce deterministic ownership and terminal ordering for complete M3 plans."""
+def _validate_v2_plan_lifecycle(operations: list[dict[str, Any]]) -> None:
+    """Enforce the lifecycle shared by every complete longform-v2 plan."""
     finalizers = [index for index, item in enumerate(operations) if item["op"] == "writer.finalize_fields"]
     if len(finalizers) != 1 or finalizers[0] != len(operations) - 1:
         raise OperationPlanError("writer.finalize_fields must occur exactly once and last")
+
+
+def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
+    """Enforce deterministic ownership and terminal ordering for complete M3 plans."""
 
     body_ops = {
         "writer.add_captioned_figure",
@@ -1755,7 +1795,25 @@ def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
     owned: set[str] = set()
     object_positions: list[int] = []
     target_descriptors: dict[str, tuple[str, str]] = {}
+    bookmark_owners: dict[str, str] = {}
+    index_counts = {"figure": 0, "table": 0}
+    index_targets = {"figure": 0, "table": 0}
+    current_section_role: Optional[str] = None
     for index, item in enumerate(operations):
+        if item["op"] == "writer.configure_section":
+            current_section_role = item["args"].get("role")
+        index_kind = {
+            "writer.insert_figure_index": "figure",
+            "writer.insert_table_index": "table",
+        }.get(item["op"])
+        if index_kind is not None:
+            if current_section_role != "front_matter":
+                raise OperationPlanError(
+                    "native figure/table indexes must precede body objects and be in a front-matter section"
+                )
+            index_counts[index_kind] += 1
+            if index_counts[index_kind] > 1:
+                raise OperationPlanError(f"duplicate native {index_kind} index; at most one is allowed")
         node_id = item.get("nodeId")
         if item["op"] in semantic_owner_ops and node_id:
             if node_id in owned:
@@ -1777,6 +1835,16 @@ def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
             "writer.add_semantic_table": "table",
             "writer.add_equation": "equation",
         }.get(item["op"])
+        if target_kind in index_targets and item["args"]["indexable"] and item["args"]["caption"]:
+            index_targets[target_kind] += 1
+        bookmark = item["args"].get("bookmarkName") if target_kind is not None else None
+        if bookmark is not None:
+            owner = bookmark_owners.get(bookmark)
+            if owner is not None and owner != node_id:
+                raise OperationPlanError(
+                    f"bookmarkName must be globally unique to one target owner: {bookmark}"
+                )
+            bookmark_owners[bookmark] = node_id
         if target_kind is not None and (
             item["op"] == "writer.add_equation"
             or item["args"].get("referenceable", False)
@@ -1791,6 +1859,12 @@ def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
         for index, item in enumerate(operations):
             if item["op"] in {"writer.insert_figure_index", "writer.insert_table_index"} and index > first_body:
                 raise OperationPlanError("native figure/table indexes must precede body objects")
+
+    for kind, count in index_counts.items():
+        if count and index_targets[kind] == 0:
+            raise OperationPlanError(
+                f"native {kind} index requires an indexable target with a non-empty caption"
+            )
 
     for item in operations:
         if item["op"] != "writer.add_cross_reference":

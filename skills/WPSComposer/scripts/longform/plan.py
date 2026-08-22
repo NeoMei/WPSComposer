@@ -779,28 +779,16 @@ def _build_indexes(state: _BuilderState, policy: LongformPolicy) -> None:
         and state.has_figures
         and not state.front_matter_figure_index_emitted
     ):
-        state.add(
-            "writer.insert_figure_index",
-            {
-                "title": policy.figure_index_title,
-                "sequenceId": "WPSC_FIG",
-                "titleStyleId": "WPSC_INDEX_TITLE",
-            },
-            node_id="doc:figure-index",
+        raise ValueError(
+            "figure index was not emitted in its front-matter section"
         )
     if (
         policy.table_index
         and state.has_tables
         and not state.front_matter_table_index_emitted
     ):
-        state.add(
-            "writer.insert_table_index",
-            {
-                "title": policy.table_index_title,
-                "sequenceId": "WPSC_TAB",
-                "titleStyleId": "WPSC_INDEX_TITLE",
-            },
-            node_id="doc:table-index",
+        raise ValueError(
+            "table index was not emitted in its front-matter section"
         )
 
 

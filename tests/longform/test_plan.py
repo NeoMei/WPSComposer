@@ -403,8 +403,11 @@ def test_recording_writer_composer_records_longform_operations():
     composer = RecordingWriterComposer()
     with composer as writer:
         writer.configure_front_matter(title="标题", author="作者")
-        writer.configure_section(landscape=True)
+        writer.configure_section(role="front_matter", landscape=False)
         writer.configure_toc_styles(tocTitle="目录", levels=3)
+        writer.insert_figure_index(title="图目录")
+        writer.insert_table_index(title="表目录")
+        writer.configure_section(role="body", landscape=True)
         writer.add_captioned_figure(
             node_id="fig:rec",
             caption="录制图",
@@ -430,8 +433,6 @@ def test_recording_writer_composer_records_longform_operations():
             kind="figure",
             fallback_text="[图]",
         )
-        writer.insert_figure_index(title="图目录")
-        writer.insert_table_index(title="表目录")
         writer.add_bibliography(node_id="bib:rec", entries=["[1] 文献"])
         writer.add_inline_degradation(
             node_id="deg:inline",
@@ -536,4 +537,3 @@ def test_build_longform_plan_includes_inline_degradation():
     deg_ops = [op for op in ops if op["op"] == "writer.add_inline_degradation"]
     assert len(deg_ops) == 1
     assert deg_ops[0]["nodeId"] == "deg:inline-1"
-

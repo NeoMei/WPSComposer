@@ -10,13 +10,22 @@ from skills.WPSComposer.scripts.generation_plan import (
 
 
 def _v2_plan(*operations):
+    complete = list(operations)
+    if not complete or complete[-1].get("op") != "writer.finalize_fields":
+        complete.append(
+            {
+                "op": "writer.finalize_fields",
+                "nodeId": "doc:finalize",
+                "args": {"maxRounds": 3},
+            }
+        )
     return {
         "protocolVersion": 2,
         "semanticVersion": "longform-1",
         "component": "writer",
         "resourceManifestVersion": 1,
         "resourceManifestDigest": "sha256:" + "0" * 64,
-        "operations": list(operations),
+        "operations": complete,
     }
 
 

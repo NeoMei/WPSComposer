@@ -208,13 +208,25 @@ def test_sectioned_m3_plan_enforces_index_ownership_and_finalize_order() -> None
         "nodeId": "doc:section-body",
         "args": {"role": "body"},
     }
+    front_section = {
+        "op": "writer.configure_section",
+        "nodeId": "doc:section-front",
+        "args": {"role": "front_matter"},
+    }
     finalize = {"op": "writer.finalize_fields", "nodeId": "doc:finalize", "args": {"maxRounds": 3}}
     raw = _plan(section)
     raw["operations"] = [section, figure, index, finalize]
     with pytest.raises(OperationPlanError, match="indexes must precede"):
         validate_generation_plan(raw, "writer")
 
-    raw["operations"] = [section, index, figure, copy.deepcopy(figure), finalize]
+    raw["operations"] = [
+        front_section,
+        index,
+        section,
+        figure,
+        copy.deepcopy(figure),
+        finalize,
+    ]
     with pytest.raises(OperationPlanError, match="owned more than once"):
         validate_generation_plan(raw, "writer")
 

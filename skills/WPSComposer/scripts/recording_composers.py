@@ -630,29 +630,9 @@ class RecordingWriterComposer:
 
     def save_docx(self, path):
         if self._protocol_version == 2:
-            operations = list(self._operations)
-            index_names = {
-                "writer.insert_figure_index",
-                "writer.insert_table_index",
-            }
-            native_body_names = {
-                "writer.add_captioned_figure",
-                "writer.add_semantic_table",
-                "writer.add_equation",
-                "writer.add_cross_reference",
-            }
-            indexes = [item for item in operations if item.op in index_names]
-            if indexes and any(item.op in native_body_names for item in operations):
-                operations = [item for item in operations if item.op not in index_names]
-                first_native = next(
-                    index
-                    for index, item in enumerate(operations)
-                    if item.op in native_body_names
-                )
-                operations[first_native:first_native] = indexes
             plan = GenerationPlan(
                 "writer",
-                tuple(operations),
+                tuple(self._operations),
                 protocol_version=2,
                 semantic_version="longform-1",
                 resource_manifest_version=1,

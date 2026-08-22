@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
+
+import pytest
 
 from skills.WPSComposer.scripts.document_model import (
     CaptionBinding,
@@ -109,7 +112,42 @@ def test_front_matter_indexes_are_native_and_precede_body_objects() -> None:
     body_fig = next(i for i, op in enumerate(plan) if op["op"] == "writer.add_captioned_figure")
     assert fig_index < body_fig
     assert plan[fig_index]["args"] == {"title": "图目录", "sequenceId": "WPSC_FIG", "titleStyleId": "WPSC_INDEX_TITLE"}
+    current_role = None
+    for operation in plan[: fig_index + 1]:
+        if operation["op"] == "writer.configure_section":
+            current_role = operation["args"]["role"]
+    assert current_role == "front_matter"
     assert plan[-1]["op"] == "writer.finalize_fields"
+
+
+@pytest.mark.parametrize("kind", ["figure", "table"])
+def test_plan_never_falls_back_to_a_late_native_index(monkeypatch, kind: str) -> None:
+    if kind == "figure":
+        elements = [
+            FigureBlock(
+                "fig:one", "fig:one", "Figure", [ImageBlock("fig.png", "")],
+                caption_binding=CaptionBinding(
+                    "global", None, "wpsc_fig_" + "a" * 24, True, True
+                ),
+            )
+        ]
+        semantic = _semantic(elements, table_index=False)
+    else:
+        elements = [
+            SemanticTableBlock(
+                "tab:one", "tab:one", "Table", ["A"], [["1"]], ["left"],
+                caption_binding=CaptionBinding(
+                    "global", None, "wpsc_tab_" + "b" * 24, True, True
+                ),
+            )
+        ]
+        semantic = _semantic(elements, figure_index=False)
+    monkeypatch.setattr(
+        "skills.WPSComposer.scripts.longform.plan.build_page_policy",
+        lambda *args: SimpleNamespace(sections=()),
+    )
+    with pytest.raises(ValueError, match="front-matter"):
+        build_longform_plan(semantic, _preflight())
 
 
 def test_operation_json_is_byte_deterministic() -> None:
