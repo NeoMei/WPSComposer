@@ -103,6 +103,9 @@ _LONGFORM_WRITER_OPERATIONS = frozenset(
         "writer.add_degradation_notice",
         "writer.add_document_quality_notice",
         "writer.finalize_fields",
+        "writer.set_page_role",
+        "writer.set_page_numbering",
+        "writer.set_header_footer",
     }
 )
 
@@ -342,6 +345,45 @@ _POSITIVE_INT = _bounded_integer(1)
 _POSITIVE_NUMBER = _bounded_number(0, exclusive=True)
 _NONNEGATIVE_NUMBER = _bounded_number(0)
 
+_PAGE_ROLES = frozenset({"cover", "front_matter", "body", "landscape"})
+_PAGE_NUMBER_FORMATS = frozenset({"none", "roman", "arabic", "continue"})
+_NUMBERING_SCHEMES = frozenset({"none", "chinese-formal", "decimal", "hybrid-bid"})
+_TOC_DENSITY_LEVELS = frozenset({"toc1", "toc2", "toc3"})
+_TOC_DENSITY_BOUNDS: dict[str, dict[str, float]] = {
+    "minFontSizePt": {"toc1": 10.5, "toc2": 10.0, "toc3": 10.0},
+    "minSpaceBeforePt": {"toc1": 0.0, "toc2": 0.0, "toc3": 0.0},
+    "minSpaceAfterPt": {"toc1": 0.0, "toc2": 0.0, "toc3": 0.0},
+}
+
+
+def _enum(values: frozenset[str], name: str) -> ArgumentValidator:
+    def validate(value: Any, path: str) -> None:
+        _string(value, path)
+        if value not in values:
+            _invalid(path, name)
+    return validate
+
+
+def _toc_density_map(bounds: dict[str, float]) -> ArgumentValidator:
+    def validate(value: Any, path: str) -> None:
+        if not isinstance(value, dict):
+            _invalid(path, "object")
+        unknown = set(value) - _TOC_DENSITY_LEVELS
+        if unknown:
+            names = ", ".join(sorted(unknown))
+            raise OperationPlanError(f"unknown argument in {path}: {names}")
+        missing = _TOC_DENSITY_LEVELS - set(value)
+        if missing:
+            names = ", ".join(sorted(missing))
+            raise OperationPlanError(f"missing required argument in {path}: {names}")
+        for level, minimum in bounds.items():
+            item_path = f"{path}.{level}"
+            number = value[level]
+            _number(number, item_path)
+            if number < minimum:
+                _invalid(item_path, f"number >= {minimum}")
+    return validate
+
 
 def _cell(value: Any, path: str) -> None:
     if value is None or isinstance(value, (str, bool)):
@@ -552,6 +594,8 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             lineSpacing=_number,
             lineSpacingRule=_string,
             spaceAfter=_number,
+            numbering=_boolean,
+            numberingScheme=_enum(_NUMBERING_SCHEMES, "numbering scheme"),
         ),
         "writer.add_list": _schema(
             ("items", "ordered"),
@@ -701,11 +745,15 @@ _PLANNED_DEGRADATION_SCHEMA = _schema(
     placement=_string,
 )
 
+
+def _planned_degradation(value: Any, path: str) -> None:
+    _validate_object(value, path, _PLANNED_DEGRADATION_SCHEMA)
+
 _FIGURE_CHILD_SCHEMA = _schema(
     ("nodeId",),
     nodeId=_string,
     resourceId=_nullable_string,
-    plannedDegradation=_PLANNED_DEGRADATION_SCHEMA,
+    plannedDegradation=_planned_degradation,
 )
 
 
@@ -722,17 +770,25 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         header=_nullable_string,
         titlePage=_boolean,
     ),
-    "writer.configure_section": _schema(
-        (),
-        landscape=_boolean,
-        pageSize=_string,
-        margins=_schema(
-            ("top", "bottom", "left", "right"),
+   "writer.configure_section": _schema(
+       (),
+       landscape=_boolean,
+        role=_enum(_PAGE_ROLES, "page role"),
+       pageSize=_string,
+       margins=_schema(
+           ("top", "bottom", "left", "right"),
             top=_number,
             bottom=_number,
             left=_number,
             right=_number,
         ),
+        restartPageNumbering=_boolean,
+        pageNumberFormat=_enum(_PAGE_NUMBER_FORMATS, "page number format"),
+        startPageNumber=_integer,
+        headerText=_string,
+        footerText=_string,
+        linkToPreviousHeader=_boolean,
+        linkToPreviousFooter=_boolean,
     ),
     "writer.configure_toc_styles": _schema(
         (),
@@ -742,6 +798,26 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         includeTableIndex=_boolean,
         figureIndexTitle=_nullable_string,
         tableIndexTitle=_nullable_string,
+        minFontSizePt=_toc_density_map(_TOC_DENSITY_BOUNDS["minFontSizePt"]),
+        minSpaceBeforePt=_toc_density_map(_TOC_DENSITY_BOUNDS["minSpaceBeforePt"]),
+        minSpaceAfterPt=_toc_density_map(_TOC_DENSITY_BOUNDS["minSpaceAfterPt"]),
+    ),
+    "writer.set_page_role": _schema(
+        ("role",),
+        role=_enum(_PAGE_ROLES, "page role"),
+    ),
+    "writer.set_page_numbering": _schema(
+        ("format",),
+        format=_enum(_PAGE_NUMBER_FORMATS, "page number format"),
+        start=_integer,
+        restart=_boolean,
+    ),
+    "writer.set_header_footer": _schema(
+        (),
+        headerText=_string,
+        footerText=_string,
+        linkToPreviousHeader=_boolean,
+        linkToPreviousFooter=_boolean,
     ),
     "writer.add_captioned_figure": _schema(
         ("caption", "children", "layout"),
