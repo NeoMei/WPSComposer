@@ -750,15 +750,22 @@ _M3_FAILURE_POLICIES = {
         "inline-fallback",
     ),
 }
+_M3_EXISTING_LOCAL_FAILURE_POLICIES = {
+    "writer.add_bibliography": (("BIBLIOGRAPHY_INSERT_FAILED",), "notice"),
+    "writer.add_inline_degradation": (("DEGRADATION_INSERT_FAILED",), "inline"),
+    "writer.add_degradation_notice": (("DEGRADATION_INSERT_FAILED",), "notice"),
+}
 
 
 def _validate_m3_failure_policy(
     op: str,
     value: Optional[Mapping[str, Any]],
-    args: Mapping[str, Any],
+    native_mode: str,
 ) -> None:
-    if not _is_m3_shape(op, args):
+    if native_mode != "m3":
         return
+    if value is not None and value.get("mode") == "fail" and set(value) != {"mode"}:
+        _invalid(f"{op}.failurePolicy", "fatal policy containing only mode=fail")
     expected = _M3_FAILURE_POLICIES.get(op)
     if expected is not None:
         if value is None:
@@ -770,13 +777,44 @@ def _validate_m3_failure_policy(
             or value.get("fallback") != fallback
         ):
             _invalid(f"{op}.failurePolicy", "exact M3 recovery allowlist and fallback")
-    elif op in {
-        "writer.add_equation",
-        "writer.insert_figure_index",
-        "writer.insert_table_index",
-        "writer.finalize_fields",
-    } and value is not None and value.get("mode") != "fail":
-        _invalid(f"{op}.failurePolicy", "fatal field/index policy")
+        return
+    if value is None or value.get("mode") == "fail":
+        return
+    existing = _M3_EXISTING_LOCAL_FAILURE_POLICIES.get(op)
+    if existing is not None:
+        codes, fallback = existing
+        if (
+            tuple(value.get("recoverableCodes", ())) == codes
+            and value.get("fallback") == fallback
+        ):
+            return
+    _invalid(f"{op}.failurePolicy", "fatal policy or exact named local recovery")
+
+
+_M2_FAILURE_POLICIES = {
+    "writer.add_captioned_figure": (("IMAGE_INSERT_FAILED",), "notice"),
+    "writer.add_semantic_table": (("TABLE_INSERT_FAILED",), "notice"),
+    "writer.add_equation": (("EQUATION_INSERT_FAILED",), "inline"),
+    "writer.add_cross_reference": (("CROSS_REFERENCE_FAILED",), "inline"),
+}
+
+
+def _validate_m2_failure_policy(
+    op: str,
+    value: Optional[Mapping[str, Any]],
+    native_mode: str,
+) -> None:
+    if native_mode != "legacy" or value is None or op not in _M2_FAILURE_POLICIES:
+        return
+    if value.get("mode") == "fail" and set(value) == {"mode"}:
+        return
+    codes, fallback = _M2_FAILURE_POLICIES[op]
+    if (
+        value.get("mode") != "degrade"
+        or tuple(value.get("recoverableCodes", ())) != codes
+        or value.get("fallback") != fallback
+    ):
+        _invalid(f"{op}.failurePolicy", "exact legacy recovery allowlist and fallback")
 
 
 _NOTICE_ITEM_SCHEMA = _schema(
@@ -819,6 +857,7 @@ def _planned_degradation(value: Any, path: str) -> None:
         _invalid(f"{path}.placement", "block")
 
 _BOOKMARK_RE = re.compile(r"^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$")
+_RESOURCE_MANIFEST_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 def _bookmark(value: Any, path: str) -> None:
@@ -892,6 +931,20 @@ def _figure_child(value: Any, path: str) -> None:
         _invalid(path, "exactly one complete resource or planned degradation")
     if has_resource and not resource_fields <= set(value):
         _invalid(path, "complete resolved image metadata")
+    if has_resource:
+        media_type = value["mediaType"]
+        normalizer = value["normalizerId"]
+        if media_type == "image/svg+xml":
+            if normalizer != "svg-static-v1":
+                _invalid(path, "SVG media paired with svg-static-v1 normalizer")
+        elif normalizer == "svg-static-v1":
+            _invalid(path, "raster media paired with a raster normalizer")
+        elif normalizer in {
+            "exif-transpose-png-v1",
+            "gif-first-frame-png-v1",
+            "tiff-first-page-png-v1",
+        } and media_type != "image/png":
+            _invalid(path, "normalized PNG media for PNG-producing normalizer")
 
 
 def _figure_children(value: Any, path: str) -> None:
@@ -952,18 +1005,38 @@ _TABLE_DEGRADATION_SCHEMA = _schema(
 
 def _table_degradation(value: Any, path: str) -> None:
     _validate_object(value, path, _TABLE_DEGRADATION_SCHEMA)
-    if value["code"] not in {"TABLE_MERGE_INVALID", "TABLE_ROW_FORCED_SPLIT"}:
+    code = value["code"]
+    if code not in {"TABLE_MERGE_INVALID", "TABLE_ROW_FORCED_SPLIT"}:
         _invalid(f"{path}.code", "controlled M3 table degradation code")
-    if value["recoveryScope"] not in {"row", "complete-table"}:
-        _invalid(f"{path}.recoveryScope", "row or complete-table")
-    allowed_actions = {
-        "discard-all-merges", "preserve-complete-grid", "allow-row-split",
-        "apply-grid-style",
-    }
-    if not value["actions"] or any(item not in allowed_actions for item in value["actions"]):
-        _invalid(f"{path}.actions", "controlled non-empty table recovery actions")
-    if "rowGroup" in value and value["rowGroup"]["bottom"] < value["rowGroup"]["top"]:
-        _invalid(f"{path}.rowGroup", "ordered row interval")
+    if code == "TABLE_MERGE_INVALID":
+        if (
+            value["trigger"] != "invalid-merge-declaration"
+            or value["recoveryScope"] != "complete-table"
+            or tuple(value["actions"])
+            != ("discard-all-merges", "preserve-complete-grid")
+            or "rowGroup" in value
+        ):
+            _invalid(path, "exact TABLE_MERGE_INVALID degradation recovery")
+        return
+    row_group = value.get("rowGroup")
+    if row_group is None or row_group["top"] < 2 or row_group["bottom"] < row_group["top"]:
+        _invalid(f"{path}.rowGroup", "ordered body-row interval")
+    if row_group["top"] == row_group["bottom"]:
+        expected = (
+            "row-exceeds-available-page",
+            "row",
+            ("allow-row-split",),
+        )
+    else:
+        expected = (
+            "vertical-merge-group-exceeds-available-page",
+            "complete-table",
+            ("discard-all-merges", "apply-grid-style", "allow-row-split"),
+        )
+    if (
+        value["trigger"], value["recoveryScope"], tuple(value["actions"])
+    ) != expected:
+        _invalid(path, "exact TABLE_ROW_FORCED_SPLIT degradation recovery")
 
 
 _TEXT_RUN_SCHEMA = _schema(("type", "text"), type=_enum(frozenset({"text"}), "text run"), text=_string)
@@ -1145,29 +1218,32 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     ),
     "writer.finalize_fields": _schema(
         (),
-        maxRounds=_integer,
+        maxRounds=_bounded_integer(1, 3),
     ),
 }
+
+
+_M2_FIGURE_CHILD_SCHEMA = _schema(
+    ("nodeId",),
+    nodeId=_string,
+    resourceId=_logical_id,
+    plannedDegradation=_planned_degradation,
+)
+
+
+def _m2_figure_child(value: Any, path: str) -> None:
+    _validate_object(value, path, _M2_FIGURE_CHILD_SCHEMA)
+    if ("resourceId" in value) == ("plannedDegradation" in value):
+        _invalid(path, "exactly one logical resource or planned degradation")
 
 
 _M2_COMPAT_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     "writer.add_captioned_figure": _schema(
         ("caption", "children", "layout"),
         caption=_string,
-        children=_list_of(
-            lambda value, path: _validate_object(
-                value,
-                path,
-                _schema(
-                    ("nodeId",),
-                    nodeId=_string,
-                    resourceId=_nullable_string,
-                    plannedDegradation=_planned_degradation,
-                ),
-            )
-        ),
-        layout=_string,
-        columns=_integer,
+        children=_list_of(_m2_figure_child),
+        layout=_enum(frozenset({"stack", "side-by-side", "columns"}), "legacy figure layout"),
+        columns=_bounded_integer(1, 2),
     ),
     "writer.add_semantic_table": _schema(
         ("caption", "headers", "rows"),
@@ -1187,12 +1263,15 @@ _M2_COMPAT_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     "writer.add_cross_reference": _schema(
         ("targetId", "kind", "fallbackText"),
         targetId=_string,
-        kind=_string,
+        kind=_enum(_OBJECT_KINDS, "legacy reference kind"),
         fallbackText=_string,
     ),
     "writer.insert_figure_index": _schema((), title=_nullable_string),
     "writer.insert_table_index": _schema((), title=_nullable_string),
 }
+
+
+_NATIVE_OBJECT_OPERATIONS = frozenset(_M2_COMPAT_OPERATION_ARG_SCHEMAS)
 
 
 def _is_m3_shape(op: str, args: Mapping[str, Any]) -> bool:
@@ -1205,12 +1284,35 @@ def _is_m3_shape(op: str, args: Mapping[str, Any]) -> bool:
         "writer.insert_table_index": "sequenceId",
     }
     marker = markers.get(op)
-    return marker is None or marker in args
+    return marker is not None and marker in args
 
 
-def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
+def _native_plan_mode(operations: list[dict[str, Any]]) -> str:
+    native = [
+        item
+        for item in operations
+        if isinstance(item, dict) and item.get("op") in _NATIVE_OBJECT_OPERATIONS
+    ]
+    if not native:
+        return "legacy"
+    shapes = [
+        _is_m3_shape(
+            item["op"], item.get("args") if isinstance(item.get("args"), dict) else {}
+        )
+        for item in native
+    ]
+    if any(shapes) and not all(shapes):
+        raise OperationPlanError("M2 legacy and M3 native object shapes cannot mix in one plan")
+    return "m3" if all(shapes) else "legacy"
+
+
+def _validate_operation_args(
+    op: str,
+    args: Mapping[str, Any],
+    native_mode: str,
+) -> None:
     schema = _OPERATION_ARG_SCHEMAS.get(op)
-    if schema is None and op in _M2_COMPAT_OPERATION_ARG_SCHEMAS and not _is_m3_shape(op, args):
+    if schema is None and op in _M2_COMPAT_OPERATION_ARG_SCHEMAS and native_mode == "legacy":
         schema = _M2_COMPAT_OPERATION_ARG_SCHEMAS[op]
     if schema is None:
         schema = _LONGFORM_OPERATION_ARG_SCHEMAS.get(op)
@@ -1218,7 +1320,7 @@ def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
         raise OperationPlanError(f"unknown operation schema: {op}")
     _validate_object(args, f"{op}.args", schema)
     _validate_table_shape(op, args)
-    if _is_m3_shape(op, args):
+    if native_mode == "m3" and op in _NATIVE_OBJECT_OPERATIONS:
         _validate_m3_operation_contract(op, args)
 
 
@@ -1262,6 +1364,8 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
             _invalid(f"{op}.args.explicitWidthPt", "positive width for explicit mode")
         if args["widthMode"] != "explicit" and "explicitWidthPt" in args:
             _invalid(f"{op}.args.explicitWidthPt", "omitted unless widthMode is explicit")
+        if args["keepWithCaption"] is not True:
+            _invalid(f"{op}.args.keepWithCaption", "true")
         for index, child in enumerate(children):
             if "resourceId" in child and args["layout"] == "columns":
                 if child["displayWidthPt"] <= 0 or child["displayHeightPt"] <= 0:
@@ -1273,8 +1377,38 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
             _invalid(f"{op}.args.alignments", "one alignment per table column")
         if any(len(row) != width for row in args["rows"]):
             _invalid(f"{op}.args.rows", "rectangular rows matching headers")
+        if args["keepCaptionWithFirstRow"] is not True:
+            _invalid(f"{op}.args.keepCaptionWithFirstRow", "true")
+        expected_borders = (
+            {
+                "top": 1.5,
+                "bottom": 1.5,
+                "headerBottom": 0.75,
+                "left": 0.0,
+                "right": 0.0,
+                "insideHorizontal": 0.0,
+                "insideVertical": 0.0,
+            }
+            if args["style"] == "three-line"
+            else {
+                "top": 0.75,
+                "bottom": 0.75,
+                "headerBottom": 0.75,
+                "left": 0.75,
+                "right": 0.75,
+                "insideHorizontal": 0.75,
+                "insideVertical": 0.75,
+            }
+        )
+        if args["borderSpec"] != expected_borders:
+            _invalid(
+                f"{op}.args.borderSpec",
+                f"exact {args['style']} border policy",
+            )
+        grid = [args["headers"], *args["rows"]]
         row_count = 1 + len(args["rows"])
         occupied: set[tuple[int, int]] = set()
+        vertical_intervals: list[tuple[int, int]] = []
         for index, merge in enumerate(args["merges"]):
             if merge["bottom"] > row_count or merge["right"] > width:
                 _invalid(f"{op}.args.merges[{index}]", "coordinates inside table grid")
@@ -1287,7 +1421,43 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
             }
             if occupied & coordinates:
                 _invalid(f"{op}.args.merges[{index}]", "non-overlapping merge")
+            covered = coordinates - {(merge["top"], merge["left"])}
+            if any(str(grid[row - 1][col - 1]).strip() for row, col in covered):
+                _invalid(f"{op}.args.merges[{index}]", "empty covered merge cells")
             occupied.update(coordinates)
+            if merge["top"] >= 2 and merge["bottom"] > merge["top"]:
+                vertical_intervals.append((merge["top"], merge["bottom"]))
+        vertical_groups: list[tuple[int, int]] = []
+        for top, bottom in sorted(vertical_intervals):
+            if vertical_groups and top <= vertical_groups[-1][1]:
+                vertical_groups[-1] = (
+                    vertical_groups[-1][0],
+                    max(vertical_groups[-1][1], bottom),
+                )
+            else:
+                vertical_groups.append((top, bottom))
+        for index, degradation in enumerate(args["plannedDegradation"]):
+            row_group = degradation.get("rowGroup")
+            if row_group is not None and row_group["bottom"] > row_count:
+                _invalid(
+                    f"{op}.args.plannedDegradation[{index}].rowGroup",
+                    "body-row interval inside table grid",
+                )
+            if degradation["code"] == "TABLE_MERGE_INVALID" and args["merges"]:
+                _invalid(
+                    f"{op}.args.plannedDegradation[{index}]",
+                    "merge-invalid degradation with an empty resolved merge set",
+                )
+            if (
+                degradation["code"] == "TABLE_ROW_FORCED_SPLIT"
+                and row_group is not None
+                and row_group["bottom"] > row_group["top"]
+                and (row_group["top"], row_group["bottom"]) not in vertical_groups
+            ):
+                _invalid(
+                    f"{op}.args.plannedDegradation[{index}].rowGroup",
+                    "an indivisible vertical merge group",
+                )
 
     if op == "writer.add_cross_reference":
         for index, run in enumerate(args["runs"]):
@@ -1440,8 +1610,11 @@ def validate_generation_plan(
             raise OperationPlanError(
                 f"resourceManifestVersion must be {RESOURCE_MANIFEST_VERSION}"
             )
-        if not isinstance(raw.get("resourceManifestDigest"), str):
-            raise OperationPlanError("resourceManifestDigest must be a string")
+        digest = raw.get("resourceManifestDigest")
+        if not isinstance(digest, str) or _RESOURCE_MANIFEST_DIGEST_RE.fullmatch(digest) is None:
+            raise OperationPlanError(
+                "resourceManifestDigest must match sha256:<64 lowercase hex characters>"
+            )
     else:
         if set(raw) != {"component", "operations"}:
             raise OperationPlanError(
@@ -1462,6 +1635,7 @@ def validate_generation_plan(
         raise OperationPlanError("generation plan exceeds 2,000,000 bytes")
 
     normalized = json.loads(serialized.decode("utf-8"))
+    native_mode = _native_plan_mode(normalized["operations"]) if is_v2 else "legacy"
 
     parsed = []
     allowed_v1 = ALLOWED_OPERATIONS[component]
@@ -1492,8 +1666,8 @@ def validate_generation_plan(
             raise OperationPlanError(f"unsupported operation: {op_name}")
 
         node_id = operation.get("nodeId")
-        if node_id is not None and not isinstance(node_id, str):
-            raise OperationPlanError("operation nodeId must be a string")
+        if node_id is not None:
+            _string(node_id, "operation.nodeId")
         if (
             is_v2
             and op_name in _LONGFORM_OPERATION_ARG_SCHEMAS
@@ -1524,9 +1698,10 @@ def validate_generation_plan(
             if _table_cell_count(args) > MAX_TABLE_CELLS:
                 raise OperationPlanError("table exceeds 10,000 cells")
         _validate_image_args(op_name, args)
-        _validate_operation_args(op_name, args)
+        _validate_operation_args(op_name, args, native_mode)
         if is_v2:
-            _validate_m3_failure_policy(op_name, failure_policy, args)
+            _validate_m3_failure_policy(op_name, failure_policy, native_mode)
+            _validate_m2_failure_policy(op_name, failure_policy, native_mode)
         parsed.append(
             GenerationOperation(
                 op_name,
@@ -1537,7 +1712,10 @@ def validate_generation_plan(
         )
 
     if is_v2:
-        _validate_m3_plan_state(normalized["operations"])
+        if native_mode == "m3":
+            _validate_m3_plan_state(normalized["operations"])
+        else:
+            _validate_m2_plan_state(normalized["operations"])
         return GenerationPlan(
             component,
             tuple(parsed),
@@ -1551,11 +1729,8 @@ def validate_generation_plan(
 
 def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
     """Enforce deterministic ownership and terminal ordering for complete M3 plans."""
-    if not any(_is_m3_shape(item["op"], item["args"]) for item in operations):
-        return
-
     finalizers = [index for index, item in enumerate(operations) if item["op"] == "writer.finalize_fields"]
-    if finalizers and (len(finalizers) != 1 or finalizers[0] != len(operations) - 1):
+    if len(finalizers) != 1 or finalizers[0] != len(operations) - 1:
         raise OperationPlanError("writer.finalize_fields must occur exactly once and last")
 
     body_ops = {
@@ -1564,18 +1739,31 @@ def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
         "writer.add_equation",
         "writer.add_cross_reference",
     }
+    semantic_owner_ops = {
+        "writer.add_heading",
+        "writer.add_paragraph",
+        "writer.add_list",
+        "writer.add_captioned_figure",
+        "writer.add_semantic_table",
+        "writer.add_equation",
+        "writer.add_cross_reference",
+        "writer.add_bibliography",
+        "writer.add_inline_degradation",
+        "writer.add_degradation_notice",
+        "writer.add_page_break",
+    }
     owned: set[str] = set()
     object_positions: list[int] = []
-    referenceable_targets: set[str] = set()
-    has_native_targets = False
+    target_descriptors: dict[str, tuple[str, str]] = {}
     for index, item in enumerate(operations):
-        if item["op"] not in body_ops or not _is_m3_shape(item["op"], item["args"]):
+        node_id = item.get("nodeId")
+        if item["op"] in semantic_owner_ops and node_id:
+            if node_id in owned:
+                raise OperationPlanError(f"semantic node is owned more than once: {node_id}")
+            owned.add(node_id)
+        if item["op"] not in body_ops:
             continue
         object_positions.append(index)
-        node_id = item.get("nodeId")
-        if node_id in owned:
-            raise OperationPlanError(f"semantic node is owned more than once: {node_id}")
-        owned.add(node_id)
         if item["op"] == "writer.add_captioned_figure":
             for child in item["args"]["children"]:
                 child_node_id = child["nodeId"]
@@ -1584,31 +1772,57 @@ def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
                         f"semantic node is owned more than once: {child_node_id}"
                     )
                 owned.add(child_node_id)
-        if item["op"] == "writer.add_equation" or (
-            item["op"] in {"writer.add_captioned_figure", "writer.add_semantic_table"}
-            and item["args"].get("referenceable", True)
+        target_kind = {
+            "writer.add_captioned_figure": "figure",
+            "writer.add_semantic_table": "table",
+            "writer.add_equation": "equation",
+        }.get(item["op"])
+        if target_kind is not None and (
+            item["op"] == "writer.add_equation"
+            or item["args"].get("referenceable", False)
         ):
-            referenceable_targets.add(node_id)
-        if item["op"] in {
-            "writer.add_captioned_figure", "writer.add_semantic_table", "writer.add_equation"
-        }:
-            has_native_targets = True
+            target_descriptors[node_id] = (
+                target_kind,
+                item["args"]["bookmarkName"],
+            )
 
-    is_sectioned_plan = any(
-        item["op"] == "writer.configure_section"
-        and item["args"].get("role") in {"front_matter", "body", "landscape"}
-        for item in operations
-    )
-    if object_positions and is_sectioned_plan:
+    if object_positions:
         first_body = min(object_positions)
         for index, item in enumerate(operations):
             if item["op"] in {"writer.insert_figure_index", "writer.insert_table_index"} and index > first_body:
                 raise OperationPlanError("native figure/table indexes must precede body objects")
 
-    if has_native_targets:
-        for item in operations:
-            if item["op"] != "writer.add_cross_reference" or not _is_m3_shape(item["op"], item["args"]):
+    for item in operations:
+        if item["op"] != "writer.add_cross_reference":
+            continue
+        for run in item["args"]["runs"]:
+            if run["type"] != "reference":
                 continue
-            for run in item["args"]["runs"]:
-                if run["type"] == "reference" and run["targetNodeId"] not in referenceable_targets:
-                    raise OperationPlanError("reference run target is not a referenceable native object")
+            target = target_descriptors.get(run["targetNodeId"])
+            actual = (run["targetKind"], run["bookmarkName"])
+            if target is None or target != actual:
+                raise OperationPlanError(
+                    "reference target node, kind, and bookmark must exactly match a referenceable native object"
+                )
+
+
+def _validate_m2_plan_state(operations: list[dict[str, Any]]) -> None:
+    """Retain safe target semantics for a complete legacy native-object plan."""
+    targets = {
+        item.get("nodeId"): {
+            "writer.add_captioned_figure": "figure",
+            "writer.add_semantic_table": "table",
+            "writer.add_equation": "equation",
+        }[item["op"]]
+        for item in operations
+        if item["op"] in {
+            "writer.add_captioned_figure",
+            "writer.add_semantic_table",
+            "writer.add_equation",
+        }
+    }
+    for item in operations:
+        if item["op"] != "writer.add_cross_reference":
+            continue
+        if targets.get(item["args"]["targetId"]) != item["args"]["kind"]:
+            raise OperationPlanError("legacy reference target must exist and match its kind")

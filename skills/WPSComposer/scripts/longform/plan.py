@@ -304,13 +304,13 @@ def _render_front_matter(
     policy: LongformPolicy,
 ) -> None:
     if section_policy.includes_abstract and document.abstract:
-        for paragraph in document.abstract.paragraphs:
+        for index, paragraph in enumerate(document.abstract.paragraphs, start=1):
             text = paragraph.plain_text
             if text:
                 state.add(
                     "writer.add_paragraph",
                     {"text": text, "style": "Body Text"},
-                    node_id="doc:abstract",
+                    node_id=paragraph.node_id or f"doc:abstract:{index}",
                 )
     if section_policy.includes_keywords and document.keywords:
         text = _keywords_text(document.keywords)

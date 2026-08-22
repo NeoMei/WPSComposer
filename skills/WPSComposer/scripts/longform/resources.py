@@ -262,7 +262,7 @@ def _build_manifest(resources: list[PreflightResource]) -> dict[str, Any]:
     ]
     envelope: dict[str, Any] = {"version": "1", "entries": entries}
     canonical = json.dumps(envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-    envelope["digest"] = hashlib.sha256(canonical).hexdigest()
+    envelope["digest"] = "sha256:" + hashlib.sha256(canonical).hexdigest()
     return envelope
 
 

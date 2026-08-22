@@ -25,7 +25,10 @@ def _plan(operation: dict) -> dict:
         "component": "writer",
         "resourceManifestVersion": 1,
         "resourceManifestDigest": "sha256:" + "0" * 64,
-        "operations": [operation],
+        "operations": [
+            operation,
+            {"op": "writer.finalize_fields", "nodeId": "doc:finalize", "args": {"maxRounds": 3}},
+        ],
     }
 
 
@@ -174,10 +177,12 @@ def test_reference_runs_are_closed_resolved_and_ordered() -> None:
         ]},
         "failurePolicy": {"mode": "degrade", "recoverableCodes": ["CROSS_REFERENCE_FAILED"], "fallback": "inline-fallback"},
     }
-    validate_generation_plan(_plan(operation), "writer")
+    raw = _plan(operation)
+    raw["operations"].insert(0, _figure())
+    validate_generation_plan(raw, "writer")
     operation["args"]["runs"][1]["fieldCode"] = "REF evil \\h"
     with pytest.raises(OperationPlanError, match="unknown argument"):
-        validate_generation_plan(_plan(operation), "writer")
+        validate_generation_plan(raw, "writer")
 
 
 def test_utf16_string_bound_is_enforced() -> None:
