@@ -23,6 +23,7 @@ from .executor import (
     PaginationNode,
     finalize_fields_with_convergence,
 )
+from .resources import PreparedLongformResource
 
 
 WINDOWS_DEDICATED_HOST_UNAVAILABLE = "WINDOWS_DEDICATED_HOST_UNAVAILABLE"
@@ -144,7 +145,7 @@ class WindowsLongformExecutor(LongformExecutor):
     def execute(
         self,
         plan: GenerationPlan,
-        resources: Tuple[Any, ...] = (),
+        resources: Tuple[PreparedLongformResource, ...] = (),
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
         validate_generation_plan(plan.to_dict(), component="writer")

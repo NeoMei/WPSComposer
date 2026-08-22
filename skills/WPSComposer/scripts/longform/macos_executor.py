@@ -9,13 +9,12 @@ the add-in JavaScript.
 from __future__ import annotations
 
 import os
-import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Tuple
 
-from ..generation_plan import GenerationPlan, GenerationResource, validate_generation_plan
+from ..generation_plan import GenerationPlan, validate_generation_plan
 from ..macos_probe.bridge import LoopbackBridge
 from ..macos_probe.models import ProbeResult
 from .executor import (
@@ -28,6 +27,7 @@ from .executor import (
     PaginationNode,
     finalize_fields_with_convergence,
 )
+from .resources import PreparedLongformResource
 
 
 MACOS_DEDICATED_HOST_UNAVAILABLE = "MACOS_DEDICATED_HOST_UNAVAILABLE"
@@ -83,7 +83,7 @@ class MacOSLongformExecutor(LongformExecutor):
     def execute(
         self,
         plan: GenerationPlan,
-        resources: Tuple[GenerationResource, ...] = (),
+        resources: Tuple[PreparedLongformResource, ...] = (),
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
         validate_generation_plan(plan.to_dict(), component="writer")
@@ -136,31 +136,32 @@ class MacOSLongformExecutor(LongformExecutor):
 
     def _stage_resources(
         self,
-        resources: Tuple[GenerationResource, ...],
+        resources: Tuple[PreparedLongformResource, ...],
         staged_docx: str,
-    ) -> Tuple[GenerationResource, ...]:
-        """Copy resources into the private staging dir and return staged resources."""
+    ) -> Tuple[Tuple[str, Path], ...]:
+        """Write normalized bytes into the private staging directory."""
         if not resources:
             return ()
         staging_dir = Path(staged_docx).parent
-        staged: List[GenerationResource] = []
+        staged: List[Tuple[str, Path]] = []
         for idx, resource in enumerate(resources):
-            suffix = Path(resource.source_path).suffix
+            suffix = {
+                "image/png": ".png",
+                "image/jpeg": ".jpg",
+                "image/tiff": ".tiff",
+                "image/bmp": ".bmp",
+                "image/gif": ".gif",
+                "image/svg+xml": ".svg",
+            }[resource.media_type]
             target = staging_dir / f"resource-{resource.id}-{idx}{suffix}"
-            shutil.copy2(resource.source_path, target)
-            staged.append(
-                GenerationResource(
-                    id=resource.id,
-                    source_path=target,
-                    media_type=resource.media_type,
-                )
-            )
+            target.write_bytes(resource.payload_bytes)
+            staged.append((resource.id, target))
         return tuple(staged)
 
     def _build_resource_map(
-        self, resources: Tuple[GenerationResource, ...]
+        self, resources: Tuple[Tuple[str, Path], ...]
     ) -> Mapping[str, str]:
-        return {resource.id: str(resource.source_path) for resource in resources}
+        return {resource_id: str(path) for resource_id, path in resources}
 
     def _build_outcome(
         self,

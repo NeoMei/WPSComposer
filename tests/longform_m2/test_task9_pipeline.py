@@ -17,10 +17,10 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from skills.WPSComposer.scripts.generation_plan import (
     GenerationPlan,
-    GenerationResource,
     OperationPlanError,
 )
 from skills.WPSComposer.scripts.longform.executor import (
@@ -31,6 +31,11 @@ from skills.WPSComposer.scripts.longform.pipeline import (
     LongformBuild,
     build_longform_generation,
 )
+from skills.WPSComposer.scripts.longform.resources import PreparedLongformResource
+
+
+def _write_png(path: Path) -> None:
+    Image.new("RGB", (2, 2), (40, 80, 120)).save(path, format="PNG")
 
 
 @pytest.fixture
@@ -41,7 +46,7 @@ def project_root() -> Path:
 @pytest.fixture
 def sample_build(tmp_path: Path) -> LongformBuild:
     image_path = tmp_path / "sample.png"
-    image_path.write_bytes(b"fake-png-data")
+    _write_png(image_path)
     markdown = f"""---
 title: Task 9 Test
 ---
@@ -95,7 +100,7 @@ class TestDiagnosticHygiene:
     def test_to_json_with_absolute_base_dir_redacts_everything(self, tmp_path: Path) -> None:
         abs_base = str(tmp_path.resolve())
         image_path = tmp_path / "sample.png"
-        image_path.write_bytes(b"fake-png-data")
+        _write_png(image_path)
         # Use an absolute path to the image itself as well.
         markdown = f"""---
 title: Absolute Path Test
@@ -157,17 +162,18 @@ class TestExecutorBinding:
         assert plan is sample_build.plan
         assert len(resources) == len(sample_build.preflight.resources)
         for resource in resources:
-            assert isinstance(resource, GenerationResource)
+            assert isinstance(resource, PreparedLongformResource)
+            assert resource.payload_bytes
         assert deadline == 42.0
 
-    def test_execute_longform_plan_resolves_resources_to_absolute_paths(
+    def test_execute_longform_plan_transports_normalized_private_bytes(
         self, tmp_path: Path
     ) -> None:
         from skills.WPSComposer.scripts.longform.pipeline import execute_longform_plan
 
         abs_base = str(tmp_path.resolve())
         image_path = tmp_path / "sample.png"
-        image_path.write_bytes(b"fake-png-data")
+        _write_png(image_path)
         markdown = f"""---
 title: Resolve Test
 ---
@@ -184,7 +190,9 @@ title: Resolve Test
         assert len(executor.calls) == 1
         _plan, resources, _deadline = executor.calls[0]
         assert len(resources) == 1
-        assert Path(resources[0].source_path).is_absolute()
+        assert isinstance(resources[0], PreparedLongformResource)
+        assert resources[0].payload_bytes == image_path.read_bytes()
+        assert not hasattr(resources[0], "source_path")
 
     def test_execute_longform_plan_validates_plan_before_executor(
         self, sample_build: LongformBuild
@@ -269,4 +277,3 @@ print("pure")
 
 def _is_unix(path: str) -> bool:
     return os.name == "posix" and not path.startswith("\\")
-

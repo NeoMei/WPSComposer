@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import os
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from skills.WPSComposer.scripts.document_model import (
     DegradationBlock,
@@ -37,6 +39,12 @@ def _make_image(base_dir: Path, rel_path: str, data: bytes) -> Path:
     return target
 
 
+def _image_bytes(format_name: str = "PNG") -> bytes:
+    output = io.BytesIO()
+    Image.new("RGB", (2, 2), (40, 80, 120)).save(output, format=format_name)
+    return output.getvalue()
+
+
 def test_missing_resource_returns_degradation(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
@@ -49,7 +57,7 @@ def test_missing_resource_returns_degradation(tmp_path: Path) -> None:
     deg = result.degradations[0]
     assert isinstance(deg, ResourceDegradation)
     assert deg.code == RESOURCE_NOT_FOUND
-    assert "missing.png" in deg.fallback_text
+    assert deg.fallback_text == "[RESOURCE_NOT_FOUND]"
     assert isinstance(result.manifest, dict)
     assert result.manifest["entries"] == []
 
@@ -66,13 +74,13 @@ def test_unsupported_extension_returns_degradation(tmp_path: Path) -> None:
     assert len(result.degradations) == 1
     deg = result.degradations[0]
     assert deg.code == RESOURCE_MEDIA_TYPE_UNSUPPORTED
-    assert "bad.exe" in deg.fallback_text
+    assert deg.fallback_text == "[RESOURCE_MEDIA_TYPE_UNSUPPORTED]"
 
 
 def test_valid_raster_produces_hash_and_resource(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b"\x89PNG\r\n\x1a\nfake-png-body"
+    data = _image_bytes()
     _make_image(base_dir, "diagram.png", data)
     nodes = [ImageBlock(path="diagram.png", alt="diagram")]
 
@@ -86,14 +94,14 @@ def test_valid_raster_produces_hash_and_resource(tmp_path: Path) -> None:
     assert resource.payload_sha256 == _sha256(data)
     assert resource.byte_length == len(data)
     assert resource.media_type == "image/png"
-    assert resource.normalizer_id == "none"
+    assert resource.normalizer_id == "none-v1"
     assert result.degradations == []
 
 
 def test_valid_jpeg_resource(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b"\xff\xd8\xff\xe0fake-jpeg"
+    data = _image_bytes("JPEG")
     _make_image(base_dir, "photo.jpg", data)
     nodes = [ImageBlock(path="photo.jpg", alt="photo")]
 
@@ -124,7 +132,7 @@ def test_svg_resource_manifest_binding(tmp_path: Path) -> None:
     assert manifest["version"] == "1"
     entry = manifest["entries"][0]
     assert entry["mediaType"] == "image/svg+xml"
-    assert entry["normalizerId"] == "none"
+    assert entry["normalizerId"] == "svg-static-v1"
     assert "source" not in entry
     assert "path" not in entry
 
@@ -132,7 +140,7 @@ def test_svg_resource_manifest_binding(tmp_path: Path) -> None:
 def test_manifest_redacts_absolute_paths(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b"\x89PNG\r\n\x1a\nsecret"
+    data = _image_bytes()
     _make_image(base_dir, "assets/secret.png", data)
     nodes = [ImageBlock(path="assets/secret.png", alt="secret")]
 
@@ -147,8 +155,10 @@ def test_manifest_redacts_absolute_paths(tmp_path: Path) -> None:
 def test_figure_block_images_are_processed(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    a = b"\x89PNG\r\n\x1a\nA"
-    b = b"\x89PNG\r\n\x1a\nB"
+    a = _image_bytes()
+    output = io.BytesIO()
+    Image.new("RGB", (2, 2), (200, 40, 20)).save(output, format="PNG")
+    b = output.getvalue()
     _make_image(base_dir, "a.png", a)
     _make_image(base_dir, "b.png", b)
     figure = FigureBlock(
@@ -200,7 +210,7 @@ def test_symlink_escaping_base_dir_is_rejected(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
     target = tmp_path / "real.png"
-    target.write_bytes(b"\x89PNG\r\n\x1a\n")
+    target.write_bytes(_image_bytes())
     link = base_dir / "link.png"
     os.symlink(target, link)
     nodes = [ImageBlock(path="link.png", alt="link")]
@@ -216,7 +226,7 @@ def test_valid_symlink_inside_base_dir_is_accepted(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
     target = base_dir / "real.png"
-    target.write_bytes(b"\x89PNG\r\n\x1a\n")
+    target.write_bytes(_image_bytes())
     link = base_dir / "link.png"
     os.symlink(target, link)
     nodes = [ImageBlock(path="link.png", alt="link")]
@@ -230,7 +240,7 @@ def test_valid_symlink_inside_base_dir_is_accepted(tmp_path: Path) -> None:
 def test_duplicate_references_yield_one_resource(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b"\x89PNG\r\n\x1a\n"
+    data = _image_bytes()
     _make_image(base_dir, "x.png", data)
     nodes = [
         ImageBlock(path="x.png", alt="first"),
@@ -246,7 +256,10 @@ def test_duplicate_references_yield_one_resource(tmp_path: Path) -> None:
 def test_excalidraw_block_is_processed_as_svg_source(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b'{"type":"excalidraw"}'
+    data = (
+        b'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">'
+        b'<rect width="20" height="10"/></svg>'
+    )
     _make_image(base_dir, "diag.excalidraw.md", data)
     nodes = [ExcalidrawBlock(path="diag.excalidraw.md", alt="diagram")]
 
@@ -254,6 +267,8 @@ def test_excalidraw_block_is_processed_as_svg_source(tmp_path: Path) -> None:
 
     assert len(result.resources) == 1
     assert result.resources[0].media_type == "image/svg+xml"
+    assert result.resources[0].normalizer_id == "svg-static-v1"
+    assert result.resources[0].image_profile.source_format == "SVG"
     assert result.resources[0].source_sha256 == _sha256(data)
     assert result.degradations == []
 
@@ -262,7 +277,7 @@ def test_read_failure_is_degraded(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
     target = base_dir / "unreadable.png"
-    target.write_bytes(b"\x89PNG\r\n\x1a\n")
+    target.write_bytes(_image_bytes())
     target.chmod(0o000)
     try:
         nodes = [ImageBlock(path="unreadable.png", alt="diagram")]
@@ -299,7 +314,7 @@ def test_empty_nodes_yield_empty_result(tmp_path: Path) -> None:
 def test_section_walks_into_elements(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
-    data = b"\x89PNG\r\n\x1a\nZ"
+    data = _image_bytes()
     _make_image(base_dir, "z.png", data)
     section = Section(
         level=1,

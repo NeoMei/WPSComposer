@@ -20,7 +20,10 @@ import pytest
 from skills.WPSComposer.scripts.generation_plan import (
     GenerationOperation,
     GenerationPlan,
-    GenerationResource,
+)
+from skills.WPSComposer.scripts.longform.resources import (
+    ImageProfile,
+    PreparedLongformResource,
 )
 from skills.WPSComposer.scripts.longform.executor import (
     ExecutionIssue,
@@ -163,12 +166,14 @@ def test_execute_stages_resources_in_command_params(tmp_staging: Path):
     bridge = FakeLoopbackBridge()
     executor = MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_staging))
     plan = make_simple_plan()
-    source = tmp_staging / "source.png"
-    source.write_bytes(b"PNG")
-    resource = GenerationResource(
+    resource = PreparedLongformResource(
         id="image-1",
-        source_path=source,
         media_type="image/png",
+        source_sha256="a" * 64,
+        payload_sha256="a" * 64,
+        normalizer_id="none-v1",
+        payload_bytes=b"PNG",
+        image_profile=ImageProfile(1, 1, None, None, 1, "PNG", False),
     )
     executor.execute(plan, (resource,))
 
@@ -543,4 +548,3 @@ assert.equal(result.fieldSnapshots.length, 4);
     path = Path(tempfile.mkdtemp()) / "ordering_test.js"
     path.write_text(js, encoding="utf-8")
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
-

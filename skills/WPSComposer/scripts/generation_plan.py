@@ -25,6 +25,7 @@ ALLOWED_MEDIA_TYPES = frozenset(
         "image/jpeg",
         "image/png",
         "image/tiff",
+        "image/svg+xml",
     }
 )
 

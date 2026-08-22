@@ -9,7 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol, Tuple, runtime_checkable
 
-from ..generation_plan import GenerationPlan, GenerationResource
+from ..generation_plan import GenerationPlan
+from .resources import PreparedLongformResource
 
 
 FIELD_REFRESH_UNSTABLE = "FIELD_REFRESH_UNSTABLE"
@@ -168,7 +169,7 @@ class LongformExecutor(Protocol):
     def execute(
         self,
         plan: GenerationPlan,
-        resources: Tuple[GenerationResource, ...],
+        resources: Tuple[PreparedLongformResource, ...],
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
         ...
@@ -359,7 +360,7 @@ class RecordingLongformExecutor:
     def execute(
         self,
         plan: GenerationPlan,
-        resources: Tuple[Any, ...] = (),
+        resources: Tuple[PreparedLongformResource, ...] = (),
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
         self.calls.append((plan, resources, deadline))

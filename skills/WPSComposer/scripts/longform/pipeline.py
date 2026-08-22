@@ -14,13 +14,13 @@ from typing import Any, Optional, Tuple
 from ..document_model import DocumentIssue, StructuredDocument
 from ..generation_plan import (
     GenerationPlan,
-    GenerationResource,
     validate_generation_plan,
 )
 from ..md_parser import parse_markdown
 from .executor import ExecutionOutcome, LongformExecutor
 from .plan import build_longform_plan
 from .resources import (
+    PreparedLongformResource,
     PreflightResource,
     ResourcePreflight,
     preflight_resources,
@@ -105,29 +105,19 @@ def _apply_redactions(value: Any, redactions: dict[str, str]) -> Any:
 def _build_executor_resources(
     base_dir: str,
     preflight: ResourcePreflight,
-) -> tuple[GenerationResource, ...]:
-    """Convert preflight resources into executor-ready GenerationResources.
-
-    Relative source_paths are resolved against base_dir so that real
-    executors receive absolute, staging-ready paths.
-    """
-    if base_dir:
-        base = Path(base_dir).resolve()
-    else:
-        base = Path.cwd()
-
-    resources: list[GenerationResource] = []
+) -> tuple[PreparedLongformResource, ...]:
+    """Bind accepted normalized payloads to the private executor contract."""
+    resources: list[PreparedLongformResource] = []
     for resource in preflight.resources:
-        source = Path(resource.source_path)
-        if source.is_absolute():
-            resolved = source.resolve()
-        else:
-            resolved = (base / source).resolve()
         resources.append(
-            GenerationResource(
+            PreparedLongformResource(
                 id=resource.resource_id,
-                source_path=str(resolved),
                 media_type=resource.media_type,
+                source_sha256=resource.source_sha256,
+                payload_sha256=resource.payload_sha256,
+                normalizer_id=resource.normalizer_id,
+                payload_bytes=resource.payload_bytes,
+                image_profile=resource.image_profile,
             )
         )
     return tuple(resources)
@@ -144,10 +134,8 @@ def execute_longform_plan(
     change the public `generate()` path and remains platform-pure: the caller
     supplies the executor instance; the pipeline never imports platform modules.
 
-    The executor resources are resolved to absolute paths via the original
-    base_dir stored on the build.  Callers that pass an absolute base_dir or
-    absolute image paths receive fully resolved staging paths; callers using
-    relative paths receive paths resolved against the recorded base_dir.
+    The executor receives only normalized private bytes and immutable image
+    metadata. Source paths are never re-read or carried across this boundary.
     """
     validate_generation_plan(build.plan.to_dict(), component="writer")
     resources = _build_executor_resources(build.base_dir, build.preflight)

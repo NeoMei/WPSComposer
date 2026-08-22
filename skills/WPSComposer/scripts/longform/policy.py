@@ -14,6 +14,12 @@ from .semantic import LongformConfig
 from .unicode_text import shorten_display_units
 
 
+def page_content_width_pt(orientation: str = "portrait") -> float:
+    """Return A4 content width after the standard long-form side margins."""
+    width_mm = 297.0 if orientation == "landscape" else 210.0
+    return (width_mm - 30.0 - 25.0) * 72.0 / 25.4
+
+
 @dataclass(frozen=True)
 class LongformPolicy:
     """Resolved deterministic policy for a long-form document."""
@@ -148,4 +154,4 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
     )
 
 
-__all__ = ["LongformPolicy", "build_policy"]
+__all__ = ["LongformPolicy", "build_policy", "page_content_width_pt"]

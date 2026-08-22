@@ -21,6 +21,7 @@ classifiers = [
     "Topic :: Office/Business :: Office Suites",
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
+dependencies = ["Pillow>=10"]
 
 [project.optional-dependencies]
 windows = ["pywin32>=306; platform_system == 'Windows'"]
