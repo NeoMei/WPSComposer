@@ -200,27 +200,72 @@
 
   function addHeading(document, args) {
     const styleName = args.style || ("Heading " + args.level);
-    insertText(document, args.text, styleName, args);
+    return insertText(document, args.text, styleName, args);
+  }
+
+  function unnumberedHeadingStyle(document, level, sequenceTransparent) {
+    const name = (sequenceTransparent ? "WPSC Sequence Transparent Heading " : "WPSC Unnumbered Heading ") + level;
+    let style = null;
+    try { style = getStyle(document, name); } catch (error) { style = null; }
+    if (!style && document.Styles && typeof document.Styles.Add === "function") {
+      style = document.Styles.Add(name, 1);
+      const source = getStyle(document, "Heading " + level);
+      if (source && source.Font && style.Font) {
+        style.Font.Name = source.Font.Name;
+        style.Font.NameFarEast = source.Font.NameFarEast;
+        style.Font.NameAscii = source.Font.NameAscii;
+        style.Font.Size = source.Font.Size;
+        style.Font.Bold = source.Font.Bold;
+      }
+      // SEQ \\s 1 resets on any outline-level-1 paragraph, even if that
+      // paragraph has no list number. Explicit sequence-transparent headings
+      // keep the H1 visual treatment but use body outline; ordinary globally
+      // unnumbered headings remain outline-visible for TOC population.
+      style.ParagraphFormat.OutlineLevel = sequenceTransparent ? 10 : level;
+    }
+    return name;
+  }
+
+  function headingListTemplate(document, scheme) {
+    if (!document._wpscHeadingTemplates) document._wpscHeadingTemplates = {};
+    if (document._wpscHeadingTemplates[scheme]) return document._wpscHeadingTemplates[scheme];
+    const safeScheme = String(scheme || "decimal").replace(/[^a-z0-9_-]/gi, "_");
+    const template = document.ListTemplates.Add(true, "wpsc_m3_" + safeScheme);
+    const formats = scheme === "chinese-formal"
+      ? ["第%1章", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"]
+      : ["%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"];
+    for (let level = 1; level <= 4; level += 1) {
+      const listLevel = collectionItem(template.ListLevels, level);
+      listLevel.NumberFormat = formats[level - 1];
+      listLevel.NumberStyle = scheme === "chinese-formal" && level === 1 ? 37 : 0;
+      listLevel.NumberPosition = (level - 1) * 18;
+      listLevel.TextPosition = level * 18;
+      listLevel.ResetOnHigher = level === 1 ? 0 : level - 1;
+      listLevel.StartAt = 1;
+    }
+    document._wpscHeadingTemplates[scheme] = template;
+    return template;
   }
 
   function addHeadingNative(document, args) {
-    addHeading(document, args);
     if (!args.numbering) {
+      const styleName = unnumberedHeadingStyle(document, args.level, args.sequenceTransparent === true);
+      insertText(document, args.text, styleName, args);
       return;
     }
+    const levelIndex = safeNumber(args.level, 1);
     try {
-      const style = getStyle(document, "Heading " + args.level);
-      if (!style) {
-        return;
+      const template = headingListTemplate(document, args.numberingScheme || "decimal");
+      const inserted = addHeading(document, args);
+      const builtInStyle = collectionItem(document.Styles, -1 - levelIndex);
+      if (builtInStyle) inserted.range.Style = builtInStyle;
+      inserted.range.ListFormat.ApplyListTemplateWithLevel(template, false, 0, 0, levelIndex);
+      inserted.range.ListFormat.ListLevelNumber = levelIndex;
+      if (!String(inserted.range.ListFormat.ListString || "").replace(/\s+/g, "")) {
+        throw nativeError("EXECUTION_ABORTED");
       }
-      const template = document.ListTemplates.Add(true);
-      const schemeMap = { "chinese-formal": "%1", decimal: "%1.", "hybrid-bid": "%1." };
-      const format = schemeMap[args.numberingScheme] || "%1.";
-      const levelIndex = safeNumber(args.level, 1);
-      template.ListLevels(levelIndex).NumberFormat = format;
-      style.LinkToListTemplate(template, levelIndex);
     } catch (error) {
-      // Native numbering is best-effort.
+      throw nativeError("EXECUTION_ABORTED");
     }
   }
 
@@ -260,17 +305,25 @@
     }
 
     setPageRole(document, args.role || "body");
-    setPageNumbering(document, {
-      format: args.pageNumberFormat || "continue",
-      start: args.startPageNumber,
-      restart: args.restartPageNumbering
-    });
     setHeaderFooter(document, {
       headerText: args.headerText,
       footerText: args.footerText,
       linkToPreviousHeader: args.linkToPreviousHeader,
       linkToPreviousFooter: args.linkToPreviousFooter
     });
+    setPageNumbering(document, {
+      format: args.pageNumberFormat || "continue",
+      start: args.startPageNumber,
+      restart: args.restartPageNumbering
+    });
+    const front = document._wpscFrontMatter || {};
+    if (args.role === "cover" && front.titlePage) {
+      insertText(document, front.title || "", "Title", {
+        align: "center", size: 24, bold: true, spaceAfter: 24
+      });
+      if (front.author) insertText(document, front.author, "Body Text", {align: "center", size: 14});
+      if (front.date) insertText(document, front.date, "Body Text", {align: "center", size: 12});
+    }
   }
 
   function setPageRole(document, role) {
@@ -317,22 +370,23 @@
   function setHeaderFooter(document, args) {
     try {
       const section = collectionItem(document.Sections, document.Sections.Count);
+      const header = collectionItem(section.Headers, 1);
+      const footer = collectionItem(section.Footers, 1);
       if (args.linkToPreviousHeader !== undefined) {
         try {
-          section.Headers(1).LinkToPrevious = args.linkToPreviousHeader ? -1 : 0;
+          header.LinkToPrevious = args.linkToPreviousHeader ? -1 : 0;
         } catch (error) {
           // ignore
         }
       }
       if (args.linkToPreviousFooter !== undefined) {
         try {
-          section.Footers(1).LinkToPrevious = args.linkToPreviousFooter ? -1 : 0;
+          footer.LinkToPrevious = args.linkToPreviousFooter ? -1 : 0;
         } catch (error) {
           // ignore
         }
       }
       if (args.headerText !== undefined && args.headerText !== null) {
-        const header = section.Headers(1);
         header.Range.Text = String(args.headerText);
         try {
           header.Range.ParagraphFormat.Alignment = 1;
@@ -345,7 +399,7 @@
       }
       if (args.footerText !== undefined && args.footerText !== null) {
         if (String(args.footerText) !== "") {
-          section.Footers(1).Range.Text = String(args.footerText);
+          footer.Range.Text = String(args.footerText);
         }
       }
     } catch (error) {
@@ -450,12 +504,28 @@
     }
   }
 
+  function nativeHeadingStyleName(document, level) {
+    const style = collectionItem(document.Styles, -1 - level);
+    const name = style && (style.NameLocal || style.Name);
+    if (typeof name !== "string" || !name || name.indexOf('"') !== -1) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return name;
+  }
+
   function addNativeNumberShell(document, numbering, bookmarkName, ownerNodeId) {
     validateNumbering(numbering);
     insertInlineText(document, numbering.prefix);
     const numberStart = currentPosition(document);
     if (numbering.mode === "chapter") {
-      addNativeField(document, "STYLEREF 1 \\s", ownerNodeId, "STYLEREF", "numbering");
+      // WPS for macOS interprets numeric STYLEREF style arguments as literal
+      // style names. Translate the closed level-1 descriptor to the stable
+      // built-in English style ID used by this executor.
+      // WPS field lookup uses the localized UI name even though styles.xml
+      // persists an English built-in name. Resolve the locale-independent
+      // built-in style (-2 for H1), then emit its NameLocal at runtime.
+      const headingStyle = nativeHeadingStyleName(document, 1);
+      addNativeField(document, 'STYLEREF "' + headingStyle + '" \\s', ownerNodeId, "STYLEREF", "numbering");
       insertInlineText(document, "-");
     }
     const sequenceCode = "SEQ " + numbering.sequenceId + " \\* ARABIC" +
@@ -519,7 +589,15 @@
     const start = currentPosition(document);
     let shape;
     try {
+      const rawBefore = document.InlineShapes && Number(document.InlineShapes.Count);
+      const before = Number.isInteger(rawBefore) && rawBefore >= 0 ? rawBefore : -1;
       shape = document.InlineShapes.AddPicture(locator, false, true, targetRange || endRange(document));
+      const rawAfter = document.InlineShapes && Number(document.InlineShapes.Count);
+      const after = Number.isInteger(rawAfter) && rawAfter >= 0 ? rawAfter : -1;
+      if ((shape === null || shape === undefined) && before >= 0 && after > before) {
+        shape = collectionItem(document.InlineShapes, after);
+      }
+      if (shape === null || shape === undefined) throw nativeError("IMAGE_INSERT_FAILED");
     } catch (error) {
       rollbackMutation(document, start);
       throw nativeError("IMAGE_INSERT_FAILED");
@@ -533,7 +611,7 @@
         shape.Range.ParagraphFormat.KeepTogether = -1;
         shape.Range.ParagraphFormat.KeepWithNext = -1;
       }
-      insertInlineText(document, "\r", targetRange || null);
+      if (!targetRange) insertInlineText(document, "\r");
       return shape;
     } catch (error) {
       rollbackMutation(document, start);
@@ -600,30 +678,48 @@
     let table;
     try {
       table = document.Tables.Add(endRange(document), 1, 3);
+      try { table.AllowAutoFit = false; } catch (error) { /* ignore */ }
       [children[0].displayWidthPt, 12, children[1].displayWidthPt].forEach(function (width, index) {
         const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
         if (typeof column.SetWidth === "function") column.SetWidth(width, 0);
         else column.Width = width;
       });
       for (let borderId = -6; borderId <= -1; borderId += 1) {
-        table.Borders(borderId).LineStyle = 0;
+        tableBorder(table, borderId).LineStyle = 0;
       }
       if (table.Range && table.Range.ParagraphFormat) {
         table.Range.ParagraphFormat.KeepTogether = -1;
         table.Range.ParagraphFormat.KeepWithNext = -1;
       }
     } catch (error) {
+      try { if (table && typeof table.Delete === "function") table.Delete(); } catch (deleteError) { /* ignore */ }
       throw nativeError("IMAGE_INSERT_FAILED");
     }
-    children.forEach(function (child, index) {
-      const locator = resources[child.resourceId];
-      if (typeof locator !== "string" || locator.length === 0) {
-        throw nativeError("RESOURCE_HASH_MISMATCH");
+    try {
+      children.forEach(function (child, index) {
+        const locator = resources[child.resourceId];
+        if (typeof locator !== "string" || locator.length === 0) {
+          throw nativeError("RESOURCE_HASH_MISMATCH");
+        }
+        const cell = table.Cell(1, index === 0 ? 1 : 3);
+        const target = cell.Range.Duplicate;
+        target.End = target.Start;
+        if (target.ParagraphFormat) {
+          target.ParagraphFormat.Alignment = 1;
+          target.ParagraphFormat.KeepTogether = -1;
+          target.ParagraphFormat.KeepWithNext = -1;
+        }
+        addFigureChild(document, child, locator, context.ownerNodeId, target);
+      });
+      return table;
+    } catch (error) {
+      try {
+        if (table && typeof table.Delete === "function") table.Delete();
+      } catch (deleteError) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
-      const cell = table.Cell(1, index === 0 ? 1 : 3);
-      addFigureChild(document, child, locator, context.ownerNodeId, cell.Range);
-    });
-    return table;
+      throw error;
+    }
   }
 
   function addCaptionedFigureNative(document, args, resources, context) {
@@ -654,7 +750,7 @@
         placement: "block",
         nodeId: context.ownerNodeId
       });
-      addNativeCaption(document, args, context.ownerNodeId, false);
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
     } finally {
       if (landscape) addExplicitOrientationSection(document, false);
     }
@@ -711,13 +807,22 @@
     } catch (error) {
       throw nativeError("TABLE_STYLE_APPLY_FAILED");
     }
+    const mergePageAnchors = [];
     try {
       (args.merges || []).forEach(function (merge) {
+        const firstRange = table.Cell(merge.top, merge.left).Range;
+        const lastRange = table.Cell(merge.bottom, merge.right).Range;
+        mergePageAnchors.push({
+          merge: merge,
+          first: firstRange.Duplicate || firstRange,
+          last: lastRange.Duplicate || lastRange
+        });
         table.Cell(merge.top, merge.left).Merge(table.Cell(merge.bottom, merge.right));
       });
     } catch (error) {
       throw nativeError("TABLE_MERGE_APPLY_FAILED");
     }
+    table._wpscMergePageAnchors = mergePageAnchors;
     insertInlineText(document, "\r");
     return table;
   }
@@ -734,12 +839,18 @@
   }
 
   function tableOverflowGroup(table, merges) {
-    for (let index = 0; index < (merges || []).length; index += 1) {
-      const merge = merges[index];
+    const anchors = Array.isArray(table._wpscMergePageAnchors)
+      ? table._wpscMergePageAnchors : [];
+    for (let index = 0; index < anchors.length; index += 1) {
+      const merge = anchors[index].merge;
       if (merge.top < 2 || merge.bottom <= merge.top) continue;
-      const first = table.Cell(merge.top, merge.left).Range;
-      const last = table.Cell(merge.bottom, merge.right).Range;
-      if (safeNumber(first.Information(3), 0) !== safeNumber(last.Information(3), 0)) return true;
+      const first = anchors[index].first;
+      const last = anchors[index].last;
+      try {
+        if (safeNumber(first.Information(3), 0) !== safeNumber(last.Information(3), 0)) return true;
+      } catch (error) {
+        throw nativeError("TABLE_ROW_FORCED_SPLIT");
+      }
     }
     return false;
   }
@@ -766,7 +877,7 @@
     const landscape = args.orientation === "landscape";
     if (landscape) addExplicitOrientationSection(document, true);
     try {
-      addNativeCaption(document, args, context.ownerNodeId, true);
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
       (args.plannedDegradation || []).forEach(function (planned) {
         addNativeTableNotice(document, planned.code);
         appendIssueOnce(context.issues, {
@@ -1290,7 +1401,10 @@
     "writer.add_list": addList,
     "writer.add_page_break": function (document) { endRange(document).InsertBreak(7); },
     "writer.configure_section": configureSection,
-    "writer.configure_front_matter": function (document, args) { setPageRole(document, args.role || "front_matter"); },
+    "writer.configure_front_matter": function (document, args) {
+      document._wpscFrontMatter = args;
+      if (args.role) setPageRole(document, args.role);
+    },
     "writer.configure_toc_styles": function (document, args) { document._wpscTocDensity = args; },
     "writer.set_page_role": function (document, args) { setPageRole(document, args.role); },
     "writer.set_page_numbering": function (document, args) { setPageNumbering(document, args); },
@@ -1388,15 +1502,19 @@
           return;
         }
       }
-      throw nativeError(error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED"
+      const wrapped = nativeError(error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED"
         ? "LOCAL_MUTATION_ROLLBACK_FAILED" : "EXECUTION_ABORTED");
+      wrapped.message = wrapped.code + ":" + opName;
+      throw wrapped;
     }
   }
 
   function buildPaginationMap(operations) {
     const nodes = [];
+    const seen = {};
     operations.forEach(function (operation) {
-      if (operation.nodeId) {
+      if (operation.nodeId && !seen[operation.nodeId]) {
+        seen[operation.nodeId] = true;
         nodes.push({
           nodeId: operation.nodeId,
           fragments: [{ page: 1 }]
@@ -1425,6 +1543,184 @@
     Object.keys(resources).forEach(function (resourceId) {
       if (!expected[resourceId]) throw nativeError("RESOURCE_HASH_MISMATCH");
     });
+  }
+
+  function requiredBookmark(document, name) {
+    if (typeof name !== "string" || !/^wpsc_(fig|tab|eq)_[a-z0-9]{24}$/.test(name)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" || !document.Bookmarks.Exists(name)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return collectionItem(document.Bookmarks, name).Range;
+  }
+
+  function paragraphRangeFor(range) {
+    const paragraphs = range && range.Paragraphs;
+    const paragraph = paragraphs ? collectionItem(paragraphs, 1) : null;
+    if (!paragraph || !paragraph.Range) throw nativeError("EXECUTION_ABORTED");
+    return paragraph.Range;
+  }
+
+  function nativeObjectRange(document, mutation) {
+    const anchor = requiredBookmark(document, mutation.bookmarkName);
+    const caption = paragraphRangeFor(anchor);
+    let start = safeNumber(caption.Start, 0);
+    let finish = safeNumber(caption.End, start);
+    if (mutation.kind === "figure") {
+      let located = false;
+      const shapes = document.InlineShapes;
+      for (let index = 1; index <= requiredCollectionCount(shapes); index += 1) {
+        const shape = collectionItem(shapes, index);
+        if (shape && shape.AlternativeText === mutation.ownerNodeId && shape.Range) {
+          start = Math.min(start, safeNumber(shape.Range.Start, start));
+          located = true;
+        }
+      }
+      if (!located && start > 0) {
+        const previous = document.Range(Math.max(0, start - 2), start);
+        start = safeNumber(paragraphRangeFor(previous).Start, start);
+      }
+      const tables = document.Tables;
+      for (let tableIndex = 1; tableIndex <= requiredCollectionCount(tables); tableIndex += 1) {
+        const table = collectionItem(tables, tableIndex);
+        if (table && table.Range && safeNumber(table.Range.End, 0) <= safeNumber(caption.Start, 0)) {
+          const distance = safeNumber(caption.Start, 0) - safeNumber(table.Range.End, 0);
+          if (distance <= 3) start = Math.min(start, safeNumber(table.Range.Start, start));
+        }
+      }
+    } else if (mutation.kind === "table") {
+      const tables = document.Tables;
+      let nearest = null;
+      for (let index = 1; index <= requiredCollectionCount(tables); index += 1) {
+        const table = collectionItem(tables, index);
+        if (!table || !table.Range) continue;
+        const tableStart = safeNumber(table.Range.Start, -1);
+        if (tableStart >= finish && (nearest === null || tableStart < safeNumber(nearest.Range.Start, tableStart + 1))) {
+          nearest = table;
+        }
+      }
+      if (!nearest) throw nativeError("EXECUTION_ABORTED");
+      finish = safeNumber(nearest.Range.End, finish);
+    } else if (mutation.kind !== "equation") {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    return document.Range(start, finish);
+  }
+
+  function validateMutation(mutation) {
+    if (!mutation || typeof mutation !== "object" || Array.isArray(mutation)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const allowed = {
+      move: ["type", "kind", "bookmarkName", "ownerNodeId", "beforeBookmarkName", "beforeKind", "beforeOwnerNodeId"],
+      insert: ["type", "operations"],
+      delete: ["type", "kind", "bookmarkName", "ownerNodeId"]
+    };
+    if (!allowed[mutation.type] || Object.keys(mutation).some(function (key) { return allowed[mutation.type].indexOf(key) === -1; })) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    if (mutation.type === "insert" && (!Array.isArray(mutation.operations) || mutation.operations.length === 0)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+  }
+
+  function applyLongformMutation(document, mutation, resources, issues, childResults) {
+    validateMutation(mutation);
+    if (mutation.type === "move") {
+      const source = nativeObjectRange(document, mutation);
+      const destination = nativeObjectRange(document, {
+        kind: mutation.beforeKind,
+        bookmarkName: mutation.beforeBookmarkName,
+        ownerNodeId: mutation.beforeOwnerNodeId
+      }).Duplicate;
+      source.Cut();
+      // Pasting at a table's Start on WPS nests the moved table in its first
+      // cell. For a table destination, the preceding paragraph mark is the
+      // external insertion anchor. Non-table destinations can safely create
+      // a fresh paragraph before their range.
+      let destinationIsTable = false;
+      for (let index = 1; index <= requiredCollectionCount(document.Tables); index += 1) {
+        const table = collectionItem(document.Tables, index);
+        if (table && table.Range && safeNumber(table.Range.Start, -1) === safeNumber(destination.Start, -2)) {
+          destinationIsTable = true;
+          break;
+        }
+      }
+      let pasteRange;
+      if (destinationIsTable) {
+        const anchor = Math.max(0, safeNumber(destination.Start, 0) - 1);
+        pasteRange = document.Range(anchor, anchor);
+      } else {
+        if (typeof destination.InsertParagraphBefore !== "function") {
+          throw nativeError("EXECUTION_ABORTED");
+        }
+        destination.InsertParagraphBefore();
+        pasteRange = document.Range(destination.Start, destination.Start);
+      }
+      pasteRange.Paste();
+      return;
+    }
+    if (mutation.type === "delete") {
+      nativeObjectRange(document, mutation).Delete();
+      return;
+    }
+    mutation.operations.forEach(function (operation) {
+      if (!operation || typeof operation.op !== "string" || operation.op === "writer.finalize_fields") {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      runOperation(document, operation, resources, issues, childResults);
+    });
+  }
+
+  function mutate(params) {
+    const sourcePath = params.sourcePath;
+    const outputPath = params.outputPath;
+    const mutations = params.mutations;
+    const resources = params.resources || {};
+    if (typeof sourcePath !== "string" || !sourcePath || typeof outputPath !== "string" || !outputPath || !Array.isArray(mutations) || mutations.length === 0) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const previousAlerts = Application.DisplayAlerts;
+    const previousScreenUpdating = Application.ScreenUpdating;
+    let document = null;
+    const issues = [];
+    const childResults = [];
+    const refreshRounds = [];
+    try {
+      Application.DisplayAlerts = 0;
+      Application.ScreenUpdating = false;
+      document = Application.Documents.Open(sourcePath, false, false);
+      mutations.forEach(function (mutation) {
+        applyLongformMutation(document, mutation, resources, issues, childResults);
+        refreshRounds.push(runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues).length);
+      });
+      document.SaveAs2(outputPath, 12);
+      document.Close(0);
+      document = Application.Documents.Open(outputPath, false, false);
+      refreshRounds.push(runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues).length);
+      document.Save();
+      document.Close(0);
+      document = null;
+      return {
+        outputPath: outputPath,
+        mutationCount: mutations.length,
+        mutationKinds: mutations.map(function (mutation) { return mutation.type; }).filter(function (kind, index, values) {
+          return values.indexOf(kind) === index;
+        }),
+        refreshRounds: refreshRounds,
+        issueCodes: issues.map(function (issue) { return issue.code; })
+      };
+    } catch (error) {
+      if (document !== null) {
+        try { document.Close(0); } catch (closeError) { /* ignore */ }
+      }
+      if (!error.code) error.code = "GENERATION_COMMAND_FAILED";
+      throw error;
+    } finally {
+      try { Application.ScreenUpdating = previousScreenUpdating; }
+      finally { Application.DisplayAlerts = previousAlerts; }
+    }
   }
 
   function run(params) {
@@ -1492,6 +1788,7 @@
 
   window.WPSComposerLongformV2 = Object.freeze({
     run: run,
+    mutate: mutate,
     OPERATIONS: Object.keys(OPERATIONS),
     __test: Object.freeze({
       addNativeNumberShell: addNativeNumberShell,
@@ -1504,8 +1801,10 @@
       createNativeTable: createNativeTable,
       nativeFieldAdapter: nativeFieldAdapter,
       runNativeFieldConvergence: runNativeFieldConvergence,
+      buildPaginationMap: buildPaginationMap,
       hashVisible: hashVisible,
       rollbackMutation: rollbackMutation,
+      applyLongformMutation: applyLongformMutation,
       runOperation: runOperation
     })
   });

@@ -307,8 +307,15 @@ class MacOSLongformExecutor(LongformExecutor):
         plan: GenerationPlan,
     ) -> ExecutionOutcome:
         if not result.ok:
+            code = str((result.error or {}).get("code", EXECUTION_ABORTED))
+            detail = str((result.error or {}).get("message", ""))
+            if not (
+                detail.startswith(code + ":writer.")
+                and detail.replace(code + ":writer.", "").replace("_", "").isalnum()
+            ):
+                detail = ""
             raise MacOSLongformExecutorError(
-                "Execution aborted by WPS JSAPI"
+                f"Execution aborted by WPS JSAPI ({code}{': ' + detail if detail else ''})"
             ) from None
 
         value = validate_longform_generation_value(result.value or {})

@@ -1582,10 +1582,11 @@ class WriterComposer(BaseComposer):
                     "message": "Figure used deterministic stack recovery",
                     "placement": "block",
                 })
-            self._add_native_caption(
-                caption, numbering, bookmarkName, owner_node_id,
-                keep_with_next=False,
-            )
+            if caption:
+                self._add_native_caption(
+                    caption, numbering, bookmarkName, owner_node_id,
+                    keep_with_next=False,
+                )
         finally:
             if landscape:
                 self.add_section(landscape=False)
@@ -1693,10 +1694,11 @@ class WriterComposer(BaseComposer):
             self.add_section(landscape=True)
         issues = []
         try:
-            self._add_native_caption(
-                caption, numbering, bookmarkName, owner_node_id,
-                keep_with_next=True,
-            )
+            if caption:
+                self._add_native_caption(
+                    caption, numbering, bookmarkName, owner_node_id,
+                    keep_with_next=True,
+                )
             for degradation in plannedDegradation:
                 self._add_native_table_notice(
                     degradation["code"], degradation["message"], "",

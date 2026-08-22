@@ -484,15 +484,21 @@ def test_addin_routes_add_heading_to_native_numbering(project_root: Path):
 const fs = require("fs");
 const assert = require("assert");
 global.window = {{}};
-let linkedLevel = null;
-function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}}, LinkToListTemplate: function(t, level) {{ linkedLevel = level; }} }}; }}
+let appliedLevel = null;
+let templateName = null;
+function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}} }}; }}
 function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return {{ NumberFormat: null }}; }} }}; }}
+const writtenRange = {{
+  Font: {{}}, ParagraphFormat: {{}}, Style: null,
+  ListFormat: {{ListString: "1", ApplyListTemplateWithLevel: function(t, restart, a, b, level) {{ appliedLevel = level; }}}}
+}};
 const document = {{
   _wpscFirstSectionConfigured: false,
   Content: {{ End: 0, Text: "" }},
+  Range: function() {{ return Object.assign({{Start: 0, End: 0, InsertAfter: function() {{}}}}, writtenRange); }},
   PageSetup: {{}},
   Styles: {{ Item: function(name) {{ return makeStyle(); }}, Add: function(name) {{ return makeStyle(); }} }},
-  ListTemplates: {{ Add: function() {{ return makeListTemplate(); }} }},
+  ListTemplates: {{ Add: function(outline, name) {{ assert.equal(outline, true); templateName = name; return makeListTemplate(); }} }},
   TablesOfContents: {{ Add: function() {{}} }},
   SaveAs2: function() {{}},
   Close: function() {{}}
@@ -513,7 +519,8 @@ window.WPSComposerLongformV2.run({{
     ]
   }}
 }});
-assert.equal(linkedLevel, 1);
+assert.equal(appliedLevel, 1);
+assert.equal(templateName, "wpsc_m3_decimal");
 """
     path = Path(tempfile.mkdtemp()) / "heading_native_test.js"
     path.write_text(js, encoding="utf-8")

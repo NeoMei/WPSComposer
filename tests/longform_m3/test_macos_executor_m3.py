@@ -605,6 +605,33 @@ def test_addin_exposes_m3_native_handlers_and_only_bibliography_is_deferred() ->
         assert operation not in deferred_body
 
 
+def test_native_insert_mutation_accepts_an_ordered_operation_group() -> None:
+    asset = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({asset}, "utf8"));
+let text = "";
+const document = {{
+  Content: {{get End() {{ return text.length + 1; }}}},
+  Range: function(start, end) {{
+    return {{Start: start, End: end, Font: {{}}, ParagraphFormat: {{}},
+      InsertAfter: function(value) {{ text += String(value); this.End = text.length; }} }};
+  }}
+}};
+window.WPSComposerLongformV2.__test.applyLongformMutation(document, {{
+  type: "insert",
+  operations: [
+    {{op: "writer.add_paragraph", nodeId: "p:one", args: {{text: "first"}}}},
+    {{op: "writer.add_paragraph", nodeId: "p:two", args: {{text: "second"}}}}
+  ]
+}}, {{}}, [], []);
+assert.strictEqual(text, "first\\rsecond\\r");
+"""
+    _run_node(script)
+
+
 def test_addin_number_shell_and_cross_reference_use_controlled_native_fields() -> None:
     asset = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
     script = f"""
@@ -616,6 +643,7 @@ const calls = [];
 let position = 0;
 const document = {{
   Content: {{get End() {{ return position + 1; }}}},
+  Styles: {{Item: function(id) {{ assert.equal(id, -2); return {{NameLocal: "标题 1"}}; }}}},
   Range: function(start, end) {{
     return {{Start: start, End: end, ParagraphFormat: {{}},
       InsertAfter: function(text) {{ position += String(text).length; this.End = position; }},
@@ -636,7 +664,7 @@ t.addCrossReferenceParagraph(document, {{runs: [
   {{type: "text", text: "。"}}
 ]}}, {{}}, {{ownerNodeId: "para:one", issues: [], childResults: []}});
 assert.deepEqual(calls.filter(x => x[0] === "field").map(x => x[2]), [
-  "STYLEREF 1 \\\\s", "SEQ WPSC_FIG \\\\* ARABIC \\\\s 1", "REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\\\h"
+  'STYLEREF "标题 1" \\\\s', "SEQ WPSC_FIG \\\\* ARABIC \\\\s 1", "REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\\\h"
 ]);
 assert.equal(calls.filter(x => x[0] === "bookmark").length, 1);
 assert.ok(calls.find(x => x[0] === "bookmark")[3] > calls.find(x => x[0] === "bookmark")[2]);
@@ -815,20 +843,23 @@ eval(fs.readFileSync({asset}, "utf8"));
 let position = 0;
 const widths = [];
 const pictures = [];
-function makeRange(start, end) {{ return {{Start: start, End: end, ParagraphFormat: {{}}, InsertAfter: function(text) {{ position += String(text).length; }}, Delete: function() {{ position = start; }}}}; }}
+function makeRange(start, end) {{ return {{Start: start, End: end, ParagraphFormat: {{}},
+  get Duplicate() {{ return makeRange(this.Start, this.End); }},
+  InsertAfter: function(text) {{ position += String(text).length; }}, Delete: function() {{ position = start; }}}}; }}
 const columns = function(index) {{ return {{SetWidth: function(width) {{ widths[index - 1] = width; }}}}; }};
 columns.Item = columns;
+const borders = {{}};
 const table = {{
   Columns: columns,
   Range: {{End: 1, ParagraphFormat: {{}}}},
-  Borders: function() {{ return {{LineStyle: null}}; }},
-  Cell: function(row, column) {{ return {{Range: makeRange(position, position)}}; }}
+  Borders: function(id) {{ return borders[id] = borders[id] || {{LineStyle: null}}; }},
+  Cell: function(row, column) {{ return {{Range: makeRange(column * 10, column * 10 + 1)}}; }}
 }};
 const document = {{
   Content: {{get End() {{ return position + 1; }}}},
   Range: makeRange,
   Tables: {{Add: function() {{ return table; }}}},
-  InlineShapes: {{AddPicture: function(path) {{ pictures.push(path); position += 1; return {{Range: {{ParagraphFormat: {{}}}}}}; }}}}
+  InlineShapes: {{AddPicture: function(path, link, save, target) {{ pictures.push([path, target.Start, target.End]); position += 1; return {{Range: {{ParagraphFormat: {{}}}}}}; }}}}
 }};
 const children = [
   {{nodeId: "image:1", resourceId: "r1", displayWidthPt: 100, displayHeightPt: 50}},
@@ -836,7 +867,8 @@ const children = [
 ];
 window.WPSComposerLongformV2.__test.createFigureColumns(document, children, {{r1: "/private/one.png", r2: "/private/two.png"}}, {{ownerNodeId: "fig:1", issues: [], childResults: []}});
 assert.deepEqual(widths, [100, 12, 110]);
-assert.deepEqual(pictures, ["/private/one.png", "/private/two.png"]);
+assert.deepEqual(pictures, [["/private/one.png", 10, 10], ["/private/two.png", 30, 30]]);
+assert.deepEqual(Object.values(borders).map(function(border) {{ return border.LineStyle; }}), [0, 0, 0, 0, 0, 0]);
 assert.equal(table.Range.ParagraphFormat.KeepTogether, -1);
 assert.equal(table.Range.ParagraphFormat.KeepWithNext, -1);
 """

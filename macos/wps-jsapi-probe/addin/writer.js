@@ -1347,6 +1347,13 @@
     return window.WPSComposerLongformV2.run(params);
   }
 
+  async function mutateLongformDocument(params) {
+    if (!window.WPSComposerLongformV2 || typeof window.WPSComposerLongformV2.mutate !== "function") {
+      throw new Error("WPSComposer longform v2 mutation support is not loaded");
+    }
+    return window.WPSComposerLongformV2.mutate(params);
+  }
+
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_docx": saveDocx,
@@ -1355,7 +1362,8 @@
     "generate_writer_document": generateWriterDocument,
     "inspect_document": inspectDocument,
     "probe_longform_m0": function (params) { return window.WPSComposerLongformM0.run(params); },
-    "generate_longform_document": generateLongformDocument
+    "generate_longform_document": generateLongformDocument,
+    "mutate_longform_document": mutateLongformDocument
   };
 
 

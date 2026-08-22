@@ -81,6 +81,7 @@ class _BuilderState:
     title_displayed: bool = False
     front_matter_figure_index_emitted: bool = False
     front_matter_table_index_emitted: bool = False
+    active_numbered_h1: bool = False
 
     def add(
         self,
@@ -371,6 +372,11 @@ def _render_section(
         ):
             heading_args["numbering"] = True
             heading_args["numberingScheme"] = section.numbering_scheme
+            if section.level == 1:
+                state.active_numbered_h1 = True
+        elif section.level == 1 and state.active_numbered_h1:
+            heading_args["numbering"] = False
+            heading_args["sequenceTransparent"] = True
         state.add(
             "writer.add_heading",
             heading_args,

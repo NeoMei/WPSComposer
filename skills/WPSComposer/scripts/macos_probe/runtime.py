@@ -945,7 +945,8 @@ class ProbeRuntime:
         return dict(self.fixtures)
 
     def activate_component(
-        self, component: str, *, deadline: Optional[float] = None
+        self, component: str, *, deadline: Optional[float] = None,
+        isolated: bool = False,
     ) -> Path:
         if component not in FIXTURE_NAMES:
             raise ValueError(f"Unknown component: {component}")
@@ -981,10 +982,33 @@ class ProbeRuntime:
             else require_remaining(deadline, "Timed out before WPS activation")
         )
         subprocess.run(
-            activation_command(self.wps_app, target),
+            activation_command(self.wps_app, target, reuse_running=not isolated),
             check=True,
             timeout=timeout,
         )
+        if isolated:
+            ownership_deadline = (
+                time.monotonic() + ACTIVATION_TIMEOUT
+                if deadline is None
+                else deadline
+            )
+            baseline = self._wps_processes_before or {}
+            while remaining(ownership_deadline) > 0:
+                current = list_wps_processes(
+                    self.wps_app,
+                    timeout=min(CLEANUP_GRACE_SECONDS, require_remaining(ownership_deadline)),
+                )
+                started = {
+                    pid: identity
+                    for pid, identity in current.items()
+                    if pid not in baseline
+                }
+                if started:
+                    self._owned_wps_processes.update(started)
+                    break
+                time.sleep(min(0.1, remaining(ownership_deadline)))
+            else:
+                raise TimeoutError("Timed out identifying isolated WPS activation")
         if deadline is not None:
             require_remaining(deadline, "Timed out during WPS activation")
         self.fixtures[component] = target
