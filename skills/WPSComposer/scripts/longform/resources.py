@@ -49,8 +49,21 @@ _FORMAT_MEDIA_TYPES = {
     "GIF": "image/gif",
 }
 _SVG_FORBIDDEN_DECLARATIONS = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_SVG_FORBIDDEN_PI = re.compile(br"<\?\s*xml-stylesheet\b", re.IGNORECASE)
 _SVG_URL = re.compile(r"url\(\s*(['\"]?)(.*?)\1\s*\)", re.IGNORECASE)
+_SVG_ACTIVE_CSS = re.compile(r"@\s*(?:import|font-face)\b", re.IGNORECASE)
 _SVG_LENGTH = re.compile(r"^\s*([0-9]+(?:\.[0-9]+)?)(?:px)?\s*$", re.IGNORECASE)
+_SVG_ACTIVE_ELEMENTS = frozenset(
+    {
+        "script",
+        "foreignobject",
+        "animate",
+        "animatetransform",
+        "animatemotion",
+        "set",
+    }
+)
+_PNG_LOSSLESS_MODES = frozenset({"RGB", "RGBA", "L", "LA", "P"})
 
 
 @dataclass(frozen=True)
@@ -241,12 +254,51 @@ def _check_geometry(width: int, height: int) -> None:
         raise _ResourceRejected(RESOURCE_PIXEL_LIMIT_EXCEEDED)
 
 
-def _save_lossless_png(image: Image.Image, icc: Optional[bytes]) -> bytes:
+def _png_compatible_image(
+    image: Image.Image, icc: Optional[bytes]
+) -> tuple[Image.Image, Optional[bytes]]:
+    """Return a PNG-capable image and an ICC profile valid for its mode.
+
+    RGB/L/LA/RGBA/P pixels keep their original samples in the PNG container.
+    Other supported raster modes require a deterministic RGB/RGBA conversion;
+    when a usable source ICC profile exists, convert through it to sRGB.
+    """
+    if image.mode in _PNG_LOSSLESS_MODES:
+        return image, icc
+
+    target_mode = "RGBA" if "A" in image.getbands() else "RGB"
+    if icc is not None:
+        try:
+            source_profile = ImageCms.ImageCmsProfile(io.BytesIO(icc))
+            target_profile = ImageCms.createProfile("sRGB")
+            converted = ImageCms.profileToProfile(
+                image,
+                source_profile,
+                target_profile,
+                outputMode=target_mode,
+            )
+            target_icc = ImageCms.ImageCmsProfile(target_profile).tobytes()
+            return converted, target_icc
+        except (ImageCms.PyCMSError, OSError, TypeError, ValueError):
+            # A structurally valid profile can still be incompatible with the
+            # decoded pixel mode. Do not attach it to converted RGB pixels.
+            pass
+    return image.convert(target_mode), None
+
+
+def _save_normalized_png(image: Image.Image, icc: Optional[bytes]) -> bytes:
+    normalized, normalized_icc = _png_compatible_image(image, icc)
+    if normalized_icc is None and normalized.info.get("icc_profile") is not None:
+        # Pillow copies ``info`` through mode conversion and may implicitly
+        # write that stale profile even when it cannot describe the converted
+        # pixels. Avoid mutating the caller's image while removing it.
+        normalized = normalized.copy()
+        normalized.info.pop("icc_profile", None)
     output = io.BytesIO()
     kwargs: dict[str, Any] = {"format": "PNG", "compress_level": 9}
-    if icc is not None:
-        kwargs["icc_profile"] = icc
-    image.save(output, **kwargs)
+    if normalized_icc is not None:
+        kwargs["icc_profile"] = normalized_icc
+    normalized.save(output, **kwargs)
     return output.getvalue()
 
 
@@ -282,7 +334,7 @@ def _prepare_raster_if_identified(data: bytes) -> Optional[_RasterPreparation]:
 
                 multiframe = frame_count > 1 and source_format in {"GIF", "TIFF"}
                 if multiframe or transformed:
-                    payload = _save_lossless_png(first, icc)
+                    payload = _save_normalized_png(first, icc)
                     payload_media_type = "image/png"
                     if multiframe:
                         normalizer = (
@@ -350,7 +402,7 @@ def _svg_number(value: Optional[str]) -> Optional[int]:
 
 
 def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
-    if _SVG_FORBIDDEN_DECLARATIONS.search(data):
+    if _SVG_FORBIDDEN_DECLARATIONS.search(data) or _SVG_FORBIDDEN_PI.search(data):
         raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
     count = 0
@@ -358,17 +410,14 @@ def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
     root: Optional[ET.Element] = None
     embedded_bytes = 0
 
-    def inspect_data_uri(uri: str, *, raster_required: bool = False) -> None:
+    def inspect_data_uri(uri: str) -> None:
         nonlocal embedded_bytes
-        media_type, payload = _decode_data_uri(uri)
-        declared_raster = (
-            media_type.startswith("image/") and media_type != "image/svg+xml"
-        )
+        _media_type, payload = _decode_data_uri(uri)
         try:
             prepared_raster = _prepare_raster_if_identified(payload)
         except _ResourceRejected:
             raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
-        if prepared_raster is None and (raster_required or declared_raster):
+        if prepared_raster is None:
             raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
         embedded_bytes += len(payload)
         if len(data) + embedded_bytes > MAX_RESOURCE_BYTES:
@@ -378,12 +427,17 @@ def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
         for match in _SVG_URL.finditer(value):
             inspect_data_uri(match.group(2))
 
+    def inspect_css(value: str) -> None:
+        if _SVG_ACTIVE_CSS.search(value):
+            raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
+        inspect_url_references(value)
+
     try:
         for event, element in ET.iterparse(io.BytesIO(data), events=("start", "end")):
             if event == "end":
                 tag = element.tag.rsplit("}", 1)[-1].lower()
                 if tag == "style":
-                    inspect_url_references(element.text or "")
+                    inspect_css(element.text or "")
                 depth -= 1
                 continue
             count += 1
@@ -393,17 +447,19 @@ def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
             if root is None:
                 root = element
             tag = element.tag.rsplit("}", 1)[-1].lower()
-            if tag in {"script", "foreignobject"}:
+            if tag in _SVG_ACTIVE_ELEMENTS:
                 raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
             for raw_name, raw_value in element.attrib.items():
                 name = raw_name.rsplit("}", 1)[-1].lower()
                 value = raw_value.strip()
+                if name.startswith("on"):
+                    raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
                 if name in {"font-face-uri", "font-family"} and "url(" in value.lower():
                     raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
                 if name in {"href", "src"}:
-                    inspect_data_uri(
-                        value, raster_required=tag in {"image", "feimage"}
-                    )
+                    inspect_data_uri(value)
+                elif name == "style":
+                    inspect_css(value)
                 else:
                     inspect_url_references(value)
     except _ResourceRejected:
