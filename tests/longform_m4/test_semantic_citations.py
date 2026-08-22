@@ -201,6 +201,38 @@ $$
         for paragraph in paragraphs
         for span in paragraph.spans
     )
+
+
+def test_page_break_blockquote_preserves_inline_citation_semantics() -> None:
+    result = _normalize(
+        """:::page-break
+> Quote {{cite:a}}.
+:::
+
+:::bibliography
+[a] Entry A.
+:::
+"""
+    )
+    page_break = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, PageBreakBlock)
+    )
+    citation_spans = [
+        span
+        for paragraph in page_break.content
+        for span in paragraph.spans
+        if span.citation is not None
+    ]
+    assert [span.text for span in citation_spans] == ["[1]"]
+    assert [(span.citation.target_id, span.citation.number) for span in citation_spans] == [
+        ("a", 1)
+    ]
+    assert result.references["a"]["cited"] is True
+
+
 def test_multiple_citations_split_runs_and_unresolved_stays_same_paragraph() -> None:
     result = _normalize(
         """Before {{cite:a}}, {{cite:missing}}, and {{cite:a}} after.

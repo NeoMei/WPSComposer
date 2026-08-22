@@ -178,7 +178,7 @@ def build_page_policy(
                 )
             elif role == "bibliography":
                 has_arabic_content = any(
-                    section.role in {"body", "landscape"}
+                    section.page_number_format == "arabic"
                     for section in sections
                 )
                 numbering_overrides: dict[str, Any] = {}

@@ -119,6 +119,8 @@ def _paragraphs_from_element(parse_inline, elem: Any) -> List[Paragraph]:
             for item in elem.items
             if "".join(s.text for s in item).strip()
         ]
+    if isinstance(elem, BlockQuote):
+        return list(elem.paragraphs)
     if isinstance(elem, Section):
         result: List[Paragraph] = []
         if elem.heading:
