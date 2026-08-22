@@ -74,6 +74,7 @@ class ListBlock:
     """Ordered or unordered list."""
     items: List[List[Span]] = field(default_factory=list)
     ordered: bool = False
+    item_node_ids: List[Optional[str]] = field(default_factory=list)
 
 
 @dataclass

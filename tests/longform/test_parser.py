@@ -254,6 +254,52 @@ def test_table_directive_preserves_m3_table_attributes() -> None:
     assert table.repeat_header is False
 
 
+@pytest.mark.parametrize("directive_name", ["figure", "table"])
+def test_wide_orientation_does_not_trigger_landscape_section(
+    directive_name: str,
+) -> None:
+    body = "![A](a.png)" if directive_name == "figure" else "| A |\n|---|\n| 1 |"
+    doc = parse_markdown(
+        f":::{directive_name} {{caption=\"A\" orientation=\"wide\"}}\n"
+        f"{body}\n"
+        ":::\n",
+        longform=True,
+    )
+    assert getattr(doc.sections[0], "orientation", "portrait") == "portrait"
+
+
+@pytest.mark.parametrize("directive_name", ["figure", "table"])
+def test_explicit_landscape_orientation_triggers_landscape_section(
+    directive_name: str,
+) -> None:
+    body = "![A](a.png)" if directive_name == "figure" else "| A |\n|---|\n| 1 |"
+    doc = parse_markdown(
+        f":::{directive_name} {{caption=\"A\" orientation=\"landscape\"}}\n"
+        f"{body}\n"
+        ":::\n",
+        longform=True,
+    )
+    assert getattr(doc.sections[0], "orientation", None) == "landscape"
+
+
+def test_unicode_digit_like_columns_value_defaults_without_raising() -> None:
+    doc = parse_markdown(
+        """:::figure {caption="A" layout="columns" columns="²"}
+![A](a.png)
+![B](b.png)
+:::
+""",
+        longform=True,
+    )
+    figure = next(
+        element
+        for section in doc.sections
+        for element in section.elements
+        if isinstance(element, FigureBlock)
+    )
+    assert figure.columns is None
+
+
 def test_formula_directive_captures_latex_source_and_identifier() -> None:
     md = """# Math
 

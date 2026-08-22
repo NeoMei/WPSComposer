@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from skills.WPSComposer.scripts.document_model import FigureBlock, Paragraph, SemanticTableBlock
+from skills.WPSComposer.scripts.document_model import (
+    FigureBlock,
+    ListBlock,
+    Paragraph,
+    SemanticTableBlock,
+)
 from skills.WPSComposer.scripts.md_parser import parse_markdown
 from skills.WPSComposer.scripts.longform.bookmark_ids import BOOKMARK_NAME_COLLISION
 from skills.WPSComposer.scripts.longform.semantic import (
@@ -227,3 +232,95 @@ See {{ref:fig:a}}.
     run = next(span["cross_reference"] for span in paragraph["spans"] if span["cross_reference"])
     assert list(run) == sorted(run)
     assert run["target_id"] == "fig:a"
+
+
+def test_abstract_paragraphs_receive_ids_and_split_multiple_references() -> None:
+    result = _normalize(
+        """:::abstract
+See {{ref:fig:a}}, {{ref:missing}}, and `{{ref:missing}}`.
+:::
+
+:::figure {#fig:a caption="A"}
+![a](a.png)
+:::
+"""
+    )
+    abstract = result.document.abstract
+    assert abstract is not None
+    (paragraph,) = abstract.paragraphs
+    assert paragraph.node_id == "__wpsc_para:0:1"
+    runs = [span.cross_reference for span in paragraph.spans if span.cross_reference]
+    assert [run.node_id for run in runs] == [
+        "__wpsc_para:0:1/ref:1",
+        "__wpsc_para:0:1/ref:2",
+    ]
+    assert runs[0].target_node_id == "fig:a"
+    assert runs[0].bookmark_name is not None
+    assert runs[1].target_node_id is None
+    code = next(span for span in paragraph.spans if span.code)
+    assert code.text == "{{ref:missing}}"
+    assert code.cross_reference is None
+    assert len([issue for issue in result.issues if issue.code == REFERENCE_UNRESOLVED]) == 1
+
+
+def test_list_items_receive_ids_and_split_references_without_duplicate_issues() -> None:
+    result = _normalize(
+        """:::figure {#fig:a caption="A"}
+![a](a.png)
+:::
+
+- First {{ref:fig:a}} and {{ref:missing}}.
+- `{{ref:missing}}` then {{ref:fig:a}} and {{ref:fig:a}}.
+"""
+    )
+    list_block = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, ListBlock)
+    )
+    assert list_block.item_node_ids == [
+        "__wpsc_para:1:1",
+        "__wpsc_para:1:2",
+    ]
+    first_runs = [span.cross_reference for span in list_block.items[0] if span.cross_reference]
+    second_runs = [span.cross_reference for span in list_block.items[1] if span.cross_reference]
+    assert [run.node_id for run in first_runs] == [
+        "__wpsc_para:1:1/ref:1",
+        "__wpsc_para:1:1/ref:2",
+    ]
+    assert [run.node_id for run in second_runs] == [
+        "__wpsc_para:1:2/ref:1",
+        "__wpsc_para:1:2/ref:2",
+    ]
+    assert first_runs[0].target_node_id == "fig:a"
+    assert first_runs[1].target_node_id is None
+    assert all(run.target_node_id == "fig:a" for run in second_runs)
+    code = next(span for span in list_block.items[1] if span.code)
+    assert code.text == "{{ref:missing}}"
+    assert code.cross_reference is None
+    assert len([issue for issue in result.issues if issue.code == REFERENCE_UNRESOLVED]) == 1
+
+
+def test_abstract_and_list_reference_order_is_canonical_across_runs() -> None:
+    markdown = """:::abstract
+Abstract {{ref:fig:a}}.
+:::
+
+:::figure {#fig:a caption="A"}
+![a](a.png)
+:::
+
+- List {{ref:fig:a}}.
+"""
+    first = _normalize(markdown).to_json()
+    second = _normalize(markdown).to_json()
+    assert first == second
+    assert first["document"]["abstract"]["paragraphs"][0]["node_id"] == "__wpsc_para:0:1"
+    list_json = next(
+        element
+        for section in first["document"]["sections"]
+        for element in section["elements"]
+        if "item_node_ids" in element
+    )
+    assert list_json["item_node_ids"] == ["__wpsc_para:1:1"]

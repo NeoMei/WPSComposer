@@ -185,7 +185,7 @@ def _collect_elements(parse_block_lines, lines: List[str], base_dir: str = "") -
 
 
 def _positive_int_attribute(value: Optional[str]) -> Optional[int]:
-    if value is None or not value.isdigit():
+    if value is None or not value.isascii() or not value.isdecimal():
         return None
     parsed = int(value)
     return parsed if parsed > 0 else None
@@ -429,7 +429,7 @@ def _handle_table_directive(
 
     ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
     orientation = directive.attributes.get("orientation", "portrait")
-    if orientation in ("landscape", "wide"):
+    if orientation == "landscape":
         ctx.current_section.orientation = "landscape"
     ctx.current_section.elements.append(SemanticTableBlock(
         identifier=directive.identifier,
@@ -460,7 +460,7 @@ def _handle_figure_directive(
 
     ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
     orientation = directive.attributes.get("orientation", "portrait")
-    if orientation in ("landscape", "wide"):
+    if orientation == "landscape":
         ctx.current_section.orientation = "landscape"
     ctx.current_section.elements.append(FigureBlock(
         identifier=directive.identifier,

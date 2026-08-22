@@ -820,7 +820,7 @@ def _parse_bibliography_entries(
 
 
 def _scan_inline_references(
-    sections: list[Section], issues: list[DocumentIssue]
+    doc: StructuredDocument, issues: list[DocumentIssue]
 ) -> tuple[set[str], set[str]]:
     """Scan visible text for {{ref:...}} and {{cite:...}} markers."""
     refs: set[str] = set()
@@ -833,50 +833,51 @@ def _scan_inline_references(
             for m in pattern.finditer(span.text):
                 collector.add(normalize_visible_text(m.group(1).strip()))
 
-    for section in sections:
-        for elem in section.elements:
-            if isinstance(elem, Paragraph):
-                scan_spans(elem.spans, refs, _REF_RE)
-                scan_spans(elem.spans, cites, _CITE_RE)
-            elif isinstance(elem, ListBlock):
-                for item in elem.items:
-                    scan_spans(item, refs, _REF_RE)
-                    scan_spans(item, cites, _CITE_RE)
-            elif isinstance(elem, (AbstractBlock, BlockQuote)):
-                for para in elem.paragraphs:
-                    scan_spans(para.spans, refs, _REF_RE)
-                    scan_spans(para.spans, cites, _CITE_RE)
-            elif isinstance(elem, TableBlock):
-                for cell in elem.headers:
+    def scan_element(elem: Any) -> None:
+        if isinstance(elem, Paragraph):
+            scan_spans(elem.spans, refs, _REF_RE)
+            scan_spans(elem.spans, cites, _CITE_RE)
+        elif isinstance(elem, ListBlock):
+            for item in elem.items:
+                scan_spans(item, refs, _REF_RE)
+                scan_spans(item, cites, _CITE_RE)
+        elif isinstance(elem, (AbstractBlock, BlockQuote)):
+            for para in elem.paragraphs:
+                scan_element(para)
+        elif isinstance(elem, TableBlock):
+            for cell in elem.headers:
+                scan_spans([Span(text=cell)], refs, _REF_RE)
+                scan_spans([Span(text=cell)], cites, _CITE_RE)
+            for row in elem.rows:
+                for cell in row:
                     scan_spans([Span(text=cell)], refs, _REF_RE)
                     scan_spans([Span(text=cell)], cites, _CITE_RE)
-                for row in elem.rows:
-                    for cell in row:
-                        scan_spans([Span(text=cell)], refs, _REF_RE)
-                        scan_spans([Span(text=cell)], cites, _CITE_RE)
-            elif isinstance(elem, SemanticTableBlock):
-                for cell in elem.headers:
+        elif isinstance(elem, SemanticTableBlock):
+            for cell in elem.headers:
+                scan_spans([Span(text=cell)], refs, _REF_RE)
+                scan_spans([Span(text=cell)], cites, _CITE_RE)
+            for row in elem.rows:
+                for cell in row:
                     scan_spans([Span(text=cell)], refs, _REF_RE)
                     scan_spans([Span(text=cell)], cites, _CITE_RE)
-                for row in elem.rows:
-                    for cell in row:
-                        scan_spans([Span(text=cell)], refs, _REF_RE)
-                        scan_spans([Span(text=cell)], cites, _CITE_RE)
-            elif isinstance(elem, FigureBlock):
-                for img in elem.images:
-                    scan_spans([Span(text=img.alt)], refs, _REF_RE)
-                    scan_spans([Span(text=img.alt)], cites, _CITE_RE)
-            elif isinstance(elem, DegradationBlock):
-                scan_spans(
-                    [Span(text=elem.fallback_text)], refs, _REF_RE
-                )
-                scan_spans(
-                    [Span(text=elem.fallback_text)], cites, _CITE_RE
-                )
-            elif isinstance(elem, PageBreakBlock):
-                for para in elem.content:
-                    scan_spans(para.spans, refs, _REF_RE)
-                    scan_spans(para.spans, cites, _CITE_RE)
+        elif isinstance(elem, FigureBlock):
+            for img in elem.images:
+                scan_spans([Span(text=img.alt)], refs, _REF_RE)
+                scan_spans([Span(text=img.alt)], cites, _CITE_RE)
+        elif isinstance(elem, DegradationBlock):
+            scan_spans([Span(text=elem.fallback_text)], refs, _REF_RE)
+            scan_spans([Span(text=elem.fallback_text)], cites, _CITE_RE)
+        elif isinstance(elem, PageBreakBlock):
+            for para in elem.content:
+                scan_element(para)
+        elif isinstance(elem, Section):
+            for child in elem.elements:
+                scan_element(child)
+
+    if doc.abstract is not None:
+        scan_element(doc.abstract)
+    for section in doc.sections:
+        scan_element(section)
 
     return refs, cites
 
@@ -935,9 +936,7 @@ def _build_references(
             "node_id": node_id,
         }
 
-    requested_refs, requested_cites = _scan_inline_references(
-        doc.sections, issues
-    )
+    requested_refs, requested_cites = _scan_inline_references(doc, issues)
 
     for ref_id in requested_refs:
         if ref_id not in references:
@@ -1090,95 +1089,145 @@ def _apply_caption_bindings(
             )
 
 
-def _iter_paragraphs(element: Any):
+@dataclass
+class _ParagraphSlot:
+    """Mutable adapter over a Paragraph or one legacy ListBlock item."""
+
+    owner: Any
+    item_index: Optional[int] = None
+
+    @property
+    def node_id(self) -> Optional[str]:
+        if isinstance(self.owner, Paragraph):
+            return self.owner.node_id
+        return self.owner.item_node_ids[self.item_index]
+
+    @property
+    def spans(self) -> list[Span]:
+        if isinstance(self.owner, Paragraph):
+            return self.owner.spans
+        return self.owner.items[self.item_index]
+
+    def assign_node_id(self, node_id: str) -> None:
+        if isinstance(self.owner, Paragraph):
+            self.owner.node_id = node_id
+        else:
+            self.owner.item_node_ids[self.item_index] = node_id
+
+    def replace_spans(self, spans: list[Span]) -> None:
+        if isinstance(self.owner, Paragraph):
+            self.owner.spans = spans
+        else:
+            self.owner.items[self.item_index] = spans
+
+
+def _iter_paragraph_slots(element: Any):
     if isinstance(element, Paragraph):
-        yield element
+        yield _ParagraphSlot(element)
+    elif isinstance(element, ListBlock):
+        element.item_node_ids = (
+            list(element.item_node_ids[: len(element.items)])
+            + [None] * max(0, len(element.items) - len(element.item_node_ids))
+        )
+        for item_index in range(len(element.items)):
+            yield _ParagraphSlot(element, item_index)
     elif isinstance(element, (AbstractBlock, BlockQuote)):
-        yield from element.paragraphs
+        for paragraph in element.paragraphs:
+            yield _ParagraphSlot(paragraph)
     elif isinstance(element, PageBreakBlock):
-        yield from element.content
+        for paragraph in element.content:
+            yield _ParagraphSlot(paragraph)
     elif isinstance(element, Section):
         for child in element.elements:
-            yield from _iter_paragraphs(child)
+            yield from _iter_paragraph_slots(child)
 
 
-def _assign_paragraph_ids(sections: list[Section]) -> None:
-    """Assign deterministic traversal IDs to paragraph-bearing blocks."""
-    for section_index, section in enumerate(sections, start=1):
-        ordinal = 0
-        for element in section.elements:
-            for paragraph in _iter_paragraphs(element):
-                ordinal += 1
-                if paragraph.node_id is None:
-                    paragraph.node_id = (
-                        f"__wpsc_para:{section_index}:{ordinal}"
+def _assign_slot_ids(slots, section_index: int) -> None:
+    for ordinal, slot in enumerate(slots, start=1):
+        if slot.node_id is None:
+            slot.assign_node_id(
+                f"__wpsc_para:{section_index}:{ordinal}"
+            )
+
+
+def _assign_paragraph_ids(doc: StructuredDocument) -> None:
+    """Assign canonical IDs to abstract, paragraph, and list-item spans."""
+    if doc.abstract is not None:
+        _assign_slot_ids(_iter_paragraph_slots(doc.abstract), 0)
+    for section_index, section in enumerate(doc.sections, start=1):
+        _assign_slot_ids(_iter_paragraph_slots(section), section_index)
+
+
+def _split_slot_references(
+    slot: _ParagraphSlot,
+    references: dict[str, dict[str, Any]],
+    fallback_text: str,
+) -> None:
+    if slot.node_id is None:
+        return
+    occurrence = 0
+    normalized_spans: list[Span] = []
+    for span in slot.spans:
+        if span.code or span.math or not _REF_RE.search(span.text):
+            normalized_spans.append(span)
+            continue
+
+        cursor = 0
+        for match in _REF_RE.finditer(span.text):
+            if match.start() > cursor:
+                normalized_spans.append(
+                    dataclasses.replace(
+                        span,
+                        text=span.text[cursor:match.start()],
+                        cross_reference=None,
                     )
+                )
+            occurrence += 1
+            target_id = normalize_visible_text(match.group(1).strip())
+            target = references.get(target_id)
+            resolved = target is not None and target.get("kind") in {
+                "fig", "tab", "eq"
+            }
+            run = CrossReferenceRun(
+                node_id=f"{slot.node_id}/ref:{occurrence}",
+                target_id=target_id,
+                target_node_id=(target["node_id"] if resolved else None),
+                target_kind=(target["kind"] if resolved else None),
+                bookmark_name=(
+                    target["bookmark_name"] if resolved else None
+                ),
+                fallback_text=fallback_text,
+            )
+            normalized_spans.append(
+                dataclasses.replace(
+                    span,
+                    text=fallback_text,
+                    cross_reference=run,
+                )
+            )
+            cursor = match.end()
+        if cursor < len(span.text):
+            normalized_spans.append(
+                dataclasses.replace(
+                    span,
+                    text=span.text[cursor:],
+                    cross_reference=None,
+                )
+            )
+    slot.replace_spans(normalized_spans)
 
 
 def _split_cross_reference_spans(
-    sections: list[Section], references: dict[str, dict[str, Any]]
+    doc: StructuredDocument, references: dict[str, dict[str, Any]]
 ) -> None:
-    """Replace non-code/math reference markers with typed inline runs."""
+    """Replace non-code/math reference markers in every paragraph container."""
     fallback_text = normalize_visible_text("引用目标未解析")
-    for section in sections:
-        for element in section.elements:
-            for paragraph in _iter_paragraphs(element):
-                if paragraph.node_id is None:
-                    continue
-                occurrence = 0
-                normalized_spans: list[Span] = []
-                for span in paragraph.spans:
-                    if span.code or span.math or not _REF_RE.search(span.text):
-                        normalized_spans.append(span)
-                        continue
-
-                    cursor = 0
-                    for match in _REF_RE.finditer(span.text):
-                        if match.start() > cursor:
-                            normalized_spans.append(
-                                dataclasses.replace(
-                                    span,
-                                    text=span.text[cursor:match.start()],
-                                    cross_reference=None,
-                                )
-                            )
-                        occurrence += 1
-                        target_id = normalize_visible_text(
-                            match.group(1).strip()
-                        )
-                        target = references.get(target_id)
-                        resolved = target is not None and target.get("kind") in {
-                            "fig", "tab", "eq"
-                        }
-                        run = CrossReferenceRun(
-                            node_id=f"{paragraph.node_id}/ref:{occurrence}",
-                            target_id=target_id,
-                            target_node_id=(
-                                target["node_id"] if resolved else None
-                            ),
-                            target_kind=(target["kind"] if resolved else None),
-                            bookmark_name=(
-                                target["bookmark_name"] if resolved else None
-                            ),
-                            fallback_text=fallback_text,
-                        )
-                        normalized_spans.append(
-                            dataclasses.replace(
-                                span,
-                                text=fallback_text,
-                                cross_reference=run,
-                            )
-                        )
-                        cursor = match.end()
-                    if cursor < len(span.text):
-                        normalized_spans.append(
-                            dataclasses.replace(
-                                span,
-                                text=span.text[cursor:],
-                                cross_reference=None,
-                            )
-                        )
-                paragraph.spans = normalized_spans
+    if doc.abstract is not None:
+        for slot in _iter_paragraph_slots(doc.abstract):
+            _split_slot_references(slot, references, fallback_text)
+    for section in doc.sections:
+        for slot in _iter_paragraph_slots(section):
+            _split_slot_references(slot, references, fallback_text)
 
 
 def _plain_text_from_element(elem: Any) -> str:
@@ -1388,13 +1437,13 @@ def normalize_longform_document(
                 )
             )
         _apply_caption_bindings(doc, config, reference_targets, bookmarks)
+        if doc.abstract is not None:
+            doc.abstract = _normalize_abstract(doc.abstract, issues)
         references = _build_references(
             doc, reference_targets, bookmarks, issues
         )
-        _assign_paragraph_ids(doc.sections)
-        _split_cross_reference_spans(doc.sections, references)
-        if doc.abstract is not None:
-            doc.abstract = _normalize_abstract(doc.abstract, issues)
+        _assign_paragraph_ids(doc)
+        _split_cross_reference_spans(doc, references)
         _scan_page_breaks(doc.sections, issues)
 
         # Store resolved config on the document for downstream consumers.
