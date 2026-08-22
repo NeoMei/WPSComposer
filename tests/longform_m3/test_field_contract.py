@@ -8,6 +8,7 @@ privacy semantics they must implement.
 from __future__ import annotations
 
 import hashlib
+import traceback
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -192,6 +193,72 @@ def test_throwing_required_native_api_is_fatal_and_contains_no_private_evidence(
     assert exc_info.value.phase == "refresh_indexes"
 
 
+def test_adapter_exception_chain_and_formatted_traceback_are_fully_sanitized():
+    secret = "/Users/private/标题 WPSC_SECRET deadbeef"
+
+    class _SecretContractError(_Adapter):
+        def refresh_indexes(self) -> None:
+            raise NativeFieldContractError(secret, secret)
+
+    with pytest.raises(NativeFieldContractError) as exc_info:
+        finalize_native_fields(
+            _SecretContractError(((_field("fig:1", "SEQ_FIG", 0, "1"),),))
+        )
+
+    exc = exc_info.value
+    rendered = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    assert exc.__cause__ is None
+    assert exc.__context__ is None
+    assert secret not in rendered
+    assert exc.phase == "refresh_indexes"
+
+
+def test_malformed_snapshot_objects_are_fatal_without_exception_chain_or_secrets():
+    secret = "/private/resource.png 可见文本 WPSC_BOOKMARK cafebabe"
+
+    class _EvilSnapshot:
+        @property
+        def stable_key(self):
+            raise RuntimeError(secret)
+
+    malformed_values = (
+        (_EvilSnapshot(),),
+        (FieldSnapshot(("fig:1", [], 0), "native", "0" * 64, 0, 0, 0, 1),),
+        (FieldSnapshot(("fig:1", "SEQ_FIG", 0), "native", None, 0, 0, 0, 1),),
+    )
+
+    class _Malformed(_Adapter):
+        def __init__(self, value) -> None:
+            super().__init__(((),))
+            self.value = value
+
+        def snapshot_fields(self):
+            return self.value
+
+    for value in malformed_values:
+        with pytest.raises(NativeFieldContractError) as exc_info:
+            finalize_native_fields(_Malformed(value))
+        exc = exc_info.value
+        rendered = "".join(
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        )
+        assert exc.__cause__ is None
+        assert exc.__context__ is None
+        assert secret not in rendered
+        assert "cafebabe" not in rendered
+        assert exc.phase == "snapshot_fields"
+
+
+@pytest.mark.parametrize("value", (4, 0, -1, True, 2.9, "3", None))
+def test_max_rounds_accepts_only_non_bool_int_from_one_through_three(value):
+    adapter = _Adapter(((_field("fig:1", "SEQ_FIG", 0, "1"),),))
+    with pytest.raises(NativeFieldContractError, match="max_rounds") as exc_info:
+        finalize_native_fields(adapter, max_rounds=value)
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+    assert adapter.calls == []
+
+
 def test_unstable_issue_evidence_has_counts_only_no_text_hash_or_bookmark_mapping():
     secret = "可见内容-绝密"
     rounds = tuple(
@@ -221,13 +288,35 @@ def test_mutations_change_seq_ref_snapshot_without_changing_owner_or_bookmark(mu
         _field("fig:1", "SEQ_FIG", 0, changed_number),
         _field("p:ref", "REF", 0, changed_ref),
     )
-    adapter = _Adapter((before, after, after))
-    original_mapping = dict(adapter.bookmark_by_owner)
+    class _BookmarkResolvedAdapter(_Adapter):
+        def __init__(self, rounds):
+            super().__init__(rounds)
+            self.owner_by_bookmark = {"WPSC_FIG_1": "fig:1", "WPSC_REF_1": "p:ref"}
+            self.bookmark_order = ("WPSC_FIG_1", "WPSC_REF_1")
+
+        def snapshot_fields(self) -> tuple[FieldSnapshot, ...]:
+            self.calls.append("snapshot")
+            selected = self.rounds[min(self.round_index, len(self.rounds) - 1)]
+            self.round_index += 1
+            return tuple(
+                snapshot_visible_field(
+                    owner_node_id=self.owner_by_bookmark[bookmark],
+                    field_kind=item.kind,
+                    ordinal_within_node=item.ordinal,
+                    visible_result=item.text,
+                    field_category="native",
+                    total_pages=5,
+                )
+                for bookmark, item in zip(self.bookmark_order, selected)
+            )
+
+    adapter = _BookmarkResolvedAdapter((before, after, after))
+    original_mapping = dict(adapter.owner_by_bookmark)
 
     result = finalize_native_fields(adapter)
 
     assert result.rounds == 3
-    assert adapter.bookmark_by_owner == original_mapping
+    assert adapter.owner_by_bookmark == original_mapping
     assert [item.stable_key for item in result.snapshot] == [
         ("fig:1", "SEQ_FIG", 0),
         ("p:ref", "REF", 0),

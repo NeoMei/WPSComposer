@@ -310,13 +310,13 @@ def test_finalize_emits_unstable_after_three_changing_rounds():
     executor = _ChangingExecutor()
     result = finalize_fields_with_convergence(executor, max_rounds=3)
 
-    assert result.snapshot == snapshots[3]
+    assert result.snapshot == snapshots[2]
     assert len(result.issues) == 1
     issue = result.issues[0]
     assert issue.code == FIELD_REFRESH_UNSTABLE
     assert issue.placement == "document"
     assert result.rounds == 4
-    assert executor.calls == [0, 1, 2, 3]
+    assert executor.calls == [0, 1, 2]
 
 def test_finalize_deterministic_ordering_of_stable_keys():
     """Snapshots with the same fields in different order compare equal after sorting."""
@@ -380,8 +380,35 @@ def test_recording_executor_can_inject_snapshots_for_convergence():
     executor = RecordingLongformExecutor(snapshots=snapshots)
     result = finalize_fields_with_convergence(executor, max_rounds=3)
     assert result.issues[0].code == FIELD_REFRESH_UNSTABLE
-    assert result.snapshot == snapshots[3]
-    assert len(executor.refresh_calls) == 4
+    assert result.snapshot == snapshots[2]
+    assert len(executor.refresh_calls) == 3
+
+
+def test_m2_legacy_adapter_caches_each_mutation_snapshot_and_freezes_without_refresh():
+    snapshots = [
+        _make_snapshot("doc:body", "h1"),
+        _make_snapshot("doc:body", "h2"),
+        _make_snapshot("doc:body", "h3"),
+        _make_snapshot("doc:body", "must-not-be-read"),
+    ]
+    executor = RecordingLongformExecutor(snapshots=snapshots)
+
+    result = finalize_fields_with_convergence(executor, max_rounds=3)
+
+    assert executor.refresh_calls == [0, 1, 2]
+    assert result.snapshot == snapshots[2]
+    assert result.rounds == 4
+
+
+def test_m2_facade_rejects_out_of_contract_round_bound_as_fatal():
+    from skills.WPSComposer.scripts.longform.field_contract import NativeFieldContractError
+
+    executor = RecordingLongformExecutor()
+    with pytest.raises(NativeFieldContractError, match="max_rounds") as exc_info:
+        finalize_fields_with_convergence(executor, max_rounds=4)
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+    assert executor.refresh_calls == []
 
 
 def test_m2_convergence_facade_delegates_to_shared_engine_exactly_once(monkeypatch):

@@ -264,16 +264,19 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
             rounds=0,
         )
 
-    from .field_contract import NativeFieldContractError, _finalize_native_fields
+    from .field_contract import _finalize_native_fields
 
     class _LegacyRefreshAdapter:
         _wpsc_legacy_snapshot = True
 
         def __init__(self) -> None:
             self.round_index = 0
+            self.cached_snapshot: Tuple[FieldSnapshot, ...] = ()
 
         def repaginate_and_update_numbering(self) -> None:
-            return None
+            raw = refresh(self.round_index)
+            self.round_index += 1
+            self.cached_snapshot = tuple(raw or ())
 
         def refresh_bookmarks_and_references(self) -> None:
             return None
@@ -285,28 +288,13 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
             return None
 
         def snapshot_fields(self) -> Tuple[FieldSnapshot, ...]:
-            raw = refresh(self.round_index)
-            self.round_index += 1
-            return tuple(raw or ())
+            return self.cached_snapshot
 
-    try:
-        return _finalize_native_fields(
-            _LegacyRefreshAdapter(),
-            max_rounds,
-            allow_legacy_hashes=True,
-        )
-    except NativeFieldContractError as exc:
-        return ConvergenceResult(
-            snapshot=(),
-            issues=(
-                ExecutionIssue(
-                    code="FIELD_REFRESH_SNAPSHOT_INVALID",
-                    message=f"Legacy field refresh contract failed in {exc.phase}",
-                    placement="document",
-                ),
-            ),
-            rounds=0,
-        )
+    return _finalize_native_fields(
+        _LegacyRefreshAdapter(),
+        max_rounds,
+        allow_legacy_hashes=True,
+    )
 
 
 # ---------------------------------------------------------------------------

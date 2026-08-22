@@ -1285,15 +1285,13 @@ class WriterComposer(BaseComposer):
         """Return a deterministic field snapshot for the convergence loop."""
         from .longform.executor import FieldSnapshot
 
-        self.update_fields()
-        try:
-            total_pages = int(self._doc.ComputeStatistics(2))
-        except Exception:
-            total_pages = 1
-        try:
-            toc_pages = int(self._doc.TablesOfContents.Count)
-        except Exception:
-            toc_pages = 0
+        # This is the single legacy mutation point used by the shared adapter.
+        # Required field APIs intentionally propagate failures to the executor.
+        for index in range(1, self._doc.TablesOfContents.Count + 1):
+            self._doc.TablesOfContents.Item(index).Update()
+        self._doc.Fields.Update()
+        total_pages = int(self._doc.ComputeStatistics(2))
+        toc_pages = int(self._doc.TablesOfContents.Count)
         return (
             FieldSnapshot(
                 stable_key=("doc:finalize", "PAGE", 0),

@@ -153,7 +153,10 @@ class WindowsLongformExecutor(LongformExecutor):
         paths = self._resolve_paths()
         try:
             self._dispatch_all(composer, plan.operations)
-            convergence = finalize_fields_with_convergence(composer, max_rounds=3)
+            convergence = finalize_fields_with_convergence(
+                composer,
+                max_rounds=_extract_max_rounds(plan.operations),
+            )
             self._issues.extend(convergence.issues)
             composer.save_docx(paths.staged_docx)
         except _ExecutionAbort as exc:
@@ -468,7 +471,8 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.finalize_fields":
-            composer.finalize_fields(max_rounds=args.get("maxRounds", 3))
+            # The outer executor owns convergence.  Dispatching this operation
+            # must not pre-refresh fields or create a second convergence owner.
             return
 
         # Fallback for anything else that reaches the executor.
@@ -534,6 +538,13 @@ def _op_fallback_message(op: GenerationOperation) -> str:
     if "message" in args:
         return str(args["message"])
     return f"{op.op} could not be rendered"
+
+
+def _extract_max_rounds(operations: Tuple[GenerationOperation, ...]) -> int:
+    for operation in operations:
+        if operation.op == "writer.finalize_fields":
+            return operation.args.get("maxRounds", 3)
+    return 3
 
 
 def _build_pagination_map(

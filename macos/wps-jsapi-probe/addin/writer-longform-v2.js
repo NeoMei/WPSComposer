@@ -393,40 +393,18 @@
   }
 
   function finalizeFields(document, args) {
-    try {
-      for (let i = 1; i <= document.TablesOfContents.Count; i += 1) {
-        document.TablesOfContents.Item(i).Update();
-      }
-    } catch (error) {
-      // ignore
+    for (let i = 1; i <= document.TablesOfContents.Count; i += 1) {
+      document.TablesOfContents.Item(i).Update();
     }
-    try {
-      for (let i = 1; i <= document.TablesOfFigures.Count; i += 1) {
-        document.TablesOfFigures.Item(i).Update();
-      }
-    } catch (error) {
-      // ignore
+    for (let i = 1; i <= document.TablesOfFigures.Count; i += 1) {
+      document.TablesOfFigures.Item(i).Update();
     }
-    try {
-      document.Fields.Update();
-    } catch (error) {
-      // ignore
-    }
+    document.Fields.Update();
   }
 
   function buildFieldSnapshot(document, roundIndex) {
-    let totalPages = 1;
-    let tocPageCount = 0;
-    try {
-      totalPages = Number(document.ComputeStatistics(2)) || 1;
-    } catch (error) {
-      totalPages = 1;
-    }
-    try {
-      tocPageCount = Number(document.TablesOfContents.Count) || 0;
-    } catch (error) {
-      tocPageCount = 0;
-    }
+    const totalPages = Number(document.ComputeStatistics(2)) || 1;
+    const tocPageCount = Number(document.TablesOfContents.Count) || 0;
     return {
       stableKey: ["doc:finalize", "PAGE", 0],
       fieldCategory: "page",
@@ -442,10 +420,29 @@
     let fieldSnapshots = [];
     operations.forEach(function (operation) {
       if (operation.op === "writer.finalize_fields") {
-        const maxRounds = operation.args && Number(operation.args.maxRounds) || 3;
-        for (let round = 0; round <= maxRounds; round += 1) {
-          finalizeFields(document, operation.args);
-          fieldSnapshots.push(buildFieldSnapshot(document, round));
+        const rawMaxRounds = operation.args && operation.args.maxRounds !== undefined
+          ? operation.args.maxRounds
+          : 3;
+        if (!Number.isInteger(rawMaxRounds) || rawMaxRounds < 1 || rawMaxRounds > 3) {
+          const boundError = new Error("Native field maxRounds must be an integer from 1 through 3");
+          boundError.code = "FIELD_REFRESH_CONTRACT_INVALID";
+          throw boundError;
+        }
+        let failed = false;
+        try {
+          for (let round = 0; round < rawMaxRounds; round += 1) {
+            finalizeFields(document, operation.args);
+            fieldSnapshots.push(buildFieldSnapshot(document, round));
+          }
+          // The diagnostic snapshot after the mutation bound is read-only.
+          fieldSnapshots.push(buildFieldSnapshot(document, rawMaxRounds));
+        } catch (error) {
+          failed = true;
+        }
+        if (failed) {
+          const fieldError = new Error("Required native field API failed");
+          fieldError.code = "FIELD_REFRESH_FAILED";
+          throw fieldError;
         }
       }
     });
@@ -496,7 +493,8 @@
     "writer.insert_toc_with_styles": insertTocWithStyles,
     "writer.insert_figure_index": insertFigureIndex,
     "writer.insert_table_index": insertTableIndex,
-    "writer.finalize_fields": finalizeFields,
+    // runFieldConvergence is the sole owner; operation dispatch is a no-op.
+    "writer.finalize_fields": function () {},
     "writer.add_inline_degradation": addInlineDegradation,
     "writer.add_degradation_notice": addDegradationNotice,
     "writer.add_document_quality_notice": addDocumentQualityNotice

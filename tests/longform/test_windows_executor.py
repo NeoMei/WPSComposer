@@ -9,7 +9,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import types
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -94,6 +94,7 @@ class FakeWriterComposer:
         self.closed = False
         self._snapshots: List[Tuple[FieldSnapshot, ...]] = []
         self._snapshot_index = 0
+        self.refresh_rounds: List[int] = []
 
     def __enter__(self):
         return self
@@ -115,6 +116,7 @@ class FakeWriterComposer:
 
     # -- field refresh for convergence --
     def refresh_fields(self, round_index: int) -> Tuple[FieldSnapshot, ...]:
+        self.refresh_rounds.append(round_index)
         if self._snapshots:
             snap = self._snapshots[self._snapshot_index % len(self._snapshots)]
             self._snapshot_index += 1
@@ -415,7 +417,7 @@ def test_execute_dispatches_section_and_toc_and_heading(
     assert "insert_toc_with_styles" in names
     assert "add_heading_level_native" in names
     assert "add_paragraph" in names
-    assert "finalize_fields" in names
+    assert "finalize_fields" not in names
 
 
 def test_configure_section_carries_roman_and_arabic_args(
@@ -557,6 +559,78 @@ def test_convergence_emits_field_refresh_unstable(
     outcome = executor.execute(simple_plan, ())
     assert len(outcome.issues) == 1
     assert outcome.issues[0].code == FIELD_REFRESH_UNSTABLE
+
+
+def test_finalize_dispatch_has_one_owner_uses_plan_bound_and_freezes_without_mutation(
+    executor, fake_composer, simple_plan
+):
+    fake_composer._snapshots = [
+        (
+            FieldSnapshot(
+                stable_key=("doc:toc", "TOC", 0),
+                field_category="index",
+                result_hash=f"hash{index}",
+                toc_page_count=2,
+                figure_index_page_count=0,
+                table_index_page_count=0,
+                total_pages=5,
+            ),
+        )
+        for index in range(1, 5)
+    ]
+    operations = tuple(
+        replace(op, args={"maxRounds": 2})
+        if op.op == "writer.finalize_fields"
+        else op
+        for op in simple_plan.operations
+    )
+    bounded_plan = replace(simple_plan, operations=operations)
+
+    outcome = executor.execute(bounded_plan, ())
+
+    assert fake_composer._snapshot_index == 2
+    assert fake_composer.refresh_rounds == [0, 1]
+    assert not [call for call in fake_composer.primitives if call.name == "finalize_fields"]
+    assert outcome.issues[0].code == FIELD_REFRESH_UNSTABLE
+
+
+def test_writer_refresh_fields_mutates_required_field_apis_once_per_round():
+    from skills.WPSComposer.scripts.writer import WriterComposer
+
+    events = []
+
+    class _Collection:
+        Count = 1
+
+        def Item(self, index):
+            assert index == 1
+
+            class _Item:
+                def Update(self):
+                    events.append("toc")
+
+            return _Item()
+
+    class _Fields:
+        def Update(self):
+            events.append("fields")
+
+    class _Document:
+        TablesOfContents = _Collection()
+        Fields = _Fields()
+
+        def ComputeStatistics(self, kind):
+            assert kind == 2
+            events.append("snapshot")
+            return 5
+
+    composer = WriterComposer.__new__(WriterComposer)
+    composer._doc = _Document()
+
+    snapshot = composer.refresh_fields(0)
+
+    assert events == ["toc", "fields", "snapshot"]
+    assert snapshot[0].total_pages == 5
 
 
 # -----------------------------------------------------------------------------

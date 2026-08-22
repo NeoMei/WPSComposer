@@ -112,19 +112,32 @@ _PHASES = (
 
 
 def _require_adapter(adapter: Any) -> None:
+    failed_phase = None
     for phase in (*_PHASES, "snapshot_fields"):
-        if not callable(getattr(adapter, phase, None)):
-            raise NativeFieldContractError(phase, "is missing")
+        try:
+            available = callable(getattr(adapter, phase, None))
+        except Exception:
+            available = False
+        if not available:
+            failed_phase = phase
+            break
+    if failed_phase is not None:
+        raise NativeFieldContractError(failed_phase, "is missing") from None
 
 
 def _invoke(adapter: NativeFieldAdapter, phase: str) -> Any:
-    method = getattr(adapter, phase)
+    failed = False
+    result = None
     try:
-        return method()
-    except NativeFieldContractError:
-        raise
-    except Exception as exc:
-        raise NativeFieldContractError(phase) from exc
+        method = getattr(adapter, phase)
+        result = method()
+    except Exception:
+        failed = True
+    if failed:
+        # Raise after leaving the handler so neither __cause__ nor __context__
+        # retains platform exception text, paths, field values, or bookmarks.
+        raise NativeFieldContractError(phase) from None
+    return result
 
 
 def _is_sha256(value: str) -> bool:
@@ -135,15 +148,12 @@ def _is_sha256(value: str) -> bool:
     )
 
 
-def _canonical_snapshot(
+def _canonical_snapshot_unchecked(
     raw: Any,
     *,
     allow_legacy_hashes: bool,
 ) -> Tuple[FieldSnapshot, ...]:
-    try:
-        snapshot = tuple(raw or ())
-    except TypeError as exc:
-        raise NativeFieldContractError("snapshot_fields", "returned an invalid field snapshot") from exc
+    snapshot = tuple(raw or ())
 
     keys: set[Tuple[str, str, int]] = set()
     for item in snapshot:
@@ -177,6 +187,27 @@ def _canonical_snapshot(
             raise NativeFieldContractError("snapshot_fields", "returned an invalid field snapshot")
         keys.add(key)
     return tuple(sorted(snapshot))
+
+
+def _canonical_snapshot(
+    raw: Any,
+    *,
+    allow_legacy_hashes: bool,
+) -> Tuple[FieldSnapshot, ...]:
+    failed = False
+    snapshot: Tuple[FieldSnapshot, ...] = ()
+    try:
+        snapshot = _canonical_snapshot_unchecked(
+            raw,
+            allow_legacy_hashes=allow_legacy_hashes,
+        )
+    except Exception:
+        failed = True
+    if failed:
+        raise NativeFieldContractError(
+            "snapshot_fields", "returned an invalid field snapshot"
+        ) from None
+    return snapshot
 
 
 def _snapshot_digest(snapshot: Tuple[FieldSnapshot, ...]) -> str:
@@ -217,8 +248,12 @@ def _finalize_native_fields(
     *,
     allow_legacy_hashes: bool,
 ) -> ConvergenceResult:
+    if type(max_rounds) is not int or not 1 <= max_rounds <= 3:
+        raise NativeFieldContractError(
+            "max_rounds", "must be an integer from 1 through 3"
+        ) from None
     _require_adapter(adapter)
-    rounds_limit = max(1, int(max_rounds))
+    rounds_limit = max_rounds
     previous_digest: str | None = None
 
     for round_index in range(rounds_limit):

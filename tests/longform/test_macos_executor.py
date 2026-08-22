@@ -497,6 +497,7 @@ const assert = require("assert");
 global.window = {{}};
 let updateCount = 0;
 let saveCount = 0;
+const convergenceEvents = [];
 const blankRange = {{
   Text: "",
   ParagraphFormat: {{ Alignment: 0 }},
@@ -522,9 +523,10 @@ const document = {{
   PageSetup: {{}},
   Sections: {{ Count: 1, Item: function() {{ return section; }} }},
   TablesOfContents: {{ Count: 0, Item: function(i) {{}}, Add: function() {{}} }},
-  Fields: {{ Update: function() {{ updateCount += 1; }} }},
-  ComputeStatistics: function() {{ return 1; }},
-  SaveAs2: function() {{ saveCount += 1; assert.ok(updateCount > 0, "Fields.Update must run before SaveAs2"); }},
+  TablesOfFigures: {{ Count: 0, Item: function(i) {{}} }},
+  Fields: {{ Update: function() {{ updateCount += 1; convergenceEvents.push("mutation"); }} }},
+  ComputeStatistics: function() {{ convergenceEvents.push("snapshot"); return 1; }},
+  SaveAs2: function() {{ saveCount += 1; convergenceEvents.push("save"); assert.ok(updateCount > 0, "Fields.Update must run before SaveAs2"); }},
   Close: function() {{}}
 }};
 global.Application = {{
@@ -543,8 +545,72 @@ const result = window.WPSComposerLongformV2.run({{
   }}
 }});
 assert.equal(saveCount, 1);
+assert.equal(updateCount, 3, "maxRounds=3 performs exactly three mutations; frozen snapshot is read-only");
 assert.equal(result.fieldSnapshots.length, 4);
+assert.deepEqual(convergenceEvents, [
+  "mutation", "snapshot",
+  "mutation", "snapshot",
+  "mutation", "snapshot",
+  "snapshot", "save"
+]);
 """
     path = Path(tempfile.mkdtemp()) / "ordering_test.js"
+    path.write_text(js, encoding="utf-8")
+    subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
+
+
+def test_addin_field_convergence_rejects_bounds_and_sanitizes_native_failures(
+    project_root: Path,
+):
+    addin_dir = project_root / "macos" / "wps-jsapi-probe" / "addin"
+    v2_path = json.dumps(str(addin_dir / "writer-longform-v2.js"))
+    js = f"""
+const fs = require("fs");
+const assert = require("assert");
+global.window = {{}};
+let updateCount = 0;
+let failWithSecret = false;
+function makeDocument() {{
+  return {{
+    Content: {{ End: 0, Text: "" }},
+    TablesOfContents: {{ Count: 0, Item: function() {{}} }},
+    TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
+    Fields: {{ Update: function() {{
+      updateCount += 1;
+      if (failWithSecret) throw new Error("/private/image.png WPSC_SECRET visible text");
+    }} }},
+    ComputeStatistics: function() {{ return 1; }},
+    SaveAs2: function() {{}},
+    Close: function() {{}}
+  }};
+}}
+global.Application = {{
+  DisplayAlerts: 7,
+  ScreenUpdating: true,
+  Documents: {{ Add: function() {{ return makeDocument(); }} }}
+}};
+eval(fs.readFileSync({v2_path}, "utf8"));
+function run(maxRounds) {{
+  return window.WPSComposerLongformV2.run({{
+    outputPath: "/staged/output.docx",
+    plan: {{component: "writer", operations: [
+      {{op: "writer.finalize_fields", args: {{maxRounds: maxRounds}}, nodeId: "doc:finalize"}}
+    ]}}
+  }});
+}}
+assert.throws(function() {{ run(4); }}, function(error) {{
+  return error.code === "FIELD_REFRESH_CONTRACT_INVALID" && !String(error).includes("/private");
+}});
+assert.equal(updateCount, 0);
+failWithSecret = true;
+assert.throws(function() {{ run(2); }}, function(error) {{
+  return error.code === "FIELD_REFRESH_FAILED" &&
+    !String(error).includes("/private") &&
+    !String(error).includes("WPSC_SECRET") &&
+    !String(error).includes("visible text");
+}});
+assert.equal(updateCount, 1);
+"""
+    path = Path(tempfile.mkdtemp()) / "field_contract_failure_test.js"
     path.write_text(js, encoding="utf-8")
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)

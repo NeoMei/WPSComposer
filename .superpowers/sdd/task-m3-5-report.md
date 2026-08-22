@@ -96,3 +96,85 @@ Both commands exited successfully.
 - No Windows COM or macOS JSAPI implementation was added.
 - No plan/schema/resource/public generation API was changed.
 - `uv.lock` is unchanged.
+
+## Independent review fix wave
+
+### Review RED evidence
+
+The review tests were added before the fixes and run with:
+
+```text
+../../.venv/bin/python -m pytest tests/longform_m3/test_field_contract.py tests/longform/test_executor.py tests/longform/test_windows_executor.py::test_finalize_dispatch_has_one_owner_uses_plan_bound_and_freezes_without_mutation tests/longform/test_macos_executor.py::test_addin_runs_field_convergence_before_save -q
+```
+
+Observed result: `13 failed, 31 passed`. The failures proved:
+
+- a custom adapter `NativeFieldContractError` could preserve secret text in the
+  formatted traceback;
+- malformed field kinds and hashes could escape as raw `TypeError`;
+- `4`, `0`, `-1`, `True`, `2.9`, `"3"`, and `None` were converted or clamped
+  instead of being rejected;
+- the M2 adapter invoked `refresh_fields` a fourth time instead of freezing;
+- Windows ignored the plan's `maxRounds`, dispatched `composer.finalize_fields`
+  once, then ran a second outer convergence owner;
+- the macOS add-in performed five updates for `maxRounds=3` (one dispatch
+  update plus four convergence updates).
+
+The mutation fixtures were also strengthened so the stable bookmark-to-owner
+map is the source used to build `SEQ`/`REF` stable keys after move, insert, and
+delete simulations.
+
+### Review fixes
+
+- The legacy adapter now calls `refresh_fields(round_index)` only in the first
+  mutation phase, caches that round's snapshot, and returns the cache from the
+  read-only snapshot phase. The fourth diagnostic read cannot invoke native
+  mutation.
+- Windows treats `writer.finalize_fields` dispatch as a no-op. The outer
+  executor is the sole convergence owner and reads `maxRounds` from the
+  validated plan. Its fake records exactly `[0, 1]` for a two-round bound and
+  no `finalize_fields` primitive call.
+- `WriterComposer.refresh_fields` performs one required TOC/field update and
+  one snapshot read per mutation call; required native failures propagate.
+- The macOS finalizer operation handler is a no-op. `runFieldConvergence` uses
+  `round < maxRounds`, then performs one read-only snapshot. The Node event
+  sequence is exactly mutation/snapshot repeated three times, one frozen
+  snapshot, then save.
+- macOS rejects invalid bounds before mutation and converts native field errors
+  into fatal `FIELD_REFRESH_FAILED` errors without retaining the underlying
+  path, bookmark, or visible text.
+- Python accepts only non-bool integers `1..3`. There is no coercion, clamping,
+  or truncation in either the strict API or the M2 facade.
+- Adapter invocation and canonical snapshot validation raise only after leaving
+  their exception handlers. Sanitized errors have both `__cause__ is None` and
+  `__context__ is None`; formatted tracebacks contain no original exception
+  text. Malicious iteration, attributes, unhashable field kinds, `None` hashes,
+  invalid counts, and duplicate keys all collapse to one clean fatal contract
+  error.
+
+### Review GREEN evidence
+
+Focused field/executor/platform/Node/assets command:
+
+```text
+../../.venv/bin/python -m pytest tests/longform_m3/test_field_contract.py tests/longform/test_executor.py tests/longform/test_windows_executor.py tests/longform/test_macos_executor.py tests/longform_m0/test_addin_assets.py -q
+```
+
+Result: `97 passed`.
+
+Broad long-form command:
+
+```text
+../../.venv/bin/python -m pytest tests/longform tests/longform_m2 tests/longform_m3 tests/longform_m0/test_addin_assets.py -q
+```
+
+Result: `722 passed, 6 skipped`. The skips remain only the existing real-WPS
+writer registration gate.
+
+Fresh full-suite verification:
+
+```text
+../../.venv/bin/python -m pytest -q
+```
+
+Result: `1651 passed, 6 skipped in 155.78s`. No review test was skipped.
