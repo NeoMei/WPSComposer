@@ -371,15 +371,37 @@ class RecordingWriterComposer:
             titlePage=title_page,
         )
 
-    def configure_section(self, *, landscape=None, page_size=None, margins=None):
+    def configure_section(
+        self,
+        *,
+        role=None,
+        landscape=None,
+        page_size=None,
+        margins=None,
+        restart_page_numbering=None,
+        page_number_format=None,
+        start_page_number=None,
+        header_text=None,
+        footer_text=None,
+        link_to_previous_header=None,
+        link_to_previous_footer=None,
+    ):
         self._record_v2(
             "writer.configure_section",
+            role=role,
             landscape=landscape,
             pageSize=page_size,
             margins=margins,
+            restartPageNumbering=restart_page_numbering,
+            pageNumberFormat=page_number_format,
+            startPageNumber=start_page_number,
+            headerText=header_text,
+            footerText=footer_text,
+            linkToPreviousHeader=link_to_previous_header,
+            linkToPreviousFooter=link_to_previous_footer,
         )
 
-    def configure_toc_styles(self, *, tocTitle=None, levels=None, includeFigureIndex=None, includeTableIndex=None, figureIndexTitle=None, tableIndexTitle=None):
+    def configure_toc_styles(self, *, tocTitle=None, levels=None, includeFigureIndex=None, includeTableIndex=None, figureIndexTitle=None, tableIndexTitle=None, min_font_size_pt=None, min_space_before_pt=None, min_space_after_pt=None):
         self._record_v2(
             "writer.configure_toc_styles",
             tocTitle=tocTitle,
@@ -388,6 +410,29 @@ class RecordingWriterComposer:
             includeTableIndex=includeTableIndex,
             figureIndexTitle=figureIndexTitle,
             tableIndexTitle=tableIndexTitle,
+            minFontSizePt=min_font_size_pt,
+            minSpaceBeforePt=min_space_before_pt,
+            minSpaceAfterPt=min_space_after_pt,
+        )
+
+    def set_page_role(self, *, role):
+        self._record_v2("writer.set_page_role", role=role)
+
+    def set_page_numbering(self, *, format, start=None, restart=None):
+        self._record_v2(
+            "writer.set_page_numbering",
+            format=format,
+            start=start,
+            restart=restart,
+        )
+
+    def set_header_footer(self, *, header_text="", footer_text="", link_to_previous_header=None, link_to_previous_footer=None):
+        self._record_v2(
+            "writer.set_header_footer",
+            headerText=header_text,
+            footerText=footer_text,
+            linkToPreviousHeader=link_to_previous_header,
+            linkToPreviousFooter=link_to_previous_footer,
         )
 
     def add_captioned_figure(self, *, node_id, caption, children, layout="stack", columns=None, failure_policy=None):

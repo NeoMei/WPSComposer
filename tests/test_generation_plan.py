@@ -780,3 +780,39 @@ def test_bounded_numeric_fields_reject_out_of_range_values(op, field, value):
             {"component": component, "operations": [{"op": op, "args": args}]},
             component,
         )
+
+
+
+def test_validate_generation_plan_accepts_planned_degradation_in_figure_child():
+    raw = {
+        "component": "writer",
+        "protocolVersion": 2,
+        "semanticVersion": "longform-1",
+        "resourceManifestVersion": 1,
+        "resourceManifestDigest": "sha256:" + "0" * 64,
+        "operations": [
+            {
+                "op": "writer.add_captioned_figure",
+                "nodeId": "fig:missing",
+                "args": {
+                    "caption": "Missing figure",
+                    "children": [
+                        {
+                            "nodeId": "fig:missing/image:1",
+                            "plannedDegradation": {
+                                "code": "RESOURCE_NOT_FOUND",
+                                "message": "Resource not found in manifest",
+                                "fallback": "[RESOURCE_NOT_FOUND]",
+                                "placement": "block",
+                            },
+                        }
+                    ],
+                    "layout": "stack",
+                },
+            }
+        ],
+    }
+    plan = validate_generation_plan(raw, "writer")
+    assert len(plan.operations) == 1
+    child = plan.operations[0].args["children"][0]
+    assert child["plannedDegradation"]["code"] == "RESOURCE_NOT_FOUND"
