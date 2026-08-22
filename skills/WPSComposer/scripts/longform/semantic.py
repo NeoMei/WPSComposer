@@ -1314,29 +1314,42 @@ def _normalize_abstract(
     seen_disallowed = False
     paragraph_ordinal = 0
 
-    def append_paragraph(paragraph: Paragraph) -> None:
+    def iter_projection_slots(element: Any):
+        if isinstance(element, (Paragraph, ListBlock)):
+            yield from _iter_paragraph_slots(element)
+        elif isinstance(element, Section):
+            if element.heading:
+                yield _ParagraphSlot(Paragraph.from_text(element.heading))
+            for child in element.elements:
+                yield from iter_projection_slots(child)
+        elif isinstance(element, (AbstractBlock, BlockQuote)):
+            for child in element.paragraphs:
+                yield from iter_projection_slots(child)
+        elif isinstance(element, PageBreakBlock):
+            for child in element.content:
+                yield from iter_projection_slots(child)
+        else:
+            plain = _plain_text_from_element(element).strip()
+            if plain:
+                yield _ParagraphSlot(Paragraph.from_text(plain))
+
+    def append_slot(slot: _ParagraphSlot) -> None:
         nonlocal paragraph_ordinal
         paragraph_ordinal += 1
-        paragraph.node_id = f"__wpsc_para:0:{paragraph_ordinal}"
-        normalized.append(paragraph)
+        node_id = f"__wpsc_para:0:{paragraph_ordinal}"
+        slot.assign_node_id(node_id)
+        if isinstance(slot.owner, Paragraph):
+            normalized.append(slot.owner)
+        elif "".join(span.text for span in slot.spans).strip():
+            normalized.append(
+                Paragraph(spans=list(slot.spans), node_id=node_id)
+            )
 
     for elem in abstract.raw_elements:
-        if isinstance(elem, Paragraph):
-            append_paragraph(elem)
-        elif isinstance(elem, ListBlock):
-            elem.item_node_ids = []
-            for item in elem.items:
-                paragraph_ordinal += 1
-                node_id = f"__wpsc_para:0:{paragraph_ordinal}"
-                elem.item_node_ids.append(node_id)
-                if "".join(span.text for span in item).strip():
-                    normalized.append(
-                        Paragraph(spans=list(item), node_id=node_id)
-                    )
-        else:
+        if not isinstance(elem, (Paragraph, ListBlock)):
             seen_disallowed = True
-            for paragraph in _paragraphs_from_element(elem):
-                append_paragraph(paragraph)
+        for slot in iter_projection_slots(elem):
+            append_slot(slot)
     if seen_disallowed:
         issues.append(
             _issue(

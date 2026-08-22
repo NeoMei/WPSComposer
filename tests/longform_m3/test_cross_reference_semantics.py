@@ -11,6 +11,7 @@ from skills.WPSComposer.scripts.document_model import (
     FigureBlock,
     ListBlock,
     Paragraph,
+    Section,
     SemanticTableBlock,
 )
 from skills.WPSComposer.scripts.md_parser import parse_markdown
@@ -423,4 +424,60 @@ def test_abstract_raw_list_ids_align_without_duplicate_reference_runs() -> None:
         "__wpsc_para:0:1/ref:1",
         "__wpsc_para:0:2/ref:1",
     ]
+    assert normalize_longform_document(first.document).to_json() == first.to_json()
+
+
+def test_nested_abstract_raw_list_ids_reuse_projected_paragraph_ids() -> None:
+    markdown = """:::abstract
+# Nested heading
+
+- First {{ref:fig:a}} and {{ref:missing}}.
+- Second `{{ref:missing}}` and {{ref:missing}}.
+:::
+
+:::figure {#fig:a caption="A"}
+![a](a.png)
+:::
+"""
+    parsed = parse_markdown(markdown, longform=True)
+    first = normalize_longform_document(parsed)
+    second = normalize_longform_document(parsed)
+    assert first.to_json() == second.to_json()
+
+    abstract = first.document.abstract
+    assert abstract is not None
+    raw_section = next(
+        element for element in abstract.raw_elements if isinstance(element, Section)
+    )
+    raw_list = next(
+        element for element in raw_section.elements if isinstance(element, ListBlock)
+    )
+    assert raw_list.item_node_ids == [
+        "__wpsc_para:0:2",
+        "__wpsc_para:0:3",
+    ]
+    assert [paragraph.node_id for paragraph in abstract.paragraphs] == [
+        "__wpsc_para:0:1",
+        *raw_list.item_node_ids,
+    ]
+
+    raw_runs = [
+        span.cross_reference
+        for item in raw_list.items
+        for span in item
+        if span.cross_reference is not None
+    ]
+    projected_runs = [
+        span.cross_reference
+        for paragraph in abstract.paragraphs
+        for span in paragraph.spans
+        if span.cross_reference is not None
+    ]
+    assert raw_runs == []
+    assert [run.node_id for run in projected_runs] == [
+        "__wpsc_para:0:2/ref:1",
+        "__wpsc_para:0:2/ref:2",
+        "__wpsc_para:0:3/ref:1",
+    ]
+    assert len([issue for issue in first.issues if issue.code == REFERENCE_UNRESOLVED]) == 1
     assert normalize_longform_document(first.document).to_json() == first.to_json()
