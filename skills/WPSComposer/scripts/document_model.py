@@ -137,6 +137,7 @@ class DocumentIssue:
 class AbstractBlock:
     """Document abstract — one or more paragraphs."""
     paragraphs: List[Paragraph] = field(default_factory=list)
+    raw_elements: List[Any] = field(default_factory=list)
 
     @property
     def plain_text(self) -> str:
@@ -152,7 +153,8 @@ class KeywordsBlock:
 @dataclass
 class PageBreakBlock:
     """Explicit page break directive."""
-    pass
+    node_id: Optional[str] = None
+    content: List[Paragraph] = field(default_factory=list)
 
 
 @dataclass
@@ -215,6 +217,8 @@ class Section:
     numbering: str = "auto"             # "auto" | "none" | scheme name
     numbering_scheme: Optional[str] = None
     preface: bool = False
+    outline_level: int = 0
+    page_role: Optional[str] = None
 
     @property
     def has_heading(self) -> bool:
@@ -236,6 +240,8 @@ class StructuredDocument:
     issues: List[DocumentIssue] = field(default_factory=list)
     abstract: Optional[AbstractBlock] = None
     keywords: Optional[KeywordsBlock] = None
+    page_roles: Optional[List[str]] = None
+    title_display: Optional[Paragraph] = None
 
     @property
     def all_tables(self) -> List[TableBlock]:

@@ -54,6 +54,9 @@ TITLE_MISSING = "TITLE_MISSING"
 REFERENCE_UNRESOLVED = "REFERENCE_UNRESOLVED"
 DUPLICATE_EXPLICIT_ID = "DUPLICATE_EXPLICIT_ID"
 INVALID_EXPLICIT_ID = "INVALID_EXPLICIT_ID"
+ABSTRACT_CONTENT_DEGRADED = "ABSTRACT_CONTENT_DEGRADED"
+PAGE_BREAK_CONTENT_DEGRADED = "PAGE_BREAK_CONTENT_DEGRADED"
+PAGE_ROLE_RESOLUTION_FAILED = "PAGE_ROLE_RESOLUTION_FAILED"
 
 _VALID_BOOL = frozenset({"true", "false", "yes", "no", "1", "0"})
 _VALID_CAPTION_NUMBERING = frozenset({"auto", "chapter", "global"})
@@ -988,6 +991,164 @@ def _update_caption_numbering(
     config.caption_numbering = "chapter" if has_numbered_h1 else "global"
 
 
+def _plain_text_from_element(elem: Any) -> str:
+    """Extract readable plain text from any block element."""
+    if isinstance(elem, Paragraph):
+        return elem.plain_text
+    if isinstance(elem, ListBlock):
+        return " ".join(
+            "".join(s.text for s in item)
+            for item in elem.items
+        )
+    if isinstance(elem, Section):
+        result: list[Paragraph] = []
+        if elem.heading:
+            result.append(Paragraph.from_text(elem.heading))
+        for child in elem.elements:
+            result.extend(_paragraphs_from_element(child))
+        return " ".join(p.plain_text for p in result)
+    if isinstance(elem, (AbstractBlock, BlockQuote)):
+        return " ".join(p.plain_text for p in elem.paragraphs)
+    if isinstance(elem, FigureBlock):
+        return " ".join(
+            img.alt for img in elem.images if img.alt
+        )
+    if isinstance(elem, SemanticTableBlock):
+        parts = [elem.caption] if elem.caption else []
+        parts.extend(elem.headers)
+        for row in elem.rows:
+            parts.extend(row)
+        return " ".join(parts)
+    if isinstance(elem, FormulaBlock):
+        return elem.source or ""
+    if isinstance(elem, MathBlock):
+        return elem.latex or ""
+    if isinstance(elem, CodeBlock):
+        return elem.code
+    if isinstance(elem, ImageBlock):
+        return elem.alt
+    if isinstance(elem, ExcalidrawBlock):
+        return elem.alt
+    if isinstance(elem, DegradationBlock):
+        return elem.fallback_text
+    if isinstance(elem, ReferenceListBlock):
+        return " ".join(elem.entries)
+    if isinstance(elem, TaskList):
+        return " ".join(text for text, _ in elem.items)
+    if isinstance(elem, TableBlock):
+        parts = list(elem.headers)
+        for row in elem.rows:
+            parts.extend(row)
+        return " ".join(parts)
+    if isinstance(elem, HorizontalRule):
+        return ""
+    if isinstance(elem, PageBreakBlock):
+        return " ".join(p.plain_text for p in elem.content)
+    return ""
+
+
+def _paragraphs_from_element(elem: Any) -> list[Paragraph]:
+    """Convert a block element into one or more readable paragraphs."""
+    if isinstance(elem, Paragraph):
+        return [elem]
+    if isinstance(elem, ListBlock):
+        return [
+            Paragraph(spans=list(item))
+            for item in elem.items
+            if "".join(s.text for s in item).strip()
+        ]
+    if isinstance(elem, Section):
+        result: list[Paragraph] = []
+        if elem.heading:
+            result.append(Paragraph.from_text(elem.heading))
+        for child in elem.elements:
+            result.extend(_paragraphs_from_element(child))
+        return result
+    plain = _plain_text_from_element(elem).strip()
+    if plain:
+        return [Paragraph.from_text(plain)]
+    return []
+
+
+def _normalize_abstract(
+    abstract: AbstractBlock, issues: list[DocumentIssue]
+) -> AbstractBlock:
+    """Keep allowed abstract children and degrade disallowed ones in place."""
+    normalized: list[Paragraph] = []
+    seen_disallowed = False
+    for elem in abstract.raw_elements:
+        if isinstance(elem, (Paragraph, ListBlock)):
+            normalized.extend(_paragraphs_from_element(elem))
+        else:
+            seen_disallowed = True
+            normalized.extend(_paragraphs_from_element(elem))
+    if seen_disallowed:
+        issues.append(
+            _issue(
+                ABSTRACT_CONTENT_DEGRADED,
+                "Abstract contains disallowed block elements; "
+                "content was retained as plain text.",
+                placement="block",
+            )
+        )
+    return AbstractBlock(
+        paragraphs=normalized,
+        raw_elements=list(abstract.raw_elements),
+    )
+
+
+def _scan_page_breaks(
+    sections: list[Section], issues: list[DocumentIssue]
+) -> None:
+    """Emit block-level issues for non-empty page-break blocks."""
+    for section in sections:
+        for elem in section.elements:
+            if isinstance(elem, PageBreakBlock) and elem.content:
+                issues.append(
+                    _issue(
+                        PAGE_BREAK_CONTENT_DEGRADED,
+                        "Non-empty page-break block; "
+                        "content was retained after the page break.",
+                        placement="block",
+                    )
+                )
+
+
+def _apply_page_role_metadata(
+    doc: StructuredDocument, config: LongformConfig, issues: list[DocumentIssue]
+) -> None:
+    """Attach page roles to the document and each content section."""
+    for section in doc.sections:
+        section.outline_level = section.level
+        section.page_role = (
+            "landscape"
+            if getattr(section, "orientation", None) == "landscape"
+            else "body"
+        )
+
+    try:
+        from .policy import build_policy
+        from .page_policy import build_page_policy
+
+        policy = build_policy(config)
+        skeleton = build_page_policy(doc, config, policy)
+        doc.page_roles = [s.role for s in skeleton.sections]
+    except Exception as exc:
+        doc.page_roles = []
+        issues.append(
+            _issue(
+                PAGE_ROLE_RESOLUTION_FAILED,
+                f"Page role resolution failed: {exc}; using empty skeleton.",
+            )
+        )
+
+
+def _set_title_display(doc: StructuredDocument, config: LongformConfig) -> None:
+    """Preserve the document title as a non-cover title paragraph."""
+    if not config.title_page and config.title:
+        doc.title_display = Paragraph.from_text(config.title)
+
+
 _NORMALIZATION_ERROR = "LONGFORM_NORMALIZATION_ERROR"
 
 
@@ -1008,6 +1169,7 @@ def normalize_longform_document(
 
         sections = _consume_title_h1(doc.sections, config.title)
         doc.sections = sections
+        _set_title_display(doc, config)
 
         selected_scheme = _apply_heading_numbering(
             doc.sections, config.heading_numbering, config.title, issues
@@ -1015,11 +1177,15 @@ def normalize_longform_document(
         if config.heading_numbering == "auto":
             config.heading_numbering = selected_scheme
 
+        _apply_page_role_metadata(doc, config, issues)
         _derive_header(config, issues)
 
         targets, explicit_ids = _collect_explicit_targets(doc, issues)
         references = _build_references(doc, targets, explicit_ids, issues)
         bookmarks = _map_bookmarks_from_targets(targets)
+        if doc.abstract is not None:
+            doc.abstract = _normalize_abstract(doc.abstract, issues)
+        _scan_page_breaks(doc.sections, issues)
 
         _update_caption_numbering(config, doc.sections)
 
@@ -1054,6 +1220,7 @@ def normalize_longform_document(
 
 
 __all__ = [
+    "ABSTRACT_CONTENT_DEGRADED",
     "CONFIG_VALUE_INVALID",
     "DUPLICATE_EXPLICIT_ID",
     "HEADER_SHORTENED",
@@ -1061,6 +1228,8 @@ __all__ = [
     "HEADING_PREFIX_AMBIGUOUS",
     "INVALID_EXPLICIT_ID",
     "LongformConfig",
+    "PAGE_BREAK_CONTENT_DEGRADED",
+    "PAGE_ROLE_RESOLUTION_FAILED",
     "REFERENCE_UNRESOLVED",
     "SemanticResult",
     "TITLE_MISSING",
