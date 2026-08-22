@@ -980,6 +980,50 @@ assert.ok(!JSON.stringify(context).includes("/private"));
     _run_node(script)
 
 
+def test_addin_reference_list_paragraph_uses_list_style_and_hanging_indent() -> None:
+    asset = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({asset}, "utf8"));
+let text = "";
+const paragraphFormats = [];
+function range(start, end) {{
+  const format = {{TabStops: {{Add: function(value) {{ format.tabStop = value; }}}}}};
+  const value = {{Start: start, End: end, ParagraphFormat: format,
+    InsertAfter: function(inserted) {{ text += String(inserted); }},
+    Delete: function() {{ text = text.slice(0, start); }}}};
+  paragraphFormats.push(value);
+  return value;
+}}
+const document = {{
+  Content: {{get End() {{ return text.length + 1; }}}},
+  Range: range,
+  Styles: {{Item: function(name) {{ return name; }}}},
+  Fields: {{Add: function(rng, type, code) {{ text += "1"; return {{Result: {{End: text.length, Text: "1"}}, Range: rng}}; }}}}
+}};
+window.WPSComposerLongformV2.__test.addCrossReferenceParagraph(document, {{
+  runs: [
+    {{type: "text", text: "1.\\tWrapped "}},
+    {{type: "reference", bookmarkName: "wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa", prefix: "图 ", suffix: "", fallbackText: "[图]"}}
+  ],
+  listFormatting: {{kind: "ordered", indentPt: 24.0}}
+}}, {{}}, {{ownerNodeId: "para:list-item", issues: [], childResults: []}});
+const styled = paragraphFormats.find(function(item) {{
+  return item.Style === "List Paragraph";
+}});
+assert.ok(styled);
+assert.equal(styled.ParagraphFormat.LeftIndent, 24.0);
+assert.equal(styled.ParagraphFormat.FirstLineIndent, -24.0);
+assert.equal(styled.ParagraphFormat.SpaceBefore, 0);
+assert.equal(styled.ParagraphFormat.SpaceAfter, 3);
+assert.equal(styled.ParagraphFormat.tabStop, 24.0);
+assert.ok(text.startsWith("1.\\tWrapped 图 "));
+"""
+    _run_node(script)
+
+
 def test_addin_two_child_stack_rolls_back_failed_child_and_keeps_order() -> None:
     asset = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
     script = f"""

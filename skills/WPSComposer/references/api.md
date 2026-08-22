@@ -1,5 +1,111 @@
 # WPS Composer API Reference
 
+## Long-form offline plan and optional native execution
+
+This Python API is for WPSComposer/SuperWriter orchestration code, plugin
+maintainers, and advanced integrations that need a deterministic plan before
+starting WPS. Normal users should keep using `generate()`; M3 does not reroute
+that public entry point.
+
+```python
+from skills.WPSComposer.scripts.longform import (
+    LongformBuild,
+    build_longform_generation,
+    execute_longform_plan,
+)
+
+build = build_longform_generation(markdown, base_dir="assets")
+outcome = execute_longform_plan(build, executor, deadline=deadline)
+```
+
+```python
+def build_longform_generation(
+    markdown: str,
+    base_dir: str = "",
+) -> LongformBuild:
+    ...
+
+def execute_longform_plan(
+    build: LongformBuild,
+    executor: LongformExecutor,
+    deadline: Optional[float] = None,
+) -> ExecutionOutcome:
+    ...
+```
+
+`build_longform_generation()` parses and normalizes Markdown, preflights local
+media once, and returns a closed protocol-v2 plan without launching WPS or
+writing a file. `execute_longform_plan()` validates that plan and passes an
+immutable tuple of private `PreparedLongformResource` objects to the caller's
+dedicated executor. Source paths are not re-read at the executor boundary;
+the pipeline's transient normalized-payload tuple is released on every exit
+path. Executor-staged copy cleanup runs on success, error, timeout, and save
+failure; cleanup failure is itself fatal and cannot silently publish a result.
+
+### M3 Markdown contract
+
+| Object | Attributes / syntax | Native result |
+|---|---|---|
+| Figure | `#id`, `caption`, `width=auto\|column\|full\|Npt`, `orientation=portrait\|landscape`, `kind`, `layout=stack\|columns`, `columns=2` | native image container; caption below; one or two children |
+| Table | `#id`, `caption`, `style=three-line\|grid`, `orientation`, `merges=A2:A3;B2:C2`, `repeat_header` | native table; caption above; repeated header and direct alignment |
+| Formula | identifier plus readable formula body | readable source with native editable equation-number shell |
+| Reference | `{{ref:target-id}}` outside code/math spans | `REF <safe-bookmark> \\h` in the same paragraph |
+
+References in abstracts and mixed ordered/unordered lists use the same native
+field contract. List items retain controlled markers, tabs, `List Paragraph`
+style, and a 24 pt hanging indent on both Windows COM and macOS JSAPI.
+
+Front matter accepts `caption_numbering: auto|global|chapter`, `figure_index`,
+and `table_index`. `auto` is object-local: before the first numbered H1 it is
+global, after that H1 it is chapter-based, and an unnumbered H1 is transparent
+to sequence reset. Explicit `chapter` falls back to global before a numbered
+H1. Controlled sequence identifiers are `WPSC_FIG`, `WPSC_TAB`, and
+`WPSC_EQ`; user text never enters field codes or generated bookmark names.
+
+Figure and table index operations are native and populated from those internal
+sequence labels. Field finalization runs numbering, bookmark/reference,
+index, and page-field phases in order. Two adjacent equal snapshots must occur
+within three mutation rounds; otherwise a read-only fourth snapshot freezes
+the document and emits one `FIELD_REFRESH_UNSTABLE` issue.
+
+### Media, sizing, and privacy
+
+Accepted decoded formats are PNG, JPEG, TIFF, BMP, GIF, and restricted static
+SVG. WebP, remote resources, active SVG content, corrupt media, payloads over
+50 MiB, images over 80,000,000 pixels, and either side over 32,768 pixels are
+rejected. EXIF transforms, the first GIF frame, and the first TIFF page use a
+private lossless-PNG normalized payload. Width is resolved in points against
+the current portrait/explicit-landscape content slot; paired columns use a
+12 pt gap and never trigger orientation changes heuristically.
+
+Plan and diagnostic JSON omit payload bytes/base64, source paths, source and
+payload hashes, private locators, bookmark lookup maps, and visible field
+values/hashes. The executable plan retains only its required manifest digest,
+controlled bookmark descriptors, and opaque resource IDs.
+
+### Table and failure contract
+
+Academic tables default to `three-line`: 1.5 pt top/bottom borders, 0.75 pt
+header-bottom border, no vertical/interior body borders, zero cell indent,
+direct alignment, repeated header, and no row splitting. Other presets default
+to `grid`. Merge ranges are one-based A1 rectangles and are applied only when
+the complete declaration validates. Any invalid range discards every requested
+merge, preserves the full grid, and places one `TABLE_MERGE_INVALID` notice
+after the caption. An over-page vertical group recovers to the one specified
+unmerged/splittable grid form.
+
+Engine acquisition, configuration, field/index refresh, save, validation,
+publication, and cleanup failures are fatal. Named object-local image, table,
+and cross-reference failures alone may follow their closed fallback ladders.
+An unavailable WPS engine therefore fails immediately. A missing image block
+does not affect documents that contain no image; an insertion failure degrades
+at that object's location and the executor still returns the requested result
+when its declared fallback succeeds.
+
+M4 owns native Office Math content, bibliography/citation ordering, and the
+general degradation framework. M5 owns PDF-driven quality and re-layout plus
+public default migration. M3 does not change `generate()` routing.
+
 ## Office-to-PDF conversion
 
 ```python

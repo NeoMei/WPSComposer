@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import traceback
 from typing import Any, Optional, Tuple
 
 from ..document_model import DocumentIssue, StructuredDocument
@@ -139,7 +140,21 @@ def execute_longform_plan(
     """
     validate_generation_plan(build.plan.to_dict(), component="writer")
     resources = _build_executor_resources(build.base_dir, build.preflight)
-    return executor.execute(build.plan, resources, deadline=deadline)
+    try:
+        return executor.execute(build.plan, resources, deadline=deadline)
+    except Exception as error:
+        # Executor failures can retain their argument tuple through traceback
+        # frame locals. Clear completed frames so normalized payload transports
+        # are not kept alive by a caller that records the exception.
+        try:
+            traceback.clear_frames(error.__traceback__)
+        except (AttributeError, RuntimeError):
+            pass
+        raise
+    finally:
+        # Drop the pipeline's own strong reference on every exit path. Concrete
+        # executors own deletion of any private staged copies they created.
+        resources = ()
 
 
 @dataclass(frozen=True)
@@ -167,6 +182,12 @@ class LongformBuild:
     def to_json(self) -> dict[str, Any]:
         redactions = _build_path_redaction_map(self.base_dir, self.preflight)
         semantic_json = self.semantic.to_json()
+        # Semantic diagnostics do not need the private stable-id lookup maps.
+        # The executable plan retains only its controlled bookmark descriptors.
+        semantic_json["bookmarks"] = {
+            "issues": list(self.semantic.bookmarks.issues),
+        }
+        semantic_json["references"] = {}
         document_json = _redact_path_values(
             _apply_redactions(semantic_json.get("document", {}), redactions)
         )
@@ -180,8 +201,8 @@ class LongformBuild:
                 "resources": [
                     {
                         "resourceId": r.resource_id,
-                        "sourceSha256": r.source_sha256,
-                        "payloadSha256": r.payload_sha256,
+                        "sourceSha256": _REDACTED_PATH,
+                        "payloadSha256": _REDACTED_PATH,
                         "byteLength": r.byte_length,
                         "mediaType": r.media_type,
                         "normalizerId": r.normalizer_id,
@@ -197,7 +218,10 @@ class LongformBuild:
                     }
                     for d in self.preflight.degradations
                 ],
-                "manifest": self.preflight.manifest,
+                "manifest": {
+                    "version": self.preflight.manifest.get("version", "1"),
+                    "resourceCount": len(self.preflight.resources),
+                },
             },
             "plan": self.plan.to_dict(),
             "issues": [

@@ -552,7 +552,7 @@ class RecordingWriterComposer:
             failure_policy={"mode": "fail"},
         )
 
-    def add_cross_reference(self, *, node_id, target_id=None, kind=None, fallback_text="", runs=None, failure_policy=None):
+    def add_cross_reference(self, *, node_id, target_id=None, kind=None, fallback_text="", runs=None, list_formatting=None, failure_policy=None):
         if runs is None:
             short_kind = {"figure": "fig", "table": "tab", "equation": "eq"}[kind]
             _, prefix, suffix = {
@@ -573,6 +573,7 @@ class RecordingWriterComposer:
             "writer.add_cross_reference",
             node_id=node_id,
             runs=runs,
+            listFormatting=list_formatting,
             failure_policy={
                 "mode": "degrade",
                 "recoverableCodes": ["CROSS_REFERENCE_FAILED"],

@@ -1095,8 +1095,21 @@ def _reference_run(value: Any, path: str) -> None:
 
 def _reference_runs(value: Any, path: str) -> None:
     _list_of(_reference_run)(value, path)
-    if not value or not any(item.get("type") == "reference" for item in value):
-        _invalid(path, "non-empty runs containing a resolved reference")
+    if not value:
+        _invalid(path, "non-empty text/reference runs")
+
+
+_LIST_FORMATTING_SCHEMA = _schema(
+    ("kind", "indentPt"),
+    kind=_enum(frozenset({"bullet", "ordered"}), "controlled list kind"),
+    indentPt=_number,
+)
+
+
+def _list_formatting(value: Any, path: str) -> None:
+    _validate_object(value, path, _LIST_FORMATTING_SCHEMA)
+    if type(value["indentPt"]) not in {int, float} or value["indentPt"] != 24.0:
+        _invalid(f"{path}.indentPt", "24.0")
 
 _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     "writer.configure_front_matter": _schema(
@@ -1211,6 +1224,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     "writer.add_cross_reference": _schema(
         ("runs",),
         runs=_reference_runs,
+        listFormatting=_list_formatting,
     ),
     "writer.insert_figure_index": _schema(
         ("title", "sequenceId", "titleStyleId"),
@@ -1494,6 +1508,19 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
                 )
 
     if op == "writer.add_cross_reference":
+        has_reference = any(run["type"] == "reference" for run in args["runs"])
+        list_formatting = args.get("listFormatting")
+        if not has_reference and list_formatting is None:
+            _invalid(f"{op}.args.runs", "a resolved reference outside list paragraphs")
+        if list_formatting is not None:
+            first = args["runs"][0]
+            marker = first.get("text", "") if first.get("type") == "text" else ""
+            if list_formatting["kind"] == "bullet":
+                valid_marker = marker.startswith("•\t")
+            else:
+                valid_marker = re.match(r"[1-9][0-9]*\.\t", marker) is not None
+            if not valid_marker:
+                _invalid(f"{op}.args.runs[0]", "controlled list marker and tab")
         for index, run in enumerate(args["runs"]):
             if run["type"] != "reference":
                 continue

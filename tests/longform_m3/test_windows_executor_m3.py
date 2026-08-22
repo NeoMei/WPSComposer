@@ -860,6 +860,33 @@ def test_writer_reference_and_native_index_use_controlled_native_apis():
     assert writer._selection.typed[:4] == ["见", "图 ", "。", "\n"]
 
 
+def test_writer_reference_list_paragraph_uses_native_list_hanging_indent():
+    writer = _writer_with_native_fakes()
+    tabs = []
+    writer._selection.ParagraphFormat.TabStops = type(
+        "Tabs", (), {"Add": lambda self, value: tabs.append(value)}
+    )()
+    writer._reset_selection_to_normal = lambda: None
+
+    writer.add_cross_reference_paragraph(
+        runs=[
+            {"type": "text", "text": "•\tWrapped "},
+            {"type": "reference", "bookmarkName": BOOKMARK, "prefix": "图 ", "suffix": "", "fallbackText": "[图]", "targetNodeId": "fig:one", "targetKind": "figure"},
+        ],
+        listFormatting={"kind": "bullet", "indentPt": 24.0},
+        owner_node_id="para:list-item",
+    )
+
+    paragraph = writer._selection.ParagraphFormat
+    assert writer._selection.Style == "List Paragraph"
+    assert paragraph.LeftIndent == 24.0
+    assert paragraph.FirstLineIndent == -24.0
+    assert paragraph.SpaceBefore == 0
+    assert paragraph.SpaceAfter == 3
+    assert tabs == [24.0]
+    assert writer._selection.typed[0] == "•\tWrapped "
+
+
 def test_raw_ref_field_error_stays_inline_and_returns_one_controlled_issue():
     writer = _writer_with_native_fakes()
     writer.doc.Fields.Add = lambda *args: (_ for _ in ()).throw(_ComError("raw REF failure"))
@@ -1431,6 +1458,55 @@ def test_table_vertical_group_rolls_back_complete_table_to_splittable_grid():
     assert table_calls[1][1][5] is True  # allowRowSplit
     assert table_calls[1][1][3]["insideVertical"] == .75
     assert outcome["issues"][0]["code"] == "TABLE_ROW_FORCED_SPLIT"
+
+
+def test_table_vertical_group_grid_failure_rolls_back_to_text_fallback():
+    from skills.WPSComposer.scripts.writer import NativeWriterObjectError, WriterComposer
+
+    writer = WriterComposer.__new__(WriterComposer)
+    writer._selection = _Selection()
+    writer._app = type("App", (), {"Selection": writer._selection})()
+    calls = []
+    writer._add_native_caption = lambda *args, **kwargs: calls.append("caption")
+    positions = iter((40, 50, 60, 70, 80))
+    writer._native_position = lambda: next(positions, 90)
+    writer._native_document_end = lambda: 100
+    writer._native_rollback = lambda start, end: calls.append(("rollback", start, end))
+    writer._add_native_table_notice = lambda *args: calls.append(("notice", args))
+    writer._table_overflow_group = lambda table, merges: (2, 3) if merges else None
+    writer._add_native_table_text_fallback = lambda headers, rows: calls.append(
+        ("text", headers, rows)
+    )
+
+    attempts = 0
+
+    def create(*args):
+        nonlocal attempts
+        attempts += 1
+        calls.append(("table", args))
+        if attempts == 2:
+            raise NativeWriterObjectError("TABLE_INSERT_FAILED")
+        return object()
+
+    writer._create_native_table = create
+    outcome = writer.add_semantic_table_native(
+        caption="表格", numbering=_numbering("WPSC_TAB", "表 "),
+        bookmarkName="wpsc_tab_" + "b" * 24, indexable=True, referenceable=True,
+        headers=["A", "B"], rows=[["1", ""]], alignments=["left", "right"],
+        style="three-line", orientation="portrait",
+        borderSpec={"top": 1.5, "bottom": 1.5, "headerBottom": .75, "left": 0.0, "right": 0.0, "insideHorizontal": 0.0, "insideVertical": 0.0},
+        merges=[{"top": 2, "left": 1, "bottom": 3, "right": 1}],
+        repeatHeader=True, allowRowSplit=False, cellIndentPt=0.0,
+        plannedDegradation=[], keepCaptionWithFirstRow=True, owner_node_id="tab:one",
+    )
+
+    rollbacks = [item for item in calls if item[0] == "rollback"]
+    assert len(rollbacks) == 2
+    assert ("text", ["A", "B"], [["1", ""]]) in calls
+    assert [issue["code"] for issue in outcome["issues"]] == [
+        "TABLE_ROW_FORCED_SPLIT",
+        "TABLE_INSERT_FAILED",
+    ]
 
 
 def test_table_named_style_failure_uses_grid_then_text_ladder():

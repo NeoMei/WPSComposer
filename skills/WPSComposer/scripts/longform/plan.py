@@ -82,6 +82,7 @@ class _BuilderState:
     front_matter_figure_index_emitted: bool = False
     front_matter_table_index_emitted: bool = False
     active_numbered_h1: bool = False
+    table_preset: str = "academic"
 
     def add(
         self,
@@ -107,7 +108,14 @@ def build_longform_plan(
 ) -> GenerationPlan:
     """Build a protocol v2 GenerationPlan from a semantic result and preflight data."""
     policy = build_policy(semantic.config)
-    state = _BuilderState()
+    requested_preset = str(
+        semantic.document.metadata.get("design", "academic")
+    ).strip().lower()
+    state = _BuilderState(
+        table_preset=requested_preset
+        if requested_preset in {"academic", "business", "consultant", "tech", "proposal"}
+        else "academic"
+    )
 
     _build_begin(state, semantic.document, policy)
     _build_page_skeleton(state, semantic.document, semantic.config, policy, preflight)
@@ -308,11 +316,17 @@ def _render_front_matter(
         for index, paragraph in enumerate(document.abstract.paragraphs, start=1):
             text = paragraph.plain_text
             if text:
-                state.add(
-                    "writer.add_paragraph",
-                    {"text": text, "style": "Body Text"},
-                    node_id=paragraph.node_id or f"doc:abstract:{index}",
-                )
+                paragraph_node_id = paragraph.node_id or f"doc:abstract:{index}"
+                if any(_is_resolved_reference(span) for span in paragraph.spans):
+                    _render_cross_reference_paragraph(
+                        state, paragraph, paragraph_node_id
+                    )
+                else:
+                    state.add(
+                        "writer.add_paragraph",
+                        {"text": text, "style": "Body Text"},
+                        node_id=paragraph_node_id,
+                    )
     if section_policy.includes_keywords and document.keywords:
         text = _keywords_text(document.keywords)
         if text:
@@ -410,7 +424,29 @@ def _render_element(
                 node_id=node_id,
             )
     elif isinstance(node, ListBlock):
-        if node.ordered:
+        if any(
+            _is_resolved_reference(span)
+            for item in node.items
+            for span in item
+        ):
+            for index, spans in enumerate(node.items, start=1):
+                item_node_id = (
+                    node.item_node_ids[index - 1]
+                    if index <= len(node.item_node_ids)
+                    else f"{node_id or 'wpsc-list'}/item:{index}"
+                )
+                marker = f"{index}.\t" if node.ordered else "•\t"
+                _render_cross_reference_paragraph(
+                    state,
+                    Paragraph(spans=list(spans), node_id=item_node_id),
+                    item_node_id,
+                    prefix_text=marker,
+                    list_formatting={
+                        "kind": "ordered" if node.ordered else "bullet",
+                        "indentPt": 24.0,
+                    },
+                )
+        elif node.ordered:
             state.add(
                 "writer.add_list",
                 {"items": _list_items(node.items), "ordered": True},
@@ -537,7 +573,7 @@ def _render_semantic_table(
         node_id = f"wpsc-tab:{state.table_count}"
     binding = _binding_or_legacy(node.caption_binding, "table", node_id, bool(node.caption))
     state.has_tables = state.has_tables or binding.indexable
-    table_policy, table_issues = resolve_table_policy(node, "academic")
+    table_policy, table_issues = resolve_table_policy(node, state.table_preset)
     border_spec = {
         "top": table_policy.borders["top"],
         "bottom": table_policy.borders["bottom"],
@@ -616,8 +652,13 @@ def _render_cross_reference_paragraph(
     state: _BuilderState,
     node: Paragraph,
     node_id: Optional[str],
+    *,
+    prefix_text: str = "",
+    list_formatting: Optional[dict[str, Any]] = None,
 ) -> None:
     runs: list[dict[str, Any]] = []
+    if prefix_text:
+        runs.append({"type": "text", "text": prefix_text})
     for span in node.spans:
         if span.cross_reference is None:
             if span.text:
@@ -633,9 +674,12 @@ def _render_cross_reference_paragraph(
             **descriptor,
             "fallbackText": span.cross_reference.fallback_text,
         })
+    args: dict[str, Any] = {"runs": runs}
+    if list_formatting is not None:
+        args["listFormatting"] = list_formatting
     state.add(
         "writer.add_cross_reference",
-        {"runs": runs},
+        args,
         node_id=node_id,
         failure_policy={
             "mode": "degrade",

@@ -185,6 +185,27 @@ def test_reference_runs_are_closed_resolved_and_ordered() -> None:
         validate_generation_plan(raw, "writer")
 
 
+def test_reference_list_paragraph_formatting_is_closed_and_allows_plain_items() -> None:
+    operation = {
+        "op": "writer.add_cross_reference",
+        "nodeId": "para:list-item",
+        "args": {
+            "runs": [{"type": "text", "text": "•\tPlain companion"}],
+            "listFormatting": {"kind": "bullet", "indentPt": 24.0},
+        },
+        "failurePolicy": {"mode": "degrade", "recoverableCodes": ["CROSS_REFERENCE_FAILED"], "fallback": "inline-fallback"},
+    }
+    validate_generation_plan(_plan(operation), "writer")
+
+    operation["args"]["listFormatting"]["indentPt"] = 36.0
+    with pytest.raises(OperationPlanError, match="listFormatting|indentPt"):
+        validate_generation_plan(_plan(operation), "writer")
+
+    operation["args"]["listFormatting"] = {"kind": "evil", "indentPt": 24.0}
+    with pytest.raises(OperationPlanError, match="listFormatting|kind"):
+        validate_generation_plan(_plan(operation), "writer")
+
+
 def test_utf16_string_bound_is_enforced() -> None:
     operation = {
         "op": "writer.add_cross_reference",

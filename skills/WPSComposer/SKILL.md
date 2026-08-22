@@ -250,6 +250,78 @@ Generate and deliver only the requested artifact format. During development,
 create PDF evidence separately when a native WPS layout change needs visual
 verification; do not make that PDF an automatic public companion output.
 
+## Long-form native objects (M3)
+
+The M3 long-form pipeline is an advanced Python integration boundary for
+WPSComposer/SuperWriter agents, plugin maintainers, and applications that need
+to inspect a deterministic offline plan before choosing a native executor. It
+is not the normal end-user entry point: ordinary document requests continue to
+use `generate()`, and M3 does not change that routing.
+
+```python
+from skills.WPSComposer.scripts.longform import (
+    build_longform_generation,
+    execute_longform_plan,
+)
+
+build = build_longform_generation(markdown, base_dir="assets")
+# Supply a dedicated Windows COM or macOS JSAPI executor only when native
+# generation is explicitly required.
+outcome = execute_longform_plan(build, executor, deadline=deadline)
+```
+
+Long-form Markdown supports these M3 attributes:
+
+- Figures: `#id`, `caption`, `width="auto|column|full|Npt"`,
+  `orientation="portrait|landscape"`, `kind`, `layout="stack|columns"`, and
+  `columns=2`. Figure captions are native fields below the image container.
+- Tables: `#id`, `caption`, `style="three-line|grid"`, explicit
+  `orientation`, `merges="A2:A3;B2:C2"`, and `repeat_header`. Table captions
+  are native fields above the first row.
+- Formula blocks accept an identifier and get an editable native number shell;
+  `{{ref:target-id}}` creates a native hyperlinking cross-reference outside
+  code and math spans. References inside abstract paragraphs and ordered or
+  unordered list items retain native REF fields and list hanging indents.
+- Front matter controls `caption_numbering: auto|global|chapter` plus
+  `figure_index` and `table_index`. `auto` is resolved per object: content
+  before the first numbered H1 is global, later content is chapter-numbered,
+  and an unnumbered H1 does not reset a sequence.
+
+Controlled native sequences are `WPSC_FIG`, `WPSC_TAB`, and `WPSC_EQ`.
+Bookmarks wrap only the visible number, and references use `REF ... \\h`.
+Figure/table indexes are populated native fields in the front matter. Field
+finalization is bounded: numbering, references, indexes, and page fields must
+produce two adjacent equal snapshots within three rounds; otherwise one frozen
+fourth snapshot records `FIELD_REFRESH_UNSTABLE`.
+
+Accepted media are decoded PNG, JPEG, TIFF, BMP, GIF, and restricted static
+SVG. WebP and network media are rejected. EXIF-oriented images, the first GIF
+frame, and the first TIFF page are normalized privately to lossless PNG.
+Limits are 50 MiB per resource, 80,000,000 pixels, and 32,768 pixels on either
+side. The normalized bytes and source paths never enter the plan or diagnostic
+JSON. Executor staging cleanup is attempted on every exit path; a cleanup
+failure is fatal and never silently publishes a result.
+
+The academic preset defaults to a native three-line table: 1.5 pt top/bottom,
+0.75 pt below the header, no vertical/interior body borders, zero cell indent,
+direct cell alignment, repeated headers, and row splitting disabled. Merge
+declarations are validated all-or-nothing. An invalid declaration preserves
+the complete unmerged grid and records one notice after the caption; an
+over-page vertical group degrades to an unmerged splittable grid.
+
+Configuration, engine acquisition, native fields/indexes, save, validation,
+publication, and cleanup failures stop generation. Only explicitly named
+object-local image/table/reference failures may use their closed fallback. If
+the WPS engine is unavailable, execution fails immediately. If a document has
+no image, normal text/table layout proceeds; if an individual image insertion
+fails, generation continues through the declared fallback and marks the
+corresponding document position.
+
+M3 intentionally stops at the readable equation source plus native numbering
+shell. Native Office Math content, bibliography/citations, the general M4
+degradation framework, PDF-driven quality/re-layout, and migration of the
+public `generate()` default remain later milestones.
+
 ## Native heading numbering (docx)
 
 Generated DOCX files carry **native Word/WPS multi-level heading numbering**

@@ -1775,15 +1775,37 @@ class WriterComposer(BaseComposer):
                     "left": .75, "right": .75,
                     "insideHorizontal": .75, "insideVertical": .75,
                 }
-                self._create_native_table(
-                    headers, rows, alignments, grid, repeatHeader,
-                    True, cellIndentPt, (),
-                )
                 issues.append({
                     "code": "TABLE_ROW_FORCED_SPLIT",
                     "message": "Vertical merge group rendered as splittable grid",
                     "placement": "block",
                 })
+                grid_start = self._native_position()
+                try:
+                    self._create_native_table(
+                        headers, rows, alignments, grid, repeatHeader,
+                        True, cellIndentPt, (),
+                    )
+                except Exception as grid_exc:
+                    grid_code = (
+                        grid_exc.code
+                        if isinstance(grid_exc, NativeWriterObjectError)
+                        else None
+                    )
+                    if grid_code not in {
+                        "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
+                        "TABLE_INSERT_FAILED",
+                    }:
+                        raise
+                    self._native_rollback(
+                        grid_start, self._native_document_end()
+                    )
+                    self._add_native_table_text_fallback(headers, rows)
+                    issues.append({
+                        "code": "TABLE_INSERT_FAILED",
+                        "message": "Table used the deterministic text fallback",
+                        "placement": "block",
+                    })
         finally:
             if landscape:
                 self.add_section(landscape=False)
@@ -1804,8 +1826,27 @@ class WriterComposer(BaseComposer):
         self.selection.TypeParagraph()
         return {"issues": []}
 
-    def add_cross_reference_paragraph(self, *, runs, owner_node_id=None):
+    def add_cross_reference_paragraph(
+        self, *, runs, owner_node_id=None, listFormatting=None,
+    ):
         """Insert ordered literal and native REF runs in one paragraph."""
+        if listFormatting is not None:
+            indent = float(listFormatting["indentPt"])
+            self._reset_selection_to_normal()
+            try:
+                self.selection.Style = self._doc.Styles("List Paragraph")
+            except Exception:
+                pass
+            paragraph_format = self.selection.ParagraphFormat
+            paragraph_format.LeftIndent = indent
+            paragraph_format.FirstLineIndent = -indent
+            try:
+                paragraph_format.TabStops.Add(indent)
+            except Exception:
+                pass
+            self._set_line_spacing(paragraph_format, rule="one_and_half")
+            paragraph_format.SpaceBefore = 0
+            paragraph_format.SpaceAfter = 3
         degraded = False
         for run in runs:
             if run["type"] == "text":
@@ -1828,6 +1869,8 @@ class WriterComposer(BaseComposer):
             if run["suffix"]:
                 self.selection.TypeText(run["suffix"])
         self.selection.TypeParagraph()
+        if listFormatting is not None:
+            self._reset_selection_to_normal()
         issues = []
         if degraded:
             issues.append({

@@ -964,6 +964,7 @@
 
   function addCrossReferenceParagraph(document, args, resources, context) {
     void resources;
+    const paragraphStart = currentPosition(document);
     let degraded = false;
     (args.runs || []).forEach(function (run) {
       if (run.type === "text") {
@@ -989,6 +990,22 @@
       }
       if (run.suffix) insertInlineText(document, run.suffix);
     });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const style = getStyle(document, "List Paragraph");
+      if (style) paragraph.Style = style;
+      const format = paragraph.ParagraphFormat;
+      if (format) {
+        const indent = safeNumber(args.listFormatting.indentPt, 24);
+        format.LeftIndent = indent;
+        format.FirstLineIndent = -indent;
+        format.SpaceBefore = 0;
+        format.SpaceAfter = 3;
+        if (format.TabStops && typeof format.TabStops.Add === "function") {
+          format.TabStops.Add(indent);
+        }
+      }
+    }
     insertInlineText(document, "\r");
     if (degraded) appendIssueOnce(context.issues, {
       code: "CROSS_REFERENCE_FAILED",
