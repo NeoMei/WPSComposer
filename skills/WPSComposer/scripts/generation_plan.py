@@ -276,6 +276,12 @@ def _invalid(path: str, expected: str) -> None:
 def _string(value: Any, path: str) -> None:
     if not isinstance(value, str):
         _invalid(path, "string")
+    try:
+        utf16_units = len(value.encode("utf-16-le")) // 2
+    except UnicodeEncodeError as error:
+        raise OperationPlanError(f"invalid argument {path}: invalid Unicode string") from error
+    if utf16_units > MAX_STRING_CHARS:
+        _invalid(path, "string no longer than 100,000 UTF-16 code units")
 
 
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -725,6 +731,54 @@ def _failure_policy(value: Any, path: str) -> None:
             )
 
 
+_M3_FAILURE_POLICIES = {
+    "writer.add_captioned_figure": (
+        ("IMAGE_INSERT_FAILED",),
+        "figure-child-stack-then-notice",
+    ),
+    "writer.add_semantic_table": (
+        (
+            "TABLE_STYLE_APPLY_FAILED",
+            "TABLE_MERGE_APPLY_FAILED",
+            "TABLE_ROW_FORCED_SPLIT",
+            "TABLE_INSERT_FAILED",
+        ),
+        "grid-then-text",
+    ),
+    "writer.add_cross_reference": (
+        ("CROSS_REFERENCE_FAILED",),
+        "inline-fallback",
+    ),
+}
+
+
+def _validate_m3_failure_policy(
+    op: str,
+    value: Optional[Mapping[str, Any]],
+    args: Mapping[str, Any],
+) -> None:
+    if not _is_m3_shape(op, args):
+        return
+    expected = _M3_FAILURE_POLICIES.get(op)
+    if expected is not None:
+        if value is None:
+            raise OperationPlanError(f"{op}.failurePolicy is required")
+        codes, fallback = expected
+        if (
+            value.get("mode") != "degrade"
+            or tuple(value.get("recoverableCodes", ())) != codes
+            or value.get("fallback") != fallback
+        ):
+            _invalid(f"{op}.failurePolicy", "exact M3 recovery allowlist and fallback")
+    elif op in {
+        "writer.add_equation",
+        "writer.insert_figure_index",
+        "writer.insert_table_index",
+        "writer.finalize_fields",
+    } and value is not None and value.get("mode") != "fail":
+        _invalid(f"{op}.failurePolicy", "fatal field/index policy")
+
+
 _NOTICE_ITEM_SCHEMA = _schema(
     ("code", "message", "fallbackText", "placement"),
     code=_string,
@@ -749,17 +803,197 @@ _PLANNED_DEGRADATION_SCHEMA = _schema(
 
 def _planned_degradation(value: Any, path: str) -> None:
     _validate_object(value, path, _PLANNED_DEGRADATION_SCHEMA)
+    if value["code"] not in {
+        "RESOURCE_NOT_FOUND",
+        "RESOURCE_PATH_ESCAPES_BASE",
+        "RESOURCE_ABSOLUTE_PATH_OUTSIDE",
+        "RESOURCE_MEDIA_TYPE_UNSUPPORTED",
+        "RESOURCE_READ_FAILED",
+        "RESOURCE_DECODE_FAILED",
+        "RESOURCE_TOO_LARGE",
+        "RESOURCE_PIXEL_LIMIT_EXCEEDED",
+        "RESOURCE_SIDE_LIMIT_EXCEEDED",
+    }:
+        _invalid(f"{path}.code", "controlled M3 resource degradation code")
+    if value["placement"] != "block":
+        _invalid(f"{path}.placement", "block")
+
+_BOOKMARK_RE = re.compile(r"^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$")
+
+
+def _bookmark(value: Any, path: str) -> None:
+    if not isinstance(value, str) or _BOOKMARK_RE.fullmatch(value) is None:
+        _invalid(path, "generated WPSComposer bookmark name")
+
+
+def _logical_id(value: Any, path: str) -> None:
+    _string(value, path)
+    if not value or "/" in value or "\\" in value:
+        _invalid(path, "logical identifier")
+
+
+_CAPTION_MODES = frozenset({"global", "chapter"})
+_SEQUENCE_IDS = frozenset({"WPSC_FIG", "WPSC_TAB", "WPSC_EQ"})
+_OBJECT_KINDS = frozenset({"figure", "table", "equation"})
+_ORIENTATIONS = frozenset({"portrait", "landscape"})
+_FIGURE_LAYOUTS = frozenset({"stack", "columns"})
+_FIGURE_KINDS = frozenset({"auto", "photo", "scan", "screenshot", "diagram"})
+_WIDTH_MODES = frozenset({"auto", "column", "full", "explicit"})
+_TABLE_STYLES = frozenset({"three-line", "grid"})
+_ALIGNMENTS = frozenset({"left", "center", "right"})
+_NORMALIZER_IDS = frozenset({
+    "none-v1", "exif-transpose-png-v1", "gif-first-frame-png-v1",
+    "tiff-first-page-png-v1", "svg-static-v1",
+})
+
+
+_NUMBERING_SCHEMA = _schema(
+    ("mode", "sequenceId", "chapterStyleLevel", "resetLevel", "prefix", "suffix"),
+    mode=_enum(_CAPTION_MODES, "caption numbering mode"),
+    sequenceId=_enum(_SEQUENCE_IDS, "controlled sequence identifier"),
+    chapterStyleLevel=lambda value, path: _integer(value, path) if value is not None else None,
+    resetLevel=lambda value, path: _integer(value, path) if value is not None else None,
+    prefix=_string,
+    suffix=_string,
+)
+
+
+def _numbering(value: Any, path: str) -> None:
+    _validate_object(value, path, _NUMBERING_SCHEMA)
+    if value["mode"] == "global":
+        if value["chapterStyleLevel"] is not None or value["resetLevel"] is not None:
+            _invalid(path, "global numbering without chapter/reset levels")
+    elif value["chapterStyleLevel"] != 1 or value["resetLevel"] != 1:
+        _invalid(path, "chapter numbering at heading/reset level 1")
+
 
 _FIGURE_CHILD_SCHEMA = _schema(
     ("nodeId",),
     nodeId=_string,
-    resourceId=_nullable_string,
+    resourceId=_logical_id,
+    displayWidthPt=_POSITIVE_NUMBER,
+    displayHeightPt=_POSITIVE_NUMBER,
+    effectiveDpi=_NONNEGATIVE_NUMBER,
+    mediaType=_enum(ALLOWED_MEDIA_TYPES, "allowed M3 media type"),
+    normalizerId=_enum(_NORMALIZER_IDS, "controlled normalizer identifier"),
     plannedDegradation=_planned_degradation,
 )
 
 
 def _figure_child(value: Any, path: str) -> None:
     _validate_object(value, path, _FIGURE_CHILD_SCHEMA)
+    resource_fields = {
+        "resourceId", "displayWidthPt", "displayHeightPt", "effectiveDpi",
+        "mediaType", "normalizerId",
+    }
+    has_resource = bool(resource_fields & set(value))
+    has_degradation = "plannedDegradation" in value
+    if has_resource == has_degradation:
+        _invalid(path, "exactly one complete resource or planned degradation")
+    if has_resource and not resource_fields <= set(value):
+        _invalid(path, "complete resolved image metadata")
+
+
+def _figure_children(value: Any, path: str) -> None:
+    _list_of(_figure_child)(value, path)
+    if not 1 <= len(value) <= 2:
+        _invalid(path, "one or two figure children")
+
+
+_BORDER_SCHEMA = _schema(
+    ("top", "bottom", "headerBottom", "left", "right", "insideHorizontal", "insideVertical"),
+    top=_NONNEGATIVE_NUMBER,
+    bottom=_NONNEGATIVE_NUMBER,
+    headerBottom=_NONNEGATIVE_NUMBER,
+    left=_NONNEGATIVE_NUMBER,
+    right=_NONNEGATIVE_NUMBER,
+    insideHorizontal=_NONNEGATIVE_NUMBER,
+    insideVertical=_NONNEGATIVE_NUMBER,
+)
+
+
+def _border_spec(value: Any, path: str) -> None:
+    _validate_object(value, path, _BORDER_SCHEMA)
+
+
+_MERGE_SCHEMA = _schema(
+    ("top", "left", "bottom", "right"),
+    top=_POSITIVE_INT,
+    left=_POSITIVE_INT,
+    bottom=_POSITIVE_INT,
+    right=_POSITIVE_INT,
+)
+
+
+def _merge(value: Any, path: str) -> None:
+    _validate_object(value, path, _MERGE_SCHEMA)
+    if value["bottom"] < value["top"] or value["right"] < value["left"]:
+        _invalid(path, "ordered rectangular merge coordinates")
+    if value["bottom"] == value["top"] and value["right"] == value["left"]:
+        _invalid(path, "non-degenerate merge rectangle")
+
+
+_TABLE_DEGRADATION_SCHEMA = _schema(
+    ("code", "message", "placement", "insertAfter", "trigger", "recoveryScope", "actions"),
+    code=_string,
+    message=_string,
+    placement=_enum(frozenset({"block"}), "block placement"),
+    insertAfter=_enum(frozenset({"caption"}), "caption adjacency"),
+    trigger=_string,
+    recoveryScope=_string,
+    actions=_STRING_LIST,
+    rowGroup=lambda value, path: _validate_object(
+        value,
+        path,
+        _schema(("top", "bottom"), top=_POSITIVE_INT, bottom=_POSITIVE_INT),
+    ),
+)
+
+
+def _table_degradation(value: Any, path: str) -> None:
+    _validate_object(value, path, _TABLE_DEGRADATION_SCHEMA)
+    if value["code"] not in {"TABLE_MERGE_INVALID", "TABLE_ROW_FORCED_SPLIT"}:
+        _invalid(f"{path}.code", "controlled M3 table degradation code")
+    if value["recoveryScope"] not in {"row", "complete-table"}:
+        _invalid(f"{path}.recoveryScope", "row or complete-table")
+    allowed_actions = {
+        "discard-all-merges", "preserve-complete-grid", "allow-row-split",
+        "apply-grid-style",
+    }
+    if not value["actions"] or any(item not in allowed_actions for item in value["actions"]):
+        _invalid(f"{path}.actions", "controlled non-empty table recovery actions")
+    if "rowGroup" in value and value["rowGroup"]["bottom"] < value["rowGroup"]["top"]:
+        _invalid(f"{path}.rowGroup", "ordered row interval")
+
+
+_TEXT_RUN_SCHEMA = _schema(("type", "text"), type=_enum(frozenset({"text"}), "text run"), text=_string)
+_REFERENCE_RUN_SCHEMA = _schema(
+    ("type", "targetNodeId", "targetKind", "bookmarkName", "prefix", "suffix", "fallbackText"),
+    type=_enum(frozenset({"reference"}), "reference run"),
+    targetNodeId=_string,
+    targetKind=_enum(_OBJECT_KINDS, "reference target kind"),
+    bookmarkName=_bookmark,
+    prefix=_string,
+    suffix=_string,
+    fallbackText=_string,
+)
+
+
+def _reference_run(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "text or reference run")
+    if value.get("type") == "text":
+        _validate_object(value, path, _TEXT_RUN_SCHEMA)
+    elif value.get("type") == "reference":
+        _validate_object(value, path, _REFERENCE_RUN_SCHEMA)
+    else:
+        _invalid(f"{path}.type", "text or reference")
+
+
+def _reference_runs(value: Any, path: str) -> None:
+    _list_of(_reference_run)(value, path)
+    if not value or not any(item.get("type") == "reference" for item in value):
+        _invalid(path, "non-empty runs containing a resolved reference")
 
 _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
     "writer.configure_front_matter": _schema(
@@ -821,40 +1055,71 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         linkToPreviousFooter=_boolean,
     ),
     "writer.add_captioned_figure": _schema(
-        ("caption", "children", "layout"),
+        (
+            "caption", "numbering", "widthMode", "orientation", "kind",
+            "indexable", "referenceable", "children", "layout", "keepWithCaption",
+        ),
         caption=_string,
-        children=_list_of(_figure_child),
-        layout=_string,
-        columns=_integer,
+        numbering=_numbering,
+        bookmarkName=_bookmark,
+        indexable=_boolean,
+        referenceable=_boolean,
+        widthMode=_enum(_WIDTH_MODES, "figure width mode"),
+        explicitWidthPt=_POSITIVE_NUMBER,
+        orientation=_enum(_ORIENTATIONS, "page orientation"),
+        kind=_enum(_FIGURE_KINDS, "figure kind"),
+        children=_figure_children,
+        layout=_enum(_FIGURE_LAYOUTS, "figure layout"),
+        columns=_bounded_integer(2, 2),
+        keepWithCaption=_boolean,
     ),
     "writer.add_semantic_table": _schema(
-        ("caption", "headers", "rows"),
+        (
+            "caption", "numbering", "indexable", "referenceable", "headers", "rows",
+            "alignments", "style", "orientation", "borderSpec", "merges",
+            "repeatHeader", "allowRowSplit", "cellIndentPt",
+            "plannedDegradation", "keepCaptionWithFirstRow",
+        ),
         caption=_string,
+        numbering=_numbering,
+        bookmarkName=_bookmark,
+        indexable=_boolean,
+        referenceable=_boolean,
         headers=_STRING_LIST,
         rows=_list_of(_STRING_LIST),
-        alignments=_STRING_LIST,
-        style=_string,
-        orientation=_string,
+        alignments=_list_of(_enum(_ALIGNMENTS, "cell alignment")),
+        style=_enum(_TABLE_STYLES, "table style"),
+        orientation=_enum(_ORIENTATIONS, "page orientation"),
+        borderSpec=_border_spec,
+        merges=_list_of(_merge),
+        repeatHeader=_boolean,
+        allowRowSplit=_boolean,
+        cellIndentPt=_NONNEGATIVE_NUMBER,
+        plannedDegradation=_list_of(_table_degradation),
+        keepCaptionWithFirstRow=_boolean,
     ),
     "writer.add_equation": _schema(
-        ("source",),
+        ("source", "numbering", "bookmarkName", "fallbackText"),
         source=_string,
-        number=_nullable_string,
+        numbering=_numbering,
+        bookmarkName=_bookmark,
         fallbackText=_string,
     ),
     "writer.add_cross_reference": _schema(
-        ("targetId", "kind", "fallbackText"),
-        targetId=_string,
-        kind=_string,
-        fallbackText=_string,
+        ("runs",),
+        runs=_reference_runs,
     ),
     "writer.insert_figure_index": _schema(
-        (),
+        ("title", "sequenceId", "titleStyleId"),
         title=_nullable_string,
+        sequenceId=_enum(frozenset({"WPSC_FIG"}), "figure sequence identifier"),
+        titleStyleId=_enum(frozenset({"WPSC_INDEX_TITLE"}), "index title style"),
     ),
     "writer.insert_table_index": _schema(
-        (),
+        ("title", "sequenceId", "titleStyleId"),
         title=_nullable_string,
+        sequenceId=_enum(frozenset({"WPSC_TAB"}), "table sequence identifier"),
+        titleStyleId=_enum(frozenset({"WPSC_INDEX_TITLE"}), "index title style"),
     ),
     "writer.add_bibliography": _schema(
         ("entries",),
@@ -885,12 +1150,161 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
 }
 
 
+_M2_COMPAT_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
+    "writer.add_captioned_figure": _schema(
+        ("caption", "children", "layout"),
+        caption=_string,
+        children=_list_of(
+            lambda value, path: _validate_object(
+                value,
+                path,
+                _schema(
+                    ("nodeId",),
+                    nodeId=_string,
+                    resourceId=_nullable_string,
+                    plannedDegradation=_planned_degradation,
+                ),
+            )
+        ),
+        layout=_string,
+        columns=_integer,
+    ),
+    "writer.add_semantic_table": _schema(
+        ("caption", "headers", "rows"),
+        caption=_string,
+        headers=_STRING_LIST,
+        rows=_list_of(_STRING_LIST),
+        alignments=_STRING_LIST,
+        style=_string,
+        orientation=_string,
+    ),
+    "writer.add_equation": _schema(
+        ("source",),
+        source=_string,
+        number=_nullable_string,
+        fallbackText=_string,
+    ),
+    "writer.add_cross_reference": _schema(
+        ("targetId", "kind", "fallbackText"),
+        targetId=_string,
+        kind=_string,
+        fallbackText=_string,
+    ),
+    "writer.insert_figure_index": _schema((), title=_nullable_string),
+    "writer.insert_table_index": _schema((), title=_nullable_string),
+}
+
+
+def _is_m3_shape(op: str, args: Mapping[str, Any]) -> bool:
+    markers = {
+        "writer.add_captioned_figure": "numbering",
+        "writer.add_semantic_table": "numbering",
+        "writer.add_equation": "numbering",
+        "writer.add_cross_reference": "runs",
+        "writer.insert_figure_index": "sequenceId",
+        "writer.insert_table_index": "sequenceId",
+    }
+    marker = markers.get(op)
+    return marker is None or marker in args
+
+
 def _validate_operation_args(op: str, args: Mapping[str, Any]) -> None:
-    schema = _OPERATION_ARG_SCHEMAS.get(op) or _LONGFORM_OPERATION_ARG_SCHEMAS.get(op)
+    schema = _OPERATION_ARG_SCHEMAS.get(op)
+    if schema is None and op in _M2_COMPAT_OPERATION_ARG_SCHEMAS and not _is_m3_shape(op, args):
+        schema = _M2_COMPAT_OPERATION_ARG_SCHEMAS[op]
+    if schema is None:
+        schema = _LONGFORM_OPERATION_ARG_SCHEMAS.get(op)
     if schema is None:
         raise OperationPlanError(f"unknown operation schema: {op}")
     _validate_object(args, f"{op}.args", schema)
     _validate_table_shape(op, args)
+    if _is_m3_shape(op, args):
+        _validate_m3_operation_contract(op, args)
+
+
+def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
+    """Validate invariants spanning nested fields of one M3 operation."""
+    expected = {
+        "writer.add_captioned_figure": ("WPSC_FIG", "图 ", "", "fig"),
+        "writer.add_semantic_table": ("WPSC_TAB", "表 ", "", "tab"),
+        "writer.add_equation": ("WPSC_EQ", "(", ")", "eq"),
+    }
+    if op in expected:
+        sequence_id, prefix, suffix, bookmark_kind = expected[op]
+        numbering = args["numbering"]
+        if (
+            numbering["sequenceId"] != sequence_id
+            or numbering["prefix"] != prefix
+            or numbering["suffix"] != suffix
+        ):
+            _invalid(f"{op}.args.numbering", "controlled type-specific numbering")
+        bookmark = args.get("bookmarkName")
+        if bookmark is not None and not bookmark.startswith(f"wpsc_{bookmark_kind}_"):
+            _invalid(f"{op}.args.bookmarkName", f"{bookmark_kind} bookmark")
+        if op in {"writer.add_captioned_figure", "writer.add_semantic_table"}:
+            if args["referenceable"] and bookmark is None:
+                _invalid(f"{op}.args.bookmarkName", "bookmark for referenceable object")
+            if not args["referenceable"] and bookmark is not None:
+                _invalid(f"{op}.args.bookmarkName", "omitted for non-referenceable object")
+            if not args["caption"] and (
+                args["indexable"] or args["referenceable"] or bookmark is not None
+            ):
+                _invalid(f"{op}.args.caption", "empty caption omitted from indexes and targets")
+
+    if op == "writer.add_captioned_figure":
+        children = args["children"]
+        if args["layout"] == "columns":
+            if len(children) != 2 or args.get("columns") != 2:
+                _invalid(f"{op}.args.columns", "2 with exactly two children")
+        elif "columns" in args:
+            _invalid(f"{op}.args.columns", "omitted for stack layout")
+        if args["widthMode"] == "explicit" and "explicitWidthPt" not in args:
+            _invalid(f"{op}.args.explicitWidthPt", "positive width for explicit mode")
+        if args["widthMode"] != "explicit" and "explicitWidthPt" in args:
+            _invalid(f"{op}.args.explicitWidthPt", "omitted unless widthMode is explicit")
+        for index, child in enumerate(children):
+            if "resourceId" in child and args["layout"] == "columns":
+                if child["displayWidthPt"] <= 0 or child["displayHeightPt"] <= 0:
+                    _invalid(f"{op}.args.children[{index}]", "positive dimensions")
+
+    if op == "writer.add_semantic_table":
+        width = len(args["headers"])
+        if width == 0 or len(args["alignments"]) != width:
+            _invalid(f"{op}.args.alignments", "one alignment per table column")
+        if any(len(row) != width for row in args["rows"]):
+            _invalid(f"{op}.args.rows", "rectangular rows matching headers")
+        row_count = 1 + len(args["rows"])
+        occupied: set[tuple[int, int]] = set()
+        for index, merge in enumerate(args["merges"]):
+            if merge["bottom"] > row_count or merge["right"] > width:
+                _invalid(f"{op}.args.merges[{index}]", "coordinates inside table grid")
+            if merge["top"] == 1 and merge["bottom"] != 1:
+                _invalid(f"{op}.args.merges[{index}]", "merge not crossing header boundary")
+            coordinates = {
+                (row, col)
+                for row in range(merge["top"], merge["bottom"] + 1)
+                for col in range(merge["left"], merge["right"] + 1)
+            }
+            if occupied & coordinates:
+                _invalid(f"{op}.args.merges[{index}]", "non-overlapping merge")
+            occupied.update(coordinates)
+
+    if op == "writer.add_cross_reference":
+        for index, run in enumerate(args["runs"]):
+            if run["type"] != "reference":
+                continue
+            expected_affixes = {
+                "figure": ("fig", "图 ", ""),
+                "table": ("tab", "表 ", ""),
+                "equation": ("eq", "(", ")"),
+            }[run["targetKind"]]
+            kind, prefix, suffix = expected_affixes
+            if (
+                not run["bookmarkName"].startswith(f"wpsc_{kind}_")
+                or run["prefix"] != prefix
+                or run["suffix"] != suffix
+            ):
+                _invalid(f"{op}.args.runs[{index}]", "controlled resolved reference")
 
 
 def _validate_table_shape(op: str, args: Mapping[str, Any]) -> None:
@@ -1111,6 +1525,8 @@ def validate_generation_plan(
                 raise OperationPlanError("table exceeds 10,000 cells")
         _validate_image_args(op_name, args)
         _validate_operation_args(op_name, args)
+        if is_v2:
+            _validate_m3_failure_policy(op_name, failure_policy, args)
         parsed.append(
             GenerationOperation(
                 op_name,
@@ -1121,6 +1537,7 @@ def validate_generation_plan(
         )
 
     if is_v2:
+        _validate_m3_plan_state(normalized["operations"])
         return GenerationPlan(
             component,
             tuple(parsed),
@@ -1130,3 +1547,68 @@ def validate_generation_plan(
             resource_manifest_digest=normalized["resourceManifestDigest"],
         )
     return GenerationPlan(component, tuple(parsed))
+
+
+def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
+    """Enforce deterministic ownership and terminal ordering for complete M3 plans."""
+    if not any(_is_m3_shape(item["op"], item["args"]) for item in operations):
+        return
+
+    finalizers = [index for index, item in enumerate(operations) if item["op"] == "writer.finalize_fields"]
+    if finalizers and (len(finalizers) != 1 or finalizers[0] != len(operations) - 1):
+        raise OperationPlanError("writer.finalize_fields must occur exactly once and last")
+
+    body_ops = {
+        "writer.add_captioned_figure",
+        "writer.add_semantic_table",
+        "writer.add_equation",
+        "writer.add_cross_reference",
+    }
+    owned: set[str] = set()
+    object_positions: list[int] = []
+    referenceable_targets: set[str] = set()
+    has_native_targets = False
+    for index, item in enumerate(operations):
+        if item["op"] not in body_ops or not _is_m3_shape(item["op"], item["args"]):
+            continue
+        object_positions.append(index)
+        node_id = item.get("nodeId")
+        if node_id in owned:
+            raise OperationPlanError(f"semantic node is owned more than once: {node_id}")
+        owned.add(node_id)
+        if item["op"] == "writer.add_captioned_figure":
+            for child in item["args"]["children"]:
+                child_node_id = child["nodeId"]
+                if child_node_id in owned:
+                    raise OperationPlanError(
+                        f"semantic node is owned more than once: {child_node_id}"
+                    )
+                owned.add(child_node_id)
+        if item["op"] == "writer.add_equation" or (
+            item["op"] in {"writer.add_captioned_figure", "writer.add_semantic_table"}
+            and item["args"].get("referenceable", True)
+        ):
+            referenceable_targets.add(node_id)
+        if item["op"] in {
+            "writer.add_captioned_figure", "writer.add_semantic_table", "writer.add_equation"
+        }:
+            has_native_targets = True
+
+    is_sectioned_plan = any(
+        item["op"] == "writer.configure_section"
+        and item["args"].get("role") in {"front_matter", "body", "landscape"}
+        for item in operations
+    )
+    if object_positions and is_sectioned_plan:
+        first_body = min(object_positions)
+        for index, item in enumerate(operations):
+            if item["op"] in {"writer.insert_figure_index", "writer.insert_table_index"} and index > first_body:
+                raise OperationPlanError("native figure/table indexes must precede body objects")
+
+    if has_native_targets:
+        for item in operations:
+            if item["op"] != "writer.add_cross_reference" or not _is_m3_shape(item["op"], item["args"]):
+                continue
+            for run in item["args"]["runs"]:
+                if run["type"] == "reference" and run["targetNodeId"] not in referenceable_targets:
+                    raise OperationPlanError("reference run target is not a referenceable native object")

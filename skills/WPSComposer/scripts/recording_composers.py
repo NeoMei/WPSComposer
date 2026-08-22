@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from .generation_plan import (
@@ -36,6 +37,28 @@ _STYLE_KEYS = {
 
 def _without_none(**values):
     return {key: value for key, value in values.items() if value is not None}
+
+
+def _m3_bookmark(kind, node_id):
+    digest = hashlib.sha256(f"{kind}\0{node_id}".encode("utf-8")).hexdigest()[:24]
+    return f"wpsc_{kind}_{digest}"
+
+
+def _m3_numbering(kind, mode="global"):
+    sequence, prefix, suffix = {
+        "fig": ("WPSC_FIG", "图 ", ""),
+        "tab": ("WPSC_TAB", "表 ", ""),
+        "eq": ("WPSC_EQ", "(", ")"),
+    }[kind]
+    chapter = mode == "chapter"
+    return {
+        "mode": mode,
+        "sequenceId": sequence,
+        "chapterStyleLevel": 1 if chapter else None,
+        "resetLevel": 1 if chapter else None,
+        "prefix": prefix,
+        "suffix": suffix,
+    }
 
 
 def _normalize_style(key, props, *, outline_level=None):
@@ -435,55 +458,133 @@ class RecordingWriterComposer:
             linkToPreviousFooter=link_to_previous_footer,
         )
 
-    def add_captioned_figure(self, *, node_id, caption, children, layout="stack", columns=None, failure_policy=None):
+    def add_captioned_figure(
+        self, *, node_id, caption, children, layout="stack", columns=None,
+        numbering=None, bookmarkName=None, widthMode="auto", orientation="portrait",
+        kind="auto", keepWithCaption=True, failure_policy=None,
+    ):
+        normalized_children = []
+        for child in children:
+            item = dict(child)
+            if "resourceId" in item:
+                item.setdefault("displayWidthPt", 1.0)
+                item.setdefault("displayHeightPt", 1.0)
+                item.setdefault("effectiveDpi", 96.0)
+                item.setdefault("mediaType", "image/png")
+                item.setdefault("normalizerId", "none-v1")
+            normalized_children.append(item)
+        normalized_layout = "columns" if layout in {"columns", "side-by-side"} else "stack"
         self._record_v2(
             "writer.add_captioned_figure",
             node_id=node_id,
             caption=caption,
-            children=children,
-            layout=layout,
-            columns=columns,
-            failure_policy=failure_policy,
+            numbering=numbering or _m3_numbering("fig"),
+            bookmarkName=(bookmarkName or _m3_bookmark("fig", node_id)) if caption else None,
+            indexable=bool(caption),
+            referenceable=bool(caption),
+            widthMode=widthMode,
+            orientation=orientation,
+            kind=kind,
+            children=normalized_children,
+            layout=normalized_layout,
+            columns=2 if normalized_layout == "columns" else None,
+            keepWithCaption=keepWithCaption,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": ["IMAGE_INSERT_FAILED"],
+                "fallback": "figure-child-stack-then-notice",
+            },
         )
 
-    def add_semantic_table(self, *, node_id, caption, headers, rows, alignments=None, style=None, orientation=None, failure_policy=None):
+    def add_semantic_table(
+        self, *, node_id, caption, headers, rows, alignments=None,
+        numbering=None, bookmarkName=None, style="grid", orientation="portrait",
+        borderSpec=None, merges=None, repeatHeader=True, allowRowSplit=False,
+        cellIndentPt=0.0, plannedDegradation=None,
+        keepCaptionWithFirstRow=True, failure_policy=None,
+    ):
+        column_count = len(headers)
+        normalized_borders = borderSpec or {
+            "top": 0.75, "bottom": 0.75, "headerBottom": 0.75,
+            "left": 0.75, "right": 0.75,
+            "insideHorizontal": 0.75, "insideVertical": 0.75,
+        }
         self._record_v2(
             "writer.add_semantic_table",
             node_id=node_id,
             caption=caption,
+            numbering=numbering or _m3_numbering("tab"),
+            bookmarkName=(bookmarkName or _m3_bookmark("tab", node_id)) if caption else None,
+            indexable=bool(caption),
+            referenceable=bool(caption),
             headers=headers,
             rows=rows,
-            alignments=alignments,
+            alignments=alignments or ["left"] * column_count,
             style=style,
             orientation=orientation,
-            failure_policy=failure_policy,
+            borderSpec=normalized_borders,
+            merges=merges or [],
+            repeatHeader=repeatHeader,
+            allowRowSplit=allowRowSplit,
+            cellIndentPt=cellIndentPt,
+            plannedDegradation=plannedDegradation or [],
+            keepCaptionWithFirstRow=keepCaptionWithFirstRow,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": [
+                    "TABLE_STYLE_APPLY_FAILED",
+                    "TABLE_MERGE_APPLY_FAILED",
+                    "TABLE_ROW_FORCED_SPLIT",
+                    "TABLE_INSERT_FAILED",
+                ],
+                "fallback": "grid-then-text",
+            },
         )
 
-    def add_equation(self, *, node_id, source, number=None, fallback_text=None, failure_policy=None):
+    def add_equation(self, *, node_id, source, number=None, numbering=None, bookmarkName=None, fallback_text=None, failure_policy=None):
         self._record_v2(
             "writer.add_equation",
             node_id=node_id,
             source=source,
-            number=number,
-            fallbackText=fallback_text,
-            failure_policy=failure_policy,
+            numbering=numbering or _m3_numbering("eq"),
+            bookmarkName=bookmarkName or _m3_bookmark("eq", node_id),
+            fallbackText=fallback_text if fallback_text is not None else source,
+            failure_policy={"mode": "fail"},
         )
 
-    def add_cross_reference(self, *, node_id, target_id, kind, fallback_text, failure_policy=None):
+    def add_cross_reference(self, *, node_id, target_id=None, kind=None, fallback_text="", runs=None, failure_policy=None):
+        if runs is None:
+            short_kind = {"figure": "fig", "table": "tab", "equation": "eq"}[kind]
+            _, prefix, suffix = {
+                "figure": ("WPSC_FIG", "图 ", ""),
+                "table": ("WPSC_TAB", "表 ", ""),
+                "equation": ("WPSC_EQ", "(", ")"),
+            }[kind]
+            runs = [{
+                "type": "reference",
+                "targetNodeId": target_id,
+                "targetKind": kind,
+                "bookmarkName": _m3_bookmark(short_kind, target_id),
+                "prefix": prefix,
+                "suffix": suffix,
+                "fallbackText": fallback_text,
+            }]
         self._record_v2(
             "writer.add_cross_reference",
             node_id=node_id,
-            targetId=target_id,
-            kind=kind,
-            fallbackText=fallback_text,
-            failure_policy=failure_policy,
+            runs=runs,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+                "fallback": "inline-fallback",
+            },
         )
 
-    def insert_figure_index(self, *, title=None):
-        self._record_v2("writer.insert_figure_index", title=title)
+    def insert_figure_index(self, *, title=None, sequenceId="WPSC_FIG", titleStyleId="WPSC_INDEX_TITLE"):
+        self._record_v2("writer.insert_figure_index", title=title, sequenceId=sequenceId, titleStyleId=titleStyleId)
 
-    def insert_table_index(self, *, title=None):
-        self._record_v2("writer.insert_table_index", title=title)
+    def insert_table_index(self, *, title=None, sequenceId="WPSC_TAB", titleStyleId="WPSC_INDEX_TITLE"):
+        self._record_v2("writer.insert_table_index", title=title, sequenceId=sequenceId, titleStyleId=titleStyleId)
 
     def add_bibliography(self, *, node_id, entries, style="numbered", failure_policy=None):
         self._record_v2(

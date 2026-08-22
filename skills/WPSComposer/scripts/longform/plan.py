@@ -7,9 +7,12 @@ manifest into a pure JSON operation plan.  It never reads files or launches WPS.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import hashlib
+from types import SimpleNamespace
 from typing import Any, Optional
 
 from ..document_model import (
+    CaptionBinding,
     DegradationBlock,
     DocumentIssue,
     FigureBlock,
@@ -28,9 +31,12 @@ from ..document_model import (
 )
 from ..generation_plan import GenerationOperation, GenerationPlan
 from .page_policy import _group_sections, build_page_policy
-from .policy import LongformPolicy, build_policy
+from .image_policy import resolve_figure_layout
+from .native_fields import caption_numbering_descriptor, cross_reference_descriptor
+from .policy import LongformPolicy, build_policy, page_content_width_pt
 from .resources import ResourcePreflight
 from .semantic import SemanticResult
+from .table_policy import resolve_table_policy
 
 
 _LONGFORM_PROTOCOL_VERSION = 2
@@ -228,7 +234,8 @@ def _emit_configure_section(
 
 def _contains_figure(node: Any) -> bool:
     if isinstance(node, FigureBlock):
-        return True
+        binding = node.caption_binding
+        return bool(node.caption) if binding is None else binding.indexable
     if isinstance(node, Section):
         return any(_contains_figure(child) for child in node.elements)
     return False
@@ -236,7 +243,8 @@ def _contains_figure(node: Any) -> bool:
 
 def _contains_table(node: Any) -> bool:
     if isinstance(node, SemanticTableBlock):
-        return True
+        binding = node.caption_binding
+        return bool(node.caption) if binding is None else binding.indexable
     if isinstance(node, Section):
         return any(_contains_table(child) for child in node.elements)
     return False
@@ -321,14 +329,22 @@ def _render_front_matter(
     if section_policy.includes_figure_index and state.has_figures:
         state.add(
             "writer.insert_figure_index",
-            {"title": policy.figure_index_title},
+            {
+                "title": policy.figure_index_title,
+                "sequenceId": "WPSC_FIG",
+                "titleStyleId": "WPSC_INDEX_TITLE",
+            },
             node_id="doc:figure-index",
         )
         state.front_matter_figure_index_emitted = True
     if section_policy.includes_table_index and state.has_tables:
         state.add(
             "writer.insert_table_index",
-            {"title": policy.table_index_title},
+            {
+                "title": policy.table_index_title,
+                "sequenceId": "WPSC_TAB",
+                "titleStyleId": "WPSC_INDEX_TITLE",
+            },
             node_id="doc:table-index",
         )
         state.front_matter_table_index_emitted = True
@@ -379,11 +395,14 @@ def _render_element(
         return
 
     if isinstance(node, Paragraph):
-        state.add(
-            "writer.add_paragraph",
-            {"text": _span_text(node.spans), "style": "Body Text"},
-            node_id=node_id,
-        )
+        if any(_is_resolved_reference(span) for span in node.spans):
+            _render_cross_reference_paragraph(state, node, node_id)
+        else:
+            state.add(
+                "writer.add_paragraph",
+                {"text": _span_text(node.spans), "style": "Body Text"},
+                node_id=node_id,
+            )
     elif isinstance(node, ListBlock):
         if node.ordered:
             state.add(
@@ -420,7 +439,6 @@ def _render_figure(
     state.figure_count += 1
     if not node_id:
         node_id = f"wpsc-fig:{state.figure_count}"
-    state.has_figures = True
 
     resource_by_path: dict[str, dict[str, Any]] = {}
     for resource in preflight.resources:
@@ -431,12 +449,23 @@ def _render_figure(
         if deg.source_path:
             degradation_by_path[deg.source_path] = deg
 
+    resolved_layouts = _resolve_available_figure_layouts(node, preflight)
     children: list[dict[str, Any]] = []
     for index, image in enumerate(node.images, start=1):
         child_id = f"{node_id}/image:{index}"
         normalized_path = image.path.replace("\\", "/")
         if normalized_path in resource_by_path:
-            children.append({"nodeId": child_id, "resourceId": resource_by_path[normalized_path]["resourceId"]})
+            resource_id = resource_by_path[normalized_path]["resourceId"]
+            layout = resolved_layouts[resource_id]
+            children.append({
+                "nodeId": child_id,
+                "resourceId": resource_id,
+                "displayWidthPt": round(layout.display_width_pt, 4),
+                "displayHeightPt": round(layout.display_height_pt, 4),
+                "effectiveDpi": round(layout.effective_dpi, 4),
+                "mediaType": layout.media_type,
+                "normalizerId": layout.normalizer_id,
+            })
         elif normalized_path in degradation_by_path:
             deg = degradation_by_path[normalized_path]
             children.append({
@@ -459,18 +488,35 @@ def _render_figure(
                 },
             })
 
+    binding = _binding_or_legacy(node.caption_binding, "figure", node_id, bool(node.caption))
+    state.has_figures = state.has_figures or binding.indexable
+    width_mode, explicit_width = _width_descriptor(node.width)
+    args: dict[str, Any] = {
+        "caption": node.caption,
+        "numbering": caption_numbering_descriptor("figure", binding),
+        "indexable": binding.indexable,
+        "referenceable": binding.referenceable,
+        "widthMode": width_mode,
+        "orientation": node.orientation,
+        "kind": node.kind,
+        "children": children,
+        "layout": "columns" if node.layout in {"columns", "side-by-side"} else "stack",
+        "keepWithCaption": True,
+    }
+    if binding.bookmark_name is not None:
+        args["bookmarkName"] = binding.bookmark_name
+    if explicit_width is not None:
+        args["explicitWidthPt"] = explicit_width
+    if args["layout"] == "columns":
+        args["columns"] = 2
     state.add(
         "writer.add_captioned_figure",
-        {
-            "caption": node.caption,
-            "children": children,
-            "layout": node.layout or "stack",
-        },
+        args,
         node_id=node_id,
         failure_policy={
             "mode": "degrade",
             "recoverableCodes": ["IMAGE_INSERT_FAILED"],
-            "fallback": "notice",
+            "fallback": "figure-child-stack-then-notice",
         },
     )
 
@@ -483,20 +529,54 @@ def _render_semantic_table(
     state.table_count += 1
     if not node_id:
         node_id = f"wpsc-tab:{state.table_count}"
-    state.has_tables = True
+    binding = _binding_or_legacy(node.caption_binding, "table", node_id, bool(node.caption))
+    state.has_tables = state.has_tables or binding.indexable
+    table_policy, table_issues = resolve_table_policy(node, "academic")
+    border_spec = {
+        "top": table_policy.borders["top"],
+        "bottom": table_policy.borders["bottom"],
+        "headerBottom": table_policy.borders["header_bottom"],
+        "left": table_policy.borders["left"],
+        "right": table_policy.borders["right"],
+        "insideHorizontal": table_policy.borders["inside_horizontal"],
+        "insideVertical": table_policy.borders["inside_vertical"],
+    }
+    args: dict[str, Any] = {
+        "caption": node.caption,
+        "numbering": caption_numbering_descriptor("table", binding),
+        "indexable": binding.indexable,
+        "referenceable": binding.referenceable,
+        "headers": node.headers,
+        "rows": node.rows,
+        "alignments": node.alignments,
+        "style": table_policy.style,
+        "orientation": node.orientation,
+        "borderSpec": border_spec,
+        "merges": [
+            {"top": item.top, "left": item.left, "bottom": item.bottom, "right": item.right}
+            for item in table_policy.merges
+        ],
+        "repeatHeader": table_policy.repeat_header,
+        "allowRowSplit": table_policy.allow_row_split,
+        "cellIndentPt": table_policy.cell_indent_pt,
+        "plannedDegradation": [issue.to_dict() for issue in table_issues],
+        "keepCaptionWithFirstRow": True,
+    }
+    if binding.bookmark_name is not None:
+        args["bookmarkName"] = binding.bookmark_name
     state.add(
         "writer.add_semantic_table",
-        {
-            "caption": node.caption,
-            "headers": node.headers,
-            "rows": node.rows,
-            "alignments": node.alignments,
-        },
+        args,
         node_id=node_id,
         failure_policy={
             "mode": "degrade",
-            "recoverableCodes": ["TABLE_INSERT_FAILED"],
-            "fallback": "notice",
+            "recoverableCodes": [
+                "TABLE_STYLE_APPLY_FAILED",
+                "TABLE_MERGE_APPLY_FAILED",
+                "TABLE_ROW_FORCED_SPLIT",
+                "TABLE_INSERT_FAILED",
+            ],
+            "fallback": "grid-then-text",
         },
     )
 
@@ -510,21 +590,129 @@ def _render_equation(
     if not node_id:
         node_id = f"wpsc-eq:{state.equation_count}"
     source = getattr(node, "source", None) or getattr(node, "latex", "")
-    number = getattr(node, "number", None)
+    binding = _binding_or_legacy(
+        getattr(node, "caption_binding", None), "equation", node_id, True
+    )
     state.add(
         "writer.add_equation",
         {
             "source": source,
-            "number": number,
+            "numbering": caption_numbering_descriptor("equation", binding),
+            "bookmarkName": binding.bookmark_name,
             "fallbackText": source,
         },
         node_id=node_id,
+        failure_policy={"mode": "fail"},
+    )
+
+
+def _render_cross_reference_paragraph(
+    state: _BuilderState,
+    node: Paragraph,
+    node_id: Optional[str],
+) -> None:
+    runs: list[dict[str, Any]] = []
+    for span in node.spans:
+        if span.cross_reference is None:
+            if span.text:
+                runs.append({"type": "text", "text": span.text})
+            continue
+        if not _is_resolved_reference(span):
+            if span.text:
+                runs.append({"type": "text", "text": span.text})
+            continue
+        descriptor = cross_reference_descriptor(span.cross_reference)
+        runs.append({
+            "type": "reference",
+            **descriptor,
+            "fallbackText": span.cross_reference.fallback_text,
+        })
+    state.add(
+        "writer.add_cross_reference",
+        {"runs": runs},
+        node_id=node_id,
         failure_policy={
             "mode": "degrade",
-            "recoverableCodes": ["EQUATION_INSERT_FAILED"],
-            "fallback": "inline",
+            "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+            "fallback": "inline-fallback",
         },
     )
+
+
+def _is_resolved_reference(span: Span) -> bool:
+    run = span.cross_reference
+    return bool(
+        run is not None
+        and run.target_node_id
+        and run.target_kind in {"fig", "tab", "eq", "figure", "table", "equation"}
+        and run.bookmark_name
+    )
+
+
+def _binding_or_legacy(
+    binding: Optional[CaptionBinding],
+    kind: str,
+    node_id: str,
+    has_caption: bool,
+) -> CaptionBinding:
+    if binding is not None:
+        return binding
+    short_kind = {"figure": "fig", "table": "tab", "equation": "eq"}[kind]
+    digest = hashlib.sha256(f"{kind}\0{node_id}".encode("utf-8")).hexdigest()[:24]
+    return CaptionBinding(
+        mode="global",
+        chapter_node_id=None,
+        bookmark_name=f"wpsc_{short_kind}_{digest}" if has_caption else None,
+        indexable=has_caption,
+        referenceable=has_caption,
+    )
+
+
+def _resolve_available_figure_layouts(
+    node: FigureBlock,
+    preflight: ResourcePreflight,
+) -> dict[str, Any]:
+    """Resolve accepted children even when siblings have planned degradation."""
+    by_path = {
+        str(resource.source_path).replace("\\", "/"): resource
+        for resource in preflight.resources
+    }
+    available = [
+        (image, by_path[path])
+        for image in node.images
+        if (path := image.path.replace("\\", "/")) in by_path
+    ]
+    if not available:
+        return {}
+    content_width = page_content_width_pt(node.orientation)
+    if len(available) == len(node.images):
+        layouts = resolve_figure_layout(node, preflight.resources, content_width)
+        return {layout.resource_id: layout for layout in layouts}
+
+    slot_width = (
+        (content_width - 12.0) / 2.0
+        if node.layout in {"columns", "side-by-side"}
+        else content_width
+    )
+    resolved: dict[str, Any] = {}
+    for image, resource in available:
+        partial = SimpleNamespace(
+            images=[image],
+            layout="stack",
+            width="full" if node.width == "column" else node.width,
+        )
+        layout = resolve_figure_layout(partial, [resource], slot_width)[0]
+        resolved[layout.resource_id] = layout
+    return resolved
+
+
+def _width_descriptor(width: Any) -> tuple[str, Optional[float]]:
+    text = str(width or "auto").strip().lower()
+    if text in {"auto", "column", "full"}:
+        return text, None
+    if text.endswith("pt"):
+        return "explicit", float(text[:-2])
+    raise ValueError(f"unsupported figure width: {width}")
 
 
 def _render_bibliography(
@@ -593,7 +781,11 @@ def _build_indexes(state: _BuilderState, policy: LongformPolicy) -> None:
     ):
         state.add(
             "writer.insert_figure_index",
-            {"title": policy.figure_index_title},
+            {
+                "title": policy.figure_index_title,
+                "sequenceId": "WPSC_FIG",
+                "titleStyleId": "WPSC_INDEX_TITLE",
+            },
             node_id="doc:figure-index",
         )
     if (
@@ -603,7 +795,11 @@ def _build_indexes(state: _BuilderState, policy: LongformPolicy) -> None:
     ):
         state.add(
             "writer.insert_table_index",
-            {"title": policy.table_index_title},
+            {
+                "title": policy.table_index_title,
+                "sequenceId": "WPSC_TAB",
+                "titleStyleId": "WPSC_INDEX_TITLE",
+            },
             node_id="doc:table-index",
         )
 
