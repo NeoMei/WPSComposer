@@ -482,6 +482,16 @@ class _Parser:
                 parts.append(token.value)
                 continue
             if token.kind == "COMMAND":
+                if token.value in _FORBIDDEN_COMMANDS:
+                    _raise(
+                        FORMULA_FORBIDDEN_PRIMITIVE,
+                        "\\" + token.value,
+                    )
+                if token.value in LEGACY_PREFLIGHT_DEGRADATION_COMMANDS:
+                    _raise(
+                        FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED,
+                        "\\" + token.value,
+                    )
                 if token.value in _LITERAL_COMMANDS:
                     parts.append(_LITERAL_COMMANDS[token.value])
                     continue

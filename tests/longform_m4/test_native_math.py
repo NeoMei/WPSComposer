@@ -493,6 +493,40 @@ def test_standard_and_invented_lossy_variants_preflight_degrade(source: str) -> 
 @pytest.mark.parametrize(
     "source",
     [
+        r"\text{safe \input{foo}}",
+        r"\mbox{\newcommand{x}}",
+        r"\operatorname{safe \include{x}}",
+    ],
+)
+def test_nested_text_forbidden_commands_keep_top_level_error_precedence(
+    source: str,
+) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == FORMULA_FORBIDDEN_PRIMITIVE
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        r"\text{x \displaystyle y}",
+        r"\mbox{x \mathbf y}",
+        r"\operatorname{x \quad y}",
+    ],
+)
+def test_nested_text_lossy_commands_keep_preflight_degradation_precedence(
+    source: str,
+) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
         "E=mc^2",
         r"\frac{x}{y}",
         r"\sqrt[3]{x}",
