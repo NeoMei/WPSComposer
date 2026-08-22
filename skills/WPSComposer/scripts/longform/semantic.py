@@ -898,7 +898,7 @@ def _scan_inline_references(
 
     def scan_spans(spans: list[Span]) -> None:
         for span in spans:
-            if span.code or span.math:
+            if span.code or span.math or span.semantic_literal:
                 continue
             if span.cross_reference is not None:
                 add_request("ref", span.cross_reference.target_id)
@@ -972,15 +972,18 @@ def _build_references(
     """Resolve cross-references and citations against collected targets."""
     references: dict[str, dict[str, Any]] = {}
 
-    bibliography_candidates: list[_BibliographyCandidate] = []
+    all_bibliography_candidates: list[_BibliographyCandidate] = []
     for section in doc.sections:
         for elem in section.elements:
             if isinstance(elem, ReferenceListBlock):
-                bibliography_candidates.extend(
-                    candidate
-                    for candidate in getattr(elem, "_bibliography_candidates", ())
-                    if candidate.identifier is not None
+                all_bibliography_candidates.extend(
+                    getattr(elem, "_bibliography_candidates", ())
                 )
+    bibliography_candidates = [
+        candidate
+        for candidate in all_bibliography_candidates
+        if candidate.identifier is not None
+    ]
     for candidate in bibliography_candidates:
         if candidate.target_degradation is not None:
             continue
@@ -1063,48 +1066,29 @@ def _build_references(
         ),
         key=lambda entry: entry.number,
     )
-    by_node = {entry.node_id: entry for entry in ordered_entries}
     reference_blocks: list[ReferenceListBlock] = []
     for section in doc.sections:
         for elem in section.elements:
-            if not isinstance(elem, ReferenceListBlock):
-                continue
-            reference_blocks.append(elem)
-            candidates = getattr(elem, "_bibliography_candidates", ())
-            if any(entry.cited for entry in ordered_entries):
-                resolved: list[Any] = [
-                    entry for entry in ordered_entries
-                    if any(candidate.node_id == entry.node_id for candidate in candidates)
-                ]
-                resolved.extend(
-                    candidate.degradation
-                    for candidate in candidates
-                    if candidate.degradation is not None
-                )
-            else:
-                resolved = []
-                for candidate in candidates:
-                    entry = by_node.get(candidate.node_id)
-                    if entry is not None:
-                        resolved.append(entry)
-                    elif candidate.degradation is not None:
-                        resolved.append(candidate.degradation)
-            elem.resolved_items = resolved
+            if isinstance(elem, ReferenceListBlock):
+                reference_blocks.append(elem)
 
-    # Structured bibliography entries have one global numeric order even when
-    # authors used multiple alias blocks. Keep local malformed/duplicate
-    # degradations in their declaring blocks, but place all final entries in
-    # the first visible bibliography block.
-    if reference_blocks and any(entry.cited for entry in ordered_entries):
-        local_degradations = [
-            [item for item in block.resolved_items if isinstance(item, DegradationBlock)]
-            for block in reference_blocks
-        ]
-        for block, degradations in zip(reference_blocks, local_degradations):
-            block.resolved_items = degradations
-        reference_blocks[0].resolved_items = (
-            list(ordered_entries) + local_degradations[0]
-        )
+    # Cited entries lead in citation-number order. The remaining declaration
+    # stream stays source-ordered, including malformed/duplicate degradations
+    # at their exact relative positions among uncited entries.
+    entry_by_node = {entry.node_id: entry for entry in ordered_entries}
+    cited_entries = [entry for entry in ordered_entries if entry.cited]
+    declaration_tail: list[Any] = []
+    for candidate in all_bibliography_candidates:
+        if candidate.degradation is not None:
+            declaration_tail.append(candidate.degradation)
+            continue
+        entry = entry_by_node.get(candidate.node_id)
+        if entry is not None and not entry.cited:
+            declaration_tail.append(entry)
+    for block in reference_blocks:
+        block.resolved_items = []
+    if reference_blocks:
+        reference_blocks[0].resolved_items = cited_entries + declaration_tail
 
     return references
 
@@ -1367,7 +1351,7 @@ def _split_slot_references(
     normalized_spans: list[Span] = []
     for span in slot.spans:
         matches = list(_iter_visible_markers(span.text))
-        if span.code or span.math or not matches:
+        if span.code or span.math or span.semantic_literal or not matches:
             normalized_spans.append(span)
             continue
 
@@ -1626,7 +1610,10 @@ def _normalize_abstract(
             yield from _iter_paragraph_slots(element)
         elif isinstance(element, Section):
             if element.heading:
-                yield _ParagraphSlot(Paragraph.from_text(element.heading))
+                yield _ParagraphSlot(Paragraph(spans=[Span(
+                    text=element.heading,
+                    semantic_literal=True,
+                )]))
             for child in element.elements:
                 yield from iter_projection_slots(child)
         elif isinstance(element, (AbstractBlock, BlockQuote)):
@@ -1638,7 +1625,12 @@ def _normalize_abstract(
         else:
             plain = _plain_text_from_element(element).strip()
             if plain:
-                yield _ParagraphSlot(Paragraph.from_text(plain))
+                yield _ParagraphSlot(Paragraph(spans=[Span(
+                    text=plain,
+                    code=isinstance(element, CodeBlock),
+                    math=(plain if isinstance(element, MathBlock) else ""),
+                    semantic_literal=True,
+                )]))
 
     def append_slot(slot: _ParagraphSlot) -> None:
         nonlocal paragraph_ordinal

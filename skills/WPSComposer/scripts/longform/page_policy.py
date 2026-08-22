@@ -177,6 +177,17 @@ def build_page_policy(
                     )
                 )
             elif role == "bibliography":
+                has_arabic_content = any(
+                    section.role in {"body", "landscape"}
+                    for section in sections
+                )
+                numbering_overrides: dict[str, Any] = {}
+                if not has_arabic_content:
+                    numbering_overrides = {
+                        "page_number_format": "arabic",
+                        "start_page_number": 1,
+                        "restart_numbering": True,
+                    }
                 sections.append(
                     _role_policy(
                         policy,
@@ -184,8 +195,9 @@ def build_page_policy(
                         has_header=True,
                         has_footer=True,
                         header_text=policy.header_text,
-                        link_to_previous_header=link,
-                        link_to_previous_footer=link,
+                        link_to_previous_header=(link if has_arabic_content else False),
+                        link_to_previous_footer=(link if has_arabic_content else False),
+                        **numbering_overrides,
                     )
                 )
 

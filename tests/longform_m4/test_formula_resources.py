@@ -5,12 +5,14 @@ import json
 from dataclasses import replace
 
 from PIL import Image
+import pytest
 
 from skills.WPSComposer.scripts.document_model import FigureBlock, FormulaBlock, ImageBlock
 from skills.WPSComposer.scripts.md_parser import parse_markdown
 from skills.WPSComposer.scripts.longform.pipeline import (
     _build_executor_resources,
     build_longform_generation,
+    execute_longform_plan,
 )
 from skills.WPSComposer.scripts.longform.resources import (
     FORMULA_FALLBACK_IMAGE_UNAVAILABLE,
@@ -45,6 +47,7 @@ def test_explicit_formula_fallback_is_preflighted_and_bound_exactly_once(tmp_pat
     resource = preflight.resources[0]
     assert preflight.formula_bindings == {"eq:a": resource.resource_id}
     assert preflight.formula_resource_ids == frozenset({resource.resource_id})
+    assert preflight.formula_node_ids == frozenset({"eq:a"})
     assert preflight.degradations == []
     prepared = _build_executor_resources(str(tmp_path), preflight)
     assert len(prepared) == 1
@@ -173,9 +176,14 @@ def test_orphaned_or_multiply_bound_formula_resources_fail_before_preparation(
 
     invalid_cases = (
         replace(preflight, formula_bindings={}),
+        replace(preflight, formula_bindings={"eq:fake": resource_id}),
         replace(
             preflight,
             formula_bindings={"eq:a": resource_id, "eq:b": resource_id},
+        ),
+        replace(
+            preflight,
+            resources=[preflight.resources[0], preflight.resources[0]],
         ),
     )
     for invalid in invalid_cases:
@@ -191,6 +199,49 @@ def test_orphaned_or_multiply_bound_formula_resources_fail_before_preparation(
             assert str(error) == FORMULA_RESOURCE_BINDING_INVALID
         else:
             raise AssertionError("invalid binding reached prepared resources")
+
+
+def test_invalid_formula_binding_is_rejected_before_executor_start(tmp_path) -> None:
+    (tmp_path / "fallback.png").write_bytes(_png_bytes())
+    build = build_longform_generation(
+        ':::equation {#eq:a fallback_image="fallback.png"}\nx\n:::\n',
+        base_dir=str(tmp_path),
+    )
+    resource_id = build.preflight.resources[0].resource_id
+    invalid = replace(
+        build,
+        preflight=replace(
+            build.preflight,
+            formula_bindings={"eq:fake": resource_id},
+        ),
+    )
+
+    class NeverStartedExecutor:
+        called = False
+
+        def execute(self, plan, resources, deadline=None):
+            self.called = True
+            raise AssertionError("executor must not start")
+
+    executor = NeverStartedExecutor()
+    with pytest.raises(ValueError, match=FORMULA_RESOURCE_BINDING_INVALID):
+        execute_longform_plan(invalid, executor)
+    assert executor.called is False
+
+
+def test_ordinary_resource_sharing_remains_valid(tmp_path) -> None:
+    (tmp_path / "shared.png").write_bytes(_png_bytes())
+    preflight = preflight_resources(
+        [
+            ImageBlock(path="shared.png", alt="first"),
+            ImageBlock(path="shared.png", alt="second"),
+        ],
+        str(tmp_path),
+    )
+    assert len(preflight.resources) == 1
+    assert preflight.formula_bindings == {}
+    assert preflight.formula_node_ids == frozenset()
+    validate_formula_resource_bindings(preflight)
 
 
 def test_build_repr_semantic_and_plan_surfaces_hide_formula_resource_details(

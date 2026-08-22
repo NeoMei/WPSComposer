@@ -142,6 +142,65 @@ Break content {{cite:e}}.
     ]
 
 
+def test_abstract_and_page_break_block_literals_are_never_citation_runs() -> None:
+    result = _normalize(
+        """:::abstract
+![{{cite:abstract-alt}}](abstract.png)
+
+```text
+{{cite:abstract-code}}
+```
+
+$$
+{{cite:abstract-math}}
+$$
+:::
+
+:::page-break
+![{{cite:break-alt}}](break.png)
+
+```text
+{{cite:break-code}}
+```
+
+$$
+{{cite:break-math}}
+$$
+:::
+
+:::bibliography
+[abstract-alt] Abstract image alt.
+[abstract-code] Abstract code.
+[abstract-math] Abstract math.
+[break-alt] Break image alt.
+[break-code] Break code.
+[break-math] Break math.
+:::
+"""
+    )
+    literal_ids = {
+        "abstract-alt",
+        "abstract-code",
+        "abstract-math",
+        "break-alt",
+        "break-code",
+        "break-math",
+    }
+    assert _citation_runs(result) == []
+    assert all(result.references[identifier]["cited"] is False for identifier in literal_ids)
+    paragraphs = list(result.document.abstract.paragraphs)
+    page_break = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, PageBreakBlock)
+    )
+    paragraphs.extend(page_break.content)
+    assert all(
+        span.citation is None and span.inline_degradation is None
+        for paragraph in paragraphs
+        for span in paragraph.spans
+    )
 def test_multiple_citations_split_runs_and_unresolved_stays_same_paragraph() -> None:
     result = _normalize(
         """Before {{cite:a}}, {{cite:missing}}, and {{cite:a}} after.
@@ -251,6 +310,38 @@ def test_multiple_bibliography_blocks_share_one_global_cited_first_order() -> No
         ("b", 3, 2),
         ("d", 4, 4),
     ]
+
+
+def test_cited_first_keeps_malformed_item_in_uncited_declaration_position() -> None:
+    result = _normalize(
+        """Body cites {{cite:b}} first.
+
+:::bibliography
+[a] A.
+malformed source remains between a and the remaining declarations
+[b] B.
+[c] C.
+:::
+"""
+    )
+    refs = next(
+        element
+        for section in result.document.sections
+        for element in section.elements
+        if isinstance(element, ReferenceListBlock)
+    )
+    assert [
+        item.identifier if isinstance(item, BibliographyEntry) else item.fallback_text
+        for item in refs.resolved_items
+    ] == [
+        "b",
+        "a",
+        "malformed source remains between a and the remaining declarations",
+        "c",
+    ]
+    assert [
+        item.number for item in refs.resolved_items if isinstance(item, BibliographyEntry)
+    ] == [1, 2, 3]
 
 
 def test_malformed_bibliography_source_remains_visible_in_original_item_order() -> None:

@@ -122,13 +122,42 @@ def _paragraphs_from_element(parse_inline, elem: Any) -> List[Paragraph]:
     if isinstance(elem, Section):
         result: List[Paragraph] = []
         if elem.heading:
-            result.append(Paragraph.from_text(elem.heading))
+            result.append(Paragraph(spans=[Span(
+                text=elem.heading,
+                semantic_literal=True,
+            )]))
         for child in elem.elements:
             result.extend(_paragraphs_from_element(parse_inline, child))
         return result
+    if isinstance(elem, CodeBlock):
+        text = elem.code.strip()
+        return [Paragraph(spans=[Span(
+            text=text,
+            code=True,
+            semantic_literal=True,
+        )])] if text else []
+    if isinstance(elem, MathBlock):
+        text = elem.latex.strip()
+        return [Paragraph(spans=[Span(
+            text=text,
+            math=text,
+            semantic_literal=True,
+        )])] if text else []
+    if isinstance(elem, (ImageBlock, ExcalidrawBlock)):
+        text = elem.alt.strip()
+        return [Paragraph(spans=[Span(
+            text=text,
+            semantic_literal=True,
+        )])] if text else []
     plain = _plain_text_from_element(elem).strip()
     if plain:
-        return [Paragraph(spans=parse_inline(plain))]
+        # Blocks projected into the paragraph-only abstract/page-break contract
+        # remain readable, but their code/math/alt-like payload is never
+        # reinterpreted as authored inline syntax.
+        return [Paragraph(spans=[Span(
+            text=plain,
+            semantic_literal=True,
+        )])]
     return []
 
 

@@ -190,6 +190,9 @@ class ResourcePreflight:
     formula_resource_ids: frozenset[str] = field(
         default_factory=frozenset, repr=False
     )
+    formula_node_ids: frozenset[str] = field(
+        default_factory=frozenset, repr=False
+    )
 
     def __repr__(self) -> str:
         return (
@@ -692,15 +695,21 @@ def _formula_degradation(
 
 def validate_formula_resource_bindings(preflight: ResourcePreflight) -> None:
     """Reject orphaned or multiply-bound private formula resources."""
-    accepted_ids = {resource.resource_id for resource in preflight.resources}
+    resource_ids = [resource.resource_id for resource in preflight.resources]
+    accepted_ids = set(resource_ids)
     formula_ids = set(preflight.formula_resource_ids)
+    formula_node_ids = set(preflight.formula_node_ids)
     bound_ids = list(preflight.formula_bindings.values())
+    bound_node_ids = set(preflight.formula_bindings)
     valid_node_ids = all(
         isinstance(node_id, str) and bool(node_id)
-        for node_id in preflight.formula_bindings
+        for node_id in formula_node_ids | bound_node_ids
     )
     if (
         not valid_node_ids
+        or len(resource_ids) != len(accepted_ids)
+        or any(not isinstance(resource_id, str) or not resource_id for resource_id in resource_ids)
+        or not bound_node_ids.issubset(formula_node_ids)
         or len(bound_ids) != len(set(bound_ids))
         or set(bound_ids) != formula_ids
         or not formula_ids.issubset(accepted_ids)
@@ -724,6 +733,11 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
 
     base = Path(base_dir).resolve()
     uses = _scan_nodes(nodes)
+    formula_node_ids = {
+        use.node_id
+        for use in uses
+        if use.formula_fallback and isinstance(use.node_id, str) and use.node_id
+    }
     formula_groups: dict[str, list[_ResourceUse]] = {}
     for use in uses:
         if use.formula_fallback:
@@ -853,6 +867,7 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
         manifest=manifest,
         formula_bindings=formula_bindings,
         formula_resource_ids=frozenset(formula_resource_ids),
+        formula_node_ids=frozenset(formula_node_ids),
     )
     validate_formula_resource_bindings(result)
     return result

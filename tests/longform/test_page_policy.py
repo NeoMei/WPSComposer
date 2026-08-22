@@ -248,6 +248,47 @@ def test_empty_bibliography_does_not_create_a_page_section() -> None:
     assert "bibliography" not in _role_names(skeleton)
 
 
+def test_bibliography_only_starts_explicit_arabic_numbering() -> None:
+    from skills.WPSComposer.scripts.md_parser import parse_markdown
+    from skills.WPSComposer.scripts.longform.semantic import normalize_longform_document
+
+    result = normalize_longform_document(
+        parse_markdown(":::bibliography\n[a] Entry A.\n:::\n", longform=True)
+    )
+    policy = _policy_from_config(result.config)
+    skeleton = build_page_policy(result.document, result.config, policy)
+    assert _role_names(skeleton) == ["bibliography"]
+    bibliography = skeleton.sections[0]
+    assert bibliography.page_number_format == "arabic"
+    assert bibliography.start_page_number == 1
+    assert bibliography.restart_numbering is True
+    assert bibliography.link_to_previous_header is False
+    assert bibliography.link_to_previous_footer is False
+
+
+def test_abstract_then_bibliography_starts_arabic_after_roman_front_matter() -> None:
+    from skills.WPSComposer.scripts.md_parser import parse_markdown
+    from skills.WPSComposer.scripts.longform.semantic import normalize_longform_document
+
+    result = normalize_longform_document(
+        parse_markdown(
+            ":::abstract\nAbstract text.\n:::\n\n"
+            ":::bibliography\n[a] Entry A.\n:::\n",
+            longform=True,
+        )
+    )
+    policy = _policy_from_config(result.config)
+    skeleton = build_page_policy(result.document, result.config, policy)
+    assert _role_names(skeleton) == ["front_matter", "bibliography"]
+    assert skeleton.sections[0].page_number_format == "roman"
+    bibliography = skeleton.sections[1]
+    assert bibliography.page_number_format == "arabic"
+    assert bibliography.start_page_number == 1
+    assert bibliography.restart_numbering is True
+    assert bibliography.link_to_previous_header is False
+    assert bibliography.link_to_previous_footer is False
+
+
 # ---------------------------------------------------------------------------
 # Header shortening
 # ---------------------------------------------------------------------------

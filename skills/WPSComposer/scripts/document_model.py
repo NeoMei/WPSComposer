@@ -67,6 +67,7 @@ class Span:
     cross_reference: Optional[CrossReferenceRun] = None
     citation: Optional[CitationRun] = None
     inline_degradation: Optional[InlineDegradationRun] = None
+    semantic_literal: bool = False
 
 
 # ---------------------------------------------------------------------------
