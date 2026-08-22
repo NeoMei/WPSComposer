@@ -215,3 +215,37 @@ full suite:
 
 The six skips remain the real macOS WPS bridge gate; real Windows COM evidence
 is still intentionally deferred to the platform verification run.
+
+## Fourth-review staged-cleanup state closure
+
+The final review case combined a private-resource write failure with a permanent
+unlink failure during staging.  The new test first reproduced the state-loss
+bug:
+
+```text
+Task 6 fourth-review RED:
+1 failed, 48 passed
+```
+
+Outer teardown now OR-merges its cleanup result with the safe primary error's
+existing `cleanup_failed` value.  It can add a newly observed failure but can
+never erase one already recorded by staging.  The outward error therefore
+remains `Private resource staging failed`, retains `cleanup_failed = True`, has
+no cause or context, and leaves the executor locator map empty.  The successful
+staging-cleanup path remains `cleanup_failed = False`.
+
+Final fourth-review verification (COM-free; no WPS process started):
+
+```text
+focused Task 6 + existing Windows executor + COM lifecycle:
+86 passed
+
+all M3:
+332 passed
+
+full suite:
+1710 passed, 6 skipped in 154.35s
+```
+
+The remaining platform risk is unchanged: native Windows WPS validation is a
+separate evidence gate.

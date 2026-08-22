@@ -206,10 +206,61 @@ def test_partial_private_resource_is_cleaned_when_write_or_flush_fails(
     assert not leaked.exists()
     assert caught.value.__cause__ is None
     assert caught.value.__context__ is None
+    assert caught.value.cleanup_failed is False
     assert "secret" not in str(caught.value)
     assert str(tmp_path) not in str(caught.value)
     assert "secret" not in _formatted_exception(caught.value)
     assert str(tmp_path) not in _formatted_exception(caught.value)
+
+
+def test_staging_cleanup_failure_state_survives_outer_executor_teardown(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    staged = tmp_path / "write-and-cleanup-private.png"
+    staged.write_bytes(b"")
+
+    class WriteFailingHandle:
+        name = str(staged)
+
+        def write(self, payload):
+            raise OSError("C:\\private\\write-secret.png")
+
+        def flush(self):
+            raise AssertionError("flush must not run after write failure")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        windows_executor.tempfile, "NamedTemporaryFile",
+        lambda **kwargs: WriteFailingHandle(),
+    )
+    original_unlink = windows_executor.os.unlink
+
+    def locked(path):
+        if Path(path) == staged:
+            raise PermissionError("C:\\private\\unlink-secret.png")
+        return original_unlink(path)
+
+    monkeypatch.setattr(windows_executor.os, "unlink", locked)
+    executor = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=RecordingNativeComposer
+    )
+    executor._resource_locators = {"stale": "C:\\private\\stale.png"}
+
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(_plan(resource, _figure()), (resource,))
+
+    assert str(caught.value) == "Private resource staging failed"
+    assert caught.value.cleanup_failed is True
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert executor._resource_locators == {}
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
 
 
 def test_staging_handle_close_retries_once_then_execution_cleans_file(

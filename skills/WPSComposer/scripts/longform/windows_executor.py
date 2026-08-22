@@ -230,7 +230,14 @@ class WindowsLongformExecutor(LongformExecutor):
                     # failure must never retain it on a reusable executor.
                     self._resource_locators = {}
         if primary_error is not None:
-            setattr(primary_error, "cleanup_failed", cleanup_failed)
+            setattr(
+                primary_error,
+                "cleanup_failed",
+                bool(
+                    getattr(primary_error, "cleanup_failed", False)
+                    or cleanup_failed
+                ),
+            )
             primary_error.__cause__ = None
             primary_error.__context__ = None
             raise primary_error from None
