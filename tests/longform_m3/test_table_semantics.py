@@ -4,7 +4,11 @@ from copy import deepcopy
 
 import pytest
 
-from skills.WPSComposer.scripts.document_model import SemanticTableBlock, TableMerge
+from skills.WPSComposer.scripts.document_model import (
+    DocumentIssue,
+    SemanticTableBlock,
+    TableMerge,
+)
 from skills.WPSComposer.scripts.longform.table_policy import (
     TABLE_MERGE_INVALID,
     parse_a1_merge_ranges,
@@ -113,6 +117,7 @@ def test_semantically_invalid_ranges_discard_all_merges(merge_spec: str) -> None
 
     assert policy.merges == ()
     assert len(issues) == 1
+    assert all(isinstance(issue, DocumentIssue) for issue in issues)
     assert issues[0].code == TABLE_MERGE_INVALID
     assert issues[0].placement == "block"
 

@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from types import MappingProxyType
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, ClassVar, Iterator, Mapping, Optional, Sequence
 
 from ..design_presets import PRESETS
-from ..document_model import TableMerge
+from ..document_model import DocumentIssue, TableMerge
 
 
 TABLE_MERGE_INVALID = "TABLE_MERGE_INVALID"
@@ -23,35 +22,68 @@ _A1_RANGE_RE = re.compile(
     r"(?P<right>[A-Za-z]+)(?P<bottom>[1-9][0-9]*)"
 )
 
-_THREE_LINE_BORDERS = MappingProxyType({
-    "top": 1.5,
-    "bottom": 1.5,
-    "header_bottom": 0.75,
-    "left": 0.0,
-    "right": 0.0,
-    "inside_horizontal": 0.0,
-    "inside_vertical": 0.0,
-})
-_GRID_BORDERS = MappingProxyType({
-    "top": 0.75,
-    "bottom": 0.75,
-    "header_bottom": 0.75,
-    "left": 0.75,
-    "right": 0.75,
-    "inside_horizontal": 0.75,
-    "inside_vertical": 0.75,
-})
+@dataclass(frozen=True, eq=False)
+class TableBorders(Mapping[str, float]):
+    """Fixed, deeply immutable border values with mapping-style lookup."""
+
+    top: float
+    bottom: float
+    header_bottom: float
+    left: float
+    right: float
+    inside_horizontal: float
+    inside_vertical: float
+
+    _KEYS: ClassVar[tuple[str, ...]] = (
+        "top",
+        "bottom",
+        "header_bottom",
+        "left",
+        "right",
+        "inside_horizontal",
+        "inside_vertical",
+    )
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, float]) -> "TableBorders":
+        if isinstance(values, cls):
+            return values
+        return cls(*(float(values.get(key, 0.0)) for key in cls._KEYS))
+
+    def __getitem__(self, key: str) -> float:
+        if key not in self._KEYS:
+            raise KeyError(key)
+        return float(getattr(self, key))
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._KEYS)
+
+    def __len__(self) -> int:
+        return len(self._KEYS)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Mapping):
+            return False
+        return self.to_dict() == dict(other.items())
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.items()))
+
+    def to_dict(self) -> dict[str, float]:
+        return {key: self[key] for key in self._KEYS}
+
+
+_THREE_LINE_BORDERS = TableBorders(1.5, 1.5, 0.75, 0.0, 0.0, 0.0, 0.0)
+_GRID_BORDERS = TableBorders(0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 0.75)
 
 
 @dataclass(frozen=True)
-class TableDegradationMetadata:
-    """Immutable table-local degradation contract for later plan/executor use."""
+class TableDocumentIssue(DocumentIssue):
+    """A DocumentIssue with immutable table-local recovery metadata."""
 
-    code: str
-    message: str
-    trigger: str
-    recovery_scope: str
-    actions: tuple[str, ...]
+    trigger: str = ""
+    recovery_scope: str = ""
+    actions: tuple[str, ...] = ()
     row_group: Optional[tuple[int, int]] = None
     placement: str = "block"
     insert_after: str = "caption"
@@ -87,26 +119,31 @@ class TableDegradationMetadata:
         return result
 
 
+# Backward-compatible name from the first Task 3 review; this is now a
+# DocumentIssue subtype rather than an independent metadata object.
+TableDegradationMetadata = TableDocumentIssue
+
+
 @dataclass(frozen=True)
 class TablePolicy:
     """Resolved platform-independent table policy."""
 
     style: str
-    borders: Mapping[str, float]
+    borders: TableBorders
     merges: tuple[TableMerge, ...]
     repeat_header: bool
     allow_row_split: bool
     cell_indent_pt: float
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "borders", MappingProxyType(dict(self.borders)))
+        object.__setattr__(self, "borders", TableBorders.from_mapping(self.borders))
         object.__setattr__(self, "merges", tuple(self.merges))
 
     def to_dict(self) -> dict[str, Any]:
         """Return a detached, deterministic JSON-ready policy mapping."""
         return {
             "style": self.style,
-            "borders": dict(sorted(self.borders.items())),
+            "borders": dict(sorted(self.borders.to_dict().items())),
             "merges": [
                 {
                     "top": merge.top,
@@ -165,11 +202,11 @@ def parse_a1_merge_ranges(merge_spec: str) -> tuple[TableMerge, ...]:
 def resolve_table_policy(
     table: Any,
     preset: Any,
-) -> tuple[TablePolicy, tuple[TableDegradationMetadata, ...]]:
+) -> tuple[TablePolicy, tuple[DocumentIssue, ...]]:
     """Resolve style and validate every requested merge as one atomic declaration."""
     style = _resolve_style(getattr(table, "style", ""), preset)
     merges: tuple[TableMerge, ...] = ()
-    issues: tuple[TableDegradationMetadata, ...] = ()
+    issues: tuple[DocumentIssue, ...] = ()
     merge_spec = str(getattr(table, "merge_spec", "") or "")
     if merge_spec.strip():
         try:
@@ -182,7 +219,7 @@ def resolve_table_policy(
             merges = requested_merges
         except (IndexError, TypeError, ValueError):
             issues = (
-                TableDegradationMetadata(
+                TableDocumentIssue(
                     code=TABLE_MERGE_INVALID,
                     message=_TABLE_MERGE_INVALID_MESSAGE,
                     trigger="invalid-merge-declaration",
@@ -205,14 +242,14 @@ def resolve_table_policy(
 def row_forced_split_degradation(
     top: int,
     bottom: int,
-) -> TableDegradationMetadata:
+) -> TableDocumentIssue:
     """Describe runtime recovery for an over-page body row or merged group."""
     if top < 2:
         raise ValueError("body row group must start at row 2 or later")
     if bottom < top:
         raise ValueError("body row group coordinates must be ordered")
     if top == bottom:
-        return TableDegradationMetadata(
+        return TableDocumentIssue(
             code=TABLE_ROW_FORCED_SPLIT,
             message=(
                 f"Table row {top} exceeded the available page height; allow that "
@@ -223,7 +260,7 @@ def row_forced_split_degradation(
             actions=("allow-row-split",),
             row_group=(top, bottom),
         )
-    return TableDegradationMetadata(
+    return TableDocumentIssue(
         code=TABLE_ROW_FORCED_SPLIT,
         message=(
             f"Table row group {top}:{bottom} exceeded the available page height; "
@@ -308,7 +345,9 @@ def _cell_value(
 __all__ = [
     "TABLE_MERGE_INVALID",
     "TABLE_ROW_FORCED_SPLIT",
+    "TableBorders",
     "TableDegradationMetadata",
+    "TableDocumentIssue",
     "TableMerge",
     "TablePolicy",
     "parse_a1_merge_ranges",

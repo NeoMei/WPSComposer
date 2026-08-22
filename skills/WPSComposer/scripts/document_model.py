@@ -149,7 +149,7 @@ class TaskList:
 # Long-form semantic blocks (M1)
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(frozen=True)
 class DocumentIssue:
     """A deterministic, serializable planned degradation or issue."""
     code: str

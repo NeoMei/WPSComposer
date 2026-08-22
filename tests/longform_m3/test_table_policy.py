@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, asdict
 import json
 
 import pytest
 
 from skills.WPSComposer.scripts.design_presets import PRESETS
-from skills.WPSComposer.scripts.document_model import SemanticTableBlock, TableMerge
+from skills.WPSComposer.scripts.document_model import (
+    DocumentIssue,
+    SemanticTableBlock,
+    TableMerge,
+)
 from skills.WPSComposer.scripts.longform.policy import resolve_table_policy
+from skills.WPSComposer.scripts.longform.semantic import _canonical_value
 from skills.WPSComposer.scripts.longform.table_policy import (
     TABLE_ROW_FORCED_SPLIT,
     TableDegradationMetadata,
@@ -123,6 +128,59 @@ def test_policy_borders_are_deeply_immutable_and_serialization_is_stable() -> No
     assert first.to_dict()["borders"]["top"] == 1.5
 
 
+def test_policy_supports_shared_canonical_and_dataclass_serialization() -> None:
+    policy, _ = resolve_table_policy(_table(style="three-line"), "business")
+    borders = {
+        "top": 1.5,
+        "bottom": 1.5,
+        "header_bottom": 0.75,
+        "left": 0.0,
+        "right": 0.0,
+        "inside_horizontal": 0.0,
+        "inside_vertical": 0.0,
+    }
+
+    assert asdict(policy) == {
+        "style": "three-line",
+        "borders": borders,
+        "merges": (),
+        "repeat_header": True,
+        "allow_row_split": False,
+        "cell_indent_pt": 0.0,
+    }
+    assert _canonical_value(policy) == {
+        "allow_row_split": False,
+        "borders": dict(sorted(borders.items())),
+        "cell_indent_pt": 0.0,
+        "merges": [],
+        "repeat_header": True,
+        "style": "three-line",
+    }
+    assert policy.to_dict() == {
+        "style": "three-line",
+        "borders": dict(sorted(borders.items())),
+        "merges": [],
+        "repeatHeader": True,
+        "allowRowSplit": False,
+        "cellIndentPt": 0.0,
+    }
+
+
+def test_plain_document_issue_serialization_remains_backward_compatible() -> None:
+    issue = DocumentIssue("EXISTING", "existing", "document")
+
+    assert asdict(issue) == {
+        "code": "EXISTING",
+        "message": "existing",
+        "placement": "document",
+    }
+    assert _canonical_value(issue) == {
+        "code": "EXISTING",
+        "message": "existing",
+        "placement": "document",
+    }
+
+
 def test_direct_policy_construction_defensively_freezes_nested_values() -> None:
     source_borders = {"top": 1.5}
     source_merges = [TableMerge(2, 1, 3, 1)]
@@ -184,6 +242,7 @@ def test_normal_rows_have_no_indivisible_group() -> None:
 def test_forced_split_metadata_is_runtime_only_and_caption_anchored() -> None:
     metadata = row_forced_split_degradation(2, 4)
 
+    assert isinstance(metadata, DocumentIssue)
     assert metadata.to_dict() == {
         "code": TABLE_ROW_FORCED_SPLIT,
         "message": (
@@ -211,6 +270,7 @@ def test_forced_split_metadata_for_merged_group_is_immutable() -> None:
 def test_forced_split_metadata_also_supports_one_oversized_normal_row() -> None:
     metadata = row_forced_split_degradation(3, 3)
 
+    assert isinstance(metadata, DocumentIssue)
     assert metadata.to_dict() == {
         "code": TABLE_ROW_FORCED_SPLIT,
         "message": (
