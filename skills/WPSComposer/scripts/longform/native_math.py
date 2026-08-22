@@ -39,7 +39,7 @@ _FORBIDDEN_COMMANDS: FrozenSet[str] = frozenset({
     "def", "gdef", "edef", "xdef", "let", "futurelet", "global", "newcommand",
     "renewcommand", "newenvironment", "renewenvironment", "DeclareMathOperator",
     "usepackage", "documentclass", "RequirePackage", "LoadClass", "href", "url",
-    "path", "includegraphics", "graphicspath", "label", "ref", "pageref", "cite",
+    "path", "includegraphics", "graphicspath", "ref", "pageref", "cite",
     "bibliography", "bibliographystyle", "batchmode", "nonstopmode", "scrollmode",
     "errorstopmode", "shell", "system", "exec", "open", "file", "read",
     "directlua", "luadirect", "writefile",
@@ -109,7 +109,26 @@ _ACCENT_COMMANDS = {
     "widetilde": "\u0303", "vec": "\u20d7", "bar": "\u0305",
     "dot": "\u0307", "ddot": "\u0308", "overline": "\u0305",
     "underline": "\u0332",
+    "acute": "\u0301", "grave": "\u0300", "check": "\u030c",
+    "breve": "\u0306", "overbrace": "⏞", "underbrace": "⏟",
 }
+_STACK_COMMANDS: FrozenSet[str] = frozenset({
+    "overset", "underset", "stackrel", "buildrel",
+})
+_CHOICE_COMMANDS: FrozenSet[str] = frozenset({"atop", "choose", "brack", "brace"})
+_DIMENSION_COMMANDS: FrozenSet[str] = frozenset({
+    "hspace", "hskip", "vspace", "vskip", "kern", "mskip", "mkern",
+})
+_CONTENT_BOX_COMMANDS: FrozenSet[str] = frozenset({"raisebox", "lower"})
+_SIMPLE_BOX_COMMANDS: FrozenSet[str] = frozenset({"box"})
+_PHANTOM_COMMANDS: FrozenSet[str] = frozenset({
+    "phantom", "vphantom", "hphantom",
+})
+_DELIMITER_SIZE_COMMANDS: FrozenSet[str] = frozenset({
+    "big", "Big", "bigg", "Bigg", "bigl", "bigr", "Bigl", "Bigr",
+    "biggl", "biggr", "Biggl", "Biggr",
+})
+_METADATA_COMMANDS: FrozenSet[str] = frozenset({"nonumber", "tag", "label"})
 _DELIMITER_COMMANDS = {
     "lbrace": "{", "rbrace": "}", "langle": "⟨", "rangle": "⟩",
     "vert": "|", "Vert": "‖", "lfloor": "⌊", "rfloor": "⌋",
@@ -119,6 +138,72 @@ _LITERAL_COMMANDS = {
     "%": "%", "#": "#", "$": "$", "_": "_", "&": "&",
     "{": "{", "}": "}", "|": "|", " ": " ",
 }
+
+_LEGACY_ENVIRONMENT_NAMES: FrozenSet[str] = frozenset({
+    "matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix", "Bmatrix",
+    "smallmatrix", "cases", "align", "aligned", "alignedat", "gather",
+    "multline", "equation", "array", "split", "flalign",
+})
+_LEGACY_STRUCTURAL_COMMANDS: FrozenSet[str] = frozenset({
+    "limits", "nolimits", "left", "right", "begin", "end",
+})
+_FRACTION_COMMANDS: FrozenSet[str] = frozenset({"frac", "dfrac", "tfrac"})
+_SPECIAL_FORM_COMMANDS: FrozenSet[str] = frozenset({
+    "sqrt", "operatorname", "mathop", "bmod", "pmod", "pod", "genfrac", "not",
+})
+
+LEGACY_ALLOWED_COMMANDS: FrozenSet[str] = frozenset().union(
+    _SYMBOL_COMMANDS,
+    _LARGE_OPERATORS,
+    _NAMED_FUNCTIONS,
+    _GROUP_WRAPPERS,
+    _SPACING_COMMANDS,
+    _STYLE_COMMANDS,
+    _LEGACY_ENVIRONMENT_NAMES,
+    _LEGACY_STRUCTURAL_COMMANDS,
+    _FRACTION_COMMANDS,
+    _SPECIAL_FORM_COMMANDS,
+    _BINOMIAL_COMMANDS,
+    _ACCENT_COMMANDS,
+    _STACK_COMMANDS,
+    _CHOICE_COMMANDS,
+    _DIMENSION_COMMANDS,
+    _CONTENT_BOX_COMMANDS,
+    _SIMPLE_BOX_COMMANDS,
+    _PHANTOM_COMMANDS,
+    _DELIMITER_SIZE_COMMANDS,
+    _METADATA_COMMANDS,
+)
+
+
+def legacy_command_category(command: str) -> Optional[str]:
+    """Return the explicit grammar category for a legacy-accepted command."""
+    categories = (
+        (_SYMBOL_COMMANDS, "symbol"),
+        (_LARGE_OPERATORS, "large-operator"),
+        (_NAMED_FUNCTIONS, "named-function"),
+        (_GROUP_WRAPPERS, "group-wrapper"),
+        (_SPACING_COMMANDS, "spacing"),
+        (_STYLE_COMMANDS, "style"),
+        (_LEGACY_ENVIRONMENT_NAMES, "environment"),
+        (_LEGACY_STRUCTURAL_COMMANDS, "structural"),
+        (_FRACTION_COMMANDS, "fraction"),
+        (_SPECIAL_FORM_COMMANDS, "special-form"),
+        (_BINOMIAL_COMMANDS, "binomial"),
+        (_ACCENT_COMMANDS, "accent"),
+        (_STACK_COMMANDS, "stack"),
+        (_CHOICE_COMMANDS, "choice"),
+        (_DIMENSION_COMMANDS, "dimension"),
+        (_CONTENT_BOX_COMMANDS, "content-box"),
+        (_SIMPLE_BOX_COMMANDS, "box"),
+        (_PHANTOM_COMMANDS, "phantom"),
+        (_DELIMITER_SIZE_COMMANDS, "delimiter-size"),
+        (_METADATA_COMMANDS, "metadata"),
+    )
+    for commands, category in categories:
+        if command in commands:
+            return category
+    return None
 
 
 class NativeMathConversionError(ValueError):
@@ -130,13 +215,31 @@ class NativeMathConversionError(ValueError):
         super().__init__(code if not detail else f"{code}: {detail}")
 
 
-@dataclass(frozen=True)
+_DESCRIPTOR_FACTORY_TOKEN = object()
+
+
+@dataclass(frozen=True, init=False)
 class NativeMathDescriptor:
     """Trusted, immutable WPS linear-math content."""
 
     syntax: str
     linear_text: str
     source_hash: str
+
+    def __init__(
+        self,
+        *,
+        _factory_token: object,
+        syntax: str,
+        linear_text: str,
+        source_hash: str,
+    ) -> None:
+        if _factory_token is not _DESCRIPTOR_FACTORY_TOKEN:
+            raise TypeError("NativeMathDescriptor must be created by the converter")
+        object.__setattr__(self, "syntax", syntax)
+        object.__setattr__(self, "linear_text", linear_text)
+        object.__setattr__(self, "source_hash", source_hash)
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         if self.syntax != _SYNTAX:
@@ -158,6 +261,15 @@ class NativeMathDescriptor:
             "NativeMathDescriptor(syntax='wps-linear-v1', "
             f"linear_text=<{len(self.linear_text)} chars>, source_hash='{self.source_hash}')"
         )
+
+
+def _create_descriptor(linear_text: str, source_hash: str) -> NativeMathDescriptor:
+    return NativeMathDescriptor(
+        _factory_token=_DESCRIPTOR_FACTORY_TOKEN,
+        syntax=_SYNTAX,
+        linear_text=linear_text,
+        source_hash=source_hash,
+    )
 
 
 @dataclass(frozen=True)
@@ -345,6 +457,24 @@ class _Parser:
         self._take("LBRACE")
         return self._parse_group_after_open()
 
+    def _parse_required_group_allow_empty(self) -> str:
+        self._skip_spaces()
+        self._take("LBRACE")
+        self._enter_nested()
+        value = self._parse_sequence(stop_kinds=frozenset({"RBRACE"}))
+        self._take("RBRACE")
+        self._leave_nested()
+        return value
+
+    def _parse_dimension_group(self) -> str:
+        value = self._parse_required_group()
+        if re.fullmatch(
+            r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:pt|em|ex|mu|cm|mm|in)",
+            value,
+        ) is None:
+            _raise(FORMULA_MALFORMED, "invalid dimension")
+        return value
+
     def _parse_required_text_group(self) -> str:
         """Parse a bounded text/mbox/operator-name argument with visible spaces."""
         self._skip_spaces()
@@ -470,7 +600,7 @@ class _Parser:
             return '"' + self._parse_required_text_group() + '"'
         if command in _GROUP_WRAPPERS:
             return self._parse_required_group()
-        if command in {"frac", "dfrac", "tfrac"}:
+        if command in _FRACTION_COMMANDS:
             numerator = self._parse_required_group()
             denominator = self._parse_required_group()
             if not numerator or not denominator:
@@ -489,6 +619,51 @@ class _Parser:
         if command in _ACCENT_COMMANDS:
             accented = self._parse_required_group()
             return f"({accented}){_ACCENT_COMMANDS[command]}"
+        if command in _STACK_COMMANDS:
+            annotation = self._parse_required_group()
+            base = self._parse_required_group()
+            if command == "underset":
+                return f"({base})_({annotation})"
+            return f"({base})^({annotation})"
+        if command in _CHOICE_COMMANDS:
+            upper = self._parse_required_group()
+            lower = self._parse_required_group()
+            stack = f"({upper})¦({lower})"
+            if command == "choose":
+                return "(" + stack + ")"
+            if command == "brack":
+                return "[" + stack + "]"
+            if command == "brace":
+                return "{" + stack + "}"
+            return stack
+        if command in _DIMENSION_COMMANDS:
+            self._parse_dimension_group()
+            return " " if command in {"hspace", "hskip", "kern", "mskip", "mkern"} else ""
+        if command in _CONTENT_BOX_COMMANDS:
+            self._parse_dimension_group()
+            return self._parse_required_group()
+        if command in _SIMPLE_BOX_COMMANDS:
+            return self._parse_required_group()
+        if command in _PHANTOM_COMMANDS:
+            self._parse_required_group()
+            return " "
+        if command == "bmod":
+            return " mod "
+        if command == "pmod":
+            return "(mod " + self._parse_required_group() + ")"
+        if command == "pod":
+            return "(" + self._parse_required_group() + ")"
+        if command == "genfrac":
+            return self._parse_generalized_fraction()
+        if command in _DELIMITER_SIZE_COMMANDS:
+            return self._parse_delimiter()
+        if command == "nonumber":
+            return ""
+        if command in {"tag", "label"}:
+            self._parse_required_group()
+            return ""
+        if command == "not":
+            return self._parse_negated_atom()
         if command == "operatorname":
             self._skip_spaces()
             if (
@@ -504,10 +679,55 @@ class _Parser:
             return self._parse_scalable_delimiters()
         if command == "begin":
             return self._parse_environment()
-        if command in {"right", "end"}:
+        if command in {"right", "end", "limits", "nolimits"}:
             _raise(FORMULA_MALFORMED, "unmatched \\" + command)
+        if command in _LEGACY_ENVIRONMENT_NAMES:
+            _raise(FORMULA_MALFORMED, "environment name outside \\begin")
         _raise(FORMULA_UNKNOWN_COMMAND, "\\" + command)
         return ""  # pragma: no cover
+
+    def _parse_generalized_fraction(self) -> str:
+        left = self._parse_required_group_allow_empty()
+        right = self._parse_required_group_allow_empty()
+        thickness = self._parse_required_group_allow_empty()
+        style = self._parse_required_group_allow_empty()
+        numerator = self._parse_required_group()
+        denominator = self._parse_required_group()
+        if left not in {"", "(", "[", "{", "|"}:
+            _raise(FORMULA_MALFORMED, "invalid generalized-fraction delimiter")
+        if right not in {"", ")", "]", "}", "|"}:
+            _raise(FORMULA_MALFORMED, "invalid generalized-fraction delimiter")
+        if thickness and re.fullmatch(
+            r"(?:0|[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:pt|em|ex|mu))",
+            thickness,
+        ) is None:
+            _raise(FORMULA_MALFORMED, "invalid generalized-fraction thickness")
+        if style not in {"", "0", "1", "2", "3"}:
+            _raise(FORMULA_MALFORMED, "invalid generalized-fraction style")
+        return left + f"({numerator})/({denominator})" + right
+
+    def _parse_negated_atom(self) -> str:
+        self._skip_spaces()
+        token = self._peek()
+        if token is None:
+            _raise(FORMULA_MALFORMED, "missing negated relation")
+        direct_text = {"=": "≠", "<": "≮", ">": "≯"}
+        direct_command = {
+            "in": "∉", "le": "≰", "leq": "≰", "ge": "≱",
+            "geq": "≱", "equiv": "≢", "approx": "≉",
+            "subset": "⊄", "supset": "⊅", "subseteq": "⊈",
+            "supseteq": "⊉",
+        }
+        if token.kind == "TEXT" and token.value in direct_text:
+            self._take("TEXT")
+            return direct_text[token.value]
+        if token.kind == "COMMAND" and token.value in direct_command:
+            self._take("COMMAND")
+            return direct_command[token.value]
+        atom = self._parse_atom()
+        if not atom.strip():
+            _raise(FORMULA_MALFORMED, "missing negated relation")
+        return atom + "\u0338"
 
     def _parse_delimiter(self) -> str:
         self._skip_spaces()
@@ -561,10 +781,12 @@ class _Parser:
                 _raise(FORMULA_UNKNOWN_COMMAND, "environment " + base_name)
             if name.endswith("*") and not is_equation_array:
                 _raise(FORMULA_MALFORMED, "starred matrix environment")
+            expected_columns: Optional[int] = None
             if base_name == "alignedat":
                 pair_count = self._parse_required_group()
                 if not pair_count.isdigit() or not 1 <= int(pair_count) <= 32:
                     _raise(FORMULA_TOO_COMPLEX, "alignedat pair limit exceeded")
+                expected_columns = 2 * int(pair_count)
             if base_name == "array":
                 column_spec = self._parse_required_text_group().replace(" ", "")
                 if (
@@ -572,10 +794,17 @@ class _Parser:
                     or re.fullmatch(r"[lcr|]{1,64}", column_spec) is None
                 ):
                     _raise(FORMULA_MALFORMED, "unsupported array column specification")
+                expected_columns = sum(char in "lcr" for char in column_spec)
             rows: List[List[str]] = []
             row: List[str] = []
+            pending_column = False
             while True:
+                self._skip_spaces()
                 if self._at_command("end"):
+                    if pending_column:
+                        if not is_equation_array:
+                            _raise(FORMULA_MALFORMED, "empty matrix cell")
+                        row.append("")
                     if row:
                         rows.append(row)
                     break
@@ -585,6 +814,7 @@ class _Parser:
                 if not cell and not is_equation_array:
                     _raise(FORMULA_MALFORMED, "empty matrix cell")
                 row.append(cell)
+                pending_column = False
                 if len(row) > _MAX_MATRIX_COLUMNS:
                     _raise(FORMULA_TOO_COMPLEX, "matrix column limit exceeded")
                 token = self._peek()
@@ -592,6 +822,7 @@ class _Parser:
                     _raise(FORMULA_MALFORMED, "unterminated environment")
                 if token.kind == "AMP":
                     self._take("AMP")
+                    pending_column = True
                     continue
                 if token.kind == "ROW":
                     self._take("ROW")
@@ -599,6 +830,7 @@ class _Parser:
                     if len(rows) > _MAX_MATRIX_ROWS:
                         _raise(FORMULA_TOO_COMPLEX, "matrix row limit exceeded")
                     row = []
+                    self._skip_spaces()
                     if self._at_command("end"):
                         break
                     continue
@@ -615,6 +847,12 @@ class _Parser:
             width = len(rows[0])
             if width == 0 or any(len(candidate) != width for candidate in rows):
                 _raise(FORMULA_MALFORMED, "ragged matrix")
+            if any(not any(cell.strip() for cell in candidate) for candidate in rows):
+                _raise(FORMULA_MALFORMED, "empty equation row")
+            if expected_columns is not None and any(
+                len(candidate) != expected_columns for candidate in rows
+            ):
+                _raise(FORMULA_MALFORMED, "declared column count mismatch")
             if base_name == "cases" and width > 2:
                 _raise(FORMULA_TOO_COMPLEX, "cases column limit exceeded")
             matrix = "■(" + "@".join("&".join(candidate) for candidate in rows) + ")"
@@ -645,12 +883,12 @@ def convert_restricted_latex(source: str) -> NativeMathDescriptor:
     if not linear_text:
         _raise(FORMULA_MALFORMED, "empty formula")
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-    return NativeMathDescriptor(_SYNTAX, linear_text, digest)
+    return _create_descriptor(linear_text, digest)
 
 
 __all__ = [
     "FORMULA_FORBIDDEN_PRIMITIVE", "FORMULA_MALFORMED",
     "FORMULA_NESTING_TOO_DEEP", "FORMULA_TOO_COMPLEX", "FORMULA_TOO_LONG",
-    "FORMULA_UNKNOWN_COMMAND", "NativeMathConversionError", "NativeMathDescriptor",
-    "convert_restricted_latex",
+    "FORMULA_UNKNOWN_COMMAND", "LEGACY_ALLOWED_COMMANDS", "NativeMathConversionError",
+    "NativeMathDescriptor", "convert_restricted_latex", "legacy_command_category",
 ]

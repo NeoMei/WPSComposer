@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from skills.WPSComposer.scripts.longform import native_math as native_math_module
 from skills.WPSComposer.scripts.longform.formula import (
     FORMULA_FORBIDDEN_PRIMITIVE,
     FORMULA_NESTING_TOO_DEEP,
@@ -62,7 +63,6 @@ def test_whitespace_is_normalized_deterministically() -> None:
         r"\href{https://example.test}{x}",
         r"\includegraphics{plot.png}",
         r"\newcommand{\x}{y}",
-        r"\label{external}",
     ],
 )
 def test_forbidden_or_external_commands_are_rejected(source: str) -> None:
@@ -281,8 +281,17 @@ def test_descriptor_public_constructor_rejects_untrusted_content(
     linear_text: str,
     source_hash: str,
 ) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises((TypeError, ValueError)):
         NativeMathDescriptor(syntax, linear_text, source_hash)
+
+
+def test_descriptor_direct_construction_is_never_a_public_trust_path() -> None:
+    with pytest.raises(TypeError):
+        NativeMathDescriptor(  # type: ignore[call-arg]
+            "wps-linear-v1",
+            "x",
+            hashlib.sha256(b"x").hexdigest(),
+        )
 
 
 def test_parser_nested_failure_does_not_affect_later_conversion() -> None:
@@ -290,6 +299,166 @@ def test_parser_nested_failure_does_not_affect_later_conversion() -> None:
         convert_restricted_latex(r"\left(\left[x\right)")
 
     assert convert_restricted_latex(r"\left(x\right)").linear_text == "(x)"
+
+
+def test_environment_structural_whitespace_does_not_add_rows() -> None:
+    compact = convert_restricted_latex(r"\begin{matrix}a\\\end{matrix}")
+    spaced = convert_restricted_latex(r"\begin{matrix}a\\   \end{matrix}")
+    aligned = convert_restricted_latex(
+        r"\begin{aligned}a&=b\\   \end{aligned}"
+    )
+
+    assert compact.linear_text == "■(a)"
+    assert spaced.linear_text == compact.linear_text
+    assert aligned.linear_text == "■(a&=b)"
+
+
+def test_aligned_explicit_blank_row_is_rejected() -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(
+            r"\begin{aligned}a&=b\\   \\c&=d\end{aligned}"
+        )
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        r"\begin{array}{cc}a\end{array}",
+        r"\begin{array}{c}a&b\end{array}",
+        r"\begin{array}{|c|c|}a&b\\c\end{array}",
+        r"\begin{alignedat}{2}a&=b\end{alignedat}",
+        r"\begin{alignedat}{1}a&=b&c\end{alignedat}",
+        r"\begin{alignedat}{1}a&=b\\c\end{alignedat}",
+    ],
+)
+def test_declared_environment_shape_must_match_every_row(source: str) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
+
+
+def test_array_and_alignedat_accept_exact_multiple_row_shapes() -> None:
+    array = convert_restricted_latex(
+        r"\begin{array}{|c|r|}a&b\\c&d\end{array}"
+    )
+    alignedat = convert_restricted_latex(
+        r"\begin{alignedat}{2}a&=b&c&=d\\e&=f&g&=h\end{alignedat}"
+    )
+
+    assert array.linear_text == "■(a&b@c&d)"
+    assert alignedat.linear_text == "■(a&=b&c&=d@e&=f&g&=h)"
+
+
+def test_every_legacy_allowed_command_has_an_explicit_handler_category() -> None:
+    expected = frozenset({
+        "alpha", "beta", "gamma", "delta", "epsilon", "varepsilon", "zeta",
+        "eta", "theta", "vartheta", "iota", "kappa", "lambda", "mu", "nu",
+        "xi", "pi", "varpi", "rho", "varrho", "sigma", "varsigma", "tau",
+        "upsilon", "phi", "varphi", "chi", "psi", "omega", "Gamma", "Delta",
+        "Theta", "Lambda", "Xi", "Pi", "Sigma", "Upsilon", "Phi", "Psi",
+        "Omega", "times", "div", "pm", "mp", "cdot", "ast", "star", "circ",
+        "bullet", "oplus", "ominus", "otimes", "oslash", "leq", "geq", "le",
+        "ge", "neq", "ne", "approx", "sim", "simeq", "equiv", "cong",
+        "propto", "in", "notin", "subset", "supset", "subseteq", "supseteq",
+        "cup", "cap", "setminus", "emptyset", "forall", "exists", "nexists",
+        "neg", "land", "lor", "wedge", "vee", "to", "gets", "rightarrow",
+        "leftarrow", "Rightarrow", "Leftarrow", "leftrightarrow",
+        "Leftrightarrow", "mapsto", "iff", "infty", "nabla", "partial",
+        "prime", "hbar", "ell", "wp", "Re", "Im", "sin", "cos", "tan",
+        "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh",
+        "tanh", "log", "ln", "exp", "lim", "sup", "inf", "max", "min",
+        "arg", "dim", "det", "ker", "mod", "gcd", "lcm", "Pr", "frac",
+        "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "oint", "iint",
+        "iiint", "iiiint", "limits", "nolimits", "displaystyle", "textstyle",
+        "scriptstyle", "scriptscriptstyle", "left", "right", "begin", "end",
+        "matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix", "Bmatrix",
+        "smallmatrix", "cases", "align", "aligned", "alignedat", "gather",
+        "multline", "equation", "array", "split", "flalign", "text", "mbox",
+        "mathrm", "mathbf", "mathit", "mathsf", "mathtt", "mathcal", "mathbb",
+        "mathfrak", "mathscr", "boldsymbol", "bm", "operatorname", "mathop",
+        "overline", "underline", "hat", "widehat", "tilde", "widetilde", "vec",
+        "bar", "dot", "ddot", "acute", "grave", "check", "breve", "overbrace",
+        "underbrace", "overset", "underset", "stackrel", "buildrel", "atop",
+        "choose", "brack", "brace", ",", ":", ";", "!", "quad", "qquad",
+        "space", "thinspace", "medspace", "thickspace", "enspace", "hspace",
+        "hskip", "vspace", "vskip", "kern", "mskip", "mkern", "raisebox",
+        "lower", "box", "phantom", "vphantom", "hphantom", "ldots", "cdots",
+        "vdots", "ddots", "dots", "binom", "tbinom", "dbinom", "bmod", "pmod",
+        "pod", "genfrac", "big", "Big", "bigg", "Bigg", "bigl", "bigr",
+        "Bigl", "Bigr", "biggl", "biggr", "Biggl", "Biggr", "nonumber",
+        "tag", "label", "not",
+    })
+
+    assert native_math_module.LEGACY_ALLOWED_COMMANDS == expected
+    assert {
+        native_math_module.legacy_command_category(command)
+        for command in expected
+    }.isdisjoint({None, "unknown"})
+
+
+@pytest.mark.parametrize(
+    "command",
+    sorted(native_math_module.LEGACY_ALLOWED_COMMANDS),
+)
+def test_no_legacy_allowed_command_falls_through_to_unknown(command: str) -> None:
+    try:
+        convert_restricted_latex("\\" + command)
+    except NativeMathConversionError as exc:
+        assert exc.code != FORMULA_UNKNOWN_COMMAND
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (r"\acute{x}+\grave{y}+\check{z}+\breve{w}", "(x)\u0301+(y)\u0300+(z)\u030c+(w)\u0306"),
+        (r"\overbrace{x+y}", "(x+y)⏞"),
+        (r"\underbrace{x+y}", "(x+y)⏟"),
+        (r"\overset{a}{b}+\stackrel{c}{d}", "(b)^(a)+(d)^(c)"),
+        (r"\underset{a}{b}", "(b)_(a)"),
+        (r"\buildrel{a}{b}", "(b)^(a)"),
+        (r"\atop{n}{k}", "(n)¦(k)"),
+        (r"\choose{n}{k}", "((n)¦(k))"),
+        (r"\brack{n}{k}", "[(n)¦(k)]"),
+        (r"\brace{n}{k}", "{(n)¦(k)}"),
+        (r"x\hspace{1em}y\vspace{2pt}z", "x yz"),
+        (r"\raisebox{1pt}{x}+\lower{1pt}{y}+\box{z}", "x+y+z"),
+        (r"x+\phantom{abc}+y", "x+ +y"),
+        (r"a\bmod b+\pmod{n}+\pod{k}", "a mod b+(mod n)+(k)"),
+        (r"\genfrac{(}{)}{0pt}{}{a}{b}", "((a)/(b))"),
+        (r"\bigl(x\bigr)", "(x)"),
+        (r"\tag{1}\label{eq:x}x\nonumber", "x"),
+        (r"x\not=y", "x≠y"),
+    ],
+)
+def test_legacy_formatting_commands_have_stable_semantic_transforms(
+    source: str,
+    expected: str,
+) -> None:
+    assert convert_restricted_latex(source).linear_text == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        r"\hspace",
+        r"\raisebox{1pt}",
+        r"\overset{x}",
+        r"\tag",
+        r"\label",
+        r"\not",
+        r"\genfrac{(}{)}{0pt}{}{a}",
+    ],
+)
+def test_legacy_commands_with_missing_arguments_are_stably_malformed(
+    source: str,
+) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
 
 
 @pytest.mark.parametrize(
