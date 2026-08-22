@@ -6,11 +6,13 @@ performed lazily inside the dedicated-composer factory.
 from __future__ import annotations
 
 import inspect
+import hashlib
+import json
 import os
 import sys
 import tempfile
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 from ..generation_plan import GenerationOperation, GenerationPlan, validate_generation_plan
 from ..writer import WriterComposer
@@ -24,6 +26,7 @@ from .executor import (
     finalize_fields_with_convergence,
 )
 from .resources import PreparedLongformResource
+from .field_contract import NativeFieldAdapter, finalize_native_fields
 
 
 WINDOWS_DEDICATED_HOST_UNAVAILABLE = "WINDOWS_DEDICATED_HOST_UNAVAILABLE"
@@ -32,14 +35,26 @@ EXECUTION_ABORTED = "EXECUTION_ABORTED"
 DEGRADATION_FALLBACK_FAILED = "DEGRADATION_FALLBACK_FAILED"
 UNKNOWN_OPERATION = "UNKNOWN_OPERATION"
 
-# Operations whose native rendering is intentionally deferred past M2.  The
+# Operations whose native rendering is intentionally deferred past M3.  The
 # executor emits a deterministic degradation notice/inline fallback for them
 # and records the stable issue code declared by the plan builder.
 _M2_DEFERRED_OPERATIONS = {
+    "writer.add_bibliography": ("BIBLIOGRAPHY_INSERT_FAILED", "notice"),
+}
+
+_M3_NATIVE_OPERATIONS = frozenset({
+    "writer.add_captioned_figure",
+    "writer.add_semantic_table",
+    "writer.add_equation",
+    "writer.add_cross_reference",
+    "writer.insert_figure_index",
+    "writer.insert_table_index",
+})
+
+_LEGACY_OBJECT_DEFERRED = {
     "writer.add_captioned_figure": ("IMAGE_INSERT_FAILED", "notice"),
     "writer.add_semantic_table": ("TABLE_INSERT_FAILED", "notice"),
     "writer.add_equation": ("EQUATION_INSERT_FAILED", "inline"),
-    "writer.add_bibliography": ("BIBLIOGRAPHY_INSERT_FAILED", "notice"),
     "writer.add_cross_reference": ("CROSS_REFERENCE_FAILED", "inline"),
 }
 
@@ -138,6 +153,7 @@ class WindowsLongformExecutor(LongformExecutor):
         self._composer_factory = composer_factory or _create_dedicated_composer
         self._issues: List[ExecutionIssue] = []
         self._toc_density: dict[str, Any] = {}
+        self._resource_locators: dict[str, str] = {}
 
     # ----------------------------------------------------------------------
     # Public interface
@@ -150,31 +166,135 @@ class WindowsLongformExecutor(LongformExecutor):
     ) -> ExecutionOutcome:
         self._issues = []
         validate_generation_plan(plan.to_dict(), component="writer")
-        composer = self._acquire_composer()
         paths = self._resolve_paths()
+        staged_resources: Tuple[str, ...] = ()
+        composer: Optional[WriterComposer] = None
         try:
+            self._validate_resource_manifest(plan, resources)
+            self._resource_locators, staged_resources = self._stage_resources(resources)
+            composer = self._acquire_composer()
             self._dispatch_all(composer, plan.operations)
-            convergence = finalize_fields_with_convergence(
-                composer,
-                max_rounds=_extract_max_rounds(plan.operations),
-            )
+            if isinstance(composer, NativeFieldAdapter):
+                convergence = finalize_native_fields(
+                    composer, max_rounds=_extract_max_rounds(plan.operations)
+                )
+            else:
+                convergence = finalize_fields_with_convergence(
+                    composer, max_rounds=_extract_max_rounds(plan.operations)
+                )
             self._extend_issues(convergence.issues)
             composer.save_docx(paths.staged_docx)
         except _ExecutionAbort as exc:
-            composer.close(save_changes=False)
             raise WindowsLongformExecutorError(
-                f"Execution aborted at {exc.op_name}: {exc.cause}"
-            ) from exc.cause
+                f"Execution aborted at {exc.op_name}"
+            ) from None
+        except (WindowsLongformExecutorError, WindowsDedicatedHostUnavailableError):
+            raise
+        except Exception:
+            raise WindowsLongformExecutorError("Windows native execution failed") from None
         finally:
-            try:
-                composer.close(save_changes=False)
-            except Exception:
-                pass
+            if composer is not None:
+                try:
+                    composer.close(save_changes=False)
+                except Exception:
+                    pass
+            self._cleanup_resources(staged_resources)
+            self._resource_locators = {}
         return ExecutionOutcome(
             staged_artifact=paths.staged_docx,
             issues=tuple(self._issues),
             pagination_map=_build_pagination_map(plan.operations),
+            applied_operations=len(plan.operations),
         )
+
+    def _validate_resource_manifest(
+        self,
+        plan: GenerationPlan,
+        resources: Tuple[PreparedLongformResource, ...],
+    ) -> None:
+        seen: set[str] = set()
+        entries = []
+        for resource in resources:
+            if resource.id in seen:
+                raise WindowsLongformExecutorError("Private resource validation failed")
+            seen.add(resource.id)
+            actual = hashlib.sha256(resource.payload_bytes).hexdigest()
+            if actual != resource.payload_sha256:
+                raise WindowsLongformExecutorError("Private resource validation failed")
+            entries.append({
+                "resourceId": resource.id,
+                "sourceSha256": resource.source_sha256,
+                "payloadSha256": resource.payload_sha256,
+                "byteLength": len(resource.payload_bytes),
+                "mediaType": resource.media_type,
+                "normalizerId": resource.normalizer_id,
+            })
+        if resources or any(_is_m3_operation(operation) for operation in plan.operations):
+            envelope = {"version": "1", "entries": sorted(entries, key=lambda item: item["resourceId"])}
+            canonical = json.dumps(
+                envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode("utf-8")
+            digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
+            if digest != plan.resource_manifest_digest:
+                raise WindowsLongformExecutorError("Private resource validation failed")
+
+        by_id = {resource.id: resource for resource in resources}
+        for operation in plan.operations:
+            if operation.op != "writer.add_captioned_figure":
+                continue
+            for child in operation.args.get("children", ()):
+                resource_id = child.get("resourceId")
+                if resource_id is None:
+                    continue
+                resource = by_id.get(resource_id)
+                if (
+                    resource is None
+                    or child.get("mediaType") != resource.media_type
+                    or child.get("normalizerId") != resource.normalizer_id
+                ):
+                    raise WindowsLongformExecutorError("Private resource validation failed")
+
+    def _stage_resources(
+        self, resources: Tuple[PreparedLongformResource, ...]
+    ) -> Tuple[dict[str, str], Tuple[str, ...]]:
+        locators: dict[str, str] = {}
+        paths: list[str] = []
+        suffixes = {
+            "image/png": ".png", "image/jpeg": ".jpg", "image/tiff": ".tiff",
+            "image/bmp": ".bmp", "image/gif": ".gif", "image/svg+xml": ".svg",
+        }
+        try:
+            for index, resource in enumerate(resources):
+                suffix = suffixes.get(resource.media_type)
+                if suffix is None:
+                    raise WindowsLongformExecutorError("Private resource validation failed")
+                handle = tempfile.NamedTemporaryFile(
+                    prefix=f"wpsc-resource-{index}-", suffix=suffix,
+                    dir=self._staging_dir, delete=False,
+                )
+                try:
+                    handle.write(resource.payload_bytes)
+                    handle.flush()
+                finally:
+                    handle.close()
+                locators[resource.id] = handle.name
+                paths.append(handle.name)
+        except Exception:
+            self._cleanup_resources(tuple(paths))
+            raise
+        return locators, tuple(paths)
+
+    @staticmethod
+    def _cleanup_resources(paths: Tuple[str, ...]) -> None:
+        for path in paths:
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                # The private staging handle is best-effort deleted here; a
+                # deletion error never leaks the path into diagnostics.
+                pass
 
     # ----------------------------------------------------------------------
     # Composer lifecycle
@@ -195,12 +315,13 @@ class WindowsLongformExecutor(LongformExecutor):
 
     def _resolve_paths(self) -> _ResolvedPaths:
         os.makedirs(self._staging_dir, exist_ok=True)
-        base = tempfile.NamedTemporaryFile(
+        descriptor, base = tempfile.mkstemp(
             prefix="wpsc-longform-",
             suffix="",
             dir=self._staging_dir,
-            delete=False,
-        ).name
+        )
+        os.close(descriptor)
+        os.unlink(base)
         return _ResolvedPaths(staged_docx=base + ".docx")
 
     # ----------------------------------------------------------------------
@@ -217,6 +338,8 @@ class WindowsLongformExecutor(LongformExecutor):
     def _run_op(self, composer: WriterComposer, op: GenerationOperation) -> None:
         policy = op.failure_policy
         deferred = _M2_DEFERRED_OPERATIONS.get(op.op)
+        if deferred is None and not _is_m3_operation(op):
+            deferred = _LEGACY_OBJECT_DEFERRED.get(op.op)
 
         try:
             if deferred is not None:
@@ -242,9 +365,11 @@ class WindowsLongformExecutor(LongformExecutor):
                 if code in policy.get("recoverableCodes", []):
                     self._degrade_op(composer, op, exc, code, policy["fallback"])
                     return
+            if _is_m3_operation(op):
+                raise _ExecutionAbort(op.op, exc) from exc
             self._record_issue(
                 code=EXECUTION_FAILED,
-                message=f"{op.op} failed: {exc}",
+                message=f"{op.op} failed",
                 node_id=op.node_id,
             )
             if policy is not None and policy.get("mode") == "fail":
@@ -262,7 +387,7 @@ class WindowsLongformExecutor(LongformExecutor):
     ) -> None:
         self._record_issue(
             code=code,
-            message=f"{op.op} degraded: {exc}",
+            message=f"{op.op} used its declared native fallback",
             node_id=op.node_id,
         )
         try:
@@ -270,9 +395,10 @@ class WindowsLongformExecutor(LongformExecutor):
         except Exception as fb_exc:
             self._record_issue(
                 code=DEGRADATION_FALLBACK_FAILED,
-                message=f"Fallback for {op.op} failed: {fb_exc}",
+                message=f"Fallback for {op.op} failed",
                 node_id=op.node_id,
             )
+            raise _ExecutionAbort(op.op, fb_exc) from fb_exc
 
     def _apply_fallback(
         self,
@@ -281,11 +407,12 @@ class WindowsLongformExecutor(LongformExecutor):
         fallback: str,
     ) -> None:
         args = op.args
-        if fallback == "inline":
+        if fallback in {"inline", "inline-fallback"}:
             text = str(
                 args.get("fallbackText")
                 or args.get("source")
                 or args.get("text")
+                or _reference_fallback_text(args.get("runs", ()))
                 or ""
             )
             composer.add_inline_degradation(
@@ -293,11 +420,15 @@ class WindowsLongformExecutor(LongformExecutor):
                 message=_op_fallback_message(op),
                 fallback_text=text,
             )
-        elif fallback == "notice":
+        elif fallback in {
+            "notice", "figure-child-stack-then-notice", "grid-then-text"
+        }:
             text = str(
                 args.get("fallbackText")
                 or args.get("source")
                 or args.get("text")
+                or _table_fallback_text(args)
+                or args.get("caption")
                 or ""
             )
             composer.add_degradation_notice(
@@ -427,6 +558,36 @@ class WindowsLongformExecutor(LongformExecutor):
             )
             return
 
+        if name == "writer.add_captioned_figure" and "numbering" in args:
+            result = composer.add_captioned_figure_native(
+                **args,
+                owner_node_id=op.node_id,
+                resource_locators=dict(self._resource_locators),
+            )
+            self._consume_native_result(result, op.node_id)
+            return
+
+        if name == "writer.add_semantic_table" and "numbering" in args:
+            result = composer.add_semantic_table_native(
+                **args, owner_node_id=op.node_id
+            )
+            self._consume_native_result(result, op.node_id)
+            return
+
+        if name == "writer.add_equation" and "numbering" in args:
+            result = composer.add_equation_number_native(
+                **args, owner_node_id=op.node_id
+            )
+            self._consume_native_result(result, op.node_id)
+            return
+
+        if name == "writer.add_cross_reference" and "runs" in args:
+            result = composer.add_cross_reference_paragraph(
+                **args, owner_node_id=op.node_id
+            )
+            self._consume_native_result(result, op.node_id)
+            return
+
         if name == "writer.add_list":
             items = args.get("items", [])
             if args.get("ordered"):
@@ -464,10 +625,26 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.insert_figure_index":
+            if "sequenceId" in args:
+                composer.insert_caption_index_native(
+                    title=args.get("title"),
+                    sequence_id=args["sequenceId"],
+                    title_style_id=args["titleStyleId"],
+                    owner_node_id=op.node_id,
+                )
+                return
             composer.insert_figure_index(title=args.get("title"))
             return
 
         if name == "writer.insert_table_index":
+            if "sequenceId" in args:
+                composer.insert_caption_index_native(
+                    title=args.get("title"),
+                    sequence_id=args["sequenceId"],
+                    title_style_id=args["titleStyleId"],
+                    owner_node_id=op.node_id,
+                )
+                return
             composer.insert_table_index(title=args.get("title"))
             return
 
@@ -478,6 +655,19 @@ class WindowsLongformExecutor(LongformExecutor):
 
         # Fallback for anything else that reaches the executor.
         self._apply_fallback(composer, op, "notice")
+
+    def _consume_native_result(self, result: Any, node_id: Optional[str]) -> None:
+        if not isinstance(result, dict):
+            return
+        for raw in result.get("issues", ()):
+            if not isinstance(raw, dict):
+                continue
+            self._record_issue(
+                code=str(raw.get("code") or EXECUTION_FAILED),
+                message="Native object used its declared recovery",
+                node_id=node_id,
+                placement="block" if raw.get("placement") == "block" else "document",
+            )
 
     # ----------------------------------------------------------------------
     # Helpers
@@ -528,10 +718,44 @@ class _DeferredOperationError(Exception):
 
 def _error_code(exc: Exception) -> str:
     """Extract a deterministic error code from an exception."""
+    explicit = getattr(exc, "code", None)
+    if isinstance(explicit, str) and explicit:
+        return explicit
     cls_name = type(exc).__name__
     if cls_name == "COMError":
         return "COM_ERROR"
     return "EXECUTION_FAILED"
+
+
+def _is_m3_operation(op: GenerationOperation) -> bool:
+    if op.op not in _M3_NATIVE_OPERATIONS:
+        return False
+    markers = {
+        "writer.add_captioned_figure": "numbering",
+        "writer.add_semantic_table": "numbering",
+        "writer.add_equation": "numbering",
+        "writer.add_cross_reference": "runs",
+        "writer.insert_figure_index": "sequenceId",
+        "writer.insert_table_index": "sequenceId",
+    }
+    return markers[op.op] in op.args
+
+
+def _reference_fallback_text(runs: Any) -> str:
+    parts = []
+    for run in runs or ():
+        if not isinstance(run, dict):
+            continue
+        parts.append(str(run.get("text") if run.get("type") == "text" else run.get("fallbackText", "")))
+    return "".join(parts)
+
+
+def _table_fallback_text(args: Any) -> str:
+    headers = args.get("headers") if isinstance(args, Mapping) else None
+    rows = args.get("rows") if isinstance(args, Mapping) else None
+    if not headers:
+        return ""
+    return "\n".join(" | ".join(str(cell) for cell in row) for row in [headers, *(rows or ())])
 
 
 def _op_fallback_code(op: GenerationOperation) -> str:

@@ -49,6 +49,41 @@ _LINE_SPACING_RULES = {
     "multiple": 5,
 }
 
+_NATIVE_SEQUENCE_IDS = frozenset({"WPSC_FIG", "WPSC_TAB", "WPSC_EQ"})
+_NATIVE_BOOKMARK_RE = re.compile(r"^wpsc_(?:fig|tab|eq)_[0-9a-f]{24}$")
+
+
+class NativeWriterObjectError(RuntimeError):
+    """A closed, operation-local native rendering failure."""
+
+    def __init__(self, code, message="native object operation failed"):
+        super().__init__(message)
+        self.code = code
+
+
+def _caption_field_codes(numbering):
+    """Return controlled STYLEREF/SEQ codes from a validated descriptor."""
+    sequence_id = numbering.get("sequenceId")
+    mode = numbering.get("mode")
+    if sequence_id not in _NATIVE_SEQUENCE_IDS or mode not in {"global", "chapter"}:
+        raise ValueError("invalid native numbering descriptor")
+    if mode == "chapter":
+        if numbering.get("chapterStyleLevel") != 1 or numbering.get("resetLevel") != 1:
+            raise ValueError("invalid chapter numbering descriptor")
+        return (
+            "STYLEREF 1 \\s",
+            f"SEQ {sequence_id} \\* ARABIC \\s 1",
+        )
+    if numbering.get("chapterStyleLevel") is not None or numbering.get("resetLevel") is not None:
+        raise ValueError("invalid global numbering descriptor")
+    return (None, f"SEQ {sequence_id} \\* ARABIC")
+
+
+def _reference_field_code(bookmark_name):
+    if not isinstance(bookmark_name, str) or not _NATIVE_BOOKMARK_RE.fullmatch(bookmark_name):
+        raise ValueError("invalid native bookmark")
+    return f"REF {bookmark_name} \\h"
+
 
 # ---------------------------------------------------------------------------
 # Stable paragraph IDs (w14:paraId)
@@ -1085,9 +1120,10 @@ class WriterComposer(BaseComposer):
                 pass
             s.Font.Size = 12
             s.Font.Color = 0
-        self._doc.TablesOfContents.Add(s.Range, True, 1, 3)
+        toc = self._doc.TablesOfContents.Add(s.Range, True, 1, 3)
         self.selection.EndKey(6)
         self.selection.InsertBreak(7)
+        return toc
 
 
     # ================================================================
@@ -1236,7 +1272,8 @@ class WriterComposer(BaseComposer):
 
     def insert_toc_with_styles(self, title, density):
         """Insert a TOC and apply density minima to TOC 1/2/3 styles."""
-        self.insert_toc(title)
+        toc = self.insert_toc(title)
+        self._native_fields().append(("doc:toc", "TOC", toc, "index"))
         density = density or {}
         for level, key in enumerate(("toc1", "toc2", "toc3"), start=1):
             style_name = "TOC " + str(level)
@@ -1276,6 +1313,494 @@ class WriterComposer(BaseComposer):
             style.LinkToListTemplate(list_template, level_idx)
         except Exception:
             pass
+
+    # ================================================================
+    # Long-form M3 native figure/table/caption/reference primitives
+    # ================================================================
+
+    def _native_fields(self):
+        fields = getattr(self, "_wpsc_native_fields", None)
+        if fields is None:
+            fields = []
+            self._wpsc_native_fields = fields
+        return fields
+
+    def _native_position(self):
+        rng = self.selection.Range
+        return int(getattr(rng, "End", getattr(self.selection, "End", 0)))
+
+    def _native_set_position(self, position):
+        self.selection.SetRange(int(position), int(position))
+
+    def _native_insert_field(self, code, owner_node_id, kind, category):
+        rng = self.selection.Range
+        try:
+            rng.Collapse(0)
+        except Exception:
+            pass
+        field = self._doc.Fields.Add(rng, -1, code, True)
+        result = getattr(field, "Result", None)
+        if result is not None:
+            self.selection.SetRange(int(result.End), int(result.End))
+        self._native_fields().append((owner_node_id or "doc:native", kind, field, category))
+        return field
+
+    def _native_rollback(self, start, end=None):
+        try:
+            stop = self._native_position() if end is None else int(end)
+            if stop > int(start):
+                self._doc.Range(int(start), stop).Delete()
+            self._native_set_position(start)
+        except Exception:
+            raise NativeWriterObjectError(
+                "LOCAL_MUTATION_ROLLBACK_FAILED", "native rollback failed"
+            ) from None
+
+    def _add_native_number_shell(self, numbering, bookmark_name, owner_node_id):
+        style_code, sequence_code = _caption_field_codes(numbering)
+        prefix = numbering["prefix"]
+        suffix = numbering["suffix"]
+        self.selection.TypeText(prefix)
+        number_start = self._native_position()
+        if style_code is not None:
+            self._native_insert_field(style_code, owner_node_id, "STYLEREF", "numbering")
+            self.selection.TypeText("-")
+        kind = {
+            "WPSC_FIG": "SEQ_FIG",
+            "WPSC_TAB": "SEQ_TAB",
+            "WPSC_EQ": "SEQ_EQ",
+        }[numbering["sequenceId"]]
+        self._native_insert_field(sequence_code, owner_node_id, kind, "numbering")
+        number_end = self._native_position()
+        if bookmark_name is not None:
+            if not _NATIVE_BOOKMARK_RE.fullmatch(bookmark_name):
+                raise ValueError("invalid native bookmark")
+            self._doc.Bookmarks.Add(
+                bookmark_name, self._doc.Range(number_start, number_end)
+            )
+        if suffix:
+            self.selection.TypeText(suffix)
+        return number_start, number_end
+
+    def _add_native_caption(
+        self, caption, numbering, bookmark_name, owner_node_id,
+        *, keep_with_next=False,
+    ):
+        start = self._native_position()
+        self._add_native_number_shell(numbering, bookmark_name, owner_node_id)
+        if caption:
+            self.selection.TypeText(" " + str(caption))
+        paragraph_range = self._doc.Range(start, self._native_position())
+        paragraph_range.ParagraphFormat.Alignment = 1
+        paragraph_range.ParagraphFormat.KeepTogether = -1
+        paragraph_range.ParagraphFormat.KeepWithNext = -1 if keep_with_next else 0
+        self.selection.TypeParagraph()
+        return paragraph_range
+
+    def _native_insert_figure_child(self, child, locator, owner_node_id):
+        start = self._native_position()
+        try:
+            shape = self.add_image(
+                locator,
+                width=float(child["displayWidthPt"]),
+                height=float(child["displayHeightPt"]),
+                inline=True,
+                preserve_aspect=True,
+                alt=owner_node_id,
+            )
+            shape.Range.ParagraphFormat.Alignment = 1
+            shape.Range.ParagraphFormat.KeepTogether = -1
+            shape.Range.ParagraphFormat.KeepWithNext = -1
+            self.selection.TypeParagraph()
+            return shape
+        except Exception:
+            self._native_rollback(start)
+            raise
+
+    def _native_columns_container(self, children):
+        table = self._doc.Tables.Add(self.selection.Range, 1, 3)
+        widths = (
+            float(children[0]["displayWidthPt"]),
+            12.0,
+            float(children[1]["displayWidthPt"]),
+        )
+        for index, width in enumerate(widths, start=1):
+            try:
+                table.Columns(index).SetWidth(width, 0)
+            except Exception:
+                table.Columns(index).Width = width
+        for border_id in range(-6, 0):
+            table.Borders(border_id).LineStyle = 0
+        return table
+
+    def add_captioned_figure_native(
+        self, *, caption, numbering, indexable, referenceable, widthMode,
+        orientation, kind, children, layout, keepWithCaption,
+        owner_node_id=None, resource_locators=None, bookmarkName=None,
+        explicitWidthPt=None, columns=None,
+    ):
+        """Insert normalized inline images followed by one native caption."""
+        del indexable, referenceable, widthMode, kind, explicitWidthPt, columns
+        if keepWithCaption is not True:
+            raise ValueError("figure cohesion is required")
+        resource_locators = dict(resource_locators or {})
+        issues = []
+        landscape = orientation == "landscape"
+        if landscape:
+            self.add_section(landscape=True)
+        try:
+            container = self._native_columns_container(children) if layout == "columns" else None
+            for index, child in enumerate(children):
+                degradation = child.get("plannedDegradation")
+                if degradation is not None:
+                    self.add_degradation_notice(
+                        degradation["code"], degradation["message"],
+                        degradation["fallback"], degradation.get("placement", "block"),
+                    )
+                    issues.append({
+                        "code": degradation["code"],
+                        "message": degradation["message"],
+                        "placement": degradation.get("placement", "block"),
+                    })
+                    continue
+                locator = resource_locators.get(child["resourceId"])
+                if locator is None:
+                    raise NativeWriterObjectError("RESOURCE_HASH_MISMATCH")
+                if container is not None:
+                    column = 1 if index == 0 else 3
+                    cell_range = container.Cell(1, column).Range
+                    self.selection.SetRange(cell_range.Start, cell_range.Start)
+                try:
+                    self._native_insert_figure_child(child, locator, owner_node_id)
+                except Exception as exc:
+                    if getattr(exc, "code", None) != "IMAGE_INSERT_FAILED":
+                        raise
+                    if container is not None:
+                        self.selection.SetRange(container.Range.End, container.Range.End)
+                    try:
+                        self._native_insert_figure_child(child, locator, owner_node_id)
+                    except Exception as retry_exc:
+                        if getattr(retry_exc, "code", None) != "IMAGE_INSERT_FAILED":
+                            raise
+                        self.add_degradation_notice(
+                            "IMAGE_INSERT_FAILED", "Figure image could not be inserted",
+                            "[IMAGE_INSERT_FAILED]", "block",
+                        )
+                    issues.append({
+                        "code": "IMAGE_INSERT_FAILED",
+                        "message": "Figure child used deterministic stack fallback",
+                        "placement": "block",
+                    })
+            if container is not None:
+                self.selection.SetRange(container.Range.End, container.Range.End)
+                self.selection.TypeParagraph()
+            self._add_native_caption(
+                caption, numbering, bookmarkName, owner_node_id,
+                keep_with_next=False,
+            )
+        finally:
+            if landscape:
+                self.add_section(landscape=False)
+        return {"issues": issues}
+
+    @staticmethod
+    def _native_border_width(points):
+        return {0.75: 6, 1.5: 12}.get(float(points), 2)
+
+    def _apply_native_table_borders(self, table, border_spec):
+        mapping = {
+            "top": -1, "left": -2, "bottom": -3, "right": -4,
+            "insideHorizontal": -5, "insideVertical": -6,
+        }
+        for key, border_id in mapping.items():
+            points = float(border_spec[key])
+            border = table.Borders(border_id)
+            border.LineStyle = 0 if points == 0.0 else 1
+            if points:
+                border.LineWidth = self._native_border_width(points)
+        header_points = float(border_spec["headerBottom"])
+        header_border = table.Rows(1).Borders(-3)
+        header_border.LineStyle = 0 if header_points == 0.0 else 1
+        if header_points:
+            header_border.LineWidth = self._native_border_width(header_points)
+
+    def _create_native_table(
+        self, headers, rows, alignments, border_spec, repeat_header,
+        allow_row_split, cell_indent_pt, merges,
+    ):
+        data = [list(headers), *[list(row) for row in rows]]
+        table = self._doc.Tables.Add(self.selection.Range, len(data), len(headers))
+        alignment_codes = {"left": 0, "center": 1, "right": 2}
+        for row_index, row in enumerate(data, start=1):
+            for col_index, text in enumerate(row, start=1):
+                cell = table.Cell(row_index, col_index)
+                cell.Range.Text = str(text)
+                paragraph = cell.Range.ParagraphFormat
+                paragraph.FirstLineIndent = float(cell_indent_pt)
+                paragraph.LeftIndent = 0.0
+                paragraph.RightIndent = 0.0
+                paragraph.Alignment = alignment_codes[alignments[col_index - 1]]
+        table.Rows.AllowBreakAcrossPages = -1 if allow_row_split else 0
+        if repeat_header:
+            table.Rows(1).HeadingFormat = -1
+        self._apply_native_table_borders(table, border_spec)
+        for merge in merges:
+            table.Cell(merge["top"], merge["left"]).Merge(
+                table.Cell(merge["bottom"], merge["right"])
+            )
+        try:
+            self.selection.SetRange(table.Range.End, table.Range.End)
+        except Exception:
+            self.selection.EndKey(6)
+        self.selection.TypeParagraph()
+        return table
+
+    def _table_overflow_group(self, table, merges):
+        for merge in merges:
+            if merge["top"] < 2 or merge["bottom"] <= merge["top"]:
+                continue
+            first = table.Cell(merge["top"], merge["left"]).Range
+            last = table.Cell(merge["bottom"], merge["right"]).Range
+            if int(first.Information(3)) != int(last.Information(3)):
+                return merge["top"], merge["bottom"]
+        return None
+
+    def _add_native_table_text_fallback(self, headers, rows):
+        self.selection.TypeText(" | ".join(str(value) for value in headers))
+        self.selection.TypeParagraph()
+        for row in rows:
+            self.selection.TypeText(" | ".join(str(value) for value in row))
+            self.selection.TypeParagraph()
+
+    def _add_native_table_notice(self, code, message, fallback_text=""):
+        start = self._native_position()
+        self.add_degradation_notice(code, message, fallback_text, "block")
+        notice = self._doc.Range(start, self._native_position())
+        notice.ParagraphFormat.KeepTogether = -1
+        notice.ParagraphFormat.KeepWithNext = -1
+
+    def add_semantic_table_native(
+        self, *, caption, numbering, indexable, referenceable, headers, rows,
+        alignments, style, orientation, borderSpec, merges, repeatHeader,
+        allowRowSplit, cellIndentPt, plannedDegradation,
+        keepCaptionWithFirstRow, owner_node_id=None, bookmarkName=None,
+    ):
+        """Insert a caption, planned notices, and a resolved native table."""
+        del indexable, referenceable, style
+        if keepCaptionWithFirstRow is not True:
+            raise ValueError("table cohesion is required")
+        landscape = orientation == "landscape"
+        if landscape:
+            self.add_section(landscape=True)
+        issues = []
+        try:
+            self._add_native_caption(
+                caption, numbering, bookmarkName, owner_node_id,
+                keep_with_next=True,
+            )
+            for degradation in plannedDegradation:
+                self._add_native_table_notice(
+                    degradation["code"], degradation["message"], "",
+                )
+                issues.append(dict(degradation))
+            table_start = self._native_position()
+            effective_merges = merges
+            try:
+                table = self._create_native_table(
+                    headers, rows, alignments, borderSpec, repeatHeader,
+                    allowRowSplit, cellIndentPt, merges,
+                )
+            except Exception as exc:
+                code = getattr(exc, "code", None)
+                if code not in {
+                    "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
+                    "TABLE_INSERT_FAILED",
+                }:
+                    raise
+                self._native_rollback(table_start)
+                self._add_native_table_notice(
+                    code, "Table used the deterministic grid fallback"
+                )
+                grid_start = self._native_position()
+                grid = {
+                    "top": .75, "bottom": .75, "headerBottom": .75,
+                    "left": .75, "right": .75,
+                    "insideHorizontal": .75, "insideVertical": .75,
+                }
+                try:
+                    table = self._create_native_table(
+                        headers, rows, alignments, grid, repeatHeader,
+                        True, cellIndentPt, (),
+                    )
+                    effective_merges = ()
+                    issues.append({
+                        "code": code,
+                        "message": "Table used the deterministic grid fallback",
+                        "placement": "block",
+                    })
+                except Exception as grid_exc:
+                    if getattr(grid_exc, "code", None) not in {
+                        "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
+                        "TABLE_INSERT_FAILED",
+                    }:
+                        raise
+                    self._native_rollback(grid_start)
+                    self._add_native_table_text_fallback(headers, rows)
+                    issues.append({
+                        "code": "TABLE_INSERT_FAILED",
+                        "message": "Table used the deterministic text fallback",
+                        "placement": "block",
+                    })
+                    return {"issues": issues}
+            group = self._table_overflow_group(table, effective_merges)
+            if group is not None:
+                self._native_rollback(table_start)
+                self._add_native_table_notice(
+                    "TABLE_ROW_FORCED_SPLIT",
+                    "A vertical merge group exceeded the available page height",
+                    "",
+                )
+                grid = {
+                    "top": .75, "bottom": .75, "headerBottom": .75,
+                    "left": .75, "right": .75,
+                    "insideHorizontal": .75, "insideVertical": .75,
+                }
+                self._create_native_table(
+                    headers, rows, alignments, grid, repeatHeader,
+                    True, cellIndentPt, (),
+                )
+                issues.append({
+                    "code": "TABLE_ROW_FORCED_SPLIT",
+                    "message": "Vertical merge group rendered as splittable grid",
+                    "placement": "block",
+                })
+        finally:
+            if landscape:
+                self.add_section(landscape=False)
+        return {"issues": issues}
+
+    def add_equation_number_native(
+        self, *, source, numbering, bookmarkName, fallbackText,
+        owner_node_id=None,
+    ):
+        """Insert readable M2 formula text plus the M3 native number shell."""
+        start = self._native_position()
+        self.selection.TypeText(str(source or fallbackText))
+        self.selection.TypeText("\t")
+        self._add_native_number_shell(numbering, bookmarkName, owner_node_id)
+        paragraph = self._doc.Range(start, self._native_position())
+        paragraph.ParagraphFormat.Alignment = 2
+        paragraph.ParagraphFormat.KeepTogether = -1
+        self.selection.TypeParagraph()
+        return {"issues": []}
+
+    def add_cross_reference_paragraph(self, *, runs, owner_node_id=None):
+        """Insert ordered literal and native REF runs in one paragraph."""
+        for run in runs:
+            if run["type"] == "text":
+                self.selection.TypeText(run["text"])
+                continue
+            self.selection.TypeText(run["prefix"])
+            start = self._native_position()
+            try:
+                self._native_insert_field(
+                    _reference_field_code(run["bookmarkName"]),
+                    owner_node_id, "REF", "reference",
+                )
+            except Exception as exc:
+                if getattr(exc, "code", None) != "CROSS_REFERENCE_FAILED":
+                    raise
+                self._native_rollback(start)
+                self.selection.TypeText(run["fallbackText"])
+            if run["suffix"]:
+                self.selection.TypeText(run["suffix"])
+        self.selection.TypeParagraph()
+        return {"issues": []}
+
+    def insert_caption_index_native(
+        self, *, title, sequence_id, title_style_id, owner_node_id=None,
+    ):
+        if sequence_id not in {"WPSC_FIG", "WPSC_TAB"}:
+            raise ValueError("invalid native caption index sequence")
+        if title:
+            try:
+                self.selection.Style = self._doc.Styles(title_style_id)
+            except Exception:
+                # Built-in Body Text is explicitly non-outline and therefore
+                # safe for the TOC when the named internal style is absent.
+                self.selection.Style = self._doc.Styles("Body Text")
+            self.selection.TypeText(str(title))
+            self.selection.TypeParagraph()
+        index = self._doc.TablesOfFigures.Add(self.selection.Range, sequence_id)
+        self._native_fields().append((
+            owner_node_id or "doc:index",
+            "TOF_FIG" if sequence_id == "WPSC_FIG" else "TOF_TAB",
+            index,
+            "index",
+        ))
+        self.selection.EndKey(6)
+        self.selection.TypeParagraph()
+        return index
+
+    def _update_tracked_native_fields(self, kinds):
+        for _owner, kind, native, _category in self._native_fields():
+            if kind in kinds:
+                native.Update()
+
+    def repaginate_and_update_numbering(self):
+        self._doc.Repaginate()
+        self._update_tracked_native_fields({"STYLEREF", "SEQ_FIG", "SEQ_TAB", "SEQ_EQ"})
+
+    def refresh_bookmarks_and_references(self):
+        # Accessing Count is a required bookmark API health check.  Do not
+        # swallow a missing/throwing native collection.
+        int(self._doc.Bookmarks.Count)
+        self._update_tracked_native_fields({"REF"})
+
+    def refresh_indexes(self):
+        for index in range(1, int(self._doc.TablesOfContents.Count) + 1):
+            self._doc.TablesOfContents.Item(index).Update()
+        for index in range(1, int(self._doc.TablesOfFigures.Count) + 1):
+            self._doc.TablesOfFigures.Item(index).Update()
+
+    def repaginate_and_update_page_fields(self):
+        self._doc.Repaginate()
+        self._update_tracked_native_fields({"PAGE", "NUMPAGES"})
+
+    def snapshot_fields(self):
+        from .longform.field_contract import snapshot_visible_field
+
+        total_pages = int(self._doc.ComputeStatistics(2))
+        toc_count = int(self._doc.TablesOfContents.Count)
+        figure_indexes = 0
+        table_indexes = 0
+        snapshots = []
+        ordinals = {}
+        for owner, kind, native, category in self._native_fields():
+            key = (owner, kind)
+            ordinal = ordinals.get(key, 0)
+            ordinals[key] = ordinal + 1
+            if kind == "TOF_FIG":
+                figure_indexes += 1
+            elif kind == "TOF_TAB":
+                table_indexes += 1
+            result = getattr(native, "Result", None)
+            if result is not None:
+                visible = getattr(result, "Text", "")
+            else:
+                visible = getattr(getattr(native, "Range", None), "Text", "")
+            snapshots.append(snapshot_visible_field(
+                owner_node_id=owner,
+                field_kind=kind,
+                ordinal_within_node=ordinal,
+                visible_result=visible,
+                field_category=category,
+                toc_page_count=toc_count,
+                figure_index_page_count=figure_indexes,
+                table_index_page_count=table_indexes,
+                total_pages=total_pages,
+            ))
+        return tuple(snapshots)
 
     def finalize_fields(self, *, max_rounds=3):
         """Update all fields (convergence helper)."""
