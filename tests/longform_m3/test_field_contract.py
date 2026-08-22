@@ -19,6 +19,7 @@ from skills.WPSComposer.scripts.longform.field_contract import (
     FIELD_KINDS,
     NativeFieldAdapter,
     NativeFieldContractError,
+    evaluate_field_snapshot_history,
     finalize_native_fields,
     snapshot_visible_field,
 )
@@ -351,3 +352,79 @@ def test_unknown_field_kind_and_duplicate_stable_key_are_fatal():
 
     with pytest.raises(NativeFieldContractError, match="field snapshot"):
         finalize_native_fields(_Raw(((),)))
+
+
+def test_remote_history_stops_only_on_its_final_adjacent_equal_pair():
+    a = (snapshot_visible_field(owner_node_id="fig:1", field_kind="SEQ_FIG", ordinal_within_node=0, visible_result="1", field_category="native"),)
+    b = (snapshot_visible_field(owner_node_id="fig:1", field_kind="SEQ_FIG", ordinal_within_node=0, visible_result="2", field_category="native"),)
+
+    converged = evaluate_field_snapshot_history((a, b, b), max_rounds=3)
+    assert converged.rounds == 3
+    assert converged.snapshot == b
+    assert converged.issues == ()
+
+    with pytest.raises(NativeFieldContractError, match="history") as exc_info:
+        evaluate_field_snapshot_history((a, a, b, b), max_rounds=3)
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+
+
+def test_remote_unstable_history_uses_the_read_only_fourth_snapshot_not_third():
+    rounds = tuple(
+        (
+            snapshot_visible_field(
+                owner_node_id="fig:1",
+                field_kind="SEQ_FIG",
+                ordinal_within_node=0,
+                visible_result=str(index),
+                field_category="native",
+                total_pages=index,
+            ),
+        )
+        for index in (1, 2, 3, 4)
+    )
+
+    result = evaluate_field_snapshot_history(rounds, max_rounds=3)
+
+    assert result.rounds == 4
+    assert result.snapshot == rounds[3]
+    assert result.snapshot != rounds[2]
+    assert [issue.code for issue in result.issues] == ["FIELD_REFRESH_UNSTABLE"]
+
+
+def test_remote_history_rejects_truncation_and_post_convergence_mutation():
+    a = (snapshot_visible_field(owner_node_id="fig:1", field_kind="SEQ_FIG", ordinal_within_node=0, visible_result="1", field_category="native"),)
+    b = (snapshot_visible_field(owner_node_id="fig:1", field_kind="SEQ_FIG", ordinal_within_node=0, visible_result="2", field_category="native"),)
+    for history in ((), (a,), (a, b), (a, a, b), (a, b, b, a)):
+        with pytest.raises(NativeFieldContractError, match="history"):
+            evaluate_field_snapshot_history(history, max_rounds=3)
+
+
+def test_digest_rejects_field_snapshot_subclass_without_leaking_overridden_serializer():
+    secret = "/private/field.docx WPSC_SECRET visible field hash"
+
+    class _EvilFieldSnapshot(FieldSnapshot):
+        def to_dict(self):
+            raise RuntimeError(secret)
+
+    evil = _EvilFieldSnapshot(
+        stable_key=("fig:1", "SEQ_FIG", 0),
+        field_category="native",
+        result_hash="0" * 64,
+        toc_page_count=0,
+        figure_index_page_count=0,
+        table_index_page_count=0,
+        total_pages=1,
+    )
+
+    class _EvilAdapter(_Adapter):
+        def snapshot_fields(self):
+            return (evil,)
+
+    with pytest.raises(NativeFieldContractError) as exc_info:
+        finalize_native_fields(_EvilAdapter(((),)))
+    exc = exc_info.value
+    rendered = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    assert exc.__cause__ is None
+    assert exc.__context__ is None
+    assert secret not in rendered

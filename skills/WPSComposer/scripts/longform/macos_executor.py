@@ -25,7 +25,10 @@ from .executor import (
     PaginationFragment,
     PaginationMap,
     PaginationNode,
-    finalize_fields_with_convergence,
+)
+from .field_contract import (
+    NativeFieldContractError,
+    evaluate_field_snapshot_history,
 )
 from .resources import PreparedLongformResource
 
@@ -48,21 +51,6 @@ class MacOSLongformExecutorError(Exception):
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
-
-
-class _FieldSnapshotPlayer:
-    """Replays add-in field snapshots through the shared convergence loop."""
-
-    def __init__(self, snapshots: Tuple[Mapping[str, Any], ...]) -> None:
-        self._snapshots = snapshots
-        self._index = 0
-
-    def refresh_fields(self, round_index: int) -> Tuple[FieldSnapshot, ...]:
-        if self._index >= len(self._snapshots):
-            return ()
-        snapshot = self._snapshots[self._index]
-        self._index += 1
-        return (FieldSnapshot.from_dict(snapshot),)
 
 
 class MacOSLongformExecutor(LongformExecutor):
@@ -199,14 +187,25 @@ class MacOSLongformExecutor(LongformExecutor):
             _execution_issue(item) for item in issue_codes
         ]
 
-        field_snapshots = value.get("fieldSnapshots")
-        if field_snapshots:
+        raw_history = value.get("fieldSnapshots")
+        if (
+            raw_history is not None
+            and any(op.op == "writer.finalize_fields" for op in plan.operations)
+        ):
             max_rounds = self._extract_max_rounds(plan)
-            player = _FieldSnapshotPlayer(tuple(field_snapshots))
-            convergence = finalize_fields_with_convergence(
-                player, max_rounds=max_rounds
+            history = _parse_field_snapshot_history(raw_history)
+            convergence = evaluate_field_snapshot_history(
+                history,
+                max_rounds=max_rounds,
+                allow_legacy_hashes=True,
             )
-            issues.extend(convergence.issues)
+            # The validated saved-state history is authoritative.  Discard any
+            # stale/duplicate remote instability marker, then add the shared
+            # result exactly once.
+            issues = [
+                issue for issue in issues if issue.code != "FIELD_REFRESH_UNSTABLE"
+            ]
+            issues = _merge_execution_issues(issues, convergence.issues)
 
         return ExecutionOutcome(
             staged_artifact=staged_artifact,
@@ -218,7 +217,7 @@ class MacOSLongformExecutor(LongformExecutor):
     def _extract_max_rounds(self, plan: GenerationPlan) -> int:
         for op in plan.operations:
             if op.op == "writer.finalize_fields":
-                return int(op.args.get("maxRounds", 3))
+                return op.args.get("maxRounds", 3)
         return 3
 
 
@@ -234,6 +233,45 @@ def _execution_issue(raw: Mapping[str, Any]) -> ExecutionIssue:
         placement=str(raw.get("placement") or "document"),
         node_id=raw.get("nodeId"),
     )
+
+
+def _parse_field_snapshot_history(raw: Any) -> Tuple[Tuple[FieldSnapshot, ...], ...]:
+    failed = False
+    history: Tuple[Tuple[FieldSnapshot, ...], ...] = ()
+    try:
+        parsed = []
+        for round_value in tuple(raw or ()):
+            if isinstance(round_value, Mapping):
+                parsed.append((FieldSnapshot.from_dict(dict(round_value)),))
+            else:
+                parsed.append(
+                    tuple(
+                        FieldSnapshot.from_dict(dict(item))
+                        for item in tuple(round_value)
+                    )
+                )
+        history = tuple(parsed)
+    except Exception:
+        failed = True
+    if failed:
+        raise NativeFieldContractError("field_history", "is invalid") from None
+    return history
+
+
+def _merge_execution_issues(
+    existing: List[ExecutionIssue],
+    additions: Tuple[ExecutionIssue, ...],
+) -> List[ExecutionIssue]:
+    merged = list(existing)
+    for issue in additions:
+        identity = (issue.code, issue.placement, issue.node_id)
+        merged = [
+            prior
+            for prior in merged
+            if (prior.code, prior.placement, prior.node_id) != identity
+        ]
+        merged.append(issue)
+    return merged
 
 
 def _parse_pagination_map(raw: Mapping[str, Any]) -> PaginationMap:

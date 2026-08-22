@@ -178,3 +178,91 @@ Fresh full-suite verification:
 ```
 
 Result: `1651 passed, 6 skipped in 155.78s`. No review test was skipped.
+
+## Second independent review fix wave
+
+### Second-review RED evidence
+
+New history, malicious-snapshot, saved-state, and executor-reuse tests were
+added first. The initial focused command stopped at collection with the
+expected error:
+
+```text
+ImportError: cannot import name 'evaluate_field_snapshot_history'
+```
+
+The added tests require immediate remote convergence, complete-history
+validation, fourth-snapshot ownership, post-convergence mutation rejection,
+snapshot-subclass rejection, remote/local issue alignment, and per-document
+Windows issue isolation.
+
+After the focused fixes, the first fresh full-suite run exposed two additional
+M2 compatibility failures:
+
+```text
+2 failed, 1659 passed, 6 skipped
+```
+
+Both were the existing macOS M2 evidence mocks, which intentionally omit the
+new `fieldSnapshots` key. The parser now preserves that historic result shape:
+missing history remains accepted, while any supplied history is strictly and
+completely validated. The direct evidence compatibility rerun plus Task 5
+focused suites returned `76 passed`.
+
+### Second-review fixes
+
+- The macOS add-in compares canonical snapshot signatures immediately after
+  each mutation. `A,A` stops after two mutations; it never runs the remaining
+  bound and asks Python to reinterpret an already-saved document.
+- If all three mutation snapshots change, the add-in takes exactly one
+  read-only fourth snapshot, records that snapshot in history, and emits one
+  `FIELD_REFRESH_UNSTABLE` issue using the same aggregate message contract as
+  Python.
+- Added shared pure `evaluate_field_snapshot_history(...)`. Legal converged
+  history must end on its first adjacent equal pair. `A,A,B,B`, `A,A,B`,
+  `A,B,B,A`, truncated histories, and excessive histories are sanitized fatal
+  protocol errors. `A,B,C,D` is unstable and returns D, not C.
+- `MacOSLongformExecutor` no longer replays remote history through the legacy
+  mutation adapter. It parses every supplied round, validates the complete
+  history, treats the validated saved state as authoritative, and replaces
+  stale/duplicate remote instability markers with exactly one shared result.
+- Remote history accepts the current single-field-per-round JSON shape and the
+  future tuple-of-fields-per-round shape. Malformed mappings/iteration are
+  collapsed into a sanitized `field_history` failure.
+- Canonical validation now requires `type(item) is FieldSnapshot`, rejecting
+  subclasses before overridden attributes or serializers execute. Digest,
+  `to_dict`, and JSON serialization are additionally enclosed in a sanitized
+  digest boundary with no cause/context leakage.
+- `WindowsLongformExecutor.execute` clears `_issues` before every document and
+  exact issue insertion is idempotent. Reusing one executor for two unstable
+  documents yields exactly one instability issue in each outcome.
+- Updated `NativeFieldContractError` documentation to match the implemented
+  no-cause/no-context behavior.
+
+### Second-review GREEN evidence
+
+Focused field/Windows/macOS/Node/assets command:
+
+```text
+../../.venv/bin/python -m pytest tests/longform_m3/test_field_contract.py tests/longform/test_executor.py tests/longform/test_windows_executor.py tests/longform/test_macos_executor.py tests/longform_m0/test_addin_assets.py -q
+```
+
+Result: `107 passed`; the subsequent evidence-compatibility plus affected-suite
+rerun was `76 passed`.
+
+Broad long-form regression:
+
+```text
+../../.venv/bin/python -m pytest tests/longform tests/longform_m2 tests/longform_m3 tests/longform_m0/test_addin_assets.py -q
+```
+
+Result: `732 passed, 6 skipped`.
+
+Final full-suite verification after the M2 evidence compatibility fix:
+
+```text
+../../.venv/bin/python -m pytest -q
+```
+
+Result: `1661 passed, 6 skipped in 154.22s`. The six skips remain only the
+existing real-WPS M2 writer registration gate; no Task 5 test was skipped.

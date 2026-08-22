@@ -148,6 +148,7 @@ class WindowsLongformExecutor(LongformExecutor):
         resources: Tuple[PreparedLongformResource, ...] = (),
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
+        self._issues = []
         validate_generation_plan(plan.to_dict(), component="writer")
         composer = self._acquire_composer()
         paths = self._resolve_paths()
@@ -157,7 +158,7 @@ class WindowsLongformExecutor(LongformExecutor):
                 composer,
                 max_rounds=_extract_max_rounds(plan.operations),
             )
-            self._issues.extend(convergence.issues)
+            self._extend_issues(convergence.issues)
             composer.save_docx(paths.staged_docx)
         except _ExecutionAbort as exc:
             composer.close(save_changes=False)
@@ -488,14 +489,24 @@ class WindowsLongformExecutor(LongformExecutor):
         node_id: Optional[str] = None,
         placement: str = "document",
     ) -> None:
-        self._issues.append(
-            ExecutionIssue(
-                code=code,
-                message=message,
-                placement=placement,
-                node_id=node_id,
-            )
+        issue = ExecutionIssue(
+            code=code,
+            message=message,
+            placement=placement,
+            node_id=node_id,
         )
+        self._extend_issues((issue,))
+
+    def _extend_issues(self, issues: Tuple[ExecutionIssue, ...]) -> None:
+        identities = {
+            (issue.code, issue.message, issue.placement, issue.node_id)
+            for issue in self._issues
+        }
+        for issue in issues:
+            identity = (issue.code, issue.message, issue.placement, issue.node_id)
+            if identity not in identities:
+                self._issues.append(issue)
+                identities.add(identity)
 
 
 class _ExecutionAbort(Exception):

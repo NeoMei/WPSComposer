@@ -32,6 +32,7 @@ from skills.WPSComposer.scripts.longform.executor import (
     PaginationMap,
     PaginationNode,
     PaginationFragment,
+    FieldSnapshot,
 )
 
 
@@ -64,6 +65,10 @@ class FakeLoopbackBridge:
             "appliedOperations": 3,
             "issueCodes": [],
             "paginationMap": {"version": "M2-stub", "nodes": []},
+            "fieldSnapshots": [
+                _remote_snapshot("stable", 1),
+                _remote_snapshot("stable", 1),
+            ],
         })
 
     def issue(
@@ -196,6 +201,10 @@ def test_execute_returns_outcome_from_add_in_result(tmp_staging: Path):
                 {"nodeId": "sec:1", "pageStart": 1, "pageEnd": 1, "fragments": [{"page": 1}]},
             ],
         },
+        "fieldSnapshots": [
+            _remote_snapshot("stable", 1),
+            _remote_snapshot("stable", 1),
+        ],
     })
     bridge = FakeLoopbackBridge(result=result)
     executor = MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_staging))
@@ -208,6 +217,105 @@ def test_execute_returns_outcome_from_add_in_result(tmp_staging: Path):
     assert outcome.pagination_map.version == "M2-stub"
     assert len(outcome.pagination_map.nodes) == 1
     assert outcome.pagination_map.nodes[0].node_id == "sec:1"
+
+
+def _remote_snapshot(hash_value: str, total_pages: int) -> dict[str, Any]:
+    return FieldSnapshot(
+        stable_key=("doc:finalize", "PAGE", 0),
+        field_category="page",
+        result_hash=hash_value,
+        toc_page_count=0,
+        figure_index_page_count=0,
+        table_index_page_count=0,
+        total_pages=total_pages,
+    ).to_dict()
+
+
+def test_execute_consumes_complete_unstable_history_and_deduplicates_remote_issue(
+    tmp_staging: Path,
+):
+    from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
+
+    result = FakeBridgeResult(value={
+        "outputPath": "/staged/final.docx",
+        "issueCodes": [{
+            "code": "FIELD_REFRESH_UNSTABLE",
+            "message": "remote unstable",
+            "placement": "document",
+        }],
+        "fieldSnapshots": [
+            _remote_snapshot("h1", 1),
+            _remote_snapshot("h2", 2),
+            _remote_snapshot("h3", 3),
+            _remote_snapshot("h4", 4),
+        ],
+        "paginationMap": {"version": "M2-stub", "nodes": []},
+    })
+    executor = MacOSLongformExecutor(
+        bridge=FakeLoopbackBridge(result=result),
+        staging_dir=str(tmp_staging),
+    )
+
+    outcome = executor.execute(make_simple_plan(), ())
+
+    assert [issue.code for issue in outcome.issues] == ["FIELD_REFRESH_UNSTABLE"]
+    assert "total_pages=4" in outcome.issues[0].message
+
+
+def test_execute_rejects_remote_history_that_mutated_after_convergence(
+    tmp_staging: Path,
+):
+    from skills.WPSComposer.scripts.longform.field_contract import NativeFieldContractError
+    from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
+
+    result = FakeBridgeResult(value={
+        "outputPath": "/staged/final.docx",
+        "issueCodes": [],
+        "fieldSnapshots": [
+            _remote_snapshot("same", 1),
+            _remote_snapshot("same", 1),
+            _remote_snapshot("later", 2),
+            _remote_snapshot("later", 2),
+        ],
+        "paginationMap": {"version": "M2-stub", "nodes": []},
+    })
+    executor = MacOSLongformExecutor(
+        bridge=FakeLoopbackBridge(result=result),
+        staging_dir=str(tmp_staging),
+    )
+
+    with pytest.raises(NativeFieldContractError, match="history") as exc_info:
+        executor.execute(make_simple_plan(), ())
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+
+
+def test_execute_uses_validated_stable_history_over_stale_remote_unstable_issue(
+    tmp_staging: Path,
+):
+    from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
+
+    result = FakeBridgeResult(value={
+        "outputPath": "/staged/final.docx",
+        "issueCodes": [{
+            "code": "FIELD_REFRESH_UNSTABLE",
+            "message": "stale marker",
+            "placement": "document",
+        }],
+        "fieldSnapshots": [
+            _remote_snapshot("same", 1),
+            _remote_snapshot("same", 1),
+        ],
+        "paginationMap": {"version": "M2-stub", "nodes": []},
+    })
+    executor = MacOSLongformExecutor(
+        bridge=FakeLoopbackBridge(result=result),
+        staging_dir=str(tmp_staging),
+    )
+
+    outcome = executor.execute(make_simple_plan(), ())
+
+    assert outcome.issues == ()
 
 
 def test_execute_raises_dedicated_host_error_when_bridge_missing(tmp_staging: Path):
@@ -545,16 +653,59 @@ const result = window.WPSComposerLongformV2.run({{
   }}
 }});
 assert.equal(saveCount, 1);
-assert.equal(updateCount, 3, "maxRounds=3 performs exactly three mutations; frozen snapshot is read-only");
-assert.equal(result.fieldSnapshots.length, 4);
+assert.equal(updateCount, 2, "the second identical adjacent snapshot stops native mutation");
+assert.equal(result.fieldSnapshots.length, 2);
 assert.deepEqual(convergenceEvents, [
   "mutation", "snapshot",
   "mutation", "snapshot",
-  "mutation", "snapshot",
-  "snapshot", "save"
+  "save"
 ]);
 """
     path = Path(tempfile.mkdtemp()) / "ordering_test.js"
+    path.write_text(js, encoding="utf-8")
+    subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
+
+
+def test_addin_unstable_history_freezes_fourth_snapshot_and_deduplicates_issue(
+    project_root: Path,
+):
+    addin_dir = project_root / "macos" / "wps-jsapi-probe" / "addin"
+    v2_path = json.dumps(str(addin_dir / "writer-longform-v2.js"))
+    js = f"""
+const fs = require("fs");
+const assert = require("assert");
+global.window = {{}};
+let mutationCount = 0;
+let snapshotCount = 0;
+const pages = [1, 2, 3, 4];
+const document = {{
+  Content: {{ End: 0, Text: "" }},
+  TablesOfContents: {{ Count: 0, Item: function() {{}} }},
+  TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
+  Fields: {{ Update: function() {{ mutationCount += 1; }} }},
+  ComputeStatistics: function() {{ return pages[snapshotCount++]; }},
+  SaveAs2: function() {{}},
+  Close: function() {{}}
+}};
+global.Application = {{
+  DisplayAlerts: 7,
+  ScreenUpdating: true,
+  Documents: {{ Add: function() {{ return document; }} }}
+}};
+eval(fs.readFileSync({v2_path}, "utf8"));
+const result = window.WPSComposerLongformV2.run({{
+  outputPath: "/staged/output.docx",
+  plan: {{component: "writer", operations: [
+    {{op: "writer.finalize_fields", args: {{maxRounds: 3}}, nodeId: "doc:finalize"}}
+  ]}}
+}});
+assert.equal(mutationCount, 3);
+assert.equal(snapshotCount, 4);
+assert.equal(result.fieldSnapshots.length, 4);
+assert.equal(result.fieldSnapshots[3].totalPages, 4);
+assert.equal(result.issueCodes.filter(function(issue) {{ return issue.code === "FIELD_REFRESH_UNSTABLE"; }}).length, 1);
+"""
+    path = Path(tempfile.mkdtemp()) / "field_contract_unstable_test.js"
     path.write_text(js, encoding="utf-8")
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
 

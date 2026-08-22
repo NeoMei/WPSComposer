@@ -633,6 +633,37 @@ def test_writer_refresh_fields_mutates_required_field_apis_once_per_round():
     assert snapshot[0].total_pages == 5
 
 
+def test_executor_reuse_does_not_leak_unstable_issue_between_documents(
+    executor, fake_composer, simple_plan
+):
+    fake_composer._snapshots = [
+        (
+            FieldSnapshot(
+                stable_key=("doc:toc", "TOC", 0),
+                field_category="index",
+                result_hash=f"hash{index}",
+                toc_page_count=1,
+                figure_index_page_count=0,
+                table_index_page_count=0,
+                total_pages=index,
+            ),
+        )
+        for index in (1, 2, 3)
+    ]
+
+    first = executor.execute(simple_plan, ())
+    second = executor.execute(simple_plan, ())
+
+    assert [issue.code for issue in first.issues] == [FIELD_REFRESH_UNSTABLE]
+    assert [issue.code for issue in second.issues] == [FIELD_REFRESH_UNSTABLE]
+
+
+def test_record_issue_deduplicates_exact_same_issue(executor):
+    executor._record_issue("SAME", "same", "node:1")
+    executor._record_issue("SAME", "same", "node:1")
+    assert [issue.code for issue in executor._issues] == ["SAME"]
+
+
 # -----------------------------------------------------------------------------
 # Dedicated host ownership
 # -----------------------------------------------------------------------------

@@ -41,8 +41,9 @@ class NativeFieldContractError(RuntimeError):
 
     Exception text intentionally excludes the platform exception.  Native API
     errors can contain visible field values, bookmark names, or local paths;
-    callers may retain the cause for debugging but must not serialize it as an
-    execution issue.
+    the original exception is deliberately discarded.  Contract helpers raise
+    only after leaving exception handlers, yielding neither ``__cause__`` nor
+    ``__context__`` and keeping formatted tracebacks privacy-safe.
     """
 
     def __init__(self, phase: str, reason: str = "failed") -> None:
@@ -157,7 +158,7 @@ def _canonical_snapshot_unchecked(
 
     keys: set[Tuple[str, str, int]] = set()
     for item in snapshot:
-        if not isinstance(item, FieldSnapshot):
+        if type(item) is not FieldSnapshot:
             raise NativeFieldContractError("snapshot_fields", "returned an invalid field snapshot")
         key = item.stable_key
         if (
@@ -210,7 +211,7 @@ def _canonical_snapshot(
     return snapshot
 
 
-def _snapshot_digest(snapshot: Tuple[FieldSnapshot, ...]) -> str:
+def _snapshot_digest_unchecked(snapshot: Tuple[FieldSnapshot, ...]) -> str:
     canonical = json.dumps(
         [item.to_dict() for item in snapshot],
         ensure_ascii=False,
@@ -218,6 +219,18 @@ def _snapshot_digest(snapshot: Tuple[FieldSnapshot, ...]) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def _snapshot_digest(snapshot: Tuple[FieldSnapshot, ...]) -> str:
+    failed = False
+    digest = ""
+    try:
+        digest = _snapshot_digest_unchecked(snapshot)
+    except Exception:
+        failed = True
+    if failed:
+        raise NativeFieldContractError("snapshot_digest") from None
+    return digest
 
 
 def _unstable_issue(snapshot: Tuple[FieldSnapshot, ...], rounds: int) -> ExecutionIssue:
@@ -280,6 +293,71 @@ def _finalize_native_fields(
     )
 
 
+def evaluate_field_snapshot_history(
+    history: Any,
+    max_rounds: int = 3,
+    *,
+    allow_legacy_hashes: bool = False,
+) -> ConvergenceResult:
+    """Validate convergence already executed by a remote native adapter.
+
+    A remote executor must stop immediately after the second adjacent equal
+    snapshot.  If all mutation rounds change, it appends exactly one read-only
+    diagnostic snapshot.  This function never replays or mutates native state.
+    """
+
+    if type(max_rounds) is not int or not 1 <= max_rounds <= 3:
+        raise NativeFieldContractError(
+            "max_rounds", "must be an integer from 1 through 3"
+        ) from None
+
+    failed = False
+    raw_rounds: Tuple[Any, ...] = ()
+    try:
+        raw_rounds = tuple(history)
+    except Exception:
+        failed = True
+    if failed:
+        raise NativeFieldContractError("field_history", "is invalid") from None
+
+    rounds = tuple(
+        _canonical_snapshot(raw, allow_legacy_hashes=allow_legacy_hashes)
+        for raw in raw_rounds
+    )
+    digests = tuple(_snapshot_digest(snapshot) for snapshot in rounds)
+    round_count = len(rounds)
+
+    if 2 <= round_count <= max_rounds:
+        equal_positions = tuple(
+            index
+            for index in range(1, round_count)
+            if digests[index] == digests[index - 1]
+        )
+        if equal_positions == (round_count - 1,):
+            return ConvergenceResult(
+                snapshot=rounds[-1],
+                issues=(),
+                rounds=round_count,
+            )
+        raise NativeFieldContractError("field_history", "is inconsistent") from None
+
+    if round_count == max_rounds + 1:
+        converged_before_bound = any(
+            digests[index] == digests[index - 1]
+            for index in range(1, max_rounds)
+        )
+        if converged_before_bound:
+            raise NativeFieldContractError("field_history", "is inconsistent") from None
+        frozen = rounds[-1]
+        return ConvergenceResult(
+            snapshot=frozen,
+            issues=(_unstable_issue(frozen, max_rounds + 1),),
+            rounds=max_rounds + 1,
+        )
+
+    raise NativeFieldContractError("field_history", "is incomplete") from None
+
+
 def finalize_native_fields(
     adapter: NativeFieldAdapter,
     max_rounds: int = 3,
@@ -293,6 +371,7 @@ __all__ = [
     "FIELD_KINDS",
     "NativeFieldAdapter",
     "NativeFieldContractError",
+    "evaluate_field_snapshot_history",
     "finalize_native_fields",
     "snapshot_visible_field",
 ]

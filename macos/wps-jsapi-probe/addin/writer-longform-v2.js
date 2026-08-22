@@ -416,7 +416,40 @@
     };
   }
 
-  function runFieldConvergence(document, operations) {
+  function fieldSnapshotSignature(snapshot) {
+    return JSON.stringify([
+      snapshot.stableKey,
+      snapshot.fieldCategory,
+      snapshot.resultHash,
+      snapshot.tocPageCount,
+      snapshot.figureIndexPageCount,
+      snapshot.tableIndexPageCount,
+      snapshot.totalPages
+    ]);
+  }
+
+  function appendIssueOnce(issues, issue) {
+    const duplicate = issues.some(function (existing) {
+      return existing.code === issue.code &&
+        (existing.placement || "document") === (issue.placement || "document") &&
+        (existing.nodeId || null) === (issue.nodeId || null);
+    });
+    if (!duplicate) issues.push(issue);
+  }
+
+  function unstableFieldIssue(snapshot, rounds) {
+    return {
+      code: "FIELD_REFRESH_UNSTABLE",
+      message: "Field refresh did not converge after " + rounds + " rounds; " +
+        "fields=1, toc_pages=" + snapshot.tocPageCount +
+        ", figure_index_pages=" + snapshot.figureIndexPageCount +
+        ", table_index_pages=" + snapshot.tableIndexPageCount +
+        ", total_pages=" + snapshot.totalPages,
+      placement: "document"
+    };
+  }
+
+  function runFieldConvergence(document, operations, issues) {
     let fieldSnapshots = [];
     operations.forEach(function (operation) {
       if (operation.op === "writer.finalize_fields") {
@@ -429,13 +462,26 @@
           throw boundError;
         }
         let failed = false;
+        let converged = false;
+        let previousSignature = null;
         try {
           for (let round = 0; round < rawMaxRounds; round += 1) {
             finalizeFields(document, operation.args);
-            fieldSnapshots.push(buildFieldSnapshot(document, round));
+            const snapshot = buildFieldSnapshot(document, round);
+            fieldSnapshots.push(snapshot);
+            const signature = fieldSnapshotSignature(snapshot);
+            if (previousSignature !== null && signature === previousSignature) {
+              converged = true;
+              break;
+            }
+            previousSignature = signature;
           }
-          // The diagnostic snapshot after the mutation bound is read-only.
-          fieldSnapshots.push(buildFieldSnapshot(document, rawMaxRounds));
+          if (!converged) {
+            // The diagnostic snapshot after the mutation bound is read-only.
+            const frozen = buildFieldSnapshot(document, rawMaxRounds);
+            fieldSnapshots.push(frozen);
+            appendIssueOnce(issues, unstableFieldIssue(frozen, rawMaxRounds + 1));
+          }
         } catch (error) {
           failed = true;
         }
@@ -603,7 +649,7 @@
         appliedCount += 1;
       });
 
-      const fieldSnapshots = runFieldConvergence(document, operations);
+      const fieldSnapshots = runFieldConvergence(document, operations, issues);
 
       document.SaveAs2(outputPath, 12);
       document.Close(0);
