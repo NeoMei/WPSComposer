@@ -11,6 +11,14 @@ from dataclasses import dataclass
 from typing import Any
 
 from .semantic import LongformConfig
+from .table_policy import (
+    TABLE_MERGE_INVALID,
+    TABLE_ROW_FORCED_SPLIT,
+    TablePolicy,
+    parse_a1_merge_ranges,
+    resolve_table_policy,
+    row_forced_split_degradation,
+)
 from .unicode_text import shorten_display_units
 
 
@@ -154,4 +162,14 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
     )
 
 
-__all__ = ["LongformPolicy", "build_policy", "page_content_width_pt"]
+__all__ = [
+    "LongformPolicy",
+    "TABLE_MERGE_INVALID",
+    "TABLE_ROW_FORCED_SPLIT",
+    "TablePolicy",
+    "build_policy",
+    "page_content_width_pt",
+    "parse_a1_merge_ranges",
+    "resolve_table_policy",
+    "row_forced_split_degradation",
+]

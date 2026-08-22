@@ -181,6 +181,15 @@ class PageBreakBlock:
     content: List[Paragraph] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class TableMerge:
+    """One rectangular table merge in one-based row/column coordinates."""
+    top: int
+    left: int
+    bottom: int
+    right: int
+
+
 @dataclass
 class SemanticTableBlock:
     """A captioned, referenceable table."""
