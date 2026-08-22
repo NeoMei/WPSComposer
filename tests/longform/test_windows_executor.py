@@ -34,6 +34,11 @@ from skills.WPSComposer.scripts.longform.windows_executor import (
 )
 
 
+EMPTY_RESOURCE_MANIFEST_DIGEST = (
+    "sha256:dc7749a3af2a2bb77cad0700bddd3716d4b431bf91885cc20c6a1af68136f890"
+)
+
+
 def _finalize_operation() -> GenerationOperation:
     return GenerationOperation(
         op="writer.finalize_fields",
@@ -367,7 +372,7 @@ def simple_plan() -> GenerationPlan:
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
 
 
@@ -683,7 +688,7 @@ def test_dedicated_host_unavailable_without_dispatch(monkeypatch):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     with pytest.raises(WindowsDedicatedHostUnavailableError) as exc_info:
         executor.execute(plan, ())
@@ -720,7 +725,7 @@ def test_no_shared_dispatch_fallback(monkeypatch):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     with pytest.raises(WindowsDedicatedHostUnavailableError):
         executor.execute(plan, ())
@@ -744,7 +749,7 @@ def test_staged_artifact_path_is_inside_staging_dir(tmp_path, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     outcome = executor.execute(plan, ())
     assert Path(outcome.staged_artifact).parent == tmp_path
@@ -817,7 +822,7 @@ def test_deferred_ops_emit_stable_issues_and_fallbacks(executor, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     outcome = executor.execute(plan, ())
 
@@ -851,7 +856,7 @@ def test_index_placeholders_are_inserted(executor, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     executor.execute(plan, ())
     names = [call.name for call in fake_composer.primitives]
@@ -968,7 +973,7 @@ def test_explicit_degradation_notices_dispatch(executor, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     outcome = executor.execute(plan, ())
     names = {call.name for call in fake_composer.primitives}
@@ -1010,7 +1015,7 @@ def test_ensure_styles_converts_list_of_mappings_to_dict(executor, fake_composer
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     executor.execute(plan, ())
 
@@ -1055,7 +1060,7 @@ def test_configure_section_without_margins_passes_none(executor, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     executor.execute(plan, ())
 
@@ -1107,7 +1112,7 @@ def test_set_header_footer_uses_schema_keys(executor, fake_composer):
         protocol_version=2,
         semantic_version="longform-1",
         resource_manifest_version=1,
-        resource_manifest_digest="sha256:" + "0" * 64,
+        resource_manifest_digest=EMPTY_RESOURCE_MANIFEST_DIGEST,
     )
     executor.execute(plan, ())
     call = [c for c in fake_composer.primitives if c.name == "set_header_footer"][0]

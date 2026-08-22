@@ -79,3 +79,56 @@ The COM implementation is intentionally written blind on macOS.  Real WPS
 differences in `TablesOfFigures.Add`, table-cell image placement, field result
 ranges, and temporary landscape section behavior remain for the final
 all-milestone Windows verification gate.
+
+## Independent-review hardening wave
+
+An independent Task-6 review identified boundary cases that the first fake-COM
+suite did not exercise.  The follow-up began with behavior tests for raw
+pywintypes-like failures, selection/range side effects, section-story fields,
+multi-page index ranges, partially created private files, locked deletion,
+column child ordering, inline REF recovery, and empty manifests:
+
+```text
+focused review RED:
+16 failed, 24 passed
+```
+
+The implementation now converts raw failures only at the exact native primitive
+that owns the stable code: `AddPicture`, table creation/style/merge, and REF
+`Fields.Add`.  Each recoverable object mutation captures its explicit start/end
+range; unknown failures and rollback failures remain fatal.  A failed column
+child atomically removes the entire local container and rebuilds every logical
+child in original order as a stack.  The container itself participates in
+caption cohesion through `KeepTogether` and `KeepWithNext`.
+
+PAGE/NUMPAGES refresh now covers every header and footer story in every section
+as well as tracked native fields.  Field snapshots use the actual start/end page
+span of each TOC, figure index, and table index, with one aggregate count shared
+by every snapshot.  REF failure writes its fallback in the same paragraph and
+returns exactly one controlled inline issue, which the executor preserves.
+
+Private resource files are registered immediately after creation, including
+write/flush/close failure paths.  Deletion is attempted before composer close
+and locked files are retried after close; a permanent cleanup failure is fatal
+without exposing a locator or hash.  Protocol-v2 manifest validation is now
+unconditional, including the canonical empty manifest.
+
+Final review-wave verification (still COM-free; no WPS process started):
+
+```text
+focused Task 6 + existing Windows executor + COM lifecycle:
+77 passed
+
+all M3:
+323 passed
+
+longform + Writer renderer + COM lifecycle:
+372 passed
+
+full suite:
+1701 passed, 6 skipped in 155.54s
+```
+
+The six skips remain the pre-existing real macOS WPS bridge acceptance cases.
+The remaining risk is the same platform gate described above: these stronger
+fakes prove the failure contracts but do not replace real Windows WPS evidence.

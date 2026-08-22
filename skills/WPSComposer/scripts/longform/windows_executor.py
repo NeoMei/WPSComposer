@@ -168,6 +168,8 @@ class WindowsLongformExecutor(LongformExecutor):
         validate_generation_plan(plan.to_dict(), component="writer")
         paths = self._resolve_paths()
         staged_resources: Tuple[str, ...] = ()
+        pending_cleanup: Tuple[str, ...] = ()
+        cleanup_attempted = False
         composer: Optional[WriterComposer] = None
         try:
             self._validate_resource_manifest(plan, resources)
@@ -184,6 +186,13 @@ class WindowsLongformExecutor(LongformExecutor):
                 )
             self._extend_issues(convergence.issues)
             composer.save_docx(paths.staged_docx)
+            # WPS may retain an image handle until the document closes.  Try
+            # once while the host is alive, then retry only locked paths after
+            # close in the finally block.
+            pending_cleanup = self._cleanup_resources(
+                staged_resources, strict=False
+            )
+            cleanup_attempted = True
         except _ExecutionAbort as exc:
             raise WindowsLongformExecutorError(
                 f"Execution aborted at {exc.op_name}"
@@ -198,7 +207,8 @@ class WindowsLongformExecutor(LongformExecutor):
                     composer.close(save_changes=False)
                 except Exception:
                     pass
-            self._cleanup_resources(staged_resources)
+            final_targets = pending_cleanup if cleanup_attempted else staged_resources
+            self._cleanup_resources(final_targets, strict=True)
             self._resource_locators = {}
         return ExecutionOutcome(
             staged_artifact=paths.staged_docx,
@@ -229,14 +239,13 @@ class WindowsLongformExecutor(LongformExecutor):
                 "mediaType": resource.media_type,
                 "normalizerId": resource.normalizer_id,
             })
-        if resources or any(_is_m3_operation(operation) for operation in plan.operations):
-            envelope = {"version": "1", "entries": sorted(entries, key=lambda item: item["resourceId"])}
-            canonical = json.dumps(
-                envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-            ).encode("utf-8")
-            digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
-            if digest != plan.resource_manifest_digest:
-                raise WindowsLongformExecutorError("Private resource validation failed")
+        envelope = {"version": "1", "entries": sorted(entries, key=lambda item: item["resourceId"])}
+        canonical = json.dumps(
+            envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
+        if digest != plan.resource_manifest_digest:
+            raise WindowsLongformExecutorError("Private resource validation failed")
 
         by_id = {resource.id: resource for resource in resources}
         for operation in plan.operations:
@@ -272,29 +281,39 @@ class WindowsLongformExecutor(LongformExecutor):
                     prefix=f"wpsc-resource-{index}-", suffix=suffix,
                     dir=self._staging_dir, delete=False,
                 )
+                # Register immediately: write, flush, or close can fail after
+                # the OS has already created the private file.
+                paths.append(handle.name)
                 try:
                     handle.write(resource.payload_bytes)
                     handle.flush()
                 finally:
                     handle.close()
                 locators[resource.id] = handle.name
-                paths.append(handle.name)
         except Exception:
-            self._cleanup_resources(tuple(paths))
-            raise
+            self._cleanup_resources(tuple(paths), strict=True)
+            raise WindowsLongformExecutorError(
+                "Private resource staging failed"
+            ) from None
         return locators, tuple(paths)
 
     @staticmethod
-    def _cleanup_resources(paths: Tuple[str, ...]) -> None:
+    def _cleanup_resources(
+        paths: Tuple[str, ...], *, strict: bool
+    ) -> Tuple[str, ...]:
+        remaining = []
         for path in paths:
             try:
                 os.unlink(path)
             except FileNotFoundError:
                 pass
             except OSError:
-                # The private staging handle is best-effort deleted here; a
-                # deletion error never leaks the path into diagnostics.
-                pass
+                remaining.append(path)
+        if remaining and strict:
+            raise WindowsLongformExecutorError(
+                "Private resource cleanup failed"
+            ) from None
+        return tuple(remaining)
 
     # ----------------------------------------------------------------------
     # Composer lifecycle
@@ -666,7 +685,11 @@ class WindowsLongformExecutor(LongformExecutor):
                 code=str(raw.get("code") or EXECUTION_FAILED),
                 message="Native object used its declared recovery",
                 node_id=node_id,
-                placement="block" if raw.get("placement") == "block" else "document",
+                placement=(
+                    str(raw["placement"])
+                    if raw.get("placement") in {"block", "inline", "document"}
+                    else "document"
+                ),
             )
 
     # ----------------------------------------------------------------------

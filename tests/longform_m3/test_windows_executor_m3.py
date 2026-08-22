@@ -16,6 +16,7 @@ from tests.longform_m3.fakes.windows_com import RecordingNativeComposer
 
 
 BOOKMARK = "wpsc_fig_" + "a" * 24
+EMPTY_MANIFEST_DIGEST = "sha256:dc7749a3af2a2bb77cad0700bddd3716d4b431bf91885cc20c6a1af68136f890"
 
 
 def _numbering(sequence="WPSC_FIG", prefix="图 ", suffix=""):
@@ -93,7 +94,7 @@ def _plan(resource, *ops):
     return GenerationPlan(
         component="writer", operations=(*ops, finalize), protocol_version=2,
         semantic_version="longform-1", resource_manifest_version=1,
-        resource_manifest_digest=_manifest(resource) if resource else "sha256:" + "0" * 64,
+        resource_manifest_digest=_manifest(resource) if resource else EMPTY_MANIFEST_DIGEST,
     )
 
 
@@ -141,6 +142,102 @@ def test_resource_hash_mismatch_aborts_before_composer_acquisition(tmp_path: Pat
         executor.execute(_plan(resource, _figure()), (corrupt,))
     assert acquired is False
     assert not list(tmp_path.glob("wpsc-resource-*"))
+
+
+def test_protocol_v2_rejects_noncanonical_empty_manifest_before_com(tmp_path: Path):
+    acquired = False
+    def factory():
+        nonlocal acquired
+        acquired = True
+        return RecordingNativeComposer()
+    bad = GenerationPlan(
+        component="writer",
+        operations=(GenerationOperation("writer.finalize_fields", {"maxRounds": 3}, node_id="doc:finalize"),),
+        protocol_version=2, semantic_version="longform-1",
+        resource_manifest_version=1,
+        resource_manifest_digest="sha256:" + "0" * 64,
+    )
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    with pytest.raises(WindowsLongformExecutorError, match="resource validation"):
+        executor.execute(bad, ())
+    assert acquired is False
+
+
+@pytest.mark.parametrize("failure_point", ["write", "flush"])
+def test_partial_private_resource_is_cleaned_when_write_or_flush_fails(
+    failure_point: str, tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    leaked = tmp_path / "partial.png"
+    leaked.write_bytes(b"")
+
+    class FailingHandle:
+        name = str(leaked)
+
+        def write(self, payload):
+            if failure_point == "write":
+                raise OSError("write failed")
+
+        def flush(self):
+            if failure_point == "flush":
+                raise OSError("flush failed")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(windows_executor.tempfile, "NamedTemporaryFile", lambda **kwargs: FailingHandle())
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=RecordingNativeComposer)
+
+    with pytest.raises(WindowsLongformExecutorError):
+        executor._stage_resources((resource,))
+    assert not leaked.exists()
+
+
+def test_locked_resource_cleanup_retries_after_composer_close(tmp_path: Path, monkeypatch):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    composer = RecordingNativeComposer()
+    original_unlink = windows_executor.os.unlink
+    resource_attempts = []
+
+    def locked_once(path):
+        if "wpsc-resource" in str(path):
+            resource_attempts.append(composer.closed)
+            if not composer.closed:
+                raise PermissionError("locked")
+        return original_unlink(path)
+
+    monkeypatch.setattr(windows_executor.os, "unlink", locked_once)
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=lambda: composer)
+    executor.execute(_plan(resource, _figure()), (resource,))
+
+    assert resource_attempts == [False, True]
+    assert not list(tmp_path.glob("wpsc-resource-*"))
+
+
+def test_permanent_private_resource_cleanup_failure_is_fatal_without_path(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    composer = RecordingNativeComposer()
+    original_unlink = windows_executor.os.unlink
+
+    def always_locked(path):
+        if "wpsc-resource" in str(path):
+            raise PermissionError("C:\\private\\secret.png")
+        return original_unlink(path)
+
+    monkeypatch.setattr(windows_executor.os, "unlink", always_locked)
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=lambda: composer)
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(_plan(resource, _figure()), (resource,))
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
 
 
 def test_unknown_native_error_and_save_error_are_fatal_and_cleanup(tmp_path: Path):
@@ -286,6 +383,7 @@ class _NativeDocument:
         self.TablesOfFigures = _Indexes()
         self.TablesOfContents = _EmptyIndexes()
         self.Styles = _Styles()
+        self.Sections = type("Sections", (), {"Count": 0})()
         self.repaginate_count = 0
 
     def Range(self, start, end):
@@ -297,6 +395,82 @@ class _NativeDocument:
     def ComputeStatistics(self, kind):
         assert kind == 2
         return 3
+
+
+class _ComError(RuntimeError):
+    """pywintypes-like raw COM error with no stable WPSComposer code."""
+
+
+def test_raw_add_picture_com_error_is_classified_and_explicit_span_is_rolled_back():
+    from skills.WPSComposer.scripts.writer import NativeWriterObjectError, WriterComposer
+
+    class DeletingRange(_Range):
+        def __init__(self, start, end, deletions):
+            super().__init__(start, end)
+            self._deletions = deletions
+
+        def Delete(self):
+            self._deletions.append((self.Start, self.End))
+
+    deletions = []
+    writer = WriterComposer.__new__(WriterComposer)
+    writer._selection = _Selection()
+    writer._selection.pos = 5
+    content = type("Content", (), {"End": 5})()
+    writer._doc = type("Doc", (), {
+        "Content": content,
+        "Range": lambda self, start, end: DeletingRange(start, end, deletions),
+    })()
+    writer._app = type("App", (), {"Selection": writer._selection})()
+
+    def add_image(*args, **kwargs):
+        # Native side effect exists even though Selection did not advance.
+        content.End = 9
+        raise _ComError("C:\\private\\must-not-leak.png")
+
+    writer.add_image = add_image
+    with pytest.raises(NativeWriterObjectError) as caught:
+        writer._native_insert_figure_child(
+            {"displayWidthPt": 100.0, "displayHeightPt": 50.0},
+            "C:\\private\\staged.png", "fig:one",
+        )
+    assert caught.value.code == "IMAGE_INSERT_FAILED"
+    assert deletions == [(5, 9)]
+
+
+@pytest.mark.parametrize(
+    ("boundary", "expected"),
+    [
+        ("create", "TABLE_INSERT_FAILED"),
+        ("style", "TABLE_STYLE_APPLY_FAILED"),
+        ("merge", "TABLE_MERGE_APPLY_FAILED"),
+    ],
+)
+def test_raw_table_com_errors_are_classified_at_exact_primitive_boundary(boundary, expected):
+    from skills.WPSComposer.scripts.writer import NativeWriterObjectError, WriterComposer
+
+    writer = _writer_with_native_fakes()
+    table = _SemanticTableFake(2, 1)
+    if boundary == "create":
+        writer._doc.Tables = type("Tables", (), {
+            "Add": lambda self, *args: (_ for _ in ()).throw(_ComError("raw"))
+        })()
+    else:
+        writer._doc.Tables = type("Tables", (), {"Add": lambda self, *args: table})()
+        if boundary == "style":
+            writer._apply_native_table_borders = lambda *args: (_ for _ in ()).throw(_ComError("raw"))
+        else:
+            writer._apply_native_table_borders = lambda *args: None
+            table.Cell(2, 1).Merge = lambda other: (_ for _ in ()).throw(_ComError("raw"))
+
+    merges = [{"top": 2, "left": 1, "bottom": 2, "right": 1}] if boundary == "merge" else []
+    with pytest.raises(NativeWriterObjectError) as caught:
+        writer._create_native_table(
+            ["A"], [[""]], ["left"],
+            {"top": .75, "bottom": .75, "headerBottom": .75, "left": .75, "right": .75, "insideHorizontal": .75, "insideVertical": .75},
+            True, False, 0.0, merges,
+        )
+    assert caught.value.code == expected
 
 
 def _writer_with_native_fakes():
@@ -365,6 +539,62 @@ def test_writer_reference_and_native_index_use_controlled_native_apis():
     assert writer._selection.typed[:4] == ["见", "图 ", "。", "\n"]
 
 
+def test_raw_ref_field_error_stays_inline_and_returns_one_controlled_issue():
+    writer = _writer_with_native_fakes()
+    writer.doc.Fields.Add = lambda *args: (_ for _ in ()).throw(_ComError("raw REF failure"))
+    writer._native_rollback = lambda start, end: writer._native_set_position(start)
+
+    outcome = writer.add_cross_reference_paragraph(
+        runs=[
+            {"type": "text", "text": "见"},
+            {"type": "reference", "bookmarkName": BOOKMARK, "prefix": "图 ", "suffix": "", "fallbackText": "[图]", "targetNodeId": "fig:one", "targetKind": "figure"},
+            {"type": "text", "text": "。"},
+        ],
+        owner_node_id="para:one",
+    )
+
+    assert writer._selection.typed == ["见", "图 ", "[图]", "。", "\n"]
+    assert outcome == {"issues": [{
+        "code": "CROSS_REFERENCE_FAILED",
+        "message": "Cross-reference used its inline fallback",
+        "placement": "inline",
+    }]}
+
+
+def test_executor_preserves_controlled_inline_issue_without_duplicate_fallback(tmp_path: Path):
+    class InlineIssueComposer(RecordingNativeComposer):
+        def add_cross_reference_paragraph(self, **kwargs):
+            self._call("reference", **kwargs)
+            return {"issues": [{
+                "code": "CROSS_REFERENCE_FAILED",
+                "message": "safe",
+                "placement": "inline",
+            }]}
+
+    composer = InlineIssueComposer()
+    reference = GenerationOperation(
+        "writer.add_cross_reference", {"runs": [
+            {"type": "reference", "targetNodeId": "fig:one", "targetKind": "figure", "bookmarkName": BOOKMARK, "prefix": "图 ", "suffix": "", "fallbackText": "[图]"},
+        ]}, node_id="para:one",
+        failure_policy={"mode": "degrade", "recoverableCodes": ["CROSS_REFERENCE_FAILED"], "fallback": "inline-fallback"},
+    )
+    figure_without_resource = GenerationOperation(
+        "writer.add_captioned_figure",
+        {
+            **dict(_figure().args),
+            "children": [{"nodeId": "fig:one/image:1", "plannedDegradation": {"code": "RESOURCE_NOT_FOUND", "message": "missing", "fallback": "[missing]", "placement": "block"}}],
+        },
+        node_id="fig:one", failure_policy=_figure().failure_policy,
+    )
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=lambda: composer)
+    # The helper below is changed to the canonical empty manifest in GREEN.
+    outcome = executor.execute(_plan(None, figure_without_resource, reference), ())
+    assert [(issue.code, issue.placement) for issue in outcome.issues] == [
+        ("CROSS_REFERENCE_FAILED", "inline")
+    ]
+    assert not [name for name, _ in composer.calls if name == "inline"]
+
+
 def test_writer_refreshes_native_indexes_and_mutation_changes_snapshot_not_owner():
     writer = _writer_with_native_fakes()
     writer._add_native_number_shell(_numbering(), BOOKMARK, "fig:one")
@@ -396,6 +626,105 @@ def test_writer_refreshes_native_indexes_and_mutation_changes_snapshot_not_owner
     assert tuple(writer.doc.Bookmarks.calls) == bookmark_before
     assert writer.doc.TablesOfFigures.items[0].updates == 1
     assert writer.doc.repaginate_count == 2
+
+
+class _PagedRange(_Range):
+    def __init__(self, start_page, end_page, text="index"):
+        super().__init__(0, 1)
+        self.start_page = start_page
+        self.end_page = end_page
+        self.current_page = end_page
+        self.Text = text
+
+    @property
+    def Duplicate(self):
+        return _PagedRange(self.start_page, self.end_page, self.Text)
+
+    def Collapse(self, direction):
+        self.current_page = self.start_page if direction == 1 else self.end_page
+
+    def Information(self, kind):
+        assert kind == 3
+        return self.current_page
+
+
+class _StoryField(_NativeField):
+    def __init__(self, code):
+        super().__init__(code, 1)
+        self.Code = type("Code", (), {"Text": code})()
+
+
+class _StoryFields:
+    def __init__(self, *codes):
+        self.items = [_StoryField(code) for code in codes]
+
+    @property
+    def Count(self):
+        return len(self.items)
+
+    def Item(self, index):
+        return self.items[index - 1]
+
+
+class _StoryCollection:
+    def __init__(self, *field_groups):
+        self.items = [type("Story", (), {"Range": type("StoryRange", (), {"Fields": fields})()})() for fields in field_groups]
+
+    @property
+    def Count(self):
+        return len(self.items)
+
+    def Item(self, index):
+        return self.items[index - 1]
+
+
+def test_page_phase_updates_page_fields_in_every_header_and_footer_story():
+    writer = _writer_with_native_fakes()
+    first_header = _StoryFields(" PAGE ", "TITLE")
+    first_footer = _StoryFields("NUMPAGES")
+    second_header = _StoryFields("PAGE")
+    second_footer = _StoryFields(" NUMPAGES ", "DATE")
+    sections = [
+        type("Section", (), {"Headers": _StoryCollection(first_header), "Footers": _StoryCollection(first_footer)})(),
+        type("Section", (), {"Headers": _StoryCollection(second_header), "Footers": _StoryCollection(second_footer)})(),
+    ]
+    writer.doc.Sections = type("Sections", (), {
+        "Count": 2,
+        "Item": lambda self, index: sections[index - 1],
+    })()
+
+    writer.repaginate_and_update_page_fields()
+
+    page_fields = [
+        first_header.items[0], first_footer.items[0],
+        second_header.items[0], second_footer.items[0],
+    ]
+    assert [field.updates for field in page_fields] == [1, 1, 1, 1]
+    assert first_header.items[1].updates == 0
+    assert second_footer.items[1].updates == 0
+
+
+def test_snapshot_uses_actual_aggregate_index_page_spans_for_every_field():
+    writer = _writer_with_native_fakes()
+    toc = _NativeField("TOC", 1)
+    toc.Range = _PagedRange(1, 2, "toc")
+    fig_index = _NativeField("TOF FIG", 1)
+    fig_index.Range = _PagedRange(3, 4, "fig")
+    tab_index = _NativeField("TOF TAB", 1)
+    tab_index.Range = _PagedRange(5, 5, "tab")
+    seq = _NativeField("SEQ", 1)
+    writer._wpsc_native_fields = [
+        ("doc:toc", "TOC", toc, "index"),
+        ("doc:fig-index", "TOF_FIG", fig_index, "index"),
+        ("doc:tab-index", "TOF_TAB", tab_index, "index"),
+        ("fig:one", "SEQ_FIG", seq, "numbering"),
+    ]
+    writer.doc.TablesOfContents = type("TOCs", (), {"Count": 1})()
+
+    snapshot = writer.snapshot_fields()
+
+    assert snapshot
+    assert {(item.toc_page_count, item.figure_index_page_count, item.table_index_page_count) for item in snapshot} == {(2, 2, 1)}
 
 
 class _Border:
@@ -448,6 +777,7 @@ class _ColumnTable:
     def __init__(self):
         self._columns = {index: _Column() for index in (1, 2, 3)}
         self.Borders = _Borders()
+        self.Range = _Range(0, 30)
 
     def Columns(self, index):
         return self._columns[index]
@@ -462,6 +792,61 @@ def test_writer_two_column_container_has_exact_12pt_gap_and_no_borders():
     assert writer._native_columns_container(children) is table
     assert [table.Columns(index).Width for index in (1, 2, 3)] == [120.0, 12.0, 150.0]
     assert all(table.Borders(index).LineStyle == 0 for index in range(-6, 0))
+    assert table.Range.ParagraphFormat.KeepTogether == -1
+    assert table.Range.ParagraphFormat.KeepWithNext == -1
+
+
+@pytest.mark.parametrize("failed_child", ["img:1", "img:2"])
+def test_column_child_failure_atomically_rebuilds_original_order_as_stack(failed_child):
+    from skills.WPSComposer.scripts.writer import NativeWriterObjectError, WriterComposer
+
+    writer = WriterComposer.__new__(WriterComposer)
+    writer._selection = _Selection()
+    writer._selection.pos = 5
+    writer._app = type("App", (), {"Selection": writer._selection})()
+    cells = {
+        1: type("Cell", (), {"Range": _Range(6, 10)})(),
+        3: type("Cell", (), {"Range": _Range(11, 15)})(),
+    }
+    container = type("Container", (), {
+        "Range": _Range(5, 20),
+        "Cell": lambda self, row, col: cells[col],
+    })()
+    events = []
+    failed = False
+    writer._native_columns_container = lambda children: container
+    writer._native_rollback = lambda start, end: events.append(("rollback", start, end)) or writer._native_set_position(start)
+
+    def insert(child, locator, owner, rollback_scope=None):
+        nonlocal failed
+        mode = "column" if rollback_scope is not None else "stack"
+        events.append((mode, child["nodeId"]))
+        if mode == "column" and child["nodeId"] == failed_child and not failed:
+            failed = True
+            raise NativeWriterObjectError("IMAGE_INSERT_FAILED")
+
+    writer._native_insert_figure_child = insert
+    writer._add_native_caption = lambda *args, **kwargs: events.append(("caption", args[0]))
+    writer.add_degradation_notice = lambda *args: events.append(("notice", args[0]))
+
+    outcome = writer.add_captioned_figure_native(
+        caption="图示", numbering=_numbering(), bookmarkName=BOOKMARK,
+        indexable=True, referenceable=True, widthMode="full", orientation="portrait",
+        kind="diagram",
+        children=[
+            {"nodeId": "img:1", "resourceId": "one"},
+            {"nodeId": "img:2", "resourceId": "two"},
+        ],
+        layout="columns", columns=2, keepWithCaption=True,
+        owner_node_id="fig:one",
+        resource_locators={"one": "/private/one.png", "two": "/private/two.png"},
+    )
+
+    assert ("rollback", 5, 20) in events
+    stack_order = [event[1] for event in events if event[0] == "stack"]
+    assert stack_order == ["img:1", "img:2"]
+    assert events[-1] == ("caption", "图示")
+    assert [issue["code"] for issue in outcome["issues"]] == ["IMAGE_INSERT_FAILED"]
 
 
 def test_writer_inline_figure_child_preserves_aspect_and_caption_cohesion():
@@ -491,7 +876,7 @@ def test_figure_caption_is_after_children_and_landscape_is_explicit_only(orienta
     writer._app = type("App", (), {"Selection": writer._selection})()
     events = []
     writer.add_section = lambda landscape=None: events.append(("section", landscape))
-    writer._native_insert_figure_child = lambda child, locator, owner: events.append(("child", child["nodeId"]))
+    writer._native_insert_figure_child = lambda child, locator, owner, rollback_scope=None: events.append(("child", child["nodeId"]))
     writer._add_native_caption = lambda *args, **kwargs: events.append(("caption", args[0]))
 
     writer.add_captioned_figure_native(
@@ -516,7 +901,7 @@ def test_one_figure_child_failure_rolls_back_that_child_then_retries_stack():
     attempts = {"img:1": 0, "img:2": 0}
     writer._native_position = lambda: 10 if attempts["img:2"] == 0 else 20
 
-    def insert(child, locator, owner):
+    def insert(child, locator, owner, rollback_scope=None):
         node = child["nodeId"]
         attempts[node] += 1
         events.append(("insert", node, attempts[node]))
@@ -525,7 +910,7 @@ def test_one_figure_child_failure_rolls_back_that_child_then_retries_stack():
             raise NativeWriterObjectError("IMAGE_INSERT_FAILED")
 
     writer._native_insert_figure_child = insert
-    writer._native_rollback = lambda start: events.append(("outer-rollback", start))
+    writer._native_rollback = lambda start, end: events.append(("outer-rollback", start, end))
     writer._add_native_caption = lambda *args, **kwargs: events.append(("caption", args[0]))
     writer.add_degradation_notice = lambda *args: events.append(("notice", args[0]))
 
@@ -646,7 +1031,7 @@ def test_table_vertical_group_rolls_back_complete_table_to_splittable_grid():
     calls = []
     writer._add_native_caption = lambda *args, **kwargs: calls.append(("caption", kwargs))
     writer._native_position = lambda: 40
-    writer._native_rollback = lambda start: calls.append(("rollback", start))
+    writer._native_rollback = lambda start, end: calls.append(("rollback", start, end))
     writer._add_native_table_notice = lambda *args: calls.append(("notice", args))
     writer._table_overflow_group = lambda table, merges: (2, 3) if merges else None
 
@@ -668,7 +1053,7 @@ def test_table_vertical_group_rolls_back_complete_table_to_splittable_grid():
 
     table_calls = [item for item in calls if item[0] == "table"]
     assert calls[0][0] == "caption"
-    assert ("rollback", 40) in calls
+    assert any(item[:2] == ("rollback", 40) for item in calls)
     assert table_calls[0][1][-1] == [{"top": 2, "left": 1, "bottom": 3, "right": 1}]
     assert table_calls[1][1][-1] == ()
     assert table_calls[1][1][5] is True  # allowRowSplit
@@ -685,7 +1070,7 @@ def test_table_named_style_failure_uses_grid_then_text_ladder():
     calls = []
     writer._add_native_caption = lambda *args, **kwargs: calls.append("caption")
     writer._native_position = lambda: 20
-    writer._native_rollback = lambda start: calls.append(("rollback", start))
+    writer._native_rollback = lambda start, end: calls.append(("rollback", start, end))
     writer._add_native_table_notice = lambda *args: calls.append(("notice", args))
     writer._table_overflow_group = lambda table, merges: None
     writer._add_native_table_text_fallback = lambda headers, rows: calls.append(("text", headers, rows))
@@ -711,7 +1096,10 @@ def test_table_named_style_failure_uses_grid_then_text_ladder():
     assert attempts_seen[0][1]["insideVertical"] == 0.0
     assert attempts_seen[1][1]["insideVertical"] == .75
     assert attempts_seen[1][2] == ()
-    assert calls.count(("rollback", 20)) == 2
+    assert sum(
+        1 for item in calls
+        if isinstance(item, tuple) and item[:2] == ("rollback", 20)
+    ) == 2
     assert ("text", ["A"], [["1"]]) in calls
     assert outcome["issues"][-1]["code"] == "TABLE_INSERT_FAILED"
 

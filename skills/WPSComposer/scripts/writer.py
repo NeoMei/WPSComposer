@@ -1332,22 +1332,35 @@ class WriterComposer(BaseComposer):
     def _native_set_position(self, position):
         self.selection.SetRange(int(position), int(position))
 
-    def _native_insert_field(self, code, owner_node_id, kind, category):
+    def _native_insert_field(
+        self, code, owner_node_id, kind, category, *, failure_code=None,
+    ):
         rng = self.selection.Range
         try:
             rng.Collapse(0)
         except Exception:
             pass
-        field = self._doc.Fields.Add(rng, -1, code, True)
+        try:
+            field = self._doc.Fields.Add(rng, -1, code, True)
+        except Exception:
+            if failure_code is not None:
+                raise NativeWriterObjectError(failure_code) from None
+            raise
         result = getattr(field, "Result", None)
         if result is not None:
             self.selection.SetRange(int(result.End), int(result.End))
         self._native_fields().append((owner_node_id or "doc:native", kind, field, category))
         return field
 
-    def _native_rollback(self, start, end=None):
+    def _native_document_end(self):
+        content = getattr(getattr(self, "_doc", None), "Content", None)
+        if content is not None:
+            return int(content.End)
+        return self._native_position()
+
+    def _native_rollback(self, start, end):
         try:
-            stop = self._native_position() if end is None else int(end)
+            stop = int(end)
             if stop > int(start):
                 self._doc.Range(int(start), stop).Delete()
             self._native_set_position(start)
@@ -1397,7 +1410,9 @@ class WriterComposer(BaseComposer):
         self.selection.TypeParagraph()
         return paragraph_range
 
-    def _native_insert_figure_child(self, child, locator, owner_node_id):
+    def _native_insert_figure_child(
+        self, child, locator, owner_node_id, rollback_scope=None,
+    ):
         start = self._native_position()
         try:
             shape = self.add_image(
@@ -1414,24 +1429,77 @@ class WriterComposer(BaseComposer):
             self.selection.TypeParagraph()
             return shape
         except Exception:
-            self._native_rollback(start)
-            raise
+            if rollback_scope is None:
+                end = self._native_document_end()
+            else:
+                end = max(start, int(rollback_scope.End) - 1)
+            self._native_rollback(start, end)
+            raise NativeWriterObjectError("IMAGE_INSERT_FAILED") from None
 
     def _native_columns_container(self, children):
-        table = self._doc.Tables.Add(self.selection.Range, 1, 3)
-        widths = (
-            float(children[0]["displayWidthPt"]),
-            12.0,
-            float(children[1]["displayWidthPt"]),
-        )
-        for index, width in enumerate(widths, start=1):
+        try:
+            table = self._doc.Tables.Add(self.selection.Range, 1, 3)
+            widths = (
+                float(children[0]["displayWidthPt"]),
+                12.0,
+                float(children[1]["displayWidthPt"]),
+            )
+            for index, width in enumerate(widths, start=1):
+                try:
+                    table.Columns(index).SetWidth(width, 0)
+                except Exception:
+                    table.Columns(index).Width = width
+            for border_id in range(-6, 0):
+                table.Borders(border_id).LineStyle = 0
+            table.Range.ParagraphFormat.KeepTogether = -1
+            table.Range.ParagraphFormat.KeepWithNext = -1
+            return table
+        except Exception:
+            raise NativeWriterObjectError("IMAGE_INSERT_FAILED") from None
+
+    def _render_native_figure_stack(
+        self, children, resource_locators, owner_node_id, *, retry_once,
+    ):
+        degraded = False
+        for child in children:
+            degradation = child.get("plannedDegradation")
+            if degradation is not None:
+                self.add_degradation_notice(
+                    degradation["code"], degradation["message"],
+                    degradation["fallback"], degradation.get("placement", "block"),
+                )
+                continue
+            locator = resource_locators.get(child["resourceId"])
+            if locator is None:
+                raise NativeWriterObjectError("RESOURCE_HASH_MISMATCH")
             try:
-                table.Columns(index).SetWidth(width, 0)
-            except Exception:
-                table.Columns(index).Width = width
-        for border_id in range(-6, 0):
-            table.Borders(border_id).LineStyle = 0
-        return table
+                self._native_insert_figure_child(
+                    child, locator, owner_node_id, rollback_scope=None
+                )
+            except NativeWriterObjectError as error:
+                if error.code != "IMAGE_INSERT_FAILED":
+                    raise
+                if retry_once:
+                    try:
+                        self._native_insert_figure_child(
+                            child, locator, owner_node_id, rollback_scope=None
+                        )
+                    except NativeWriterObjectError as retry_error:
+                        if retry_error.code != "IMAGE_INSERT_FAILED":
+                            raise
+                        self.add_degradation_notice(
+                            "IMAGE_INSERT_FAILED",
+                            "Figure image could not be inserted",
+                            "[IMAGE_INSERT_FAILED]", "block",
+                        )
+                else:
+                    self.add_degradation_notice(
+                        "IMAGE_INSERT_FAILED",
+                        "Figure image could not be inserted",
+                        "[IMAGE_INSERT_FAILED]", "block",
+                    )
+                degraded = True
+        return degraded
 
     def add_captioned_figure_native(
         self, *, caption, numbering, indexable, referenceable, widthMode,
@@ -1449,51 +1517,63 @@ class WriterComposer(BaseComposer):
         if landscape:
             self.add_section(landscape=True)
         try:
-            container = self._native_columns_container(children) if layout == "columns" else None
-            for index, child in enumerate(children):
-                degradation = child.get("plannedDegradation")
-                if degradation is not None:
-                    self.add_degradation_notice(
-                        degradation["code"], degradation["message"],
-                        degradation["fallback"], degradation.get("placement", "block"),
-                    )
+            degraded = False
+            for child in children:
+                planned = child.get("plannedDegradation")
+                if planned is not None:
                     issues.append({
-                        "code": degradation["code"],
-                        "message": degradation["message"],
-                        "placement": degradation.get("placement", "block"),
+                        "code": planned["code"],
+                        "message": planned["message"],
+                        "placement": planned.get("placement", "block"),
                     })
-                    continue
-                locator = resource_locators.get(child["resourceId"])
-                if locator is None:
-                    raise NativeWriterObjectError("RESOURCE_HASH_MISMATCH")
-                if container is not None:
-                    column = 1 if index == 0 else 3
-                    cell_range = container.Cell(1, column).Range
-                    self.selection.SetRange(cell_range.Start, cell_range.Start)
+            can_use_columns = (
+                layout == "columns"
+                and all("resourceId" in child for child in children)
+            )
+            if can_use_columns:
+                operation_start = self._native_position()
+                container = None
                 try:
-                    self._native_insert_figure_child(child, locator, owner_node_id)
-                except Exception as exc:
-                    if getattr(exc, "code", None) != "IMAGE_INSERT_FAILED":
-                        raise
-                    if container is not None:
-                        self.selection.SetRange(container.Range.End, container.Range.End)
-                    try:
-                        self._native_insert_figure_child(child, locator, owner_node_id)
-                    except Exception as retry_exc:
-                        if getattr(retry_exc, "code", None) != "IMAGE_INSERT_FAILED":
-                            raise
-                        self.add_degradation_notice(
-                            "IMAGE_INSERT_FAILED", "Figure image could not be inserted",
-                            "[IMAGE_INSERT_FAILED]", "block",
+                    container = self._native_columns_container(children)
+                    for index, child in enumerate(children):
+                        locator = resource_locators.get(child["resourceId"])
+                        if locator is None:
+                            raise NativeWriterObjectError("RESOURCE_HASH_MISMATCH")
+                        column = 1 if index == 0 else 3
+                        cell_range = container.Cell(1, column).Range
+                        self.selection.SetRange(cell_range.Start, cell_range.Start)
+                        self._native_insert_figure_child(
+                            child, locator, owner_node_id,
+                            rollback_scope=cell_range,
                         )
-                    issues.append({
-                        "code": "IMAGE_INSERT_FAILED",
-                        "message": "Figure child used deterministic stack fallback",
-                        "placement": "block",
-                    })
-            if container is not None:
-                self.selection.SetRange(container.Range.End, container.Range.End)
-                self.selection.TypeParagraph()
+                    self.selection.SetRange(
+                        container.Range.End, container.Range.End
+                    )
+                    self.selection.TypeParagraph()
+                except NativeWriterObjectError as error:
+                    if error.code != "IMAGE_INSERT_FAILED":
+                        raise
+                    container_end = (
+                        int(container.Range.End)
+                        if container is not None
+                        else self._native_document_end()
+                    )
+                    self._native_rollback(operation_start, container_end)
+                    degraded = self._render_native_figure_stack(
+                        children, resource_locators, owner_node_id,
+                        retry_once=False,
+                    ) or True
+            else:
+                degraded = self._render_native_figure_stack(
+                    children, resource_locators, owner_node_id,
+                    retry_once=True,
+                )
+            if degraded:
+                issues.append({
+                    "code": "IMAGE_INSERT_FAILED",
+                    "message": "Figure used deterministic stack recovery",
+                    "placement": "block",
+                })
             self._add_native_caption(
                 caption, numbering, bookmarkName, owner_node_id,
                 keep_with_next=False,
@@ -1529,30 +1609,41 @@ class WriterComposer(BaseComposer):
         allow_row_split, cell_indent_pt, merges,
     ):
         data = [list(headers), *[list(row) for row in rows]]
-        table = self._doc.Tables.Add(self.selection.Range, len(data), len(headers))
-        alignment_codes = {"left": 0, "center": 1, "right": 2}
-        for row_index, row in enumerate(data, start=1):
-            for col_index, text in enumerate(row, start=1):
-                cell = table.Cell(row_index, col_index)
-                cell.Range.Text = str(text)
-                paragraph = cell.Range.ParagraphFormat
-                paragraph.FirstLineIndent = float(cell_indent_pt)
-                paragraph.LeftIndent = 0.0
-                paragraph.RightIndent = 0.0
-                paragraph.Alignment = alignment_codes[alignments[col_index - 1]]
-        table.Rows.AllowBreakAcrossPages = -1 if allow_row_split else 0
-        if repeat_header:
-            table.Rows(1).HeadingFormat = -1
-        self._apply_native_table_borders(table, border_spec)
-        for merge in merges:
-            table.Cell(merge["top"], merge["left"]).Merge(
-                table.Cell(merge["bottom"], merge["right"])
+        try:
+            table = self._doc.Tables.Add(
+                self.selection.Range, len(data), len(headers)
             )
+        except Exception:
+            raise NativeWriterObjectError("TABLE_INSERT_FAILED") from None
+        alignment_codes = {"left": 0, "center": 1, "right": 2}
+        try:
+            for row_index, row in enumerate(data, start=1):
+                for col_index, text in enumerate(row, start=1):
+                    cell = table.Cell(row_index, col_index)
+                    cell.Range.Text = str(text)
+                    paragraph = cell.Range.ParagraphFormat
+                    paragraph.FirstLineIndent = float(cell_indent_pt)
+                    paragraph.LeftIndent = 0.0
+                    paragraph.RightIndent = 0.0
+                    paragraph.Alignment = alignment_codes[alignments[col_index - 1]]
+            table.Rows.AllowBreakAcrossPages = -1 if allow_row_split else 0
+            if repeat_header:
+                table.Rows(1).HeadingFormat = -1
+            self._apply_native_table_borders(table, border_spec)
+        except Exception:
+            raise NativeWriterObjectError("TABLE_STYLE_APPLY_FAILED") from None
+        try:
+            for merge in merges:
+                table.Cell(merge["top"], merge["left"]).Merge(
+                    table.Cell(merge["bottom"], merge["right"])
+                )
+        except Exception:
+            raise NativeWriterObjectError("TABLE_MERGE_APPLY_FAILED") from None
         try:
             self.selection.SetRange(table.Range.End, table.Range.End)
+            self.selection.TypeParagraph()
         except Exception:
-            self.selection.EndKey(6)
-        self.selection.TypeParagraph()
+            raise NativeWriterObjectError("TABLE_INSERT_FAILED") from None
         return table
 
     def _table_overflow_group(self, table, merges):
@@ -1611,13 +1702,15 @@ class WriterComposer(BaseComposer):
                     allowRowSplit, cellIndentPt, merges,
                 )
             except Exception as exc:
-                code = getattr(exc, "code", None)
+                code = (
+                    exc.code if isinstance(exc, NativeWriterObjectError) else None
+                )
                 if code not in {
                     "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
                     "TABLE_INSERT_FAILED",
                 }:
                     raise
-                self._native_rollback(table_start)
+                self._native_rollback(table_start, self._native_document_end())
                 self._add_native_table_notice(
                     code, "Table used the deterministic grid fallback"
                 )
@@ -1639,12 +1732,19 @@ class WriterComposer(BaseComposer):
                         "placement": "block",
                     })
                 except Exception as grid_exc:
-                    if getattr(grid_exc, "code", None) not in {
+                    grid_code = (
+                        grid_exc.code
+                        if isinstance(grid_exc, NativeWriterObjectError)
+                        else None
+                    )
+                    if grid_code not in {
                         "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
                         "TABLE_INSERT_FAILED",
                     }:
                         raise
-                    self._native_rollback(grid_start)
+                    self._native_rollback(
+                        grid_start, self._native_document_end()
+                    )
                     self._add_native_table_text_fallback(headers, rows)
                     issues.append({
                         "code": "TABLE_INSERT_FAILED",
@@ -1654,7 +1754,7 @@ class WriterComposer(BaseComposer):
                     return {"issues": issues}
             group = self._table_overflow_group(table, effective_merges)
             if group is not None:
-                self._native_rollback(table_start)
+                self._native_rollback(table_start, self._native_document_end())
                 self._add_native_table_notice(
                     "TABLE_ROW_FORCED_SPLIT",
                     "A vertical merge group exceeded the available page height",
@@ -1696,6 +1796,7 @@ class WriterComposer(BaseComposer):
 
     def add_cross_reference_paragraph(self, *, runs, owner_node_id=None):
         """Insert ordered literal and native REF runs in one paragraph."""
+        degraded = False
         for run in runs:
             if run["type"] == "text":
                 self.selection.TypeText(run["text"])
@@ -1706,16 +1807,25 @@ class WriterComposer(BaseComposer):
                 self._native_insert_field(
                     _reference_field_code(run["bookmarkName"]),
                     owner_node_id, "REF", "reference",
+                    failure_code="CROSS_REFERENCE_FAILED",
                 )
-            except Exception as exc:
-                if getattr(exc, "code", None) != "CROSS_REFERENCE_FAILED":
+            except NativeWriterObjectError as error:
+                if error.code != "CROSS_REFERENCE_FAILED":
                     raise
-                self._native_rollback(start)
+                self._native_rollback(start, self._native_document_end())
                 self.selection.TypeText(run["fallbackText"])
+                degraded = True
             if run["suffix"]:
                 self.selection.TypeText(run["suffix"])
         self.selection.TypeParagraph()
-        return {"issues": []}
+        issues = []
+        if degraded:
+            issues.append({
+                "code": "CROSS_REFERENCE_FAILED",
+                "message": "Cross-reference used its inline fallback",
+                "placement": "inline",
+            })
+        return {"issues": issues}
 
     def insert_caption_index_native(
         self, *, title, sequence_id, title_style_id, owner_node_id=None,
@@ -1747,6 +1857,57 @@ class WriterComposer(BaseComposer):
             if kind in kinds:
                 native.Update()
 
+    @staticmethod
+    def _native_collection_item(collection, index):
+        item = getattr(collection, "Item", None)
+        if callable(item):
+            return item(index)
+        return collection(index)
+
+    @staticmethod
+    def _native_field_kind(field):
+        code = str(getattr(getattr(field, "Code", None), "Text", ""))
+        token = code.strip().upper().split(None, 1)
+        return token[0] if token and token[0] in {"PAGE", "NUMPAGES"} else None
+
+    def _iter_section_page_fields(self):
+        sections = self._doc.Sections
+        for section_index in range(1, int(sections.Count) + 1):
+            section = self._native_collection_item(sections, section_index)
+            for story_name in ("Headers", "Footers"):
+                stories = getattr(section, story_name)
+                for story_index in range(1, int(stories.Count) + 1):
+                    story = self._native_collection_item(stories, story_index)
+                    exists = getattr(story, "Exists", True)
+                    if exists is False or exists == 0:
+                        continue
+                    fields = story.Range.Fields
+                    for field_index in range(1, int(fields.Count) + 1):
+                        native = self._native_collection_item(fields, field_index)
+                        kind = self._native_field_kind(native)
+                        if kind is not None:
+                            owner = (
+                                f"section:{section_index}/"
+                                f"{story_name.lower()}:{story_index}"
+                            )
+                            yield owner, kind, native
+
+    @staticmethod
+    def _native_range_page_span(native):
+        try:
+            native_range = native.Range
+            start = native_range.Duplicate
+            end = native_range.Duplicate
+            start.Collapse(1)
+            end.Collapse(0)
+            first_page = int(start.Information(3))
+            last_page = int(end.Information(3))
+            return max(1, last_page - first_page + 1)
+        except Exception:
+            # Older WPS builds can omit Range.Information on an empty index.
+            # The native index still occupies at least its insertion page.
+            return 1
+
     def repaginate_and_update_numbering(self):
         self._doc.Repaginate()
         self._update_tracked_native_fields({"STYLEREF", "SEQ_FIG", "SEQ_TAB", "SEQ_EQ"})
@@ -1766,24 +1927,41 @@ class WriterComposer(BaseComposer):
     def repaginate_and_update_page_fields(self):
         self._doc.Repaginate()
         self._update_tracked_native_fields({"PAGE", "NUMPAGES"})
+        tracked_ids = {
+            id(native)
+            for _owner, kind, native, _category in self._native_fields()
+            if kind in {"PAGE", "NUMPAGES"}
+        }
+        for _owner, _kind, native in self._iter_section_page_fields():
+            if id(native) not in tracked_ids:
+                native.Update()
 
     def snapshot_fields(self):
         from .longform.field_contract import snapshot_visible_field
 
         total_pages = int(self._doc.ComputeStatistics(2))
-        toc_count = int(self._doc.TablesOfContents.Count)
-        figure_indexes = 0
-        table_indexes = 0
+        tracked = tuple(self._native_fields())
+        toc_pages = sum(
+            self._native_range_page_span(native)
+            for _owner, kind, native, _category in tracked
+            if kind == "TOC"
+        )
+        figure_index_pages = sum(
+            self._native_range_page_span(native)
+            for _owner, kind, native, _category in tracked
+            if kind == "TOF_FIG"
+        )
+        table_index_pages = sum(
+            self._native_range_page_span(native)
+            for _owner, kind, native, _category in tracked
+            if kind == "TOF_TAB"
+        )
         snapshots = []
         ordinals = {}
-        for owner, kind, native, category in self._native_fields():
+        for owner, kind, native, category in tracked:
             key = (owner, kind)
             ordinal = ordinals.get(key, 0)
             ordinals[key] = ordinal + 1
-            if kind == "TOF_FIG":
-                figure_indexes += 1
-            elif kind == "TOF_TAB":
-                table_indexes += 1
             result = getattr(native, "Result", None)
             if result is not None:
                 visible = getattr(result, "Text", "")
@@ -1795,9 +1973,26 @@ class WriterComposer(BaseComposer):
                 ordinal_within_node=ordinal,
                 visible_result=visible,
                 field_category=category,
-                toc_page_count=toc_count,
-                figure_index_page_count=figure_indexes,
-                table_index_page_count=table_indexes,
+                toc_page_count=toc_pages,
+                figure_index_page_count=figure_index_pages,
+                table_index_page_count=table_index_pages,
+                total_pages=total_pages,
+            ))
+        story_ordinals = {}
+        for owner, kind, native in self._iter_section_page_fields():
+            key = (owner, kind)
+            ordinal = story_ordinals.get(key, 0)
+            story_ordinals[key] = ordinal + 1
+            visible = getattr(getattr(native, "Result", None), "Text", "")
+            snapshots.append(snapshot_visible_field(
+                owner_node_id=owner,
+                field_kind=kind,
+                ordinal_within_node=ordinal,
+                visible_result=visible,
+                field_category="page",
+                toc_page_count=toc_pages,
+                figure_index_page_count=figure_index_pages,
+                table_index_page_count=table_index_pages,
                 total_pages=total_pages,
             ))
         return tuple(snapshots)
