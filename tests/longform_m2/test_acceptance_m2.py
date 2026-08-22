@@ -523,7 +523,7 @@ def real_macos_bridge():
 
     with bridge:
         try:
-            bridge.wait_registered({{"writer"}}, timeout=5.0)
+            bridge.wait_registered({"writer"}, timeout=5.0)
         except TimeoutError:
             pytest.skip("WPS writer component did not register within timeout")
         except Exception as exc:  # pragma: no cover
@@ -706,4 +706,3 @@ class TestProtocolEdge:
         codes = {issue.code for issue in build.issues}
         assert "ABSTRACT_CONTENT_DEGRADED" in codes
         assert "PAGE_BREAK_CONTENT_DEGRADED" in codes
-

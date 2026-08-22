@@ -137,12 +137,14 @@ class ExecutionOutcome:
     staged_artifact: str
     issues: Tuple[ExecutionIssue, ...] = ()
     pagination_map: PaginationMap = field(default_factory=PaginationMap)
+    applied_operations: Optional[int] = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "stagedArtifact": self.staged_artifact,
             "issues": [i.to_dict() for i in self.issues],
             "paginationMap": self.pagination_map.to_dict(),
+            "appliedOperations": self.applied_operations,
         }
 
     @classmethod
@@ -151,6 +153,7 @@ class ExecutionOutcome:
             staged_artifact=str(data["stagedArtifact"]),
             issues=tuple(ExecutionIssue.from_dict(i) for i in (data.get("issues") or ())),
             pagination_map=PaginationMap.from_dict(data.get("paginationMap") or {}),
+            applied_operations=data.get("appliedOperations"),
         )
 
 

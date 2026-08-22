@@ -211,6 +211,7 @@ class MacOSLongformExecutor(LongformExecutor):
             staged_artifact=staged_artifact,
             issues=tuple(issues),
             pagination_map=pagination_map,
+            applied_operations=value.get("appliedOperations"),
         )
 
     def _extract_max_rounds(self, plan: GenerationPlan) -> int:
