@@ -64,6 +64,23 @@ def test_multi_letter_columns_use_exact_one_based_coordinates() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "coordinates",
+    [
+        (0, 1, 1, 2),
+        (1, -1, 1, 2),
+        (2, 1, 1, 2),
+        (1, 2, 1, 1),
+        (1, 1, 1, 1),
+    ],
+)
+def test_direct_table_merge_construction_enforces_one_based_rectangle(
+    coordinates: tuple[int, int, int, int],
+) -> None:
+    with pytest.raises(ValueError):
+        TableMerge(*coordinates)
+
+
 def test_header_horizontal_merge_is_accepted_when_covered_cells_are_empty() -> None:
     table = _table(merges="A1:B1")
     table.headers = ["Grouped heading", "", "Value"]
@@ -148,6 +165,19 @@ def test_one_invalid_range_discards_every_requested_merge_without_mutating_grid(
     assert len(issues) == 1
     assert issues[0].code == TABLE_MERGE_INVALID
     assert issues[0].placement == "block"
+    assert issues[0].insert_after == "caption"
+    assert issues[0].to_dict() == {
+        "code": TABLE_MERGE_INVALID,
+        "message": (
+            "Table merge declaration is invalid; all merges were discarded and "
+            "the complete unmerged grid was preserved."
+        ),
+        "placement": "block",
+        "insertAfter": "caption",
+        "trigger": "invalid-merge-declaration",
+        "recoveryScope": "complete-table",
+        "actions": ["discard-all-merges", "preserve-complete-grid"],
+    }
     assert "complete unmerged grid" in issues[0].message
     assert table == original
 

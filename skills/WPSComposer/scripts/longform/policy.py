@@ -14,6 +14,7 @@ from .semantic import LongformConfig
 from .table_policy import (
     TABLE_MERGE_INVALID,
     TABLE_ROW_FORCED_SPLIT,
+    TableDegradationMetadata,
     TablePolicy,
     parse_a1_merge_ranges,
     resolve_table_policy,
@@ -166,6 +167,7 @@ __all__ = [
     "LongformPolicy",
     "TABLE_MERGE_INVALID",
     "TABLE_ROW_FORCED_SPLIT",
+    "TableDegradationMetadata",
     "TablePolicy",
     "build_policy",
     "page_content_width_pt",

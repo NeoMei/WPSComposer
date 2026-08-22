@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
+import json
 
 import pytest
 
@@ -9,6 +10,7 @@ from skills.WPSComposer.scripts.document_model import SemanticTableBlock, TableM
 from skills.WPSComposer.scripts.longform.policy import resolve_table_policy
 from skills.WPSComposer.scripts.longform.table_policy import (
     TABLE_ROW_FORCED_SPLIT,
+    TableDegradationMetadata,
     TablePolicy,
     row_forced_split_degradation,
 )
@@ -107,6 +109,53 @@ def test_policy_and_merge_coordinates_are_immutable() -> None:
         policy.style = "three-line"  # type: ignore[misc]
 
 
+def test_policy_borders_are_deeply_immutable_and_serialization_is_stable() -> None:
+    first, _ = resolve_table_policy(_table(style="three-line"), "business")
+    second, _ = resolve_table_policy(_table(style="three-line"), "business")
+
+    with pytest.raises(TypeError):
+        first.borders["top"] = 99.0  # type: ignore[index]
+    assert first == second
+    assert first.to_dict() == second.to_dict()
+    assert json.dumps(first.to_dict(), sort_keys=True) == json.dumps(
+        second.to_dict(), sort_keys=True
+    )
+    assert first.to_dict()["borders"]["top"] == 1.5
+
+
+def test_direct_policy_construction_defensively_freezes_nested_values() -> None:
+    source_borders = {"top": 1.5}
+    source_merges = [TableMerge(2, 1, 3, 1)]
+    policy = TablePolicy("three-line", source_borders, source_merges, True, False, 0.0)  # type: ignore[arg-type]
+
+    source_borders["top"] = 99.0
+    source_merges.clear()
+
+    assert policy.borders["top"] == 1.5
+    assert policy.merges == (TableMerge(2, 1, 3, 1),)
+    with pytest.raises(TypeError):
+        policy.borders["top"] = 2.0  # type: ignore[index]
+
+
+def test_degradation_metadata_defensively_freezes_nested_values() -> None:
+    source_actions = ["allow-row-split"]
+    source_group = [3, 3]
+    metadata = TableDegradationMetadata(
+        code=TABLE_ROW_FORCED_SPLIT,
+        message="row",
+        trigger="row-exceeds-available-page",
+        recovery_scope="row",
+        actions=source_actions,  # type: ignore[arg-type]
+        row_group=source_group,  # type: ignore[arg-type]
+    )
+
+    source_actions.append("discard-all-merges")
+    source_group[0] = 2
+
+    assert metadata.actions == ("allow-row-split",)
+    assert metadata.row_group == (3, 3)
+
+
 def test_vertical_body_merges_mark_the_transitive_row_group_indivisible() -> None:
     table = SemanticTableBlock(
         headers=["A", "B", "C"],
@@ -135,26 +184,46 @@ def test_normal_rows_have_no_indivisible_group() -> None:
 def test_forced_split_metadata_is_runtime_only_and_caption_anchored() -> None:
     metadata = row_forced_split_degradation(2, 4)
 
-    assert metadata == {
+    assert metadata.to_dict() == {
         "code": TABLE_ROW_FORCED_SPLIT,
         "message": (
             "Table row group 2:4 exceeded the available page height; "
-            "remove its vertical merges and allow row splitting."
+            "render the complete table as an unmerged splittable grid."
         ),
         "placement": "block",
-        "insert_after": "caption",
-        "trigger": "indivisible-row-group-exceeds-available-page",
-        "recovery": "unmerge-group-and-allow-row-split",
-        "row_group": {"top": 2, "bottom": 4},
+        "insertAfter": "caption",
+        "trigger": "vertical-merge-group-exceeds-available-page",
+        "recoveryScope": "complete-table",
+        "actions": ["discard-all-merges", "apply-grid-style", "allow-row-split"],
+        "rowGroup": {"top": 2, "bottom": 4},
     }
+
+
+def test_forced_split_metadata_for_merged_group_is_immutable() -> None:
+    metadata = row_forced_split_degradation(2, 4)
+
+    with pytest.raises(FrozenInstanceError):
+        metadata.recovery_scope = "row"  # type: ignore[misc]
+    with pytest.raises(TypeError):
+        metadata.actions[0] = "preserve-merges"  # type: ignore[index]
 
 
 def test_forced_split_metadata_also_supports_one_oversized_normal_row() -> None:
     metadata = row_forced_split_degradation(3, 3)
 
-    assert metadata["code"] == TABLE_ROW_FORCED_SPLIT
-    assert metadata["row_group"] == {"top": 3, "bottom": 3}
-    assert metadata["recovery"] == "unmerge-group-and-allow-row-split"
+    assert metadata.to_dict() == {
+        "code": TABLE_ROW_FORCED_SPLIT,
+        "message": (
+            "Table row 3 exceeded the available page height; allow that row "
+            "to split without removing table merges."
+        ),
+        "placement": "block",
+        "insertAfter": "caption",
+        "trigger": "row-exceeds-available-page",
+        "recoveryScope": "row",
+        "actions": ["allow-row-split"],
+        "rowGroup": {"top": 3, "bottom": 3},
+    }
 
 
 def test_forced_split_metadata_does_not_measure_pages() -> None:

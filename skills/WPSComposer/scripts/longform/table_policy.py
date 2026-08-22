@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from typing import Any, Sequence
+from types import MappingProxyType
+from typing import Any, Mapping, Optional, Sequence
 
 from ..design_presets import PRESETS
-from ..document_model import DocumentIssue, TableMerge
+from ..document_model import TableMerge
 
 
 TABLE_MERGE_INVALID = "TABLE_MERGE_INVALID"
@@ -22,7 +23,7 @@ _A1_RANGE_RE = re.compile(
     r"(?P<right>[A-Za-z]+)(?P<bottom>[1-9][0-9]*)"
 )
 
-_THREE_LINE_BORDERS = {
+_THREE_LINE_BORDERS = MappingProxyType({
     "top": 1.5,
     "bottom": 1.5,
     "header_bottom": 0.75,
@@ -30,8 +31,8 @@ _THREE_LINE_BORDERS = {
     "right": 0.0,
     "inside_horizontal": 0.0,
     "inside_vertical": 0.0,
-}
-_GRID_BORDERS = {
+})
+_GRID_BORDERS = MappingProxyType({
     "top": 0.75,
     "bottom": 0.75,
     "header_bottom": 0.75,
@@ -39,7 +40,51 @@ _GRID_BORDERS = {
     "right": 0.75,
     "inside_horizontal": 0.75,
     "inside_vertical": 0.75,
-}
+})
+
+
+@dataclass(frozen=True)
+class TableDegradationMetadata:
+    """Immutable table-local degradation contract for later plan/executor use."""
+
+    code: str
+    message: str
+    trigger: str
+    recovery_scope: str
+    actions: tuple[str, ...]
+    row_group: Optional[tuple[int, int]] = None
+    placement: str = "block"
+    insert_after: str = "caption"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "actions", tuple(self.actions))
+        if self.row_group is not None:
+            group = tuple(self.row_group)
+            if (
+                len(group) != 2
+                or any(type(value) is not int for value in group)
+                or group[0] < 2
+                or group[1] < group[0]
+            ):
+                raise ValueError("table degradation row group is invalid")
+            object.__setattr__(self, "row_group", group)
+
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "code": self.code,
+            "message": self.message,
+            "placement": self.placement,
+            "insertAfter": self.insert_after,
+            "trigger": self.trigger,
+            "recoveryScope": self.recovery_scope,
+            "actions": list(self.actions),
+        }
+        if self.row_group is not None:
+            result["rowGroup"] = {
+                "top": self.row_group[0],
+                "bottom": self.row_group[1],
+            }
+        return result
 
 
 @dataclass(frozen=True)
@@ -47,11 +92,34 @@ class TablePolicy:
     """Resolved platform-independent table policy."""
 
     style: str
-    borders: dict[str, float]
+    borders: Mapping[str, float]
     merges: tuple[TableMerge, ...]
     repeat_header: bool
     allow_row_split: bool
     cell_indent_pt: float
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "borders", MappingProxyType(dict(self.borders)))
+        object.__setattr__(self, "merges", tuple(self.merges))
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a detached, deterministic JSON-ready policy mapping."""
+        return {
+            "style": self.style,
+            "borders": dict(sorted(self.borders.items())),
+            "merges": [
+                {
+                    "top": merge.top,
+                    "left": merge.left,
+                    "bottom": merge.bottom,
+                    "right": merge.right,
+                }
+                for merge in self.merges
+            ],
+            "repeatHeader": self.repeat_header,
+            "allowRowSplit": self.allow_row_split,
+            "cellIndentPt": self.cell_indent_pt,
+        }
 
     @property
     def indivisible_row_groups(self) -> tuple[tuple[int, int], ...]:
@@ -97,11 +165,11 @@ def parse_a1_merge_ranges(merge_spec: str) -> tuple[TableMerge, ...]:
 def resolve_table_policy(
     table: Any,
     preset: Any,
-) -> tuple[TablePolicy, tuple[DocumentIssue, ...]]:
+) -> tuple[TablePolicy, tuple[TableDegradationMetadata, ...]]:
     """Resolve style and validate every requested merge as one atomic declaration."""
     style = _resolve_style(getattr(table, "style", ""), preset)
     merges: tuple[TableMerge, ...] = ()
-    issues: tuple[DocumentIssue, ...] = ()
+    issues: tuple[TableDegradationMetadata, ...] = ()
     merge_spec = str(getattr(table, "merge_spec", "") or "")
     if merge_spec.strip():
         try:
@@ -114,16 +182,18 @@ def resolve_table_policy(
             merges = requested_merges
         except (IndexError, TypeError, ValueError):
             issues = (
-                DocumentIssue(
+                TableDegradationMetadata(
                     code=TABLE_MERGE_INVALID,
                     message=_TABLE_MERGE_INVALID_MESSAGE,
-                    placement="block",
+                    trigger="invalid-merge-declaration",
+                    recovery_scope="complete-table",
+                    actions=("discard-all-merges", "preserve-complete-grid"),
                 ),
             )
 
     policy = TablePolicy(
         style=style,
-        borders=dict(_THREE_LINE_BORDERS if style == "three-line" else _GRID_BORDERS),
+        borders=_THREE_LINE_BORDERS if style == "three-line" else _GRID_BORDERS,
         merges=merges,
         repeat_header=bool(getattr(table, "repeat_header", True)),
         allow_row_split=False,
@@ -132,24 +202,38 @@ def resolve_table_policy(
     return policy, issues
 
 
-def row_forced_split_degradation(top: int, bottom: int) -> dict[str, Any]:
+def row_forced_split_degradation(
+    top: int,
+    bottom: int,
+) -> TableDegradationMetadata:
     """Describe runtime recovery for an over-page body row or merged group."""
     if top < 2:
         raise ValueError("body row group must start at row 2 or later")
     if bottom < top:
         raise ValueError("body row group coordinates must be ordered")
-    return {
-        "code": TABLE_ROW_FORCED_SPLIT,
-        "message": (
+    if top == bottom:
+        return TableDegradationMetadata(
+            code=TABLE_ROW_FORCED_SPLIT,
+            message=(
+                f"Table row {top} exceeded the available page height; allow that "
+                "row to split without removing table merges."
+            ),
+            trigger="row-exceeds-available-page",
+            recovery_scope="row",
+            actions=("allow-row-split",),
+            row_group=(top, bottom),
+        )
+    return TableDegradationMetadata(
+        code=TABLE_ROW_FORCED_SPLIT,
+        message=(
             f"Table row group {top}:{bottom} exceeded the available page height; "
-            "remove its vertical merges and allow row splitting."
+            "render the complete table as an unmerged splittable grid."
         ),
-        "placement": "block",
-        "insert_after": "caption",
-        "trigger": "indivisible-row-group-exceeds-available-page",
-        "recovery": "unmerge-group-and-allow-row-split",
-        "row_group": {"top": top, "bottom": bottom},
-    }
+        trigger="vertical-merge-group-exceeds-available-page",
+        recovery_scope="complete-table",
+        actions=("discard-all-merges", "apply-grid-style", "allow-row-split"),
+        row_group=(top, bottom),
+    )
 
 
 def _column_number(label: str) -> int:
@@ -224,6 +308,7 @@ def _cell_value(
 __all__ = [
     "TABLE_MERGE_INVALID",
     "TABLE_ROW_FORCED_SPLIT",
+    "TableDegradationMetadata",
     "TableMerge",
     "TablePolicy",
     "parse_a1_merge_ranges",

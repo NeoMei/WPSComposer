@@ -189,6 +189,15 @@ class TableMerge:
     bottom: int
     right: int
 
+    def __post_init__(self) -> None:
+        coordinates = (self.top, self.left, self.bottom, self.right)
+        if any(type(value) is not int or value < 1 for value in coordinates):
+            raise ValueError("table merge coordinates must be positive integers")
+        if self.bottom < self.top or self.right < self.left:
+            raise ValueError("table merge coordinates must form an ordered rectangle")
+        if self.bottom == self.top and self.right == self.left:
+            raise ValueError("table merge must cover at least two cells")
+
 
 @dataclass
 class SemanticTableBlock:
