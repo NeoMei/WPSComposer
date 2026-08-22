@@ -49,21 +49,72 @@ _FORMAT_MEDIA_TYPES = {
     "GIF": "image/gif",
 }
 _SVG_FORBIDDEN_DECLARATIONS = re.compile(br"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
-_SVG_FORBIDDEN_PI = re.compile(br"<\?\s*xml-stylesheet\b", re.IGNORECASE)
-_SVG_URL = re.compile(r"url\(\s*(['\"]?)(.*?)\1\s*\)", re.IGNORECASE)
-_SVG_ACTIVE_CSS = re.compile(r"@\s*(?:import|font-face)\b", re.IGNORECASE)
 _SVG_LENGTH = re.compile(r"^\s*([0-9]+(?:\.[0-9]+)?)(?:px)?\s*$", re.IGNORECASE)
-_SVG_ACTIVE_ELEMENTS = frozenset(
+_SVG_FRAGMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_.:-]*$")
+_SVG_FRAGMENT_URL = re.compile(
+    r"^url\(\s*(#[A-Za-z_][A-Za-z0-9_.:-]*)\s*\)$", re.IGNORECASE
+)
+_SVG_URI_SCHEME = re.compile(r"(?:^|[\s,(])[A-Za-z][A-Za-z0-9+.-]*:")
+_SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+_XLINK_NAMESPACE = "http://www.w3.org/1999/xlink"
+_XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
+_SVG_SAFE_ELEMENTS = frozenset(
     {
-        "script",
-        "foreignobject",
-        "animate",
-        "animatetransform",
-        "animatemotion",
-        "set",
+        "circle",
+        "clippath",
+        "defs",
+        "desc",
+        "ellipse",
+        "feblend",
+        "fecolormatrix",
+        "fecomponenttransfer",
+        "fecomposite",
+        "feconvolvematrix",
+        "fediffuselighting",
+        "fedisplacementmap",
+        "fedistantlight",
+        "fedropshadow",
+        "feflood",
+        "fefunca",
+        "fefuncb",
+        "fefuncg",
+        "fefuncr",
+        "fegaussianblur",
+        "feimage",
+        "femerge",
+        "femergenode",
+        "femorphology",
+        "feoffset",
+        "fepointlight",
+        "fespecularlighting",
+        "fespotlight",
+        "fetile",
+        "feturbulence",
+        "filter",
+        "g",
+        "image",
+        "line",
+        "lineargradient",
+        "marker",
+        "mask",
+        "path",
+        "pattern",
+        "polygon",
+        "polyline",
+        "radialgradient",
+        "rect",
+        "stop",
+        "svg",
+        "symbol",
+        "text",
+        "textpath",
+        "title",
+        "tspan",
+        "use",
     }
 )
 _PNG_LOSSLESS_MODES = frozenset({"RGB", "RGBA", "L", "LA", "P"})
+_PNG_UNSIGNED_16_MODES = frozenset({"I;16", "I;16L", "I;16B"})
 
 
 @dataclass(frozen=True)
@@ -237,14 +288,27 @@ def _dpi_pair(info: dict[str, Any]) -> tuple[Optional[float], Optional[float]]:
     return (value, value) if value is not None else (None, None)
 
 
-def _valid_icc(raw: Any) -> Optional[bytes]:
+def _icc_compatible_with_mode(profile: ImageCms.ImageCmsProfile, mode: str) -> bool:
+    color_space = str(profile.profile.xcolor_space).strip().upper()
+    if mode in {"RGB", "RGBA", "RGBX", "P"}:
+        return color_space == "RGB"
+    if mode in {"1", "L", "LA", "I", "I;16", "I;16L", "I;16B"}:
+        return color_space in {"GRAY", "GREY"}
+    if mode == "CMYK":
+        return color_space == "CMYK"
+    if mode == "LAB":
+        return color_space == "LAB"
+    return False
+
+
+def _valid_icc(raw: Any, mode: str) -> Optional[bytes]:
     if not isinstance(raw, bytes) or not raw:
         return None
     try:
-        ImageCms.ImageCmsProfile(io.BytesIO(raw))
+        profile = ImageCms.ImageCmsProfile(io.BytesIO(raw))
     except (OSError, TypeError, ValueError):
         return None
-    return raw
+    return raw if _icc_compatible_with_mode(profile, mode) else None
 
 
 def _check_geometry(width: int, height: int) -> None:
@@ -265,6 +329,16 @@ def _png_compatible_image(
     """
     if image.mode in _PNG_LOSSLESS_MODES:
         return image, icc
+
+    if image.mode in _PNG_UNSIGNED_16_MODES:
+        # Normalize byte order via Pillow's numeric I mode before emitting the
+        # native-endian I;16 mode accepted by the PNG writer.
+        return image.convert("I").convert("I;16"), icc
+
+    if image.mode == "I":
+        minimum, maximum = image.getextrema()
+        if minimum >= 0 and maximum <= 65535:
+            return image.convert("I;16"), icc
 
     target_mode = "RGBA" if "A" in image.getbands() else "RGB"
     if icc is not None:
@@ -315,7 +389,7 @@ def _prepare_raster_if_identified(data: bytes) -> Optional[_RasterPreparation]:
                 frame_count = int(getattr(image, "n_frames", 1) or 1)
                 info = dict(image.info)
                 dpi_x, dpi_y = _dpi_pair(info)
-                icc = _valid_icc(info.get("icc_profile"))
+                icc = _valid_icc(info.get("icc_profile"), image.mode)
                 orientation = int(image.getexif().get(274, 1) or 1)
 
                 # Every frame/page is decoded so the accepted format is based
@@ -401,8 +475,15 @@ def _svg_number(value: Optional[str]) -> Optional[int]:
     return max(1, int(math.ceil(float(match.group(1)))))
 
 
+def _xml_expanded_name(name: str) -> tuple[str, str]:
+    if name.startswith("{") and "}" in name:
+        namespace, local_name = name[1:].split("}", 1)
+        return namespace, local_name.casefold()
+    return "", name.casefold()
+
+
 def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
-    if _SVG_FORBIDDEN_DECLARATIONS.search(data) or _SVG_FORBIDDEN_PI.search(data):
+    if _SVG_FORBIDDEN_DECLARATIONS.search(data):
         raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
     count = 0
@@ -423,21 +504,33 @@ def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
         if len(data) + embedded_bytes > MAX_RESOURCE_BYTES:
             raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
-    def inspect_url_references(value: str) -> None:
-        for match in _SVG_URL.finditer(value):
-            inspect_data_uri(match.group(2))
+    def inspect_reference(value: str) -> None:
+        if _SVG_FRAGMENT.fullmatch(value):
+            return
+        if value.casefold().startswith("data:"):
+            inspect_data_uri(value)
+            return
+        raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
-    def inspect_css(value: str) -> None:
-        if _SVG_ACTIVE_CSS.search(value):
+    def inspect_presentation_value(value: str) -> None:
+        folded = value.casefold()
+        if "\\" in value or "/*" in value or "*/" in value or "data:" in folded:
             raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
-        inspect_url_references(value)
+        if "url" in folded:
+            if _SVG_FRAGMENT_URL.fullmatch(value) is None:
+                raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
+        elif _SVG_URI_SCHEME.search(value):
+            raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
     try:
-        for event, element in ET.iterparse(io.BytesIO(data), events=("start", "end")):
+        for event, element in ET.iterparse(
+            io.BytesIO(data), events=("start", "end", "pi")
+        ):
+            if event == "pi":
+                # ElementTree does not report the XML declaration as a PI, so
+                # every PI event here is non-declarative and out of contract.
+                raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
             if event == "end":
-                tag = element.tag.rsplit("}", 1)[-1].lower()
-                if tag == "style":
-                    inspect_css(element.text or "")
                 depth -= 1
                 continue
             count += 1
@@ -446,28 +539,36 @@ def _prepare_svg(data: bytes) -> tuple[str, str, bytes, ImageProfile, bool]:
                 raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
             if root is None:
                 root = element
-            tag = element.tag.rsplit("}", 1)[-1].lower()
-            if tag in _SVG_ACTIVE_ELEMENTS:
+            element_namespace, tag = _xml_expanded_name(element.tag)
+            if element_namespace not in {"", _SVG_NAMESPACE}:
+                raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
+            if tag not in _SVG_SAFE_ELEMENTS:
                 raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
             for raw_name, raw_value in element.attrib.items():
-                name = raw_name.rsplit("}", 1)[-1].lower()
+                attribute_namespace, name = _xml_expanded_name(raw_name)
                 value = raw_value.strip()
-                if name.startswith("on"):
+                if name.startswith("on") or name == "handler":
                     raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
-                if name in {"font-face-uri", "font-family"} and "url(" in value.lower():
+                if attribute_namespace == _XLINK_NAMESPACE:
+                    if name != "href":
+                        raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
+                elif attribute_namespace == _XML_NAMESPACE:
+                    if name not in {"lang", "space"}:
+                        raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
+                elif attribute_namespace:
                     raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
-                if name in {"href", "src"}:
-                    inspect_data_uri(value)
+                if name in {"href", "src"} or name.endswith(("href", "src")):
+                    inspect_reference(value)
                 elif name == "style":
-                    inspect_css(value)
+                    raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
                 else:
-                    inspect_url_references(value)
+                    inspect_presentation_value(value)
     except _ResourceRejected:
         raise
     except (ET.ParseError, UnicodeError, ValueError):
         raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
 
-    if root is None or root.tag.rsplit("}", 1)[-1].lower() != "svg":
+    if root is None or _xml_expanded_name(root.tag)[1] != "svg":
         raise _ResourceRejected(RESOURCE_MEDIA_TYPE_UNSUPPORTED)
     width = _svg_number(root.attrib.get("width"))
     height = _svg_number(root.attrib.get("height"))

@@ -322,7 +322,7 @@ def test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png(
 
     assert resource.normalizer_id == "exif-transpose-png-v1"
     assert resource.media_type == "image/png"
-    assert resource.image_profile.has_icc is True
+    assert resource.image_profile.has_icc is False
     with Image.open(io.BytesIO(payload)) as decoded_source:
         decoded_source.load()
         expected = ImageOps.exif_transpose(decoded_source).convert("RGB")
@@ -362,21 +362,12 @@ def test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png(tmp_path: Path) -
         _assert_rgb_pixels_close(normalized, expected, tolerance=1)
 
 
-@pytest.mark.parametrize("mode", ["F", "I;16"])
-def test_multiframe_numeric_tiff_normalizes_first_page_deterministically(
-    tmp_path: Path, mode: str
+def test_multiframe_float_tiff_normalizes_first_page_deterministically(
+    tmp_path: Path,
 ) -> None:
-    if mode == "F":
-        first = Image.new("F", (2, 2))
-        first.putdata([0.0, 64.5, 255.0, 512.0])
-        second = Image.new("F", (2, 2), 999.0)
-    else:
-        first = Image.frombytes(
-            "I;16", (2, 2), struct.pack("<4H", 0, 64, 255, 65535)
-        )
-        second = Image.frombytes(
-            "I;16", (2, 2), struct.pack("<4H", 1000, 2000, 3000, 4000)
-        )
+    first = Image.new("F", (2, 2))
+    first.putdata([0.0, 64.5, 255.0, 512.0])
+    second = Image.new("F", (2, 2), 999.0)
     payload = _image_payload(
         first,
         "TIFF",
@@ -385,7 +376,7 @@ def test_multiframe_numeric_tiff_normalizes_first_page_deterministically(
         compression="raw",
     )
 
-    result = _preflight(tmp_path, f"numeric-{mode}.tiff", payload)
+    result = _preflight(tmp_path, "numeric-float.tiff", payload)
     resource = result.resources[0]
 
     assert resource.normalizer_id == "tiff-first-page-png-v1"
@@ -398,6 +389,135 @@ def test_multiframe_numeric_tiff_normalizes_first_page_deterministically(
         normalized.load()
         assert normalized.mode == "RGB"
         _assert_rgb_pixels_close(normalized, expected, tolerance=1)
+
+
+@pytest.mark.parametrize(
+    ("mode", "endian"),
+    [("I;16", "<"), ("I;16L", "<"), ("I;16B", ">"), ("I", None)],
+)
+def test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples(
+    tmp_path: Path, mode: str, endian: str | None
+) -> None:
+    samples = [0, 64, 1024, 65535]
+    second_samples = [5, 1000, 30000, 60000]
+    if mode == "I":
+        first = Image.new("I", (2, 2))
+        first.putdata(samples)
+        second = Image.new("I", (2, 2))
+        second.putdata(second_samples)
+    else:
+        assert endian is not None
+        first = Image.frombytes(mode, (2, 2), struct.pack(f"{endian}4H", *samples))
+        second = Image.frombytes(
+            mode, (2, 2), struct.pack(f"{endian}4H", *second_samples)
+        )
+    payload = _image_payload(
+        first,
+        "TIFF",
+        save_all=True,
+        append_images=[second],
+        compression="raw",
+    )
+
+    result = _preflight(tmp_path, f"unsigned-{mode}.tiff", payload)
+    resource = result.resources[0]
+
+    assert resource.normalizer_id == "tiff-first-page-png-v1"
+    assert [item.code for item in result.degradations] == [MULTIFRAME_FLATTENED]
+    with Image.open(io.BytesIO(resource.payload_bytes)) as normalized:
+        normalized.load()
+        assert normalized.mode == "I;16"
+        assert list(normalized.getdata()) == samples
+
+
+def test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples(
+    tmp_path: Path,
+) -> None:
+    samples = [0, 64, 1024, 4096, 32768, 65535]
+    source = Image.frombytes("I;16", (2, 3), struct.pack("<6H", *samples))
+    exif = Image.Exif()
+    exif[274] = 6
+    payload = _image_payload(source, "TIFF", compression="raw", exif=exif)
+
+    result = _preflight(tmp_path, "oriented-16bit.tiff", payload)
+    resource = result.resources[0]
+
+    assert resource.normalizer_id == "exif-transpose-png-v1"
+    with Image.open(io.BytesIO(payload)) as decoded_source:
+        decoded_source.load()
+        expected = list(ImageOps.exif_transpose(decoded_source).getdata())
+    with Image.open(io.BytesIO(resource.payload_bytes)) as normalized:
+        normalized.load()
+        assert normalized.mode == "I;16"
+        assert list(normalized.getdata()) == expected
+
+
+def test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback(
+    tmp_path: Path,
+) -> None:
+    first = Image.new("I", (2, 2))
+    first.putdata([-1, 0, 65535, 65536])
+    second = Image.new("I", (2, 2), 1)
+    payload = _image_payload(first, "TIFF", save_all=True, append_images=[second])
+
+    result = _preflight(tmp_path, "wide-signed.tiff", payload)
+    resource = result.resources[0]
+
+    with Image.open(io.BytesIO(payload)) as decoded_source:
+        decoded_source.seek(0)
+        decoded_source.load()
+        expected = decoded_source.convert("RGB")
+    with Image.open(io.BytesIO(resource.payload_bytes)) as normalized:
+        normalized.load()
+        assert normalized.mode == "RGB"
+        _assert_rgb_pixels_close(normalized, expected, tolerance=0)
+
+
+def test_grayscale_raster_drops_structurally_valid_rgb_icc(tmp_path: Path) -> None:
+    rgb_icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    first = Image.new("L", (2, 2))
+    first.putdata([0, 64, 128, 255])
+    second = Image.new("L", (2, 2), 32)
+    payload = _image_payload(
+        first,
+        "TIFF",
+        save_all=True,
+        append_images=[second],
+        icc_profile=rgb_icc,
+    )
+
+    result = _preflight(tmp_path, "gray-rgb-profile.tiff", payload)
+    resource = result.resources[0]
+
+    assert resource.image_profile.has_icc is False
+    with Image.open(io.BytesIO(resource.payload_bytes)) as normalized:
+        normalized.load()
+        assert normalized.mode == "L"
+        assert normalized.info.get("icc_profile") is None
+
+
+def test_rgb_raster_retains_compatible_icc_after_normalization(tmp_path: Path) -> None:
+    rgb_icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    first = Image.new("RGB", (2, 2), (20, 40, 60))
+    second = Image.new("RGB", (2, 2), (80, 100, 120))
+    payload = _image_payload(
+        first,
+        "TIFF",
+        save_all=True,
+        append_images=[second],
+        icc_profile=rgb_icc,
+    )
+
+    result = _preflight(tmp_path, "rgb-profile.tiff", payload)
+    resource = result.resources[0]
+
+    assert resource.image_profile.has_icc is True
+    with Image.open(io.BytesIO(resource.payload_bytes)) as normalized:
+        normalized.load()
+        retained_icc = normalized.info.get("icc_profile")
+        assert retained_icc
+        retained_profile = ImageCms.ImageCmsProfile(io.BytesIO(retained_icc))
+        assert retained_profile.profile.xcolor_space == "RGB "
 
 
 def test_preflight_private_payload_and_path_do_not_affect_repr_or_equality() -> None:
@@ -463,6 +583,133 @@ def test_static_svg_is_retained_as_svg() -> None:
     assert resource.normalizer_id == "svg-static-v1"
     assert resource.payload_bytes == payload
     assert resource.image_profile == ImageProfile(40, 20, None, None, 1, "SVG", False)
+
+
+@pytest.mark.parametrize(
+    "svg",
+    [
+        (
+            r'<svg xmlns="http://www.w3.org/2000/svg"><style>'
+            r'@\69mport "https://example.invalid/a.css";</style></svg>'
+        ),
+        (
+            r'<svg xmlns="http://www.w3.org/2000/svg"><style>'
+            r'.x{fill:u\72l(https://example.invalid/x)}</style></svg>'
+        ),
+        (
+            '<svg xmlns="http://www.w3.org/2000/svg"><style>'
+            '@keyframes pulse{to{opacity:0}}.x{animation:pulse 1s}'
+            "</style></svg>"
+        ),
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:red"/></svg>',
+    ],
+)
+def test_svg_style_elements_and_attributes_are_always_rejected(
+    tmp_path: Path, svg: str
+) -> None:
+    result = _preflight(tmp_path, "style.svg", svg.encode("utf-8"))
+
+    assert result.resources == []
+    assert [item.code for item in result.degradations] == [
+        RESOURCE_MEDIA_TYPE_UNSUPPORTED
+    ]
+
+
+@pytest.mark.parametrize(
+    "element",
+    [
+        "animateColor",
+        "discard",
+        'ev:handler xmlns:ev="http://www.w3.org/2001/xml-events"',
+        'html:iframe xmlns:html="http://www.w3.org/1999/xhtml"',
+        "unknownWidget",
+    ],
+)
+def test_svg_animation_interaction_and_unknown_elements_are_rejected(
+    tmp_path: Path, element: str
+) -> None:
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg"><{element}/></svg>'
+
+    result = _preflight(tmp_path, "active-element.svg", svg.encode("utf-8"))
+
+    assert result.resources == []
+    assert [item.code for item in result.degradations] == [
+        RESOURCE_MEDIA_TYPE_UNSUPPORTED
+    ]
+
+
+@pytest.mark.parametrize(
+    "attribute",
+    [
+        'xmlns:ev="http://www.w3.org/2001/xml-events" ev:handler="#handler"',
+        'xmlns:ev="http://www.w3.org/2001/xml-events" ev:event="click"',
+        'xmlns:unknown="urn:active" unknown:payload="x"',
+    ],
+)
+def test_svg_xml_events_and_unknown_attribute_namespaces_are_rejected(
+    tmp_path: Path, attribute: str
+) -> None:
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg"><rect {attribute}/></svg>'
+
+    result = _preflight(tmp_path, "active-attribute.svg", svg.encode("utf-8"))
+
+    assert result.resources == []
+    assert [item.code for item in result.degradations] == [
+        RESOURCE_MEDIA_TYPE_UNSUPPORTED
+    ]
+
+
+def test_svg_non_declaration_processing_instruction_is_rejected(tmp_path: Path) -> None:
+    svg = (
+        '<?xml version="1.0"?><?reviewer active="yes"?>'
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>'
+    )
+
+    result = _preflight(tmp_path, "processing-instruction.svg", svg.encode("utf-8"))
+
+    assert result.resources == []
+    assert [item.code for item in result.degradations] == [
+        RESOURCE_MEDIA_TYPE_UNSUPPORTED
+    ]
+
+
+def test_svg_entities_are_normalized_before_reference_checks(tmp_path: Path) -> None:
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg">'
+        '<rect fill="url(&#x68;ttps://example.invalid/external.svg)"/>'
+        "</svg>"
+    )
+
+    result = _preflight(tmp_path, "entity-reference.svg", svg.encode("utf-8"))
+
+    assert result.resources == []
+    assert [item.code for item in result.degradations] == [
+        RESOURCE_MEDIA_TYPE_UNSUPPORTED
+    ]
+
+
+def test_safe_static_svg_allowlist_supports_shapes_gradients_clips_and_use(
+    tmp_path: Path,
+) -> None:
+    svg = b'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20">
+  <defs>
+    <linearGradient id="gradient"><stop offset="0" stop-color="#fff"/></linearGradient>
+    <clipPath id="clip"><circle cx="10" cy="10" r="8"/></clipPath>
+    <g id="shape"><path d="M0 0 L10 0 L10 10 Z"/></g>
+  </defs>
+  <rect width="40" height="20" fill="url(#gradient)" clip-path="url(#clip)"/>
+  <use href="&#35;shape" x="5" y="5"/>
+  <line x1="0" y1="0" x2="40" y2="20"/>
+  <polygon points="0,0 2,0 1,2"/>
+  <text x="1" y="15"><tspan>safe</tspan></text>
+</svg>'''
+
+    result = _preflight(tmp_path, "safe-static.svg", svg)
+
+    assert len(result.resources) == 1
+    assert result.resources[0].media_type == "image/svg+xml"
+    assert result.degradations == []
 
 
 @pytest.mark.parametrize(
