@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import traceback
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,12 @@ from tests.longform_m3.fakes.windows_com import RecordingNativeComposer
 
 BOOKMARK = "wpsc_fig_" + "a" * 24
 EMPTY_MANIFEST_DIGEST = "sha256:dc7749a3af2a2bb77cad0700bddd3716d4b431bf91885cc20c6a1af68136f890"
+
+
+def _formatted_exception(error: BaseException) -> str:
+    return "".join(traceback.format_exception(
+        type(error), error, error.__traceback__
+    ))
 
 
 def _numbering(sequence="WPSC_FIG", prefix="图 ", suffix=""):
@@ -182,11 +189,11 @@ def test_partial_private_resource_is_cleaned_when_write_or_flush_fails(
 
         def write(self, payload):
             if failure_point == "write":
-                raise OSError("write failed")
+                raise OSError("C:\\private\\write-secret.png")
 
         def flush(self):
             if failure_point == "flush":
-                raise OSError("flush failed")
+                raise OSError("C:\\private\\flush-secret.png")
 
         def close(self):
             pass
@@ -194,9 +201,15 @@ def test_partial_private_resource_is_cleaned_when_write_or_flush_fails(
     monkeypatch.setattr(windows_executor.tempfile, "NamedTemporaryFile", lambda **kwargs: FailingHandle())
     executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=RecordingNativeComposer)
 
-    with pytest.raises(WindowsLongformExecutorError):
+    with pytest.raises(WindowsLongformExecutorError) as caught:
         executor._stage_resources((resource,))
     assert not leaked.exists()
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
+    assert "secret" not in _formatted_exception(caught.value)
+    assert str(tmp_path) not in _formatted_exception(caught.value)
 
 
 def test_staging_handle_close_retries_once_then_execution_cleans_file(
@@ -304,6 +317,10 @@ def test_permanent_staging_close_failure_is_bounded_and_cleans_all_created_files
     assert executor._resource_locators == {}
     assert "secret" not in str(caught.value)
     assert str(tmp_path) not in str(caught.value)
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert "secret" not in _formatted_exception(caught.value)
+    assert str(tmp_path) not in _formatted_exception(caught.value)
 
 
 def test_locked_resource_cleanup_retries_after_composer_close(tmp_path: Path, monkeypatch):
@@ -349,8 +366,13 @@ def test_permanent_private_resource_cleanup_failure_is_fatal_without_path(
         executor.execute(_plan(resource, _figure()), (resource,))
     assert composer.closed is True
     assert executor._resource_locators == {}
+    assert caught.value.cleanup_failed is True
     assert "secret" not in str(caught.value)
     assert str(tmp_path) not in str(caught.value)
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert "secret" not in _formatted_exception(caught.value)
+    assert str(tmp_path) not in _formatted_exception(caught.value)
 
 
 def test_strict_cleanup_attempts_every_private_path_before_safe_failure(
@@ -382,6 +404,50 @@ def test_strict_cleanup_attempts_every_private_path_before_safe_failure(
     assert not removable.exists()
     assert "secret" not in str(caught.value)
     assert str(tmp_path) not in str(caught.value)
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert "secret" not in _formatted_exception(caught.value)
+    assert str(tmp_path) not in _formatted_exception(caught.value)
+
+
+def test_execution_abort_remains_primary_when_private_cleanup_also_fails(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    composer = RecordingNativeComposer()
+    composer.failures["figure"] = "BOOKMARK_FAILED"
+    original_unlink = windows_executor.os.unlink
+    attempts = []
+
+    def always_locked(path):
+        if "wpsc-resource" in str(path):
+            attempts.append(str(path))
+            raise PermissionError("C:\\private\\cleanup-secret.png")
+        return original_unlink(path)
+
+    monkeypatch.setattr(windows_executor.os, "unlink", always_locked)
+    executor = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=lambda: composer
+    )
+
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(_plan(resource, _figure()), (resource,))
+
+    assert str(caught.value) == (
+        "Execution aborted at writer.add_captioned_figure"
+    )
+    assert caught.value.cleanup_failed is True
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
+    assert "secret" not in _formatted_exception(caught.value)
+    assert str(tmp_path) not in _formatted_exception(caught.value)
+    assert composer.closed is True
+    assert executor._resource_locators == {}
+    assert len(attempts) == 1
 
 
 def test_unknown_native_error_and_save_error_are_fatal_and_cleanup(tmp_path: Path):

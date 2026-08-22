@@ -72,6 +72,7 @@ class WindowsLongformExecutorError(Exception):
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
+        self.cleanup_failed = False
 
 
 def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterComposer:
@@ -171,6 +172,8 @@ class WindowsLongformExecutor(LongformExecutor):
         pending_cleanup: Tuple[str, ...] = ()
         cleanup_attempted = False
         composer: Optional[WriterComposer] = None
+        primary_error: Optional[Exception] = None
+        cleanup_failed = False
         try:
             self._validate_resource_manifest(plan, resources)
             self._resource_locators, staged_resources = self._stage_resources(resources)
@@ -194,13 +197,18 @@ class WindowsLongformExecutor(LongformExecutor):
             )
             cleanup_attempted = True
         except _ExecutionAbort as exc:
-            raise WindowsLongformExecutorError(
+            primary_error = WindowsLongformExecutorError(
                 f"Execution aborted at {exc.op_name}"
-            ) from None
-        except (WindowsLongformExecutorError, WindowsDedicatedHostUnavailableError):
-            raise
+            )
+        except (
+            WindowsLongformExecutorError,
+            WindowsDedicatedHostUnavailableError,
+        ) as exc:
+            primary_error = exc
         except Exception:
-            raise WindowsLongformExecutorError("Windows native execution failed") from None
+            primary_error = WindowsLongformExecutorError(
+                "Windows native execution failed"
+            )
         finally:
             try:
                 if composer is not None:
@@ -213,11 +221,25 @@ class WindowsLongformExecutor(LongformExecutor):
                     final_targets = (
                         pending_cleanup if cleanup_attempted else staged_resources
                     )
-                    self._cleanup_resources(final_targets, strict=True)
+                    try:
+                        self._cleanup_resources(final_targets, strict=True)
+                    except Exception:
+                        cleanup_failed = True
                 finally:
                     # Locator state is private and execution-scoped.  Cleanup
                     # failure must never retain it on a reusable executor.
                     self._resource_locators = {}
+        if primary_error is not None:
+            setattr(primary_error, "cleanup_failed", cleanup_failed)
+            primary_error.__cause__ = None
+            primary_error.__context__ = None
+            raise primary_error from None
+        if cleanup_failed:
+            cleanup_error = WindowsLongformExecutorError(
+                "Private resource cleanup failed"
+            )
+            cleanup_error.cleanup_failed = True
+            raise cleanup_error from None
         return ExecutionOutcome(
             staged_artifact=paths.staged_docx,
             issues=tuple(self._issues),
@@ -280,6 +302,7 @@ class WindowsLongformExecutor(LongformExecutor):
             "image/png": ".png", "image/jpeg": ".jpg", "image/tiff": ".tiff",
             "image/bmp": ".bmp", "image/gif": ".gif", "image/svg+xml": ".svg",
         }
+        staging_failed = False
         try:
             for index, resource in enumerate(resources):
                 suffix = suffixes.get(resource.media_type)
@@ -299,10 +322,18 @@ class WindowsLongformExecutor(LongformExecutor):
                     self._close_staging_handle(handle)
                 locators[resource.id] = handle.name
         except Exception:
-            self._cleanup_resources(tuple(paths), strict=True)
-            raise WindowsLongformExecutorError(
+            staging_failed = True
+        if staging_failed:
+            cleanup_failed = False
+            try:
+                self._cleanup_resources(tuple(paths), strict=True)
+            except Exception:
+                cleanup_failed = True
+            staging_error = WindowsLongformExecutorError(
                 "Private resource staging failed"
-            ) from None
+            )
+            staging_error.cleanup_failed = cleanup_failed
+            raise staging_error from None
         return locators, tuple(paths)
 
     @staticmethod
@@ -331,9 +362,11 @@ class WindowsLongformExecutor(LongformExecutor):
             except OSError:
                 remaining.append(path)
         if remaining and strict:
-            raise WindowsLongformExecutorError(
+            cleanup_error = WindowsLongformExecutorError(
                 "Private resource cleanup failed"
-            ) from None
+            )
+            cleanup_error.cleanup_failed = True
+            raise cleanup_error from None
         return tuple(remaining)
 
     # ----------------------------------------------------------------------

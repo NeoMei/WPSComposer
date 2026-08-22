@@ -176,3 +176,42 @@ full suite:
 
 The remaining risk continues to be real Windows WPS object-model validation;
 no mock run is presented as native platform evidence.
+
+## Third-review exception-priority closure
+
+The third review found two Python exception-handling gaps.  The new tests first
+demonstrated both failures:
+
+```text
+Task 6 third-review RED:
+5 failed, 43 passed
+```
+
+Executor failures are now captured as already-sanitized primary errors and
+raised only after composer close, all-path cleanup, and unconditional locator
+clearing finish.  If cleanup also fails, the outward error remains the original
+safe execution error (for example, `Execution aborted at
+writer.add_captioned_figure`) and carries only `cleanup_failed = True`.  With no
+earlier execution error, permanent cleanup remains its own safe fatal error.
+
+Resource write, flush, close, staging-cleanup, and final-cleanup wrappers no
+longer raise a replacement while the sensitive native exception handler is
+active.  They leave the handler, construct a safe error, and raise it with no
+cause or context.  Tests also verify that rendered traceback text contains
+neither the injected private locator nor the staging directory.
+
+Final third-review verification (COM-free; no WPS process started):
+
+```text
+focused Task 6 + existing Windows executor + COM lifecycle:
+85 passed
+
+all M3:
+331 passed
+
+full suite:
+1709 passed, 6 skipped in 159.76s
+```
+
+The six skips remain the real macOS WPS bridge gate; real Windows COM evidence
+is still intentionally deferred to the platform verification run.
