@@ -1,0 +1,105 @@
+[
+  {
+    "op": "writer.reset",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_page",
+    "args": {}
+  },
+  {
+    "op": "writer.ensure_styles",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_front_matter",
+    "args": {
+      "title": "简短说明",
+      "author": "测试组",
+      "date": "",
+      "header": "简短说明",
+      "titlePage": false,
+      "shortTitle": ""
+    }
+  },
+  {
+    "op": "writer.configure_toc_styles",
+    "args": {
+      "tocTitle": "目录",
+      "minFontSizePt": {
+        "toc1": 10.5,
+        "toc2": 10.0,
+        "toc3": 10.0
+      },
+      "minSpaceBeforePt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      },
+      "minSpaceAfterPt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      }
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "body",
+      "pageNumberFormat": "arabic",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "简短说明",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "简短说明",
+      "style": "Title"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "背景",
+      "level": 1,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "这是背景说明。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "结论",
+      "level": 1,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "这是结论。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.finalize_fields",
+    "args": {
+      "maxRounds": 3
+    }
+  }
+]

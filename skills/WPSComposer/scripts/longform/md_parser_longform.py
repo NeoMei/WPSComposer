@@ -5,9 +5,10 @@ from typing import Any, List, Optional, Tuple
 
 from ..document_model import (
     StructuredDocument, Section, Paragraph, Span, ListBlock, TableBlock,
-    ImageBlock, ExcalidrawBlock, DocumentIssue, AbstractBlock, KeywordsBlock,
-    PageBreakBlock, SemanticTableBlock, FigureBlock, FormulaBlock,
-    ReferenceListBlock, DegradationBlock,
+    BlockQuote, CodeBlock, HorizontalRule, ImageBlock, ExcalidrawBlock,
+    DocumentIssue, AbstractBlock, KeywordsBlock, MathBlock, PageBreakBlock,
+    SemanticTableBlock, FigureBlock, FormulaBlock, ReferenceListBlock,
+    DegradationBlock, TaskList,
 )
 from .frontmatter_parser import (
     parse_frontmatter_document,
@@ -56,15 +57,102 @@ def _paragraphs_from_text(parse_inline, text: str) -> List[Paragraph]:
     return paragraphs
 
 
+def _plain_text_from_element(elem: Any) -> str:
+    """Extract readable plain text from a block element."""
+    if isinstance(elem, Paragraph):
+        return elem.plain_text
+    if isinstance(elem, ListBlock):
+        return " ".join(
+            "".join(s.text for s in item)
+            for item in elem.items
+        )
+    if isinstance(elem, Section):
+        parts = [elem.heading] if elem.heading else []
+        for child in elem.elements:
+            parts.append(_plain_text_from_element(child))
+        return " ".join(p for p in parts if p)
+    if isinstance(elem, AbstractBlock):
+        return " ".join(p.plain_text for p in elem.paragraphs)
+    if isinstance(elem, BlockQuote):
+        return " ".join(p.plain_text for p in elem.paragraphs)
+    if isinstance(elem, FigureBlock):
+        return " ".join(img.alt for img in elem.images if img.alt)
+    if isinstance(elem, SemanticTableBlock):
+        parts = [elem.caption] if elem.caption else []
+        parts.extend(elem.headers)
+        for row in elem.rows:
+            parts.extend(row)
+        return " ".join(p for p in parts if p)
+    if isinstance(elem, FormulaBlock):
+        return elem.source or ""
+    if isinstance(elem, MathBlock):
+        return elem.latex or ""
+    if isinstance(elem, CodeBlock):
+        return elem.code
+    if isinstance(elem, (ImageBlock, ExcalidrawBlock)):
+        return elem.alt
+    if isinstance(elem, DegradationBlock):
+        return elem.fallback_text
+    if isinstance(elem, ReferenceListBlock):
+        return " ".join(elem.entries)
+    if isinstance(elem, TaskList):
+        return " ".join(text for text, _ in elem.items)
+    if isinstance(elem, TableBlock):
+        parts = list(elem.headers)
+        for row in elem.rows:
+            parts.extend(row)
+        return " ".join(p for p in parts if p)
+    if isinstance(elem, HorizontalRule):
+        return ""
+    if isinstance(elem, PageBreakBlock):
+        return " ".join(p.plain_text for p in elem.content)
+    return ""
+
+
+def _paragraphs_from_element(parse_inline, elem: Any) -> List[Paragraph]:
+    """Convert a block element into one or more readable paragraphs."""
+    if isinstance(elem, Paragraph):
+        return [elem]
+    if isinstance(elem, ListBlock):
+        return [
+            Paragraph(spans=list(item))
+            for item in elem.items
+            if "".join(s.text for s in item).strip()
+        ]
+    if isinstance(elem, Section):
+        result: List[Paragraph] = []
+        if elem.heading:
+            result.append(Paragraph.from_text(elem.heading))
+        for child in elem.elements:
+            result.extend(_paragraphs_from_element(parse_inline, child))
+        return result
+    plain = _plain_text_from_element(elem).strip()
+    if plain:
+        return [Paragraph(spans=parse_inline(plain))]
+    return []
+
+
+def _flatten_top_level_elements(sections: List[Section]) -> List[Any]:
+    """Flatten parsed sections into top-level blocks without duplication."""
+    elements: List[Any] = []
+    for sec in sections:
+        if sec.has_heading:
+            elements.append(sec)
+        else:
+            elements.extend(sec.elements)
+    return elements
+
+
 def _abstract_from_value(parse_inline, value: Any) -> Optional[AbstractBlock]:
     if isinstance(value, str):
-        return AbstractBlock(paragraphs=_paragraphs_from_text(parse_inline, value))
+        paras = _paragraphs_from_text(parse_inline, value)
+        return AbstractBlock(paragraphs=paras, raw_elements=list(paras))
     if isinstance(value, list):
         paragraphs: List[Paragraph] = []
         for item in value:
             if isinstance(item, str):
                 paragraphs.extend(_paragraphs_from_text(parse_inline, item))
-        return AbstractBlock(paragraphs=paragraphs)
+        return AbstractBlock(paragraphs=paragraphs, raw_elements=list(paragraphs))
     return None
 
 
@@ -240,15 +328,14 @@ def _handle_abstract_directive(
     ctx.seen_front_blocks.add("abstract")
 
     paras: List[Paragraph] = []
-    for elem in _collect_elements(parse_block_lines, directive.body.split("\n"), base_dir=ctx.base_dir):
-        if isinstance(elem, Paragraph):
-            paras.append(elem)
-        elif isinstance(elem, ListBlock):
-            for item in elem.items:
-                text = "".join(s.text for s in item)
-                if text:
-                    paras.append(Paragraph(spans=parse_inline(text)))
-    ctx.doc.abstract = AbstractBlock(paragraphs=paras)
+    raw_elements: List[Any] = []
+    sections, _ = parse_block_lines(
+        directive.body.split("\n"), base_dir=ctx.base_dir
+    )
+    raw_elements = _flatten_top_level_elements(sections)
+    for elem in raw_elements:
+        paras.extend(_paragraphs_from_element(parse_inline, elem))
+    ctx.doc.abstract = AbstractBlock(paragraphs=paras, raw_elements=raw_elements)
     return ctx.current_section
 
 
@@ -294,7 +381,13 @@ def _handle_page_break_directive(
     parse_inline,
 ) -> Optional[Section]:
     ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
-    ctx.current_section.elements.append(PageBreakBlock())
+    content: List[Paragraph] = []
+    sections, _ = parse_block_lines(
+        directive.body.split("\n"), base_dir=ctx.base_dir
+    )
+    for elem in _flatten_top_level_elements(sections):
+        content.extend(_paragraphs_from_element(parse_inline, elem))
+    ctx.current_section.elements.append(PageBreakBlock(content=content))
     return ctx.current_section
 
 
@@ -322,6 +415,9 @@ def _handle_table_directive(
         return ctx.current_section
 
     ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
+    orientation = directive.attributes.get("orientation", "portrait")
+    if orientation in ("landscape", "wide"):
+        ctx.current_section.orientation = "landscape"
     ctx.current_section.elements.append(SemanticTableBlock(
         identifier=directive.identifier,
         caption=directive.attributes.get("caption", ""),
@@ -344,6 +440,9 @@ def _handle_figure_directive(
             images.append(elem)
 
     ctx.current_section = _ensure_section(ctx.current_section, ctx.sections)
+    orientation = directive.attributes.get("orientation", "portrait")
+    if orientation in ("landscape", "wide"):
+        ctx.current_section.orientation = "landscape"
     ctx.current_section.elements.append(FigureBlock(
         identifier=directive.identifier,
         caption=directive.attributes.get("caption", ""),

@@ -1,0 +1,308 @@
+[
+  {
+    "op": "writer.reset",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_page",
+    "args": {}
+  },
+  {
+    "op": "writer.ensure_styles",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_front_matter",
+    "args": {
+      "title": "决策即服务：基于图谱的招投标数据挖掘与AI决策系统构建",
+      "author": "研究组",
+      "date": "2026-08-22",
+      "header": "决策即服务技术研究报告",
+      "titlePage": true,
+      "shortTitle": ""
+    }
+  },
+  {
+    "op": "writer.configure_toc_styles",
+    "args": {
+      "tocTitle": "目录",
+      "minFontSizePt": {
+        "toc1": 10.5,
+        "toc2": 10.0,
+        "toc3": 10.0
+      },
+      "minSpaceBeforePt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      },
+      "minSpaceAfterPt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      }
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "cover",
+      "pageNumberFormat": "none",
+      "restartPageNumbering": false,
+      "startPageNumber": null,
+      "headerText": "",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "front_matter",
+      "pageNumberFormat": "roman",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本文提出了一种面向招投标领域的决策即服务框架。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "关键词：知识图谱；招投标",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.insert_toc",
+    "args": {
+      "title": "目录"
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "body",
+      "pageNumberFormat": "arabic",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "决策即服务技术研究报告",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "绪论",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "1.1 研究背景",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "招投标活动是公共资源配置的核心环节之一。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "1.2 研究意义",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "构建决策即服务系统能够提升评标效率。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "相关工作",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "2.1 知识图谱",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "知识图谱通过实体关系建模。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "2.2 决策支持系统",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "传统决策支持系统依赖规则引擎。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "方法",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "3.1 总体架构",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "系统由数据采集、图谱构建组成。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "3.1.1 数据采集层",
+      "level": 3,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "数据采集层负责获取文本。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "3.1.2 图谱构建层",
+      "level": 3,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "图谱构建层对实体进行链接。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "3.2 决策模型",
+      "level": 2,
+      "numbering": null,
+      "numberingScheme": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "决策模型综合考虑多维特征。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_document_quality_notice",
+    "args": {
+      "notices": [
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        },
+        {
+          "code": "HEADING_PREFIX_AMBIGUOUS",
+          "placement": "document"
+        }
+      ]
+    }
+  },
+  {
+    "op": "writer.finalize_fields",
+    "args": {
+      "maxRounds": 3
+    }
+  }
+]

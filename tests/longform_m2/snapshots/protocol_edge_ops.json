@@ -1,0 +1,96 @@
+[
+  {
+    "op": "writer.reset",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_page",
+    "args": {}
+  },
+  {
+    "op": "writer.ensure_styles",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_front_matter",
+    "args": {
+      "title": "边缘协议测试",
+      "author": "测试组",
+      "date": "2026-08-22",
+      "header": "边缘协议测试",
+      "titlePage": true,
+      "shortTitle": ""
+    }
+  },
+  {
+    "op": "writer.configure_toc_styles",
+    "args": {
+      "tocTitle": "目录",
+      "minFontSizePt": {
+        "toc1": 10.5,
+        "toc2": 10.0,
+        "toc3": 10.0
+      },
+      "minSpaceBeforePt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      },
+      "minSpaceAfterPt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      }
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "cover",
+      "pageNumberFormat": "none",
+      "restartPageNumbering": false,
+      "startPageNumber": null,
+      "headerText": "",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "body",
+      "pageNumberFormat": "arabic",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "边缘协议测试",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "正文",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本测试验证封面存在但目录禁用且没有摘要关键词时，不会产生空白前置页。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.finalize_fields",
+    "args": {
+      "maxRounds": 3
+    }
+  }
+]

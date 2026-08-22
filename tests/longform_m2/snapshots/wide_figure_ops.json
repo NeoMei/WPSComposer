@@ -1,0 +1,187 @@
+[
+  {
+    "op": "writer.reset",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_page",
+    "args": {}
+  },
+  {
+    "op": "writer.ensure_styles",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_front_matter",
+    "args": {
+      "title": "宽表与大幅面图技术文档",
+      "author": "工程组",
+      "date": "2026-08-22",
+      "header": "宽表技术文档",
+      "titlePage": true,
+      "shortTitle": ""
+    }
+  },
+  {
+    "op": "writer.configure_toc_styles",
+    "args": {
+      "tocTitle": "目录",
+      "minFontSizePt": {
+        "toc1": 10.5,
+        "toc2": 10.0,
+        "toc3": 10.0
+      },
+      "minSpaceBeforePt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      },
+      "minSpaceAfterPt": {
+        "toc1": 0.0,
+        "toc2": 0.0,
+        "toc3": 0.0
+      }
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "cover",
+      "pageNumberFormat": "none",
+      "restartPageNumbering": false,
+      "startPageNumber": null,
+      "headerText": "",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "front_matter",
+      "pageNumberFormat": "roman",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本文档说明宽幅表格与大幅面图片在横排版式下的编排规范，确保跨页连续、编号不中断。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.insert_toc",
+    "args": {
+      "title": "目录"
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "body",
+      "pageNumberFormat": "arabic",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "宽表技术文档",
+      "footerText": "",
+      "linkToPreviousHeader": false,
+      "linkToPreviousFooter": false,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "概述",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本文档给出宽幅内容的基本处理原则。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "landscape",
+      "pageNumberFormat": "continue",
+      "restartPageNumbering": false,
+      "startPageNumber": null,
+      "headerText": "宽表技术文档",
+      "footerText": "",
+      "linkToPreviousHeader": true,
+      "linkToPreviousFooter": true,
+      "landscape": true
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "宽幅数据",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本章包含需要横向排版的宽表。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.add_semantic_table",
+    "args": {}
+  },
+  {
+    "op": "writer.configure_section",
+    "args": {
+      "role": "body",
+      "pageNumberFormat": "arabic",
+      "restartPageNumbering": true,
+      "startPageNumber": 1,
+      "headerText": "宽表技术文档",
+      "footerText": "",
+      "linkToPreviousHeader": true,
+      "linkToPreviousFooter": true,
+      "landscape": null
+    }
+  },
+  {
+    "op": "writer.add_heading",
+    "args": {
+      "text": "结论",
+      "level": 1,
+      "numbering": true,
+      "numberingScheme": "chinese-formal"
+    }
+  },
+  {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "横排版式仅作为临时插入，不影响正文页码连续性。",
+      "style": "Body Text"
+    }
+  },
+  {
+    "op": "writer.finalize_fields",
+    "args": {
+      "maxRounds": 3
+    }
+  }
+]
