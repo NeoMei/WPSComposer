@@ -1089,6 +1089,223 @@ class WriterComposer(BaseComposer):
         self.selection.EndKey(6)
         self.selection.InsertBreak(7)
 
+
+    # ================================================================
+    # Long-form M2 COM primitives
+    # ================================================================
+
+    def reset(self):
+        """Reset to a fresh document.  No-op when the composer already owns one."""
+        pass
+
+    def set_page_role(self, role):
+        """Tag the current section with a logical page role.
+
+        Word/WPS has no native role slot, so failures are swallowed to keep
+        generation robust on blind-COM runs.
+        """
+        try:
+            section = self._doc.Sections(self._doc.Sections.Count)
+            try:
+                section.Range.DocumentVariables.Add(
+                    "WpsComposerSectionRole_" + str(self._doc.Sections.Count), str(role)
+                )
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def set_page_numbering(self, format, start=None, restart=None):
+        """Apply page-numbering format to the current section."""
+        try:
+            section = self._doc.Sections(self._doc.Sections.Count)
+            footer = section.Footers(1)
+            page_numbers = footer.PageNumbers
+            if restart is not None:
+                page_numbers.RestartNumberingAtSection = -1 if restart else 0
+            if start is not None:
+                page_numbers.StartingNumber = int(start)
+            # Word/WPS NumberStyle: 0=Arabic, 1=UppercaseRoman, 2=LowercaseRoman
+            style_map = {
+                "none": 0,
+                "roman": 2,
+                "arabic": 0,
+                "continue": 0,
+            }
+            if format in style_map:
+                page_numbers.NumberStyle = style_map[format]
+            if format == "none":
+                footer.Range.Text = ""
+            else:
+                # Ensure a PAGE field exists in the primary footer.
+                try:
+                    footer.Range.Collapse(0)
+                    footer.Range.Fields.Add(footer.Range, 33)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def set_header_footer(
+        self,
+        header=None,
+        footer=None,
+        link_to_previous_header=None,
+        link_to_previous_footer=None,
+    ):
+        """Set header/footer text for the current section."""
+        try:
+            section = self._doc.Sections(self._doc.Sections.Count)
+            if link_to_previous_header is not None:
+                try:
+                    section.Headers(1).LinkToPrevious = -1 if link_to_previous_header else 0
+                except Exception:
+                    pass
+            if link_to_previous_footer is not None:
+                try:
+                    section.Footers(1).LinkToPrevious = -1 if link_to_previous_footer else 0
+                except Exception:
+                    pass
+            if header is not None:
+                hdr = section.Headers(1)
+                hdr.Range.Text = str(header)
+                # Centered body header with bottom border line.
+                try:
+                    hdr.Range.ParagraphFormat.Alignment = 1
+                    hdr.Range.ParagraphFormat.Borders(-3).LineStyle = 1
+                    hdr.Range.ParagraphFormat.Borders(-3).LineWidth = 6
+                    hdr.Range.ParagraphFormat.Borders(-3).Color = 0x000000
+                except Exception:
+                    pass
+            if footer is not None:
+                footer_text = str(footer)
+                if footer_text != "":
+                    section.Footers(1).Range.Text = footer_text
+        except Exception:
+            pass
+
+    def configure_section(
+        self,
+        *,
+        role=None,
+        landscape=None,
+        page_size=None,
+        margins=None,
+        restart_page_numbering=None,
+        page_number_format=None,
+        start_page_number=None,
+        header_text=None,
+        footer_text=None,
+        link_to_previous_header=None,
+        link_to_previous_footer=None,
+    ):
+        """Insert a new section after the first call and apply M2 skeleton settings."""
+        first = not getattr(self, "_first_section_configured", False)
+        if not first:
+            try:
+                self.selection.InsertBreak(2)  # wdSectionBreakNextPage
+            except Exception:
+                pass
+        self._first_section_configured = True
+
+        if landscape is not None:
+            self.set_orientation(landscape)
+        if page_size is not None:
+            # Page-size strings are mapped at the add-in/protocol layer.
+            pass
+        if margins is not None:
+            self.set_margins(
+                margins.get("top", 72),
+                margins.get("bottom", 72),
+                margins.get("left", 90),
+                margins.get("right", 90),
+            )
+
+        self.set_page_role(role or "body")
+        self.set_page_numbering(
+            format=page_number_format or "continue",
+            start=start_page_number,
+            restart=restart_page_numbering,
+        )
+        self.set_header_footer(
+            header=header_text,
+            footer=footer_text,
+            link_to_previous_header=link_to_previous_header,
+            link_to_previous_footer=link_to_previous_footer,
+        )
+
+    def insert_toc_with_styles(self, title, density):
+        """Insert a TOC and apply density minima to TOC 1/2/3 styles."""
+        self.insert_toc(title)
+        density = density or {}
+        for level, key in enumerate(("toc1", "toc2", "toc3"), start=1):
+            style_name = "TOC " + str(level)
+            try:
+                style = self._doc.Styles(style_name)
+            except Exception:
+                continue
+            try:
+                min_font = density.get("minFontSizePt", {}).get(key)
+                if min_font is not None:
+                    style.Font.Size = float(min_font)
+                min_before = density.get("minSpaceBeforePt", {}).get(key)
+                if min_before is not None:
+                    style.ParagraphFormat.SpaceBefore = float(min_before)
+                min_after = density.get("minSpaceAfterPt", {}).get(key)
+                if min_after is not None:
+                    style.ParagraphFormat.SpaceAfter = float(min_after)
+            except Exception:
+                pass
+
+    def add_heading_level_native(self, text, level, numbering=None, scheme=None):
+        """Add a heading and, when requested, link it to native numbering."""
+        self.add_heading_level(text, level=level)
+        if not numbering:
+            return
+        try:
+            style_idx = -(int(level) + 1)
+            style = self._doc.Styles(style_idx)
+            list_template = self._doc.ListTemplates.Add(True)
+            scheme_to_format = {
+                "chinese-formal": "%1",
+                "decimal": "%1.",
+                "hybrid-bid": "%1.",
+            }
+            level_idx = int(level)
+            list_template.ListLevels(level_idx).NumberFormat = scheme_to_format.get(scheme or "decimal", "%1.")
+            style.LinkToListTemplate(list_template, level_idx)
+        except Exception:
+            pass
+
+    def finalize_fields(self, *, max_rounds=3):
+        """Update all fields (convergence helper)."""
+        self.update_fields()
+
+    def refresh_fields(self, round_index):
+        """Return a deterministic field snapshot for the convergence loop."""
+        from .longform.executor import FieldSnapshot
+
+        self.update_fields()
+        try:
+            total_pages = int(self._doc.ComputeStatistics(2))
+        except Exception:
+            total_pages = 1
+        try:
+            toc_pages = int(self._doc.TablesOfContents.Count)
+        except Exception:
+            toc_pages = 0
+        return (
+            FieldSnapshot(
+                stable_key=("doc:finalize", "PAGE", 0),
+                field_category="page",
+                result_hash=str(total_pages) + "-" + str(toc_pages),
+                toc_page_count=toc_pages,
+                figure_index_page_count=0,
+                table_index_page_count=0,
+                total_pages=total_pages,
+            ),
+        )
+
     def update_fields(self):
         try:
             for i in range(1, self._doc.TablesOfContents.Count + 1):
@@ -1103,6 +1320,46 @@ class WriterComposer(BaseComposer):
     # ================================================================
     # Existing-document inspection and element-level editing
     # ================================================================
+
+
+    # ---- long-form M2 fallback / placeholder primitives ----
+    def add_degradation_notice(self, code, message, fallback_text, placement="block"):
+        """Insert a deterministic block-level degradation notice."""
+        display = f"[{code}] {fallback_text}"
+        try:
+            self.add_paragraph(display, style="Body Text", italic=True, color="#C00000")
+        except Exception:
+            self.add_paragraph(display)
+
+    def add_inline_degradation(self, code, message, fallback_text):
+        """Insert a deterministic inline degradation fallback as its own paragraph."""
+        display = f"[{code}: {fallback_text}]"
+        try:
+            self.add_paragraph(display, style="Body Text", italic=True, color="#C00000")
+        except Exception:
+            self.add_paragraph(display)
+
+    def add_document_quality_notice(self, notices):
+        """Insert document-level quality notices as degradation blocks."""
+        for notice in notices:
+            self.add_degradation_notice(
+                notice.get("code", "QUALITY_NOTICE"),
+                notice.get("message", ""),
+                notice.get("fallbackText", ""),
+                placement=notice.get("placement", "document"),
+            )
+
+    def insert_figure_index(self, title=None):
+        """Insert a figure index placeholder (content population is M3)."""
+        if title:
+            self.add_heading(str(title), size=14, bold=True)
+        self.add_paragraph("[Figure index placeholder]", style="Body Text")
+
+    def insert_table_index(self, title=None):
+        """Insert a table index placeholder (content population is M3)."""
+        if title:
+            self.add_heading(str(title), size=14, bold=True)
+        self.add_paragraph("[Table index placeholder]", style="Body Text")
 
     def inspect_selection(self):
         """Return the active Writer selection as a JSON-compatible snapshot."""
