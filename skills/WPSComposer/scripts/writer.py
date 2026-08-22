@@ -1423,6 +1423,14 @@ class WriterComposer(BaseComposer):
                 preserve_aspect=True,
                 alt=owner_node_id,
             )
+        except Exception:
+            if rollback_scope is None:
+                end = self._native_document_end()
+            else:
+                end = max(start, int(rollback_scope.End) - 1)
+            self._native_rollback(start, end)
+            raise NativeWriterObjectError("IMAGE_INSERT_FAILED") from None
+        try:
             shape.Range.ParagraphFormat.Alignment = 1
             shape.Range.ParagraphFormat.KeepTogether = -1
             shape.Range.ParagraphFormat.KeepWithNext = -1
@@ -1434,7 +1442,7 @@ class WriterComposer(BaseComposer):
             else:
                 end = max(start, int(rollback_scope.End) - 1)
             self._native_rollback(start, end)
-            raise NativeWriterObjectError("IMAGE_INSERT_FAILED") from None
+            raise
 
     def _native_columns_container(self, children):
         try:
@@ -1894,19 +1902,23 @@ class WriterComposer(BaseComposer):
 
     @staticmethod
     def _native_range_page_span(native):
-        try:
-            native_range = native.Range
-            start = native_range.Duplicate
-            end = native_range.Duplicate
-            start.Collapse(1)
-            end.Collapse(0)
-            first_page = int(start.Information(3))
-            last_page = int(end.Information(3))
-            return max(1, last_page - first_page + 1)
-        except Exception:
-            # Older WPS builds can omit Range.Information on an empty index.
-            # The native index still occupies at least its insertion page.
+        native_range = native.Range
+        start_position = int(native_range.Start)
+        end_position = int(native_range.End)
+        if end_position < start_position:
+            raise ValueError("native index range is reversed")
+        if end_position == start_position:
+            # A truly empty native index has no content page to inspect but
+            # still occupies its insertion page.
             return 1
+        start = native_range.Duplicate
+        end = native_range.Duplicate
+        start.SetRange(start_position, start_position)
+        last_content_position = end_position - 1
+        end.SetRange(last_content_position, last_content_position)
+        first_page = int(start.Information(3))
+        last_page = int(end.Information(3))
+        return max(1, last_page - first_page + 1)
 
     def repaginate_and_update_numbering(self):
         self._doc.Repaginate()

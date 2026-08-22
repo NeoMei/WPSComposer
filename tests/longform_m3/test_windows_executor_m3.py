@@ -26,7 +26,7 @@ def _numbering(sequence="WPSC_FIG", prefix="图 ", suffix=""):
     }
 
 
-def _manifest(resource: PreparedLongformResource) -> str:
+def _manifest_resources(resources) -> str:
     envelope = {
         "version": "1",
         "entries": [{
@@ -36,10 +36,14 @@ def _manifest(resource: PreparedLongformResource) -> str:
             "byteLength": len(resource.payload_bytes),
             "mediaType": resource.media_type,
             "normalizerId": resource.normalizer_id,
-        }],
+        } for resource in resources],
     }
     raw = json.dumps(envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return "sha256:" + hashlib.sha256(raw).hexdigest()
+
+
+def _manifest(resource: PreparedLongformResource) -> str:
+    return _manifest_resources((resource,))
 
 
 def _resource(payload=b"normalized-png"):
@@ -195,6 +199,113 @@ def test_partial_private_resource_is_cleaned_when_write_or_flush_fails(
     assert not leaked.exists()
 
 
+def test_staging_handle_close_retries_once_then_execution_cleans_file(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    resource = _resource()
+    staged = tmp_path / "close-on-retry.png"
+    staged.write_bytes(b"")
+
+    class RetryCloseHandle:
+        name = str(staged)
+        close_calls = 0
+
+        def write(self, payload):
+            pass
+
+        def flush(self):
+            pass
+
+        def close(self):
+            self.close_calls += 1
+            if self.close_calls == 1:
+                raise OSError("transient close failure")
+
+    handle = RetryCloseHandle()
+    monkeypatch.setattr(
+        windows_executor.tempfile, "NamedTemporaryFile", lambda **kwargs: handle
+    )
+    composer = RecordingNativeComposer()
+    executor = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=lambda: composer
+    )
+
+    executor.execute(_plan(resource, _figure()), (resource,))
+
+    assert handle.close_calls == 2
+    assert not staged.exists()
+    assert executor._resource_locators == {}
+
+
+def test_permanent_staging_close_failure_is_bounded_and_cleans_all_created_files(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    first_path = tmp_path / "first-private.png"
+    second_path = tmp_path / "second-private.png"
+    first_path.write_bytes(b"")
+    second_path.write_bytes(b"")
+
+    class Handle:
+        def __init__(self, path, *, fail_close):
+            self.name = str(path)
+            self.fail_close = fail_close
+            self.close_calls = 0
+
+        def write(self, payload):
+            pass
+
+        def flush(self):
+            pass
+
+        def close(self):
+            self.close_calls += 1
+            if self.fail_close:
+                raise OSError("C:\\private\\close-secret.png")
+
+    handles = [
+        Handle(first_path, fail_close=False),
+        Handle(second_path, fail_close=True),
+    ]
+    pending = iter(handles)
+    monkeypatch.setattr(
+        windows_executor.tempfile, "NamedTemporaryFile",
+        lambda **kwargs: next(pending),
+    )
+    first = _resource(b"first")
+    second = PreparedLongformResource(**{
+        **_resource(b"second").__dict__, "id": "image-2",
+    })
+    executor = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=RecordingNativeComposer
+    )
+    executor._resource_locators = {"stale": "C:\\private\\stale.png"}
+    plan = GenerationPlan(
+        component="writer",
+        operations=(GenerationOperation(
+            "writer.finalize_fields", {"maxRounds": 3}, node_id="doc:finalize"
+        ),),
+        protocol_version=2,
+        semantic_version="longform-1",
+        resource_manifest_version=1,
+        resource_manifest_digest=_manifest_resources((first, second)),
+    )
+
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(plan, (first, second))
+
+    assert handles[0].close_calls == 1
+    assert handles[1].close_calls == 2
+    assert not first_path.exists()
+    assert not second_path.exists()
+    assert executor._resource_locators == {}
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
+
+
 def test_locked_resource_cleanup_retries_after_composer_close(tmp_path: Path, monkeypatch):
     import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
 
@@ -236,6 +347,39 @@ def test_permanent_private_resource_cleanup_failure_is_fatal_without_path(
     executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=lambda: composer)
     with pytest.raises(WindowsLongformExecutorError) as caught:
         executor.execute(_plan(resource, _figure()), (resource,))
+    assert composer.closed is True
+    assert executor._resource_locators == {}
+    assert "secret" not in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
+
+
+def test_strict_cleanup_attempts_every_private_path_before_safe_failure(
+    tmp_path: Path, monkeypatch,
+):
+    import skills.WPSComposer.scripts.longform.windows_executor as windows_executor
+
+    locked = tmp_path / "locked-private.png"
+    removable = tmp_path / "removable-private.png"
+    locked.write_bytes(b"")
+    removable.write_bytes(b"")
+    original_unlink = windows_executor.os.unlink
+    attempts = []
+
+    def unlink(path):
+        attempts.append(Path(path).name)
+        if Path(path) == locked:
+            raise PermissionError("C:\\private\\locked-secret.png")
+        return original_unlink(path)
+
+    monkeypatch.setattr(windows_executor.os, "unlink", unlink)
+
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        WindowsLongformExecutor._cleanup_resources(
+            (str(locked), str(removable)), strict=True
+        )
+
+    assert attempts == [locked.name, removable.name]
+    assert not removable.exists()
     assert "secret" not in str(caught.value)
     assert str(tmp_path) not in str(caught.value)
 
@@ -357,6 +501,7 @@ class _Indexes:
     def Add(self, rng, label):
         self.calls.append((rng.Start, label))
         item = _NativeField("INDEX " + label, rng.Start + 1)
+        item.Range = _Range(rng.Start, rng.Start)
         self.items.append(item)
         return item
 
@@ -435,6 +580,65 @@ def test_raw_add_picture_com_error_is_classified_and_explicit_span_is_rolled_bac
             "C:\\private\\staged.png", "fig:one",
         )
     assert caught.value.code == "IMAGE_INSERT_FAILED"
+    assert deletions == [(5, 9)]
+
+
+@pytest.mark.parametrize("failure_point", ["format", "paragraph"])
+def test_post_picture_unknown_layout_error_rolls_back_but_remains_fatal(
+    failure_point,
+):
+    from skills.WPSComposer.scripts.writer import WriterComposer
+
+    class FailingFormat(_Format):
+        def __init__(self):
+            object.__setattr__(self, "_armed", False)
+            super().__init__()
+            object.__setattr__(self, "_armed", True)
+
+        def __setattr__(self, name, value):
+            if (
+                getattr(self, "_armed", False)
+                and name == "Alignment"
+                and failure_point == "format"
+            ):
+                raise RuntimeError("unknown paragraph format failure")
+            object.__setattr__(self, name, value)
+
+    class DeletingRange(_Range):
+        def __init__(self, start, end, deletions):
+            super().__init__(start, end)
+            self._deletions = deletions
+
+        def Delete(self):
+            self._deletions.append((self.Start, self.End))
+
+    deletions = []
+    writer = WriterComposer.__new__(WriterComposer)
+    writer._selection = _Selection()
+    writer._selection.pos = 5
+    if failure_point == "paragraph":
+        writer._selection.TypeParagraph = lambda: (_ for _ in ()).throw(
+            RuntimeError("unknown paragraph insertion failure")
+        )
+    content = type("Content", (), {"End": 9})()
+    writer._doc = type("Doc", (), {
+        "Content": content,
+        "Range": lambda self, start, end: DeletingRange(start, end, deletions),
+    })()
+    writer._app = type("App", (), {"Selection": writer._selection})()
+    shape_range = _Range(5, 9)
+    shape_range.ParagraphFormat = FailingFormat()
+    writer.add_image = lambda *args, **kwargs: type(
+        "Shape", (), {"Range": shape_range}
+    )()
+
+    with pytest.raises(RuntimeError, match="unknown") as caught:
+        writer._native_insert_figure_child(
+            {"displayWidthPt": 100.0, "displayHeightPt": 50.0},
+            "C:\\private\\staged.png", "fig:one",
+        )
+
+    assert not hasattr(caught.value, "code")
     assert deletions == [(5, 9)]
 
 
@@ -630,7 +834,7 @@ def test_writer_refreshes_native_indexes_and_mutation_changes_snapshot_not_owner
 
 class _PagedRange(_Range):
     def __init__(self, start_page, end_page, text="index"):
-        super().__init__(0, 1)
+        super().__init__(0, 2)
         self.start_page = start_page
         self.end_page = end_page
         self.current_page = end_page
@@ -640,8 +844,9 @@ class _PagedRange(_Range):
     def Duplicate(self):
         return _PagedRange(self.start_page, self.end_page, self.Text)
 
-    def Collapse(self, direction):
-        self.current_page = self.start_page if direction == 1 else self.end_page
+    def SetRange(self, start, end):
+        assert start == end
+        self.current_page = self.start_page if start == self.Start else self.end_page
 
     def Information(self, kind):
         assert kind == 3
@@ -725,6 +930,56 @@ def test_snapshot_uses_actual_aggregate_index_page_spans_for_every_field():
 
     assert snapshot
     assert {(item.toc_page_count, item.figure_index_page_count, item.table_index_page_count) for item in snapshot} == {(2, 2, 1)}
+
+
+def test_index_page_span_uses_last_content_character_not_trailing_new_page_marker():
+    from skills.WPSComposer.scripts.writer import WriterComposer
+
+    class BoundaryRange(_Range):
+        def __init__(self):
+            super().__init__(10, 20)
+            self.position = 10
+
+        @property
+        def Duplicate(self):
+            return BoundaryRange()
+
+        def SetRange(self, start, end):
+            assert start == end
+            self.position = start
+
+        def Information(self, kind):
+            assert kind == 3
+            # End itself is the paragraph marker on page 3. End-1 is the last
+            # actual index character on page 2.
+            return {10: 1, 19: 2, 20: 3}[self.position]
+
+    native = type("Index", (), {"Range": BoundaryRange()})()
+
+    assert WriterComposer._native_range_page_span(native) == 2
+
+
+def test_nonempty_index_page_span_propagates_required_information_failure():
+    from skills.WPSComposer.scripts.writer import WriterComposer
+
+    class ThrowingRange(_Range):
+        def __init__(self):
+            super().__init__(1, 4)
+
+        @property
+        def Duplicate(self):
+            return ThrowingRange()
+
+        def SetRange(self, start, end):
+            pass
+
+        def Information(self, kind):
+            raise RuntimeError("required Information API failed")
+
+    native = type("Index", (), {"Range": ThrowingRange()})()
+
+    with pytest.raises(RuntimeError, match="required Information"):
+        WriterComposer._native_range_page_span(native)
 
 
 class _Border:

@@ -202,14 +202,22 @@ class WindowsLongformExecutor(LongformExecutor):
         except Exception:
             raise WindowsLongformExecutorError("Windows native execution failed") from None
         finally:
-            if composer is not None:
+            try:
+                if composer is not None:
+                    try:
+                        composer.close(save_changes=False)
+                    except Exception:
+                        pass
+            finally:
                 try:
-                    composer.close(save_changes=False)
-                except Exception:
-                    pass
-            final_targets = pending_cleanup if cleanup_attempted else staged_resources
-            self._cleanup_resources(final_targets, strict=True)
-            self._resource_locators = {}
+                    final_targets = (
+                        pending_cleanup if cleanup_attempted else staged_resources
+                    )
+                    self._cleanup_resources(final_targets, strict=True)
+                finally:
+                    # Locator state is private and execution-scoped.  Cleanup
+                    # failure must never retain it on a reusable executor.
+                    self._resource_locators = {}
         return ExecutionOutcome(
             staged_artifact=paths.staged_docx,
             issues=tuple(self._issues),
@@ -288,7 +296,7 @@ class WindowsLongformExecutor(LongformExecutor):
                     handle.write(resource.payload_bytes)
                     handle.flush()
                 finally:
-                    handle.close()
+                    self._close_staging_handle(handle)
                 locators[resource.id] = handle.name
         except Exception:
             self._cleanup_resources(tuple(paths), strict=True)
@@ -296,6 +304,19 @@ class WindowsLongformExecutor(LongformExecutor):
                 "Private resource staging failed"
             ) from None
         return locators, tuple(paths)
+
+    @staticmethod
+    def _close_staging_handle(handle: Any) -> None:
+        """Close a newly-created private handle with one bounded retry."""
+        last_error: Optional[Exception] = None
+        for _attempt in range(2):
+            try:
+                handle.close()
+                return
+            except Exception as exc:
+                last_error = exc
+        assert last_error is not None
+        raise last_error
 
     @staticmethod
     def _cleanup_resources(

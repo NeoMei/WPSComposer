@@ -132,3 +132,47 @@ full suite:
 The six skips remain the pre-existing real macOS WPS bridge acceptance cases.
 The remaining risk is the same platform gate described above: these stronger
 fakes prove the failure contracts but do not replace real Windows WPS evidence.
+
+## Second-review closure wave
+
+The second independent review narrowed three remaining boundaries.  New tests
+were run before implementation and produced the expected RED result:
+
+```text
+Task 6 second-review RED:
+8 failed, 38 passed
+```
+
+Private staging handles now receive exactly one close retry.  A permanent close
+failure still attempts deletion of every file created so far and reports only a
+safe fatal error.  Executor teardown is nested so composer close and strict
+resource cleanup run normally while `_resource_locators` is cleared in an
+unskippable inner `finally`, including cleanup-failure paths.
+
+Figure-child error conversion now ends at the `add_image` boundary.  Failures
+from that insertion/size primitive are rolled back and converted to
+`IMAGE_INSERT_FAILED`; failures after a successful image insertion while
+formatting its paragraph or advancing Selection are rolled back over the same
+explicit range and re-raised unchanged as fatal unknown errors.
+
+Non-empty native index ranges now require working Range, Duplicate, SetRange,
+and Information APIs.  Missing or throwing native APIs propagate fatally.  Page
+span checks use a one-point range at `End - 1`, avoiding an extra page caused by
+a trailing paragraph marker; only a truly zero-length index receives the
+one-page empty-index compatibility result.
+
+Final second-review verification (COM-free; no WPS process started):
+
+```text
+focused Task 6 + existing Windows executor + COM lifecycle:
+84 passed
+
+all M3:
+330 passed
+
+full suite:
+1708 passed, 6 skipped in 154.34s
+```
+
+The remaining risk continues to be real Windows WPS object-model validation;
+no mock run is presented as native platform evidence.
