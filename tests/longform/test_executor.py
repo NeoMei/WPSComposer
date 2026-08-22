@@ -384,6 +384,25 @@ def test_recording_executor_can_inject_snapshots_for_convergence():
     assert len(executor.refresh_calls) == 4
 
 
+def test_m2_convergence_facade_delegates_to_shared_engine_exactly_once(monkeypatch):
+    """A finalize dispatch has one convergence owner, including via M2 facade."""
+    from skills.WPSComposer.scripts.longform import field_contract
+
+    calls = []
+    expected = ConvergenceResult(snapshot=(), issues=(), rounds=2)
+
+    def _record(adapter, max_rounds, *, allow_legacy_hashes):
+        calls.append((adapter, max_rounds, allow_legacy_hashes))
+        return expected
+
+    monkeypatch.setattr(field_contract, "_finalize_native_fields", _record)
+    executor = RecordingLongformExecutor()
+
+    assert finalize_fields_with_convergence(executor, max_rounds=3) is expected
+    assert len(calls) == 1
+    assert calls[0][1:] == (3, True)
+
+
 # ---------------------------------------------------------------------------
 # Protocol violations
 # ---------------------------------------------------------------------------

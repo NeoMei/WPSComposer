@@ -243,32 +243,13 @@ class ConvergenceResult:
         )
 
 
-def _unstable_message(snapshot: Tuple[FieldSnapshot, ...], rounds: int) -> str:
-    """Build the deterministic FIELD_REFRESH_UNSTABLE issue message."""
-    field_count = len(snapshot)
-    if snapshot:
-        representative = snapshot[-1]
-        toc_pages = representative.toc_page_count
-        figure_pages = representative.figure_index_page_count
-        table_pages = representative.table_index_page_count
-        total_pages = representative.total_pages
-    else:
-        toc_pages = figure_pages = table_pages = total_pages = 0
-    return (
-        f"Field refresh did not converge after {rounds} rounds; "
-        f"fields={field_count}, toc_pages={toc_pages}, "
-        f"figure_index_pages={figure_pages}, table_index_pages={table_pages}, "
-        f"total_pages={total_pages}"
-    )
-
-
-def _normalize_snapshot(snapshot: Tuple[FieldSnapshot, ...]) -> Tuple[FieldSnapshot, ...]:
-    """Return a deterministically ordered snapshot for comparison."""
-    return tuple(sorted(snapshot))
-
-
 def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> ConvergenceResult:
-    """Run the fixed 5-step field-refresh sequence until convergence or a final round."""
+    """Compatibility facade delegating M2 refreshers to the M3 field contract.
+
+    M3 native executors should call ``finalize_native_fields`` with a complete
+    five-phase adapter.  The legacy facade retains M2's ``refresh_fields``
+    shape and outcome behavior while sharing the bounded convergence engine.
+    """
     refresh = getattr(executor, "refresh_fields", None)
     if not callable(refresh):
         return ConvergenceResult(
@@ -283,57 +264,49 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
             rounds=0,
         )
 
-    if max_rounds < 1:
-        max_rounds = 1
+    from .field_contract import NativeFieldContractError, _finalize_native_fields
 
-    previous: Optional[Tuple[FieldSnapshot, ...]] = None
+    class _LegacyRefreshAdapter:
+        _wpsc_legacy_snapshot = True
 
-    for round_index in range(max_rounds):
-        raw = refresh(round_index)
-        if raw is None:
-            raw = ()
-        try:
-            snapshot = _normalize_snapshot(tuple(raw))
-        except TypeError:
-            return ConvergenceResult(
-                snapshot=(),
-                issues=(
-                    ExecutionIssue(
-                        code="FIELD_REFRESH_SNAPSHOT_INVALID",
-                        message=f"refresh_fields returned non-comparable snapshot at round {round_index}",
-                        placement="document",
-                    ),
-                ),
-                rounds=round_index + 1,
-            )
-        if previous is not None and snapshot == previous:
-            return ConvergenceResult(
-                snapshot=snapshot,
-                issues=(),
-                rounds=round_index + 1,
-            )
-        previous = snapshot
+        def __init__(self) -> None:
+            self.round_index = 0
 
-    # Deterministic 4th round (when max_rounds == 3) that freezes the result.
-    final_round_index = max_rounds
-    final_raw = refresh(final_round_index)
-    if final_raw is None:
-        final_raw = ()
+        def repaginate_and_update_numbering(self) -> None:
+            return None
+
+        def refresh_bookmarks_and_references(self) -> None:
+            return None
+
+        def refresh_indexes(self) -> None:
+            return None
+
+        def repaginate_and_update_page_fields(self) -> None:
+            return None
+
+        def snapshot_fields(self) -> Tuple[FieldSnapshot, ...]:
+            raw = refresh(self.round_index)
+            self.round_index += 1
+            return tuple(raw or ())
+
     try:
-        final_snapshot = _normalize_snapshot(tuple(final_raw))
-    except TypeError:
-        final_snapshot = previous if previous is not None else ()
-
-    issue = ExecutionIssue(
-        code=FIELD_REFRESH_UNSTABLE,
-        message=_unstable_message(final_snapshot, max_rounds + 1),
-        placement="document",
-    )
-    return ConvergenceResult(
-        snapshot=final_snapshot,
-        issues=(issue,),
-        rounds=max_rounds + 1,
-    )
+        return _finalize_native_fields(
+            _LegacyRefreshAdapter(),
+            max_rounds,
+            allow_legacy_hashes=True,
+        )
+    except NativeFieldContractError as exc:
+        return ConvergenceResult(
+            snapshot=(),
+            issues=(
+                ExecutionIssue(
+                    code="FIELD_REFRESH_SNAPSHOT_INVALID",
+                    message=f"Legacy field refresh contract failed in {exc.phase}",
+                    placement="document",
+                ),
+            ),
+            rounds=0,
+        )
 
 
 # ---------------------------------------------------------------------------
