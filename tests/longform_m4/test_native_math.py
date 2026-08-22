@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 
 import pytest
@@ -180,6 +181,117 @@ def test_repeated_conversion_is_byte_stable() -> None:
     assert dataclasses.asdict(first) == dataclasses.asdict(second)
 
 
+@pytest.mark.parametrize("source", ["", "   ", r"\displaystyle", r"\,", "{}"])
+def test_blank_and_zero_width_formulas_are_rejected(source: str) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
+    assert validate_formula_source(source).valid is False
+
+
+def test_script_cannot_attach_to_zero_width_command() -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(r"\displaystyle^2")
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (r"\text{arg   max}", '"arg max"'),
+        (r"\mbox{x  if  y}", '"x if y"'),
+        (r"x + y", "x+y"),
+        (r"x\,y", "x y"),
+    ],
+)
+def test_text_commands_preserve_spaces_but_math_spaces_are_ignored(
+    source: str,
+    expected: str,
+) -> None:
+    assert convert_restricted_latex(source).linear_text == expected
+
+
+@pytest.mark.parametrize("control", ["\t", "\n", "\r", "\x00", "\x1f", "\x7f"])
+def test_all_control_characters_are_rejected(control: str) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex("x" + control + "y")
+
+    assert exc_info.value.code == "FORMULA_MALFORMED"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (r"\binom{n}{k}", "((n)¦(k))"),
+        (r"\tbinom{n}{k}", "((n)¦(k))"),
+        (r"\dbinom{n}{k}", "((n)¦(k))"),
+        (r"\hat{x}", "(x)\u0302"),
+        (r"\widehat{x+y}", "(x+y)\u0302"),
+        (r"\tilde{x}", "(x)\u0303"),
+        (r"\widetilde{x+y}", "(x+y)\u0303"),
+        (r"\vec{x}", "(x)\u20d7"),
+        (r"\bar{x}", "(x)\u0305"),
+        (r"\dot{x}", "(x)\u0307"),
+        (r"\ddot{x}", "(x)\u0308"),
+        (r"\overline{x+y}", "(x+y)\u0305"),
+        (r"\underline{x+y}", "(x+y)\u0332"),
+        (r"\operatorname{arg max}_{x}f(x)", '"arg max"_x f(x)'),
+        (r"\operatorname*{arg max}_{x}f(x)", '"arg max"_x f(x)'),
+        (r"\mathop{lim}_{x\to0}f(x)", "lim_(x→0) f(x)"),
+        (r"\wp(z)", "℘(z)"),
+        (
+            r"\begin{aligned}a&=b\\c&=d\end{aligned}",
+            "■(a&=b@c&=d)",
+        ),
+        (
+            r"\begin{split}a&=b+c\\&=d\end{split}",
+            "■(a&=b+c@&=d)",
+        ),
+        (
+            r"\begin{gathered}a=b\\c=d\end{gathered}",
+            "■(a=b@c=d)",
+        ),
+        (r"\begin{align*}a&=b\end{align*}", "■(a&=b)"),
+        (r"\begin{alignedat}{1}a&=b\end{alignedat}", "■(a&=b)"),
+        (r"\begin{gather}a=b\\c=d\end{gather}", "■(a=b@c=d)"),
+        (r"\begin{multline}a+b\\=c\end{multline}", "■(a+b@=c)"),
+        (r"\begin{equation}a=b\end{equation}", "■(a=b)"),
+        (r"\begin{array}{cc}a&b\\c&d\end{array}", "■(a&b@c&d)"),
+    ],
+)
+def test_legacy_common_constructs_have_controlled_wps_linear_mappings(
+    source: str,
+    expected: str,
+) -> None:
+    assert convert_restricted_latex(source).linear_text == expected
+
+
+@pytest.mark.parametrize(
+    ("syntax", "linear_text", "source_hash"),
+    [
+        ("wps-linear-v1", "", hashlib.sha256(b"").hexdigest()),
+        ("wps-linear-v1", "x" * 10_001, hashlib.sha256(b"x").hexdigest()),
+        ("wps-linear-v1", "x\ny", hashlib.sha256(b"x").hexdigest()),
+    ],
+)
+def test_descriptor_public_constructor_rejects_untrusted_content(
+    syntax: str,
+    linear_text: str,
+    source_hash: str,
+) -> None:
+    with pytest.raises(ValueError):
+        NativeMathDescriptor(syntax, linear_text, source_hash)
+
+
+def test_parser_nested_failure_does_not_affect_later_conversion() -> None:
+    with pytest.raises(NativeMathConversionError):
+        convert_restricted_latex(r"\left(\left[x\right)")
+
+    assert convert_restricted_latex(r"\left(x\right)").linear_text == "(x)"
+
+
 @pytest.mark.parametrize(
     "source",
     [
@@ -198,9 +310,8 @@ def test_validator_accepts_exactly_what_converter_accepts(source: str) -> None:
     assert validation.issues == ()
 
 
-def test_validator_rejects_converter_rejection() -> None:
+def test_operatorname_star_is_accepted_by_converter_and_validator() -> None:
     source = r"\operatorname*{arg max}"
 
-    with pytest.raises(NativeMathConversionError):
-        convert_restricted_latex(source)
-    assert validate_formula_source(source).valid is False
+    assert convert_restricted_latex(source).linear_text == '"arg max"'
+    assert validate_formula_source(source).valid is True

@@ -27,6 +27,7 @@ _MAX_BRACE_DEPTH = 64
 _MAX_TOKENS = 4_096
 _MAX_MATRIX_ROWS = 64
 _MAX_MATRIX_COLUMNS = 64
+_MAX_LINEAR_CODE_POINTS = 10_000
 
 _EXTERNAL_REFERENCE_RE = re.compile(
     r"(?:https?://|ftp://|file://|www\.)", re.IGNORECASE
@@ -69,7 +70,7 @@ _SYMBOL_COMMANDS = {
     "Rightarrow": "⇒", "Leftarrow": "⇐", "leftrightarrow": "↔",
     "Leftrightarrow": "⇔", "mapsto": "↦", "iff": "⇔", "infty": "∞",
     "nabla": "∇", "partial": "∂", "prime": "′", "hbar": "ℏ",
-    "ell": "ℓ", "Re": "ℜ", "Im": "ℑ", "ldots": "…",
+    "ell": "ℓ", "wp": "℘", "Re": "ℜ", "Im": "ℑ", "ldots": "…",
     "cdots": "⋯", "vdots": "⋮", "ddots": "⋱", "dots": "…",
 }
 
@@ -97,6 +98,17 @@ _MATRIX_DELIMITERS = {
     "matrix": ("", ""), "smallmatrix": ("", ""), "pmatrix": ("(", ")"),
     "bmatrix": ("[", "]"), "Bmatrix": ("{", "}"), "vmatrix": ("|", "|"),
     "Vmatrix": ("‖", "‖"), "cases": ("{", ""),
+}
+_EQUATION_ARRAY_ENVIRONMENTS: FrozenSet[str] = frozenset({
+    "align", "aligned", "alignedat", "flalign", "split", "gather", "gathered",
+    "multline", "equation", "array",
+})
+_BINOMIAL_COMMANDS: FrozenSet[str] = frozenset({"binom", "tbinom", "dbinom"})
+_ACCENT_COMMANDS = {
+    "hat": "\u0302", "widehat": "\u0302", "tilde": "\u0303",
+    "widetilde": "\u0303", "vec": "\u20d7", "bar": "\u0305",
+    "dot": "\u0307", "ddot": "\u0308", "overline": "\u0305",
+    "underline": "\u0332",
 }
 _DELIMITER_COMMANDS = {
     "lbrace": "{", "rbrace": "}", "langle": "⟨", "rangle": "⟩",
@@ -131,6 +143,13 @@ class NativeMathDescriptor:
             raise ValueError("unsupported native-math syntax")
         if not isinstance(self.linear_text, str):
             raise TypeError("linear_text must be str")
+        if not self.linear_text or len(self.linear_text) > _MAX_LINEAR_CODE_POINTS:
+            raise ValueError("linear_text length is outside the trusted bound")
+        if any(
+            unicodedata.category(char) in {"Cc", "Cf", "Cs"}
+            for char in self.linear_text
+        ):
+            raise ValueError("linear_text contains a control character")
         if not re.fullmatch(r"[0-9a-f]{64}", self.source_hash):
             raise ValueError("source_hash must be a lowercase SHA-256 digest")
 
@@ -179,7 +198,10 @@ def _tokenize(source: str) -> Tuple[_Token, ...]:
     while index < len(source):
         char = source[index]
         if char.isspace():
+            tokens.append(_Token("SPACE", " "))
             index += 1
+            while index < len(source) and source[index].isspace():
+                index += 1
             continue
         if char == "\\":
             if index + 1 >= len(source):
@@ -257,6 +279,10 @@ class _Parser:
         token = self._peek()
         return token is not None and token.kind == "COMMAND" and token.value == name
 
+    def _skip_spaces(self) -> None:
+        while self._peek() is not None and self._peek().kind == "SPACE":
+            self._take("SPACE")
+
     def _parse_sequence(
         self,
         stop_kinds: FrozenSet[str] = frozenset(),
@@ -267,6 +293,9 @@ class _Parser:
         while self._peek() is not None:
             token = self._peek()
             assert token is not None
+            if token.kind == "SPACE":
+                self._take("SPACE")
+                continue
             if token.kind in stop_kinds:
                 break
             if stop_on_right and self._at_command("right"):
@@ -299,6 +328,8 @@ class _Parser:
         value = self._parse_sequence(stop_kinds=frozenset({"RBRACE"}))
         self._take("RBRACE")
         self._leave_nested()
+        if not value.strip():
+            _raise(FORMULA_MALFORMED, "empty group")
         return value
 
     def _enter_nested(self) -> None:
@@ -310,10 +341,52 @@ class _Parser:
         self._depth -= 1
 
     def _parse_required_group(self) -> str:
+        self._skip_spaces()
         self._take("LBRACE")
         return self._parse_group_after_open()
 
+    def _parse_required_text_group(self) -> str:
+        """Parse a bounded text/mbox/operator-name argument with visible spaces."""
+        self._skip_spaces()
+        self._take("LBRACE")
+        self._enter_nested()
+        parts: List[str] = []
+        while True:
+            token = self._peek()
+            if token is None:
+                _raise(FORMULA_MALFORMED, "unterminated text group")
+            if token.kind == "RBRACE":
+                self._take("RBRACE")
+                break
+            token = self._take()
+            if token.kind == "SPACE":
+                if parts and parts[-1] != " ":
+                    parts.append(" ")
+                continue
+            if token.kind == "TEXT":
+                if token.value in {"#", "$", "%", "@", '"'}:
+                    _raise(FORMULA_MALFORMED, "unsafe text character")
+                parts.append(token.value)
+                continue
+            if token.kind == "COMMAND":
+                if token.value in _LITERAL_COMMANDS:
+                    parts.append(_LITERAL_COMMANDS[token.value])
+                    continue
+                if token.value in _SYMBOL_COMMANDS:
+                    parts.append(_SYMBOL_COMMANDS[token.value])
+                    continue
+                _raise(FORMULA_UNKNOWN_COMMAND, "text command \\" + token.value)
+            if token.kind == "LBRACE":
+                _raise(FORMULA_MALFORMED, "nested text group")
+            _raise(FORMULA_MALFORMED, "invalid text token")
+        self._leave_nested()
+        value = "".join(parts).strip()
+        if not value:
+            _raise(FORMULA_MALFORMED, "empty text group")
+        return value
+
     def _parse_optional_group(self) -> Optional[str]:
+        self._skip_spaces()
         token = self._peek()
         if token is None or token.kind != "LBRACKET":
             return None
@@ -325,6 +398,7 @@ class _Parser:
         return value
 
     def _parse_script_value(self) -> str:
+        self._skip_spaces()
         token = self._peek()
         if token is None:
             _raise(FORMULA_MALFORMED, "missing script value")
@@ -340,11 +414,23 @@ class _Parser:
     def _parse_scripts(self, base: str) -> str:
         subscript: Optional[str] = None
         superscript: Optional[str] = None
-        is_large_operator = bool(base and base[0] in _LARGE_OPERATORS.values())
-        if is_large_operator and (
+        is_operator = bool(
+            (base and base[0] in _LARGE_OPERATORS.values()) or base.endswith(" ")
+        )
+        if is_operator:
+            base = base.rstrip()
+        self._skip_spaces()
+        if (
+            not base.strip()
+            and self._peek() is not None
+            and self._peek().kind in {"SUB", "SUP"}
+        ):
+            _raise(FORMULA_MALFORMED, "script has no visible base")
+        if is_operator and (
             self._at_command("limits") or self._at_command("nolimits")
         ):
             self._take("COMMAND")
+            self._skip_spaces()
         while self._peek() is not None and self._peek().kind in {"SUB", "SUP"}:
             kind = self._take().kind
             value = self._parse_script_value()
@@ -356,11 +442,12 @@ class _Parser:
                 if superscript is not None:
                     _raise(FORMULA_MALFORMED, "duplicate superscript")
                 superscript = value
+            self._skip_spaces()
         if subscript is not None:
             base += "_(" + subscript + ")" if len(subscript) > 1 else "_" + subscript
         if superscript is not None:
             base += "^(" + superscript + ")" if len(superscript) > 1 else "^" + superscript
-        if is_large_operator:
+        if is_operator:
             base += " "
         return base
 
@@ -379,6 +466,8 @@ class _Parser:
             return ""
         if command in _LITERAL_COMMANDS:
             return _LITERAL_COMMANDS[command]
+        if command in {"text", "mbox"}:
+            return '"' + self._parse_required_text_group() + '"'
         if command in _GROUP_WRAPPERS:
             return self._parse_required_group()
         if command in {"frac", "dfrac", "tfrac"}:
@@ -393,6 +482,24 @@ class _Parser:
             if not radicand:
                 _raise(FORMULA_MALFORMED, "empty root")
             return f"√({radicand})" if degree is None else f"√({degree}&{radicand})"
+        if command in _BINOMIAL_COMMANDS:
+            upper = self._parse_required_group()
+            lower = self._parse_required_group()
+            return f"(({upper})¦({lower}))"
+        if command in _ACCENT_COMMANDS:
+            accented = self._parse_required_group()
+            return f"({accented}){_ACCENT_COMMANDS[command]}"
+        if command == "operatorname":
+            self._skip_spaces()
+            if (
+                self._peek() is not None
+                and self._peek().kind == "TEXT"
+                and self._peek().value == "*"
+            ):
+                self._take("TEXT")
+            return '"' + self._parse_required_text_group() + '" '
+        if command == "mathop":
+            return self._parse_required_group() + " "
         if command == "left":
             return self._parse_scalable_delimiters()
         if command == "begin":
@@ -403,6 +510,7 @@ class _Parser:
         return ""  # pragma: no cover
 
     def _parse_delimiter(self) -> str:
+        self._skip_spaces()
         token = self._take()
         if token.kind == "TEXT" and token.value in {"(", ")", "[", "]", "|", "."}:
             return "" if token.value == "." else token.value
@@ -429,19 +537,41 @@ class _Parser:
             self._leave_nested()
 
     def _read_environment_name(self) -> str:
+        self._skip_spaces()
         self._take("LBRACE")
-        token = self._take("TEXT")
+        parts: List[str] = []
+        while self._peek() is not None and self._peek().kind != "RBRACE":
+            token = self._take()
+            if token.kind != "TEXT":
+                _raise(FORMULA_MALFORMED, "invalid environment name")
+            parts.append(token.value)
         self._take("RBRACE")
-        if not token.value.isalpha():
+        name = "".join(parts)
+        if re.fullmatch(r"[A-Za-z]+\*?", name) is None:
             _raise(FORMULA_MALFORMED, "invalid environment name")
-        return token.value
+        return name
 
     def _parse_environment(self) -> str:
         self._enter_nested()
         try:
             name = self._read_environment_name()
-            if name not in _MATRIX_DELIMITERS:
-                _raise(FORMULA_UNKNOWN_COMMAND, "environment " + name)
+            base_name = name[:-1] if name.endswith("*") else name
+            is_equation_array = base_name in _EQUATION_ARRAY_ENVIRONMENTS
+            if base_name not in _MATRIX_DELIMITERS and not is_equation_array:
+                _raise(FORMULA_UNKNOWN_COMMAND, "environment " + base_name)
+            if name.endswith("*") and not is_equation_array:
+                _raise(FORMULA_MALFORMED, "starred matrix environment")
+            if base_name == "alignedat":
+                pair_count = self._parse_required_group()
+                if not pair_count.isdigit() or not 1 <= int(pair_count) <= 32:
+                    _raise(FORMULA_TOO_COMPLEX, "alignedat pair limit exceeded")
+            if base_name == "array":
+                column_spec = self._parse_required_text_group().replace(" ", "")
+                if (
+                    not column_spec
+                    or re.fullmatch(r"[lcr|]{1,64}", column_spec) is None
+                ):
+                    _raise(FORMULA_MALFORMED, "unsupported array column specification")
             rows: List[List[str]] = []
             row: List[str] = []
             while True:
@@ -452,7 +582,7 @@ class _Parser:
                 cell = self._parse_sequence(
                     stop_kinds=frozenset({"AMP", "ROW"}), stop_on_end=True
                 )
-                if not cell:
+                if not cell and not is_equation_array:
                     _raise(FORMULA_MALFORMED, "empty matrix cell")
                 row.append(cell)
                 if len(row) > _MAX_MATRIX_COLUMNS:
@@ -485,10 +615,12 @@ class _Parser:
             width = len(rows[0])
             if width == 0 or any(len(candidate) != width for candidate in rows):
                 _raise(FORMULA_MALFORMED, "ragged matrix")
-            if name == "cases" and width > 2:
+            if base_name == "cases" and width > 2:
                 _raise(FORMULA_TOO_COMPLEX, "cases column limit exceeded")
             matrix = "■(" + "@".join("&".join(candidate) for candidate in rows) + ")"
-            left, right = _MATRIX_DELIMITERS[name]
+            if is_equation_array:
+                return matrix
+            left, right = _MATRIX_DELIMITERS[base_name]
             return left + matrix + right
         finally:
             self._leave_nested()
@@ -503,13 +635,15 @@ def convert_restricted_latex(source: str) -> NativeMathDescriptor:
     normalized = unicodedata.normalize("NFC", source)
     for char in normalized:
         category = unicodedata.category(char)
-        if category in {"Cc", "Cf", "Cs"} and char not in {"\t", "\n", "\r"}:
+        if category in {"Cc", "Cf", "Cs"}:
             _raise(FORMULA_MALFORMED, "control character")
     if _EXTERNAL_REFERENCE_RE.search(normalized):
         _raise(FORMULA_FORBIDDEN_PRIMITIVE, "external reference")
     _check_braces(normalized)
     linear_text = _Parser(_tokenize(normalized)).parse()
     linear_text = " ".join(linear_text.split())
+    if not linear_text:
+        _raise(FORMULA_MALFORMED, "empty formula")
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     return NativeMathDescriptor(_SYNTAX, linear_text, digest)
 

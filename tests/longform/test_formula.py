@@ -118,8 +118,8 @@ def test_visible_fallback_text_for_invalid_formula() -> None:
     assert any(FORMULA_FORBIDDEN_PRIMITIVE in issue for issue in result.issues)
 
 
-def test_empty_formula_is_accepted() -> None:
+def test_empty_formula_is_rejected() -> None:
     result = validate_formula_source("")
-    assert result.valid is True
-    assert result.issues == ()
+    assert result.valid is False
+    assert result.issues == ("FORMULA_MALFORMED: empty formula",)
     assert result.fallback_text == ""
