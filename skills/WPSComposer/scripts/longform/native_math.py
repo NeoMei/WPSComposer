@@ -20,6 +20,7 @@ FORMULA_FORBIDDEN_PRIMITIVE = "FORMULA_FORBIDDEN_PRIMITIVE"
 FORMULA_UNKNOWN_COMMAND = "FORMULA_UNKNOWN_COMMAND"
 FORMULA_MALFORMED = "FORMULA_MALFORMED"
 FORMULA_TOO_COMPLEX = "FORMULA_TOO_COMPLEX"
+FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED = "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
 
 _SYNTAX = "wps-linear-v1"
 _MAX_CODE_POINTS = 10_000
@@ -113,8 +114,9 @@ _ACCENT_COMMANDS = {
     "breve": "\u0306", "overbrace": "⏞", "underbrace": "⏟",
 }
 _STACK_COMMANDS: FrozenSet[str] = frozenset({
-    "overset", "underset", "stackrel", "buildrel",
+    "overset", "underset", "stackrel",
 })
+_OTHER_UNSUPPORTED_LEGACY_COMMANDS: FrozenSet[str] = frozenset({"buildrel"})
 _CHOICE_COMMANDS: FrozenSet[str] = frozenset({"atop", "choose", "brack", "brace"})
 _DIMENSION_COMMANDS: FrozenSet[str] = frozenset({
     "hspace", "hskip", "vspace", "vskip", "kern", "mskip", "mkern",
@@ -166,6 +168,7 @@ LEGACY_ALLOWED_COMMANDS: FrozenSet[str] = frozenset().union(
     _BINOMIAL_COMMANDS,
     _ACCENT_COMMANDS,
     _STACK_COMMANDS,
+    _OTHER_UNSUPPORTED_LEGACY_COMMANDS,
     _CHOICE_COMMANDS,
     _DIMENSION_COMMANDS,
     _CONTENT_BOX_COMMANDS,
@@ -175,34 +178,32 @@ LEGACY_ALLOWED_COMMANDS: FrozenSet[str] = frozenset().union(
     _METADATA_COMMANDS,
 )
 
+LEGACY_PREFLIGHT_DEGRADATION_COMMANDS: FrozenSet[str] = frozenset().union(
+    _SPACING_COMMANDS,
+    _STYLE_COMMANDS,
+    _GROUP_WRAPPERS - {"text", "mbox"},
+    {"limits", "nolimits", "genfrac", "dfrac", "tfrac", "tbinom", "dbinom",
+     "smallmatrix"},
+    _OTHER_UNSUPPORTED_LEGACY_COMMANDS,
+    _CHOICE_COMMANDS,
+    _DIMENSION_COMMANDS,
+    _CONTENT_BOX_COMMANDS,
+    _SIMPLE_BOX_COMMANDS,
+    _PHANTOM_COMMANDS,
+    _DELIMITER_SIZE_COMMANDS,
+    _METADATA_COMMANDS,
+)
+LEGACY_NATIVE_EQUIVALENT_COMMANDS: FrozenSet[str] = (
+    LEGACY_ALLOWED_COMMANDS - LEGACY_PREFLIGHT_DEGRADATION_COMMANDS
+)
+
 
 def legacy_command_category(command: str) -> Optional[str]:
-    """Return the explicit grammar category for a legacy-accepted command."""
-    categories = (
-        (_SYMBOL_COMMANDS, "symbol"),
-        (_LARGE_OPERATORS, "large-operator"),
-        (_NAMED_FUNCTIONS, "named-function"),
-        (_GROUP_WRAPPERS, "group-wrapper"),
-        (_SPACING_COMMANDS, "spacing"),
-        (_STYLE_COMMANDS, "style"),
-        (_LEGACY_ENVIRONMENT_NAMES, "environment"),
-        (_LEGACY_STRUCTURAL_COMMANDS, "structural"),
-        (_FRACTION_COMMANDS, "fraction"),
-        (_SPECIAL_FORM_COMMANDS, "special-form"),
-        (_BINOMIAL_COMMANDS, "binomial"),
-        (_ACCENT_COMMANDS, "accent"),
-        (_STACK_COMMANDS, "stack"),
-        (_CHOICE_COMMANDS, "choice"),
-        (_DIMENSION_COMMANDS, "dimension"),
-        (_CONTENT_BOX_COMMANDS, "content-box"),
-        (_SIMPLE_BOX_COMMANDS, "box"),
-        (_PHANTOM_COMMANDS, "phantom"),
-        (_DELIMITER_SIZE_COMMANDS, "delimiter-size"),
-        (_METADATA_COMMANDS, "metadata"),
-    )
-    for commands, category in categories:
-        if command in commands:
-            return category
+    """Classify legacy input as native-equivalent or planned degradation."""
+    if command in LEGACY_PREFLIGHT_DEGRADATION_COMMANDS:
+        return "explicit-preflight-degradation"
+    if command in LEGACY_NATIVE_EQUIVALENT_COMMANDS:
+        return "native-equivalent"
     return None
 
 
@@ -457,24 +458,6 @@ class _Parser:
         self._take("LBRACE")
         return self._parse_group_after_open()
 
-    def _parse_required_group_allow_empty(self) -> str:
-        self._skip_spaces()
-        self._take("LBRACE")
-        self._enter_nested()
-        value = self._parse_sequence(stop_kinds=frozenset({"RBRACE"}))
-        self._take("RBRACE")
-        self._leave_nested()
-        return value
-
-    def _parse_dimension_group(self) -> str:
-        value = self._parse_required_group()
-        if re.fullmatch(
-            r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:pt|em|ex|mu|cm|mm|in)",
-            value,
-        ) is None:
-            _raise(FORMULA_MALFORMED, "invalid dimension")
-        return value
-
     def _parse_required_text_group(self) -> str:
         """Parse a bounded text/mbox/operator-name argument with visible spaces."""
         self._skip_spaces()
@@ -559,8 +542,8 @@ class _Parser:
         if is_operator and (
             self._at_command("limits") or self._at_command("nolimits")
         ):
-            self._take("COMMAND")
-            self._skip_spaces()
+            command = self._take("COMMAND").value
+            _raise(FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED, "\\" + command)
         while self._peek() is not None and self._peek().kind in {"SUB", "SUP"}:
             kind = self._take().kind
             value = self._parse_script_value()
@@ -584,22 +567,18 @@ class _Parser:
     def _parse_command(self, command: str) -> str:
         if command in _FORBIDDEN_COMMANDS:
             _raise(FORMULA_FORBIDDEN_PRIMITIVE, "\\" + command)
+        if command in LEGACY_PREFLIGHT_DEGRADATION_COMMANDS:
+            _raise(FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED, "\\" + command)
         if command in _SYMBOL_COMMANDS:
             return _SYMBOL_COMMANDS[command]
         if command in _LARGE_OPERATORS:
             return _LARGE_OPERATORS[command]
         if command in _NAMED_FUNCTIONS:
             return command + " "
-        if command in _SPACING_COMMANDS:
-            return " "
-        if command in _STYLE_COMMANDS:
-            return ""
         if command in _LITERAL_COMMANDS:
             return _LITERAL_COMMANDS[command]
         if command in {"text", "mbox"}:
             return '"' + self._parse_required_text_group() + '"'
-        if command in _GROUP_WRAPPERS:
-            return self._parse_required_group()
         if command in _FRACTION_COMMANDS:
             numerator = self._parse_required_group()
             denominator = self._parse_required_group()
@@ -625,43 +604,12 @@ class _Parser:
             if command == "underset":
                 return f"({base})_({annotation})"
             return f"({base})^({annotation})"
-        if command in _CHOICE_COMMANDS:
-            upper = self._parse_required_group()
-            lower = self._parse_required_group()
-            stack = f"({upper})¦({lower})"
-            if command == "choose":
-                return "(" + stack + ")"
-            if command == "brack":
-                return "[" + stack + "]"
-            if command == "brace":
-                return "{" + stack + "}"
-            return stack
-        if command in _DIMENSION_COMMANDS:
-            self._parse_dimension_group()
-            return " " if command in {"hspace", "hskip", "kern", "mskip", "mkern"} else ""
-        if command in _CONTENT_BOX_COMMANDS:
-            self._parse_dimension_group()
-            return self._parse_required_group()
-        if command in _SIMPLE_BOX_COMMANDS:
-            return self._parse_required_group()
-        if command in _PHANTOM_COMMANDS:
-            self._parse_required_group()
-            return " "
         if command == "bmod":
             return " mod "
         if command == "pmod":
             return "(mod " + self._parse_required_group() + ")"
         if command == "pod":
             return "(" + self._parse_required_group() + ")"
-        if command == "genfrac":
-            return self._parse_generalized_fraction()
-        if command in _DELIMITER_SIZE_COMMANDS:
-            return self._parse_delimiter()
-        if command == "nonumber":
-            return ""
-        if command in {"tag", "label"}:
-            self._parse_required_group()
-            return ""
         if command == "not":
             return self._parse_negated_atom()
         if command == "operatorname":
@@ -672,6 +620,7 @@ class _Parser:
                 and self._peek().value == "*"
             ):
                 self._take("TEXT")
+                _raise(FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED, "\\operatorname*")
             return '"' + self._parse_required_text_group() + '" '
         if command == "mathop":
             return self._parse_required_group() + " "
@@ -685,26 +634,6 @@ class _Parser:
             _raise(FORMULA_MALFORMED, "environment name outside \\begin")
         _raise(FORMULA_UNKNOWN_COMMAND, "\\" + command)
         return ""  # pragma: no cover
-
-    def _parse_generalized_fraction(self) -> str:
-        left = self._parse_required_group_allow_empty()
-        right = self._parse_required_group_allow_empty()
-        thickness = self._parse_required_group_allow_empty()
-        style = self._parse_required_group_allow_empty()
-        numerator = self._parse_required_group()
-        denominator = self._parse_required_group()
-        if left not in {"", "(", "[", "{", "|"}:
-            _raise(FORMULA_MALFORMED, "invalid generalized-fraction delimiter")
-        if right not in {"", ")", "]", "}", "|"}:
-            _raise(FORMULA_MALFORMED, "invalid generalized-fraction delimiter")
-        if thickness and re.fullmatch(
-            r"(?:0|[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:pt|em|ex|mu))",
-            thickness,
-        ) is None:
-            _raise(FORMULA_MALFORMED, "invalid generalized-fraction thickness")
-        if style not in {"", "0", "1", "2", "3"}:
-            _raise(FORMULA_MALFORMED, "invalid generalized-fraction style")
-        return left + f"({numerator})/({denominator})" + right
 
     def _parse_negated_atom(self) -> str:
         self._skip_spaces()
@@ -776,11 +705,16 @@ class _Parser:
         try:
             name = self._read_environment_name()
             base_name = name[:-1] if name.endswith("*") else name
+            if base_name in LEGACY_PREFLIGHT_DEGRADATION_COMMANDS:
+                _raise(FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED, base_name)
             is_equation_array = base_name in _EQUATION_ARRAY_ENVIRONMENTS
             if base_name not in _MATRIX_DELIMITERS and not is_equation_array:
                 _raise(FORMULA_UNKNOWN_COMMAND, "environment " + base_name)
-            if name.endswith("*") and not is_equation_array:
-                _raise(FORMULA_MALFORMED, "starred matrix environment")
+            if name.endswith("*"):
+                _raise(
+                    FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED,
+                    "starred environment " + base_name,
+                )
             expected_columns: Optional[int] = None
             if base_name == "alignedat":
                 pair_count = self._parse_required_group()
@@ -888,7 +822,9 @@ def convert_restricted_latex(source: str) -> NativeMathDescriptor:
 
 __all__ = [
     "FORMULA_FORBIDDEN_PRIMITIVE", "FORMULA_MALFORMED",
-    "FORMULA_NESTING_TOO_DEEP", "FORMULA_TOO_COMPLEX", "FORMULA_TOO_LONG",
-    "FORMULA_UNKNOWN_COMMAND", "LEGACY_ALLOWED_COMMANDS", "NativeMathConversionError",
+    "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED", "FORMULA_NESTING_TOO_DEEP",
+    "FORMULA_TOO_COMPLEX", "FORMULA_TOO_LONG", "FORMULA_UNKNOWN_COMMAND",
+    "LEGACY_ALLOWED_COMMANDS", "LEGACY_NATIVE_EQUIVALENT_COMMANDS",
+    "LEGACY_PREFLIGHT_DEGRADATION_COMMANDS", "NativeMathConversionError",
     "NativeMathDescriptor", "convert_restricted_latex", "legacy_command_category",
 ]

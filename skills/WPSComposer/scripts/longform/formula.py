@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from .native_math import (
     FORMULA_FORBIDDEN_PRIMITIVE,
     FORMULA_MALFORMED,
+    FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED,
     FORMULA_NESTING_TOO_DEEP,
     FORMULA_TOO_COMPLEX,
     FORMULA_TOO_LONG,
@@ -47,6 +48,7 @@ def validate_formula_source(source: str) -> FormulaValidation:
 __all__ = [
     "FORMULA_FORBIDDEN_PRIMITIVE",
     "FORMULA_MALFORMED",
+    "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED",
     "FORMULA_NESTING_TOO_DEEP",
     "FORMULA_TOO_COMPLEX",
     "FORMULA_TOO_LONG",

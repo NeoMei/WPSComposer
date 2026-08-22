@@ -28,8 +28,8 @@ from skills.WPSComposer.scripts.longform.native_math import (
         ("a_i^2+b^{n}", "a_i^2+b^n"),
         (r"\frac{a+b}{c}", "(a+b)/(c)"),
         (r"\sqrt{x}+\sqrt[3]{y}", "√(x)+√(3&y)"),
-        (r"\sum\limits_{i=1}^{n}i+\prod_{j=1}^{m}j", "∑_(i=1)^n i+∏_(j=1)^m j"),
-        (r"\int_{0}^{1}x\,dx", "∫_0^1 x dx"),
+        (r"\sum_{i=1}^{n}i+\prod_{j=1}^{m}j", "∑_(i=1)^n i+∏_(j=1)^m j"),
+        (r"\int_{0}^{1}xdx", "∫_0^1 xdx"),
         (r"\left(\frac{x}{y}\right)", "((x)/(y))"),
         (r"\alpha+\Gamma\leq\infty", "α+Γ≤∞"),
         (r"\begin{pmatrix}a&b\\c&d\end{pmatrix}", "(■(a&b@c&d))"),
@@ -181,7 +181,7 @@ def test_repeated_conversion_is_byte_stable() -> None:
     assert dataclasses.asdict(first) == dataclasses.asdict(second)
 
 
-@pytest.mark.parametrize("source", ["", "   ", r"\displaystyle", r"\,", "{}"])
+@pytest.mark.parametrize("source", ["", "   ", "{}"])
 def test_blank_and_zero_width_formulas_are_rejected(source: str) -> None:
     with pytest.raises(NativeMathConversionError) as exc_info:
         convert_restricted_latex(source)
@@ -190,11 +190,11 @@ def test_blank_and_zero_width_formulas_are_rejected(source: str) -> None:
     assert validate_formula_source(source).valid is False
 
 
-def test_script_cannot_attach_to_zero_width_command() -> None:
+def test_style_command_with_script_preflight_degrades() -> None:
     with pytest.raises(NativeMathConversionError) as exc_info:
         convert_restricted_latex(r"\displaystyle^2")
 
-    assert exc_info.value.code == "FORMULA_MALFORMED"
+    assert exc_info.value.code == "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
 
 
 @pytest.mark.parametrize(
@@ -203,7 +203,6 @@ def test_script_cannot_attach_to_zero_width_command() -> None:
         (r"\text{arg   max}", '"arg max"'),
         (r"\mbox{x  if  y}", '"x if y"'),
         (r"x + y", "x+y"),
-        (r"x\,y", "x y"),
     ],
 )
 def test_text_commands_preserve_spaces_but_math_spaces_are_ignored(
@@ -225,8 +224,6 @@ def test_all_control_characters_are_rejected(control: str) -> None:
     ("source", "expected"),
     [
         (r"\binom{n}{k}", "((n)¦(k))"),
-        (r"\tbinom{n}{k}", "((n)¦(k))"),
-        (r"\dbinom{n}{k}", "((n)¦(k))"),
         (r"\hat{x}", "(x)\u0302"),
         (r"\widehat{x+y}", "(x+y)\u0302"),
         (r"\tilde{x}", "(x)\u0303"),
@@ -238,7 +235,6 @@ def test_all_control_characters_are_rejected(control: str) -> None:
         (r"\overline{x+y}", "(x+y)\u0305"),
         (r"\underline{x+y}", "(x+y)\u0332"),
         (r"\operatorname{arg max}_{x}f(x)", '"arg max"_x f(x)'),
-        (r"\operatorname*{arg max}_{x}f(x)", '"arg max"_x f(x)'),
         (r"\mathop{lim}_{x\to0}f(x)", "lim_(x→0) f(x)"),
         (r"\wp(z)", "℘(z)"),
         (
@@ -253,7 +249,6 @@ def test_all_control_characters_are_rejected(control: str) -> None:
             r"\begin{gathered}a=b\\c=d\end{gathered}",
             "■(a=b@c=d)",
         ),
-        (r"\begin{align*}a&=b\end{align*}", "■(a&=b)"),
         (r"\begin{alignedat}{1}a&=b\end{alignedat}", "■(a&=b)"),
         (r"\begin{gather}a=b\\c=d\end{gather}", "■(a=b@c=d)"),
         (r"\begin{multline}a+b\\=c\end{multline}", "■(a+b@=c)"),
@@ -393,21 +388,45 @@ def test_every_legacy_allowed_command_has_an_explicit_handler_category() -> None
     })
 
     assert native_math_module.LEGACY_ALLOWED_COMMANDS == expected
+    native = native_math_module.LEGACY_NATIVE_EQUIVALENT_COMMANDS
+    degradation = native_math_module.LEGACY_PREFLIGHT_DEGRADATION_COMMANDS
+    assert native.isdisjoint(degradation)
+    assert native | degradation == expected
     assert {
         native_math_module.legacy_command_category(command)
         for command in expected
-    }.isdisjoint({None, "unknown"})
+    } == {"native-equivalent", "explicit-preflight-degradation"}
+
+
+def test_lossy_legacy_commands_are_an_explicit_closed_set() -> None:
+    expected = frozenset({
+        ",", ":", ";", "!", "quad", "qquad", "space", "thinspace",
+        "medspace", "thickspace", "enspace", "limits", "nolimits",
+        "displaystyle", "textstyle", "scriptstyle", "scriptscriptstyle",
+        "mathrm", "mathbf", "mathit", "mathsf", "mathtt", "mathcal",
+        "mathbb", "mathfrak", "mathscr", "boldsymbol", "bm", "buildrel",
+        "atop", "choose", "brack", "brace", "hspace", "hskip", "vspace",
+        "vskip", "kern", "mskip", "mkern", "raisebox", "lower", "box",
+        "phantom", "vphantom", "hphantom", "genfrac", "big", "Big",
+        "bigg", "Bigg", "bigl", "bigr", "Bigl", "Bigr", "biggl",
+        "biggr", "Biggl", "Biggr", "nonumber", "tag", "label", "dfrac",
+        "tfrac", "tbinom", "dbinom", "smallmatrix",
+    })
+
+    assert native_math_module.LEGACY_PREFLIGHT_DEGRADATION_COMMANDS == expected
 
 
 @pytest.mark.parametrize(
     "command",
-    sorted(native_math_module.LEGACY_ALLOWED_COMMANDS),
+    sorted(native_math_module.LEGACY_PREFLIGHT_DEGRADATION_COMMANDS),
 )
-def test_no_legacy_allowed_command_falls_through_to_unknown(command: str) -> None:
-    try:
+def test_every_lossy_legacy_command_uses_stable_preflight_degradation(
+    command: str,
+) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
         convert_restricted_latex("\\" + command)
-    except NativeMathConversionError as exc:
-        assert exc.code != FORMULA_UNKNOWN_COMMAND
+
+    assert exc_info.value.code == "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
 
 
 @pytest.mark.parametrize(
@@ -418,18 +437,7 @@ def test_no_legacy_allowed_command_falls_through_to_unknown(command: str) -> Non
         (r"\underbrace{x+y}", "(x+y)⏟"),
         (r"\overset{a}{b}+\stackrel{c}{d}", "(b)^(a)+(d)^(c)"),
         (r"\underset{a}{b}", "(b)_(a)"),
-        (r"\buildrel{a}{b}", "(b)^(a)"),
-        (r"\atop{n}{k}", "(n)¦(k)"),
-        (r"\choose{n}{k}", "((n)¦(k))"),
-        (r"\brack{n}{k}", "[(n)¦(k)]"),
-        (r"\brace{n}{k}", "{(n)¦(k)}"),
-        (r"x\hspace{1em}y\vspace{2pt}z", "x yz"),
-        (r"\raisebox{1pt}{x}+\lower{1pt}{y}+\box{z}", "x+y+z"),
-        (r"x+\phantom{abc}+y", "x+ +y"),
         (r"a\bmod b+\pmod{n}+\pod{k}", "a mod b+(mod n)+(k)"),
-        (r"\genfrac{(}{)}{0pt}{}{a}{b}", "((a)/(b))"),
-        (r"\bigl(x\bigr)", "(x)"),
-        (r"\tag{1}\label{eq:x}x\nonumber", "x"),
         (r"x\not=y", "x≠y"),
     ],
 )
@@ -443,13 +451,8 @@ def test_legacy_formatting_commands_have_stable_semantic_transforms(
 @pytest.mark.parametrize(
     "source",
     [
-        r"\hspace",
-        r"\raisebox{1pt}",
         r"\overset{x}",
-        r"\tag",
-        r"\label",
         r"\not",
-        r"\genfrac{(}{)}{0pt}{}{a}",
     ],
 )
 def test_legacy_commands_with_missing_arguments_are_stably_malformed(
@@ -459,6 +462,32 @@ def test_legacy_commands_with_missing_arguments_are_stably_malformed(
         convert_restricted_latex(source)
 
     assert exc_info.value.code == "FORMULA_MALFORMED"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        r"{n\choose k}", r"\choose{n}{k}",
+        r"{n\atop k}", r"\atop{n}{k}",
+        r"{n\brack k}", r"\brack{n}{k}",
+        r"{n\brace k}", r"\brace{n}{k}",
+        r"\genfrac{(}{)}{0pt}{}{a}{b}",
+        r"x+\phantom{abc}+y", r"\vphantom{x}", r"\hphantom{x}",
+        r"x\hspace{1em}y", r"x\hspace*{1em}y", r"x\kern{1pt}y",
+        r"\raisebox{1pt}{x}", r"\lower{1pt}{x}", r"\box{x}",
+        r"\tag{1}x", r"\tag*{1}x", r"\label{eq:x}x", r"x\nonumber",
+        r"\mathbf{x}", r"\displaystyle x", r"\sum\limits_i i",
+        r"\bigl(x\bigr)", r"\buildrel{a}{b}",
+        r"\dfrac{x}{y}", r"\tfrac{x}{y}", r"\tbinom{n}{k}",
+        r"\dbinom{n}{k}", r"\begin{smallmatrix}a\end{smallmatrix}",
+        r"\operatorname*{arg max}", r"\begin{align*}a&=b\end{align*}",
+    ],
+)
+def test_standard_and_invented_lossy_variants_preflight_degrade(source: str) -> None:
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+
+    assert exc_info.value.code == "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
 
 
 @pytest.mark.parametrize(
@@ -479,8 +508,10 @@ def test_validator_accepts_exactly_what_converter_accepts(source: str) -> None:
     assert validation.issues == ()
 
 
-def test_operatorname_star_is_accepted_by_converter_and_validator() -> None:
+def test_operatorname_star_preflight_degrades() -> None:
     source = r"\operatorname*{arg max}"
 
-    assert convert_restricted_latex(source).linear_text == '"arg max"'
-    assert validate_formula_source(source).valid is True
+    with pytest.raises(NativeMathConversionError) as exc_info:
+        convert_restricted_latex(source)
+    assert exc_info.value.code == "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED"
+    assert validate_formula_source(source).valid is False
