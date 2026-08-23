@@ -784,7 +784,7 @@ def test_writer_native_formula_uses_real_m3_fields_and_bookmark_shell():
     )
 
     assert [call[2] for call in writer.doc.Fields.calls] == [
-        "STYLEREF 1 \\s", "SEQ WPSC_EQ \\* ARABIC \\s 1",
+        'STYLEREF "标题 1" \\s', "SEQ WPSC_EQ \\* ARABIC \\s 1",
     ]
     assert writer.doc.Bookmarks.calls == [(EQ_BOOKMARK, 81, 84)]
     assert [item[1] for item in writer._native_fields()] == [

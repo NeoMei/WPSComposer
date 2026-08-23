@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from .longform.macos_executor import MacOSLongformExecutor
-from .longform.pipeline import build_longform_generation, execute_longform_plan
+from .longform.pipeline import (
+    _is_absolute_path,
+    build_longform_generation,
+    execute_longform_plan,
+)
 from .longform_m0.host_checks import validate_evidence_privacy
 from .macos_probe.bridge import LoopbackBridge
 from .macos_probe.longform_evidence import (
@@ -563,7 +567,7 @@ def validate_m3_evidence_report(value: Any) -> None:
         if set(artifact) != {"name", "sha256", "kind"}:
             raise ValueError("M3 evidence artifact shape is invalid")
         name = Path(artifact["name"])
-        if name.is_absolute() or ".." in name.parts:
+        if _is_absolute_path(artifact["name"]) or ".." in name.parts:
             raise ValueError("M3 evidence artifact name is not relative")
         if not re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"]):
             raise ValueError("M3 evidence artifact digest is invalid")
@@ -595,7 +599,7 @@ def validate_m3_evidence_report(value: Any) -> None:
             raise ValueError("M3 evidence screenshot name is invalid")
         name = Path(raw_name)
         if (
-            name.is_absolute() or ".." in name.parts or len(name.parts) != 2
+            _is_absolute_path(raw_name) or ".." in name.parts or len(name.parts) != 2
             or name.parts[0] != "screenshots" or name.suffix.lower() != ".png"
         ):
             raise ValueError("M3 evidence screenshot name is not relative")

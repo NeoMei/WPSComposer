@@ -839,8 +839,13 @@ def preflight_resources(nodes: list[Any], base_dir: str) -> ResourcePreflight:
             continue
 
         source_digest = _sha256(data)
+        try:
+            id_path = resolved.relative_to(base).as_posix()
+        except ValueError:
+            # ponytail: absolute fallback only for paths resolve() keeps outside base
+            id_path = normalized_source_path
         accepted = PreflightResource(
-                resource_id=_resource_id_for_path(normalized_source_path),
+                resource_id=_resource_id_for_path(id_path),
                 source_path=normalized_source_path,
                 source_sha256=source_digest,
                 payload_sha256=_sha256(payload),

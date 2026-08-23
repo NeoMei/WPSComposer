@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import zipfile
 from pathlib import Path
 from typing import Any, Optional
@@ -121,6 +122,10 @@ def test_inspect_docx_reads_structural_evidence(tmp_path: Path) -> None:
     assert result["contentTypes"] is True
 
 
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason="reads the installed macOS WPS app bundle for wpsVersion",
+)
 def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()
@@ -162,6 +167,10 @@ def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
     assert runtime._servers_started is True
 
 
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason="reads the installed macOS WPS app bundle for wpsVersion",
+)
 def test_run_longform_m2_evidence_records_pdf_conversion(tmp_path: Path) -> None:
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()

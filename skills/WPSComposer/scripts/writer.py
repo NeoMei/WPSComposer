@@ -76,7 +76,7 @@ def _caption_field_codes(numbering):
         if numbering.get("chapterStyleLevel") != 1 or numbering.get("resetLevel") != 1:
             raise ValueError("invalid chapter numbering descriptor")
         return (
-            "STYLEREF 1 \\s",
+            None,  # STYLEREF code is built at COM time with the localized name
             f"SEQ {sequence_id} \\* ARABIC \\s 1",
         )
     if numbering.get("chapterStyleLevel") is not None or numbering.get("resetLevel") is not None:
@@ -1434,15 +1434,27 @@ class WriterComposer(BaseComposer):
                     descriptor.TextPosition = index * 18
                     descriptor.ResetOnHigher = 0 if index == 1 else index - 1
                     descriptor.StartAt = 1
+                # Mirror the macOS add-in: link the built-in heading styles
+                # to the template so numbering CONTINUES across headings.
+                # Applying the template per range on WPS restarts the list
+                # at 1 for every heading.
+                for template_level in range(1, 5):
+                    self._doc.Styles(-1 - template_level).LinkToListTemplate(
+                        list_template, template_level
+                    )
                 cache[normalized_scheme] = list_template
             level_idx = int(level)
             heading_range = self._doc.Range(
                 heading_start, self._native_position()
             )
-            heading_range.ListFormat.ApplyListTemplateWithLevel(
-                list_template, True, 0, 0, level_idx
-            )
+            heading_range.Style = self._doc.Styles(-1 - level_idx)
             heading_range.ListFormat.ListLevelNumber = level_idx
+            if not str(heading_range.ListFormat.ListString or "").strip():
+                raise NativeWriterObjectError(
+                    "EXECUTION_ABORTED", "heading numbering did not apply"
+                )
+        except NativeWriterObjectError:
+            raise
         except Exception:
             raise NativeWriterObjectError(
                 "EXECUTION_ABORTED", "heading numbering failed"
@@ -1504,6 +1516,13 @@ class WriterComposer(BaseComposer):
         result = getattr(field, "Result", None)
         if result is not None:
             self.selection.SetRange(int(result.End), int(result.End))
+            # WPS absorbs text typed at a field's result end into the field
+            # result; a later Update() deletes it. Step right past the field
+            # boundary before any further typing.
+            try:
+                self.selection.MoveRight(1, 1)
+            except Exception:
+                pass
         self._native_fields().append((owner_node_id or "doc:native", kind, field, category))
         return field
 
@@ -1524,12 +1543,30 @@ class WriterComposer(BaseComposer):
                 "LOCAL_MUTATION_ROLLBACK_FAILED", "native rollback failed"
             ) from None
 
+    def _localized_styleref_code(self):
+        """STYLEREF code naming the localized built-in Heading 1 style.
+
+        WPS treats numeric STYLEREF arguments as literal style names and
+        resolves built-in styles by localized UI name. Resolve the
+        locale-independent built-in id (-2) at runtime, mirroring the
+        macOS add-in.
+        """
+        try:
+            name = str(self._doc.Styles(-2).NameLocal)
+        except Exception:
+            name = "Heading 1"
+        if not name or '"' in name:
+            name = "Heading 1"
+        return f'STYLEREF "{name}" \\s'
+
     def _add_native_number_shell(self, numbering, bookmark_name, owner_node_id):
         style_code, sequence_code = _caption_field_codes(numbering)
         prefix = numbering["prefix"]
         suffix = numbering["suffix"]
         self.selection.TypeText(prefix)
         number_start = self._native_position()
+        if style_code is None and numbering.get("mode") == "chapter":
+            style_code = self._localized_styleref_code()
         if style_code is not None:
             self._native_insert_field(style_code, owner_node_id, "STYLEREF", "numbering")
             self.selection.TypeText("-")

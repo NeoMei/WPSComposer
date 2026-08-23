@@ -84,6 +84,22 @@ class WindowsLongformExecutorError(Exception):
         self.cleanup_failed = False
 
 
+def _is_host_com_error(exc: BaseException) -> bool:
+    """True when the error (or its abort cause) is a COM/RPC failure."""
+    try:
+        import pywintypes  # pywin32
+    except ImportError:  # non-Windows hosts run this module under tests
+        return False
+    seen: Optional[BaseException] = exc
+    for _ in range(4):
+        if seen is None:
+            return False
+        if isinstance(seen, pywintypes.com_error):
+            return True
+        seen = getattr(seen, "__cause__", None)
+    return False
+
+
 def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterComposer:
     """Create a dedicated WriterComposer via DispatchEx only.
 
@@ -98,43 +114,66 @@ def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterCompo
 
     pythoncom.CoInitialize()
     app: Any = None
+    composer: Optional[WriterComposer] = None
 
-    for progid in WriterComposer._progids:
+    # WPS's single-process model can hand DispatchEx a proxy into a previous
+    # instance that is still quitting, or an app object whose properties are
+    # not ready yet (AttributeError / mid-run RPC death). Retry the whole
+    # dedicated-host construction with backoff, mirroring _base.__enter__.
+    last_error: Optional[Exception] = None
+    for attempt in range(3):
         try:
-            app = client.DispatchEx(progid)
+            for progid in WriterComposer._progids:
+                try:
+                    app = client.DispatchEx(progid)
+                    break
+                except Exception:  # pragma: no cover - exercised via mocks
+                    continue
+            if app is None:
+                raise WindowsDedicatedHostUnavailableError(
+                    "Could not create dedicated WPS application"
+                )
+            # Readiness probe: touch hot properties the executor will use.
+            int(app.Documents.Count)
+            app.Selection
+            composer = WriterComposer.__new__(WriterComposer)
+            composer._app = app
+            composer._doc = None
+            composer._path = None
+            composer._read_only = False
+            composer._visible = False
+            composer._owns_app = True
+            composer._owns_doc = False
+            composer._com_initialized = True
+            composer._first_section_configured = False
+            try:
+                app.Visible = 0
+                app.DisplayAlerts = 0
+            except Exception:
+                pass
+
+            composer._doc = composer._create_doc(app)
             break
-        except Exception:  # pragma: no cover - exercised via mocks
-            continue
+        except WindowsDedicatedHostUnavailableError:
+            raise
+        except Exception as exc:  # pragma: no cover - WPS reuse race
+            last_error = exc
+            app = None
+            if composer is not None:
+                try:
+                    composer.close(save_changes=False)
+                except Exception:
+                    pass
+                composer = None
+            if attempt == 2:
+                pythoncom.CoUninitialize()
+                raise WindowsDedicatedHostUnavailableError(
+                    f"Could not create dedicated WPS host: {exc}"
+                ) from exc
+            time.sleep(0.6)
 
-    if app is None:
-        pythoncom.CoUninitialize()
-        raise WindowsDedicatedHostUnavailableError(
-            "Could not create dedicated WPS application"
-        ) from None
-
-    composer = WriterComposer.__new__(WriterComposer)
-    composer._app = app
-    composer._doc = None
-    composer._path = None
-    composer._read_only = False
-    composer._visible = False
-    composer._owns_app = True
-    composer._owns_doc = False
-    composer._com_initialized = True
-    composer._first_section_configured = False
-    try:
-        app.Visible = 0
-        app.DisplayAlerts = 0
-    except Exception:
-        pass
-
-    try:
-        composer._doc = composer._create_doc(app)
-    except Exception as exc:
-        composer.close(save_changes=False)
-        raise WindowsDedicatedHostUnavailableError(
-            f"Could not create dedicated WPS document: {exc}"
-        ) from exc
+    assert composer is not None and composer._doc is not None
+    app = composer._app
 
     composer._owns_doc = True
     if staging_dir:
@@ -166,6 +205,7 @@ class WindowsLongformExecutor(LongformExecutor):
         self._composer_factory = composer_factory or _create_dedicated_composer
         self._issues: List[ExecutionIssue] = []
         self._toc_density: dict[str, Any] = {}
+        self._front_matter: dict[str, Any] = {}
         self._resource_locators: dict[str, str] = {}
         self._recovery_controller = LocalRecoveryController()
         self._pagination_ranges: list[dict[str, Any]] = []
@@ -194,23 +234,53 @@ class WindowsLongformExecutor(LongformExecutor):
         try:
             self._validate_resource_manifest(plan, resources)
             self._resource_locators, staged_resources = self._stage_resources(resources)
-            composer = self._acquire_composer()
-            self._dispatch_all(composer, plan.operations)
-            if isinstance(composer, NativeFieldAdapter):
-                convergence = finalize_native_fields(
-                    composer, max_rounds=_extract_max_rounds(plan.operations)
-                )
-            else:
-                convergence = finalize_fields_with_convergence(
-                    composer, max_rounds=_extract_max_rounds(plan.operations)
-                )
-            self._extend_issues(convergence.issues)
-            snapshotter = getattr(composer, "pagination_map_for_ranges", None)
-            if callable(snapshotter):
-                pagination_map = PaginationMap.from_dict(
-                    snapshotter(tuple(self._pagination_ranges))
-                )
-            composer.save_docx(paths.staged_docx)
+            host_attempts = 0
+            while True:
+                try:
+                    composer = self._acquire_composer()
+                    self._dispatch_all(composer, plan.operations)
+                    if isinstance(composer, NativeFieldAdapter):
+                        convergence = finalize_native_fields(
+                            composer, max_rounds=_extract_max_rounds(plan.operations)
+                        )
+                    else:
+                        convergence = finalize_fields_with_convergence(
+                            composer, max_rounds=_extract_max_rounds(plan.operations)
+                        )
+                    self._extend_issues(convergence.issues)
+                    snapshotter = getattr(composer, "pagination_map_for_ranges", None)
+                    if callable(snapshotter):
+                        pagination_map = PaginationMap.from_dict(
+                            snapshotter(tuple(self._pagination_ranges))
+                        )
+                    composer.save_docx(paths.staged_docx)
+                    break
+                except Exception as exc:
+                    # WPS's automation session can die mid-run ("interface
+                    # unknown" / RPC errors) once instances accumulate. One
+                    # fresh-host retry of the SAME logical generation; a
+                    # content failure re-raised by the retry path is
+                    # classified as usual.
+                    if (
+                        host_attempts == 0
+                        and not isinstance(exc, WindowsLongformExecutorError)
+                        and _is_host_com_error(exc)
+                    ):
+                        host_attempts += 1
+                        if composer is not None:
+                            try:
+                                composer.close(save_changes=False)
+                            except Exception:
+                                pass
+                            composer = None
+                        self._issues = []
+                        self._pagination_ranges = []
+                        # Let the previous instance finish quitting so WPS's
+                        # single-instance re-registration completes before
+                        # the replacement dispatch.
+                        time.sleep(1.5)
+                        continue
+                    raise
             # WPS may retain an image handle until the document closes.  Try
             # once while the host is alive, then retry only locked paths after
             # close in the finally block.
@@ -749,6 +819,7 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.configure_front_matter":
+            self._front_matter = dict(args)
             metadata_setter = getattr(composer, "set_document_metadata", None)
             if callable(metadata_setter):
                 metadata_setter(
@@ -785,6 +856,26 @@ class WindowsLongformExecutor(LongformExecutor):
                 link_to_previous_header=args.get("linkToPreviousHeader"),
                 link_to_previous_footer=args.get("linkToPreviousFooter"),
             )
+            if args.get("role") == "cover" and args.get(
+                "titlePage", self._front_matter.get("titlePage")
+            ):
+                # Parity with the macOS addin: render the cover from the
+                # stashed front matter (centered, explicit sizes).
+                composer.add_paragraph(
+                    self._front_matter.get("title", ""),
+                    size=24,
+                    bold=True,
+                    align=1,
+                    space_after=24,
+                )
+                if self._front_matter.get("author"):
+                    composer.add_paragraph(
+                        self._front_matter["author"], size=14, align=1
+                    )
+                if self._front_matter.get("date"):
+                    composer.add_paragraph(
+                        self._front_matter["date"], size=12, align=1
+                    )
             return
 
         if name == "writer.configure_toc_styles":
@@ -854,10 +945,12 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.add_paragraph":
-            composer.add_paragraph(
-                text=args.get("text", ""),
-                style=args.get("style"),
-            )
+            if args.get("style"):
+                composer.add_styled_paragraph(
+                    args.get("text", ""), str(args["style"])
+                )
+            else:
+                composer.add_paragraph(text=args.get("text", ""))
             return
 
         if name == "writer.add_captioned_figure" and "numbering" in args:

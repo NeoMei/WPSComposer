@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -34,6 +35,12 @@ from skills.WPSComposer.scripts.longform.semantic import (
     LongformConfig,
     SemanticResult,
 )
+
+
+def _absolute_outside_base() -> str:
+    if sys.platform == "win32":
+        return "C:/Windows/win.ini"
+    return "/etc/passwd"
 
 
 def make_config(**kwargs) -> LongformConfig:
@@ -476,7 +483,7 @@ def test_build_longform_plan_emits_degradation_for_preflight_failure(tmp_path):
                         identifier="fig:missing",
                         node_id="fig:missing",
                         caption="缺失图",
-                        images=[ImageBlock(path="/etc/passwd", alt="x")],
+                        images=[ImageBlock(path=_absolute_outside_base(), alt="x")],
                         layout="stack",
                     ),
                 ],

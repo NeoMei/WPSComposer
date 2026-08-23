@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import platform
+import time
 from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
@@ -126,11 +127,23 @@ def _dispatch(progids):
 
 
 def _safe_quit(app):
-    """Quit a COM app, swallowing any errors."""
+    """Quit a COM app and wait (bounded) for the host to actually exit.
+
+    WPS Quit is asynchronous; a following DispatchEx in the same process can
+    otherwise receive a proxy into the still-quitting instance and die with a
+    mid-run RPC error.
+    """
     try:
         app.Quit()
     except BaseException:
         pass
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        try:
+            app.Version  # any cheap property round-trip
+        except BaseException:
+            return
+        time.sleep(0.2)
 
 
 def _abs(path):

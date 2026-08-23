@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 from .artifact_transport import validate_pdf
 from .longform.lifecycle import run_longform_lifecycle
-from .longform.pipeline import build_longform_generation
+from .longform.pipeline import _is_absolute_path, build_longform_generation
 from .longform.platform_runtime import MacLongformAdapter, WindowsLongformAdapter
 from .longform.windows_executor import _create_dedicated_composer
 from .macos_probe.runtime import read_wps_version
@@ -132,7 +132,7 @@ def _render_representative_pages(pdf: Path, output: Path, pages: int) -> list[st
         rendered.append(target.with_suffix(".png"))
     if not rendered or any(path.stat().st_size < 1024 for path in rendered):
         raise RuntimeError("M5 representative screenshot rendering failed")
-    return [str(path.relative_to(output)) for path in rendered]
+    return [path.relative_to(output).as_posix() for path in rendered]
 
 
 def _pdf_page_count(path: Path) -> int:
@@ -249,12 +249,12 @@ def validate_m5_evidence_report(report: Any) -> None:
         if (
             not isinstance(artifact, dict)
             or set(artifact) != {"name", "sha256"}
-            or Path(artifact["name"]).is_absolute()
+            or _is_absolute_path(artifact["name"])
             or not re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
         ):
             raise ValueError("M5 artifact evidence is invalid")
         if not isinstance(entry["screenshots"], list) or not entry["screenshots"] or any(
-            Path(name).is_absolute() or not name.startswith("screenshots/")
+            _is_absolute_path(name) or not name.startswith("screenshots/")
             for name in entry["screenshots"]
         ):
             raise ValueError("M5 screenshot evidence is invalid")

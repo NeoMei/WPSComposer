@@ -176,6 +176,9 @@ class FakeWriterComposer:
     def add_paragraph(self, **kwargs) -> None:
         self._record("add_paragraph", **kwargs)
 
+    def add_styled_paragraph(self, text, style_name) -> None:
+        self._record("add_styled_paragraph", text, style_name)
+
     def add_numbered_list(self, **kwargs) -> None:
         self._record("add_numbered_list", **kwargs)
 
@@ -464,7 +467,7 @@ def test_execute_dispatches_section_and_toc_and_heading(
     assert "configure_section" in names
     assert "insert_toc_with_styles" in names
     assert "add_heading_level_native" in names
-    assert "add_paragraph" in names
+    assert "add_styled_paragraph" in names
     assert "finalize_fields" not in names
 
 
@@ -827,10 +830,10 @@ def test_staged_artifact_path_is_inside_staging_dir(tmp_path, fake_composer):
 def test_operation_failure_without_declared_recovery_is_fatal(
     executor, fake_composer, simple_plan
 ):
-    def boom(**kwargs):
+    def boom(*args, **kwargs):
         raise RuntimeError("boom")
 
-    fake_composer.add_paragraph = boom
+    fake_composer.add_styled_paragraph = boom
     with pytest.raises(WindowsLongformExecutorError, match="writer.add_paragraph"):
         executor.execute(simple_plan, ())
 
@@ -934,10 +937,10 @@ def test_index_placeholders_are_inserted(executor, fake_composer):
 def test_generic_execution_failure_cannot_be_marked_recoverable(
     executor, fake_composer, simple_plan
 ):
-    def boom(**kwargs):
+    def boom(*args, **kwargs):
         raise RuntimeError("boom")
 
-    fake_composer.add_paragraph = boom
+    fake_composer.add_styled_paragraph = boom
     # Make add_paragraph fail with a recoverable code.
     ops = list(simple_plan.operations)
     new_ops = []
@@ -968,10 +971,10 @@ def test_generic_execution_failure_cannot_be_marked_recoverable(
 def test_fail_policy_aborts_execution(
     executor, fake_composer, simple_plan
 ):
-    def boom(**kwargs):
+    def boom(*args, **kwargs):
         raise RuntimeError("boom")
 
-    fake_composer.add_paragraph = boom
+    fake_composer.add_styled_paragraph = boom
     ops = list(simple_plan.operations)
     new_ops = []
     for op in ops:

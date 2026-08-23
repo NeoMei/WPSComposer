@@ -206,6 +206,10 @@ def test_absolute_path_outside_base_dir_is_rejected(tmp_path: Path) -> None:
     assert result.degradations[0].code == RESOURCE_ABSOLUTE_PATH_OUTSIDE
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="os.symlink needs SeCreateSymbolicLinkPrivilege on Windows",
+)
 def test_symlink_escaping_base_dir_is_rejected(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
@@ -222,6 +226,10 @@ def test_symlink_escaping_base_dir_is_rejected(tmp_path: Path) -> None:
     assert result.degradations[0].code == RESOURCE_PATH_ESCAPES_BASE
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="os.symlink needs SeCreateSymbolicLinkPrivilege on Windows",
+)
 def test_valid_symlink_inside_base_dir_is_accepted(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()
@@ -273,6 +281,10 @@ def test_excalidraw_block_is_processed_as_svg_source(tmp_path: Path) -> None:
     assert result.degradations == []
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="chmod 0o000 does not revoke owner read access on Windows",
+)
 def test_read_failure_is_degraded(tmp_path: Path) -> None:
     base_dir = tmp_path / "project"
     base_dir.mkdir()

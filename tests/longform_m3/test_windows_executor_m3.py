@@ -526,7 +526,7 @@ def test_native_field_adapter_runs_five_phase_order_twice_until_stable(tmp_path:
 def test_writer_controlled_field_code_helpers_are_exact():
     from skills.WPSComposer.scripts.writer import _caption_field_codes, _reference_field_code
 
-    assert _caption_field_codes(_numbering()) == ("STYLEREF 1 \\s", "SEQ WPSC_FIG \\* ARABIC \\s 1")
+    assert _caption_field_codes(_numbering()) == (None, "SEQ WPSC_FIG \\* ARABIC \\s 1")
     assert _caption_field_codes({**_numbering(), "mode": "global", "chapterStyleLevel": None, "resetLevel": None}) == (None, "SEQ WPSC_FIG \\* ARABIC")
     assert _reference_field_code(BOOKMARK) == "REF " + BOOKMARK + " \\h"
 
@@ -635,6 +635,9 @@ class _EmptyIndexes:
 
 class _Styles:
     def __call__(self, name):
+        if isinstance(name, int):
+            # Built-in style id lookup returns a style object.
+            return type("Style", (), {"NameLocal": "标题 1"})()
         return name
 
 
@@ -810,7 +813,7 @@ def test_writer_chapter_caption_fields_and_bookmark_cover_number_only():
     writer._add_native_caption("示例", _numbering(), BOOKMARK, "fig:one")
 
     assert [call[2] for call in writer.doc.Fields.calls] == [
-        "STYLEREF 1 \\s", "SEQ WPSC_FIG \\* ARABIC \\s 1",
+        'STYLEREF "标题 1" \\s', "SEQ WPSC_FIG \\* ARABIC \\s 1",
     ]
     # Prefix starts at 0 and is excluded; caption prose follows the bookmarked
     # chapter-separator-sequence range and is also excluded.

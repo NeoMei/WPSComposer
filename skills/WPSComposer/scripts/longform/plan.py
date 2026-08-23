@@ -484,7 +484,7 @@ def _render_element(
         else:
             state.add(
                 "writer.add_list",
-                {"items": _list_items(node.items), "glyph": "•"},
+                {"items": _list_items(node.items), "ordered": False, "glyph": "•"},
                 node_id=node_id,
             )
     elif isinstance(node, FigureBlock):

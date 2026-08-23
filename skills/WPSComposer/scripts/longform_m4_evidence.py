@@ -15,7 +15,11 @@ from typing import Any, Mapping, Optional, Sequence
 
 from .longform.macos_executor import MacOSLongformExecutor
 from .longform.native_math import NativeMathConversionError, convert_restricted_latex
-from .longform.pipeline import build_longform_generation, execute_longform_plan
+from .longform.pipeline import (
+    _is_absolute_path,
+    build_longform_generation,
+    execute_longform_plan,
+)
 from .longform.privacy import redact_private_text
 from .macos_probe.bridge import LoopbackBridge
 from .macos_probe.longform_evidence import (
@@ -224,7 +228,7 @@ def validate_m4_evidence_report(value: Any) -> None:
         if not isinstance(artifact, dict) or set(artifact) != {"name", "sha256"}:
             raise ValueError("M4 artifact shape is invalid")
         name = Path(artifact["name"])
-        if name.is_absolute() or ".." in name.parts or len(name.parts) > 2:
+        if _is_absolute_path(artifact["name"]) or ".." in name.parts or len(name.parts) > 2:
             raise ValueError("M4 artifact name is not relative")
         if not name.parts or any(not _SAFE_RELATIVE_PART.fullmatch(part) for part in name.parts):
             raise ValueError("M4 artifact name is not privacy safe")
@@ -260,7 +264,7 @@ def validate_m4_evidence_report(value: Any) -> None:
     for raw_name in value["screenshots"]:
         name = Path(raw_name)
         if (
-            not isinstance(raw_name, str) or name.is_absolute() or ".." in name.parts
+            not isinstance(raw_name, str) or _is_absolute_path(raw_name) or ".." in name.parts
             or len(name.parts) != 2 or name.parts[0] != "screenshots"
             or name.suffix.lower() != ".png"
             or any(not _SAFE_RELATIVE_PART.fullmatch(part) for part in name.parts)

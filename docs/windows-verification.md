@@ -1,14 +1,128 @@
 # Windows COM verification handoff
 
 > **Start here on Windows.** Read `AGENTS.md` first, then this file.
-> The conversational-edit A-G gate below was completed in July. The new M5
-> long-form final gate is still pending and must be run before 0.8.0.
+> The conversational-edit A-G gate below was completed in July. The M5
+> long-form final gate was completed on Windows (2026-08-24, see
+> "M5 Windows run results" below).
 
-## M5 final Windows gate (pending)
+## M5 final Windows gate (COMPLETED 2026-08-24)
 
-The branch now includes a cross-platform evidence runner. Do not reuse the old
-600-test result as M5 evidence. Start from a clean checkout of the latest pushed
-`codex/longform-m3` branch and record `git log -1 --oneline` in the handoff.
+Branch `codex/longform-m3`, starting commit `83def4a Record M5 local
+verification closure` (plus the Windows fixes committed on top — see
+"Windows M5 run bugs fixed" below). Evidence directories:
+`build/longform-m5/windows-real-{1,2,3}` plus a final-code rerun.
+
+- Platform-independent suite: **2512 passed, 38 skipped** (POSIX-only +
+  pypdf + env-gated real-WPS skips). One-time setup: `npm ci` in
+  `macos/wps-jsapi-probe`, Poppler `pdftoppm` on PATH (portable build
+  works; set `core.autocrlf=false` before checkout — byte-stable
+  snapshot tests fail on a CRLF smudge).
+- Real M5 gate `WPSCOMPOSER_RUN_WINDOWS_M5=1`
+  `tests/longform_m5/test_windows_real_wps_m5.py`: **3/3 green**
+  (286.7 s / 260.9 s / 267.5 s before the caption/heading fixes;
+  135.5 / 139.0 / 136.2 s + a 142.5 s final-code rerun after them).
+- Each run produced `evidence/evidence.json`, six fixture PDFs, one
+  performance PDF (63 pages), and 20 screenshots. Report fields:
+  `"system": "Windows"`, `wpsVersion: "12.0"` (COM `Version`),
+  `protocolVersion: 2`, `semanticVersion: "longform-1"`, no private
+  absolute paths, caps within bounds (generation ≤2, export ≤3,
+  patch ≤1), performance total ≈105-115 s (well under 600 s).
+- Visual/semantic inspection 1-7: all pass — academic heading sequence
+  exactly `1, 1.1, 1.2, 2, 2.1, 2.2, 3, 3.1` with citations and
+  centered page numbers; toc_dense compact with no trailing blank;
+  wide_objects landscape table page (page 4) with all six columns
+  fitting and portrait return (captions `图 1-1`, `表 2-1`);
+  degradation codes each shown once with later body preserved;
+  unicode/emoji survive with HEADING_ORPHAN placed at the mapped
+  heading; plain_short stays one concise page; performance PDF clean
+  (1 generation, 0 patches, no notices).
+- Public route: DOCX / PDF / PPTX / XLSX all generated through public
+  `generate()`; PPTX/XLSX converted to development evidence PDFs and
+  inspected (`build/public-route/`). `tests/longform_m5/test_public_routing.py`,
+  `tests/test_generation.py`, `tests/test_conversion.py`,
+  `tests/test_recording_composers.py`: 78 passed (legacy
+  `layout_engine: legacy` routes only on explicit frontmatter; fatal
+  codes do not fall back or publish partial artifacts).
+
+### Windows M5 run bugs fixed (found live)
+
+All on `codex/longform-m3` blind-written Windows paths:
+
+1. **Resource ids hashed the absolute source path**
+   (`longform/resources.py`). `wpsc-rsrc:` ids differed per checkout
+   machine, breaking every plan snapshot test off the author's machine.
+   Ids now hash the base-dir-relative posix path (the docstring always
+   claimed this). m3 snapshots regenerated.
+2. **Evidence validators used platform-dependent `Path.is_absolute()`**
+   (`longform_m3/m4/m5_evidence.py`). POSIX-absolute artifact names
+   slipped past on Windows; all three validators now use the
+   platform-neutral `_is_absolute_path` from `longform.pipeline`.
+3. **Screenshot names emitted `screenshots\...` on Windows**
+   (`longform_m5_evidence.py`); now posix, matching the validator.
+4. **`writer.add_paragraph` dispatched with a `style` kwarg the composer
+   never had** (`longform/windows_executor.py`) — every styled body
+   paragraph aborted. Dispatch now uses `add_styled_paragraph`.
+5. **Cover page never rendered** — `configure_front_matter` stashed
+   nothing and `configure_section(role="cover")` did not insert the
+   title/author/date (macOS add-in does). The executor now renders the
+   cover from stashed front matter, matching the add-in.
+6. **`STYLEREF 1 \s` caption chapter fields destroyed the document on
+   update** (`writer.py`). WPS treats numeric STYLEREF args as literal
+   style names and resolves built-ins by localized UI name; updates of
+   the unresolvable field deleted following text (captions, headings,
+   the whole landscape section). The code is now built at COM time from
+   `Styles(-2).NameLocal` → `STYLEREF "标题 1" \s`, mirroring the add-in.
+7. **Text typed at a field's `Result.End` is absorbed into the field
+   result** — any later `Update()` deleted it (WPS COM quirk).
+   `_native_insert_field` now steps the selection right past the field
+   boundary after insertion; caption/equation/reference shells survive
+   refresh with zero issues (FIELD_REFRESH_UNSTABLE gone).
+8. **Heading numbering restarted at 1 for every heading**
+   (`writer.py`). Per-range `ApplyListTemplateWithLevel` starts a fresh
+   list on WPS; the fix links built-in heading styles
+   (`Styles(-1..-4).LinkToListTemplate`) once per scheme and applies the
+   built-in style + `ListLevelNumber`, mirroring the macOS add-in.
+   Sequence now advances 1, 1.1, 1.2, 2 ….
+9. **Bullet `writer.add_list` omitted the required `ordered` arg**
+   (`longform/plan.py`) — plain markdown with a bullet list failed plan
+   validation on the public route.
+10. **Dedicated-host dispatch hardened** (`longform/windows_executor.py`,
+    `_dispatch.py`): readiness probe + bounded construction retry
+    (July's flaky-`AttributeError` class), one fresh-host retry of a
+    generation whose failure is a raw COM/RPC error, and `_safe_quit`
+    now waits (≤3 s) for the host to actually exit.
+
+### Known issues (Windows, this run)
+
+- **Second long-form generation in the same Python process dies with
+  mid-run RPC errors** (`-2147023130` / `-2147023179`, typically at
+  `writer.configure_section`). Reproducible with any two sequential
+  `generate()` calls in one process after WPS instances accumulate;
+  single-generation-per-process (how the gates, the evidence runner,
+  and per-request plugin invocations run) is stable, and WPP/ET routes
+  are unaffected. The one-retry mitigation in the executor does not
+  clear it once zombie `wps.exe` processes pile up — kill stray `wps`
+  processes between long sessions. Needs a WPS-side or
+  process-isolation fix before multi-generate sessions are supported.
+- `app.Quit()` on a modified unsaved document hangs headlessly (modal
+  save prompt); always `Close(False)`/set `DisplayAlerts=0` first —
+  the composers already do.
+- Windows symlink/chmod-dependent tests are `skipif(os.name == "nt")`
+  (privilege / POSIX chmod semantics); the M4 macOS real gate is now
+  env-gated (`WPSCOMPOSER_RUN_REAL_WPS=1`) like the M3/M5 gates so the
+  platform-independent suite stays green on Windows.
+
+### macOS follow-up required before 0.8.0
+
+The fixes above touch shared Python (`resources.py`, `plan.py`,
+`writer.py`, `windows_executor.py`, m3/m4/m5 evidence validators) and
+regenerated `tests/longform_m3/snapshots/*.json`. Per this document's
+policy: rerun the affected macOS tests and at least one complete macOS
+M5 evidence gate on a clean checkout of the pushed branch; if native
+caption/heading/cover behavior differs on macOS (it should not — all
+three mirror the add-in's own logic), rerun all three macOS gates.
+
+### M5 gate re-run recipe (as executed on 2026-08-24)
 
 Prerequisites:
 
@@ -462,14 +576,15 @@ COM smoke (Windows only, ad hoc):
 
 | Item | Value |
 |---|---|
-| Test date | 2026-07-27 |
+| Test date (A-G) | 2026-07-27 |
+| Test date (M5 gate) | 2026-08-24 |
 | Windows build | 10.0.26200 |
-| WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN) |
+| WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN; COM `Version` reports "12.0") |
 | `pywin32` version | 312 |
 | Python | 3.14.3 |
-| `tests/test_document_api.py` | pass (77) |
-| Full suite | 600 passed, 11 skipped (10 POSIX-only + pypdf) |
-| Items A–G above | all pass |
+| Full suite (M5 branch) | 2512 passed, 38 skipped |
+| Real M5 Windows gate | 3/3 green (plus final-code rerun) |
+| Items 1-7 visual inspection | all pass |
 
 ## Windows run results
 
