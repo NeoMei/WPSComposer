@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import pickle
+import subprocess
+import sys
 from types import MappingProxyType
 import threading
 import time
@@ -662,6 +664,47 @@ def test_deadline_validator_accepts_spawn_safe_explicit_spec(tmp_path):
         package,
         deadline=time.monotonic() + 2,
     )
+
+
+def test_deadline_validator_works_from_python_dash_c(tmp_path):
+    pdf = _write_pdf(tmp_path / "interactive.pdf")
+    script = (
+        "import time; "
+        "from pathlib import Path; "
+        "from skills.WPSComposer.scripts.artifact_transport import "
+        "ValidatorSpec, validate_before_deadline, validate_pdf; "
+        f"validate_before_deadline(ValidatorSpec.from_callable(validate_pdf), "
+        f"Path({str(pdf)!r}), time.monotonic() + 10)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_deadline_validator_works_from_python_stdin(tmp_path):
+    pdf = _write_pdf(tmp_path / "stdin.pdf")
+    script = (
+        "import time\n"
+        "from pathlib import Path\n"
+        "from skills.WPSComposer.scripts.artifact_transport import "
+        "ValidatorSpec, validate_before_deadline, validate_pdf\n"
+        f"validate_before_deadline(ValidatorSpec.from_callable(validate_pdf), "
+        f"Path({str(pdf)!r}), time.monotonic() + 10)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-"],
+        input=script,
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_validator_spec_rejects_non_plain_arguments():

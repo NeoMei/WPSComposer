@@ -1155,6 +1155,26 @@ class WriterComposer(BaseComposer):
         except Exception:
             pass
 
+    def set_document_metadata(self, *, title, author):
+        """Set export-facing metadata and clear any host-account identity."""
+
+        properties = getattr(self._doc, "BuiltInDocumentProperties", None)
+        if properties is None:
+            raise NativeWriterObjectError(
+                "CAPABILITY_MISMATCH", "document metadata is unavailable"
+            )
+        try:
+            for name, value in (("Title", title), ("Author", author)):
+                try:
+                    prop = properties(name)
+                except Exception:
+                    prop = properties.Item(name)
+                prop.Value = str(value or "")
+        except Exception:
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "document metadata apply failed"
+            ) from None
+
     def set_page_numbering(self, format, start=None, restart=None):
         """Apply page-numbering format to the current section."""
         try:

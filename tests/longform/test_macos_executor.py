@@ -541,6 +541,7 @@ const assert = require("assert");
 global.window = {{}};
 let addedVarName = null;
 let addedVarValue = null;
+const metadata = {{Author: {{Value: "Host User"}}, Title: {{Value: ""}}}};
 function makeSection() {{
   return {{
     Headers: {{ Item: makeHeader }},
@@ -555,6 +556,7 @@ const document = {{
   _wpscFirstSectionConfigured: false,
   Content: {{ End: 0, Text: "" }},
   PageSetup: {{}},
+  BuiltInDocumentProperties: {{Item: function(name) {{ return metadata[name]; }}}},
   Sections: {{ Count: 1, Item: makeSection }},
   Styles: {{ Item: function() {{ return {{}}; }}, Add: function() {{ return {{}}; }} }},
   TablesOfContents: {{ Add: function() {{}} }},
@@ -572,12 +574,14 @@ window.WPSComposerLongformV2.run({{
   plan: {{
     component: "writer",
     operations: [
-      {{op: "writer.configure_front_matter", args: {{role: "front_matter"}}, nodeId: "doc:front"}}
+      {{op: "writer.configure_front_matter", args: {{role: "front_matter", title: "Report", author: "WPSComposer"}}, nodeId: "doc:front"}}
     ]
   }}
 }});
 assert.ok(addedVarName && addedVarName.indexOf("SectionRole_") !== -1);
 assert.equal(addedVarValue, "front_matter");
+assert.equal(metadata.Author.Value, "WPSComposer");
+assert.equal(metadata.Title.Value, "Report");
 """
     path = Path(tempfile.mkdtemp()) / "front_matter_test.js"
     path.write_text(js, encoding="utf-8")

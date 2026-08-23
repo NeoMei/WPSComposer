@@ -450,6 +450,21 @@
     setValue(setup, "Orientation", args.landscape === undefined ? undefined : (args.landscape ? 1 : 0));
   }
 
+  function setDocumentMetadata(document, args) {
+    const properties = document && document.BuiltInDocumentProperties;
+    const title = collectionItem(properties, "Title");
+    const author = collectionItem(properties, "Author");
+    if (!title || !author) throw nativeError("CAPABILITY_MISMATCH");
+    try {
+      title.Value = safePublicText(args.title || "");
+      // Always write Author, including the empty string, so WPS cannot export
+      // the signed-in host identity into a customer-facing PDF.
+      author.Value = safePublicText(args.author || "");
+    } catch (error) {
+      throw nativeError("EXECUTION_ABORTED");
+    }
+  }
+
   function ensureStyles(document, args) {
     const styles = args.styles || [];
     styles.forEach(function (definition) {
@@ -3379,6 +3394,7 @@
     "writer.configure_section": configureSection,
     "writer.configure_front_matter": function (document, args) {
       document._wpscFrontMatter = args;
+      setDocumentMetadata(document, args);
       if (args.role) setPageRole(document, args.role);
     },
     "writer.configure_toc_styles": function (document, args) { document._wpscTocDensity = args; },

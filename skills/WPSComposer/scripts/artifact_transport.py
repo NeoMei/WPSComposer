@@ -11,6 +11,7 @@ from pathlib import Path
 import pickle
 import sys
 import tempfile
+import threading
 import time
 from typing import Any, Callable, Iterable, Union
 import zipfile
@@ -35,6 +36,8 @@ _OFFICE_MEMBERS = {
     "pptx": "ppt/presentation.xml",
 }
 _COPY_CHUNK_BYTES = 1024 * 1024
+_SPAWN_MAIN_LOCK = threading.Lock()
+_MISSING = object()
 
 
 def _require_plain_serializable(value: Any, *, path: str = "arguments") -> None:
@@ -190,7 +193,34 @@ def validate_before_deadline(
             name="wpscomposer-artifact-validation",
             daemon=True,
         )
-        worker.start()
+        # ``spawn`` reloads ``__main__.__file__``. Interactive Python uses a
+        # synthetic path such as ``<stdin>``, which makes an otherwise valid
+        # public API call fail before the validator starts. Point preparation
+        # at a no-op real module only for the synchronous start handshake.
+        main_module = sys.modules.get("__main__")
+        with _SPAWN_MAIN_LOCK:
+            original_main_file = (
+                getattr(main_module, "__file__", _MISSING)
+                if main_module is not None else _MISSING
+            )
+            current_main_file = (
+                original_main_file if isinstance(original_main_file, str) else ""
+            )
+            patched_main = bool(
+                main_module is not None and not os.path.isfile(current_main_file)
+            )
+            if patched_main:
+                main_module.__file__ = str(
+                    Path(__file__).with_name("_spawn_bootstrap.py")
+                )
+            try:
+                worker.start()
+            finally:
+                if patched_main:
+                    if original_main_file is _MISSING:
+                        delattr(main_module, "__file__")
+                    else:
+                        main_module.__file__ = original_main_file
         sender.close()
         budget = max(0.0, deadline - time.monotonic())
         if budget <= 0 or not receiver.poll(budget):
@@ -200,7 +230,10 @@ def validate_before_deadline(
                 worker.kill()
                 worker.join(timeout=0.25)
             raise TimeoutError("Artifact validation deadline expired")
-        payload = receiver.recv()
+        try:
+            payload = receiver.recv()
+        except EOFError:
+            raise RuntimeError("Artifact validator worker exited without a result") from None
         worker.join(timeout=0.25)
         if worker.is_alive():
             worker.terminate()

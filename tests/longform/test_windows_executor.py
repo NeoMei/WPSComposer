@@ -178,6 +178,9 @@ class FakeWriterComposer:
     def set_page_role(self, role: str) -> None:
         self._record("set_page_role", role=role)
 
+    def set_document_metadata(self, *, title: str, author: str) -> None:
+        self._record("set_document_metadata", title=title, author=author)
+
     def set_page_numbering(
         self,
         format: str,
@@ -452,6 +455,28 @@ def test_execute_dispatches_section_and_toc_and_heading(
     assert "add_heading_level_native" in names
     assert "add_paragraph" in names
     assert "finalize_fields" not in names
+
+
+def test_front_matter_sets_closed_document_metadata(executor, fake_composer, simple_plan):
+    operation = GenerationOperation(
+        "writer.configure_front_matter",
+        {"title": "Report", "author": "Author"},
+        node_id="doc:front-matter",
+    )
+    plan = GenerationPlan(
+        component=simple_plan.component,
+        operations=(simple_plan.operations[0], operation) + simple_plan.operations[1:],
+        protocol_version=simple_plan.protocol_version,
+        semantic_version=simple_plan.semantic_version,
+        resource_manifest_version=simple_plan.resource_manifest_version,
+        resource_manifest_digest=simple_plan.resource_manifest_digest,
+    )
+    executor.execute(plan, ())
+    metadata = [
+        call for call in fake_composer.primitives
+        if call.name == "set_document_metadata"
+    ]
+    assert metadata[0].kwargs == {"title": "Report", "author": "Author"}
 
 
 def test_configure_section_carries_roman_and_arabic_args(

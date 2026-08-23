@@ -749,6 +749,12 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.configure_front_matter":
+            metadata_setter = getattr(composer, "set_document_metadata", None)
+            if callable(metadata_setter):
+                metadata_setter(
+                    title=args.get("title", ""),
+                    author=args.get("author", ""),
+                )
             composer.set_page_role(args.get("role", "front_matter"))
             return
 
