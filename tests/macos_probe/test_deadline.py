@@ -155,7 +155,7 @@ def test_registration_retry_reuses_deadline_for_activation(monkeypatch):
             raise TimeoutError
 
     class Runtime:
-        def activate_component(self, component, *, deadline):
+        def activate_component(self, component, *, deadline, isolated=False):
             activations.append((component, deadline))
 
     monkeypatch.setattr(conversion.time, "monotonic", clock.monotonic)
@@ -370,7 +370,7 @@ def test_pdf_generation_and_final_validators_reuse_public_deadline(
         def start_servers(self, *, deadline):
             deadline_calls.append(("servers", deadline))
 
-        def activate_component(self, component, *, deadline):
+        def activate_component(self, component, *, deadline, isolated=False):
             deadline_calls.append(("activation", deadline))
 
     class Bridge:
@@ -536,7 +536,7 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
             for component in ("writer", "presentation", "spreadsheet"):
                 spend(f"server:{component}", 0.04, deadline)
 
-        def activate_component(self, component, *, deadline):
+        def activate_component(self, component, *, deadline, isolated=False):
             spend("activation", 0.05, deadline)
 
     class Bridge:
@@ -680,7 +680,7 @@ def test_source_staging_stops_at_deadline_and_preserves_files(
         def start_servers(self, *, deadline):
             pass
 
-        def activate_component(self, component, *, deadline):
+        def activate_component(self, component, *, deadline, isolated=False):
             pass
 
     class Bridge:

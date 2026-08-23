@@ -38,7 +38,7 @@ class FakeRuntime:
     def start_servers(self, *, deadline):
         pass
 
-    def activate_component(self, component, *, deadline):
+    def activate_component(self, component, *, deadline, isolated=False):
         pass
 
 

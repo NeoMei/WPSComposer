@@ -303,7 +303,7 @@ class FakeRuntime:
     def start_servers(self, *, deadline):
         self.calls.append(("start_servers",))
 
-    def activate_component(self, component, *, deadline):
+    def activate_component(self, component, *, deadline, isolated=False):
         self.calls.append(("activate_component", component))
 
 
