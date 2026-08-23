@@ -13,6 +13,8 @@ import unicodedata
 from dataclasses import dataclass
 from typing import FrozenSet, List, Optional, Sequence, Tuple
 
+from .privacy import contains_private_plan_text
+
 
 FORMULA_TOO_LONG = "FORMULA_TOO_LONG"
 FORMULA_NESTING_TOO_DEEP = "FORMULA_NESTING_TOO_DEEP"
@@ -207,6 +209,41 @@ def legacy_command_category(command: str) -> Optional[str]:
     return None
 
 
+def contains_forbidden_formula_command(source: str) -> bool:
+    """Return whether source names a command outside the native trust boundary."""
+    return any(
+        match.group(1) in _FORBIDDEN_COMMANDS
+        for match in re.finditer(r"\\([A-Za-z]+|.)", source)
+    )
+
+
+def validate_wps_linear_text(linear_text: str) -> None:
+    """Validate untrusted serialized WPS linear math before native insertion."""
+    if not isinstance(linear_text, str):
+        raise TypeError("linear_text must be str")
+    if not linear_text or len(linear_text) > _MAX_LINEAR_CODE_POINTS:
+        raise ValueError("linear_text length is outside the trusted bound")
+    if unicodedata.normalize("NFC", linear_text) != linear_text:
+        raise ValueError("linear_text must be NFC normalized")
+    if any(
+        unicodedata.category(char) in {"Cc", "Cf", "Cs"}
+        for char in linear_text
+    ):
+        raise ValueError("linear_text contains a control character")
+    if "\\" in linear_text or contains_private_plan_text(linear_text):
+        raise ValueError("linear_text contains a forbidden token or private path")
+    if len(re.findall(r"\w+|[^\w\s]", linear_text, re.UNICODE)) > _MAX_TOKENS:
+        raise ValueError("linear_text exceeds the trusted token bound")
+    depth = 0
+    for char in linear_text:
+        if char in "([":
+            depth += 1
+            if depth > _MAX_BRACE_DEPTH:
+                raise ValueError("linear_text exceeds the trusted nesting bound")
+        elif char in ")]" and depth:
+            depth -= 1
+
+
 class NativeMathConversionError(ValueError):
     """Stable preflight failure raised before a native-math descriptor exists."""
 
@@ -245,15 +282,7 @@ class NativeMathDescriptor:
     def __post_init__(self) -> None:
         if self.syntax != _SYNTAX:
             raise ValueError("unsupported native-math syntax")
-        if not isinstance(self.linear_text, str):
-            raise TypeError("linear_text must be str")
-        if not self.linear_text or len(self.linear_text) > _MAX_LINEAR_CODE_POINTS:
-            raise ValueError("linear_text length is outside the trusted bound")
-        if any(
-            unicodedata.category(char) in {"Cc", "Cf", "Cs"}
-            for char in self.linear_text
-        ):
-            raise ValueError("linear_text contains a control character")
+        validate_wps_linear_text(self.linear_text)
         if not re.fullmatch(r"[0-9a-f]{64}", self.source_hash):
             raise ValueError("source_hash must be a lowercase SHA-256 digest")
 
@@ -815,6 +844,8 @@ def convert_restricted_latex(source: str) -> NativeMathDescriptor:
     if len(source) > _MAX_CODE_POINTS:
         _raise(FORMULA_TOO_LONG)
     normalized = unicodedata.normalize("NFC", source)
+    if contains_private_plan_text(normalized.replace("\\\\", "")):
+        _raise(FORMULA_FORBIDDEN_PRIMITIVE, "private path or encoded payload")
     for char in normalized:
         category = unicodedata.category(char)
         if category in {"Cc", "Cf", "Cs"}:
@@ -836,5 +867,6 @@ __all__ = [
     "FORMULA_TOO_COMPLEX", "FORMULA_TOO_LONG", "FORMULA_UNKNOWN_COMMAND",
     "LEGACY_ALLOWED_COMMANDS", "LEGACY_NATIVE_EQUIVALENT_COMMANDS",
     "LEGACY_PREFLIGHT_DEGRADATION_COMMANDS", "NativeMathConversionError",
-    "NativeMathDescriptor", "convert_restricted_latex", "legacy_command_category",
+    "NativeMathDescriptor", "contains_forbidden_formula_command",
+    "convert_restricted_latex", "legacy_command_category", "validate_wps_linear_text",
 ]

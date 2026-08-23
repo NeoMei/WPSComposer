@@ -343,6 +343,17 @@ def test_quality_anchor_upserts_duplicate_initial_document_issues() -> None:
     assert validate_generation_plan(plan.to_dict(), "writer") == plan
 
 
+def test_quality_anchor_redacts_prefixed_private_issue_text() -> None:
+    issue = DocumentIssue(
+        "CONFIG_VALUE_INVALID", "source=file:///Users/alice/private.toml", "document"
+    )
+    plan = build_longform_plan(_semantic([], issues=(issue,)), _preflight())
+    anchor = _ops(plan, "writer.reserve_document_quality_anchor")[0]
+    assert anchor["args"]["notices"][0]["message"] == "Issue details were redacted."
+    assert "/Users/alice" not in json.dumps(plan.to_dict())
+    assert validate_generation_plan(plan.to_dict(), "writer") == plan
+
+
 def test_malformed_bibliography_degradation_keeps_its_relative_position() -> None:
     citation = CitationRun("para:one/cite:1", "ref:a", "ref:a", 1, "[1]")
     paragraph = Paragraph(
@@ -477,8 +488,7 @@ See {{cite:smith}}.
 
 
 def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> None:
-    build = build_longform_generation(
-        """# Body
+    markdown = """# Body
 
 :::table {#tab:data caption="Citations"}
 | Citation | Literal |
@@ -490,7 +500,7 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
 [smith] Smith. Title.
 :::
 """
-    )
+    build = build_longform_generation(markdown)
     plan = build.plan.to_dict()
     table = next(
         item for item in plan["operations"]
@@ -503,14 +513,23 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
         for item in operation["args"]["entries"]
     )
     assert table["args"]["rows"] == [["[1] then [1]", "ordinary [999] text"]]
-    assert table["args"]["cellCitations"] == [{
+    citation = table["args"]["cellCitations"][0]
+    assert citation == {
         "row": 2,
         "column": 1,
+        "nodeId": citation["nodeId"],
         "targetId": "smith",
         "targetNodeId": entry["nodeId"],
         "number": 1,
         "fallbackText": "[1]",
-    }]
+    }
+    assert citation["nodeId"].startswith(f"{table['nodeId']}/cell:2:1/cite:")
+    second = build_longform_generation(markdown)
+    second_citation = next(
+        item for item in second.plan.to_dict()["operations"]
+        if item["op"] == "writer.add_semantic_table"
+    )["args"]["cellCitations"][0]
+    assert second_citation["nodeId"] == citation["nodeId"]
     assert validate_generation_plan(plan, "writer") == build.plan
 
 
@@ -519,6 +538,14 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
     [
         (r"\input{/Users/alice/private/input.tex}", "/Users/alice"),
         (r"\includegraphics{data:image/png;base64,QUJDRA==}", "data:image"),
+        (r"\input{path:/Users/alice/private.tex}", "/Users/alice"),
+        (r"\input{source=file:///Users/alice/private.tex}", "file:///"),
+        (r"\input{path:C:\private\input.tex}", "C:\\private"),
+        (r"\input{secrets/private.tex}", "secrets/private.tex"),
+        (r"\includegraphics{assets/private.png}", "assets/private.png"),
+        (r"\input{..\secret\x.tex}", "secret"),
+        (r"\input{path:../secret/x.tex}", "../secret"),
+        ("blob:" + "A" * 76, "A" * 76),
     ],
 )
 def test_private_formula_source_builds_with_controlled_redacted_fallback(
@@ -537,3 +564,35 @@ def test_private_formula_source_builds_with_controlled_redacted_fallback(
     assert private_fragment not in serialized
     assert "QUJDRA==" not in serialized
     assert validate_generation_plan(plan, "writer") == build.plan
+
+
+def test_plain_pipe_table_with_citation_is_emitted_and_validated_before_bibliography() -> None:
+    build = build_longform_generation(
+        """# Body
+
+| Citation | Literal |
+|---|---|
+| {{cite:smith}} | ordinary [999] text |
+
+:::bibliography
+[smith] Smith. Title.
+:::
+"""
+    )
+    plan = build.plan.to_dict()
+    table_index = next(i for i, item in enumerate(plan["operations"]) if item["op"] == "writer.add_semantic_table")
+    bibliography_index = next(i for i, item in enumerate(plan["operations"]) if item["op"] == "writer.add_bibliography")
+    table = plan["operations"][table_index]
+    assert table_index < bibliography_index
+    assert table["args"]["rows"] == [["[1]", "ordinary [999] text"]]
+    assert table["args"]["cellCitations"][0]["targetId"] == "smith"
+    assert validate_generation_plan(plan, "writer") == build.plan
+
+
+def test_plain_pipe_table_without_citation_remains_visible() -> None:
+    build = build_longform_generation("# Body\n\n| A | B |\n|---|---|\n| one | two |\n")
+    table = next(item for item in build.plan.to_dict()["operations"] if item["op"] == "writer.add_semantic_table")
+    assert table["args"]["headers"] == ["A", "B"]
+    assert table["args"]["rows"] == [["one", "two"]]
+    assert "cellCitations" not in table["args"]
+    assert validate_generation_plan(build.plan.to_dict(), "writer") == build.plan

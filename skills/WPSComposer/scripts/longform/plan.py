@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
-import re
 from types import SimpleNamespace
 from typing import Any, Optional
 
@@ -31,6 +30,7 @@ from ..document_model import (
     SemanticTableBlock,
     Span,
     StructuredDocument,
+    TableBlock,
 )
 from ..generation_plan import GenerationOperation, GenerationPlan
 from .page_policy import _group_sections, build_page_policy
@@ -40,6 +40,8 @@ from .policy import LongformPolicy, build_policy, page_content_width_pt
 from .resources import ResourcePreflight
 from .semantic import SemanticResult
 from .table_policy import resolve_table_policy
+from .native_math import contains_forbidden_formula_command
+from .privacy import contains_private_plan_text
 
 
 _LONGFORM_PROTOCOL_VERSION = 2
@@ -47,17 +49,6 @@ _LONGFORM_SEMANTIC_VERSION = "longform-1"
 _RESOURCE_MANIFEST_VERSION = 1
 
 _MM_TO_PT = 2.834645669
-
-_PRIVATE_PLAN_TEXT_RE = re.compile(
-    r"data:[^,;]{0,80};base64,"
-    r"|(?:^|[\s({=\"'])/(?!/)[^\s,;]+"
-    r"|(?:^|[\s({=\"'])[A-Za-z]:[\\/][^\s,;]+"
-    r"|(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])"
-    r"|\b(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)"
-    r"|(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{80,}={0,2}(?![A-Za-z0-9+/])",
-    re.IGNORECASE,
-)
-
 
 def _mm_to_pt(mm: float) -> float:
     return round(mm * _MM_TO_PT, 2)
@@ -74,7 +65,7 @@ def _list_items(items: list[list[Span]]) -> list[str]:
 
 
 def _redact_private_plan_text(text: str, fallback: str) -> str:
-    if _PRIVATE_PLAN_TEXT_RE.search(text):
+    if contains_private_plan_text(text):
         return fallback
     return text
 
@@ -496,6 +487,20 @@ def _render_element(
         _render_figure(state, node, node_id, preflight)
     elif isinstance(node, SemanticTableBlock):
         _render_semantic_table(state, node, node_id)
+    elif isinstance(node, TableBlock):
+        _render_semantic_table(
+            state,
+            SemanticTableBlock(
+                node_id=node.node_id,
+                headers=node.headers,
+                rows=node.rows,
+                alignments=node.alignments,
+                style="grid",
+                cell_degradations=node.cell_degradations,
+                cell_citations=node.cell_citations,
+            ),
+            node_id,
+        )
     elif isinstance(node, (FormulaBlock, MathBlock)):
         _render_equation(state, node, node_id, preflight)
     elif isinstance(node, ReferenceListBlock):
@@ -678,6 +683,7 @@ def _render_semantic_table(
             {
                 "row": item.row,
                 "column": item.column,
+                "nodeId": item.node_id,
                 "targetId": item.target_id,
                 "targetNodeId": item.target_node_id,
                 "number": item.number,
@@ -733,10 +739,16 @@ def _render_equation(
         )
         return
 
-    fallback_text = _redact_private_plan_text(
-        source,
-        "[FORMULA_SOURCE_REDACTED 公式源已脱敏]",
-    ) if source else "[FORMULA_MALFORMED 公式源不可用]"
+    fallback_text = (
+        "[FORMULA_SOURCE_REDACTED 公式源已脱敏]"
+        if source and contains_forbidden_formula_command(source)
+        else _redact_private_plan_text(
+            source,
+            "[FORMULA_SOURCE_REDACTED 公式源已脱敏]",
+        )
+        if source
+        else "[FORMULA_MALFORMED 公式源不可用]"
+    )
     if native_math is not None:
         content = {
             "nativeMath": {

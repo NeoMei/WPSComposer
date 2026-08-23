@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 
 import pytest
 
@@ -12,6 +14,12 @@ from skills.WPSComposer.scripts.generation_plan import (
 
 _DIGEST = "sha256:" + "0" * 64
 _SOURCE_HASH = "1" * 64
+
+
+def _cell_citation_node_id(table: str, row: int, column: int, target: str) -> str:
+    payload = json.dumps([table, row, column, target], ensure_ascii=False, separators=(",", ":"))
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return f"{table}/cell:{row}:{column}/cite:{digest}"
 
 
 def _numbering() -> dict:
@@ -218,6 +226,29 @@ def test_native_equation_is_closed_and_has_exact_content_one_of(mutate) -> None:
         validate_generation_plan(plan, "writer")
 
 
+@pytest.mark.parametrize("linear_text", [
+    r"\input{/Users/alice/private.tex}", r"\write18{calc.exe}", r"\madeup{x}",
+    "/Users/alice/private.tex", r"C:\private\input.tex", "source=file:///tmp/private.tex",
+])
+def test_native_math_linear_text_is_independently_trusted(linear_text) -> None:
+    plan = _plan()
+    equation = next(op for op in plan["operations"] if op["op"] == "writer.add_equation")
+    equation["args"]["content"]["nativeMath"]["linearText"] = linear_text
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
+@pytest.mark.parametrize("fallback_text", [
+    "path:/Users/alice/private.tex", r"path:C:\private\input.tex", "A" * 76,
+])
+def test_native_equation_fallback_text_is_privacy_safe(fallback_text) -> None:
+    plan = _plan()
+    equation = next(op for op in plan["operations"] if op["op"] == "writer.add_equation")
+    equation["args"]["fallbackText"] = fallback_text
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
 def test_formula_fallback_resource_is_an_orthogonal_closed_one_of() -> None:
     for fallback_resource in (
         {"fallbackResourceId": "wpsc-rsrc:opaque"},
@@ -264,6 +295,10 @@ def test_planned_formula_content_suppresses_native_math_but_keeps_shell() -> Non
         "0" * 64,
         "ValueError('private input')",
         "data:image/png;base64,QUJDRA==",
+        "path:/Users/alice/private.tex", "source=file:///Users/alice/private.tex",
+        r"path:C:\private\input.tex", r"source=\\server\share\input.tex",
+        "path:/home/alice/input.tex", "path:/tmp/input.tex", "path:~/input.tex",
+        "A" * 76, "A" * 76 + "\n" + "B" * 76, "blob:" + "A" * 76,
     ],
 )
 @pytest.mark.parametrize("field", ["reason", "fallbackText"])
@@ -289,6 +324,10 @@ def test_planned_formula_degradation_rejects_private_diagnostics(
         "0" * 64,
         "RuntimeError('private input')",
         "data:text/plain;base64,QUJDRA==",
+        "path:/Users/alice/private.tex", "source=file:///Users/alice/private.tex",
+        r"path:C:\private\input.tex", r"source=\\server\share\input.tex",
+        "path:/home/alice/input.tex", "path:/tmp/input.tex", "path:~/input.tex",
+        "A" * 76, "A" * 76 + "\n" + "B" * 76, "blob:" + "A" * 76,
     ],
 )
 @pytest.mark.parametrize("field", ["message", "fallbackText"])
@@ -346,6 +385,22 @@ def test_quality_anchor_rejects_a_hash_disguised_as_notice_code() -> None:
         validate_generation_plan(plan, "writer")
 
 
+def test_privacy_checks_do_not_reject_short_text_or_logical_node_slashes() -> None:
+    plan = _plan()
+    citation = next(
+        run for op in plan["operations"] if op["op"] == "writer.add_cross_reference"
+        for run in op["args"]["runs"] if run["type"] == "citation"
+    )
+    bibliography = next(op for op in plan["operations"] if op["op"] == "writer.add_bibliography")
+    citation["targetNodeId"] = "scheme:logical/entry:1"
+    bibliography["args"]["entries"][0]["nodeId"] = "scheme:logical/entry:1"
+    anchor = next(op for op in plan["operations"] if op["op"] == "writer.reserve_document_quality_anchor")
+    anchor["args"]["notices"] = [{
+        "code": "SAFE_NOTICE", "message": "abc123", "fallbackText": "short-safe", "placement": "document",
+    }]
+    assert validate_generation_plan(plan, "writer")
+
+
 def test_citation_and_inline_degradation_runs_are_strict() -> None:
     plan = _plan()
     paragraph = next(op for op in plan["operations"] if op["op"] == "writer.add_cross_reference")
@@ -369,6 +424,21 @@ def test_citation_and_inline_degradation_runs_are_strict() -> None:
         citation[field] = value
         with pytest.raises(OperationPlanError):
             validate_generation_plan(broken, "writer")
+
+
+@pytest.mark.parametrize("node_id", [
+    "/leading/node", "C:/private/node", r"C:\private\node",
+    "file:///home/alice/node", "https://example.test/node", "//server/share/node", "~/node",
+])
+def test_m4_node_ids_reject_absolute_paths_and_uri_disguises(node_id) -> None:
+    plan = _plan()
+    citation = next(
+        run for op in plan["operations"] if op["op"] == "writer.add_cross_reference"
+        for run in op["args"]["runs"] if run["type"] == "citation"
+    )
+    citation["targetNodeId"] = node_id
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
 
 
 def test_cell_degradations_are_bounded_to_their_table_grid() -> None:
@@ -490,6 +560,7 @@ def test_explicit_table_cell_citation_can_be_the_only_cited_occurrence() -> None
             "cellCitations": [{
                 "row": 2,
                 "column": 1,
+                "nodeId": _cell_citation_node_id("tab:static-citation", 2, 1, "ref:a"),
                 "targetId": "ref:a",
                 "targetNodeId": "ref:a",
                 "number": 1,
@@ -517,9 +588,11 @@ def test_explicit_table_cell_citation_can_be_the_only_cited_occurrence() -> None
     "field,value",
     [
         ("row", 3),
+        ("column", 2),
         ("number", 2),
         ("targetId", "ref:missing"),
         ("targetNodeId", "ref:other"),
+        ("nodeId", "tab:cell-citation/cell:2:1/cite:forged"),
         ("unknown", True),
     ],
 )
@@ -539,9 +612,9 @@ def test_table_cell_citation_metadata_is_closed_and_matches_grid_and_bibliograph
             "bookmarkName": "wpsc_tab_" + "e" * 24,
             "indexable": True,
             "referenceable": True,
-            "headers": ["Citation"],
-            "rows": [["[1]"]],
-            "alignments": ["left"],
+            "headers": ["Citation", "Literal"],
+            "rows": [["[1]", "ordinary [1] text"]],
+            "alignments": ["left", "left"],
             "style": "grid",
             "orientation": "portrait",
             "borderSpec": {key: 0.75 for key in ("top", "bottom", "headerBottom", "left", "right", "insideHorizontal", "insideVertical")},
@@ -553,6 +626,7 @@ def test_table_cell_citation_metadata_is_closed_and_matches_grid_and_bibliograph
             "cellCitations": [{
                 "row": 2,
                 "column": 1,
+                "nodeId": _cell_citation_node_id("tab:cell-citation", 2, 1, "ref:a"),
                 "targetId": "ref:a",
                 "targetNodeId": "ref:a",
                 "number": 1,
@@ -618,6 +692,7 @@ def test_quality_anchor_is_unique_early_fail_hard_and_replaces_late_notice() -> 
         lambda plan: plan["operations"].insert(2, copy.deepcopy(plan["operations"][1])),
         lambda plan: plan["operations"][1].update({"failurePolicy": {"mode": "degrade", "recoverableCodes": ["DEGRADATION_INSERT_FAILED"], "fallback": "notice"}}),
         lambda plan: plan["operations"].append(plan["operations"].pop(1)),
+        lambda plan: plan["operations"].insert(2, plan["operations"].pop(1)),
         lambda plan: plan["operations"].insert(-1, {"op": "writer.add_document_quality_notice", "nodeId": "doc:quality:late", "args": {"notices": []}}),
     ):
         plan = _plan()

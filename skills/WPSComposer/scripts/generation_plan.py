@@ -11,6 +11,13 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Mapping, Optional
 
+from .longform.citation_ids import table_cell_citation_node_id
+from .longform.native_math import (
+    contains_forbidden_formula_command,
+    validate_wps_linear_text,
+)
+from .longform.privacy import contains_private_plan_text
+
 
 MAX_PLAN_BYTES = 2_000_000
 MAX_OPERATIONS = 10_000
@@ -1113,14 +1120,6 @@ _M4_FORMULA_CONTENT_CODES = frozenset({
 _M4_FORMULA_RESOURCE_CODES = frozenset({"FORMULA_FALLBACK_IMAGE_UNAVAILABLE"})
 _M4_INLINE_DEGRADATION_CODES = frozenset({"REFERENCE_UNRESOLVED"})
 _M4_SOURCE_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
-_PRIVATE_PATH_RE = re.compile(
-    r"(?:^|[\s({=\"'])/(?!/)[^\s,;]+|(?:^|[\s({=\"'])[A-Za-z]:[\\/][^\s,;]+"
-)
-_PRIVATE_HASH_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])")
-_PRIVATE_EXCEPTION_RE = re.compile(
-    r"\b(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)"
-)
-_PRIVATE_BASE64_RE = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{80,}={0,2}(?![A-Za-z0-9+/])")
 
 
 def _m4_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
@@ -1139,12 +1138,7 @@ def _m4_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
 
 def _privacy_safe_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
     _m4_text(value, path, maximum=maximum)
-    if (
-        _PRIVATE_PATH_RE.search(value)
-        or _PRIVATE_HASH_RE.search(value)
-        or _PRIVATE_EXCEPTION_RE.search(value)
-        or _PRIVATE_BASE64_RE.search(value)
-    ):
+    if contains_private_plan_text(value):
         _invalid(path, "privacy-safe text without paths, hashes, exception reprs, or base64")
 
 
@@ -1160,8 +1154,14 @@ def _m4_id(value: Any, path: str) -> None:
 
 def _m4_node_id(value: Any, path: str) -> None:
     _m4_text(value, path, maximum=256)
-    if "\\" in value or any(
-        unicodedata.category(char).startswith("C") for char in value
+    if (
+        value.startswith("/")
+        or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", value)
+        or contains_private_plan_text(value)
+        or "\\" in value
+        or any(
+            unicodedata.category(char).startswith("C") for char in value
+        )
     ):
         _invalid(path, "bounded semantic node identifier")
 
@@ -1180,11 +1180,10 @@ _NATIVE_MATH_SCHEMA = _schema(
 
 def _native_math(value: Any, path: str) -> None:
     _validate_object(value, path, _NATIVE_MATH_SCHEMA)
-    if any(
-        unicodedata.category(char).startswith("C")
-        for char in value["linearText"]
-    ):
-        _invalid(f"{path}.linearText", "trusted linear text without controls")
+    try:
+        validate_wps_linear_text(value["linearText"])
+    except (TypeError, ValueError):
+        _invalid(f"{path}.linearText", "closed trusted WPS linear math")
 
 
 _M4_DEGRADATION_SCHEMA = _schema(
@@ -1209,6 +1208,8 @@ def _m4_formula_degradation(value: Any, path: str) -> None:
         _invalid(f"{path}.code", "controlled M4 formula degradation code")
     if (value["placement"], value["objectLabel"], value["fallbackKind"]) != expected:
         _invalid(path, "exact controlled formula degradation placement and fallback")
+    if contains_forbidden_formula_command(value["fallbackText"]):
+        _invalid(f"{path}.fallbackText", "formula fallback without forbidden commands")
 
 
 def _m4_formula_content(value: Any, path: str) -> None:
@@ -1255,6 +1256,14 @@ _M3_EQUATION_SCHEMA = _schema(
     bookmarkName=_bookmark,
     fallbackText=_string,
 )
+
+
+def _m4_formula_fallback_text(value: Any, path: str) -> None:
+    _privacy_safe_text(value, path, maximum=10_000)
+    if contains_forbidden_formula_command(value):
+        _invalid(path, "formula fallback without forbidden commands")
+
+
 _M4_EQUATION_SCHEMA = _schema(
     ("renderMode", "content", "numbering", "bookmarkName", "fallbackText"),
     renderMode=_enum(frozenset({"native-m4"}), "native-m4 render mode"),
@@ -1262,7 +1271,7 @@ _M4_EQUATION_SCHEMA = _schema(
     fallbackResource=_m4_formula_fallback_resource,
     numbering=_numbering,
     bookmarkName=_bookmark,
-    fallbackText=lambda value, path: _m4_text(value, path, maximum=10_000),
+    fallbackText=_m4_formula_fallback_text,
 )
 
 
@@ -1332,9 +1341,10 @@ def _cell_degradation(value: Any, path: str) -> None:
 
 
 _CELL_CITATION_SCHEMA = _schema(
-    ("row", "column", "targetId", "targetNodeId", "number", "fallbackText"),
+    ("row", "column", "nodeId", "targetId", "targetNodeId", "number", "fallbackText"),
     row=_bounded_integer(1, 10_001),
     column=_bounded_integer(1, 10_000),
+    nodeId=_m4_node_id,
     targetId=_m4_id,
     targetNodeId=_m4_node_id,
     number=_bounded_integer(1, 10_000),
@@ -1429,7 +1439,7 @@ def _m4_notice_code(value: Any, path: str) -> None:
     if (
         not isinstance(value, str)
         or not _M4_NOTICE_CODE_RE.fullmatch(value)
-        or _PRIVATE_HASH_RE.fullmatch(value)
+        or re.fullmatch(r"(?i)[0-9a-f]{64}", value)
     ):
         _invalid(path, "bounded stable non-hash issue code")
 
@@ -2263,8 +2273,20 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
         if item["op"] == "writer.configure_section"
         and item["args"].get("role") == "cover"
     ]
-    if cover_positions and anchor_index <= max(cover_positions):
-        raise OperationPlanError("document quality anchor must follow the cover transition")
+    if cover_positions and anchor_index != max(cover_positions) + 1:
+        raise OperationPlanError(
+            "document quality anchor must immediately follow the cover transition"
+        )
+    non_cover_transitions = [
+        index
+        for index, item in enumerate(operations)
+        if item["op"] == "writer.configure_section"
+        and item["args"].get("role") != "cover"
+    ]
+    if non_cover_transitions and anchor_index >= min(non_cover_transitions):
+        raise OperationPlanError(
+            "document quality anchor must precede the first non-cover section transition"
+        )
     content_ops = {
         "writer.insert_toc",
         "writer.insert_figure_index",
@@ -2341,7 +2363,19 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
                 if run["type"] == "citation":
                     citations.append(run)
         if op == "writer.add_semantic_table":
-            cell_citations.extend(args.get("cellCitations", []))
+            for citation in args.get("cellCitations", []):
+                expected_node_id = table_cell_citation_node_id(
+                    item.get("nodeId"),
+                    citation["row"],
+                    citation["column"],
+                    citation["targetId"],
+                )
+                if citation["nodeId"] != expected_node_id:
+                    raise OperationPlanError(
+                        "table-cell citation node must deterministically bind table, cell, and target"
+                    )
+                own(citation["nodeId"])
+                cell_citations.append(citation)
         if op == "writer.add_bibliography" and args.get("schemaVersion") == 1:
             if current_role != "bibliography":
                 raise OperationPlanError(

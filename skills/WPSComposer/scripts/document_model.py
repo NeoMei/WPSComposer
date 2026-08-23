@@ -106,6 +106,7 @@ class TableBlock:
     alignments: List[str] = field(default_factory=list)  # "left"/"center"/"right" per column
     cell_degradations: List["TableCellDegradation"] = field(default_factory=list)
     cell_citations: List["TableCellCitation"] = field(default_factory=list)
+    node_id: Optional[str] = None
 
 
 @dataclass
@@ -236,6 +237,7 @@ class TableCellCitation:
     """One resolved citation retained in its owning table cell."""
     row: int
     column: int
+    node_id: str
     target_id: str
     target_node_id: str
     number: int

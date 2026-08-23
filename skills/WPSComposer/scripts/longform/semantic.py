@@ -46,6 +46,7 @@ from ..document_model import (
     TaskList,
 )
 from .native_math import NativeMathConversionError, convert_restricted_latex
+from .citation_ids import table_cell_citation_node_id
 from .bookmark_ids import (
     BOOKMARK_COLLISION_UNRESOLVED,
     BOOKMARK_NAME_COLLISION,
@@ -756,6 +757,8 @@ def _collect_explicit_targets(
                         elem.node_id = next_id("tab")
                 elif elem.node_id is None:
                     elem.node_id = next_id("tab")
+            elif isinstance(elem, TableBlock) and elem.node_id is None:
+                elem.node_id = next_id("tab")
             elif isinstance(elem, FormulaBlock):
                 if elem.identifier:
                     degradation = register(elem.identifier, "eq", elem.identifier)
@@ -1511,7 +1514,15 @@ def _resolve_table_citations(
                 resolved, degraded, citations = _resolve_table_citation_text(cell, references)
                 element.headers[column - 1] = resolved
                 element.cell_citations.extend(
-                    TableCellCitation(1, column, *citation) for citation in citations
+                    TableCellCitation(
+                        1,
+                        column,
+                        table_cell_citation_node_id(
+                            element.node_id, 1, column, citation[0]
+                        ),
+                        *citation,
+                    )
+                    for citation in citations
                 )
                 if degraded:
                     element.cell_degradations.append(TableCellDegradation(
@@ -1525,7 +1536,14 @@ def _resolve_table_citations(
                     resolved, degraded, citations = _resolve_table_citation_text(cell, references)
                     row[column - 1] = resolved
                     element.cell_citations.extend(
-                        TableCellCitation(row_index, column, *citation)
+                        TableCellCitation(
+                            row_index,
+                            column,
+                            table_cell_citation_node_id(
+                                element.node_id, row_index, column, citation[0]
+                            ),
+                            *citation,
+                        )
                         for citation in citations
                     )
                     if degraded:
