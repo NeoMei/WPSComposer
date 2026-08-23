@@ -317,6 +317,60 @@ process.stdout.write(JSON.stringify(
     assert json.loads(completed.stdout) == "<redacted>"
 
 
+@pytest.mark.parametrize(
+    ("length", "is_private"),
+    [(65, False), (76, True), (77, False), (80, True)],
+)
+def test_generated_js_base64_classifier_has_exact_python_length_semantics(
+    length: int, is_private: bool,
+) -> None:
+    value = "Z" * length
+    assert contains_private_plan_text(value) is is_private
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+process.stdout.write(JSON.stringify(
+  window.WPSComposerLongformV2.__test.safePublicText({json.dumps(value)})
+));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    assert json.loads(completed.stdout) == ("<redacted>" if is_private else value)
+
+
+def test_writer_figure_fallback_returns_planned_issue_without_runtime_name_error() -> None:
+    writer = WriterComposer.__new__(WriterComposer)
+    notices: list[tuple] = []
+    writer.add_degradation_notice = lambda *args: notices.append(args)
+
+    result = writer.add_captioned_figure_fallback(
+        children=[{
+            "nodeId": "fig:1/image:1",
+            "plannedDegradation": {
+                "code": "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+                "message": "Fallback image is unavailable.",
+                "fallback": "[image unavailable]",
+                "placement": "block",
+            },
+        }],
+        owner_node_id="fig:1",
+    )
+
+    assert notices == [(
+        "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "Fallback image is unavailable.",
+        "[image unavailable]",
+        "block",
+    )]
+    assert result == {"issues": [{
+        "code": "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "message": "Fallback image is unavailable.",
+        "placement": "block",
+    }]}
+
+
 def test_javascript_decisions_match_python_matrix_and_fatal_boundaries() -> None:
     script = f"""
 const fs = require("fs");

@@ -68,7 +68,7 @@
 
   // BEGIN WPSCOMPOSER GENERATED PRIVACY FILTER
   const WPSCOMPOSER_PRIVATE_PATTERNS = Object.freeze([
-    Object.freeze({"flags":"i","source":"[0-9a-f]{64}"}),
+    Object.freeze({"flags":"i","source":"(?:^|[^0-9a-f])[0-9a-f]{64}(?:$|[^0-9a-f])"}),
     Object.freeze({"flags":"","source":"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\\s*(?:\\(|\\b)"}),
     Object.freeze({"flags":"i","source":"[A-Za-z][A-Za-z0-9+.-]*://"}),
     Object.freeze({"flags":"i","source":"(?:data|blob):"}),
@@ -78,16 +78,23 @@
     Object.freeze({"flags":"","source":"(?:^|[\\\\/])\\.\\.[\\\\/]"}),
     Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])\\.\\.?[\\\\/]"}),
     Object.freeze({"flags":"","source":"(?:^|[^A-Za-z0-9_:-])(?:[A-Za-z0-9_.-]+[\\\\/])+[A-Za-z0-9_.-]+\\.[A-Za-z][A-Za-z0-9]{0,15}(?:$|[^A-Za-z0-9_.-])"}),
-    Object.freeze({"flags":"","source":"(?:^|[^A-Za-z0-9+/])[A-Za-z0-9+/]{76,}={0,2}(?:$|[^A-Za-z0-9+/])"}),
     Object.freeze({"flags":"i","source":"\\b(?:path|source|sourcePath|stagingPath|file)\\s*[:=]\\s*(?:\\.\\.?[\\\\/]|[^\\s|,;]+[\\\\/][^\\s|,;]+)"}),
     Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"']|:(?!/))/(?!/)(?=\\S)"})
   ]);
+  const WPSCOMPOSER_BASE64_PATTERN = "[A-Za-z0-9+/]{76,}={0,2}";
+
+  function wpscHasBase64Payload(text) {
+    const matches = text.match(new RegExp(WPSCOMPOSER_BASE64_PATTERN, "g")) || [];
+    return matches.some(function (candidate) {
+      return candidate.length % 4 === 0;
+    });
+  }
 
   function safePublicText(value) {
     const text = safeString(value);
     const privateValue = WPSCOMPOSER_PRIVATE_PATTERNS.some(function (item) {
       return new RegExp(item.source, item.flags).test(text);
-    });
+    }) || wpscHasBase64Payload(text);
     return privateValue ? "<redacted>" : text;
   }
   // END WPSCOMPOSER GENERATED PRIVACY FILTER

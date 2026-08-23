@@ -84,7 +84,7 @@ JS_PRIVACY_FILTER_END = "  // END WPSCOMPOSER GENERATED PRIVACY FILTER\n"
 # JavaScript-compatible equivalents of the canonical classifier above. They
 # avoid lookbehind for older WPS JSAPI engines and redact the whole value.
 _JS_PRIVATE_PATTERNS = (
-    (r"[0-9a-f]{64}", "i"),
+    (r"(?:^|[^0-9a-f])[0-9a-f]{64}(?:$|[^0-9a-f])", "i"),
     (r"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)", ""),
     (r"[A-Za-z][A-Za-z0-9+.-]*://", "i"),
     (r"(?:data|blob):", "i"),
@@ -98,7 +98,6 @@ _JS_PRIVATE_PATTERNS = (
         r"[A-Za-z0-9_.-]+\.[A-Za-z][A-Za-z0-9]{0,15}(?:$|[^A-Za-z0-9_.-])",
         "",
     ),
-    (r"(?:^|[^A-Za-z0-9+/])[A-Za-z0-9+/]{76,}={0,2}(?:$|[^A-Za-z0-9+/])", ""),
     (
         r"\b(?:path|source|sourcePath|stagingPath|file)\s*[:=]\s*"
         r"(?:\.\.?[\\/]|[^\s|,;]+[\\/][^\s|,;]+)",
@@ -124,12 +123,20 @@ def render_js_privacy_filter() -> str:
         lines.append(f"    Object.freeze({payload}){suffix}")
     lines.extend((
         "  ]);",
+        '  const WPSCOMPOSER_BASE64_PATTERN = "[A-Za-z0-9+/]{76,}={0,2}";',
+        "",
+        "  function wpscHasBase64Payload(text) {",
+        '    const matches = text.match(new RegExp(WPSCOMPOSER_BASE64_PATTERN, "g")) || [];',
+        "    return matches.some(function (candidate) {",
+        "      return candidate.length % 4 === 0;",
+        "    });",
+        "  }",
         "",
         "  function safePublicText(value) {",
         "    const text = safeString(value);",
         "    const privateValue = WPSCOMPOSER_PRIVATE_PATTERNS.some(function (item) {",
         "      return new RegExp(item.source, item.flags).test(text);",
-        "    });",
+        "    }) || wpscHasBase64Payload(text);",
         '    return privateValue ? "<redacted>" : text;',
         "  }",
         JS_PRIVACY_FILTER_END.rstrip("\n"),
