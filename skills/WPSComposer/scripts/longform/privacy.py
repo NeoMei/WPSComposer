@@ -11,9 +11,9 @@ _HASH_RE = re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])")
 _EXCEPTION_RE = re.compile(
     r"\b(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)"
 )
-_URI_RE = re.compile(r"(?i)\b[A-Za-z][A-Za-z0-9+.-]*://")
-_OPAQUE_URI_RE = re.compile(r"(?i)\b(?:data|blob):")
-_WINDOWS_RE = re.compile(r"(?i)(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s|,;]+")
+_URI_RE = re.compile(r"(?i)(?<![A-Za-z0-9])[A-Za-z][A-Za-z0-9+.-]*://")
+_OPAQUE_URI_RE = re.compile(r"(?i)(?<![A-Za-z0-9])(?:data|blob):")
+_WINDOWS_RE = re.compile(r"(?i)[A-Za-z]:[\\/][^\s|,;]+")
 _UNC_RE = re.compile(r"(?:\\\\|(?<!:)//)[A-Za-z0-9_.-]+[\\/][^\s|,;]+")
 _TILDE_RE = re.compile(r"(?:^|[\s({=:\"'])~[\\/]")
 _TRAVERSAL_RE = re.compile(r"(?:^|[\\/])\.\.[\\/]")
@@ -86,8 +86,8 @@ JS_PRIVACY_FILTER_END = "  // END WPSCOMPOSER GENERATED PRIVACY FILTER\n"
 _JS_PRIVATE_PATTERNS = (
     (r"(?:^|[^0-9a-f])[0-9a-f]{64}(?:$|[^0-9a-f])", "i"),
     (r"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)", ""),
-    (r"[A-Za-z][A-Za-z0-9+.-]*://", "i"),
-    (r"(?:data|blob):", "i"),
+    (r"(?:^|[^A-Za-z0-9])[A-Za-z][A-Za-z0-9+.-]*://", "i"),
+    (r"(?:^|[^A-Za-z0-9])(?:data|blob):", "i"),
     (r"[A-Za-z]:[\\/][^\s|,;]+", "i"),
     (r"(?:\\\\|//)[A-Za-z0-9_.-]+[\\/][^\s|,;]+", ""),
     (r"(?:^|[\s({=:\"'])~[\\/]", ""),

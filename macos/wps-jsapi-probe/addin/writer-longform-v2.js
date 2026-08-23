@@ -70,8 +70,8 @@
   const WPSCOMPOSER_PRIVATE_PATTERNS = Object.freeze([
     Object.freeze({"flags":"i","source":"(?:^|[^0-9a-f])[0-9a-f]{64}(?:$|[^0-9a-f])"}),
     Object.freeze({"flags":"","source":"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\\s*(?:\\(|\\b)"}),
-    Object.freeze({"flags":"i","source":"[A-Za-z][A-Za-z0-9+.-]*://"}),
-    Object.freeze({"flags":"i","source":"(?:data|blob):"}),
+    Object.freeze({"flags":"i","source":"(?:^|[^A-Za-z0-9])[A-Za-z][A-Za-z0-9+.-]*://"}),
+    Object.freeze({"flags":"i","source":"(?:^|[^A-Za-z0-9])(?:data|blob):"}),
     Object.freeze({"flags":"i","source":"[A-Za-z]:[\\\\/][^\\s|,;]+"}),
     Object.freeze({"flags":"","source":"(?:\\\\\\\\|//)[A-Za-z0-9_.-]+[\\\\/][^\\s|,;]+"}),
     Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])~[\\\\/]"}),
@@ -706,6 +706,31 @@
       if (stop > start) document.Range(start, stop).Delete();
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+  }
+
+  function checkpointRecoverableMutation(document) {
+    try {
+      if (!document || typeof document.Range !== "function") {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      const content = document.Content;
+      const rawEnd = content && Number(content.End);
+      if (!Number.isFinite(rawEnd)) {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      const position = Math.max(0, rawEnd - 1);
+      const checkpointRange = document.Range(position, position);
+      if (!checkpointRange || typeof checkpointRange.Delete !== "function") {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      const start = Number(checkpointRange.Start);
+      if (!Number.isFinite(start) || start < 0) {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      return start;
+    } catch (error) {
+      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
   }
 
@@ -1921,7 +1946,6 @@
 
   function runOperation(document, operation, resources, issues, childResults) {
     const opName = operation.op;
-    const checkpoint = currentPosition(document);
     const issueCheckpoint = issues.length;
     const childCheckpoint = childResults.length;
     const context = {
@@ -1931,6 +1955,24 @@
       controllerOwned: true
     };
     const deferred = LONGFORM_DEFERRED[opName];
+    const handler = OPERATIONS[opName];
+    if (!deferred && !handler) {
+      throw nativeError("UNKNOWN_OPERATION");
+    }
+    const policy = operation.failurePolicy || {};
+    let recoverable = false;
+    if (deferred) {
+      recoveryDecision(deferred[0], deferred[1], fallbackPlacement(deferred[1]));
+      recoverable = true;
+    } else if (policy.mode === "degrade" &&
+               Array.isArray(policy.recoverableCodes) &&
+               policy.recoverableCodes.length > 0) {
+      policy.recoverableCodes.forEach(function (code) {
+        recoveryDecision(code, policy.fallback, fallbackPlacement(policy.fallback));
+      });
+      recoverable = true;
+    }
+    const checkpoint = recoverable ? checkpointRecoverableMutation(document) : null;
     if (deferred) {
       recoverOperation(
         document, operation, resources, issues, context,
@@ -1938,17 +1980,12 @@
       );
       return;
     }
-    const handler = OPERATIONS[opName];
-    if (!handler) {
-      throw nativeError("UNKNOWN_OPERATION");
-    }
     try {
       handler(document, operation.args || {}, resources || {}, context);
     } catch (error) {
       if (error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED") {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
-      const policy = operation.failurePolicy || {};
       if (policy.mode === "fail") {
         throw nativeError("EXECUTION_ABORTED");
       }

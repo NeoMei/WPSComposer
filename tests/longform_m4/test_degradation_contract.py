@@ -340,6 +340,43 @@ process.stdout.write(JSON.stringify(
     assert json.loads(completed.stdout) == ("<redacted>" if is_private else value)
 
 
+@pytest.mark.parametrize(
+    ("value", "is_private"),
+    [
+        ("_https://example.com", True),
+        ("_data:abc", True),
+        (r"fooC:\private\x", True),
+        ("https_value", False),
+        ("metadata:abc", False),
+        ("database:value", False),
+        ("blob_value", False),
+    ],
+)
+def test_generated_js_privacy_classifier_matches_python_on_embedded_boundaries(
+    value: str, is_private: bool,
+) -> None:
+    expected = "<redacted>" if is_private else value
+    assert contains_private_plan_text(value) is is_private
+    assert redact_private_text(value) == expected
+    assert ExecutionIssue(
+        code="CROSS_REFERENCE_FAILED",
+        message=value,
+        placement="inline",
+    ).to_dict()["message"] == expected
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+process.stdout.write(JSON.stringify(
+  window.WPSComposerLongformV2.__test.safePublicText({json.dumps(value)})
+));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    assert json.loads(completed.stdout) == expected
+
+
 def test_writer_figure_fallback_returns_planned_issue_without_runtime_name_error() -> None:
     writer = WriterComposer.__new__(WriterComposer)
     notices: list[tuple] = []
@@ -1035,7 +1072,10 @@ const fs = require("fs");
 global.window = {{}};
 eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
 const api = window.WPSComposerLongformV2.__test;
-function range(start, end) {{ return {{Start: start, End: end, Font: {{}}, Shading: {{}}, ParagraphFormat: {{}}}}; }}
+function range(start, end) {{ return {{
+  Start: start, End: end, Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+  Delete: function() {{}}
+}}; }}
 const tables = [];
 const document = {{
   Content: {{End: 3}},
@@ -1124,6 +1164,107 @@ process.stdout.write(JSON.stringify({{
     ]
 
 
+@pytest.mark.parametrize("capability", ["range-missing", "delete-missing", "range-throws"])
+def test_javascript_recoverable_operation_preflights_rollback_without_native_write(
+    capability: str,
+) -> None:
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+const api = window.WPSComposerLongformV2.__test;
+let text = "";
+const events = [];
+const content = {{
+  Start: 0, End: 1,
+  get Text() {{ return text; }},
+  set Text(value) {{ events.push("native-write"); text += String(value); this.End = text.length + 1; }}
+}};
+function makeRange(start, end) {{
+  const result = {{
+    Start: start, End: end, ParagraphFormat: {{}}, Font: {{}}, Shading: {{}},
+    InsertAfter: function(value) {{ events.push("native-write"); text += String(value); }},
+    Delete: function() {{ events.push("rollback"); text = text.slice(0, start); }}
+  }};
+  if ({json.dumps(capability)} === "delete-missing") delete result.Delete;
+  return result;
+}}
+const document = {{
+  Content: content,
+  Fields: {{Add: function() {{ const error = new Error("native"); error.code = "CROSS_REFERENCE_FAILED"; throw error; }}}}
+}};
+if ({json.dumps(capability)} === "range-throws") {{
+  document.Range = function() {{ events.push("range-probe"); throw new Error("private range"); }};
+}} else if ({json.dumps(capability)} !== "range-missing") {{
+  document.Range = function(start, end) {{ events.push("range-probe"); return makeRange(start, end); }};
+}}
+let code = null;
+const issues = [];
+try {{
+  api.runOperation(document, {{
+    op: "writer.add_cross_reference", nodeId: "para:preflight",
+    args: {{runs: [
+      {{type: "text", text: "PARTIAL"}},
+      {{type: "reference", bookmarkName: "wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa", prefix: "", suffix: "", fallbackText: "[missing]"}}
+    ]}},
+    failurePolicy: {{mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"], fallback: "inline-fallback"}}
+  }}, {{}}, issues, []);
+}} catch (error) {{ code = error.code; }}
+process.stdout.write(JSON.stringify({{code: code, text: text, events: events, issues: issues}}));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    actual = json.loads(completed.stdout)
+    assert actual["code"] == "LOCAL_MUTATION_CHECKPOINT_FAILED"
+    assert actual["text"] == ""
+    assert "native-write" not in actual["events"]
+    assert actual["issues"] == []
+
+
+def test_javascript_recoverable_operation_orders_preflight_native_rollback_fallback() -> None:
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+const api = window.WPSComposerLongformV2.__test;
+let text = "";
+const events = [];
+function range(start, end) {{
+  events.push("range");
+  return {{
+    Start: start, End: end, ParagraphFormat: {{}}, Font: {{}}, Shading: {{}},
+    InsertAfter: function(value) {{
+      if (value === "PARTIAL") events.push("native");
+      if (value === "[missing]") events.push("fallback");
+      text += String(value);
+    }},
+    Delete: function() {{ events.push("rollback"); text = text.slice(0, start); }}
+  }};
+}}
+const document = {{
+  Content: {{get End() {{ return text.length + 1; }}}}, Range: range,
+  Fields: {{Add: function() {{ const error = new Error("native"); error.code = "CROSS_REFERENCE_FAILED"; throw error; }}}}
+}};
+api.runOperation(document, {{
+  op: "writer.add_cross_reference", nodeId: "para:order",
+  args: {{runs: [
+    {{type: "text", text: "PARTIAL"}},
+    {{type: "reference", bookmarkName: "wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa", prefix: "", suffix: "", fallbackText: "[missing]"}}
+  ]}},
+  failurePolicy: {{mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"], fallback: "inline-fallback"}}
+}}, {{}}, [], []);
+process.stdout.write(JSON.stringify(events));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    events = json.loads(completed.stdout)
+    assert events.index("range") < events.index("native")
+    assert events.index("native") < events.index("rollback")
+    assert events.index("rollback") < events.index("fallback")
+
+
 def _mac_result(issue: dict[str, object]) -> dict[str, object]:
     return {
         "outputPath": "/private/output.docx",
@@ -1161,6 +1302,9 @@ def test_macos_result_schema_accepts_new_issue_fields_and_old_payload() -> None:
         {"fallback": "sha256:" + "a" * 64},
         {"recoverable": "true"},
         {"message": "/Users/me/private/input.png"},
+        {"message": "_https://example.com"},
+        {"message": "_data:abc"},
+        {"message": r"fooC:\private\x"},
         {"unknown": True},
     ],
 )
