@@ -774,10 +774,11 @@ function range(start, end) { return {Start: start, End: end, ParagraphFormat: fo
 const state = {start: 1, end: 4};
 function wrapper() { return {get Range() { return {Start: state.start, End: state.end}; },
   BuildUp: function() { buildUps += 1; }}; }
+function globalWrapper() { return {get Range() { return {Start: 0, End: 10}; }}; }
 const local = {Count: 1, Item: function() { return wrapper(); }};
 const maths = {Count: 0, Add: function() { this.Count = 1; return {
   Start: state.start, End: state.end, OMaths: local
-}; }, Item: function() { return wrapper(); }};
+}; }, Item: function() { return globalWrapper(); }};
 const bookmarks = [], bookmarkByName = Object.create(null);
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
@@ -1172,6 +1173,53 @@ assert.equal(issues.length, 1);
 assert.equal(issues[0].code, "EQUATION_INSERT_FAILED");
 assert.ok(text.startsWith(citation));
 assert.equal(text.slice(citation.length), "\t[EQUATION_INSERT_FAILED: x+y]\t(1)\r");
+''')
+
+
+def test_js_formula_rollback_accepts_empty_checkpoint_when_collapsed_range_view_drifts() -> None:
+    _run_node(r'''
+let text = "P\r";
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() {
+    if (this.Start === this.End && text.length > this.Start) {
+      return text.slice(this.Start, this.Start + 1);
+    }
+    return text.slice(this.Start, this.End);
+  },
+  InsertAfter: function(value) {
+    value = String(value);
+    text = text.slice(0, this.End) + value + text.slice(this.End);
+    this.End += value.length;
+  },
+  Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+}; }
+const document = {
+  get Content() { return {End: text.length + 1}; }, Range: range,
+  get Paragraphs() { return {Count: (text.match(/\r/g) || []).length + 1,
+    Item: function() {
+      const start = text.lastIndexOf("\r") + 1;
+      return {Range: {Start: start, End: text.length + 1}};
+    }}; },
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
+  Fields: {Add: function(target) { target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+  }}, Bookmarks: {Add: function() {}}
+};
+const issues = [];
+window.WPSComposerLongformV2.__test.runOperation(document, {
+  op: "writer.add_equation", nodeId: "eq:collapsed", args: {
+    renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+    fallbackText: "x+y",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+    fallback: "explicit-image-then-source-notice"}
+}, {}, issues, []);
+assert.equal(text, "P\r\t[EQUATION_INSERT_FAILED: x+y]\t(1)\r");
+assert.deepEqual(issues.map(function(issue) { return issue.code; }), ["EQUATION_INSERT_FAILED"]);
 ''')
 
 

@@ -965,10 +965,16 @@
         typeof expectedPrefixSignature !== "string") {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
-    const prefix = exactDocumentRange(document, paragraphStart, start);
-    if (typeof prefix.Text !== "string" || prefix.Text !== expectedText ||
-        checkpointTextSignature(prefix.Text) !== expectedSignature) {
-      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    if (expectedText === "" && paragraphStart === start) {
+      if (expectedSignature !== checkpointTextSignature("")) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+    } else {
+      const prefix = exactDocumentRange(document, paragraphStart, start);
+      if (typeof prefix.Text !== "string" || prefix.Text !== expectedText ||
+          checkpointTextSignature(prefix.Text) !== expectedSignature) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
     }
     const documentPrefix = exactDocumentRange(document, 0, start);
     if (typeof documentPrefix.Text !== "string" || documentPrefix.Text !== expectedPrefixText ||
@@ -1663,7 +1669,8 @@
         !Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
         addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd ||
         mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd ||
-        documentStart !== mathStart || documentEnd !== mathFinish) {
+        documentEnd <= documentStart || documentStart > mathStart ||
+        documentEnd < mathFinish) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     math.BuildUp();
@@ -1682,8 +1689,8 @@
     if (builtLocalCount !== 1 || builtGlobalCount !== after ||
         builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
         builtEnd <= builtStart || builtStart < builtAddedStart ||
-        builtEnd > builtAddedEnd || builtGlobalStart !== builtStart ||
-        builtGlobalEnd !== builtEnd || !builtContent ||
+        builtEnd > builtAddedEnd || builtGlobalEnd <= builtGlobalStart ||
+        builtGlobalStart > builtStart || builtGlobalEnd < builtEnd || !builtContent ||
         Number(builtContent.Start) !== builtStart ||
         Number(builtContent.End) !== builtEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
