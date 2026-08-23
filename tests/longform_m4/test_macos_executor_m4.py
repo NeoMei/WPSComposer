@@ -874,6 +874,140 @@ error => error.code === "CAPABILITY_MISMATCH");
 ''')
 
 
+def test_js_omath_success_commits_host_expansion_before_number_and_next_operation() -> None:
+    _run_node(r'''
+let text = "";
+const writes = [];
+function range(start, end) {
+  return {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+    ParagraphFormat: {TabStops: {Add: function(){}}},
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      writes.push([this.End, value]);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+  };
+}
+const globalMath = {Range: {Start: 1, End: 4}, BuildUp: function() {
+  // Real WPS expands the built-up OMath outside the Range returned by Add.
+  text = text.slice(0, 4) + "<OMATHPAD>" + text.slice(4);
+}};
+const maths = {Count: 0, Add: function(target) {
+  this.Count = 1;
+  return {Start: target.Start, End: target.End,
+    OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+}, Item: function() { return globalMath; }};
+const document = {
+  get Content() { return {End: text.length + 1}; }, Range: range,
+  get Paragraphs() { return {Count: 1, Item: function() {
+    return {Range: {Start: 0, End: text.length + 1}};
+  }}; },
+  Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
+  Fields: {Add: function(target) { target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+  }}, Bookmarks: {Add: function() {}}
+};
+const api = window.WPSComposerLongformV2.__test;
+api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1", args: {
+  renderMode: "native-m4",
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  fallbackText: "x+y",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)
+}}, {}, [], []);
+const builtHostEnd = "\tx+y<OMATHPAD>".length;
+const numberTab = writes.find(function(item) {
+  return item[1] === "\t" && item[0] >= builtHostEnd;
+});
+assert.ok(numberTab, JSON.stringify(writes));
+api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:after",
+  args: {text: "After"}}, {}, [], []);
+const afterWrite = writes.find(function(item) { return item[1] === "After\r"; });
+assert.ok(afterWrite && afterWrite[0] > numberTab[0], JSON.stringify(writes));
+assert.ok(text.endsWith("\t(1)\rAfter\r"), text);
+''')
+
+
+def test_js_omath_success_uses_each_growing_host_endpoint_independently() -> None:
+    _run_node(r'''
+function runCase(staleSource, recoverFirst) {
+  let text = "", stale = false, failNext = recoverFirst;
+  const writes = [], issues = [];
+  function reportedEnd(source) {
+    return stale && source === staleSource ? 100 : text.length + 1;
+  }
+  function range(start, end) {
+    return {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+      ParagraphFormat: {TabStops: {Add: function(){}}},
+      get Text() { return text.slice(this.Start, this.End); },
+      InsertAfter: function(value) {
+        value = String(value);
+        writes.push([this.End, value]);
+        text = text.slice(0, this.End) + value + text.slice(this.End);
+        this.End += value.length;
+      },
+      Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+    };
+  }
+  let globalMath = null;
+  const maths = {Count: 0, Add: function(target) {
+    if (failNext) { failNext = false; return null; }
+    this.Count += 1;
+    globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+      text = text.slice(0, target.End) + "<OMATHPAD>" + text.slice(target.End);
+    }};
+    return {Start: target.Start, End: target.End,
+      OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+  }, Item: function() { return globalMath; }};
+  const document = {
+    get Content() { return {End: reportedEnd("content")}; }, Range: range,
+    get Paragraphs() { return {
+      get Count() { return (text.match(/\r/g) || []).length + 1; },
+      Item: function() {
+        const start = text.lastIndexOf("\r") + 1;
+        return {Range: {Start: start, End: reportedEnd("paragraph")}};
+      }
+    }; },
+    Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
+    Fields: {Add: function(target) { target.InsertAfter("1");
+      return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+    }}, Bookmarks: {Add: function() {}}
+  };
+  const api = window.WPSComposerLongformV2.__test;
+  api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:prefix",
+    args: {text: "Prefix"}}, {}, issues, []);
+  stale = true;
+  const operation = function(nodeId) { return {op: "writer.add_equation", nodeId: nodeId,
+    args: {renderMode: "native-m4",
+      content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+      fallbackText: "x+y",
+      numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+      bookmarkName: "wpsc_eq_" + (nodeId === "eq:first" ? "e" : "f").repeat(24)},
+    failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+      fallback: "explicit-image-then-source-notice"}}; };
+  if (recoverFirst) api.runOperation(document, operation("eq:first"), {}, issues, []);
+  const beforeSuccess = text.length;
+  api.runOperation(document, operation("eq:second"), {}, issues, []);
+  const numberTab = writes.find(function(item) {
+    return item[1] === "\t" && item[0] >= beforeSuccess + "\tx+y<OMATHPAD>".length;
+  });
+  assert.ok(numberTab, staleSource + ":" + JSON.stringify(writes));
+  api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:after",
+    args: {text: "After"}}, {}, issues, []);
+  assert.ok(text.endsWith("\t(1)\rAfter\r"), staleSource + ":" + text);
+  if (recoverFirst) assert.deepEqual(issues.map(function(item) { return item.code; }),
+    ["EQUATION_INSERT_FAILED"]);
+}
+runCase("content", true);
+runCase("paragraph", false);
+''')
+
+
 def test_js_formula_uses_last_paragraph_end_when_content_end_is_stale() -> None:
     _run_node(r'''
 const citation = "Inline citation remains complete in this paragraph.\r";

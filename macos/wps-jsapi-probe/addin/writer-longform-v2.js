@@ -287,6 +287,80 @@
     };
   }
 
+  function observedHostDocumentEnds(document) {
+    if (!document || typeof document.Range !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    let contentPosition = null;
+    let paragraphPosition = null;
+    const content = document.Content;
+    const rawContentEnd = content && content.End;
+    if (typeof rawContentEnd === "number") {
+      if (!Number.isInteger(rawContentEnd) || rawContentEnd < 0) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      contentPosition = Math.max(0, rawContentEnd - 1);
+    }
+    const paragraphs = document.Paragraphs;
+    if (paragraphs) {
+      const count = Number(paragraphs.Count);
+      if (!Number.isInteger(count) || count <= 0 ||
+          (typeof paragraphs.Item !== "function" && typeof paragraphs !== "function")) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const paragraph = collectionItem(paragraphs, count);
+      const paragraphRange = paragraph && paragraph.Range;
+      const paragraphStart = Number(paragraphRange && paragraphRange.Start);
+      const paragraphEnd = Number(paragraphRange && paragraphRange.End);
+      if (!paragraphRange || !Number.isInteger(paragraphStart) ||
+          !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
+          paragraphEnd <= paragraphStart) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      paragraphPosition = paragraphEnd - 1;
+    }
+    if (contentPosition === null && paragraphPosition === null) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return {content: contentPosition, paragraph: paragraphPosition};
+  }
+
+  function commitSuccessfulHostAdvance(
+    document, hostBefore, minimumEnd, prefixEnd, prefixText
+  ) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return;
+    const cursor = appendCursorRange(document);
+    if (!cursor || !hostBefore || !Number.isInteger(minimumEnd) ||
+        !Number.isInteger(prefixEnd) || typeof prefixText !== "string") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const prefix = exactDocumentRange(document, 0, prefixEnd);
+    if (typeof prefix.Text !== "string" || prefix.Text !== prefixText ||
+        checkpointTextSignature(prefix.Text) !== checkpointTextSignature(prefixText)) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const hostAfter = observedHostDocumentEnds(document);
+    const advanced = [];
+    ["content", "paragraph"].forEach(function (source) {
+      const before = hostBefore[source];
+      const after = hostAfter[source];
+      if (Number.isInteger(before) && Number.isInteger(after) && after > before) {
+        if (after < minimumEnd || after < cursor.End) {
+          throw nativeError("EQUATION_INSERT_FAILED");
+        }
+        exactDocumentRange(document, after, after);
+        advanced.push(after);
+      }
+    });
+    if (advanced.length) {
+      setAppendCursor(document, Math.max.apply(Math, advanced));
+      return;
+    }
+    // Some doubles and WPS builds keep the host endpoint unchanged when the
+    // returned Add Range already describes the complete built-up object.
+    if (cursor.End < minimumEnd) throw nativeError("EQUATION_INSERT_FAILED");
+  }
+
   function endRange(document) {
     if (document && typeof document.Range !== "function") {
       const content = document.Content;
@@ -1641,6 +1715,16 @@
     const linearText = safeString(nativeMath.linearText);
     insertInlineText(document, linearText);
     const mathEnd = currentPosition(document);
+    let successHostBefore = null;
+    let successPrefixText = null;
+    if (document._wpscRunOwnsAppendCursor === true) {
+      successHostBefore = observedHostDocumentEnds(document);
+      const successPrefix = exactDocumentRange(document, 0, start);
+      if (typeof successPrefix.Text !== "string") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      successPrefixText = successPrefix.Text;
+    }
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
       throw nativeError("CAPABILITY_MISMATCH");
@@ -1708,6 +1792,9 @@
         Number(builtContent.End) !== builtAddedEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
+    commitSuccessfulHostAdvance(
+      document, successHostBefore, builtAddedEnd, start, successPrefixText
+    );
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
     if (mathCursorEnd === null || builtEnd > mathCursorEnd) {
