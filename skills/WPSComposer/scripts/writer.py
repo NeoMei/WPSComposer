@@ -2131,15 +2131,13 @@ class WriterComposer(BaseComposer):
                 self.selection.TypeText(run["fallbackText"])
                 continue
             if run_type == "degradation":
-                self.add_inline_degradation(
-                    run["code"], "Reference target is unresolved",
-                    run["fallbackText"],
-                )
+                self._add_inline_degradation_literal(run["fallbackText"])
                 planned_issues.append({
                     "code": run["code"],
                     "message": "Reference target is unresolved",
                     "placement": "inline",
                     "fallback": "inline",
+                    "nodeId": run["nodeId"],
                 })
                 continue
             self.selection.TypeText(run["prefix"])
@@ -2169,6 +2167,21 @@ class WriterComposer(BaseComposer):
                 "placement": "inline",
             })
         return {"issues": issues}
+
+    def _add_inline_degradation_literal(self, fallback_text):
+        """Style an already-coded visible fallback without wrapping it again."""
+        selection = self.selection
+        start = int(selection.End)
+        try:
+            selection.TypeText(redact_private_text(str(fallback_text)))
+            inserted = self._doc.Range(start, int(selection.End))
+            self._style_degradation_range(inserted)
+            return inserted
+        except Exception:
+            raise NativeWriterObjectError(
+                "DEGRADATION_INSERT_FAILED",
+                "inline degradation insertion failed",
+            ) from None
 
     def add_bibliography_native(
         self, *, schemaVersion=1, entries, style, hangingIndentPt,

@@ -450,6 +450,8 @@ class _Range:
         self.ParagraphFormat = _PF()
         self.Text = ""
         self.OMaths = _OMathView(()) if "_OMathView" in globals() else None
+        self.Font = type("Font", (), {"Italic": None, "Color": None})()
+        self.Shading = type("Shading", (), {"BackgroundPatternColor": None})()
 
     def Collapse(self, direction):
         self.Start = self.End
@@ -731,6 +733,77 @@ def test_writer_unknown_omath_boundary_errors_remain_fatal(boundary):
         )
 
 
+def test_writer_native_formula_uses_real_m3_fields_and_bookmark_shell():
+    from tests.longform_m3.test_windows_executor_m3 import _writer_with_native_fakes
+
+    writer = _writer_with_native_fakes()
+    table = _FormulaTable()
+    writer._doc.Tables = type(
+        "Tables", (), {"Add": lambda self, rng, rows, cols: table}
+    )()
+    writer._doc.OMaths = _OMaths()
+
+    writer.add_equation_native(
+        renderMode="native-m4",
+        content={"nativeMath": {
+            "syntax": "wps-linear-v1", "linearText": "x+y",
+            "sourceHash": "2" * 64,
+        }},
+        numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+        fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+    )
+
+    assert [call[2] for call in writer.doc.Fields.calls] == [
+        "STYLEREF 1 \\s", "SEQ WPSC_EQ \\* ARABIC \\s 1",
+    ]
+    assert writer.doc.Bookmarks.calls == [(EQ_BOOKMARK, 81, 84)]
+    assert [item[1] for item in writer._native_fields()] == [
+        "STYLEREF", "SEQ_EQ",
+    ]
+    writer.repaginate_and_update_numbering()
+    assert [item[2].updates for item in writer._native_fields()] == [1, 1]
+
+
+def test_writer_formula_save_close_reopen_simulation_preserves_editable_omath(tmp_path: Path):
+    writer, _table, document = _formula_writer()
+    writer.add_equation_native(
+        renderMode="native-m4",
+        content={"nativeMath": {
+            "syntax": "wps-linear-v1", "linearText": "x+y",
+            "sourceHash": "2" * 64,
+        }},
+        numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+        fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+    )
+    saved = {}
+
+    def save_as(path, format_code):
+        saved["path"] = path
+        saved["format"] = format_code
+        saved["omaths"] = [
+            (item.Range.Start, item.Range.End, item.built)
+            for item in document.OMaths.items
+        ]
+
+    document.SaveAs = save_as
+    writer._owns_doc = False
+    writer._owns_app = False
+    writer._com_initialized = False
+    output = writer.save_docx(str(tmp_path / "formula.docx"))
+    writer.close(save_changes=False)
+
+    reopened = _OMaths()
+    for start, end, built in saved["omaths"]:
+        item = _OMath(_Range(start, end))
+        item.built = built
+        reopened.items.append(item)
+    assert output.endswith("formula.docx")
+    assert writer._doc is None
+    assert reopened.Count == 1
+    assert reopened.Item(1).built == 1
+    assert reopened.Item(1).Range.End > reopened.Item(1).Range.Start
+
+
 def test_writer_formula_image_failure_is_attempted_once_then_source_is_inside_terminal_notice():
     writer, _table, _document = _formula_writer()
     attempts = []
@@ -928,6 +1001,54 @@ def test_writer_citation_and_bibliography_preserve_runs_order_and_fixed_paragrap
     assert [rng.ParagraphFormat.LeftIndent for rng in bibliography_ranges] == [18.0, 18.0]
     assert [rng.ParagraphFormat.FirstLineIndent for rng in bibliography_ranges] == [-18.0, -18.0]
     assert [rng.ParagraphFormat.SpaceAfter for rng in bibliography_ranges] == [6.0, 6.0]
+
+
+def test_writer_unresolved_citation_literals_are_not_double_wrapped_and_keep_occurrences():
+    selection = _Selection()
+
+    class Doc:
+        def Range(self, start, end):
+            return _Range(start, end)
+
+    writer = WriterComposer.__new__(WriterComposer)
+    writer._selection = selection
+    writer._app = type("App", (), {"Selection": selection})()
+    writer._doc = Doc()
+    fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]"
+
+    outcome = writer.add_citation_paragraph(
+        runs=[
+            {"type": "text", "text": "before "},
+            {"type": "degradation", "nodeId": "p/cite:1", "code": "REFERENCE_UNRESOLVED", "fallbackText": fallback},
+            {"type": "text", "text": " middle "},
+            {"type": "degradation", "nodeId": "p/cite:2", "code": "REFERENCE_UNRESOLVED", "fallbackText": fallback},
+        ],
+        owner_node_id="p", controller_owned=True,
+    )
+
+    assert selection.typed == [
+        "before ", fallback, " middle ", fallback, "\n",
+    ]
+    assert [issue["nodeId"] for issue in outcome["issues"]] == [
+        "p/cite:1", "p/cite:2",
+    ]
+
+
+def test_executor_keeps_distinct_run_issue_ownership_in_one_paragraph():
+    executor = WindowsLongformExecutor()
+    op = GenerationOperation(
+        "writer.add_cross_reference",
+        {"runs": [{"type": "text", "text": "x"}]},
+        node_id="p",
+    )
+    executor._consume_native_result({"issues": [
+        {"code": "REFERENCE_UNRESOLVED", "placement": "inline", "nodeId": "p/cite:1", "fallback": "inline"},
+        {"code": "REFERENCE_UNRESOLVED", "placement": "inline", "nodeId": "p/cite:2", "fallback": "inline"},
+    ]}, op)
+
+    assert [issue.node_id for issue in executor._issues] == [
+        "p/cite:1", "p/cite:2",
+    ]
 
 
 @pytest.mark.parametrize(

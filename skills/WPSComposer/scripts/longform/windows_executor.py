@@ -928,10 +928,21 @@ class WindowsLongformExecutor(LongformExecutor):
         for raw in result.get("issues", ()):
             if not isinstance(raw, dict):
                 continue
+            raw_node_id = raw.get("nodeId")
+            issue_node_id = op.node_id
+            if (
+                isinstance(raw_node_id, str)
+                and isinstance(op.node_id, str)
+                and (
+                    raw_node_id == op.node_id
+                    or raw_node_id.startswith(op.node_id + "/")
+                )
+            ):
+                issue_node_id = raw_node_id
             self._record_issue(
                 code=str(raw.get("code") or EXECUTION_FAILED),
                 message=str(raw.get("message") or "Native object reported an issue"),
-                node_id=op.node_id,
+                node_id=issue_node_id,
                 placement=(
                     str(raw["placement"])
                     if raw.get("placement") in {"block", "inline", "document"}
