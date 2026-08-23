@@ -1651,26 +1651,35 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const addedMaths = addedRange.OMaths;
-    if (!addedMaths || Number(addedMaths.Count) !== 1) {
+    const addedLocalCount = Number(addedMaths && addedMaths.Count);
+    if (!addedMaths || (addedLocalCount !== 0 && addedLocalCount !== 1)) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
-    const math = collectionItem(addedMaths, 1);
+    let localMath = null;
+    try {
+      localMath = collectionItem(addedMaths, 1);
+    } catch (error) {
+      if (addedLocalCount === 1) throw error;
+      localMath = null;
+    }
+    if (addedLocalCount === 1 && !localMath) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
     const documentMath = collectionItem(document.OMaths, after);
+    const math = localMath || documentMath;
+    const chosenLocalMath = Boolean(localMath);
     if (!math || !documentMath || typeof math.BuildUp !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
+    const chosenMathRange = chosenLocalMath ? math.Range : addedRange;
     const addedStart = Number(addedRange.Start);
     const addedEnd = Number(addedRange.End);
-    const mathStart = Number(math.Range.Start);
-    const mathFinish = Number(math.Range.End);
-    const documentStart = Number(documentMath.Range.Start);
-    const documentEnd = Number(documentMath.Range.End);
+    const mathStart = Number(chosenMathRange.Start);
+    const mathFinish = Number(chosenMathRange.End);
     if (!Number.isFinite(addedStart) || !Number.isFinite(addedEnd) ||
         !Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
         addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd ||
-        mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd ||
-        documentEnd <= documentStart || documentStart > mathStart ||
-        documentEnd < mathFinish) {
+        mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     math.BuildUp();
@@ -1678,21 +1687,25 @@
     const builtAddedEnd = Number(addedRange.End);
     const builtLocalCount = Number(addedMaths.Count);
     const builtGlobalCount = Number(document.OMaths.Count);
-    const builtLocalMath = collectionItem(addedMaths, 1);
+    let builtLocalMath = null;
+    try {
+      builtLocalMath = collectionItem(addedMaths, 1);
+    } catch (error) {
+      if (chosenLocalMath) throw error;
+      builtLocalMath = null;
+    }
     const builtGlobalMath = collectionItem(document.OMaths, after);
-    const builtStart = Number(builtLocalMath.Range.Start);
-    const builtEnd = Number(builtLocalMath.Range.End);
-    const builtGlobalStart = Number(builtGlobalMath.Range.Start);
-    const builtGlobalEnd = Number(builtGlobalMath.Range.End);
-    const builtContent = document.Range(builtStart, builtEnd);
+    const builtStart = Number(chosenMathRange.Start);
+    const builtEnd = Number(chosenMathRange.End);
+    const builtContent = document.Range(builtAddedStart, builtAddedEnd);
     const builtText = safeString(builtContent && builtContent.Text);
-    if (builtLocalCount !== 1 || builtGlobalCount !== after ||
+    if (builtLocalCount !== addedLocalCount || builtGlobalCount !== after ||
+        !builtGlobalMath || (chosenLocalMath && !builtLocalMath) ||
         builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
         builtEnd <= builtStart || builtStart < builtAddedStart ||
-        builtEnd > builtAddedEnd || builtGlobalEnd <= builtGlobalStart ||
-        builtGlobalStart > builtStart || builtGlobalEnd < builtEnd || !builtContent ||
-        Number(builtContent.Start) !== builtStart ||
-        Number(builtContent.End) !== builtEnd || !builtText.trim()) {
+        builtEnd > builtAddedEnd || !builtContent ||
+        Number(builtContent.Start) !== builtAddedStart ||
+        Number(builtContent.End) !== builtAddedEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const mathCursor = endRange(document);
@@ -1700,9 +1713,10 @@
     if (mathCursorEnd === null || builtEnd > mathCursorEnd) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
+    const localCursorRanges = [builtContent, chosenMathRange];
     advanceAppendCursor(
       document, mathCursor, mathCursorEnd,
-      [builtContent, builtLocalMath.Range, builtGlobalMath.Range], mathCursorEnd
+      localCursorRanges, mathCursorEnd
     );
     insertInlineText(document, "\t");
     addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);

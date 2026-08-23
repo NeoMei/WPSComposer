@@ -738,8 +738,7 @@ const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}
 const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true};
 let local = null, globalItem = null;
 const original = {Range: {Start: 1, End: 4}, BuildUp: function() {
-  local = {Range: {Start: 1, End: 4}, BuildUp: function(){}};
-  globalItem = {Range: {Start: 2, End: 4}, BuildUp: function(){}};
+  this.Range.End = 99;
 }};
 local = original; globalItem = original;
 const localCollection = {Count: 1, Item: function() { return local; }};
@@ -752,9 +751,10 @@ assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(docu
 
 const unknown = new Error("global getter failed");
 text = "";
-const unknownMath = {Range: {Start: 1, End: 4}, BuildUp: function() {
-  Object.defineProperty(this, "Range", {get: function() { throw unknown; }});
-}};
+let failRange = false;
+const unknownRange = {get Start() { if (failRange) throw unknown; return 1; },
+  get End() { if (failRange) throw unknown; return 4; }};
+const unknownMath = {Range: unknownRange, BuildUp: function() { failRange = true; }};
 const unknownLocal = {Count: 1, Item: function() { return unknownMath; }};
 const unknownGlobal = {Count: 0, Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: unknownLocal}; },
   Item: function() { return unknownMath; }};
@@ -813,6 +813,64 @@ window.WPSComposerLongformV2.__test.addCrossReferenceParagraph(document, {runs: 
     suffix: ")", fallbackText: "1-9"}
 ]}, {}, {ownerNodeId: "p:ref", issues: [], childResults: [], controllerOwned: true});
 assert.ok(text.includes("Formula ref (1-9)"));
+''')
+
+
+def test_js_omath_accepts_empty_returned_local_collection_with_unique_global_tail() -> None:
+    _run_node(r'''
+let text = "", buildUps = 0;
+function range(start, end) { return {Start: start, End: end, Font: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); },
+  InsertAfter: function(value) { text += String(value); }}; }
+const globalMath = {get Range() { throw new Error("global Range is not trusted"); },
+  BuildUp: function() { buildUps += 1; }};
+const local = {Count: 0, Item: function() { throw new Error("missing local proxy"); }};
+const maths = {Count: 0, Add: function() { this.Count = 1;
+  return {Start: 1, End: 4, OMaths: local};
+}, Item: function() { return globalMath; }};
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
+  Fields: {Add: function(target) { text += "1";
+    return {Update: function(){}, Result: {Text: "1"}};
+  }}, Bookmarks: {Add: function() {}}};
+window.WPSComposerLongformV2.__test.addEquationNativeM4(document, {
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"
+}, {}, {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true});
+assert.equal(buildUps, 1);
+assert.ok(text.includes("x+y"));
+
+text = "";
+let localBuildUps = 0;
+const truthfulLocalMath = {Range: {Start: 1, End: 4},
+  BuildUp: function() { localBuildUps += 1; }};
+const broadGlobal = {Range: {Start: 0, End: 10},
+  BuildUp: function() { throw new Error("global proxy must not build"); }};
+document.OMaths = {Count: 0, Add: function() { this.Count = 1;
+  return {Start: 1, End: 4, OMaths: {
+    Count: 0, Item: function() { return truthfulLocalMath; }
+  }};
+}, Item: function() { return broadGlobal; }};
+window.WPSComposerLongformV2.__test.addEquationNativeM4(document, {
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "f".repeat(24), fallbackText: "x+y"
+}, {}, {ownerNodeId: "eq:local-liar", issues: [], childResults: [], controllerOwned: true});
+assert.equal(localBuildUps, 1);
+
+text = "";
+const wrongGlobal = {Range: {Start: 0, End: 10}};
+document.OMaths = {Count: 0, Add: function() { this.Count = 1;
+  return {Start: 1, End: 4, OMaths: {Count: 0}};
+}, Item: function() { return wrongGlobal; }};
+assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, {
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "a".repeat(24), fallbackText: "x+y"
+}, {}, {ownerNodeId: "eq:wrong", issues: [], childResults: [], controllerOwned: true}),
+error => error.code === "CAPABILITY_MISMATCH");
 ''')
 
 
