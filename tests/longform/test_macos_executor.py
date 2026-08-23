@@ -733,7 +733,8 @@ const document = {{
       document.ActiveWindow.Selection.Range = this;
       document.ActiveWindow.Selection.Document = document;
     }},
-    InsertAfter: function(value) {{ document.Content.Text += String(value); }}
+    InsertAfter: function(value) {{ value = String(value);
+      document.Content.Text += value; this.End += value.length; }}
   }}; }},
   ActiveWindow: {{ Selection: {{ Range: null, Document: null }} }},
   TablesOfContents: {{ Count: 0, Item: function() {{}} }},

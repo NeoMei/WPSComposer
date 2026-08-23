@@ -644,16 +644,31 @@ assert.equal(document.Bookmarks.Count, 1);
 
 def test_js_partial_professional_formula_degrades_then_keeps_number_reference_and_later_flow() -> None:
     _run_node(r'''
-function exercise(imageSucceeds, firstFunctionType, expectLatch) {
+function exercise(imageSucceeds, firstFunctionTypes, expectLatch) {
   let text = "", mathCount = 0, mathAttempts = 0, shapeCount = 0, fieldCount = 0;
   let fieldRefreshes = 0;
+  const styleWrites = [];
   const bookmarkEntries = Object.create(null);
   const selection = {Document: null, Range: null, OMaths: null};
   function paragraphCount() { return 1 + (text.match(/\r/g) || []).length; }
   function range(start, end) {
+    const font = {}, shading = {};
+    Object.defineProperties(font, {
+      Italic: {get: function() { return 0; }, set: function(value) {
+        styleWrites.push([start, "italic", value]);
+      }},
+      Color: {get: function() { return 0; }, set: function(value) {
+        styleWrites.push([start, "color", value]);
+      }}
+    });
+    Object.defineProperty(shading, "BackgroundPatternColor", {
+      get: function() { return 0; }, set: function(value) {
+        styleWrites.push([start, "background", value]);
+      }
+    });
     const value = {Start: start, End: end,
-      Font: {Italic: 0, Color: 0},
-      Shading: {BackgroundPatternColor: 0},
+      Font: font,
+      Shading: shading,
       ParagraphFormat: {TabStops: {Add: function(){}}},
       OMaths: null,
       Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
@@ -671,9 +686,10 @@ function exercise(imageSucceeds, firstFunctionType, expectLatch) {
     value.OMaths = {Add: function(target) {
       mathAttempts += 1;
       mathCount += 1;
+      const functionTypes = mathAttempts === 1 ? firstFunctionTypes : [20];
       const native = {Range: {Start: target.Start, End: target.End},
-        Functions: {Count: 1, Item: function() {
-          return {Type: mathAttempts === 1 ? firstFunctionType : 20};
+        Functions: {Count: functionTypes.length, Item: function(index) {
+          return {Type: functionTypes[index - 1]};
         }},
         BuildUp: function(){}};
       const added = range(target.Start, target.End);
@@ -723,6 +739,10 @@ function exercise(imageSucceeds, firstFunctionType, expectLatch) {
   const bookmarkName = "wpsc_eq_" + "e".repeat(24);
   const plainBookmarkName = "wpsc_eq_" + "f".repeat(24);
   const issues = [], children = [];
+  const api = window.WPSComposerLongformV2.__test;
+  api.runOperation(document, {op: "writer.add_inline_degradation",
+    nodeId: "deg:standalone", args: {code: "REFERENCE_UNRESOLVED",
+      fallbackText: "standalone notice"}}, {}, issues, children);
   const equation = {op: "writer.add_equation", nodeId: "eq:one", args: {
     renderMode: "native-m4",
     content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x^2+y^3"}},
@@ -731,7 +751,6 @@ function exercise(imageSucceeds, firstFunctionType, expectLatch) {
     bookmarkName: bookmarkName},
     failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
       fallback: "explicit-image-then-source-notice"}};
-  const api = window.WPSComposerLongformV2.__test;
   api.runOperation(document, equation, {image: "/private/staged.png"}, issues, children);
   api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:plain", args: {
     renderMode: "native-m4",
@@ -768,19 +787,28 @@ function exercise(imageSucceeds, firstFunctionType, expectLatch) {
     return issue.code === "EQUATION_INSERT_FAILED";
   }).length, expectLatch ? 2 : 1);
   assert.ok(text.includes("later"));
+  assert.ok(text.includes("standalone notice"));
   assert.ok(text.includes("(1)"));
   assert.equal(text.includes("[EQUATION_INSERT_FAILED: α+β]"), expectLatch);
+  const standaloneItalicWrites = styleWrites.filter(function(item) {
+    return item[0] === 0 && item[1] === "italic";
+  }).map(function(item) { return item[2]; });
+  assert.deepEqual(standaloneItalicWrites.slice(0, 3), [-1, 0, -1],
+    "rollback restores then requeues a span flushed across its checkpoint");
   return {shapeCount: shapeCount, text: text};
 }
-const image = exercise(true, 20, true);
+const image = exercise(true, [20], true);
 assert.equal(image.shapeCount, 1);
 assert.ok(image.text.includes("formula image fallback"));
-const source = exercise(false, 20, true);
+const source = exercise(false, [20], true);
 assert.equal(source.shapeCount, 0);
 assert.ok(source.text.includes("[EQUATION_INSERT_FAILED: x^2+y^3]"));
-const partialStructure = exercise(false, 19, false);
+const partialStructure = exercise(false, [19], false);
 assert.equal(partialStructure.shapeCount, 0);
 assert.ok(partialStructure.text.includes("α+β"));
+const mixedTextAndStructure = exercise(false, [19, 20], true);
+assert.equal(mixedTextAndStructure.shapeCount, 0);
+assert.ok(mixedTextAndStructure.text.includes("[EQUATION_INSERT_FAILED: α+β]"));
 ''')
 
 
@@ -918,8 +946,11 @@ def test_js_planned_formula_uses_validated_image_without_entering_omath() -> Non
     _run_node(r'''
 let text = "";
 let imageAttempts = 0;
-function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
-  ParagraphFormat: {TabStops: {Add: function(){}}},
+const paragraphFormats = [];
+function range(start, end) { const paragraphFormat = {TabStops: {Add: function(){}}};
+  paragraphFormats.push(paragraphFormat);
+  return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
+  ParagraphFormat: paragraphFormat,
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
   Delete: function() {}}; }
@@ -947,6 +978,8 @@ const noticeAt = text.indexOf("formula image fallback");
 assert.ok(noticeAt > 0);
 assert.ok(text.slice(0, noticeAt).includes("\r"));
 assert.ok(text.indexOf("\t") < text.indexOf("\r"));
+assert.ok(paragraphFormats.some(function(format) { return format.SpaceBefore === 6; }),
+  "the image formula paragraph needs bounded clearance from the preceding line");
 ''')
 
 
@@ -1097,11 +1130,40 @@ window.WPSComposerLongformV2.__test.insertStyledDegradationAtRange(
   document, target, "[NOTICE]"
 );
 assert.ok(writes.some(function(item) {
-  return item[0] === 8 && item[1] === "color" && item[2] === 11;
+  return item[0] === 0 && item[1] === "color" && item[2] !== 11;
 }));
 assert.ok(writes.some(function(item) {
-  return item[0] === 8 && item[1] === "background" && item[2] === 22;
+  return item[0] === 0 && item[1] === "background" && item[2] !== 22;
 }));
+assert.equal(selection.Range.Start, 4, "selection returns to the append owner");
+assert.equal(selection.Range.End, 4);
+
+let appendText = "";
+const appendSelection = {Document: null, Range: null};
+function appendRange(start, end) {
+  return {Start: start, End: end, Font: {Italic: 0, Color: 11},
+    Shading: {BackgroundPatternColor: 22}, ParagraphFormat: {},
+    Select: function() { appendSelection.Range = this; },
+    get Text() { return appendText.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      appendText = appendText.slice(0, this.End) + value + appendText.slice(this.End);
+      this.End += value.length;
+    }};
+}
+const appendDocument = {Name: "AppendNotice.docx",
+  ActiveWindow: {Selection: appendSelection},
+  get Content() { return {End: appendText.length + 1, get Text() { return appendText; }}; },
+  Range: appendRange,
+  Tables: {Add: function() { throw new Error("table unavailable"); }}
+};
+appendSelection.Document = appendDocument;
+appendDocument._wpscRunOwnsAppendCursor = true;
+appendDocument._wpscAppendCursorRange = appendDocument.Range(0, 0);
+window.WPSComposerLongformV2.__test.addDegradationNotice(appendDocument,
+  {code: "NOTICE", fallbackText: "safe", placement: "block"});
+assert.ok(appendText.endsWith("\r"), "append-owned block notice closes safely");
+assert.equal(appendDocument._wpscPendingDegradationStyles.length, 0);
 
 const missingStyleSelection = {Document: null, Range: null};
 const missingStyle = {Name: "MissingStyle.docx",

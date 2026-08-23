@@ -886,8 +886,19 @@
         start < 0 || end <= start) {
       throw nativeError("DEGRADATION_INSERT_FAILED");
     }
-    exactDocumentRange(document, start, end);
-    pendingDegradationStyles(document).push({start: start, end: end});
+    const written = exactDocumentRange(document, start, end);
+    const font = written && written.Font;
+    const shading = written && written.Shading;
+    const originalStyle = {
+      italic: degradationStyleScalar(document, font, "Italic"),
+      color: degradationStyleScalar(document, font, "Color"),
+      background: degradationStyleScalar(
+        document, shading, "BackgroundPatternColor"
+      )
+    };
+    pendingDegradationStyles(document).push({
+      start: start, end: end, originalStyle: originalStyle
+    });
   }
 
   function styleExactDegradationSpan(document, span) {
@@ -906,6 +917,40 @@
     written.Font.Color = colorFromHex("#9C0006");
     written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
     return written;
+  }
+
+  function restoreExactDegradationSpan(document, span) {
+    const written = exactDocumentRange(document, span.start, span.end);
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (typeof written.Select !== "function") {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      written.Select();
+      documentOwnedSelection(document, span.start, span.end);
+    }
+    const style = span.originalStyle || {};
+    if (!written.Font || !written.Shading ||
+        style.italic === undefined || style.color === undefined ||
+        style.background === undefined) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    written.Font.Italic = style.italic;
+    written.Font.Color = style.color;
+    written.Shading.BackgroundPatternColor = style.background;
+  }
+
+  function copyPendingDegradationStyles(document) {
+    return pendingDegradationStyles(document).map(function (span) {
+      return {
+        start: span.start,
+        end: span.end,
+        originalStyle: {
+          italic: span.originalStyle.italic,
+          color: span.originalStyle.color,
+          background: span.originalStyle.background
+        }
+      };
+    });
   }
 
   function flushPendingDegradationStyles(document, rawBoundaryEnd) {
@@ -1190,7 +1235,16 @@
       contentSignature: checkpointTextSignature(contentText),
       collectionCounts: counts,
       nativeFieldCount: nativeFields(document).length,
-      pendingDegradationCount: pendingDegradationStyles(document).length
+      pendingDegradationSnapshot: copyPendingDegradationStyles(document)
+    };
+  }
+
+  function lightweightRollbackToken(document, state) {
+    return {
+      start: state.position,
+      anchorRange: exactDocumentRange(document, state.position, state.position),
+      preserveParagraphBoundary: false,
+      pendingDegradationSnapshot: copyPendingDegradationStyles(document)
     };
   }
 
@@ -1238,13 +1292,27 @@
           throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
         }
         tracked.length = token.nativeFieldCount;
-        const pending = document._wpscPendingDegradationStyles;
-        if (!Array.isArray(pending) ||
-            !Number.isInteger(token.pendingDegradationCount) ||
-            pending.length < token.pendingDegradationCount) {
+      }
+      if (token) {
+        const snapshot = token.pendingDegradationSnapshot;
+        if (!Array.isArray(snapshot)) {
           throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
         }
-        pending.length = token.pendingDegradationCount;
+        snapshot.forEach(function (span) {
+          restoreExactDegradationSpan(document, span);
+        });
+        const pending = pendingDegradationStyles(document);
+        pending.length = 0;
+        snapshot.forEach(function (span) { pending.push(span); });
+        if (snapshot.length > 0 &&
+            document._wpscRunOwnsAppendCursor === true) {
+          const cursor = exactDocumentRange(document, start, start);
+          if (typeof cursor.Select !== "function") {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+          cursor.Select();
+          documentOwnedSelection(document, start, start);
+        }
       }
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1293,7 +1361,8 @@
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
       return preserveParagraphBoundary
-        ? paragraphSafeRollbackToken(document, state, countKeys) : start;
+        ? paragraphSafeRollbackToken(document, state, countKeys)
+        : lightweightRollbackToken(document, state);
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
@@ -1828,7 +1897,7 @@
     return {start: start, center: layout.center, right: layout.right};
   }
 
-  function finishFormulaLayout(document, layout) {
+  function finishFormulaLayout(document, layout, spaceBefore) {
     const paragraph = document.Range(layout.start, currentPosition(document));
     const format = paragraph && paragraph.ParagraphFormat;
     if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
@@ -1839,6 +1908,9 @@
     format.RightIndent = 0;
     format.FirstLineIndent = 0;
     format.KeepTogether = -1;
+    if (spaceBefore !== undefined) {
+      format.SpaceBefore = safeNumber(spaceBefore, 0);
+    }
     format.TabStops.Add(layout.center, 1, 0);
     format.TabStops.Add(layout.right, 2, 0);
   }
@@ -1975,14 +2047,14 @@
       typeCounts[type] = (typeCounts[type] || 0) + 1;
     }
     const requirements = expectedProfessionalFunctionCounts(linearText);
-    const textOnly = (typeCounts[20] || 0) === count;
+    const hasTextFunction = (typeCounts[20] || 0) > 0;
     if (requirements.ambiguousMatrix) {
-      rejectProfessionalMath(textOnly);
+      rejectProfessionalMath(hasTextFunction);
     }
     const expected = requirements.counts;
     Object.keys(expected).forEach(function (type) {
       if ((typeCounts[type] || 0) < expected[type]) {
-        rejectProfessionalMath(textOnly);
+        rejectProfessionalMath(hasTextFunction);
       }
     });
   }
@@ -2298,7 +2370,7 @@
         addNativeNumberShell(
           document, args.numbering, args.bookmarkName, context.ownerNodeId, true
         );
-        finishFormulaLayout(document, layout);
+        finishFormulaLayout(document, layout, 6);
         insertInlineText(document, "\r", null, true);
         addDegradationNotice(document, {
           code: code,
@@ -3124,22 +3196,51 @@
     }
     const start = safeNumber(target.Start, -1);
     if (start < 0) throw nativeError("DEGRADATION_INSERT_FAILED");
-    const insertionStyle = captureDegradationInsertionStyle(document, target);
+    const cursor = appendCursorRange(document);
+    const appendOwned = Boolean(
+      document && document._wpscRunOwnsAppendCursor === true && cursor &&
+      Number(target.Start) === Number(cursor.Start) &&
+      Number(target.End) === Number(cursor.End)
+    );
     try {
       insertInlineText(document, text, target);
-      const written = document.Range(start, start + text.length);
+      const written = exactDocumentRange(document, start, start + text.length);
       if (!written) throw nativeError("DEGRADATION_INSERT_FAILED");
-      if (written.Font) {
-        written.Font.Italic = -1;
-        written.Font.Color = colorFromHex("#9C0006");
+      if (appendOwned) {
+        queueDegradationStyle(document, start, start + text.length);
+        insertInlineText(document, "\r", null, true);
+        applyParagraphFormat(
+          exactDocumentRange(document, start, start + text.length).ParagraphFormat,
+          {spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10}
+        );
+      } else if (!document || document._wpscRunOwnsAppendCursor !== true) {
+        applyParagraphFormat(written.ParagraphFormat, {
+          spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+        });
+        if (written.Font) {
+          written.Font.Italic = -1;
+          written.Font.Color = colorFromHex("#9C0006");
+        }
+        if (written.Shading) {
+          written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+        }
+      } else {
+        applyParagraphFormat(written.ParagraphFormat, {
+          spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+        });
+        styleExactDegradationSpan(document, {start: start, end: start + text.length});
+        if (document && document._wpscRunOwnsAppendCursor === true) {
+          const restorePosition = currentPosition(document);
+          const restoreCursor = exactDocumentRange(
+            document, restorePosition, restorePosition
+          );
+          if (typeof restoreCursor.Select !== "function") {
+            throw nativeError("CAPABILITY_MISMATCH");
+          }
+          restoreCursor.Select();
+          documentOwnedSelection(document, restorePosition, restorePosition);
+        }
       }
-      if (written.Shading) {
-        written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
-      }
-      applyParagraphFormat(written.ParagraphFormat, {
-        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
-      });
-      restoreDegradationInsertionStyle(document, insertionStyle, Number(written.End));
       return {Range: written};
     } catch (error) {
       throw nativeError("DEGRADATION_INSERT_FAILED");
