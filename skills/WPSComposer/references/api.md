@@ -4,7 +4,7 @@
 
 This Python API is for WPSComposer/SuperWriter orchestration code, plugin
 maintainers, and advanced integrations that need a deterministic plan before
-starting WPS. Normal users should keep using `generate()`; M3 does not reroute
+starting WPS. Normal users should keep using `generate()`; M4 does not reroute
 that public entry point.
 
 ```python
@@ -42,14 +42,16 @@ the pipeline's transient normalized-payload tuple is released on every exit
 path. Executor-staged copy cleanup runs on success, error, timeout, and save
 failure; cleanup failure is itself fatal and cannot silently publish a result.
 
-### M3 Markdown contract
+### M4 Markdown contract
 
 | Object | Attributes / syntax | Native result |
 |---|---|---|
 | Figure | `#id`, `caption`, `width=auto\|column\|full\|Npt`, `orientation=portrait\|landscape`, `kind`, `layout=stack\|columns`, `columns=2` | native image container; caption below; one or two children |
 | Table | `#id`, `caption`, `style=three-line\|grid`, `orientation`, `merges=A2:A3;B2:C2`, `repeat_header` | native table; caption above; repeated header and direct alignment |
-| Formula | identifier plus readable formula body | readable source with native editable equation-number shell |
+| Formula | `:::equation {#eq:id fallback_image="relative.png"}`; legacy `:::formula` | validated editable Office Math attempt plus the M3 equation-number shell, or marked image/source fallback |
 | Reference | `{{ref:target-id}}` outside code/math spans | `REF <safe-bookmark> \\h` in the same paragraph |
+| Citation | `{{cite:id}}` in visible inline content | deterministic numeric `[n]` in the same paragraph or table cell |
+| Bibliography | `:::bibliography` with `[id] text` lines; legacy `:::references` | cited-first native hanging paragraphs with fixed spacing |
 
 References in abstracts and mixed ordered/unordered lists use the same native
 field contract. List items retain controlled markers, tabs, `List Paragraph`
@@ -61,6 +63,22 @@ global, after that H1 it is chapter-based, and an unnumbered H1 is transparent
 to sequence reset. Explicit `chapter` falls back to global before a numbered
 H1. Controlled sequence identifiers are `WPSC_FIG`, `WPSC_TAB`, and
 `WPSC_EQ`; user text never enters field codes or generated bookmark names.
+
+Formula source uses one bounded restricted-LaTeX grammar (10,000 Unicode code
+points and 64 brace levels). It accepts Unicode variables, scripts, fractions,
+roots, sums/products/integrals with limits, scalable delimiters, common
+Greek/operators/relations, matrices, cases, and bounded nesting. It rejects
+custom/unknown commands, packages, file/URL/shell access, malformed or oversized
+structures, and external resources before WPS starts. Optional `fallback_image`
+is resolved relative to `base_dir`, normalized privately under the M3 media
+limits, bound to exactly one formula, and never serialized as a path or payload.
+
+Citation numbers follow first visible semantic occurrence across abstract/body
+paragraphs, lists, block quotes, page-break paragraphs, and table cells.
+Repeated citations reuse the number. Bibliography output is cited-first;
+remaining declarations retain source order unless front matter sets
+`bibliography_include_uncited: false`. Missing citations remain visibly marked
+in their owning paragraph/cell and never disappear silently.
 
 Figure and table index operations are native and populated from those internal
 sequence labels. Field finalization runs numbering, bookmark/reference,
@@ -83,7 +101,7 @@ payload hashes, private locators, bookmark lookup maps, and visible field
 values/hashes. The executable plan retains only its required manifest digest,
 controlled bookmark descriptors, and opaque resource IDs.
 
-### Table and failure contract
+### Table and degradation contract
 
 Academic tables default to `three-line`: 1.5 pt top/bottom borders, 0.75 pt
 header-bottom border, no vertical/interior body borders, zero cell indent,
@@ -94,17 +112,36 @@ merge, preserves the full grid, and places one `TABLE_MERGE_INVALID` notice
 after the caption. An over-page vertical group recovers to the one specified
 unmerged/splittable grid form.
 
-Engine acquisition, configuration, field/index refresh, save, validation,
-publication, and cleanup failures are fatal. Named object-local image, table,
-and cross-reference failures alone may follow their closed fallback ladders.
-An unavailable WPS engine therefore fails immediately. A missing image block
-does not affect documents that contain no image; an insertion failure degrades
-at that object's location and the executor still returns the requested result
-when its declared fallback succeeds.
+M4 uses one closed recovery matrix on Windows and macOS. Formula code
+`EQUATION_INSERT_FAILED` permits one `explicit-image-then-source-notice` ladder:
+attempt native math, then at most one validated image; if unavailable or failed,
+keep readable source in the terminal marked notice. `CROSS_REFERENCE_FAILED`
+stays inline, and `BIBLIOGRAPHY_INSERT_FAILED` stays at the bibliography
+paragraph. Block notices use a restrained local box; document notices
+deduplicate at the single empty `生成质量提示` anchor. Empty optional content leaves
+that anchor invisible and creates no issue, paragraph, spacing, or notice.
 
-M4 owns native Office Math content, bibliography/citation ordering, and the
-general degradation framework. M5 owns PDF-driven quality and re-layout plus
-public default migration. M3 does not change `generate()` routing.
+On verified macOS WPS 12.1.26055, professional `BuildUp` remains a structural
+no-op for the supported formula families. The executor verifies the native
+structure and honestly uses image/source degradation instead of claiming
+Type-20 linear text as native success. This is a runtime capability result, not
+a parser relaxation. Windows receives the same descriptor and postcondition;
+real Windows M4 verification is deferred to the M5/final gate.
+
+Only named object-local failures may recover. `ENGINE_LOST`, acquisition or
+configuration failure, protocol/capability mismatch, unknown native errors,
+rollback failure, required field/index/repagination failure, staging/hash or
+cleanup failure, terminal source/notice fallback failure, and
+save/export/validation/publication failure are fatal. A recoverable image-rung
+failure may still roll back into the declared source notice. Diagnostics and
+notices never expose paths, payload/base64,
+resource hashes or locators, bookmark maps, field values/hashes, or exception
+representations.
+
+M5/final work owns PDF geometry/bbox quality checks, deterministic full
+re-layout and notice-only patches, performance gates, public `generate()`
+default migration, the real Windows cross-platform gate, and release/version
+publication. M4 still returns only the artifact format requested by the caller.
 
 ## Office-to-PDF conversion
 

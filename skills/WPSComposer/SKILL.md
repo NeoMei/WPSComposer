@@ -250,13 +250,13 @@ Generate and deliver only the requested artifact format. During development,
 create PDF evidence separately when a native WPS layout change needs visual
 verification; do not make that PDF an automatic public companion output.
 
-## Long-form native objects (M3)
+## Long-form formulas, citations, and marked recovery (M4)
 
-The M3 long-form pipeline is an advanced Python integration boundary for
+The M4 long-form pipeline is an advanced Python integration boundary for
 WPSComposer/SuperWriter agents, plugin maintainers, and applications that need
 to inspect a deterministic offline plan before choosing a native executor. It
 is not the normal end-user entry point: ordinary document requests continue to
-use `generate()`, and M3 does not change that routing.
+use `generate()`, and M4 does not change that routing.
 
 ```python
 from skills.WPSComposer.scripts.longform import (
@@ -270,7 +270,8 @@ build = build_longform_generation(markdown, base_dir="assets")
 outcome = execute_longform_plan(build, executor, deadline=deadline)
 ```
 
-Long-form Markdown supports these M3 attributes:
+Long-form Markdown preserves the M3 figure, table, numbering, reference, and
+resource contracts and adds these closed M4 forms:
 
 - Figures: `#id`, `caption`, `width="auto|column|full|Npt"`,
   `orientation="portrait|landscape"`, `kind`, `layout="stack|columns"`, and
@@ -278,10 +279,22 @@ Long-form Markdown supports these M3 attributes:
 - Tables: `#id`, `caption`, `style="three-line|grid"`, explicit
   `orientation`, `merges="A2:A3;B2:C2"`, and `repeat_header`. Table captions
   are native fields above the first row.
-- Formula blocks accept an identifier and get an editable native number shell;
-  `{{ref:target-id}}` creates a native hyperlinking cross-reference outside
-  code and math spans. References inside abstract paragraphs and ordered or
-  unordered list items retain native REF fields and list hanging indents.
+- Formula blocks use `:::equation {#eq:id}` (legacy `:::formula` is accepted).
+  Optional `fallback_image="relative/path.png"` names one local, validated
+  fallback image. Formula text is a bounded restricted-LaTeX subset: Unicode
+  variables, scripts, fractions, roots, sums/products/integrals, scalable
+  delimiters, common Greek/operators/relations, matrices, cases, and bounded
+  nesting. Custom/unknown commands, packages, file/URL/shell access, malformed
+  groups/environments, and external renderers are rejected before execution.
+- `{{cite:id}}` emits numeric citations. Numbers follow first visible semantic
+  occurrence across paragraphs, lists, block quotes, page-break paragraphs,
+  and table cells; repeats reuse the number. `:::bibliography` (legacy
+  `:::references`) declares one `[id] text` entry per line. Cited entries come
+  first, followed by uncited declarations unless front matter sets
+  `bibliography_include_uncited: false`.
+- `{{ref:target-id}}` remains the native hyperlinking object reference. Formula
+  references reuse the M3 equation number/bookmark shell. References and
+  citations in abstracts and lists retain their paragraph and list geometry.
 - Front matter controls `caption_numbering: auto|global|chapter` plus
   `figure_index` and `table_index`. `auto` is resolved per object: content
   before the first numbered H1 is global, later content is chapter-numbered,
@@ -309,18 +322,40 @@ declarations are validated all-or-nothing. An invalid declaration preserves
 the complete unmerged grid and records one notice after the caption; an
 over-page vertical group degrades to an unmerged splittable grid.
 
-Configuration, engine acquisition, native fields/indexes, save, validation,
-publication, and cleanup failures stop generation. Only explicitly named
-object-local image/table/reference failures may use their closed fallback. If
-the WPS engine is unavailable, execution fails immediately. If a document has
-no image, normal text/table layout proceeds; if an individual image insertion
-fails, generation continues through the declared fallback and marks the
-corresponding document position.
+M4 formula execution first attempts editable Office Math/WPS math content while
+keeping the number shell separate. `EQUATION_INSERT_FAILED` follows exactly one
+closed ladder: the declared validated image when available, otherwise readable
+source, plus a visible notice at the formula node. A missing or invalid fallback
+image produces `FORMULA_FALLBACK_IMAGE_UNAVAILABLE` but never suppresses a valid
+native attempt. On the verified macOS WPS 12.1.26055 build, professional
+`BuildUp` is a structural no-op for the supported families; the executor detects
+that postcondition and honestly uses the marked image/source fallback. It does
+not report a linear Type-20 object as native success. Windows uses the same
+descriptor and recovery contract; real Windows M4 execution remains the
+M5/final cross-platform gate.
 
-M3 intentionally stops at the readable equation source plus native numbering
-shell. Native Office Math content, bibliography/citations, the general M4
-degradation framework, PDF-driven quality/re-layout, and migration of the
-public `generate()` default remain later milestones.
+Marked recovery is visible and local. Missing citation/reference runs stay
+inline in their paragraph; formula/object failures use a nearby block notice;
+document issues deduplicate at the reserved `生成质量提示` anchor. Notices contain
+only a stable code, controlled label, readable reason, and actual fallback—never
+paths, payloads, hashes, bookmark maps, field values, or exception
+representations. A document with no optional formula, citation, bibliography,
+image, or degradation has an empty reserved anchor but no visible notice or
+extra spacing.
+
+Only allowlisted object-local failures such as `EQUATION_INSERT_FAILED`,
+`CROSS_REFERENCE_FAILED`, and `BIBLIOGRAPHY_INSERT_FAILED` can recover. Engine
+loss (`ENGINE_LOST`), protocol/capability mismatch, unknown native exceptions,
+rollback failure, required field/index/repagination failure, staging/hash or
+cleanup failure, save/export/validation/publication failure, and failure of the
+terminal source/notice fallback are fatal. A recoverable image-rung failure may
+still roll back into the declared source notice; an unavailable engine stops
+immediately.
+
+M5/final work is separate: PDF-driven quality and bbox mapping, automatic full
+re-layout and notice-only patching, performance gates, migration of public
+`generate()` defaults, real Windows verification, and release/version work.
+M4 does not change the requested-format-only public output rule.
 
 ## Native heading numbering (docx)
 
