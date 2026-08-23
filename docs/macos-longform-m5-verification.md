@@ -28,6 +28,11 @@ fixture PDFs, one performance PDF, `evidence.json`, SHA-256 values, and
 representative screenshots. Evidence JSON contains only relative artifact and
 screenshot names.
 
+After the evidence runner was generalized for the pending Windows gate, one
+additional full Darwin regression passed in `pytest-real-8`: 63 performance
+pages, one generation/export/analysis, zero patch, zero performance issue codes,
+and 139.7457 seconds total.
+
 ## Stable results
 
 | Fixture | Pages | Expected final issue codes | Native behavior |
