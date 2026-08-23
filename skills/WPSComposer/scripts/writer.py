@@ -1589,6 +1589,7 @@ class WriterComposer(BaseComposer):
         """Run the controller-owned bounded child-stack figure fallback."""
         del kwargs
         resource_locators = dict(resource_locators or {})
+        issues = []
         landscape = orientation == "landscape"
         if landscape:
             self.add_section(landscape=True)
@@ -1889,11 +1890,186 @@ class WriterComposer(BaseComposer):
         self.selection.TypeParagraph()
         return {"issues": []}
 
+    def _native_formula_container(self):
+        """Create the fixed borderless layout shell for one numbered formula."""
+        table = self._doc.Tables.Add(self.selection.Range, 1, 3)
+        for border_id in range(-6, 0):
+            table.Borders(border_id).LineStyle = 0
+        # Stay within the narrowest standard M2 body width while keeping equal
+        # side columns so the middle formula is visually page-centered.
+        for index, width in enumerate((36.0, 320.0, 36.0), start=1):
+            column = table.Columns(index)
+            try:
+                column.SetWidth(width, 0)
+            except Exception:
+                column.Width = width
+        table.Rows.AllowBreakAcrossPages = 0
+        table.Range.ParagraphFormat.KeepTogether = -1
+        table.Range.ParagraphFormat.KeepWithNext = 0
+        center = table.Cell(1, 2).Range
+        number = table.Cell(1, 3).Range
+        center.ParagraphFormat.Alignment = 1
+        center.ParagraphFormat.KeepTogether = -1
+        number.ParagraphFormat.Alignment = 2
+        number.ParagraphFormat.KeepTogether = -1
+        return table
+
+    def _native_formula_number_shell(
+        self, table, numbering, bookmark_name, owner_node_id,
+    ):
+        number_range = table.Cell(1, 3).Range
+        self.selection.SetRange(int(number_range.Start), int(number_range.Start))
+        self._add_native_number_shell(
+            numbering, bookmark_name, owner_node_id
+        )
+        number_range.ParagraphFormat.Alignment = 2
+        number_range.ParagraphFormat.KeepTogether = -1
+        self.selection.SetRange(int(table.Range.End), int(table.Range.End))
+        self.selection.TypeParagraph()
+
+    def _add_trusted_native_math(self, table, descriptor):
+        if descriptor.get("syntax") != "wps-linear-v1":
+            raise ValueError("untrusted native math syntax")
+        center = table.Cell(1, 2).Range
+        start = int(center.Start)
+        end = int(center.End) - 1
+        if end <= start:
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+        math_range = self._doc.Range(start, end)
+        math_range.Text = descriptor["linearText"]
+        maths = self._doc.OMaths
+        try:
+            before = int(maths.Count)
+            native = maths.Add(math_range)
+            if native is None:
+                native = self._native_collection_item(maths, before + 1)
+            native.BuildUp()
+            after = int(maths.Count)
+            native_range = native.Range
+            native_start = int(native_range.Start)
+            native_end = int(native_range.End)
+            if (
+                after != before + 1
+                or native_end <= native_start
+                or native_start < start
+                or native_end > end
+            ):
+                raise ValueError("native math verification failed")
+        except Exception:
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+        center.ParagraphFormat.Alignment = 1
+        center.ParagraphFormat.KeepTogether = -1
+        return native
+
+    def add_equation_native(
+        self, *, renderMode, content, numbering, bookmarkName, fallbackText,
+        owner_node_id=None, controller_owned=False,
+    ):
+        """Insert one M4 editable OMath; recovery remains controller-owned."""
+        if renderMode != "native-m4":
+            raise ValueError("invalid native M4 equation mode")
+        del controller_owned
+        planned = content.get("plannedDegradation")
+        if planned is not None:
+            self.add_equation_native_fallback(
+                numbering=numbering,
+                bookmarkName=bookmarkName,
+                fallbackText=fallbackText,
+                fallback_resource_locator=None,
+                owner_node_id=owner_node_id,
+                failure_code=planned["code"],
+            )
+            return {"issues": [{
+                "code": planned["code"],
+                "message": planned["reason"],
+                "placement": planned["placement"],
+                "fallback": planned["fallbackKind"],
+            }]}
+        table = self._native_formula_container()
+        self._add_trusted_native_math(table, content["nativeMath"])
+        self._native_formula_number_shell(
+            table, numbering, bookmarkName, owner_node_id
+        )
+        return {"issues": []}
+
+    def add_equation_native_fallback(
+        self, *, numbering, bookmarkName, fallbackText,
+        fallback_resource_locator=None, owner_node_id=None,
+        failure_code="EQUATION_INSERT_FAILED",
+    ):
+        """Run the controller's one bounded image-or-source formula fallback."""
+        table = self._native_formula_container()
+        center = table.Cell(1, 2).Range
+        self.selection.SetRange(int(center.Start), int(center.Start))
+        image_inserted = False
+        if fallback_resource_locator is not None:
+            image_start = self._native_position()
+            try:
+                shape = self.add_image(
+                    fallback_resource_locator,
+                    max_width=290.0,
+                    max_height=180.0,
+                    inline=True,
+                    preserve_aspect=True,
+                    alt=owner_node_id,
+                )
+            except Exception:
+                self._native_rollback(
+                    image_start,
+                    max(image_start, int(center.End) - 1),
+                )
+                self.selection.SetRange(int(center.Start), int(center.Start))
+            else:
+                shape.Range.ParagraphFormat.Alignment = 1
+                shape.Range.ParagraphFormat.KeepTogether = -1
+                image_inserted = True
+        if image_inserted:
+            self.add_inline_degradation(
+                failure_code,
+                "Formula used its validated image fallback",
+                "formula image fallback",
+            )
+        else:
+            self.add_inline_degradation(
+                failure_code,
+                "Formula native math could not be inserted",
+                str(fallbackText),
+            )
+        center.ParagraphFormat.Alignment = 1
+        center.ParagraphFormat.KeepTogether = -1
+        self._native_formula_number_shell(
+            table, numbering, bookmarkName, owner_node_id
+        )
+        return {"issues": []}
+
     def add_cross_reference_paragraph(
         self, *, runs, owner_node_id=None, listFormatting=None,
         controller_owned=False,
     ):
         """Insert ordered literal and native REF runs in one paragraph."""
+        return self._add_native_run_paragraph(
+            runs=runs,
+            owner_node_id=owner_node_id,
+            listFormatting=listFormatting,
+            controller_owned=controller_owned,
+        )
+
+    def add_citation_paragraph(
+        self, *, runs, owner_node_id=None, listFormatting=None,
+        controller_owned=False,
+    ):
+        """Insert static numeric citations through the shared run primitive."""
+        return self._add_native_run_paragraph(
+            runs=runs,
+            owner_node_id=owner_node_id,
+            listFormatting=listFormatting,
+            controller_owned=controller_owned,
+        )
+
+    def _add_native_run_paragraph(
+        self, *, runs, owner_node_id=None, listFormatting=None,
+        controller_owned=False,
+    ):
         if listFormatting is not None:
             indent = float(listFormatting["indentPt"])
             self._reset_selection_to_normal()
@@ -1912,9 +2088,26 @@ class WriterComposer(BaseComposer):
             paragraph_format.SpaceBefore = 0
             paragraph_format.SpaceAfter = 3
         degraded = False
+        planned_issues = []
         for run in runs:
-            if run["type"] == "text":
+            run_type = run["type"]
+            if run_type == "text":
                 self.selection.TypeText(run["text"])
+                continue
+            if run_type == "citation":
+                self.selection.TypeText(run["fallbackText"])
+                continue
+            if run_type == "degradation":
+                self.add_inline_degradation(
+                    run["code"], "Reference target is unresolved",
+                    run["fallbackText"],
+                )
+                planned_issues.append({
+                    "code": run["code"],
+                    "message": "Reference target is unresolved",
+                    "placement": "inline",
+                    "fallback": "inline",
+                })
                 continue
             self.selection.TypeText(run["prefix"])
             start = self._native_position()
@@ -1935,7 +2128,7 @@ class WriterComposer(BaseComposer):
         self.selection.TypeParagraph()
         if listFormatting is not None:
             self._reset_selection_to_normal()
-        issues = []
+        issues = list(planned_issues)
         if degraded:
             issues.append({
                 "code": "CROSS_REFERENCE_FAILED",
@@ -1943,6 +2136,51 @@ class WriterComposer(BaseComposer):
                 "placement": "inline",
             })
         return {"issues": issues}
+
+    def add_bibliography_native(
+        self, *, schemaVersion=1, entries, style, hangingIndentPt,
+        leftIndentPt, spaceAfterPt, owner_node_id=None,
+        controller_owned=False,
+    ):
+        """Insert already-ordered M4 numeric bibliography paragraphs."""
+        del owner_node_id
+        if schemaVersion != 1 or style != "numeric":
+            raise ValueError("invalid structured bibliography contract")
+        del controller_owned
+        for entry in entries:
+            start = self._native_position()
+            try:
+                self.selection.TypeText(
+                    f"[{int(entry['number'])}] {entry['text']}"
+                )
+            except Exception:
+                raise NativeWriterObjectError(
+                    "BIBLIOGRAPHY_INSERT_FAILED"
+                ) from None
+            paragraph = self._doc.Range(start, self._native_position())
+            paragraph.ParagraphFormat.Alignment = 0
+            paragraph.ParagraphFormat.LeftIndent = float(leftIndentPt)
+            paragraph.ParagraphFormat.FirstLineIndent = -float(hangingIndentPt)
+            paragraph.ParagraphFormat.SpaceBefore = 0
+            paragraph.ParagraphFormat.SpaceAfter = float(spaceAfterPt)
+            paragraph.ParagraphFormat.KeepTogether = -1
+            try:
+                self.selection.TypeParagraph()
+            except Exception:
+                raise NativeWriterObjectError(
+                    "BIBLIOGRAPHY_INSERT_FAILED"
+                ) from None
+        return {"issues": []}
+
+    def add_bibliography_legacy(
+        self, *, entries, style="numbered", owner_node_id=None,
+    ):
+        """Execute the unchanged legacy string bibliography shape."""
+        del style, owner_node_id
+        for entry in entries:
+            self.selection.TypeText(str(entry))
+            self.selection.TypeParagraph()
+        return {"issues": []}
 
     def add_cross_reference_fallback(
         self, *, runs, owner_node_id=None, listFormatting=None,

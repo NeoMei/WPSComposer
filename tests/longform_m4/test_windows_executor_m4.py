@@ -285,6 +285,21 @@ def test_native_success_with_unavailable_optional_image_keeps_math_and_marks_onc
     assert composer.resource_paths_seen == []
 
 
+def test_formula_without_image_uses_one_controller_owned_source_fallback(tmp_path: Path):
+    composer = RecordingNativeComposer()
+    composer.failures["equation-native"] = "EQUATION_INSERT_FAILED"
+
+    outcome = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=lambda: composer
+    ).execute(_plan(_equation()))
+
+    fallback = [kwargs for name, kwargs in composer.calls if name == "equation-fallback"]
+    assert len(fallback) == 1
+    assert fallback[0]["fallback_resource_locator"] is None
+    assert fallback[0]["fallbackText"] == "x+y"
+    assert [issue.code for issue in outcome.issues] == ["EQUATION_INSERT_FAILED"]
+
+
 def test_formula_resource_id_must_resolve_before_com_acquisition(tmp_path: Path):
     acquired = False
 
@@ -323,6 +338,29 @@ def test_citations_reuse_static_number_in_one_owning_paragraph_and_bibliography_
     bibliography = [kwargs for name, kwargs in composer.calls if name == "bibliography-native"]
     assert [entry["number"] for entry in bibliography[0]["entries"]] == [1, 2]
     assert not [name for name, _ in composer.calls if name == "notice"]
+
+
+def test_structured_bibliography_named_failure_uses_one_notice_and_keeps_all_text(
+    tmp_path: Path,
+):
+    composer = RecordingNativeComposer()
+    composer.failures["bibliography-native"] = "BIBLIOGRAPHY_INSERT_FAILED"
+    bibliography = _bibliography(entries=[{
+        "id": "ref:a", "nodeId": "ref:a", "number": 1,
+        "text": "Alpha.", "cited": False,
+    }])
+
+    outcome = WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=lambda: composer
+    ).execute(_plan(bibliography_ops=(bibliography,)))
+
+    notices = [kwargs for name, kwargs in composer.calls if name == "notice"]
+    assert len(notices) == 1
+    assert notices[0]["fallback_text"] == "[1] Alpha."
+    assert composer.rollback_tokens == composer.degradation_checkpoints
+    assert [issue.code for issue in outcome.issues] == [
+        "BIBLIOGRAPHY_INSERT_FAILED"
+    ]
 
 
 def test_m3_equation_and_legacy_bibliography_use_legacy_primitives(tmp_path: Path):
@@ -526,6 +564,60 @@ def test_writer_native_formula_uses_borderless_keep_together_omath_and_right_num
     assert "(1)" in writer.selection.typed
 
 
+def test_writer_planned_formula_content_skips_omath_and_keeps_numbered_fallback_shell():
+    writer, _table, document = _formula_writer()
+    calls = []
+    writer.add_equation_native_fallback = lambda **kwargs: calls.append(kwargs) or {"issues": []}
+    planned = {
+        "code": "FORMULA_MALFORMED",
+        "placement": "block",
+        "objectLabel": "formula",
+        "reason": "Formula is malformed.",
+        "fallbackText": "x+y",
+        "fallbackKind": "source",
+    }
+
+    outcome = writer.add_equation_native(
+        renderMode="native-m4",
+        content={"plannedDegradation": planned},
+        numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+        fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+    )
+
+    assert document.OMaths.Count == 0
+    assert calls[0]["numbering"] == _numbering()
+    assert calls[0]["bookmarkName"] == EQ_BOOKMARK
+    assert outcome["issues"] == [{
+        "code": "FORMULA_MALFORMED",
+        "message": "Formula is malformed.",
+        "placement": "block",
+        "fallback": "source",
+    }]
+
+
+def test_writer_omath_count_verification_failure_is_exact_recoverable_code():
+    writer, _table, document = _formula_writer()
+
+    class BadCountOMaths(_OMaths):
+        def Add(self, rng):
+            item = super().Add(rng)
+            self.items.append(_OMath(rng))
+            return item
+
+    document.OMaths = BadCountOMaths()
+    with pytest.raises(NativeWriterObjectError) as caught:
+        writer.add_equation_native(
+            renderMode="native-m4",
+            content={"nativeMath": {
+                "syntax": "wps-linear-v1", "linearText": "x+y",
+                "sourceHash": "2" * 64,
+            }},
+            numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+            fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+        )
+    assert caught.value.code == "EQUATION_INSERT_FAILED"
+
+
 def test_writer_formula_image_failure_is_attempted_once_then_source_is_inside_terminal_notice():
     writer, _table, _document = _formula_writer()
     attempts = []
@@ -554,6 +646,27 @@ def test_writer_formula_image_failure_is_attempted_once_then_source_is_inside_te
     assert len(rollbacks) == 1
     assert inline == [("EQUATION_INSERT_FAILED", "x+y")]
     assert "(1)" in writer.selection.typed
+
+
+def test_writer_figure_fallback_initializes_empty_issues_and_keeps_planned_order():
+    writer = WriterComposer.__new__(WriterComposer)
+    notices = []
+    writer.add_degradation_notice = lambda code, message, fallback, placement: notices.append(code)
+
+    assert writer.add_captioned_figure_fallback(children=[]) == {"issues": []}
+    outcome = writer.add_captioned_figure_fallback(children=[
+        {"plannedDegradation": {
+            "code": "RESOURCE_NOT_FOUND", "message": "first",
+            "fallback": "[first]", "placement": "block",
+        }},
+        {"plannedDegradation": {
+            "code": "RESOURCE_NORMALIZATION_FAILED", "message": "second",
+            "fallback": "[second]", "placement": "block",
+        }},
+    ])
+
+    assert notices == ["RESOURCE_NOT_FOUND", "RESOURCE_NORMALIZATION_FAILED"]
+    assert [issue["code"] for issue in outcome["issues"]] == notices
 
 
 def test_writer_citation_and_bibliography_preserve_runs_order_and_fixed_paragraph_geometry():
@@ -619,4 +732,3 @@ def test_executor_formula_non_allowlisted_boundaries_are_fatal(code: str, tmp_pa
     with pytest.raises(WindowsLongformExecutorError):
         executor.execute(_plan(_equation()))
     assert not [name for name, _ in composer.calls if name == "equation-fallback"]
-

@@ -41,12 +41,8 @@ EXECUTION_ABORTED = "EXECUTION_ABORTED"
 DEGRADATION_FALLBACK_FAILED = "DEGRADATION_FALLBACK_FAILED"
 UNKNOWN_OPERATION = "UNKNOWN_OPERATION"
 
-# Operations whose native rendering is intentionally deferred past M3.  The
-# executor emits a deterministic degradation notice/inline fallback for them
-# and records the stable issue code declared by the plan builder.
-_M2_DEFERRED_OPERATIONS = {
-    "writer.add_bibliography": ("BIBLIOGRAPHY_INSERT_FAILED", "notice"),
-}
+# M4 completes the last Windows-native object that was deferred in M2/M3.
+_M2_DEFERRED_OPERATIONS: dict[str, tuple[str, str]] = {}
 
 _M3_NATIVE_OPERATIONS = frozenset({
     "writer.add_captioned_figure",
@@ -301,6 +297,14 @@ class WindowsLongformExecutor(LongformExecutor):
 
         by_id = {resource.id: resource for resource in resources}
         for operation in plan.operations:
+            if operation.op == "writer.add_equation":
+                fallback = operation.args.get("fallbackResource") or {}
+                resource_id = fallback.get("fallbackResourceId")
+                if resource_id is not None and resource_id not in by_id:
+                    raise WindowsLongformExecutorError(
+                        "Private resource validation failed"
+                    )
+                continue
             if operation.op != "writer.add_captioned_figure":
                 continue
             for child in operation.args.get("children", ()):
@@ -581,11 +585,36 @@ class WindowsLongformExecutor(LongformExecutor):
                 message=_op_fallback_message(op),
                 fallback_text=text,
             )
+        elif (
+            fallback == "explicit-image-then-source-notice"
+            and op.op == "writer.add_equation"
+            and args.get("renderMode") == "native-m4"
+        ):
+            fallback_resource = args.get("fallbackResource") or {}
+            resource_id = fallback_resource.get("fallbackResourceId")
+            locator = (
+                self._resource_locators.get(resource_id)
+                if resource_id is not None
+                else None
+            )
+            if resource_id is not None and locator is None:
+                raise RecoveryFatalError(
+                    "RESOURCE_HASH_MISMATCH", "formula resource binding unavailable"
+                ) from None
+            composer.add_equation_native_fallback(
+                numbering=args["numbering"],
+                bookmarkName=args.get("bookmarkName"),
+                fallbackText=args.get("fallbackText", ""),
+                fallback_resource_locator=locator,
+                owner_node_id=op.node_id,
+                failure_code=code or "EQUATION_INSERT_FAILED",
+            )
         elif fallback in {"notice", "explicit-image-then-source-notice"}:
             text = str(
                 args.get("fallbackText")
                 or args.get("source")
                 or args.get("text")
+                or _bibliography_fallback_text(args)
                 or _table_fallback_text(args)
                 or args.get("caption")
                 or ""
@@ -736,6 +765,37 @@ class WindowsLongformExecutor(LongformExecutor):
             self._consume_native_result(result, op)
             return
 
+        if (
+            name == "writer.add_equation"
+            and args.get("renderMode") == "native-m4"
+        ):
+            native_args = dict(args)
+            fallback_resource = native_args.pop("fallbackResource", None) or {}
+            result = composer.add_equation_native(
+                **native_args, owner_node_id=op.node_id, controller_owned=True
+            )
+            self._consume_native_result(result, op)
+            planned = fallback_resource.get(
+                "fallbackResourcePlannedDegradation"
+            )
+            if planned is not None:
+                composer.add_degradation_notice(
+                    code=planned["code"],
+                    message=planned["reason"],
+                    fallback_text=planned["fallbackText"],
+                    placement=planned["placement"],
+                )
+                self._record_issue(
+                    code=planned["code"],
+                    message="Optional formula fallback image is unavailable",
+                    node_id=op.node_id,
+                    placement=planned["placement"],
+                    stage="native",
+                    fallback="none",
+                    recoverable=True,
+                )
+            return
+
         if name == "writer.add_equation" and "numbering" in args:
             result = composer.add_equation_number_native(
                 **args, owner_node_id=op.node_id
@@ -744,9 +804,31 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.add_cross_reference" and "runs" in args:
-            result = composer.add_cross_reference_paragraph(
+            native_method = (
+                composer.add_citation_paragraph
+                if any(
+                    run.get("type") in {"citation", "degradation"}
+                    for run in args.get("runs", ())
+                )
+                else composer.add_cross_reference_paragraph
+            )
+            result = native_method(
                 **args, owner_node_id=op.node_id, controller_owned=True
             )
+            self._consume_native_result(result, op)
+            return
+
+        if name == "writer.add_bibliography":
+            if args.get("schemaVersion") == 1:
+                result = composer.add_bibliography_native(
+                    **args, owner_node_id=op.node_id, controller_owned=True
+                )
+            else:
+                legacy_args = dict(args)
+                legacy_args["entries"] = list(legacy_args.get("entries", ()))
+                result = composer.add_bibliography_legacy(
+                    **legacy_args, owner_node_id=op.node_id
+                )
             self._consume_native_result(result, op)
             return
 
@@ -951,6 +1033,15 @@ def _table_fallback_text(args: Any) -> str:
     return "\n".join(" | ".join(str(cell) for cell in row) for row in [headers, *(rows or ())])
 
 
+def _bibliography_fallback_text(args: Any) -> str:
+    if not isinstance(args, Mapping) or args.get("schemaVersion") != 1:
+        return ""
+    return "\n".join(
+        f"[{entry['number']}] {entry['text']}"
+        for entry in args.get("entries", ())
+    )
+
+
 def _fallback_placement(fallback: str) -> str:
     if fallback in {"inline", "inline-fallback"}:
         return "inline"
@@ -976,6 +1067,7 @@ def _operation_fallback_text(op: GenerationOperation) -> str:
         or args.get("source")
         or args.get("text")
         or _reference_fallback_text(args.get("runs", ()))
+        or _bibliography_fallback_text(args)
         or _table_fallback_text(args)
         or args.get("caption")
         or ""

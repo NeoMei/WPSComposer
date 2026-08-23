@@ -256,6 +256,9 @@ class FakeWriterComposer:
     def add_cross_reference_fallback(self, **kwargs) -> None:
         self._record("add_cross_reference_fallback", **kwargs)
 
+    def add_bibliography_legacy(self, **kwargs) -> None:
+        self._record("add_bibliography_legacy", **kwargs)
+
     def add_document_quality_notice(self, notices: list) -> None:
         self._record("add_document_quality_notice", notices=notices)
 
@@ -797,8 +800,10 @@ def test_operation_failure_without_declared_recovery_is_fatal(
 
 
 
-def test_deferred_ops_emit_stable_issues_and_fallbacks(executor, fake_composer):
-    """M2-deferred ops emit stable issues and deterministic fallback text."""
+def test_deferred_ops_emit_stable_issues_and_legacy_bibliography_executes(
+    executor, fake_composer,
+):
+    """Remaining legacy objects degrade while bibliography now executes."""
     ops = [
         GenerationOperation(
             op="writer.add_captioned_figure",
@@ -855,11 +860,12 @@ def test_deferred_ops_emit_stable_issues_and_fallbacks(executor, fake_composer):
     assert "IMAGE_INSERT_FAILED" in codes
     assert "TABLE_INSERT_FAILED" in codes
     assert "EQUATION_INSERT_FAILED" in codes
-    assert "BIBLIOGRAPHY_INSERT_FAILED" in codes
+    assert "BIBLIOGRAPHY_INSERT_FAILED" not in codes
 
     names = {call.name for call in fake_composer.primitives}
     assert "add_degradation_notice" in names
     assert "add_inline_degradation" not in names
+    assert "add_bibliography_legacy" in names
 
 
 def test_index_placeholders_are_inserted(executor, fake_composer):
