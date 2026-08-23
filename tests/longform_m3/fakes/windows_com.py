@@ -18,6 +18,8 @@ class RecordingNativeComposer:
         self.closed = False
         self.failures: dict[str, str] = {}
         self.resource_paths_seen: list[str] = []
+        self.degradation_checkpoints: list[int] = []
+        self.rollback_tokens: list[int] = []
 
     def _call(self, name: str, **kwargs: Any) -> dict[str, Any] | None:
         code = self.failures.get(name)
@@ -27,6 +29,10 @@ class RecordingNativeComposer:
         for path in (kwargs.get("resource_locators") or {}).values():
             assert Path(path).is_file()
             self.resource_paths_seen.append(path)
+        locator = kwargs.get("fallback_resource_locator")
+        if locator is not None:
+            assert Path(locator).is_file()
+            self.resource_paths_seen.append(locator)
         return None
 
     def close(self, save_changes: bool = False) -> None:
@@ -45,8 +51,31 @@ class RecordingNativeComposer:
     def add_equation_number_native(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("equation", **kwargs)
 
+    def add_equation_native(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("equation-native", **kwargs)
+
+    def add_equation_native_fallback(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("equation-fallback", **kwargs)
+
     def add_cross_reference_paragraph(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("reference", **kwargs)
+
+    def add_citation_paragraph(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("citation", **kwargs)
+
+    def add_bibliography_native(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("bibliography-native", **kwargs)
+
+    def add_bibliography_legacy(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("bibliography-legacy", **kwargs)
+
+    def degradation_checkpoint(self) -> int:
+        token = len(self.calls)
+        self.degradation_checkpoints.append(token)
+        return token
+
+    def rollback_degradation_checkpoint(self, token: int) -> None:
+        self.rollback_tokens.append(token)
 
     def insert_caption_index_native(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("index", **kwargs)
@@ -79,6 +108,9 @@ class RecordingNativeComposer:
 
     def upsert_document_quality_notice(self, issue) -> None:
         self._call("quality-notice", code=issue.code)
+
+    def reserve_document_quality_anchor(self, **kwargs: Any) -> None:
+        self._call("quality-anchor", **kwargs)
 
     def add_degradation_notice(self, **kwargs: Any) -> None:
         self._call("notice", **kwargs)
