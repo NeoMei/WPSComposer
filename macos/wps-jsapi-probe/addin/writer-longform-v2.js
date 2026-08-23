@@ -865,6 +865,7 @@
     let field;
     const target = endRange(document);
     const start = target.End;
+    const contentEndBefore = Number(document.Content && document.Content.End) - 1;
     const beforeCount = Number(document.Fields && document.Fields.Count);
     const strictProof = document._wpscRunOwnsAppendCursor === true &&
       Number.isInteger(beforeCount) && beforeCount >= 0;
@@ -879,18 +880,20 @@
       const afterCount = Number(document.Fields.Count);
       const fieldRange = field && field.Range;
       const proofRanges = [result, fieldRange];
-      const hasBoundedField = proofRanges.some(function (range) {
-        const proofStart = Number(range && range.Start);
-        const proofEnd = Number(range && range.End);
-        return Number.isInteger(proofStart) && Number.isInteger(proofEnd) &&
-          proofStart === start && proofEnd > proofStart;
-      });
       const content = document.Content;
       const rawContentEnd = Number(content && content.End);
       const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd > 0
         ? rawContentEnd - 1 : null;
+      const hasBoundedField = proofRanges.some(function (range) {
+        const proofStart = Number(range && range.Start);
+        const proofEnd = Number(range && range.End);
+        return Number.isInteger(proofStart) && Number.isInteger(proofEnd) &&
+          proofStart >= start && proofEnd > proofStart &&
+          contentPosition !== null && proofEnd <= contentPosition;
+      });
       if (afterCount !== beforeCount + 1 || !hasBoundedField ||
-          !resultText || contentPosition === null || contentPosition <= start) {
+          !resultText || contentPosition === null || contentPosition <= start ||
+          !Number.isInteger(contentEndBefore) || contentPosition <= contentEndBefore) {
         throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
       }
       try {

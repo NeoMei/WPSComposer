@@ -392,6 +392,7 @@ def test_addin_exposes_m4_native_handlers_and_bibliography_is_not_deferred() -> 
     assert "OMaths.Add" in source
     assert ".BuildUp()" in source
     assert "_wpscNumericFormulaDebug" not in source
+    assert "_wpscFieldNumericDebug" not in source
     assert "failure.message =" not in source
 
 
@@ -1155,6 +1156,7 @@ assert.equal(fields.Count, 0);
 
 text = "";
 const writes = [];
+let provenContentPosition = 0;
 function provenRange(start, end) { return {
   Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
   InsertAfter: function(raw) {
@@ -1162,19 +1164,20 @@ function provenRange(start, end) { return {
     writes.push([this.End, value]);
     text = text.slice(0, this.End) + value + text.slice(this.End);
     this.End += value.length;
+    provenContentPosition = Math.max(provenContentPosition, this.End);
   }
 }; }
 const provenFields = {Count: 0, Add: function(target) {
   const start = target.End;
   text = text.slice(0, start) + "1" + text.slice(start);
+  provenContentPosition = 52;
   this.Count += 1;
-  // WPS field/result proxies may inflate End after insertion. Their Start
-  // still binds the object to the collapsed Add target.
-  return {Update: function(){}, Range: {Start: start, End: start + 50},
-    Result: {Start: start, End: start + 50, Text: "1"}};
+  // Real WPS may omit Field.Range and place Result after internal field code.
+  // The result remains bounded by the same Content growth caused by Add.
+  return {Update: function(){}, Result: {Start: 50, End: 51, Text: "1"}};
 }};
 const provenDocument = {
-  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  get Content() { return {End: provenContentPosition + 1, get Text() { return text; }}; },
   Range: provenRange, Fields: provenFields, Bookmarks: {Add: function() {}}
 };
 provenDocument._wpscRunOwnsAppendCursor = true;
@@ -1182,7 +1185,7 @@ provenDocument._wpscAppendCursorRange = provenRange(0, 0);
 window.WPSComposerLongformV2.__test.addNativeNumberShell(provenDocument, {
   mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"
 }, "wpsc_eq_" + "f".repeat(24), "eq:bound", true);
-assert.deepEqual(writes, [[0, "("], [2, ")"]]);
+assert.deepEqual(writes, [[0, "("], [52, ")"]]);
 window.WPSComposerLongformV2.__test.runOperation(provenDocument, {
   op: "writer.add_paragraph", nodeId: "p:after-field", args: {text: "After"}
 }, {}, [], []);
