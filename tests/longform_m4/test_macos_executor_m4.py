@@ -270,9 +270,15 @@ let text = "";
 const builds = [];
 const added = [];
 const bookmarks = [];
+const paragraphFormats = [];
 function makeRange(start, end) {
+  const tabStops = [];
+  const paragraphFormat = {TabStops: {Add: function(position, alignment, leader) {
+    tabStops.push([position, alignment, leader]);
+  }}, _tabStops: tabStops};
+  paragraphFormats.push(paragraphFormat);
   return {
-    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat,
     get Text() { return text.slice(start, end); },
     set Text(value) { text = text.slice(0, start) + String(value) + text.slice(end); },
     InsertAfter: function(value) { text += String(value); this.End = text.length; },
@@ -294,6 +300,7 @@ const maths = {
 const document = {
   get Content() { return {End: text.length + 1}; },
   Range: makeRange,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: maths,
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
   Bookmarks: {Add: function(name) { bookmarks.push(name); }}
@@ -307,11 +314,16 @@ const args = {
 window.WPSComposerLongformV2.__test.addEquationNativeM4(
   document, args, {}, {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true}
 );
-assert.deepEqual(added, [[0, 3, "x+y"]]);
+assert.deepEqual(added, [[1, 4, "x+y"]]);
 assert.equal(builds.length, 1);
 assert.equal(maths.Count, 1);
 assert.equal(bookmarks.length, 1);
-assert.ok(text.includes("x+y\t("));
+assert.ok(text.includes("\tx+y\t("));
+const formulaFormat = paragraphFormats.find(function(format) { return format._tabStops.length === 2; });
+assert.ok(formulaFormat);
+assert.equal(formulaFormat.Alignment, 0);
+assert.equal(formulaFormat.KeepTogether, -1);
+assert.deepEqual(formulaFormat._tabStops, [[233.5, 1, 0], [467, 2, 0]]);
 ''')
 
 
@@ -321,15 +333,18 @@ let text = "";
 let imageAttempts = 0;
 function makeRange(start, end) {
   return {
-    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+    Start: start, End: end, Font: {}, Shading: {},
+    ParagraphFormat: {TabStops: {Add: function(){}}},
     InsertAfter: function(value) { text += String(value); this.End = text.length; },
     Delete: function() { text = text.slice(0, start) + text.slice(end); }
   };
 }
 const document = {
   get Content() { return {End: text.length + 1}; }, Range: makeRange,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
-  InlineShapes: {AddPicture: function() { imageAttempts += 1; throw new Error("image failed"); }},
+  InlineShapes: {AddPicture: function() { imageAttempts += 1;
+    const error = new Error("image failed"); error.code = "IMAGE_INSERT_FAILED"; throw error; }},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
   Bookmarks: {Add: function() {}},
   _wpscRecoveryController: window.WPSComposerLongformV2.__test.createLocalRecoveryController()
@@ -411,20 +426,23 @@ assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(
 def test_js_omath_verification_rejects_escape_and_does_not_normalize_unknown_api_errors() -> None:
     _run_node(r'''
 let text = "";
-function range(start, end) { return {Start: start, End: end, ParagraphFormat: {},
+function range(start, end) { return {Start: start, End: end,
+  ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); }}; }
 const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
   numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
   bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"};
 const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true};
-const native = {Range: {Start: 0, End: 3}, BuildUp: function() { this.Range.End = 99; }};
+const native = {Range: {Start: 1, End: 4}, BuildUp: function() { this.Range.End = 99; }};
 const escaping = {Count: 0, Item: function() { return native; },
-  Add: function() { this.Count = 1; return {Start: 0, End: 3, OMaths: {Count: 1, Item: function() { return native; }}}; }};
-const document = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: escaping};
+  Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: {Count: 1, Item: function() { return native; }}}; }};
+const document = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: escaping,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {}, context),
   error => error.code === "EQUATION_INSERT_FAILED");
 const unknown = new Error("unknown OMath getter failure");
+text = "";
 document.OMaths = {get Count() { throw unknown; }, Add: function() {}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {}, context),
   error => error === unknown);
@@ -435,10 +453,13 @@ def test_js_planned_formula_uses_validated_image_without_entering_omath() -> Non
     _run_node(r'''
 let text = "";
 let imageAttempts = 0;
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
   InsertAfter: function(value) { text += String(value); }, Delete: function() {}}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
-  InlineShapes: {AddPicture: function(locator) { imageAttempts += 1; assert.equal(locator, "/private/formula.png"); return {}; }},
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  InlineShapes: {AddPicture: function(locator) { imageAttempts += 1; assert.equal(locator, "/private/formula.png");
+    return {Range: {Start: 1, End: 2, ParagraphFormat: {}}}; }},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
   Bookmarks: {Add: function() {}},
   get OMaths() { throw new Error("planned content must not enter OMath"); }};
@@ -454,4 +475,122 @@ assert.equal(imageAttempts, 1);
 assert.equal(context.issues.length, 1);
 assert.equal(context.issues[0].code, "FORMULA_MALFORMED");
 assert.ok(text.includes("formula image fallback"));
+''')
+
+
+def test_js_formula_image_rung_only_recovers_named_image_failures() -> None:
+    _run_node(r'''
+function makeDocument(addPicture) {
+  let text = "", rollbacks = 0;
+  function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+    ParagraphFormat: {TabStops: {Add: function(){}}},
+    InsertAfter: function(value) { text += String(value); },
+    Delete: function() { rollbacks += 1; text = ""; }}; }
+  return {document: {get Content() { return {End: text.length + 1}; }, Range: range,
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+    InlineShapes: {AddPicture: function() { return addPicture(function(value) { text += value; }); }},
+    Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
+    Bookmarks: {Add: function() {}}},
+    text: function() { return text; }, rollbacks: function() { return rollbacks; }};
+}
+const args = {fallbackResource: {fallbackResourceId: "formula-image-1"}, fallbackText: "x+y",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)};
+const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true};
+const unknown = new Error("raw engine exception");
+let state = makeDocument(function(mutate) { mutate("partial"); throw unknown; });
+assert.throws(() => window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+  state.document, args, {"formula-image-1": "/private/formula.png"}, context, "EQUATION_INSERT_FAILED"
+), error => error === unknown);
+assert.equal(state.rollbacks(), 1);
+assert.equal(state.text(), "");
+const engine = new Error("engine lost"); engine.code = "ENGINE_LOST";
+state = makeDocument(function(mutate) { mutate("partial"); throw engine; });
+assert.throws(() => window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+  state.document, args, {"formula-image-1": "/private/formula.png"}, context, "EQUATION_INSERT_FAILED"
+), error => error.code === "ENGINE_LOST");
+state = makeDocument(function(mutate) { mutate("partial"); return {}; });
+window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+  state.document, args, {"formula-image-1": "/private/formula.png"}, context, "EQUATION_INSERT_FAILED"
+);
+assert.equal(state.rollbacks(), 1);
+assert.ok(state.text().includes("x+y"));
+''')
+
+
+def test_js_formula_inner_rollback_and_number_failures_remain_exact_fatal_codes() -> None:
+    _run_node(r'''
+let text = "", deletes = 0;
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  InsertAfter: function(value) { text += String(value); },
+  Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
+  InlineShapes: {AddPicture: function() { text += "partial"; return {}; }},
+  Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }}, Bookmarks: {Add: function() {}}};
+const operation = {op: "writer.add_equation", nodeId: "eq:one", args: {
+  renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  fallbackResource: {fallbackResourceId: "formula-image-1"}, fallbackText: "x+y",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"], fallback: "explicit-image-then-source-notice"}};
+assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
+  document, operation, {"formula-image-1": "/private/formula.png"}, [], []
+), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
+
+let rollbackCount = 0;
+function range2(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  InsertAfter: function(value) { text += String(value); }, Delete: function() { rollbackCount += 1; text = ""; }}; }
+const fieldError = new Error("field failed"); fieldError.code = "FIELD_REFRESH_FAILED";
+const document2 = {get Content() { return {End: text.length + 1}; }, Range: range2,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  InlineShapes: {AddPicture: function() { return {Range: {Start: 0, End: 1, ParagraphFormat: {}}}; }},
+  Fields: {Add: function() { throw fieldError; }}, Bookmarks: {Add: function() {}}};
+assert.throws(() => window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+  document2, operation.args, {"formula-image-1": "/private/formula.png"},
+  {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true}, "EQUATION_INSERT_FAILED"
+), error => error.code === "FIELD_REFRESH_FAILED");
+assert.equal(rollbackCount, 1);
+''')
+
+
+def test_js_omath_post_buildup_rechecks_local_and_global_identity() -> None:
+    _run_node(r'''
+let text = "";
+function range(start, end) { return {Start: start, End: end,
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); }, InsertAfter: function(value) { text += String(value); }}; }
+const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"};
+const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true};
+let local = null, globalItem = null;
+const original = {Range: {Start: 1, End: 4}, BuildUp: function() {
+  local = {Range: {Start: 1, End: 4}, BuildUp: function(){}};
+  globalItem = {Range: {Start: 1, End: 4}, BuildUp: function(){}};
+}};
+local = original; globalItem = original;
+const localCollection = {Count: 1, Item: function() { return local; }};
+const globalCollection = {Count: 0, Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: localCollection}; },
+  Item: function() { return globalItem; }};
+const document = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: globalCollection,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
+assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {}, context),
+  error => error.code === "EQUATION_INSERT_FAILED");
+
+const unknown = new Error("global getter failed");
+text = "";
+const unknownMath = {Range: {Start: 1, End: 4}, BuildUp: function() {
+  Object.defineProperty(this, "Range", {get: function() { throw unknown; }});
+}};
+const unknownLocal = {Count: 1, Item: function() { return unknownMath; }};
+const unknownGlobal = {Count: 0, Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: unknownLocal}; },
+  Item: function() { return unknownMath; }};
+const unknownDocument = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: unknownGlobal,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
+assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(unknownDocument, args, {}, context),
+  error => error === unknown);
 ''')

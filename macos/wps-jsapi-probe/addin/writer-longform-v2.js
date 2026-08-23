@@ -576,13 +576,23 @@
     try { spec.rollback(checkpoint); }
     catch (error) { throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED"); }
     try { spec.fallbackAttempt(descriptor); }
-    catch (error) { throw nativeError("DEGRADATION_FALLBACK_FAILED"); }
+    catch (error) {
+      if (error && error._wpscPreserveFallbackFatal === true) throw error;
+      throw nativeError("DEGRADATION_FALLBACK_FAILED");
+    }
     try { spec.insertNotice(safeString(spec.nodeId), descriptor); }
     catch (error) { throw nativeError("DEGRADATION_INSERT_FAILED"); }
 
     controller.byIdentity[identity] = decision;
     controller.decisions.push(decision);
     return decision;
+  }
+
+  function preserveFallbackFatal(error) {
+    const failure = error && typeof error === "object"
+      ? error : nativeError("EXECUTION_ABORTED");
+    failure._wpscPreserveFallbackFatal = true;
+    return failure;
   }
 
   function currentPosition(document) {
@@ -1190,19 +1200,62 @@
     insertInlineText(document, "\r");
   }
 
-  function addFormulaSourceTerminalNotice(document, args, code, context) {
+  function formulaLayoutSpec(document) {
+    let setup = document && document.PageSetup;
+    const sections = document && document.Sections;
+    const sectionCount = sections && Number(sections.Count);
+    if (Number.isInteger(sectionCount) && sectionCount > 0) {
+      const section = collectionItem(sections, sectionCount);
+      if (section && section.PageSetup) setup = section.PageSetup;
+    }
+    const pageWidth = Number(setup && setup.PageWidth);
+    const leftMargin = Number(setup && setup.LeftMargin);
+    const rightMargin = Number(setup && setup.RightMargin);
+    const usableWidth = pageWidth - leftMargin - rightMargin;
+    if (!Number.isFinite(pageWidth) || !Number.isFinite(leftMargin) ||
+        !Number.isFinite(rightMargin) || pageWidth <= 0 ||
+        leftMargin < 0 || rightMargin < 0 || usableWidth <= 72) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return {center: usableWidth / 2, right: usableWidth};
+  }
+
+  function beginFormulaLayout(document) {
     const start = currentPosition(document);
+    const layout = formulaLayoutSpec(document);
+    const probe = document.Range(start, start);
+    const format = probe && probe.ParagraphFormat;
+    if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    insertInlineText(document, "\t");
+    return {start: start, center: layout.center, right: layout.right};
+  }
+
+  function finishFormulaLayout(document, layout) {
+    const paragraph = document.Range(layout.start, currentPosition(document));
+    const format = paragraph && paragraph.ParagraphFormat;
+    if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    format.Alignment = 0;
+    format.LeftIndent = 0;
+    format.RightIndent = 0;
+    format.FirstLineIndent = 0;
+    format.KeepTogether = -1;
+    format.TabStops.Add(layout.center, 1, 0);
+    format.TabStops.Add(layout.right, 2, 0);
+  }
+
+  function addFormulaSourceTerminalNotice(document, args, code, context) {
+    const layout = beginFormulaLayout(document);
     addInlineDegradation(document, {
       code: code,
       fallbackText: args.fallbackText || ""
     });
     insertInlineText(document, "\t");
     addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
-    const paragraph = document.Range(start, currentPosition(document));
-    if (paragraph && paragraph.ParagraphFormat) {
-      paragraph.ParagraphFormat.Alignment = 2;
-      paragraph.ParagraphFormat.KeepTogether = -1;
-    }
+    finishFormulaLayout(document, layout);
     insertInlineText(document, "\r");
   }
 
@@ -1230,6 +1283,7 @@
     if (!document.OMaths || typeof document.OMaths.Add !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
+    const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
     const linearText = safeString(nativeMath.linearText);
     insertInlineText(document, linearText);
@@ -1266,19 +1320,28 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     math.BuildUp();
-    const builtStart = Number(math.Range.Start);
-    const builtEnd = Number(math.Range.End);
-    if (Number(document.OMaths.Count) !== after ||
-        builtEnd <= builtStart || builtStart < addedStart || builtEnd > addedEnd) {
+    const builtAddedStart = Number(addedRange.Start);
+    const builtAddedEnd = Number(addedRange.End);
+    const builtLocalCount = Number(addedMaths.Count);
+    const builtGlobalCount = Number(document.OMaths.Count);
+    const builtLocalMath = collectionItem(addedMaths, 1);
+    const builtGlobalMath = collectionItem(document.OMaths, after);
+    const builtStart = Number(builtLocalMath.Range.Start);
+    const builtEnd = Number(builtLocalMath.Range.End);
+    const builtGlobalStart = Number(builtGlobalMath.Range.Start);
+    const builtGlobalEnd = Number(builtGlobalMath.Range.End);
+    if (builtLocalMath !== math || builtGlobalMath !== documentMath ||
+        builtLocalMath !== builtGlobalMath || builtLocalCount !== 1 ||
+        builtGlobalCount !== after ||
+        builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
+        builtEnd <= builtStart || builtStart < builtAddedStart ||
+        builtEnd > builtAddedEnd || builtGlobalStart !== builtStart ||
+        builtGlobalEnd !== builtEnd) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     insertInlineText(document, "\t");
     addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
-    const paragraph = document.Range(start, currentPosition(document));
-    if (paragraph && paragraph.ParagraphFormat) {
-      paragraph.ParagraphFormat.Alignment = 2;
-      paragraph.ParagraphFormat.KeepTogether = -1;
-    }
+    finishFormulaLayout(document, layout);
     insertInlineText(document, "\r");
 
     emitFormulaResourceDegradation(document, args, context);
@@ -1311,39 +1374,45 @@
       if (!document.InlineShapes || typeof document.InlineShapes.AddPicture !== "function") {
         throw nativeError("CAPABILITY_MISMATCH");
       }
-      const imageStart = currentPosition(document);
-      let shape = null;
-      let imageRolledBack = false;
+      const layout = beginFormulaLayout(document);
+      const imageStart = layout.start;
       try {
-        shape = document.InlineShapes.AddPicture(
+        const shape = document.InlineShapes.AddPicture(
           locator, false, true, endRange(document)
         );
-      } catch (error) {
-        rollbackMutation(document, imageStart);
-        imageRolledBack = true;
-      }
-      if (shape) {
+        const shapeRange = shape && shape.Range;
+        const shapeStart = Number(shapeRange && shapeRange.Start);
+        const shapeEnd = Number(shapeRange && shapeRange.End);
+        if (!shapeRange || !Number.isFinite(shapeStart) ||
+            !Number.isFinite(shapeEnd) || shapeEnd <= shapeStart) {
+          throw nativeError("IMAGE_INSERT_FAILED");
+        }
+        if (!shapeRange.ParagraphFormat) throw nativeError("CAPABILITY_MISMATCH");
+        shapeRange.ParagraphFormat.KeepTogether = -1;
         addInlineDegradation(document, {
           code: code, fallbackText: "formula image fallback"
         });
         insertInlineText(document, "\t");
+        addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+        finishFormulaLayout(document, layout);
+        insertInlineText(document, "\r");
+        return;
+      } catch (error) {
         try {
-          addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
-          const paragraph = document.Range(imageStart, currentPosition(document));
-          if (paragraph && paragraph.ParagraphFormat) {
-            paragraph.ParagraphFormat.Alignment = 2;
-            paragraph.ParagraphFormat.KeepTogether = -1;
-          }
-          insertInlineText(document, "\r");
-          return;
-        } catch (error) {
           rollbackMutation(document, imageStart);
-          throw error;
+        } catch (rollbackError) {
+          throw preserveFallbackFatal(rollbackError);
+        }
+        if (!error || error.code !== "IMAGE_INSERT_FAILED") {
+          throw preserveFallbackFatal(error);
         }
       }
-      if (!imageRolledBack) rollbackMutation(document, imageStart);
     }
-    addFormulaSourceTerminalNotice(document, args, code, context);
+    try {
+      addFormulaSourceTerminalNotice(document, args, code, context);
+    } catch (error) {
+      throw preserveFallbackFatal(error);
+    }
   }
 
   function addCitationParagraph(document, args, resources, context) {
