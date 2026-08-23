@@ -54,6 +54,7 @@ _LINE_SPACING_RULES = {
 
 _NATIVE_SEQUENCE_IDS = frozenset({"WPSC_FIG", "WPSC_TAB", "WPSC_EQ"})
 _NATIVE_BOOKMARK_RE = re.compile(r"^wpsc_(?:fig|tab|eq)_[0-9a-f]{24}$")
+_NATIVE_HEADING_BOOKMARK_RE = re.compile(r"^wpsc_head_[0-9a-f]{24}$")
 _PUBLIC_ISSUE_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
 
 
@@ -548,11 +549,72 @@ class WriterComposer(BaseComposer):
         ps.PageHeight = height
 
     # ---- sections (independent page layout, e.g. landscape insert) ----
-    def add_section(self, landscape=None):
-        self.selection.InsertBreak(2)  # wdSectionBreakNextPage
+    def _current_section_page_setup(self):
+        try:
+            sections = self._doc.Sections
+            return sections(sections.Count).PageSetup
+        except Exception:
+            return self._doc.PageSetup
+
+    def _current_section_is_landscape(self):
+        try:
+            setup = WriterComposer._current_section_page_setup(self)
+            return int(setup.Orientation) == 1
+        except Exception:
+            return False
+
+    def _fit_native_table_to_body(self, table, data):
+        if not hasattr(table, "Columns"):
+            return
+        try:
+            setup = WriterComposer._current_section_page_setup(self)
+            available_width = max(
+                72.0,
+                float(setup.PageWidth)
+                - float(setup.LeftMargin)
+                - float(setup.RightMargin),
+            )
+        except Exception:
+            return
+        widths = _content_column_widths(data, len(data[0]), available_width)
+        try:
+            table.AutoFitBehavior(0)
+        except Exception:
+            pass
+        table.AllowAutoFit = False
+        try:
+            table.PreferredWidthType = 3
+            table.PreferredWidth = available_width
+        except Exception:
+            pass
+        for index, width in enumerate(widths, start=1):
+            column = table.Columns(index)
+            try:
+                column.SetWidth(float(width), 0)
+            except Exception:
+                column.Width = float(width)
+
+    def add_section(self, landscape=None, *, continuous=False):
+        self.selection.InsertBreak(3 if continuous else 2)
         if landscape is not None:
             section = self._doc.Sections(self._doc.Sections.Count)
             section.PageSetup.Orientation = 1 if landscape else 0
+
+    def add_landscape_section_before_pending_heading(self):
+        position = getattr(self, "_wpsc_last_heading_start", None)
+        if not isinstance(position, int) or position < 0:
+            raise NativeWriterObjectError(
+                "PAGINATION_SNAPSHOT_FAILED", "pending heading is unavailable"
+            )
+        try:
+            self._doc.Range(position, position).InsertBreak(2)
+            self.selection.EndKey(6)
+            section = self._doc.Sections(self._doc.Sections.Count)
+            section.PageSetup.Orientation = 1
+        except Exception:
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "landscape heading cohesion failed"
+            ) from None
 
     # ---- header / footer ----
     def set_header(self, text):
@@ -1199,6 +1261,7 @@ class WriterComposer(BaseComposer):
             else:
                 # Ensure a PAGE field exists in the primary footer.
                 try:
+                    footer.Range.ParagraphFormat.Alignment = 1
                     footer.Range.Collapse(0)
                     footer.Range.Fields.Add(footer.Range, 33)
                 except Exception:
@@ -1268,18 +1331,17 @@ class WriterComposer(BaseComposer):
                 pass
         self._first_section_configured = True
 
+        setup = self._current_section_page_setup()
         if landscape is not None:
-            self.set_orientation(landscape)
+            setup.Orientation = 1 if landscape else 0
         if page_size is not None:
             # Page-size strings are mapped at the add-in/protocol layer.
             pass
         if margins is not None:
-            self.set_margins(
-                margins.get("top", 72),
-                margins.get("bottom", 72),
-                margins.get("left", 90),
-                margins.get("right", 90),
-            )
+            setup.TopMargin = margins.get("top", 72)
+            setup.BottomMargin = margins.get("bottom", 72)
+            setup.LeftMargin = margins.get("left", 90)
+            setup.RightMargin = margins.get("right", 90)
 
         self.set_page_role(role or "body")
         self.set_page_numbering(
@@ -1319,10 +1381,25 @@ class WriterComposer(BaseComposer):
                 pass
 
     def add_heading_level_native(
-        self, text, level, numbering=None, scheme=None, keep_with_next=False
+        self, text, level, numbering=None, scheme=None, keep_with_next=False,
+        bookmark_name=None,
     ):
         """Add a heading and, when requested, link it to native numbering."""
+        heading_start = self._native_position()
         self.add_heading_level(text, level=level)
+        self._wpsc_last_heading_start = heading_start
+        if bookmark_name is not None:
+            if not _NATIVE_HEADING_BOOKMARK_RE.fullmatch(bookmark_name):
+                raise ValueError("invalid native heading bookmark")
+            try:
+                self._doc.Bookmarks.Add(
+                    bookmark_name,
+                    self._doc.Range(heading_start, self._native_position()),
+                )
+            except Exception:
+                raise NativeWriterObjectError(
+                    "EXECUTION_ABORTED", "heading bookmark creation failed"
+                ) from None
         if keep_with_next:
             try:
                 paragraph = self.selection.Paragraphs(1).Previous()
@@ -1334,19 +1411,63 @@ class WriterComposer(BaseComposer):
         if not numbering:
             return
         try:
-            style_idx = -(int(level) + 1)
-            style = self._doc.Styles(style_idx)
-            list_template = self._doc.ListTemplates.Add(True)
-            scheme_to_format = {
-                "chinese-formal": "%1",
-                "decimal": "%1.",
-                "hybrid-bid": "%1.",
-            }
+            cache = getattr(self, "_wpsc_heading_templates", None)
+            if cache is None:
+                cache = {}
+                self._wpsc_heading_templates = cache
+            normalized_scheme = scheme or "decimal"
+            list_template = cache.get(normalized_scheme)
+            if list_template is None:
+                list_template = self._doc.ListTemplates.Add(True)
+                formats = (
+                    ("第%1章", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4")
+                    if normalized_scheme == "chinese-formal"
+                    else ("%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4")
+                )
+                for index, number_format in enumerate(formats, start=1):
+                    descriptor = list_template.ListLevels(index)
+                    descriptor.NumberFormat = number_format
+                    descriptor.NumberStyle = (
+                        37 if normalized_scheme == "chinese-formal" and index == 1 else 0
+                    )
+                    descriptor.NumberPosition = (index - 1) * 18
+                    descriptor.TextPosition = index * 18
+                    descriptor.ResetOnHigher = 0 if index == 1 else index - 1
+                    descriptor.StartAt = 1
+                cache[normalized_scheme] = list_template
             level_idx = int(level)
-            list_template.ListLevels(level_idx).NumberFormat = scheme_to_format.get(scheme or "decimal", "%1.")
-            style.LinkToListTemplate(list_template, level_idx)
+            heading_range = self._doc.Range(
+                heading_start, self._native_position()
+            )
+            heading_range.ListFormat.ApplyListTemplateWithLevel(
+                list_template, True, 0, 0, level_idx
+            )
+            heading_range.ListFormat.ListLevelNumber = level_idx
         except Exception:
-            pass
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "heading numbering failed"
+            ) from None
+
+    def compact_terminal_paragraph(self):
+        """Shrink only a final empty paragraph during the bounded M5 relayout."""
+        try:
+            paragraphs = self._doc.Paragraphs
+            last = paragraphs(paragraphs.Count)
+            text = str(getattr(last.Range, "Text", ""))
+            if text.replace("\r", "").replace("\n", "").replace("\x07", "").strip():
+                return
+            last.Range.Font.Size = 1
+            paragraph = last.Range.ParagraphFormat
+            paragraph.SpaceBefore = 0
+            paragraph.SpaceAfter = 0
+            paragraph.LineSpacingRule = 4
+            paragraph.LineSpacing = 1
+            paragraph.KeepTogether = 0
+            paragraph.KeepWithNext = 0
+        except Exception:
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "terminal paragraph compaction failed"
+            ) from None
 
     # ================================================================
     # Long-form M3 native figure/table/caption/reference primitives
@@ -1548,7 +1669,8 @@ class WriterComposer(BaseComposer):
         resource_locators = dict(resource_locators or {})
         issues = []
         landscape = orientation == "landscape"
-        if landscape:
+        owns_landscape_section = landscape and not self._current_section_is_landscape()
+        if owns_landscape_section:
             self.add_section(landscape=True)
         issues = []
         try:
@@ -1608,7 +1730,7 @@ class WriterComposer(BaseComposer):
                     keep_with_next=False,
                 )
         finally:
-            if landscape:
+            if owns_landscape_section:
                 self.add_section(landscape=False)
         return {"issues": issues}
 
@@ -1622,7 +1744,8 @@ class WriterComposer(BaseComposer):
         resource_locators = dict(resource_locators or {})
         issues = []
         landscape = orientation == "landscape"
-        if landscape:
+        owns_landscape_section = landscape and not self._current_section_is_landscape()
+        if owns_landscape_section:
             self.add_section(landscape=True)
         try:
             for child in children:
@@ -1658,7 +1781,7 @@ class WriterComposer(BaseComposer):
                     keep_with_next=False,
                 )
         finally:
-            if landscape:
+            if owns_landscape_section:
                 self.add_section(landscape=False)
         return {"issues": issues}
 
@@ -1708,6 +1831,7 @@ class WriterComposer(BaseComposer):
             table.Rows.AllowBreakAcrossPages = -1 if allow_row_split else 0
             if repeat_header:
                 table.Rows(1).HeadingFormat = -1
+            self._fit_native_table_to_body(table, data)
             self._apply_native_table_borders(table, border_spec)
         except Exception:
             raise NativeWriterObjectError("TABLE_STYLE_APPLY_FAILED") from None
@@ -1777,15 +1901,20 @@ class WriterComposer(BaseComposer):
         alignments, style, orientation, borderSpec, merges, repeatHeader,
         allowRowSplit, cellIndentPt, plannedDegradation,
         keepCaptionWithFirstRow, owner_node_id=None, bookmarkName=None,
-        cellDegradations=(), controller_owned=False,
+        cellDegradations=(), controller_owned=False, m5Relayout=None,
+        includePreviousHeading=False, continuousExit=False,
     ):
         """Insert a caption, planned notices, and a resolved native table."""
-        del indexable, referenceable, style
+        del indexable, referenceable, style, m5Relayout
         if keepCaptionWithFirstRow is not True:
             raise ValueError("table cohesion is required")
         landscape = orientation == "landscape"
-        if landscape:
-            self.add_section(landscape=True)
+        owns_landscape_section = landscape and not self._current_section_is_landscape()
+        if owns_landscape_section:
+            if includePreviousHeading:
+                self.add_landscape_section_before_pending_heading()
+            else:
+                self.add_section(landscape=True)
         issues = []
         try:
             if caption:
@@ -1865,8 +1994,10 @@ class WriterComposer(BaseComposer):
                 table, cellDegradations
             )
         finally:
-            if landscape:
-                self.add_section(landscape=False)
+            if owns_landscape_section:
+                self.add_section(
+                    landscape=False, continuous=bool(continuousExit)
+                )
         return {"issues": issues}
 
     def add_semantic_table_fallback(
@@ -1876,10 +2007,15 @@ class WriterComposer(BaseComposer):
         plannedDegradation=(), cellDegradations=(), **kwargs,
     ):
         """Run the controller-owned grid-then-text table fallback once."""
-        del kwargs
+        include_previous_heading = bool(kwargs.get("includePreviousHeading"))
+        continuous_exit = bool(kwargs.get("continuousExit"))
         landscape = orientation == "landscape"
-        if landscape:
-            self.add_section(landscape=True)
+        owns_landscape_section = landscape and not self._current_section_is_landscape()
+        if owns_landscape_section:
+            if include_previous_heading:
+                self.add_landscape_section_before_pending_heading()
+            else:
+                self.add_section(landscape=True)
         issues = []
         try:
             if caption:
@@ -1918,8 +2054,8 @@ class WriterComposer(BaseComposer):
                 self._native_rollback(grid_start, self._native_document_end())
                 self._add_native_table_text_fallback(headers, rows)
         finally:
-            if landscape:
-                self.add_section(landscape=False)
+            if owns_landscape_section:
+                self.add_section(landscape=False, continuous=continuous_exit)
         return {"issues": issues}
 
     def add_equation_number_native(
@@ -2793,6 +2929,7 @@ class WriterComposer(BaseComposer):
             top_margin = max(0.0, float(getattr(setup, "TopMargin", 72.0)))
             bottom_margin = max(0.0, float(getattr(setup, "BottomMargin", 72.0)))
             visual_ops = {
+                "writer.add_heading",
                 "writer.add_captioned_figure",
                 "writer.add_semantic_table",
                 "writer.add_equation",
@@ -2822,10 +2959,26 @@ class WriterComposer(BaseComposer):
                 first_x = float(first_range.Information(5))
                 first_y = float(first_range.Information(6))
                 last_y = float(last_range.Information(6))
+                usable_page = (
+                    100.0 <= page_width <= 2000.0
+                    and 100.0 <= page_height <= 2000.0
+                    and left_margin + right_margin < page_width
+                    and top_margin + bottom_margin < page_height
+                )
+                usable_points = (
+                    usable_page
+                    and all(
+                        math.isfinite(value)
+                        for value in (first_x, first_y, last_y)
+                    )
+                    and 0.0 <= first_x <= page_width
+                    and 0.0 <= first_y <= page_height
+                    and 0.0 <= last_y <= page_height
+                )
                 fragments = []
                 for page in range(first_page, last_page + 1):
                     fragment = {"page": page}
-                    if visual:
+                    if visual and usable_points:
                         x0 = max(0.0, first_x) if page == first_page and math.isfinite(first_x) else left_margin
                         y0 = max(0.0, first_y) if page == first_page and math.isfinite(first_y) else top_margin
                         x1 = max(x0 + 1.0, page_width - right_margin)

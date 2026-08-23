@@ -771,7 +771,10 @@ class WindowsLongformExecutor(LongformExecutor):
                 }
             composer.configure_section(
                 role=args.get("role", "body"),
-                landscape=args.get("landscape"),
+                # Historic plans omit portrait orientation.  Make that legacy
+                # representation explicit only at the native execution edge so
+                # a landscape section cannot leak into the following section.
+                landscape=args.get("landscape", False),
                 page_size=args.get("pageSize"),
                 margins=margins,
                 restart_page_numbering=args.get("restartPageNumbering"),
@@ -845,6 +848,8 @@ class WindowsLongformExecutor(LongformExecutor):
             # The new argument is only required by the one bounded M5 relayout.
             if args.get("keepWithNext") is True:
                 heading_args["keep_with_next"] = True
+            if args.get("bookmarkName"):
+                heading_args["bookmark_name"] = args["bookmarkName"]
             composer.add_heading_level_native(**heading_args)
             return
 
@@ -1026,6 +1031,8 @@ class WindowsLongformExecutor(LongformExecutor):
         if name == "writer.finalize_fields":
             # The outer executor owns convergence.  Dispatching this operation
             # must not pre-refresh fields or create a second convergence owner.
+            if args.get("compactTerminalParagraph") is True:
+                composer.compact_terminal_paragraph()
             return
 
         raise NativeWriterObjectError(

@@ -400,9 +400,13 @@ def _render_section(
         return
 
     if section.has_heading:
+        heading_digest = hashlib.sha256(
+            f"heading\0{section.node_id}".encode("utf-8")
+        ).hexdigest()[:24]
         heading_args: dict[str, Any] = {
             "text": section.heading,
             "level": section.level,
+            "bookmarkName": f"wpsc_head_{heading_digest}",
         }
         if (
             section.level in {1, 2, 3, 4}

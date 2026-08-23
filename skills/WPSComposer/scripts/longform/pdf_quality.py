@@ -193,11 +193,23 @@ def analyze_pages(
         PageRole.EXPLICIT_BREAK,
     }
 
-    # A truly empty ordinary page is deterministic. Explicit sparse roles are
-    # preserved because they may be intentional semantic page boundaries.
+    # Header/footer glyphs alone do not make an ordinary page non-blank. Check
+    # the printable body rectangle so page numbers and running heads cannot
+    # hide an empty main story. Explicit sparse roles remain exempt because
+    # they may be intentional semantic page boundaries.
+    margin = float(policy.body_margin_points)
+    body_inset = margin + 12.0
     for page in pages:
         role = roles.get(page.physical_page, PageRole.BODY)
-        if not page.glyph_bounds and not page.object_bounds and role not in exempt_sparse:
+        visible_bounds = page.glyph_bounds + page.object_bounds
+        has_body_content = any(
+            right > body_inset
+            and left < page.width - body_inset
+            and bottom > body_inset
+            and top < page.height - body_inset
+            for left, top, right, bottom in visible_bounds
+        )
+        if not has_body_content and role not in exempt_sparse:
             findings.append(
                 _finding(
                     "UNEXPECTED_BLANK_PAGE",
@@ -215,7 +227,6 @@ def analyze_pages(
 
     # Visual object fragments have authoritative WPS-to-PDF mappings. Text
     # fragments without bounds are intentionally excluded from bbox repairs.
-    margin = float(policy.body_margin_points)
     for node in pagination_map.nodes:
         kind = kinds.get(node.node_id)
         if kind not in {"image", "table", "formula", "visual"}:
@@ -269,7 +280,22 @@ def analyze_pages(
         page = pages_by_number.get(fragment.page) if fragment else None
         if fragment is None or fragment.bounds is None or page is None:
             continue
-        if fragment.bounds[3] > page.height - margin - (2 * line_height):
+        heading_bottom = fragment.bounds[3]
+        following_tops: list[float] = []
+        for left, top, right, bottom in page.glyph_bounds:
+            if (
+                top >= heading_bottom + 1.0
+                and right > margin
+                and left < page.width - margin
+                and bottom > margin
+                and top < page.height - margin
+            ):
+                following_tops.append(top)
+        line_tops: list[float] = []
+        for top in sorted(following_tops):
+            if not line_tops or top - line_tops[-1] > 3.0:
+                line_tops.append(top)
+        if len(line_tops) < 2:
             findings.append(
                 _finding(
                     "HEADING_ORPHAN",

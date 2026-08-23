@@ -128,6 +128,23 @@ def build_profile(
     ):
         shutil.copy2(assets / name, profile / name)
     shutil.copy2(assets / str(config["script"]), profile / "component.js")
+    # WPS WebView retains script responses across isolated application
+    # processes. Give every staged script a content-derived URL so a newly
+    # activated profile cannot execute a previous quality/pagination build.
+    index_path = profile / "index.html"
+    index_html = index_path.read_text(encoding="utf-8")
+    for script_name in (
+        "bridge-client.js",
+        "writer-longform-m0.js",
+        "writer-longform-v2.js",
+        "component.js",
+    ):
+        script_path = profile / script_name
+        digest = hashlib.sha256(script_path.read_bytes()).hexdigest()[:16]
+        index_html = index_html.replace(
+            f"./{script_name}", f"./{script_name}?v={digest}"
+        )
+    index_path.write_text(index_html, encoding="utf-8")
     _write_json(
         profile / "package.json",
         {
@@ -473,11 +490,14 @@ def install_registration_entries(
     *,
     session_nonce: str,
     client_credentials: dict[str, dict[str, str]],
+    cache_version: Optional[str] = None,
 ) -> None:
     """Merge this session's authorized add-ins into publish.xml."""
     # WPS authorizes add-ins by the stable package/profile name stored in
     # authaddin.json. Session isolation belongs in the private runtime profile,
     # not in the registration name or URL.
+    if cache_version is not None and not re.fullmatch(r"[0-9a-f]{16}", cache_version):
+        raise ValueError("cache_version must be a 16-character hexadecimal digest")
     names = tuple(
         f"wpscomposer-phase0-{component}"
         for component in component_config
@@ -509,7 +529,10 @@ def install_registration_entries(
                 {
                     "name": name,
                     "type": str(config["addon_type"]),
-                    "url": f"http://127.0.0.1:{config['port']}/",
+                    "url": (
+                        f"http://127.0.0.1:{config['port']}/"
+                        + (f"?v={cache_version}" if cache_version else "")
+                    ),
                     "debug": "",
                     "enable": "enable_dev",
                     "install": "null",
@@ -868,11 +891,21 @@ class ProbeRuntime:
             flush=True,
         )
         try:
+            cache_digest = hashlib.sha256()
+            for component in sorted(self.profiles):
+                for name in (
+                    "index.html", "bridge-client.js", "writer-longform-m0.js",
+                    "writer-longform-v2.js", "component.js",
+                ):
+                    asset = self.profiles[component] / name
+                    if asset.is_file():
+                        cache_digest.update(asset.read_bytes())
             install_registration_entries(
                 self._snapshot,
                 COMPONENT_CONFIG,
                 session_nonce=self.session_nonce,
                 client_credentials=self.client_credentials,
+                cache_version=cache_digest.hexdigest()[:16],
             )
             for component, config in COMPONENT_CONFIG.items():
                 require_remaining(deadline)

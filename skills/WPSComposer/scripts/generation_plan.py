@@ -563,6 +563,14 @@ def _preset(value: Any, path: str) -> None:
     _validate_object(value, path, _PRESET_SCHEMA)
 
 
+def _heading_bookmark(value: Any, path: str) -> None:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"wpsc_head_[0-9a-f]{24}", value) is None
+    ):
+        _invalid(path, "generated heading bookmark name")
+
+
 _OPERATION_ARG_SCHEMAS = MappingProxyType(
     {
         "writer.reset": _schema(),
@@ -613,6 +621,7 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             numbering=_boolean,
             numberingScheme=_enum(_NUMBERING_SCHEMES, "numbering scheme"),
             keepWithNext=_boolean,
+            bookmarkName=_heading_bookmark,
         ),
         "writer.add_list": _schema(
             ("items", "ordered"),
@@ -1588,6 +1597,12 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
         cellDegradations=_list_of(_cell_degradation),
         cellCitations=_cell_citations,
         keepCaptionWithFirstRow=_boolean,
+        includePreviousHeading=_boolean,
+        continuousExit=_boolean,
+        m5Relayout=_enum(
+            frozenset({"compress-table", "force-table-split"}),
+            "closed M5 table relayout",
+        ),
     ),
     "writer.add_equation": _equation_args,
     "writer.add_cross_reference": _schema(
@@ -1629,6 +1644,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
     "writer.finalize_fields": _schema(
         (),
         maxRounds=_bounded_integer(1, 3),
+        compactTerminalParagraph=_boolean,
     ),
 }
 
@@ -1794,10 +1810,20 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
             _invalid(f"{op}.args.rows", "rectangular rows matching headers")
         if args["keepCaptionWithFirstRow"] is not True:
             _invalid(f"{op}.args.keepCaptionWithFirstRow", "true")
-        if args["allowRowSplit"] is not False:
+        m5_relayout = args.get("m5Relayout")
+        if m5_relayout is None and args["allowRowSplit"] is not False:
             _invalid(f"{op}.args.allowRowSplit", "false in the initial descriptor")
+        if m5_relayout is not None and args["allowRowSplit"] is not True:
+            _invalid(f"{op}.args.allowRowSplit", "true for M5 table relayout")
         if args["cellIndentPt"] != 0.0:
             _invalid(f"{op}.args.cellIndentPt", "0.0 in the initial descriptor")
+        if m5_relayout == "force-table-split" and args["merges"]:
+            _invalid(f"{op}.args.merges", "empty for forced M5 table split")
+        if (
+            args.get("includePreviousHeading") is not None
+            or args.get("continuousExit") is not None
+        ) and args["orientation"] != "landscape":
+            _invalid(f"{op}.args.orientation", "landscape for section cohesion")
         expected_borders = (
             {
                 "top": 1.5,

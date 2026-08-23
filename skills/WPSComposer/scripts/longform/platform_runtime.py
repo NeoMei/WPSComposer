@@ -79,6 +79,7 @@ def _apply_relayout(
             by_node.setdefault(directive.node_id, set()).add(directive.kind)
     body_width = _body_width(plan)
     operations = []
+    previous_operation: Optional[GenerationOperation] = None
     for operation in plan.operations:
         args = _thawed(operation.args)
         kinds = by_node.get(operation.node_id or "", set())
@@ -102,14 +103,28 @@ def _apply_relayout(
                 children.append(child)
             args["children"] = children
         if operation.op == "writer.add_semantic_table":
+            if args.get("orientation") == "landscape":
+                args["continuousExit"] = True
+                if (
+                    previous_operation is not None
+                    and previous_operation.op == "writer.add_heading"
+                ):
+                    args["includePreviousHeading"] = True
             if "compress-table" in kinds:
                 args["cellIndentPt"] = 0.0
                 args["allowRowSplit"] = True
+                args["m5Relayout"] = "compress-table"
             if "force-table-split" in kinds:
                 args["merges"] = []
                 args["allowRowSplit"] = True
+                args["m5Relayout"] = "force-table-split"
         if operation.op == "writer.add_heading" and "keep-heading" in kinds:
             args["keepWithNext"] = True
+        if (
+            operation.op == "writer.finalize_fields"
+            and "remove-unexpected-blank" in document_kinds
+        ):
+            args["compactTerminalParagraph"] = True
         if operation.op in {"writer.add_captioned_figure", "writer.add_semantic_table"} and "keep-caption" in kinds:
             key = "keepWithCaption" if operation.op.endswith("figure") else "keepCaptionWithFirstRow"
             args[key] = True
@@ -121,6 +136,7 @@ def _apply_relayout(
                 failure_policy=_thawed(operation.failure_policy) if operation.failure_policy else None,
             )
         )
+        previous_operation = operation
     derived = GenerationPlan(
         component=plan.component,
         operations=tuple(operations),
@@ -163,6 +179,8 @@ def _quality_context(build: LongformBuild, outcome: ExecutionOutcome):
                 float(child["effectiveDpi"])
                 for child in operation.args.get("children", ())
                 if isinstance(child.get("effectiveDpi"), (int, float))
+                and float(child["effectiveDpi"]) > 0
+                and child.get("mediaType") != "image/svg+xml"
             ]
             if dpis:
                 effective_dpi.append((operation.node_id, min(dpis)))

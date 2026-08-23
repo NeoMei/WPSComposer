@@ -434,7 +434,10 @@
     setValue(format, "OutlineLevel", args.outlineLevel);
   }
 
+  let activeHeadingTemplates = Object.create(null);
+
   function resetDocument(document) {
+    activeHeadingTemplates = Object.create(null);
     document.Content.Text = "";
     if (typeof document.Range === "function") setAppendCursor(document, 0);
   }
@@ -530,8 +533,7 @@
   }
 
   function headingListTemplate(document, scheme) {
-    if (!document._wpscHeadingTemplates) document._wpscHeadingTemplates = {};
-    if (document._wpscHeadingTemplates[scheme]) return document._wpscHeadingTemplates[scheme];
+    if (activeHeadingTemplates[scheme]) return activeHeadingTemplates[scheme];
     const safeScheme = String(scheme || "decimal").replace(/[^a-z0-9_-]/gi, "_");
     const template = document.ListTemplates.Add(true, "wpsc_m3_" + safeScheme);
     const formats = scheme === "chinese-formal"
@@ -546,17 +548,38 @@
       listLevel.ResetOnHigher = level === 1 ? 0 : level - 1;
       listLevel.StartAt = 1;
     }
-    document._wpscHeadingTemplates[scheme] = template;
+    linkHeadingStyles(document, template);
+    activeHeadingTemplates[scheme] = template;
     return template;
   }
 
+  function linkHeadingStyles(document, template) {
+    for (let level = 1; level <= 4; level += 1) {
+      const style = collectionItem(document.Styles, -1 - level);
+      if (!style || typeof style.LinkToListTemplate !== "function") {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      style.LinkToListTemplate(template, level);
+    }
+  }
+
   function addHeadingNative(document, args) {
+    function persistHeadingBookmark(range) {
+      if (args.bookmarkName === undefined || args.bookmarkName === null) return;
+      if (!/^wpsc_head_[0-9a-f]{24}$/.test(args.bookmarkName) ||
+          !document.Bookmarks || typeof document.Bookmarks.Add !== "function") {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      document.Bookmarks.Add(args.bookmarkName, range);
+    }
     if (!args.numbering) {
       const styleName = unnumberedHeadingStyle(document, args.level, args.sequenceTransparent === true);
       const inserted = insertText(document, args.text, styleName, args);
       if (args.keepWithNext === true && inserted.range && inserted.range.ParagraphFormat) {
         inserted.range.ParagraphFormat.KeepWithNext = -1;
       }
+      document._wpscLastHeadingStart = safeNumber(inserted.range && inserted.range.Start, -1);
+      persistHeadingBookmark(inserted.range);
       return;
     }
     const levelIndex = safeNumber(args.level, 1);
@@ -568,11 +591,12 @@
       }
       const builtInStyle = collectionItem(document.Styles, -1 - levelIndex);
       if (builtInStyle) inserted.range.Style = builtInStyle;
-      inserted.range.ListFormat.ApplyListTemplateWithLevel(template, false, 0, 0, levelIndex);
       inserted.range.ListFormat.ListLevelNumber = levelIndex;
       if (!String(inserted.range.ListFormat.ListString || "").replace(/\s+/g, "")) {
         throw nativeError("EXECUTION_ABORTED");
       }
+      document._wpscLastHeadingStart = safeNumber(inserted.range && inserted.range.Start, -1);
+      persistHeadingBookmark(inserted.range);
     } catch (error) {
       throw nativeError("EXECUTION_ABORTED");
     }
@@ -608,10 +632,10 @@
     }
     document._wpscFirstSectionConfigured = true;
 
-    const setup = document.PageSetup;
-    if (args.landscape !== undefined) {
-      setValue(setup, "Orientation", args.landscape ? 1 : 0);
-    }
+    const setup = currentSectionPageSetup(document);
+    // Historic plans only mark landscape sections.  Resolve an omitted value
+    // to portrait here so the prior section's orientation cannot leak.
+    setValue(setup, "Orientation", args.landscape ? 1 : 0);
     if (args.margins) {
       setValue(setup, "TopMargin", args.margins.top);
       setValue(setup, "BottomMargin", args.margins.bottom);
@@ -671,6 +695,7 @@
         footer.Range.Text = "";
       } else {
         try {
+          if (footer.Range.ParagraphFormat) footer.Range.ParagraphFormat.Alignment = 1;
           footer.Range.Collapse(0);
           footer.Range.Fields.Add(footer.Range, 33);
         } catch (error) {
@@ -678,8 +703,6 @@
         }
       }
     } catch (error) {
-      rollbackNativeInsertion(document, previousEnd, target, [toc && toc.Range]);
-      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("FIELD_REFRESH_FAILED");
     }
   }
@@ -1389,13 +1412,42 @@
     }
   }
 
-  function addExplicitOrientationSection(document, landscape) {
-    insertDocumentBreak(document, 2);
+  function setLastSectionOrientation(document, landscape) {
     const sections = document.Sections;
     const section = sections ? collectionItem(sections, sections.Count) : null;
     const setup = section && section.PageSetup ? section.PageSetup : document.PageSetup;
     if (!setup) throw nativeError("EXECUTION_ABORTED");
     setup.Orientation = landscape ? 1 : 0;
+  }
+
+  function currentSectionPageSetup(document) {
+    const sections = document && document.Sections;
+    const section = sections ? collectionItem(sections, sections.Count) : null;
+    return section && section.PageSetup ? section.PageSetup : document.PageSetup;
+  }
+
+  function currentSectionIsLandscape(document) {
+    const setup = currentSectionPageSetup(document);
+    return safeNumber(setup && setup.Orientation, 0) === 1;
+  }
+
+  function addExplicitOrientationSection(document, landscape, continuous) {
+    insertDocumentBreak(document, continuous ? 3 : 2);
+    setLastSectionOrientation(document, landscape);
+  }
+
+  function addLandscapeSectionBeforePendingHeading(document) {
+    const start = safeNumber(document._wpscLastHeadingStart, -1);
+    if (!Number.isInteger(start) || start < 0 || typeof document.Range !== "function") {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    const target = document.Range(start, start);
+    if (!target || typeof target.InsertBreak !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    target.InsertBreak(2);
+    setAppendCursor(document, authoritativeDocumentEnd(document).position);
+    setLastSectionOrientation(document, true);
   }
 
   function addFigureChild(document, child, locator, ownerNodeId, targetRange) {
@@ -1561,7 +1613,8 @@
   function addCaptionedFigureNative(document, args, resources, context) {
     if (args.keepWithCaption !== true) throw nativeError("EXECUTION_ABORTED");
     const landscape = args.orientation === "landscape";
-    if (landscape) addExplicitOrientationSection(document, true);
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) addExplicitOrientationSection(document, true);
     let degraded = false;
     try {
       if (args.layout === "columns") {
@@ -1590,13 +1643,14 @@
       });
       if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
     } finally {
-      if (landscape) addExplicitOrientationSection(document, false);
+      if (ownsLandscapeSection) addExplicitOrientationSection(document, false);
     }
   }
 
   function addCaptionedFigureFallback(document, args, resources, context, code) {
     const landscape = args.orientation === "landscape";
-    if (landscape) addExplicitOrientationSection(document, true);
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) addExplicitOrientationSection(document, true);
     try {
       (args.children || []).forEach(function (child) {
         if (child.plannedDegradation) {
@@ -1627,7 +1681,7 @@
       });
       if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
     } finally {
-      if (landscape) addExplicitOrientationSection(document, false);
+      if (ownsLandscapeSection) addExplicitOrientationSection(document, false);
     }
   }
 
@@ -1653,6 +1707,87 @@
     const headerBorder = tableBorder(tableRows(table, 1), -3);
     headerBorder.LineStyle = headerPoints === 0 ? 0 : 1;
     if (headerPoints !== 0) headerBorder.LineWidth = headerPoints === 1.5 ? 12 : (headerPoints === 0.75 ? 6 : 2);
+  }
+
+  function visualTextWidth(value) {
+    return Array.from(safeString(value)).reduce(function (total, character) {
+      return total + (character.charCodeAt(0) > 255 ? 2 : 1);
+    }, 0);
+  }
+
+  function contentColumnWidths(data, availableWidth) {
+    const cols = data.length ? data[0].length : 0;
+    if (cols <= 0) return [];
+    const representatives = [];
+    for (let column = 0; column < cols; column += 1) {
+      const samples = data.map(function (row) {
+        return column < row.length ? visualTextWidth(row[column]) : 0;
+      }).filter(function (value) { return value > 0; });
+      if (!samples.length) {
+        representatives.push(4);
+        continue;
+      }
+      const header = samples[0] * 1.15;
+      samples.sort(function (left, right) { return left - right; });
+      const q75 = samples[Math.round((samples.length - 1) * 0.75)];
+      representatives.push(Math.max(4, Math.min(80, Math.max(header, q75))));
+    }
+    const weights = representatives.map(function (value) { return Math.pow(value, 0.7); });
+    const fixedMinimums = {1: 1, 2: 0.24, 3: 0.15, 4: 0.11, 5: 0.085};
+    const minimum = hasOwn(fixedMinimums, cols)
+      ? fixedMinimums[cols] : Math.min(0.08, 0.6 / cols);
+    const maximum = cols === 2 ? 0.72 : 0.65;
+    const ratios = new Array(cols).fill(0);
+    let active = weights.map(function (_, index) { return index; });
+    let remaining = 1;
+    while (active.length) {
+      const totalWeight = active.reduce(function (total, index) {
+        return total + weights[index];
+      }, 0) || active.length;
+      let constrained = false;
+      active.slice().forEach(function (index) {
+        const trial = remaining * weights[index] / totalWeight;
+        if (trial < minimum || trial > maximum) {
+          ratios[index] = trial < minimum ? minimum : maximum;
+          remaining -= ratios[index];
+          active = active.filter(function (item) { return item !== index; });
+          constrained = true;
+        }
+      });
+      if (!constrained) {
+        active.forEach(function (index) {
+          ratios[index] = remaining * weights[index] / totalWeight;
+        });
+        break;
+      }
+    }
+    const total = ratios.reduce(function (sum, value) { return sum + value; }, 0) || 1;
+    return ratios.map(function (ratio) { return availableWidth * ratio / total; });
+  }
+
+  function fitNativeTableToBody(document, table, data) {
+    if (!table || !table.Columns) return;
+    const setup = currentSectionPageSetup(document);
+    const pageWidth = safeNumber(setup.PageWidth, NaN);
+    const leftMargin = safeNumber(setup.LeftMargin, NaN);
+    const rightMargin = safeNumber(setup.RightMargin, NaN);
+    const availableWidth = pageWidth - leftMargin - rightMargin;
+    if (!Number.isFinite(availableWidth) || availableWidth < 72 || availableWidth > 2000) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
+    try {
+      if (typeof table.AutoFitBehavior === "function") table.AutoFitBehavior(0);
+      table.AllowAutoFit = false;
+      table.PreferredWidthType = 3;
+      table.PreferredWidth = availableWidth;
+      contentColumnWidths(data, availableWidth).forEach(function (width, index) {
+        const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
+        if (typeof column.SetWidth === "function") column.SetWidth(width, 0);
+        else column.Width = width;
+      });
+    } catch (error) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
   }
 
   function createNativeTable(document, args) {
@@ -1684,6 +1819,7 @@
       });
       table.Rows.AllowBreakAcrossPages = args.allowRowSplit ? -1 : 0;
       if (args.repeatHeader) tableRows(table, 1).HeadingFormat = -1;
+      fitNativeTableToBody(document, table, data);
       applyTableBorders(table, args.borderSpec);
       applyTableCellMetadata(table, args);
     } catch (error) {
@@ -1787,7 +1923,14 @@
     void resources;
     if (args.keepCaptionWithFirstRow !== true) throw nativeError("EXECUTION_ABORTED");
     const landscape = args.orientation === "landscape";
-    if (landscape) addExplicitOrientationSection(document, true);
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) {
+      if (args.includePreviousHeading === true) {
+        addLandscapeSectionBeforePendingHeading(document);
+      } else {
+        addExplicitOrientationSection(document, true, false);
+      }
+    }
     try {
       if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
       (args.plannedDegradation || []).forEach(function (planned) {
@@ -1835,14 +1978,25 @@
         }
       }
     } finally {
-      if (landscape) addExplicitOrientationSection(document, false);
+      if (ownsLandscapeSection) {
+        addExplicitOrientationSection(
+          document, false, args.continuousExit === true
+        );
+      }
     }
   }
 
   function addSemanticTableFallback(document, args, resources, context, code) {
     void resources;
     const landscape = args.orientation === "landscape";
-    if (landscape) addExplicitOrientationSection(document, true);
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) {
+      if (args.includePreviousHeading === true) {
+        addLandscapeSectionBeforePendingHeading(document);
+      } else {
+        addExplicitOrientationSection(document, true, false);
+      }
+    }
     try {
       if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
       (args.plannedDegradation || []).forEach(function (planned) {
@@ -1862,7 +2016,11 @@
         addTableTextFallback(document, args);
       }
     } finally {
-      if (landscape) addExplicitOrientationSection(document, false);
+      if (ownsLandscapeSection) {
+        addExplicitOrientationSection(
+          document, false, args.continuousExit === true
+        );
+      }
     }
   }
 
@@ -3192,8 +3350,13 @@
         throw nativeError("CAPABILITY_MISMATCH");
       }
       const cell = table.Cell(1, 1);
+      const safeFallback = safePublicText(fallbackText);
+      const codePrefix = "[" + safeCode;
+      const fallbackNamesCode = safeFallback.indexOf(codePrefix) === 0 &&
+        (safeFallback.charAt(codePrefix.length) === "]" ||
+          safeFallback.charAt(codePrefix.length) === " ");
       cell.Range.Text = rawDisplay === undefined
-        ? "[" + safeCode + "] " + safePublicText(fallbackText)
+        ? (fallbackNamesCode ? safeFallback : "[" + safeCode + "] " + safeFallback)
         : safePublicText(rawDisplay);
       cell.Range.Font.Italic = -1;
       cell.Range.Font.Color = colorFromHex("#9C0006");
@@ -3382,6 +3545,28 @@
     notices.forEach(function (notice) { upsertDocumentQualityNotice(document, notice); });
   }
 
+  function compactTerminalParagraph(document) {
+    const paragraphs = document && document.Paragraphs;
+    const last = paragraphs ? collectionItem(paragraphs, paragraphs.Count) : null;
+    const range = last && last.Range;
+    if (!range) throw nativeError("EXECUTION_ABORTED");
+    const visible = safeString(range.Text).replace(/[\r\n\u0007]/g, "").trim();
+    if (visible) return;
+    try {
+      if (range.Font) range.Font.Size = 1;
+      if (range.ParagraphFormat) {
+        range.ParagraphFormat.SpaceBefore = 0;
+        range.ParagraphFormat.SpaceAfter = 0;
+        range.ParagraphFormat.LineSpacingRule = 4;
+        range.ParagraphFormat.LineSpacing = 1;
+        range.ParagraphFormat.KeepTogether = 0;
+        range.ParagraphFormat.KeepWithNext = 0;
+      }
+    } catch (error) {
+      throw nativeError("EXECUTION_ABORTED");
+    }
+  }
+
   const OPERATIONS = {
     "writer.reset": resetDocument,
     "writer.configure_page": configurePage,
@@ -3420,8 +3605,11 @@
       return addCrossReferenceParagraph(document, args, resources, context);
     },
     "writer.add_bibliography": addBibliographyNative,
-    // runFieldConvergence is the sole owner; operation dispatch is a no-op.
-    "writer.finalize_fields": function () {},
+    // runFieldConvergence remains the sole field-refresh owner. The optional
+    // M5 pass may only compact the final empty paragraph before convergence.
+    "writer.finalize_fields": function (document, args) {
+      if (args.compactTerminalParagraph === true) compactTerminalParagraph(document);
+    },
     "writer.add_inline_degradation": addInlineDegradation,
     "writer.add_degradation_notice": addDegradationNotice,
     "writer.add_document_quality_notice": addDocumentQualityNotice,
@@ -3672,7 +3860,8 @@
   }
 
   function paginationVisualOperation(opName) {
-    return opName === "writer.add_captioned_figure" ||
+    return opName === "writer.add_heading" ||
+      opName === "writer.add_captioned_figure" ||
       opName === "writer.add_semantic_table" ||
       opName === "writer.add_equation" ||
       opName === "writer.add_degradation_notice" ||
@@ -3691,10 +3880,18 @@
     const rightMargin = Math.max(0, safeNumber(setup.RightMargin, 72));
     const topMargin = Math.max(0, safeNumber(setup.TopMargin, 72));
     const bottomMargin = Math.max(0, safeNumber(setup.BottomMargin, 72));
+    const usablePage = pageWidth >= 100 && pageWidth <= 2000 &&
+      pageHeight >= 100 && pageHeight <= 2000 &&
+      leftMargin + rightMargin < pageWidth && topMargin + bottomMargin < pageHeight;
+    const usablePoints = usablePage &&
+      Number.isFinite(first.x) && Number.isFinite(first.y) &&
+      Number.isFinite(last.x) && Number.isFinite(last.y) &&
+      first.x >= 0 && first.x <= pageWidth && first.y >= 0 && first.y <= pageHeight &&
+      last.x >= 0 && last.x <= pageWidth && last.y >= 0 && last.y <= pageHeight;
     const fragments = [];
     for (let page = first.page; page <= last.page; page += 1) {
       const fragment = {page: page};
-      if (visual) {
+      if (visual && usablePoints) {
         const x0 = page === first.page && Number.isFinite(first.x)
           ? Math.max(0, first.x) : leftMargin;
         const y0 = page === first.page && Number.isFinite(first.y)
@@ -4099,7 +4296,13 @@
       const x = safeNumber(paragraph.Information(5), NaN);
       const y = safeNumber(paragraph.Information(6), NaN);
       const fragment = {page: Math.max(1, Math.floor(page))};
-      if (Number.isFinite(x) && Number.isFinite(y)) {
+      const setup = document.PageSetup || {};
+      const pageWidth = safeNumber(setup.PageWidth, 595.28);
+      const pageHeight = safeNumber(setup.PageHeight, 841.89);
+      if (pageWidth >= 100 && pageWidth <= 2000 &&
+          pageHeight >= 100 && pageHeight <= 2000 &&
+          Number.isFinite(x) && Number.isFinite(y) &&
+          x >= 0 && x <= pageWidth && y >= 0 && y <= pageHeight) {
         fragment.bounds = [
           Math.max(0, x), Math.max(0, y),
           Math.max(1, x + 1), Math.max(1, y + 12)
@@ -4309,6 +4512,11 @@
       nativeFieldAdapter: nativeFieldAdapter,
       runNativeFieldConvergence: runNativeFieldConvergence,
       buildPaginationMap: buildPaginationMap,
+      currentSectionPageSetup: currentSectionPageSetup,
+      currentSectionIsLandscape: currentSectionIsLandscape,
+      contentColumnWidths: contentColumnWidths,
+      linkHeadingStyles: linkHeadingStyles,
+      compactTerminalParagraph: compactTerminalParagraph,
       hashVisible: hashVisible,
       rollbackMutation: rollbackMutation,
       insertDocumentBreak: insertDocumentBreak,

@@ -67,6 +67,33 @@ def test_blank_body_page_is_high_confidence_but_explicit_break_is_exempt():
     assert explicit.findings == ()
 
 
+def test_header_and_footer_alone_do_not_hide_a_blank_body_page():
+    report = analyze_pages(
+        (_page(glyphs=((72.0, 20.0, 180.0, 35.0), (300.0, 760.0, 312.0, 775.0))),),
+        _map(),
+        {1: PageRole.BODY},
+        QualityPolicy(),
+    )
+    assert _codes(report) == ["UNEXPECTED_BLANK_PAGE"]
+
+    landscape = PdfPage(
+        physical_page=1,
+        width=841.89,
+        height=595.28,
+        rotation=0,
+        media_box=(0.0, 0.0, 841.89, 595.28),
+        crop_box=(0.0, 0.0, 841.89, 595.28),
+        glyph_bounds=(
+            (398.4, 46.58, 425.4, 55.59),
+            (72.0, 539.09, 74.0, 548.10),
+        ),
+    )
+    report = analyze_pages(
+        (landscape,), _map(), {1: PageRole.BODY}, QualityPolicy()
+    )
+    assert _codes(report) == ["UNEXPECTED_BLANK_PAGE"]
+
+
 def test_visual_overflow_maps_to_stable_node_and_closed_repair():
     pmap = _map(_node("fig:wide", bounds=(60.0, 80.0, 570.0, 400.0)))
     report = analyze_pages(
@@ -113,6 +140,29 @@ def test_heading_orphan_and_caption_separation_are_high_confidence():
     )
     assert set(_codes(report)) == {"CAPTION_SEPARATED", "HEADING_ORPHAN"}
     assert all(item.confidence is QualityConfidence.HIGH for item in report.findings)
+
+
+def test_heading_orphan_uses_following_body_lines_not_only_page_position():
+    heading = _node("head:middle", bounds=(72.0, 100.0, 300.0, 120.0))
+    orphan = analyze_pages(
+        (_page(glyphs=((72.0, 100.0, 200.0, 118.0),)),),
+        _map(heading),
+        {1: PageRole.BODY},
+        QualityPolicy(node_kinds=(("head:middle", "heading"),)),
+    )
+    assert _codes(orphan) == ["HEADING_ORPHAN"]
+
+    supported = analyze_pages(
+        (_page(glyphs=(
+            (72.0, 100.0, 200.0, 118.0),
+            (72.0, 130.0, 400.0, 142.0),
+            (72.0, 146.0, 400.0, 158.0),
+        )),),
+        _map(heading),
+        {1: PageRole.BODY},
+        QualityPolicy(node_kinds=(("head:middle", "heading"),)),
+    )
+    assert supported.findings == ()
 
 
 def test_low_dpi_stays_readable_and_requests_notice_not_resize():

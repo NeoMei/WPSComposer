@@ -1168,6 +1168,7 @@ assert.equal((appendText.match(/\r/g) || []).length, 1,
 assert.equal(appendDocument._wpscPendingDegradationStyles.length, 0);
 
 let tableText = "";
+let tableCellText = "";
 const tableSelection = {Document: null, Range: null};
 function tableRange(start, end) {
   return {Start: start, End: end, Font: {Italic: 0, Color: 11},
@@ -1188,8 +1189,10 @@ const tableDocument = {Name: "TableNotice.docx",
     const start = target.End;
     target.InsertAfter("T");
     return {Range: {Start: start, End: target.End}, Rows: {},
-      Cell: function() { return {Range: {Text: "", Font: {}, Shading: {},
-        ParagraphFormat: {}}}; }};
+      Cell: function() { return {Range: {
+        get Text() { return tableCellText; },
+        set Text(value) { tableCellText = String(value); },
+        Font: {}, Shading: {}, ParagraphFormat: {}}}; }};
   }}
 };
 tableSelection.Document = tableDocument;
@@ -1199,6 +1202,13 @@ window.WPSComposerLongformV2.__test.addDegradationNotice(tableDocument,
   {code: "NOTICE", fallbackText: "safe", placement: "block"});
 assert.equal((tableText.match(/\r/g) || []).length, 1,
   "table notice owns exactly one block boundary");
+window.WPSComposerLongformV2.__test.addDegradationNotice(tableDocument,
+  {code: "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+    fallbackText: "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]",
+    placement: "block"});
+assert.equal(tableCellText,
+  "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]",
+  "a planned fallback that already names its issue code is not prefixed twice");
 
 const missingStyleSelection = {Document: null, Range: null};
 const missingStyle = {Name: "MissingStyle.docx",
@@ -1985,7 +1995,8 @@ selection.Document = document;
 const api = window.WPSComposerLongformV2.__test;
 const issues = [], children = [];
 api.runOperation(document, {op: "writer.add_heading", nodeId: "h:1",
-  args: {text: "Heading", level: 1, numbering: false}}, {}, issues, children);
+  args: {text: "Heading", level: 1, numbering: false,
+    bookmarkName: "wpsc_head_" + "a".repeat(24)}}, {}, issues, children);
 api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:1",
   args: {text: "Plain"}}, {}, issues, children);
 api.runOperation(document, {op: "writer.add_cross_reference", nodeId: "p:2",
@@ -2012,6 +2023,7 @@ assert.equal(forbiddenGlobalAdds, 0);
 assert.equal(forbiddenGlobalItems, 0);
 assert.equal(numberFieldTargets.length, 2);
 assert.ok(bookmarkNames.includes("wpsc_eq_" + "e".repeat(24)));
+assert.ok(bookmarkNames.includes("wpsc_head_" + "a".repeat(24)));
 assert.ok(fieldCodes.includes("REF wpsc_eq_" + "e".repeat(24) + " \\h"));
 assert.ok(events.indexOf("field:SEQ WPSC_EQ \\* ARABIC") < events.indexOf("build"));
 assert.ok(events.indexOf("field:REF wpsc_eq_" + "e".repeat(24) + " \\h") >
