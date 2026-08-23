@@ -22,7 +22,10 @@ from skills.WPSComposer.scripts.document_model import (
     StructuredDocument,
     TableCellDegradation,
 )
-from skills.WPSComposer.scripts.generation_plan import validate_generation_plan
+from skills.WPSComposer.scripts.generation_plan import (
+    OperationPlanError,
+    validate_generation_plan,
+)
 from skills.WPSComposer.scripts.recording_composers import RecordingWriterComposer
 from skills.WPSComposer.scripts.longform.native_math import convert_restricted_latex
 from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
@@ -599,3 +602,40 @@ def test_plain_pipe_table_without_citation_remains_visible() -> None:
     assert table["args"]["rows"] == [["one", "two"]]
     assert "cellCitations" not in table["args"]
     assert validate_generation_plan(build.plan.to_dict(), "writer") == build.plan
+
+
+@pytest.mark.parametrize(
+    "op_name,node_id",
+    [
+        ("writer.reset", "file:///Users/alice/reset"),
+        ("writer.finalize_fields", "/Users/alice/finalize"),
+        ("writer.configure_front_matter", r"C:\private\frontmatter"),
+        ("writer.insert_toc", "/tmp/private-toc"),
+        ("writer.insert_figure_index", "file:///home/alice/figure-index"),
+        ("writer.insert_table_index", r"C:\private\table-index"),
+    ],
+)
+def test_every_explicit_m4_operation_node_id_is_privacy_safe(op_name, node_id) -> None:
+    build = build_longform_generation(
+        """---
+toc: true
+figure_index: true
+table_index: true
+---
+# Body
+:::figure {#fig:a caption="F"}
+![missing](missing.png)
+:::
+:::table {#tab:a caption="T"}
+| A |
+|---|
+| one |
+:::
+"""
+    )
+    plan = build.plan.to_dict()
+    assert validate_generation_plan(plan, "writer") == build.plan
+    operation = next(item for item in plan["operations"] if item["op"] == op_name)
+    operation["nodeId"] = node_id
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
