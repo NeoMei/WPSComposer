@@ -1423,13 +1423,20 @@ def _bibliography_args(value: Any, path: str) -> None:
 
 
 _M4_NOTICE_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+
+
+def _m4_notice_code(value: Any, path: str) -> None:
+    if (
+        not isinstance(value, str)
+        or not _M4_NOTICE_CODE_RE.fullmatch(value)
+        or _PRIVATE_HASH_RE.fullmatch(value)
+    ):
+        _invalid(path, "bounded stable non-hash issue code")
+
+
 _M4_NOTICE_SCHEMA = _schema(
     ("code", "message", "fallbackText", "placement"),
-    code=lambda value, path: (
-        None
-        if isinstance(value, str) and _M4_NOTICE_CODE_RE.fullmatch(value)
-        else _invalid(path, "bounded stable issue code")
-    ),
+    code=_m4_notice_code,
     message=lambda value, path: _privacy_safe_text(value, path, maximum=500),
     fallbackText=lambda value, path: _privacy_safe_text(value, path, maximum=500),
     placement=_enum(frozenset({"document"}), "document placement"),

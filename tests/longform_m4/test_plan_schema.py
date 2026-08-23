@@ -329,6 +329,23 @@ def test_quality_anchor_rejects_duplicate_stable_notice_keys() -> None:
         validate_generation_plan(plan, "writer")
 
 
+def test_quality_anchor_rejects_a_hash_disguised_as_notice_code() -> None:
+    plan = _plan()
+    anchor = next(
+        op for op in plan["operations"]
+        if op["op"] == "writer.reserve_document_quality_anchor"
+    )
+    anchor["args"]["notices"] = [{
+        "code": "A" * 64,
+        "message": "Invalid configuration.",
+        "fallbackText": "controlled",
+        "placement": "document",
+    }]
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
 def test_citation_and_inline_degradation_runs_are_strict() -> None:
     plan = _plan()
     paragraph = next(op for op in plan["operations"] if op["op"] == "writer.add_cross_reference")
