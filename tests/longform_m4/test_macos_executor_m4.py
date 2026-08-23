@@ -489,13 +489,14 @@ function makeRange(start, end) {
   return {
     Start: start, End: end, Font: {}, Shading: {},
     ParagraphFormat: {TabStops: {Add: function(){}}},
+    get Text() { return text.slice(start, end); },
     InsertAfter: function(value) { text += String(value); this.End = text.length; },
     Delete: function() { text = text.slice(0, start) + text.slice(end); }
   };
 }
 const document = {
   get Content() { return {End: text.length + 1}; }, Range: makeRange,
-  Paragraphs: {Count: 1},
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
   InlineShapes: {AddPicture: function() { imageAttempts += 1;
@@ -610,9 +611,10 @@ let text = "";
 let imageAttempts = 0;
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); }, Delete: function() {}}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
-  Paragraphs: {Count: 1},
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function(locator) { imageAttempts += 1; assert.equal(locator, "/private/formula.png");
     return {Range: {Start: 1, End: 2, ParagraphFormat: {}}}; }},
@@ -640,10 +642,11 @@ function makeDocument(addPicture) {
   let text = "", rollbacks = 0;
   function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
     ParagraphFormat: {TabStops: {Add: function(){}}},
+    get Text() { return text.slice(start, end); },
     InsertAfter: function(value) { text += String(value); },
     Delete: function() { rollbacks += 1; text = ""; }}; }
   return {document: {get Content() { return {End: text.length + 1}; }, Range: range,
-    Paragraphs: {Count: 1},
+    Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
     PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
     InlineShapes: {AddPicture: function() { return addPicture(function(value) { text += value; }); }},
     Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
@@ -680,10 +683,11 @@ def test_js_formula_inner_rollback_and_number_failures_remain_exact_fatal_codes(
 let text = "", deletes = 0;
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); },
   Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
-  Paragraphs: {Count: 1},
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
   InlineShapes: {AddPicture: function() { text += "partial"; return {}; }},
@@ -698,13 +702,15 @@ assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
   document, operation, {"formula-image-1": "/private/formula.png"}, [], []
 ), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
 
+text = "";
 let rollbackCount = 0;
 function range2(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); }, Delete: function() { rollbackCount += 1; text = ""; }}; }
 const fieldError = new Error("field failed"); fieldError.code = "FIELD_REFRESH_FAILED";
 const document2 = {get Content() { return {End: text.length + 1}; }, Range: range2,
-  Paragraphs: {Count: 1},
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function() { return {Range: {Start: 0, End: 1, ParagraphFormat: {}}}; }},
   Fields: {Add: function() { throw fieldError; }}, Bookmarks: {Add: function() {}}};
@@ -805,12 +811,134 @@ assert.ok(text.includes("Formula ref (1-9)"));
 ''')
 
 
-def test_js_formula_recovery_restores_a_wps_consumed_paragraph_boundary() -> None:
+def test_js_formula_uses_last_paragraph_end_when_content_end_is_stale() -> None:
+    _run_node(r'''
+const citation = "Inline citation remains complete in this paragraph.\r";
+let text = citation;
+const added = [];
+function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
+function range(start, end) {
+  return {
+    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+    get Text() { return text.slice(start, end); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() { text = text.slice(0, start) + text.slice(end); }
+  };
+}
+const maths = {
+  Count: 0,
+  items: [],
+  Add: function(target) {
+    added.push([target.Start, target.End, target.Text]);
+    const bounds = {start: target.Start, end: target.End};
+    const native = {get Range() { return {Start: bounds.start, End: bounds.end}; },
+      BuildUp: function(){}};
+    this.items.push(native);
+    this.Count += 1;
+    return {Start: bounds.start, End: bounds.end,
+      OMaths: {Count: 1, Item: function() { return native; }}};
+  },
+  Item: function(index) { return this.items[index - 1]; }
+};
+const document = {
+  // Real WPS can lag by the length of the most recently inserted run.
+  get Content() { return {End: Math.max(1, text.length + 1 - 9)}; },
+  Range: range,
+  get Paragraphs() { return {
+    get Count() { return (text.match(/\r/g) || []).length + 1; },
+    Item: function(index) {
+      assert.equal(index, this.Count);
+      const start = text.lastIndexOf("\r") + 1;
+      return {Range: {Start: start, End: text.length + 1, Text: text.slice(start)}};
+    }
+  }; },
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: maths,
+  Fields: {Add: function(target) {
+    target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1"}};
+  }},
+  Bookmarks: {Add: function() {}}
+};
+window.WPSComposerLongformV2.__test.addEquationNativeM4(document, {
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"
+}, {}, {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true});
+assert.equal(added.length, 1);
+assert.equal(added[0][0], citation.length + 1);
+assert.ok(text.startsWith(citation));
+assert.ok(text.slice(citation.length).startsWith("\tx+y\t(1)\r"));
+''')
+
+
+def test_js_formula_recovery_never_deletes_before_authoritative_checkpoint() -> None:
+    _run_node(r'''
+const citation = "Inline citation remains complete in this paragraph.\r";
+let text = citation;
+function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
+function range(start, end) {
+  return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+    get Text() { return text.slice(start, end); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() { text = text.slice(0, start) + text.slice(end); }
+  };
+}
+const document = {
+  get Content() { return {End: Math.max(1, text.length + 1 - 9)}; },
+  Range: range,
+  get Paragraphs() { return {
+    get Count() { return (text.match(/\r/g) || []).length + 1; },
+    Item: function(index) {
+      assert.equal(index, this.Count);
+      const start = text.lastIndexOf("\r") + 1;
+      return {Range: {Start: start, End: text.length + 1}};
+    }
+  }; },
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
+  Fields: {Add: function(target) {
+    target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1"}};
+  }},
+  Bookmarks: {Add: function() {}}
+};
+const issues = [];
+window.WPSComposerLongformV2.__test.runOperation(document, {
+  op: "writer.add_equation", nodeId: "eq:one",
+  args: {renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+    fallbackText: "x+y",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+    fallback: "explicit-image-then-source-notice"}
+}, {}, issues, []);
+assert.equal(issues.length, 1);
+assert.equal(issues[0].code, "EQUATION_INSERT_FAILED");
+assert.ok(text.startsWith(citation));
+assert.equal(text.slice(citation.length), "\t[EQUATION_INSERT_FAILED: x+y]\t(1)\r");
+''')
+
+
+def test_js_formula_recovery_is_fatal_if_rollback_consumes_prior_paragraph_boundary() -> None:
     _run_node(r'''
 let text = "citation\r", paragraphCount = 2, rollbackDeletes = 0;
 function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+function range(start, end) {
+  const boundedStart = Math.min(start, text.length);
+  const boundedEnd = Math.min(end, text.length);
+  return {Start: boundedStart, End: boundedEnd, Font: {}, Shading: {},
   ParagraphFormat: paragraphFormat(),
+  get Text() { return text.slice(boundedStart, boundedEnd); },
   InsertAfter: function(value) {
     value = String(value); text += value;
     paragraphCount += (value.match(/\r/g) || []).length;
@@ -821,7 +949,11 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
     if (text.endsWith("\r")) { text = text.slice(0, -1); paragraphCount -= 1; }
   }}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
-  get Paragraphs() { return {Count: paragraphCount}; },
+  get Paragraphs() { return {Count: paragraphCount, Item: function(index) {
+    assert.equal(index, paragraphCount);
+    const start = text.lastIndexOf("\r") + 1;
+    return {Range: {Start: start, End: text.length + 1}};
+  }}; },
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
@@ -832,10 +964,11 @@ const operation = {op: "writer.add_equation", nodeId: "eq:one", args: {
   bookmarkName: "wpsc_eq_" + "e".repeat(24)},
   failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
     fallback: "explicit-image-then-source-notice"}};
-window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
+assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
+  document, operation, {}, [], []
+), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
 assert.ok(rollbackDeletes >= 1);
-assert.ok(text.startsWith("citation\r\t[EQUATION_INSERT_FAILED: x+y]"));
-assert.equal(paragraphCount, 3);
+assert.equal(text, "citation");
 ''')
 
 

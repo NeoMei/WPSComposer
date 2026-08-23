@@ -113,15 +113,97 @@
     return red | (green << 8) | (blue << 16);
   }
 
-  function endRange(document) {
-    const content = document.Content;
-    const end = content && typeof content.End === "number"
-      ? Math.max(0, content.End - 1)
-      : 0;
-    if (typeof document.Range === "function") {
-      return document.Range(end, end);
+  function checkpointTextSignature(value) {
+    const text = safeString(value);
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
     }
-    return content;
+    return text.length + ":" + (hash >>> 0).toString(16);
+  }
+
+  function exactDocumentRange(document, start, end) {
+    if (!document || typeof document.Range !== "function" ||
+        !Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end < start) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const range = document.Range(start, end);
+    if (!range || typeof range.Start !== "number" || typeof range.End !== "number" ||
+        range.Start !== start || range.End !== end) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return range;
+  }
+
+  function authoritativeDocumentEnd(document) {
+    if (!document || typeof document.Range !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const content = document.Content;
+    const rawContentEnd = content && typeof content.End === "number"
+      ? content.End : NaN;
+    const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd >= 0
+      ? Math.max(0, rawContentEnd - 1) : null;
+    let paragraphPosition = null;
+    let lastParagraph = null;
+    let lastParagraphStart = null;
+    let lastParagraphEnd = null;
+    const paragraphs = document.Paragraphs;
+    const count = Number(paragraphs && paragraphs.Count);
+    if (Number.isInteger(count) && count > 0 &&
+        (typeof paragraphs.Item === "function" || typeof paragraphs === "function")) {
+      const paragraph = collectionItem(paragraphs, count);
+      const paragraphRange = paragraph && paragraph.Range;
+      const paragraphStart = paragraphRange && typeof paragraphRange.Start === "number"
+        ? paragraphRange.Start : NaN;
+      const paragraphEnd = paragraphRange && typeof paragraphRange.End === "number"
+        ? paragraphRange.End : NaN;
+      if (!paragraphRange || !Number.isInteger(paragraphStart) ||
+          !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
+          paragraphEnd <= paragraphStart) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      paragraphPosition = paragraphEnd - 1;
+      lastParagraphStart = paragraphStart;
+      lastParagraphEnd = paragraphEnd;
+    }
+    if (contentPosition === null && paragraphPosition === null) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const position = Math.max(
+      contentPosition === null ? 0 : contentPosition,
+      paragraphPosition === null ? 0 : paragraphPosition
+    );
+    if (lastParagraphStart !== null) {
+      const textRange = exactDocumentRange(document, lastParagraphStart, position);
+      if (typeof textRange.Text !== "string") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const paragraphText = textRange.Text;
+      lastParagraph = {
+        start: lastParagraphStart,
+        end: lastParagraphEnd,
+        text: paragraphText,
+        signature: checkpointTextSignature(paragraphText)
+      };
+    }
+    return {
+      position: position,
+      range: exactDocumentRange(document, position, position),
+      lastParagraph: lastParagraph
+    };
+  }
+
+  function endRange(document) {
+    if (document && typeof document.Range !== "function") {
+      const content = document.Content;
+      const rawEnd = content && typeof content.End === "number" ? content.End : NaN;
+      if (content && Number.isInteger(rawEnd) && rawEnd >= 0) return content;
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return authoritativeDocumentEnd(document).range;
   }
 
   function collectionItem(collection, index) {
@@ -713,12 +795,55 @@
     return Number.isInteger(count) && count > 0 ? count : null;
   }
 
-  function paragraphSafeRollbackToken(document, start) {
+  function paragraphSafeRollbackToken(document, state) {
     const count = paragraphCount(document);
-    if (count === null) throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    const snapshot = state && state.lastParagraph;
+    if (count === null || !snapshot) {
+      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    }
+    const documentPrefix = exactDocumentRange(document, 0, state.position);
+    if (typeof documentPrefix.Text !== "string") {
+      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    }
     return {
-      start: start, paragraphCount: count, preserveParagraphBoundary: true
+      start: state.position,
+      paragraphCount: count,
+      preserveParagraphBoundary: true,
+      lastParagraphStart: snapshot.start,
+      lastParagraphEnd: snapshot.end,
+      lastParagraphText: snapshot.text,
+      lastParagraphSignature: snapshot.signature,
+      documentPrefixText: documentPrefix.Text,
+      documentPrefixSignature: checkpointTextSignature(documentPrefix.Text)
     };
+  }
+
+  function validateRollbackPrefix(document, token) {
+    const start = Number(token.start);
+    const paragraphStart = Number(token.lastParagraphStart);
+    const paragraphEnd = Number(token.lastParagraphEnd);
+    const expectedText = token.lastParagraphText;
+    const expectedSignature = token.lastParagraphSignature;
+    const expectedPrefixText = token.documentPrefixText;
+    const expectedPrefixSignature = token.documentPrefixSignature;
+    if (!Number.isInteger(start) || !Number.isInteger(paragraphStart) ||
+        !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
+        paragraphEnd <= paragraphStart || paragraphStart > start ||
+        typeof expectedText !== "string" || typeof expectedSignature !== "string" ||
+        typeof expectedPrefixText !== "string" ||
+        typeof expectedPrefixSignature !== "string") {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    const prefix = exactDocumentRange(document, paragraphStart, start);
+    if (typeof prefix.Text !== "string" || prefix.Text !== expectedText ||
+        checkpointTextSignature(prefix.Text) !== expectedSignature) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    const documentPrefix = exactDocumentRange(document, 0, start);
+    if (typeof documentPrefix.Text !== "string" || documentPrefix.Text !== expectedPrefixText ||
+        checkpointTextSignature(documentPrefix.Text) !== expectedPrefixSignature) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
   }
 
   function rollbackMutation(document, checkpoint, end) {
@@ -726,23 +851,19 @@
     const start = token ? Number(token.start) : Number(checkpoint);
     try {
       const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
+      if (!Number.isInteger(start) || start < 0 || !Number.isInteger(stop) || stop < start) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      if (token && token.preserveParagraphBoundary === true) {
+        validateRollbackPrefix(document, token);
+      }
       if (stop > start) document.Range(start, stop).Delete();
       if (token && token.preserveParagraphBoundary === true) {
-        let currentCount = paragraphCount(document);
+        validateRollbackPrefix(document, token);
+        const currentCount = paragraphCount(document);
         const expectedCount = Number(token.paragraphCount);
         if (currentCount === null || !Number.isInteger(expectedCount) ||
-            expectedCount <= 0 || currentCount > expectedCount) {
-          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-        }
-        for (let attempts = 0; currentCount < expectedCount && attempts < 4; attempts += 1) {
-          insertInlineText(document, "\r");
-          const nextCount = paragraphCount(document);
-          if (nextCount === null || nextCount <= currentCount) {
-            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-          }
-          currentCount = nextCount;
-        }
-        if (currentCount !== expectedCount) {
+            expectedCount <= 0 || currentCount !== expectedCount) {
           throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
         }
       }
@@ -756,22 +877,17 @@
       if (!document || typeof document.Range !== "function") {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
-      const content = document.Content;
-      const rawEnd = content && Number(content.End);
-      if (!Number.isFinite(rawEnd)) {
-        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
-      }
-      const position = Math.max(0, rawEnd - 1);
-      const checkpointRange = document.Range(position, position);
+      const state = authoritativeDocumentEnd(document);
+      const checkpointRange = state.range;
       if (!checkpointRange || typeof checkpointRange.Delete !== "function") {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
       const start = Number(checkpointRange.Start);
-      if (!Number.isFinite(start) || start < 0) {
+      if (!Number.isInteger(start) || start < 0 || start !== state.position) {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
       return preserveParagraphBoundary
-        ? paragraphSafeRollbackToken(document, start) : start;
+        ? paragraphSafeRollbackToken(document, state) : start;
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
@@ -1256,7 +1372,12 @@
   }
 
   function beginFormulaLayout(document) {
-    const start = currentPosition(document);
+    let state = authoritativeDocumentEnd(document);
+    if (state.lastParagraph && state.lastParagraph.text.length > 0) {
+      insertInlineText(document, "\r", state.range);
+      state = authoritativeDocumentEnd(document);
+    }
+    const start = state.position;
     const layout = formulaLayoutSpec(document);
     const probe = document.Range(start, start);
     const format = probe && probe.ParagraphFormat;
@@ -1411,15 +1532,13 @@
       if (!document.InlineShapes || typeof document.InlineShapes.AddPicture !== "function") {
         throw nativeError("CAPABILITY_MISMATCH");
       }
-      const imageBoundary = paragraphCount(document);
-      if (imageBoundary === null) throw nativeError("CAPABILITY_MISMATCH");
+      let imageCheckpoint;
+      try {
+        imageCheckpoint = checkpointRecoverableMutation(document, true);
+      } catch (error) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
       const layout = beginFormulaLayout(document);
-      const imageStart = layout.start;
-      const imageCheckpoint = {
-        start: imageStart,
-        paragraphCount: imageBoundary,
-        preserveParagraphBoundary: true
-      };
       try {
         const shape = document.InlineShapes.AddPicture(
           locator, false, true, endRange(document)
