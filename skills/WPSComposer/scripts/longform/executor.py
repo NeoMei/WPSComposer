@@ -287,6 +287,7 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
         )
 
     from .field_contract import _finalize_native_fields
+    upsert_notice = getattr(executor, "upsert_document_quality_notice", None)
 
     class _LegacyRefreshAdapter:
         _wpsc_legacy_snapshot = True
@@ -313,9 +314,9 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
             return self.cached_snapshot
 
         def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
-            # Compatibility adapters have no native document. Concrete WPS
-            # adapters implement the required reserved-anchor mutation.
-            return None
+            if not callable(upsert_notice):
+                raise RuntimeError("visible quality-notice API unavailable")
+            upsert_notice(issue)
 
     return _finalize_native_fields(
         _LegacyRefreshAdapter(),
@@ -343,6 +344,7 @@ class RecordingLongformExecutor:
         self._snapshots = snapshots or ()
         self.calls: list[Tuple[GenerationPlan, Tuple[Any, ...], Optional[float]]] = []
         self.refresh_calls: list[int] = []
+        self.quality_notices: list[ExecutionIssue] = []
         self._outcome_index = 0
 
     def execute(
@@ -387,6 +389,11 @@ class RecordingLongformExecutor:
                 total_pages=1,
             ),
         )
+
+    def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
+        """Record the visible notice mutation required by unstable convergence."""
+
+        self.quality_notices.append(issue)
 
 
 __all__ = [

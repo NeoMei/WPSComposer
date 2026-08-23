@@ -299,6 +299,7 @@ def test_finalize_emits_unstable_after_three_changing_rounds():
     class _ChangingExecutor:
         def __init__(self) -> None:
             self.calls: list[int] = []
+            self.notices: list[ExecutionIssue] = []
 
         def execute(self, plan: GenerationPlan, resources: Tuple[Any, ...], deadline: Optional[float] = None) -> ExecutionOutcome:
             return ExecutionOutcome(staged_artifact="x.docx")
@@ -306,6 +307,9 @@ def test_finalize_emits_unstable_after_three_changing_rounds():
         def refresh_fields(self, round_index: int) -> Tuple[FieldSnapshot, ...]:
             self.calls.append(round_index)
             return snapshots[round_index]
+
+        def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
+            self.notices.append(issue)
 
     executor = _ChangingExecutor()
     result = finalize_fields_with_convergence(executor, max_rounds=3)
@@ -317,6 +321,27 @@ def test_finalize_emits_unstable_after_three_changing_rounds():
     assert issue.placement == "document"
     assert result.rounds == 4
     assert executor.calls == [0, 1, 2, 3]
+    assert executor.notices == [issue]
+
+
+def test_finalize_unstable_legacy_executor_without_visible_notice_api_is_fatal():
+    from skills.WPSComposer.scripts.longform.field_contract import NativeFieldContractError
+
+    snapshots = [
+        _make_snapshot("doc:body", "hash1"),
+        _make_snapshot("doc:body", "hash2"),
+        _make_snapshot("doc:body", "hash3"),
+        _make_snapshot("doc:body", "hash4"),
+    ]
+
+    class _ChangingExecutorWithoutNotice:
+        def refresh_fields(self, round_index: int) -> Tuple[FieldSnapshot, ...]:
+            return snapshots[round_index]
+
+    with pytest.raises(NativeFieldContractError, match="upsert_document_quality_notice"):
+        finalize_fields_with_convergence(
+            _ChangingExecutorWithoutNotice(), max_rounds=3
+        )
 
 def test_finalize_deterministic_ordering_of_stable_keys():
     """Snapshots with the same fields in different order compare equal after sorting."""

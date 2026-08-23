@@ -594,6 +594,13 @@ class _RecoveryComposer:
     def __init__(self) -> None:
         self.events: list[object] = []
 
+    def degradation_checkpoint(self):
+        self.events.append("checkpoint")
+        return 17
+
+    def rollback_degradation_checkpoint(self, checkpoint):
+        self.events.append(("rollback", checkpoint))
+
     def add_cross_reference_paragraph(self, **kwargs):
         self.events.append("native")
         raise _NativeFailure("CROSS_REFERENCE_FAILED")
@@ -621,7 +628,12 @@ def test_windows_executor_routes_declared_recovery_through_closed_contract() -> 
 
     executor._run_op(composer, operation)
 
-    assert composer.events == ["native", ("inline", "See [1].")]
+    assert composer.events == [
+        "checkpoint",
+        "native",
+        ("rollback", 17),
+        ("inline", "See [1]."),
+    ]
     assert [issue.to_dict() for issue in executor._issues] == [{
         "code": "CROSS_REFERENCE_FAILED",
         "message": "writer.add_cross_reference used its declared native fallback",
@@ -631,6 +643,86 @@ def test_windows_executor_routes_declared_recovery_through_closed_contract() -> 
         "fallback": "inline-fallback",
         "recoverable": True,
     }]
+
+
+@pytest.mark.parametrize(
+    "composer",
+    [
+        SimpleNamespace(
+            rollback_degradation_checkpoint=lambda checkpoint: None,
+            add_cross_reference_paragraph=lambda **kwargs: (_ for _ in ()).throw(
+                AssertionError("native attempt must not start")
+            ),
+        ),
+        SimpleNamespace(
+            degradation_checkpoint=lambda: 17,
+            add_cross_reference_paragraph=lambda **kwargs: (_ for _ in ()).throw(
+                AssertionError("native attempt must not start")
+            ),
+        ),
+        SimpleNamespace(
+            degradation_checkpoint=lambda: (_ for _ in ()).throw(
+                RuntimeError("/private/checkpoint")
+            ),
+            rollback_degradation_checkpoint=lambda checkpoint: None,
+            add_cross_reference_paragraph=lambda **kwargs: (_ for _ in ()).throw(
+                AssertionError("native attempt must not start")
+            ),
+        ),
+    ],
+)
+def test_windows_recoverable_operation_requires_checkpoint_and_rollback_before_native(
+    composer,
+) -> None:
+    executor = WindowsLongformExecutor()
+    operation = GenerationOperation(
+        op="writer.add_cross_reference",
+        node_id="para:1",
+        args={"runs": [{"type": "text", "text": "See [1]."}]},
+        failure_policy={
+            "mode": "degrade",
+            "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+            "fallback": "inline-fallback",
+        },
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        executor._run_op(composer, operation)
+
+    assert getattr(exc_info.value, "op_name", None) == "local-checkpoint"
+    assert executor._issues == []
+
+
+def test_windows_failed_rollback_is_fatal_and_never_attempts_fallback() -> None:
+    events: list[object] = []
+    composer = SimpleNamespace(
+        degradation_checkpoint=lambda: events.append("checkpoint") or 17,
+        rollback_degradation_checkpoint=lambda checkpoint: (_ for _ in ()).throw(
+            RuntimeError("/private/rollback")
+        ),
+        add_cross_reference_paragraph=lambda **kwargs: (_ for _ in ()).throw(
+            _NativeFailure("CROSS_REFERENCE_FAILED")
+        ),
+        add_inline_degradation=lambda **kwargs: events.append("fallback"),
+    )
+    executor = WindowsLongformExecutor()
+    operation = GenerationOperation(
+        op="writer.add_cross_reference",
+        node_id="para:1",
+        args={"runs": [{"type": "text", "text": "See [1]."}]},
+        failure_policy={
+            "mode": "degrade",
+            "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+            "fallback": "inline-fallback",
+        },
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        executor._run_op(composer, operation)
+
+    assert getattr(exc_info.value, "op_name", None) == operation.op
+    assert events == ["checkpoint"]
+    assert executor._issues == []
 
 
 def test_windows_executor_unknown_operation_is_fatal_without_notice() -> None:

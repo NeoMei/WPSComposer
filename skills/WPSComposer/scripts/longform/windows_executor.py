@@ -148,6 +148,12 @@ class _ResolvedPaths:
     staged_docx: str
 
 
+@dataclass(frozen=True)
+class _LocalCheckpoint:
+    token: Any
+    rollback: Callable[[Any], Any]
+
+
 class WindowsLongformExecutor(LongformExecutor):
     """Execute a protocol v2 long-form generation plan on a dedicated WPS host."""
 
@@ -511,25 +517,25 @@ class WindowsLongformExecutor(LongformExecutor):
     @staticmethod
     def _checkpoint_local(composer: WriterComposer) -> Any:
         checkpoint = getattr(composer, "degradation_checkpoint", None)
-        if checkpoint is None:
-            return None
         if not callable(checkpoint):
             raise _ExecutionAbort(
                 "local-checkpoint", RuntimeError("checkpoint API unavailable")
             )
+        rollback = getattr(composer, "rollback_degradation_checkpoint", None)
+        if not callable(rollback):
+            raise _ExecutionAbort(
+                "local-checkpoint", RuntimeError("rollback API unavailable")
+            )
         try:
-            return checkpoint()
+            return _LocalCheckpoint(token=checkpoint(), rollback=rollback)
         except Exception as exc:
             raise _ExecutionAbort("local-checkpoint", exc) from exc
 
     @staticmethod
     def _rollback_local(composer: WriterComposer, checkpoint: Any) -> None:
-        if checkpoint is None:
-            return
-        rollback = getattr(composer, "rollback_degradation_checkpoint", None)
-        if not callable(rollback):
+        if not isinstance(checkpoint, _LocalCheckpoint):
             raise RuntimeError("rollback API unavailable")
-        rollback(checkpoint)
+        checkpoint.rollback(checkpoint.token)
 
     def _apply_fallback(
         self,
