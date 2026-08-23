@@ -45,8 +45,15 @@ class RecordingNativeComposer:
     def add_captioned_figure_native(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("figure", **kwargs)
 
+    def add_captioned_figure_fallback(self, **kwargs: Any) -> dict[str, Any] | None:
+        self._call("figure-fallback", **kwargs)
+        return self._call("notice", code=kwargs.get("failure_code"))
+
     def add_semantic_table_native(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("table", **kwargs)
+
+    def add_semantic_table_fallback(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("table-fallback", **kwargs)
 
     def add_equation_number_native(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("equation", **kwargs)
@@ -59,6 +66,9 @@ class RecordingNativeComposer:
 
     def add_cross_reference_paragraph(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("reference", **kwargs)
+
+    def add_cross_reference_fallback(self, **kwargs: Any) -> dict[str, Any] | None:
+        return self._call("reference-fallback", **kwargs)
 
     def add_citation_paragraph(self, **kwargs: Any) -> dict[str, Any] | None:
         return self._call("citation", **kwargs)

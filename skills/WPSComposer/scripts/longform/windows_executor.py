@@ -546,7 +546,29 @@ class WindowsLongformExecutor(LongformExecutor):
         code: Optional[str] = None,
     ) -> None:
         args = op.args
-        if fallback in {"inline", "inline-fallback"}:
+        if fallback == "figure-child-stack-then-notice":
+            result = composer.add_captioned_figure_fallback(
+                **dict(args),
+                owner_node_id=op.node_id,
+                resource_locators=dict(self._resource_locators),
+                failure_code=code or "IMAGE_INSERT_FAILED",
+            )
+            self._consume_native_result(result, op)
+        elif fallback == "grid-then-text":
+            native_args = dict(args)
+            native_args.pop("cellCitations", None)
+            result = composer.add_semantic_table_fallback(
+                **native_args,
+                owner_node_id=op.node_id,
+                failure_code=code or "TABLE_INSERT_FAILED",
+            )
+            self._consume_native_result(result, op)
+        elif fallback == "inline-fallback" and op.op == "writer.add_cross_reference":
+            composer.add_cross_reference_fallback(
+                **dict(args), owner_node_id=op.node_id,
+                failure_code=code or "CROSS_REFERENCE_FAILED",
+            )
+        elif fallback in {"inline", "inline-fallback"}:
             text = str(
                 args.get("fallbackText")
                 or args.get("source")
@@ -559,10 +581,7 @@ class WindowsLongformExecutor(LongformExecutor):
                 message=_op_fallback_message(op),
                 fallback_text=text,
             )
-        elif fallback in {
-            "notice", "figure-child-stack-then-notice", "grid-then-text",
-            "explicit-image-then-source-notice",
-        }:
+        elif fallback in {"notice", "explicit-image-then-source-notice"}:
             text = str(
                 args.get("fallbackText")
                 or args.get("source")
@@ -700,6 +719,7 @@ class WindowsLongformExecutor(LongformExecutor):
                 **args,
                 owner_node_id=op.node_id,
                 resource_locators=dict(self._resource_locators),
+                controller_owned=True,
             )
             self._consume_native_result(result, op)
             return
@@ -711,7 +731,7 @@ class WindowsLongformExecutor(LongformExecutor):
             # metadata and must reach the Writer primitive.
             native_args.pop("cellCitations", None)
             result = composer.add_semantic_table_native(
-                **native_args, owner_node_id=op.node_id
+                **native_args, owner_node_id=op.node_id, controller_owned=True
             )
             self._consume_native_result(result, op)
             return
@@ -725,7 +745,7 @@ class WindowsLongformExecutor(LongformExecutor):
 
         if name == "writer.add_cross_reference" and "runs" in args:
             result = composer.add_cross_reference_paragraph(
-                **args, owner_node_id=op.node_id
+                **args, owner_node_id=op.node_id, controller_owned=True
             )
             self._consume_native_result(result, op)
             return
@@ -816,20 +836,20 @@ class WindowsLongformExecutor(LongformExecutor):
                 continue
             self._record_issue(
                 code=str(raw.get("code") or EXECUTION_FAILED),
-                message="Native object used its declared recovery",
+                message=str(raw.get("message") or "Native object reported an issue"),
                 node_id=op.node_id,
                 placement=(
                     str(raw["placement"])
                     if raw.get("placement") in {"block", "inline", "document"}
                     else "document"
                 ),
-                stage="native",
-                fallback=(
-                    str(raw.get("fallback"))
-                    if raw.get("fallback")
-                    else str((op.failure_policy or {}).get("fallback") or "")
-                ) or None,
-                recoverable=True,
+                stage=str(raw["stage"]) if raw.get("stage") else None,
+                fallback=str(raw["fallback"]) if raw.get("fallback") else None,
+                recoverable=(
+                    raw.get("recoverable")
+                    if isinstance(raw.get("recoverable"), bool)
+                    else None
+                ),
             )
 
     # ----------------------------------------------------------------------
@@ -857,15 +877,19 @@ class WindowsLongformExecutor(LongformExecutor):
         self._extend_issues((issue,))
 
     def _extend_issues(self, issues: Tuple[ExecutionIssue, ...]) -> None:
-        identities = {
-            (issue.code, issue.placement, issue.node_id)
-            for issue in self._issues
-        }
         for issue in issues:
             identity = (issue.code, issue.placement, issue.node_id)
-            if identity not in identities:
+            prior_index = next((
+                index for index, prior in enumerate(self._issues)
+                if (prior.code, prior.placement, prior.node_id) == identity
+            ), None)
+            if prior_index is None:
                 self._issues.append(issue)
-                identities.add(identity)
+            elif (
+                issue.recoverable is True
+                and self._issues[prior_index].recoverable is not True
+            ):
+                self._issues[prior_index] = issue
 
 
 class _ExecutionAbort(Exception):

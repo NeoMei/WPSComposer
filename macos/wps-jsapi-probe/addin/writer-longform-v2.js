@@ -771,7 +771,6 @@
           placement: planned.placement || "block",
           nodeId: context.ownerNodeId
         });
-        degraded = true;
         return;
       }
       const locator = resources[child.resourceId];
@@ -782,19 +781,15 @@
         addFigureChild(document, child, locator, context.ownerNodeId, null);
         context.childResults.push({nodeId: child.nodeId, status: "applied"});
       } catch (error) {
-        if (error.code !== "IMAGE_INSERT_FAILED") throw error;
-        if (retryOnce) {
-          try {
-            addFigureChild(document, child, locator, context.ownerNodeId, null);
-            context.childResults.push({nodeId: child.nodeId, status: "applied"});
-            degraded = true;
-            return;
-          } catch (retryError) {
-            if (retryError.code !== "IMAGE_INSERT_FAILED") throw retryError;
-          }
+        if (error.code !== "IMAGE_INSERT_FAILED" || !retryOnce) throw error;
+        try {
+          addFigureChild(document, child, locator, context.ownerNodeId, null);
+          context.childResults.push({nodeId: child.nodeId, status: "applied"});
+        } catch (retryError) {
+          if (retryError.code !== "IMAGE_INSERT_FAILED") throw retryError;
+          addFigureNotice(document, "IMAGE_INSERT_FAILED");
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: "IMAGE_INSERT_FAILED"});
         }
-        addFigureNotice(document, "IMAGE_INSERT_FAILED");
-        context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: "IMAGE_INSERT_FAILED"});
         degraded = true;
       }
     });
@@ -864,18 +859,57 @@
           });
           insertInlineText(document, "\r");
         } catch (error) {
-          if (error.code !== "IMAGE_INSERT_FAILED") throw error;
+          if (error.code !== "IMAGE_INSERT_FAILED" || context.controllerOwned) throw error;
           rollbackMutation(document, start);
-          degraded = renderFigureStack(document, args.children, resources, context, false) || true;
+          context.childResults.length = 0;
+          renderFigureStack(document, args.children, resources, context, false);
+          degraded = true;
         }
       } else {
-        degraded = renderFigureStack(document, args.children, resources, context, true);
+        degraded = renderFigureStack(
+          document, args.children, resources, context, !context.controllerOwned
+        );
       }
       if (degraded) appendIssueOnce(context.issues, {
-        code: "IMAGE_INSERT_FAILED",
-        message: "Figure used deterministic stack recovery",
-        placement: "block",
-        nodeId: context.ownerNodeId
+        code: "IMAGE_INSERT_FAILED", message: "Figure used deterministic stack recovery",
+        placement: "block", nodeId: context.ownerNodeId
+      });
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
+    } finally {
+      if (landscape) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function addCaptionedFigureFallback(document, args, resources, context, code) {
+    const landscape = args.orientation === "landscape";
+    if (landscape) addExplicitOrientationSection(document, true);
+    try {
+      (args.children || []).forEach(function (child) {
+        if (child.plannedDegradation) {
+          const planned = child.plannedDegradation;
+          addDegradationNotice(document, {
+            code: planned.code, fallbackText: planned.fallback,
+            placement: planned.placement || "block"
+          });
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: planned.code});
+          appendIssueOnce(context.issues, {
+            code: planned.code, message: "Figure child used its planned fallback",
+            placement: planned.placement || "block", nodeId: context.ownerNodeId
+          });
+          return;
+        }
+        const locator = resources[child.resourceId];
+        if (typeof locator !== "string" || locator.length === 0) {
+          throw nativeError("RESOURCE_HASH_MISMATCH");
+        }
+        try {
+          addFigureChild(document, child, locator, context.ownerNodeId, null);
+          context.childResults.push({nodeId: child.nodeId, status: "applied"});
+        } catch (error) {
+          if (error.code !== "IMAGE_INSERT_FAILED") throw error;
+          addFigureNotice(document, code);
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: code});
+        }
       });
       if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
     } finally {
@@ -1020,45 +1054,29 @@
       });
       const tableStart = currentPosition(document);
       let table;
-      let effectiveMerges = args.merges || [];
       try {
         table = createNativeTable(document, args);
       } catch (error) {
-        if (!RECOVERABLE_TABLE_CODES[error.code]) throw error;
+        if (context.controllerOwned || !RECOVERABLE_TABLE_CODES[error.code]) throw error;
         rollbackMutation(document, tableStart);
         addNativeTableNotice(document, error.code);
         const gridStart = currentPosition(document);
         try {
           table = createNativeTable(document, gridTableArgs(args));
-          effectiveMerges = [];
-          appendIssueOnce(context.issues, {
-            code: error.code,
-            message: "Table used deterministic grid fallback",
-            placement: "block",
-            nodeId: context.ownerNodeId
-          });
+          appendIssueOnce(context.issues, {code: error.code, message: "Table used deterministic grid fallback", placement: "block", nodeId: context.ownerNodeId});
         } catch (gridError) {
           if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
           rollbackMutation(document, gridStart);
           addTableTextFallback(document, args);
-          appendIssueOnce(context.issues, {
-            code: "TABLE_INSERT_FAILED",
-            message: "Table used deterministic text fallback",
-            placement: "block",
-            nodeId: context.ownerNodeId
-          });
+          appendIssueOnce(context.issues, {code: "TABLE_INSERT_FAILED", message: "Table used deterministic text fallback", placement: "block", nodeId: context.ownerNodeId});
           return;
         }
       }
-      if (tableOverflowGroup(table, effectiveMerges)) {
+      if (tableOverflowGroup(table, args.merges || [])) {
+        if (context.controllerOwned) throw nativeError("TABLE_ROW_FORCED_SPLIT");
         rollbackMutation(document, tableStart);
         addNativeTableNotice(document, "TABLE_ROW_FORCED_SPLIT");
-        appendIssueOnce(context.issues, {
-          code: "TABLE_ROW_FORCED_SPLIT",
-          message: "Vertical merge group rendered as splittable grid",
-          placement: "block",
-          nodeId: context.ownerNodeId
-        });
+        appendIssueOnce(context.issues, {code: "TABLE_ROW_FORCED_SPLIT", message: "Vertical merge group rendered as splittable grid", placement: "block", nodeId: context.ownerNodeId});
         const gridStart = currentPosition(document);
         try {
           createNativeTable(document, gridTableArgs(args));
@@ -1066,13 +1084,35 @@
           if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
           rollbackMutation(document, gridStart);
           addTableTextFallback(document, args);
-          appendIssueOnce(context.issues, {
-            code: "TABLE_INSERT_FAILED",
-            message: "Overflow grid used deterministic text fallback",
-            placement: "block",
-            nodeId: context.ownerNodeId
-          });
+          appendIssueOnce(context.issues, {code: "TABLE_INSERT_FAILED", message: "Overflow grid used deterministic text fallback", placement: "block", nodeId: context.ownerNodeId});
         }
+      }
+    } finally {
+      if (landscape) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function addSemanticTableFallback(document, args, resources, context, code) {
+    void resources;
+    const landscape = args.orientation === "landscape";
+    if (landscape) addExplicitOrientationSection(document, true);
+    try {
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
+      (args.plannedDegradation || []).forEach(function (planned) {
+        addNativeTableNotice(document, planned.code);
+        appendIssueOnce(context.issues, {
+          code: planned.code, message: "Table used its planned fallback",
+          placement: planned.placement || "block", nodeId: context.ownerNodeId
+        });
+      });
+      addNativeTableNotice(document, code);
+      const gridStart = currentPosition(document);
+      try {
+        createNativeTable(document, gridTableArgs(args));
+      } catch (error) {
+        if (!RECOVERABLE_TABLE_CODES[error.code]) throw error;
+        rollbackMutation(document, gridStart);
+        addTableTextFallback(document, args);
       }
     } finally {
       if (landscape) addExplicitOrientationSection(document, false);
@@ -1106,15 +1146,11 @@
       const start = currentPosition(document);
       try {
         addNativeField(
-          document,
-          "REF " + run.bookmarkName + " \\h",
-          context.ownerNodeId,
-          "REF",
-          "reference",
-          "CROSS_REFERENCE_FAILED"
+          document, "REF " + run.bookmarkName + " \\h",
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED"
         );
       } catch (error) {
-        if (error.code !== "CROSS_REFERENCE_FAILED") throw error;
+        if (error.code !== "CROSS_REFERENCE_FAILED" || context.controllerOwned) throw error;
         rollbackMutation(document, start);
         insertInlineText(document, run.fallbackText);
         degraded = true;
@@ -1139,11 +1175,30 @@
     }
     insertInlineText(document, "\r");
     if (degraded) appendIssueOnce(context.issues, {
-      code: "CROSS_REFERENCE_FAILED",
-      message: "Cross-reference used inline fallback",
-      placement: "inline",
-      nodeId: context.ownerNodeId
+      code: "CROSS_REFERENCE_FAILED", message: "Cross-reference used inline fallback",
+      placement: "inline", nodeId: context.ownerNodeId
     });
+  }
+
+  function addCrossReferenceFallback(document, args) {
+    const paragraphStart = currentPosition(document);
+    (args.runs || []).forEach(function (run) {
+      insertInlineText(document, run.type === "text"
+        ? safeString(run.text)
+        : safeString(run.prefix) + safeString(run.fallbackText) + safeString(run.suffix));
+    });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const format = paragraph && paragraph.ParagraphFormat;
+      if (format) {
+        const indent = safeNumber(args.listFormatting.indentPt, 24);
+        format.LeftIndent = indent;
+        format.FirstLineIndent = -indent;
+        format.SpaceBefore = 0;
+        format.SpaceAfter = 3;
+      }
+    }
+    insertInlineText(document, "\r");
   }
 
   function insertCaptionIndexNative(document, args, resources, context) {
@@ -1440,29 +1495,15 @@
   }
 
   function appendIssueOnce(issues, issue) {
-    issue = normalizeRuntimeIssue(issue);
-    const duplicate = issues.some(function (existing) {
+    const duplicateIndex = issues.findIndex(function (existing) {
       return existing.code === issue.code &&
         (existing.placement || "document") === (issue.placement || "document") &&
         (existing.nodeId || null) === (issue.nodeId || null);
     });
-    if (!duplicate) issues.push(issue);
-  }
-
-  function normalizeRuntimeIssue(issue) {
-    if (!issue || issue.recoverable !== undefined) return issue;
-    const branches = WPSCOMPOSER_RECOVERY_MATRIX[issue.code];
-    if (!branches) return issue;
-    const placement = issue.placement || "document";
-    const fallbackKinds = Object.keys(branches).filter(function (fallbackKind) {
-      return branches[fallbackKind].placement === placement;
-    });
-    if (fallbackKinds.length !== 1) return issue;
-    return Object.assign({}, issue, {
-      stage: "native",
-      fallback: fallbackKinds[0],
-      recoverable: true
-    });
+    if (duplicateIndex < 0) issues.push(issue);
+    else if (issue.recoverable === true && issues[duplicateIndex].recoverable !== true) {
+      issues[duplicateIndex] = issue;
+    }
   }
 
   function unstableFieldIssue(snapshot, rounds) {
@@ -1793,14 +1834,28 @@
     return "";
   }
 
-  function applyOperationFallback(document, operation, code, fallbackKind) {
+  function applyOperationFallback(document, operation, code, fallbackKind, resources, context) {
     const text = operationFallbackText(operation);
+    if (fallbackKind === "figure-child-stack-then-notice" &&
+        operation.op === "writer.add_captioned_figure") {
+      addCaptionedFigureFallback(document, operation.args || {}, resources, context, code);
+      return;
+    }
+    if (fallbackKind === "grid-then-text" &&
+        operation.op === "writer.add_semantic_table") {
+      addSemanticTableFallback(document, operation.args || {}, resources, context, code);
+      return;
+    }
+    if (fallbackKind === "inline-fallback" &&
+        operation.op === "writer.add_cross_reference") {
+      addCrossReferenceFallback(document, operation.args || {});
+      return;
+    }
     if (fallbackKind === "inline" || fallbackKind === "inline-fallback") {
       addInlineDegradation(document, {code: code, fallbackText: text});
       return;
     }
-    if (fallbackKind === "notice" || fallbackKind === "grid-then-text" ||
-        fallbackKind === "figure-child-stack-then-notice" ||
+    if (fallbackKind === "notice" ||
         fallbackKind === "explicit-image-then-source-notice") {
       addDegradationNotice(document, {
         code: code, fallbackText: text, placement: "block"
@@ -1810,7 +1865,9 @@
     throw nativeError("DEGRADATION_FALLBACK_FAILED");
   }
 
-  function recoverOperation(document, operation, issues, checkpoint, code, fallbackKind) {
+  function recoverOperation(
+    document, operation, resources, issues, context, checkpoint, code, fallbackKind
+  ) {
     const placement = fallbackPlacement(fallbackKind);
     const controller = document._wpscRecoveryController || createLocalRecoveryController();
     document._wpscRecoveryController = controller;
@@ -1822,7 +1879,9 @@
       },
       rollback: function (token) { rollbackMutation(document, token); },
       fallbackAttempt: function () {
-        applyOperationFallback(document, operation, code, fallbackKind);
+        applyOperationFallback(
+          document, operation, code, fallbackKind, resources || {}, context
+        );
       },
       // The local inline fallback or restrained block is itself the visible
       // same-node notice. Reaching this callback proves insertion completed.
@@ -1842,20 +1901,26 @@
   function runOperation(document, operation, resources, issues, childResults) {
     const opName = operation.op;
     const checkpoint = currentPosition(document);
+    const issueCheckpoint = issues.length;
+    const childCheckpoint = childResults.length;
+    const context = {
+      ownerNodeId: operation.nodeId || null,
+      issues: issues,
+      childResults: childResults,
+      controllerOwned: true
+    };
     const deferred = LONGFORM_DEFERRED[opName];
     if (deferred) {
-      recoverOperation(document, operation, issues, checkpoint, deferred[0], deferred[1]);
+      recoverOperation(
+        document, operation, resources, issues, context,
+        checkpoint, deferred[0], deferred[1]
+      );
       return;
     }
     const handler = OPERATIONS[opName];
     if (!handler) {
       throw nativeError("UNKNOWN_OPERATION");
     }
-    const context = {
-      ownerNodeId: operation.nodeId || null,
-      issues: issues,
-      childResults: childResults
-    };
     try {
       handler(document, operation.args || {}, resources || {}, context);
     } catch (error) {
@@ -1871,8 +1936,11 @@
         const allowed = Array.isArray(policy.recoverableCodes) &&
           policy.recoverableCodes.indexOf(code) !== -1;
         if (allowed) {
+          issues.length = issueCheckpoint;
+          childResults.length = childCheckpoint;
           recoverOperation(
-            document, operation, issues, checkpoint, code, policy.fallback
+            document, operation, resources, issues, context,
+            checkpoint, code, policy.fallback
           );
           return;
         }
@@ -2179,6 +2247,7 @@
       recoveryDecision: recoveryDecision,
       createLocalRecoveryController: createLocalRecoveryController,
       runLocalRecovery: runLocalRecovery,
+      appendIssueOnce: appendIssueOnce,
       safePublicText: safePublicText,
       addInlineDegradation: addInlineDegradation,
       addDegradationNotice: addDegradationNotice,

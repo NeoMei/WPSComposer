@@ -100,6 +100,7 @@ class FakeWriterComposer:
         self._snapshots: List[Tuple[FieldSnapshot, ...]] = []
         self._snapshot_index = 0
         self.refresh_rounds: List[int] = []
+        self.rollback_tokens: List[int] = []
 
     def __enter__(self):
         return self
@@ -137,6 +138,16 @@ class FakeWriterComposer:
                 total_pages=1,
             ),
         )
+
+    def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
+        self._record("upsert_document_quality_notice", issue=issue)
+
+    def degradation_checkpoint(self) -> int:
+        return len(self.primitives)
+
+    def rollback_degradation_checkpoint(self, token: int) -> None:
+        self.rollback_tokens.append(token)
+        del self.primitives[token:]
 
     # -- existing primitives --
     def reset(self) -> None:
@@ -229,6 +240,21 @@ class FakeWriterComposer:
             message=message,
             fallback_text=fallback_text,
         )
+
+    def add_captioned_figure_fallback(self, **kwargs) -> None:
+        self._record("add_captioned_figure_fallback", **kwargs)
+        self.add_degradation_notice(
+            kwargs.get("failure_code", "IMAGE_INSERT_FAILED"), "fallback", ""
+        )
+
+    def add_semantic_table_fallback(self, **kwargs) -> None:
+        self._record("add_semantic_table_fallback", **kwargs)
+        self.add_degradation_notice(
+            kwargs.get("failure_code", "TABLE_INSERT_FAILED"), "fallback", ""
+        )
+
+    def add_cross_reference_fallback(self, **kwargs) -> None:
+        self._record("add_cross_reference_fallback", **kwargs)
 
     def add_document_quality_notice(self, notices: list) -> None:
         self._record("add_document_quality_notice", notices=notices)

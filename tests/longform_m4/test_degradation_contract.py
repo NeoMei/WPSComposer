@@ -711,8 +711,8 @@ class _RecoveryComposer:
         self.events.append("native")
         raise _NativeFailure("CROSS_REFERENCE_FAILED")
 
-    def add_inline_degradation(self, **kwargs):
-        self.events.append(("inline", kwargs["fallback_text"]))
+    def add_cross_reference_fallback(self, **kwargs):
+        self.events.append(("inline", kwargs["runs"][0]["text"]))
 
     def add_degradation_notice(self, **kwargs):
         self.events.append(("block", kwargs["code"]))
@@ -866,6 +866,115 @@ def test_windows_table_dispatch_accepts_plan_only_cell_citations_metadata() -> N
     assert "cellCitations" not in captured[0]
 
 
+@pytest.mark.parametrize(
+    ("op_name", "code", "fallback", "native_name", "fallback_name", "args"),
+    [
+        (
+            "writer.add_captioned_figure", "IMAGE_INSERT_FAILED",
+            "figure-child-stack-then-notice", "add_captioned_figure_native",
+            "add_captioned_figure_fallback", {"numbering": {}, "children": []},
+        ),
+        (
+            "writer.add_semantic_table", "TABLE_STYLE_APPLY_FAILED",
+            "grid-then-text", "add_semantic_table_native",
+            "add_semantic_table_fallback", {"numbering": {}, "headers": ["A"], "rows": []},
+        ),
+        (
+            "writer.add_cross_reference", "CROSS_REFERENCE_FAILED",
+            "inline-fallback", "add_cross_reference_paragraph",
+            "add_cross_reference_fallback",
+            {"runs": [{"type": "text", "text": "literal"}]},
+        ),
+    ],
+)
+def test_windows_named_runtime_recovery_is_owned_by_controller_exactly_once(
+    op_name, code, fallback, native_name, fallback_name, args,
+) -> None:
+    events: list[object] = []
+    composer = SimpleNamespace(
+        degradation_checkpoint=lambda: events.append("checkpoint") or 17,
+        rollback_degradation_checkpoint=lambda token: events.append(("rollback", token)),
+        add_degradation_notice=lambda **kwargs: (_ for _ in ()).throw(
+            AssertionError("generic fallback must not replace a named primitive")
+        ),
+        add_inline_degradation=lambda **kwargs: (_ for _ in ()).throw(
+            AssertionError("generic fallback must not replace a named primitive")
+        ),
+    )
+    setattr(
+        composer,
+        native_name,
+        lambda **kwargs: events.append(("native", kwargs.get("controller_owned"))) or (_ for _ in ()).throw(
+            _NativeFailure(code)
+        ),
+    )
+    setattr(
+        composer,
+        fallback_name,
+        lambda **kwargs: events.append(("fallback", fallback)),
+    )
+    executor = WindowsLongformExecutor()
+    operation = GenerationOperation(
+        op=op_name,
+        node_id="node:1",
+        args=args,
+        failure_policy={
+            "mode": "degrade", "recoverableCodes": [code], "fallback": fallback,
+        },
+    )
+
+    executor._run_op(composer, operation)
+
+    assert events == ["checkpoint", ("native", True), ("rollback", 17), ("fallback", fallback)]
+    assert [issue.fallback for issue in executor._issues] == [fallback]
+
+
+def test_windows_planned_issue_is_not_relabelled_as_runtime_operation_fallback() -> None:
+    executor = WindowsLongformExecutor()
+    operation = GenerationOperation(
+        op="writer.add_captioned_figure",
+        node_id="fig:1",
+        args={"numbering": {}, "children": []},
+        failure_policy={
+            "mode": "degrade",
+            "recoverableCodes": ["IMAGE_INSERT_FAILED"],
+            "fallback": "figure-child-stack-then-notice",
+        },
+    )
+
+    executor._consume_native_result({"issues": [{
+        "code": "IMAGE_INSERT_FAILED",
+        "message": "planned source degradation",
+        "placement": "block",
+    }]}, operation)
+
+    assert executor._issues[0].stage is None
+    assert executor._issues[0].fallback is None
+    assert executor._issues[0].recoverable is None
+
+
+def test_javascript_planned_issue_is_not_normalized_to_runtime_recovery() -> None:
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+const issues = [];
+window.WPSComposerLongformV2.__test.appendIssueOnce(issues, {{
+  code: "IMAGE_INSERT_FAILED", message: "planned", placement: "block", nodeId: "fig:1"
+}});
+process.stdout.write(JSON.stringify(issues));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    assert json.loads(completed.stdout) == [{
+        "code": "IMAGE_INSERT_FAILED",
+        "message": "planned",
+        "placement": "block",
+        "nodeId": "fig:1",
+    }]
+
+
 def test_javascript_operation_recovery_uses_closed_controller_and_unknown_is_fatal() -> None:
     script = f"""
 const fs = require("fs");
@@ -910,6 +1019,55 @@ process.stdout.write(JSON.stringify({{issues: issues, fatal: fatal, text: tables
         "fatal": "UNKNOWN_OPERATION",
         "text": "[BIBLIOGRAPHY_INSERT_FAILED] Alpha.",
     }
+
+
+def test_javascript_run_operation_forces_controller_owned_reference_recovery() -> None:
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+const api = window.WPSComposerLongformV2.__test;
+let text = "";
+function range(start, end) {{
+  return {{
+    Start: start, End: end, ParagraphFormat: {{}},
+    InsertAfter: function(value) {{ text += String(value); this.End += String(value).length; }},
+    Delete: function() {{ text = text.slice(0, start); }}
+  }};
+}}
+const document = {{
+  Content: {{get End() {{ return text.length + 1; }}}},
+  Range: range,
+  Fields: {{Add: function() {{ throw new Error("private native failure"); }}}}
+}};
+const issues = [];
+api.runOperation(document, {{
+  op: "writer.add_cross_reference", nodeId: "para:1",
+  args: {{
+    controllerOwned: false,
+    runs: [
+      {{type: "text", text: "See "}},
+      {{type: "reference", bookmarkName: "wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa", prefix: "", suffix: ".", fallbackText: "[missing]"}}
+    ]
+  }},
+  failurePolicy: {{mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"], fallback: "inline-fallback"}}
+}}, {{}}, issues, []);
+process.stdout.write(JSON.stringify({{
+  text: text, issues: issues,
+  decisions: document._wpscRecoveryController.decisions
+}}));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    actual = json.loads(completed.stdout)
+    assert actual["text"] == "See [missing].\r"
+    assert actual["issues"][0]["fallback"] == "inline-fallback"
+    assert actual["decisions"] == [
+        decide_recovery(
+            "CROSS_REFERENCE_FAILED", "inline-fallback", "inline"
+        ).to_dict()
+    ]
 
 
 def _mac_result(issue: dict[str, object]) -> dict[str, object]:

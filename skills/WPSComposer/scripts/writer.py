@@ -1488,25 +1488,17 @@ class WriterComposer(BaseComposer):
                     child, locator, owner_node_id, rollback_scope=None
                 )
             except NativeWriterObjectError as error:
-                if error.code != "IMAGE_INSERT_FAILED":
+                if error.code != "IMAGE_INSERT_FAILED" or not retry_once:
                     raise
-                if retry_once:
-                    try:
-                        self._native_insert_figure_child(
-                            child, locator, owner_node_id, rollback_scope=None
-                        )
-                    except NativeWriterObjectError as retry_error:
-                        if retry_error.code != "IMAGE_INSERT_FAILED":
-                            raise
-                        self.add_degradation_notice(
-                            "IMAGE_INSERT_FAILED",
-                            "Figure image could not be inserted",
-                            "[IMAGE_INSERT_FAILED]", "block",
-                        )
-                else:
+                try:
+                    self._native_insert_figure_child(
+                        child, locator, owner_node_id, rollback_scope=None
+                    )
+                except NativeWriterObjectError as retry_error:
+                    if retry_error.code != "IMAGE_INSERT_FAILED":
+                        raise
                     self.add_degradation_notice(
-                        "IMAGE_INSERT_FAILED",
-                        "Figure image could not be inserted",
+                        "IMAGE_INSERT_FAILED", "Figure image could not be inserted",
                         "[IMAGE_INSERT_FAILED]", "block",
                     )
                 degraded = True
@@ -1516,7 +1508,7 @@ class WriterComposer(BaseComposer):
         self, *, caption, numbering, indexable, referenceable, widthMode,
         orientation, kind, children, layout, keepWithCaption,
         owner_node_id=None, resource_locators=None, bookmarkName=None,
-        explicitWidthPt=None, columns=None,
+        explicitWidthPt=None, columns=None, controller_owned=False,
     ):
         """Insert normalized inline images followed by one native caption."""
         del indexable, referenceable, widthMode, kind, explicitWidthPt, columns
@@ -1527,8 +1519,8 @@ class WriterComposer(BaseComposer):
         landscape = orientation == "landscape"
         if landscape:
             self.add_section(landscape=True)
+        issues = []
         try:
-            degraded = False
             for child in children:
                 planned = child.get("plannedDegradation")
                 if planned is not None:
@@ -1541,6 +1533,7 @@ class WriterComposer(BaseComposer):
                 layout == "columns"
                 and all("resourceId" in child for child in children)
             )
+            degraded = False
             if can_use_columns:
                 operation_start = self._native_position()
                 container = None
@@ -1554,30 +1547,23 @@ class WriterComposer(BaseComposer):
                         cell_range = container.Cell(1, column).Range
                         self.selection.SetRange(cell_range.Start, cell_range.Start)
                         self._native_insert_figure_child(
-                            child, locator, owner_node_id,
-                            rollback_scope=cell_range,
+                            child, locator, owner_node_id, rollback_scope=cell_range,
                         )
-                    self.selection.SetRange(
-                        container.Range.End, container.Range.End
-                    )
+                    self.selection.SetRange(container.Range.End, container.Range.End)
                     self.selection.TypeParagraph()
                 except NativeWriterObjectError as error:
-                    if error.code != "IMAGE_INSERT_FAILED":
+                    if error.code != "IMAGE_INSERT_FAILED" or controller_owned:
                         raise
-                    container_end = (
-                        int(container.Range.End)
-                        if container is not None
-                        else self._native_document_end()
-                    )
+                    container_end = int(container.Range.End) if container is not None else self._native_document_end()
                     self._native_rollback(operation_start, container_end)
-                    degraded = self._render_native_figure_stack(
-                        children, resource_locators, owner_node_id,
-                        retry_once=False,
-                    ) or True
+                    self._render_native_figure_stack(
+                        children, resource_locators, owner_node_id, retry_once=False
+                    )
+                    degraded = True
             else:
                 degraded = self._render_native_figure_stack(
                     children, resource_locators, owner_node_id,
-                    retry_once=True,
+                    retry_once=not controller_owned,
                 )
             if degraded:
                 issues.append({
@@ -1588,6 +1574,55 @@ class WriterComposer(BaseComposer):
             if caption:
                 self._add_native_caption(
                     caption, numbering, bookmarkName, owner_node_id,
+                    keep_with_next=False,
+                )
+        finally:
+            if landscape:
+                self.add_section(landscape=False)
+        return {"issues": issues}
+
+    def add_captioned_figure_fallback(
+        self, *, children, caption="", numbering=None, orientation="portrait",
+        bookmarkName=None, owner_node_id=None, resource_locators=None,
+        failure_code="IMAGE_INSERT_FAILED", **kwargs,
+    ):
+        """Run the controller-owned bounded child-stack figure fallback."""
+        del kwargs
+        resource_locators = dict(resource_locators or {})
+        landscape = orientation == "landscape"
+        if landscape:
+            self.add_section(landscape=True)
+        try:
+            for child in children:
+                planned = child.get("plannedDegradation")
+                if planned is not None:
+                    self.add_degradation_notice(
+                        planned["code"], planned["message"], planned["fallback"],
+                        planned.get("placement", "block"),
+                    )
+                    issues.append({
+                        "code": planned["code"],
+                        "message": planned["message"],
+                        "placement": planned.get("placement", "block"),
+                    })
+                    continue
+                locator = resource_locators.get(child.get("resourceId"))
+                if locator is None:
+                    raise NativeWriterObjectError("RESOURCE_HASH_MISMATCH")
+                try:
+                    self._native_insert_figure_child(
+                        child, locator, owner_node_id, rollback_scope=None
+                    )
+                except NativeWriterObjectError as error:
+                    if error.code != "IMAGE_INSERT_FAILED":
+                        raise
+                    self.add_degradation_notice(
+                        failure_code, "Figure image could not be inserted",
+                        "[IMAGE_INSERT_FAILED]", "block",
+                    )
+            if caption:
+                self._add_native_caption(
+                    caption, numbering or {}, bookmarkName, owner_node_id,
                     keep_with_next=False,
                 )
         finally:
@@ -1687,7 +1722,7 @@ class WriterComposer(BaseComposer):
         alignments, style, orientation, borderSpec, merges, repeatHeader,
         allowRowSplit, cellIndentPt, plannedDegradation,
         keepCaptionWithFirstRow, owner_node_id=None, bookmarkName=None,
-        cellDegradations=(),
+        cellDegradations=(), controller_owned=False,
     ):
         """Insert a caption, planned notices, and a resolved native table."""
         del indexable, referenceable, style
@@ -1709,107 +1744,68 @@ class WriterComposer(BaseComposer):
                 )
                 issues.append(dict(degradation))
             table_start = self._native_position()
-            effective_merges = merges
             try:
                 table = self._create_native_table(
                     headers, rows, alignments, borderSpec, repeatHeader,
                     allowRowSplit, cellIndentPt, merges,
                 )
-            except Exception as exc:
-                code = (
-                    exc.code if isinstance(exc, NativeWriterObjectError) else None
-                )
-                if code not in {
+            except NativeWriterObjectError as error:
+                if controller_owned or error.code not in {
                     "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
                     "TABLE_INSERT_FAILED",
                 }:
                     raise
                 self._native_rollback(table_start, self._native_document_end())
                 self._add_native_table_notice(
-                    code, "Table used the deterministic grid fallback"
+                    error.code, "Table used the deterministic grid fallback"
                 )
                 grid_start = self._native_position()
-                grid = {
-                    "top": .75, "bottom": .75, "headerBottom": .75,
-                    "left": .75, "right": .75,
-                    "insideHorizontal": .75, "insideVertical": .75,
-                }
                 try:
                     table = self._create_native_table(
-                        headers, rows, alignments, grid, repeatHeader,
-                        True, cellIndentPt, (),
+                        headers, rows, alignments, {
+                            "top": .75, "bottom": .75, "headerBottom": .75,
+                            "left": .75, "right": .75,
+                            "insideHorizontal": .75, "insideVertical": .75,
+                        }, repeatHeader, True, cellIndentPt, (),
                     )
-                    effective_merges = ()
-                    issues.append({
-                        "code": code,
-                        "message": "Table used the deterministic grid fallback",
-                        "placement": "block",
-                    })
-                except Exception as grid_exc:
-                    grid_code = (
-                        grid_exc.code
-                        if isinstance(grid_exc, NativeWriterObjectError)
-                        else None
-                    )
-                    if grid_code not in {
+                    issues.append({"code": error.code, "message": "Table used deterministic grid fallback", "placement": "block"})
+                except NativeWriterObjectError as grid_error:
+                    if grid_error.code not in {
                         "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
                         "TABLE_INSERT_FAILED",
                     }:
                         raise
-                    self._native_rollback(
-                        grid_start, self._native_document_end()
-                    )
+                    self._native_rollback(grid_start, self._native_document_end())
                     self._add_native_table_text_fallback(headers, rows)
-                    issues.append({
-                        "code": "TABLE_INSERT_FAILED",
-                        "message": "Table used the deterministic text fallback",
-                        "placement": "block",
-                    })
+                    issues.append({"code": "TABLE_INSERT_FAILED", "message": "Table used deterministic text fallback", "placement": "block"})
                     return {"issues": issues}
-            group = self._table_overflow_group(table, effective_merges)
-            if group is not None:
+            if self._table_overflow_group(table, merges) is not None:
+                if controller_owned:
+                    raise NativeWriterObjectError("TABLE_ROW_FORCED_SPLIT") from None
                 self._native_rollback(table_start, self._native_document_end())
                 self._add_native_table_notice(
                     "TABLE_ROW_FORCED_SPLIT",
-                    "A vertical merge group exceeded the available page height",
-                    "",
+                    "A vertical merge group exceeded the available page height", "",
                 )
-                grid = {
-                    "top": .75, "bottom": .75, "headerBottom": .75,
-                    "left": .75, "right": .75,
-                    "insideHorizontal": .75, "insideVertical": .75,
-                }
-                issues.append({
-                    "code": "TABLE_ROW_FORCED_SPLIT",
-                    "message": "Vertical merge group rendered as splittable grid",
-                    "placement": "block",
-                })
+                issues.append({"code": "TABLE_ROW_FORCED_SPLIT", "message": "Vertical merge group rendered as splittable grid", "placement": "block"})
                 grid_start = self._native_position()
                 try:
                     table = self._create_native_table(
-                        headers, rows, alignments, grid, repeatHeader,
-                        True, cellIndentPt, (),
+                        headers, rows, alignments, {
+                            "top": .75, "bottom": .75, "headerBottom": .75,
+                            "left": .75, "right": .75,
+                            "insideHorizontal": .75, "insideVertical": .75,
+                        }, repeatHeader, True, cellIndentPt, (),
                     )
-                except Exception as grid_exc:
-                    grid_code = (
-                        grid_exc.code
-                        if isinstance(grid_exc, NativeWriterObjectError)
-                        else None
-                    )
-                    if grid_code not in {
+                except NativeWriterObjectError as grid_error:
+                    if grid_error.code not in {
                         "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
                         "TABLE_INSERT_FAILED",
                     }:
                         raise
-                    self._native_rollback(
-                        grid_start, self._native_document_end()
-                    )
+                    self._native_rollback(grid_start, self._native_document_end())
                     self._add_native_table_text_fallback(headers, rows)
-                    issues.append({
-                        "code": "TABLE_INSERT_FAILED",
-                        "message": "Table used the deterministic text fallback",
-                        "placement": "block",
-                    })
+                    issues.append({"code": "TABLE_INSERT_FAILED", "message": "Overflow grid used deterministic text fallback", "placement": "block"})
             for cell_notice in cellDegradations or ():
                 try:
                     cell_range = table.Cell(
@@ -1823,6 +1819,56 @@ class WriterComposer(BaseComposer):
                         "DEGRADATION_INSERT_FAILED",
                         "cell degradation styling failed",
                     ) from None
+        finally:
+            if landscape:
+                self.add_section(landscape=False)
+        return {"issues": issues}
+
+    def add_semantic_table_fallback(
+        self, *, headers, rows, alignments, repeatHeader=True,
+        cellIndentPt=0.0, orientation="portrait", failure_code="TABLE_INSERT_FAILED",
+        owner_node_id=None, caption="", numbering=None, bookmarkName=None,
+        plannedDegradation=(), **kwargs,
+    ):
+        """Run the controller-owned grid-then-text table fallback once."""
+        del kwargs
+        landscape = orientation == "landscape"
+        if landscape:
+            self.add_section(landscape=True)
+        issues = []
+        try:
+            if caption:
+                self._add_native_caption(
+                    caption, numbering or {}, bookmarkName, owner_node_id,
+                    keep_with_next=True,
+                )
+            for planned in plannedDegradation or ():
+                self._add_native_table_notice(
+                    planned["code"], planned.get("message", ""), ""
+                )
+                issues.append(dict(planned))
+            self._add_native_table_notice(
+                failure_code, "Table used the deterministic grid fallback"
+            )
+            grid_start = self._native_position()
+            grid = {
+                "top": .75, "bottom": .75, "headerBottom": .75,
+                "left": .75, "right": .75,
+                "insideHorizontal": .75, "insideVertical": .75,
+            }
+            try:
+                self._create_native_table(
+                    headers, rows, alignments, grid, repeatHeader,
+                    True, cellIndentPt, (),
+                )
+            except NativeWriterObjectError as error:
+                if error.code not in {
+                    "TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED",
+                    "TABLE_INSERT_FAILED",
+                }:
+                    raise
+                self._native_rollback(grid_start, self._native_document_end())
+                self._add_native_table_text_fallback(headers, rows)
         finally:
             if landscape:
                 self.add_section(landscape=False)
@@ -1845,6 +1891,7 @@ class WriterComposer(BaseComposer):
 
     def add_cross_reference_paragraph(
         self, *, runs, owner_node_id=None, listFormatting=None,
+        controller_owned=False,
     ):
         """Insert ordered literal and native REF runs in one paragraph."""
         if listFormatting is not None:
@@ -1878,7 +1925,7 @@ class WriterComposer(BaseComposer):
                     failure_code="CROSS_REFERENCE_FAILED",
                 )
             except NativeWriterObjectError as error:
-                if error.code != "CROSS_REFERENCE_FAILED":
+                if error.code != "CROSS_REFERENCE_FAILED" or controller_owned:
                     raise
                 self._native_rollback(start, self._native_document_end())
                 self.selection.TypeText(run["fallbackText"])
@@ -1896,6 +1943,42 @@ class WriterComposer(BaseComposer):
                 "placement": "inline",
             })
         return {"issues": issues}
+
+    def add_cross_reference_fallback(
+        self, *, runs, owner_node_id=None, listFormatting=None,
+        failure_code="CROSS_REFERENCE_FAILED",
+    ):
+        """Insert one controller-owned static inline reference fallback."""
+        del owner_node_id, failure_code
+        if listFormatting is not None:
+            indent = float(listFormatting["indentPt"])
+            self._reset_selection_to_normal()
+            try:
+                self.selection.Style = self._doc.Styles("List Paragraph")
+            except Exception:
+                pass
+            paragraph_format = self.selection.ParagraphFormat
+            paragraph_format.LeftIndent = indent
+            paragraph_format.FirstLineIndent = -indent
+            try:
+                paragraph_format.TabStops.Add(indent)
+            except Exception:
+                pass
+            self._set_line_spacing(paragraph_format, rule="one_and_half")
+            paragraph_format.SpaceBefore = 0
+            paragraph_format.SpaceAfter = 3
+        for run in runs:
+            if run["type"] == "text":
+                self.selection.TypeText(run["text"])
+            else:
+                self.selection.TypeText(
+                    str(run.get("prefix", ""))
+                    + str(run.get("fallbackText", ""))
+                    + str(run.get("suffix", ""))
+                )
+        self.selection.TypeParagraph()
+        if listFormatting is not None:
+            self._reset_selection_to_normal()
 
     def insert_caption_index_native(
         self, *, title, sequence_id, title_style_id, owner_node_id=None,
