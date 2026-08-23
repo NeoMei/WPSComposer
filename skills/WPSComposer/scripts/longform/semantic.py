@@ -41,6 +41,7 @@ from ..document_model import (
     InlineDegradationRun,
     StructuredDocument,
     TableBlock,
+    TableCellCitation,
     TableCellDegradation,
     TaskList,
 )
@@ -1460,10 +1461,11 @@ def _split_cross_reference_spans(
 def _resolve_table_citation_text(
     text: str,
     references: dict[str, dict[str, Any]],
-) -> tuple[str, bool]:
+) -> tuple[str, bool, list[tuple[str, str, int, str]]]:
     pieces: list[str] = []
     cursor = 0
     degraded = False
+    citations: list[tuple[str, str, int, str]] = []
     for match in _iter_visible_markers(text):
         if match.group(1) != "cite":
             continue
@@ -1475,15 +1477,22 @@ def _resolve_table_citation_text(
             and target.get("kind") == "ref"
             and isinstance(target.get("number"), int)
         ):
-            pieces.append(f"[{target['number']}]")
+            fallback_text = f"[{target['number']}]"
+            pieces.append(fallback_text)
+            citations.append((
+                target_id,
+                target["node_id"],
+                target["number"],
+                fallback_text,
+            ))
         else:
             pieces.append("[REFERENCE_UNRESOLVED 引用目标未解析]")
             degraded = True
         cursor = match.end()
     if not pieces:
-        return text, False
+        return text, False, []
     pieces.append(text[cursor:])
-    return "".join(pieces), degraded
+    return "".join(pieces), degraded, citations
 
 
 def _resolve_table_citations(
@@ -1495,9 +1504,13 @@ def _resolve_table_citations(
             if not isinstance(element, (TableBlock, SemanticTableBlock)):
                 continue
             element.cell_degradations = []
+            element.cell_citations = []
             for column, cell in enumerate(element.headers, start=1):
-                resolved, degraded = _resolve_table_citation_text(cell, references)
+                resolved, degraded, citations = _resolve_table_citation_text(cell, references)
                 element.headers[column - 1] = resolved
+                element.cell_citations.extend(
+                    TableCellCitation(1, column, *citation) for citation in citations
+                )
                 if degraded:
                     element.cell_degradations.append(TableCellDegradation(
                         row=1,
@@ -1507,8 +1520,12 @@ def _resolve_table_citations(
                     ))
             for row_index, row in enumerate(element.rows, start=2):
                 for column, cell in enumerate(row, start=1):
-                    resolved, degraded = _resolve_table_citation_text(cell, references)
+                    resolved, degraded, citations = _resolve_table_citation_text(cell, references)
                     row[column - 1] = resolved
+                    element.cell_citations.extend(
+                        TableCellCitation(row_index, column, *citation)
+                        for citation in citations
+                    )
                     if degraded:
                         element.cell_degradations.append(TableCellDegradation(
                             row=row_index,

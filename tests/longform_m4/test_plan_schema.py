@@ -256,6 +256,76 @@ def test_planned_formula_content_suppresses_native_math_but_keeps_shell() -> Non
     assert validate_generation_plan(plan, "writer")
 
 
+@pytest.mark.parametrize(
+    "private_text",
+    [
+        "/Users/alice/private/input.tex",
+        r"C:\private\input.tex",
+        "0" * 64,
+        "ValueError('private input')",
+        "data:image/png;base64,QUJDRA==",
+    ],
+)
+@pytest.mark.parametrize("field", ["reason", "fallbackText"])
+def test_planned_formula_degradation_rejects_private_diagnostics(
+    private_text, field
+) -> None:
+    plan = _plan()
+    equation = next(op for op in plan["operations"] if op["op"] == "writer.add_equation")
+    equation["args"]["content"] = {
+        "plannedDegradation": _degradation("FORMULA_MALFORMED")
+    }
+    equation["args"]["content"]["plannedDegradation"][field] = private_text
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
+@pytest.mark.parametrize(
+    "private_text",
+    [
+        "/Users/alice/private/input.tex",
+        r"C:\private\input.tex",
+        "0" * 64,
+        "RuntimeError('private input')",
+        "data:text/plain;base64,QUJDRA==",
+    ],
+)
+def test_quality_anchor_rejects_private_diagnostics(private_text) -> None:
+    plan = _plan()
+    anchor = next(
+        op for op in plan["operations"]
+        if op["op"] == "writer.reserve_document_quality_anchor"
+    )
+    anchor["args"]["notices"] = [{
+        "code": "CONFIG_VALUE_INVALID",
+        "message": private_text,
+        "fallbackText": "CONFIG_VALUE_INVALID",
+        "placement": "document",
+    }]
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
+def test_quality_anchor_rejects_duplicate_stable_notice_keys() -> None:
+    plan = _plan()
+    anchor = next(
+        op for op in plan["operations"]
+        if op["op"] == "writer.reserve_document_quality_anchor"
+    )
+    notice = {
+        "code": "CONFIG_VALUE_INVALID",
+        "message": "Invalid configuration.",
+        "fallbackText": "CONFIG_VALUE_INVALID",
+        "placement": "document",
+    }
+    anchor["args"]["notices"] = [notice, dict(notice)]
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
 def test_citation_and_inline_degradation_runs_are_strict() -> None:
     plan = _plan()
     paragraph = next(op for op in plan["operations"] if op["op"] == "writer.add_cross_reference")
@@ -317,6 +387,10 @@ def test_cell_degradations_are_bounded_to_their_table_grid() -> None:
     table["args"]["cellDegradations"][0]["row"] = 3
     with pytest.raises(OperationPlanError):
         validate_generation_plan(plan, "writer")
+    table["args"]["cellDegradations"][0]["row"] = 2
+    table["args"]["rows"] = [["fallback was lost"]]
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
 
 
 def test_structured_bibliography_requires_unique_gap_free_order_and_fixed_geometry() -> None:
@@ -334,6 +408,19 @@ def test_structured_bibliography_requires_unique_gap_free_order_and_fixed_geomet
             validate_generation_plan(plan, "writer")
 
 
+@pytest.mark.parametrize(
+    "text",
+    ["Author.\nTitle.", "Author.\rTitle.", "Author.\tTitle.", "Author.\u2029Title."],
+)
+def test_structured_bibliography_entry_text_is_one_trimmed_paragraph(text) -> None:
+    plan = _plan()
+    bibliography = next(op for op in plan["operations"] if op["op"] == "writer.add_bibliography")
+    bibliography["args"]["entries"][0]["text"] = text
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
 def test_state_matches_citations_and_bibliography_and_requires_backmatter() -> None:
     for mutator in (
         lambda plan: next(op for op in plan["operations"] if op["op"] == "writer.add_cross_reference")["args"]["runs"][1].update({"number": 2}),
@@ -346,7 +433,7 @@ def test_state_matches_citations_and_bibliography_and_requires_backmatter() -> N
             validate_generation_plan(plan, "writer")
 
 
-def test_table_static_citation_can_be_the_only_cited_occurrence() -> None:
+def test_explicit_table_cell_citation_can_be_the_only_cited_occurrence() -> None:
     plan = _plan()
     plan["operations"].remove(_citation_paragraph())
     table = {
@@ -380,6 +467,14 @@ def test_table_static_citation_can_be_the_only_cited_occurrence() -> None:
             "allowRowSplit": False,
             "cellIndentPt": 0.0,
             "plannedDegradation": [],
+            "cellCitations": [{
+                "row": 2,
+                "column": 1,
+                "targetId": "ref:a",
+                "targetNodeId": "ref:a",
+                "number": 1,
+                "fallbackText": "[1]",
+            }],
             "keepCaptionWithFirstRow": True,
         },
         "failurePolicy": {
@@ -390,6 +485,106 @@ def test_table_static_citation_can_be_the_only_cited_occurrence() -> None:
                 "TABLE_ROW_FORCED_SPLIT",
                 "TABLE_INSERT_FAILED",
             ],
+            "fallback": "grid-then-text",
+        },
+    }
+    plan["operations"].insert(3, table)
+
+    assert validate_generation_plan(plan, "writer")
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("row", 3),
+        ("number", 2),
+        ("targetId", "ref:missing"),
+        ("targetNodeId", "ref:other"),
+        ("unknown", True),
+    ],
+)
+def test_table_cell_citation_metadata_is_closed_and_matches_grid_and_bibliography(
+    field, value
+) -> None:
+    plan = _plan()
+    plan["operations"].remove(_citation_paragraph())
+    table = {
+        "op": "writer.add_semantic_table",
+        "nodeId": "tab:cell-citation",
+        "args": {
+            "caption": "T",
+            "numbering": {
+                **_numbering(), "sequenceId": "WPSC_TAB", "prefix": "表 ", "suffix": ""
+            },
+            "bookmarkName": "wpsc_tab_" + "e" * 24,
+            "indexable": True,
+            "referenceable": True,
+            "headers": ["Citation"],
+            "rows": [["[1]"]],
+            "alignments": ["left"],
+            "style": "grid",
+            "orientation": "portrait",
+            "borderSpec": {key: 0.75 for key in ("top", "bottom", "headerBottom", "left", "right", "insideHorizontal", "insideVertical")},
+            "merges": [],
+            "repeatHeader": True,
+            "allowRowSplit": False,
+            "cellIndentPt": 0.0,
+            "plannedDegradation": [],
+            "cellCitations": [{
+                "row": 2,
+                "column": 1,
+                "targetId": "ref:a",
+                "targetNodeId": "ref:a",
+                "number": 1,
+                "fallbackText": "[1]",
+            }],
+            "keepCaptionWithFirstRow": True,
+        },
+        "failurePolicy": {
+            "mode": "degrade",
+            "recoverableCodes": ["TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED", "TABLE_ROW_FORCED_SPLIT", "TABLE_INSERT_FAILED"],
+            "fallback": "grid-then-text",
+        },
+    }
+    table["args"]["cellCitations"][0][field] = value
+    plan["operations"].insert(3, table)
+
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
+def test_plain_bracketed_number_without_cell_citation_metadata_remains_literal() -> None:
+    plan = _plan()
+    plan["operations"].remove(_citation_paragraph())
+    bibliography = next(
+        item for item in plan["operations"] if item["op"] == "writer.add_bibliography"
+    )
+    bibliography["args"]["entries"][0]["cited"] = False
+    table = {
+        "op": "writer.add_semantic_table",
+        "nodeId": "tab:literal",
+        "args": {
+            "caption": "T",
+            "numbering": {**_numbering(), "sequenceId": "WPSC_TAB", "prefix": "表 ", "suffix": ""},
+            "bookmarkName": "wpsc_tab_" + "f" * 24,
+            "indexable": True,
+            "referenceable": True,
+            "headers": ["Literal"],
+            "rows": [["ordinary [999] text"]],
+            "alignments": ["left"],
+            "style": "grid",
+            "orientation": "portrait",
+            "borderSpec": {key: 0.75 for key in ("top", "bottom", "headerBottom", "left", "right", "insideHorizontal", "insideVertical")},
+            "merges": [],
+            "repeatHeader": True,
+            "allowRowSplit": False,
+            "cellIndentPt": 0.0,
+            "plannedDegradation": [],
+            "keepCaptionWithFirstRow": True,
+        },
+        "failurePolicy": {
+            "mode": "degrade",
+            "recoverableCodes": ["TABLE_STYLE_APPLY_FAILED", "TABLE_MERGE_APPLY_FAILED", "TABLE_ROW_FORCED_SPLIT", "TABLE_INSERT_FAILED"],
             "fallback": "grid-then-text",
         },
     }

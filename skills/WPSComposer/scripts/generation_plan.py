@@ -1113,6 +1113,14 @@ _M4_FORMULA_CONTENT_CODES = frozenset({
 _M4_FORMULA_RESOURCE_CODES = frozenset({"FORMULA_FALLBACK_IMAGE_UNAVAILABLE"})
 _M4_INLINE_DEGRADATION_CODES = frozenset({"REFERENCE_UNRESOLVED"})
 _M4_SOURCE_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
+_PRIVATE_PATH_RE = re.compile(
+    r"(?:^|[\s({=\"'])/(?!/)[^\s,;]+|(?:^|[\s({=\"'])[A-Za-z]:[\\/][^\s,;]+"
+)
+_PRIVATE_HASH_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])")
+_PRIVATE_EXCEPTION_RE = re.compile(
+    r"\b(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)"
+)
+_PRIVATE_BASE64_RE = re.compile(r"(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{80,}={0,2}(?![A-Za-z0-9+/])")
 
 
 def _m4_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
@@ -1127,6 +1135,17 @@ def _m4_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
         _invalid(path, "Unicode text without control characters")
     if re.search(r"data:[^,;]{0,80};base64,", value, re.IGNORECASE):
         _invalid(path, "privacy-safe text without embedded base64 payloads")
+
+
+def _privacy_safe_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
+    _m4_text(value, path, maximum=maximum)
+    if (
+        _PRIVATE_PATH_RE.search(value)
+        or _PRIVATE_HASH_RE.search(value)
+        or _PRIVATE_EXCEPTION_RE.search(value)
+        or _PRIVATE_BASE64_RE.search(value)
+    ):
+        _invalid(path, "privacy-safe text without paths, hashes, exception reprs, or base64")
 
 
 def _m4_id(value: Any, path: str) -> None:
@@ -1173,8 +1192,8 @@ _M4_DEGRADATION_SCHEMA = _schema(
     code=lambda value, path: _m4_text(value, path, maximum=64),
     placement=_enum(frozenset({"block"}), "block placement"),
     objectLabel=lambda value, path: _m4_text(value, path, maximum=64),
-    reason=lambda value, path: _m4_text(value, path, maximum=500),
-    fallbackText=lambda value, path: _m4_text(value, path, maximum=10_000),
+    reason=lambda value, path: _privacy_safe_text(value, path, maximum=500),
+    fallbackText=lambda value, path: _privacy_safe_text(value, path, maximum=10_000),
     fallbackKind=_enum(frozenset({"source", "none"}), "controlled formula fallback kind"),
 )
 
@@ -1259,7 +1278,7 @@ _CITATION_RUN_SCHEMA = _schema(
     type=_enum(frozenset({"citation"}), "citation run"),
     nodeId=_m4_node_id,
     targetId=_m4_id,
-    targetNodeId=_m4_id,
+    targetNodeId=_m4_node_id,
     number=_bounded_integer(1, 10_000),
     fallbackText=lambda value, path: _m4_text(value, path, maximum=128),
 )
@@ -1312,12 +1331,35 @@ def _cell_degradation(value: Any, path: str) -> None:
         _invalid(f"{path}.fallbackText", "controlled unresolved-reference fallback")
 
 
+_CELL_CITATION_SCHEMA = _schema(
+    ("row", "column", "targetId", "targetNodeId", "number", "fallbackText"),
+    row=_bounded_integer(1, 10_001),
+    column=_bounded_integer(1, 10_000),
+    targetId=_m4_id,
+    targetNodeId=_m4_node_id,
+    number=_bounded_integer(1, 10_000),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=128),
+)
+
+
+def _cell_citation(value: Any, path: str) -> None:
+    _validate_object(value, path, _CELL_CITATION_SCHEMA)
+    if value["fallbackText"] != f"[{value['number']}]":
+        _invalid(f"{path}.fallbackText", "numeric citation fallback matching number")
+
+
+def _bibliography_text(value: Any, path: str) -> None:
+    _m4_text(value, path, maximum=10_000)
+    if value != value.strip() or any(char in value for char in "\r\n\t\v\f\u2028\u2029"):
+        _invalid(path, "one trimmed bibliography paragraph")
+
+
 _BIBLIOGRAPHY_ENTRY_SCHEMA = _schema(
     ("id", "nodeId", "number", "text", "cited"),
     id=_m4_id,
-    nodeId=_m4_id,
+    nodeId=_m4_node_id,
     number=_bounded_integer(1, 10_000),
-    text=lambda value, path: _m4_text(value, path, maximum=10_000),
+    text=_bibliography_text,
     cited=_boolean,
 )
 
@@ -1382,8 +1424,8 @@ _M4_NOTICE_SCHEMA = _schema(
         if isinstance(value, str) and _M4_NOTICE_CODE_RE.fullmatch(value)
         else _invalid(path, "bounded stable issue code")
     ),
-    message=lambda value, path: _m4_text(value, path, maximum=500),
-    fallbackText=lambda value, path: _m4_text(value, path, maximum=500),
+    message=lambda value, path: _privacy_safe_text(value, path, maximum=500),
+    fallbackText=lambda value, path: _privacy_safe_text(value, path, maximum=500),
     placement=_enum(frozenset({"document"}), "document placement"),
 )
 
@@ -1397,6 +1439,13 @@ _QUALITY_ANCHOR_SCHEMA = _schema(
     title=_enum(frozenset({"生成质量提示"}), "fixed quality-anchor title"),
     notices=_list_of(_m4_notice),
 )
+
+
+def _quality_anchor_args(value: Any, path: str) -> None:
+    _validate_object(value, path, _QUALITY_ANCHOR_SCHEMA)
+    keys = [(notice["code"], notice["message"]) for notice in value["notices"]]
+    if len(keys) != len(set(keys)):
+        _invalid(f"{path}.notices", "unique stable code and message keys")
 
 
 _LIST_FORMATTING_SCHEMA = _schema(
@@ -1513,6 +1562,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
         cellIndentPt=_NONNEGATIVE_NUMBER,
         plannedDegradation=_list_of(_table_degradation),
         cellDegradations=_list_of(_cell_degradation),
+        cellCitations=_list_of(_cell_citation),
         keepCaptionWithFirstRow=_boolean,
     ),
     "writer.add_equation": _equation_args,
@@ -1551,7 +1601,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
         ("notices",),
         notices=_list_of(_notice_item),
     ),
-    "writer.reserve_document_quality_anchor": _QUALITY_ANCHOR_SCHEMA,
+    "writer.reserve_document_quality_anchor": _quality_anchor_args,
     "writer.finalize_fields": _schema(
         (),
         maxRounds=_bounded_integer(1, 3),
@@ -1817,6 +1867,31 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
                     "one degradation per table cell",
                 )
             occupied_degradations.add(coordinate)
+            if degradation["fallbackText"] not in grid[coordinate[0] - 1][coordinate[1] - 1]:
+                _invalid(
+                    f"{op}.args.cellDegradations[{index}].fallbackText",
+                    "fallback text visible in the target table cell",
+                )
+        occupied_citations: set[tuple[int, int, str, int]] = set()
+        for index, citation in enumerate(args.get("cellCitations", [])):
+            coordinate = (citation["row"], citation["column"])
+            if coordinate[0] > row_count or coordinate[1] > width:
+                _invalid(
+                    f"{op}.args.cellCitations[{index}]",
+                    "coordinates inside table grid",
+                )
+            identity = (*coordinate, citation["targetId"], citation["number"])
+            if identity in occupied_citations:
+                _invalid(
+                    f"{op}.args.cellCitations[{index}]",
+                    "unique citation identity per table cell",
+                )
+            occupied_citations.add(identity)
+            if citation["fallbackText"] not in grid[coordinate[0] - 1][coordinate[1] - 1]:
+                _invalid(
+                    f"{op}.args.cellCitations[{index}].fallbackText",
+                    "fallback text visible in the target table cell",
+                )
 
     if op == "writer.add_cross_reference":
         has_reference = any(
@@ -2126,7 +2201,9 @@ def _is_m4_plan(operations: list[dict[str, Any]]) -> bool:
             return True
         if op == "writer.add_bibliography" and args.get("schemaVersion") == 1:
             return True
-        if op == "writer.add_semantic_table" and "cellDegradations" in args:
+        if op == "writer.add_semantic_table" and (
+            "cellDegradations" in args or "cellCitations" in args
+        ):
             return True
         if op == "writer.add_cross_reference" and any(
             run.get("type") in {"citation", "degradation"}
@@ -2229,6 +2306,7 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
     bibliography_numbers: dict[int, str] = {}
     bibliography_sequence: list[tuple[int, bool]] = []
     citations: list[dict[str, Any]] = []
+    cell_citations: list[dict[str, Any]] = []
     for item in operations:
         op = item["op"]
         args = item["args"]
@@ -2249,6 +2327,8 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
                     own(run["nodeId"])
                 if run["type"] == "citation":
                     citations.append(run)
+        if op == "writer.add_semantic_table":
+            cell_citations.extend(args.get("cellCitations", []))
         if op == "writer.add_bibliography" and args.get("schemaVersion") == 1:
             if current_role != "bibliography":
                 raise OperationPlanError(
@@ -2288,7 +2368,7 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
                 )
 
     citation_numbers: dict[int, str] = {}
-    for run in citations:
+    for run in [*citations, *cell_citations]:
         target = bibliography.get(run["targetId"])
         if (
             target is None
@@ -2304,6 +2384,15 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
                 "one citation number cannot identify multiple bibliography targets"
             )
         citation_numbers[run["number"]] = run["targetId"]
+
+    cited_targets = {
+        identifier for identifier, (_, _, cited) in bibliography.items() if cited
+    }
+    referenced_targets = {run["targetId"] for run in [*citations, *cell_citations]}
+    if cited_targets != referenced_targets:
+        raise OperationPlanError(
+            "cited bibliography entries must have explicit inline or table-cell citation metadata"
+        )
 
 
 def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:

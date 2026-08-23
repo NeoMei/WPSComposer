@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+
+import pytest
+
 from skills.WPSComposer.scripts.document_model import (
     BibliographyEntry,
     BlockQuote,
@@ -21,6 +25,7 @@ from skills.WPSComposer.scripts.document_model import (
 from skills.WPSComposer.scripts.generation_plan import validate_generation_plan
 from skills.WPSComposer.scripts.recording_composers import RecordingWriterComposer
 from skills.WPSComposer.scripts.longform.native_math import convert_restricted_latex
+from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
 from skills.WPSComposer.scripts.longform.plan import build_longform_plan
 from skills.WPSComposer.scripts.longform.resources import (
     FORMULA_FALLBACK_IMAGE_UNAVAILABLE,
@@ -329,6 +334,15 @@ def test_quality_anchor_is_always_early_and_contains_initial_document_issues() -
     assert not _ops(build_longform_plan(_semantic([]), _preflight()), "writer.add_document_quality_notice")
 
 
+def test_quality_anchor_upserts_duplicate_initial_document_issues() -> None:
+    issue = DocumentIssue("CONFIG_VALUE_INVALID", "Invalid configuration.", "document")
+    plan = build_longform_plan(_semantic([], issues=(issue, issue)), _preflight())
+    anchor = _ops(plan, "writer.reserve_document_quality_anchor")[0]
+
+    assert len(anchor["args"]["notices"]) == 1
+    assert validate_generation_plan(plan.to_dict(), "writer") == plan
+
+
 def test_malformed_bibliography_degradation_keeps_its_relative_position() -> None:
     citation = CitationRun("para:one/cite:1", "ref:a", "ref:a", 1, "[1]")
     paragraph = Paragraph(
@@ -431,3 +445,95 @@ def test_recording_composer_mirrors_m4_and_preserves_legacy_shapes() -> None:
     assert legacy_bibliography["args"] == {
         "entries": ["Legacy entry"], "style": "numbered"
     }
+
+
+def test_real_markdown_citation_node_ids_validate_without_becoming_logical_ids() -> None:
+    build = build_longform_generation(
+        """# Body
+
+See {{cite:smith}}.
+
+:::bibliography
+[smith] Smith. Title.
+:::
+"""
+    )
+    plan = build.plan.to_dict()
+    citation = next(
+        run
+        for operation in plan["operations"]
+        if operation["op"] == "writer.add_cross_reference"
+        for run in operation["args"]["runs"]
+        if run["type"] == "citation"
+    )
+    entry = next(
+        item
+        for operation in plan["operations"]
+        if operation["op"] == "writer.add_bibliography"
+        for item in operation["args"]["entries"]
+    )
+    assert "/entry:" in citation["targetNodeId"] == entry["nodeId"]
+    assert validate_generation_plan(plan, "writer") == build.plan
+
+
+def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> None:
+    build = build_longform_generation(
+        """# Body
+
+:::table {#tab:data caption="Citations"}
+| Citation | Literal |
+|---|---|
+| {{cite:smith}} | ordinary [999] text |
+:::
+
+:::bibliography
+[smith] Smith. Title.
+:::
+"""
+    )
+    plan = build.plan.to_dict()
+    table = next(
+        item for item in plan["operations"]
+        if item["op"] == "writer.add_semantic_table"
+    )
+    entry = next(
+        item
+        for operation in plan["operations"]
+        if operation["op"] == "writer.add_bibliography"
+        for item in operation["args"]["entries"]
+    )
+    assert table["args"]["rows"] == [["[1]", "ordinary [999] text"]]
+    assert table["args"]["cellCitations"] == [{
+        "row": 2,
+        "column": 1,
+        "targetId": "smith",
+        "targetNodeId": entry["nodeId"],
+        "number": 1,
+        "fallbackText": "[1]",
+    }]
+    assert validate_generation_plan(plan, "writer") == build.plan
+
+
+@pytest.mark.parametrize(
+    "source,private_fragment",
+    [
+        (r"\input{/Users/alice/private/input.tex}", "/Users/alice"),
+        (r"\includegraphics{data:image/png;base64,QUJDRA==}", "data:image"),
+    ],
+)
+def test_private_formula_source_builds_with_controlled_redacted_fallback(
+    source, private_fragment
+) -> None:
+    build = build_longform_generation(
+        f":::equation {{#eq:private}}\n{source}\n:::\n"
+    )
+    plan = build.plan.to_dict()
+    equation = next(
+        item for item in plan["operations"] if item["op"] == "writer.add_equation"
+    )
+    serialized = json.dumps(plan, ensure_ascii=False)
+
+    assert equation["args"]["fallbackText"] == "[FORMULA_SOURCE_REDACTED 公式源已脱敏]"
+    assert private_fragment not in serialized
+    assert "QUJDRA==" not in serialized
+    assert validate_generation_plan(plan, "writer") == build.plan

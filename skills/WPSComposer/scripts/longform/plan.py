@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import re
 from types import SimpleNamespace
 from typing import Any, Optional
 
@@ -47,6 +48,16 @@ _RESOURCE_MANIFEST_VERSION = 1
 
 _MM_TO_PT = 2.834645669
 
+_PRIVATE_PLAN_TEXT_RE = re.compile(
+    r"data:[^,;]{0,80};base64,"
+    r"|(?:^|[\s({=\"'])/(?!/)[^\s,;]+"
+    r"|(?:^|[\s({=\"'])[A-Za-z]:[\\/][^\s,;]+"
+    r"|(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])"
+    r"|\b(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\s*(?:\(|\b)"
+    r"|(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{80,}={0,2}(?![A-Za-z0-9+/])",
+    re.IGNORECASE,
+)
+
 
 def _mm_to_pt(mm: float) -> float:
     return round(mm * _MM_TO_PT, 2)
@@ -60,6 +71,12 @@ def _span_text(spans: list[Span]) -> str:
 def _list_items(items: list[list[Span]]) -> list[str]:
     """Convert list item spans to plain text strings."""
     return [_span_text(spans) for spans in items]
+
+
+def _redact_private_plan_text(text: str, fallback: str) -> str:
+    if _PRIVATE_PLAN_TEXT_RE.search(text):
+        return fallback
+    return text
 
 
 def _keywords_text(keywords: KeywordsBlock) -> str:
@@ -656,6 +673,18 @@ def _render_semantic_table(
             }
             for item in node.cell_degradations
         ]
+    if node.cell_citations:
+        args["cellCitations"] = [
+            {
+                "row": item.row,
+                "column": item.column,
+                "targetId": item.target_id,
+                "targetNodeId": item.target_node_id,
+                "number": item.number,
+                "fallbackText": item.fallback_text,
+            }
+            for item in node.cell_citations
+        ]
     if binding.bookmark_name is not None:
         args["bookmarkName"] = binding.bookmark_name
     state.add(
@@ -704,7 +733,10 @@ def _render_equation(
         )
         return
 
-    fallback_text = source or "[FORMULA_MALFORMED 公式源不可用]"
+    fallback_text = _redact_private_plan_text(
+        source,
+        "[FORMULA_SOURCE_REDACTED 公式源已脱敏]",
+    ) if source else "[FORMULA_MALFORMED 公式源不可用]"
     if native_math is not None:
         content = {
             "nativeMath": {
@@ -1061,16 +1093,25 @@ def _build_quality_anchor(
     state: _BuilderState,
     issues: tuple[DocumentIssue, ...],
 ) -> None:
-    notices = [
-        {
+    notices: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for issue in issues:
+        if getattr(issue, "placement", "document") != "document":
+            continue
+        message = _redact_private_plan_text(
+            issue.message,
+            "Issue details were redacted.",
+        )
+        key = (issue.code, message)
+        if key in seen:
+            continue
+        seen.add(key)
+        notices.append({
             "code": issue.code,
-            "message": issue.message,
+            "message": message,
             "fallbackText": issue.code,
-            "placement": getattr(issue, "placement", "document") or "document",
-        }
-        for issue in issues
-        if getattr(issue, "placement", "document") == "document"
-    ]
+            "placement": "document",
+        })
     state.add(
         "writer.reserve_document_quality_anchor",
         {"title": "生成质量提示", "notices": notices},

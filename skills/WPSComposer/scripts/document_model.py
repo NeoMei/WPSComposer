@@ -105,6 +105,7 @@ class TableBlock:
     rows: List[List[str]] = field(default_factory=list)
     alignments: List[str] = field(default_factory=list)  # "left"/"center"/"right" per column
     cell_degradations: List["TableCellDegradation"] = field(default_factory=list)
+    cell_citations: List["TableCellCitation"] = field(default_factory=list)
 
 
 @dataclass
@@ -230,6 +231,17 @@ class TableCellDegradation:
     fallback_text: str
 
 
+@dataclass(frozen=True)
+class TableCellCitation:
+    """One resolved citation retained in its owning table cell."""
+    row: int
+    column: int
+    target_id: str
+    target_node_id: str
+    number: int
+    fallback_text: str
+
+
 @dataclass
 class SemanticTableBlock:
     """A captioned, referenceable table."""
@@ -245,6 +257,7 @@ class SemanticTableBlock:
     repeat_header: bool = True
     caption_binding: Optional[CaptionBinding] = None
     cell_degradations: List[TableCellDegradation] = field(default_factory=list)
+    cell_citations: List[TableCellCitation] = field(default_factory=list)
     target_degradation: Optional[DocumentIssue] = None
 
 

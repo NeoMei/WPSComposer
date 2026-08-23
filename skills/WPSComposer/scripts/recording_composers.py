@@ -502,6 +502,7 @@ class RecordingWriterComposer:
         numbering=None, bookmarkName=None, style="grid", orientation="portrait",
         borderSpec=None, merges=None, repeatHeader=True, allowRowSplit=False,
         cellIndentPt=0.0, plannedDegradation=None, cellDegradations=None,
+        cellCitations=None,
         keepCaptionWithFirstRow=True, failure_policy=None,
     ):
         column_count = len(headers)
@@ -530,6 +531,7 @@ class RecordingWriterComposer:
             cellIndentPt=cellIndentPt,
             plannedDegradation=plannedDegradation or [],
             cellDegradations=cellDegradations,
+            cellCitations=cellCitations,
             keepCaptionWithFirstRow=keepCaptionWithFirstRow,
             failure_policy={
                 "mode": "degrade",
