@@ -23,7 +23,12 @@ from ..generation_plan import (
     validate_generation_plan,
 )
 from ..macos_probe.bridge import LoopbackBridge
-from ..macos_probe.models import ProbeResult, validate_longform_generation_value
+from ..macos_probe.models import (
+    ProbeResult,
+    ProtocolError,
+    validate_longform_generation_request,
+    validate_longform_generation_value,
+)
 from .executor import (
     ExecutionIssue,
     ExecutionOutcome,
@@ -109,13 +114,14 @@ class MacOSLongformExecutor(LongformExecutor):
         outcome: Optional[ExecutionOutcome] = None
         primary_error: Optional[Exception] = None
         cleanup_failed = False
-        staged_resources = self._stage_resources(resources, paths.staged_docx)
-        params = {
-            "plan": plan.to_dict(),
-            "outputPath": paths.staged_docx,
-            "resources": self._build_resource_map(staged_resources),
-        }
         try:
+            staged_resources = self._stage_resources(resources, paths.staged_docx)
+            self._verify_staged_resources(staged_resources, resources)
+            params = validate_longform_generation_request({
+                "plan": plan.to_dict(),
+                "outputPath": paths.staged_docx,
+                "resources": self._build_resource_map(staged_resources),
+            })
             command = self._bridge.issue(
                 "writer", "generate_longform_document", params
             )
@@ -123,6 +129,10 @@ class MacOSLongformExecutor(LongformExecutor):
             if deadline is not None:
                 timeout = max(0.0, min(timeout, deadline - time.monotonic()))
             bridge_result = self._bridge.wait_result(command.id, timeout=timeout)
+        except MacOSLongformExecutorError as error:
+            primary_error = error
+        except ProtocolError:
+            primary_error = MacOSLongformExecutorError("Bridge request was invalid")
         except Exception:
             primary_error = MacOSLongformExecutorError("Bridge command failed")
         else:
@@ -219,6 +229,13 @@ class MacOSLongformExecutor(LongformExecutor):
             if digest != plan.resource_manifest_digest:
                 invalid = True
             for operation in plan.operations:
+                if operation.op == "writer.add_equation":
+                    fallback = operation.args.get("fallbackResource") or {}
+                    resource_id = fallback.get("fallbackResourceId")
+                    if resource_id is not None and resource_id not in by_id:
+                        invalid = True
+                        break
+                    continue
                 if operation.op != "writer.add_captioned_figure":
                     continue
                 for child in operation.args.get("children", ()):
@@ -286,6 +303,32 @@ class MacOSLongformExecutor(LongformExecutor):
         return tuple(staged)
 
     @staticmethod
+    def _verify_staged_resources(
+        staged: Tuple[Tuple[str, Path], ...],
+        resources: Tuple[PreparedLongformResource, ...],
+    ) -> None:
+        expected = {resource.id: resource.payload_sha256 for resource in resources}
+        staged_ids = [resource_id for resource_id, _path in staged]
+        invalid = (
+            len(staged_ids) != len(expected)
+            or len(set(staged_ids)) != len(staged_ids)
+            or set(staged_ids) != set(expected)
+        )
+        try:
+            for resource_id, path in staged:
+                if (
+                    resource_id not in expected
+                    or hashlib.sha256(path.read_bytes()).hexdigest()
+                    != expected[resource_id]
+                ):
+                    invalid = True
+                    break
+        except Exception:
+            invalid = True
+        if invalid:
+            raise MacOSLongformExecutorError("Private resource validation failed") from None
+
+    @staticmethod
     def _cleanup_resources(resources: Tuple[Tuple[str, Path], ...]) -> None:
         failed = False
         for _resource_id, path in resources:
@@ -322,6 +365,8 @@ class MacOSLongformExecutor(LongformExecutor):
             ) from None
 
         value = validate_longform_generation_value(result.value or {})
+        if value.get("outputPath") != staged_docx:
+            raise MacOSLongformExecutorError("Bridge result was invalid") from None
         self._validate_result_references(value, plan)
         staged_artifact = staged_docx
         issue_codes = value.get("issueCodes") or []

@@ -37,9 +37,7 @@
   });
   // END WPSCOMPOSER GENERATED RECOVERY MATRIX
 
-  const LONGFORM_DEFERRED = {
-    "writer.add_bibliography": ["BIBLIOGRAPHY_INSERT_FAILED", "notice"]
-  };
+  const LONGFORM_DEFERRED = {};
 
   const NATIVE_SEQUENCE_KIND = Object.freeze({
     WPSC_FIG: "SEQ_FIG",
@@ -997,6 +995,7 @@
       table.Rows.AllowBreakAcrossPages = args.allowRowSplit ? -1 : 0;
       if (args.repeatHeader) tableRows(table, 1).HeadingFormat = -1;
       applyTableBorders(table, args.borderSpec);
+      applyTableCellMetadata(table, args);
     } catch (error) {
       throw nativeError("TABLE_STYLE_APPLY_FAILED");
     }
@@ -1018,6 +1017,32 @@
     table._wpscMergePageAnchors = mergePageAnchors;
     insertInlineText(document, "\r");
     return table;
+  }
+
+  function applyTableCellMetadata(table, args) {
+    // Citation cells already contain their resolved static [n]. Metadata is
+    // deliberately non-mutating so visible cell data cannot be duplicated or
+    // lost. Only explicit unresolved degradations receive local styling.
+    (args.cellCitations || []).forEach(function (citation) {
+      const cell = table.Cell(citation.row, citation.column);
+      if (!cell || !cell.Range) throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    });
+    (args.cellDegradations || []).forEach(function (degradation) {
+      const cell = table.Cell(degradation.row, degradation.column);
+      const range = cell && cell.Range;
+      if (!range) throw nativeError("TABLE_STYLE_APPLY_FAILED");
+      try {
+        if (range.Font) {
+          range.Font.Italic = -1;
+          range.Font.Color = colorFromHex("#9C0006");
+        }
+        if (range.Shading) {
+          range.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+        }
+      } catch (error) {
+        throw nativeError("TABLE_STYLE_APPLY_FAILED");
+      }
+    });
   }
 
   function gridTableArgs(args) {
@@ -1163,6 +1188,234 @@
       paragraph.ParagraphFormat.KeepTogether = -1;
     }
     insertInlineText(document, "\r");
+  }
+
+  function addFormulaSourceTerminalNotice(document, args, code, context) {
+    const start = currentPosition(document);
+    addInlineDegradation(document, {
+      code: code,
+      fallbackText: args.fallbackText || ""
+    });
+    insertInlineText(document, "\t");
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph && paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 2;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function addEquationNativeM4(document, args, resources, context) {
+    const content = args.content || {};
+    if (content.plannedDegradation) {
+      const planned = content.plannedDegradation;
+      addFormulaNativeFallback(document, args, resources, context, planned.code);
+      appendIssueOnce(context.issues, {
+        code: planned.code,
+        message: "Formula used its planned content fallback",
+        placement: planned.placement,
+        nodeId: context.ownerNodeId,
+        stage: "preflight",
+        fallback: planned.fallbackKind,
+        recoverable: true
+      });
+      emitFormulaResourceDegradation(document, args, context);
+      return;
+    }
+    const nativeMath = content.nativeMath || {};
+    if (nativeMath.syntax !== "wps-linear-v1") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (!document.OMaths || typeof document.OMaths.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const start = currentPosition(document);
+    const linearText = safeString(nativeMath.linearText);
+    insertInlineText(document, linearText);
+    const mathEnd = currentPosition(document);
+    const before = Number(document.OMaths.Count);
+    if (!Number.isInteger(before) || before < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const addedRange = document.OMaths.Add(document.Range(start, mathEnd));
+    const after = Number(document.OMaths.Count);
+    if (!addedRange || after !== before + 1) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const addedMaths = addedRange.OMaths;
+    if (!addedMaths || Number(addedMaths.Count) !== 1) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const math = collectionItem(addedMaths, 1);
+    const documentMath = collectionItem(document.OMaths, after);
+    if (!math || !documentMath || typeof math.BuildUp !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const addedStart = Number(addedRange.Start);
+    const addedEnd = Number(addedRange.End);
+    const mathStart = Number(math.Range.Start);
+    const mathFinish = Number(math.Range.End);
+    const documentStart = Number(documentMath.Range.Start);
+    const documentEnd = Number(documentMath.Range.End);
+    if (!Number.isFinite(addedStart) || !Number.isFinite(addedEnd) ||
+        !Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
+        addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd ||
+        mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd ||
+        documentStart !== mathStart || documentEnd !== mathFinish) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    math.BuildUp();
+    const builtStart = Number(math.Range.Start);
+    const builtEnd = Number(math.Range.End);
+    if (Number(document.OMaths.Count) !== after ||
+        builtEnd <= builtStart || builtStart < addedStart || builtEnd > addedEnd) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    insertInlineText(document, "\t");
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph && paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 2;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+    }
+    insertInlineText(document, "\r");
+
+    emitFormulaResourceDegradation(document, args, context);
+  }
+
+  function emitFormulaResourceDegradation(document, args, context) {
+    const planned = (args.fallbackResource || {}).fallbackResourcePlannedDegradation;
+    if (planned) {
+      addDegradationNotice(document, planned);
+      appendIssueOnce(context.issues, {
+        code: "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        message: "Optional formula fallback image is unavailable",
+        placement: planned.placement,
+        nodeId: context.ownerNodeId,
+        stage: "native",
+        fallback: "none",
+        recoverable: true
+      });
+    }
+  }
+
+  function addFormulaNativeFallback(document, args, resources, context, code) {
+    const fallback = args.fallbackResource || {};
+    const resourceId = fallback.fallbackResourceId;
+    if (resourceId !== undefined) {
+      const locator = resources[resourceId];
+      if (typeof locator !== "string" || !locator) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+      if (!document.InlineShapes || typeof document.InlineShapes.AddPicture !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const imageStart = currentPosition(document);
+      let shape = null;
+      let imageRolledBack = false;
+      try {
+        shape = document.InlineShapes.AddPicture(
+          locator, false, true, endRange(document)
+        );
+      } catch (error) {
+        rollbackMutation(document, imageStart);
+        imageRolledBack = true;
+      }
+      if (shape) {
+        addInlineDegradation(document, {
+          code: code, fallbackText: "formula image fallback"
+        });
+        insertInlineText(document, "\t");
+        try {
+          addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+          const paragraph = document.Range(imageStart, currentPosition(document));
+          if (paragraph && paragraph.ParagraphFormat) {
+            paragraph.ParagraphFormat.Alignment = 2;
+            paragraph.ParagraphFormat.KeepTogether = -1;
+          }
+          insertInlineText(document, "\r");
+          return;
+        } catch (error) {
+          rollbackMutation(document, imageStart);
+          throw error;
+        }
+      }
+      if (!imageRolledBack) rollbackMutation(document, imageStart);
+    }
+    addFormulaSourceTerminalNotice(document, args, code, context);
+  }
+
+  function addCitationParagraph(document, args, resources, context) {
+    void resources;
+    const paragraphStart = currentPosition(document);
+    (args.runs || []).forEach(function (run) {
+      if (run.type === "text") {
+        insertInlineText(document, run.text);
+      } else if (run.type === "citation") {
+        insertInlineText(document, run.fallbackText);
+      } else if (run.type === "degradation") {
+        addInlineDegradation(document, run);
+        appendIssueOnce(context.issues, {
+          code: run.code,
+          message: "Citation used its planned fallback",
+          placement: "inline",
+          nodeId: context.ownerNodeId,
+          stage: "preflight",
+          fallback: "inline",
+          recoverable: true
+        });
+      } else if (run.type === "reference") {
+        insertInlineText(document, run.prefix);
+        addNativeField(
+          document, "REF " + run.bookmarkName + " \\h",
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED"
+        );
+        if (run.suffix) insertInlineText(document, run.suffix);
+      } else {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const format = paragraph && paragraph.ParagraphFormat;
+      if (!format) throw nativeError("CAPABILITY_MISMATCH");
+      const indent = safeNumber(args.listFormatting.indentPt, 24);
+      format.LeftIndent = indent;
+      format.FirstLineIndent = -indent;
+      format.SpaceBefore = 0;
+      format.SpaceAfter = 3;
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function addBibliographyNative(document, args) {
+    const structured = args.schemaVersion === 1;
+    const entries = args.entries || [];
+    try {
+      entries.forEach(function (entry, index) {
+        const start = currentPosition(document);
+        const text = structured
+          ? "[" + entry.number + "] " + safeString(entry.text)
+          : (args.style === "numbered" ? "[" + (index + 1) + "] " : "") + safeString(entry);
+        insertInlineText(document, text);
+        const paragraph = document.Range(start, currentPosition(document));
+        if (!paragraph || !paragraph.ParagraphFormat) {
+          throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
+        }
+        const format = paragraph.ParagraphFormat;
+        format.Alignment = 0;
+        if (structured) {
+          format.LeftIndent = safeNumber(args.leftIndentPt, 18);
+          format.FirstLineIndent = -safeNumber(args.hangingIndentPt, 18);
+          format.SpaceAfter = safeNumber(args.spaceAfterPt, 6);
+        }
+        insertInlineText(document, "\r");
+      });
+    } catch (error) {
+      if (error && error.code === "BIBLIOGRAPHY_INSERT_FAILED") throw error;
+      throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
+    }
   }
 
   function addCrossReferenceParagraph(document, args, resources, context) {
@@ -1725,6 +1978,11 @@
     if (placement === "inline") {
       return addInlineDegradation(document, args);
     }
+    if (placement === "document") {
+      upsertDocumentQualityNotice(document, args);
+      return document._wpscQualityAnchor;
+    }
+    if (placement !== "block") throw nativeError("DEGRADATION_INSERT_FAILED");
     const target = endRange(document);
     try {
       return insertDegradationBox(document, args.code, args.fallbackText, target);
@@ -1846,8 +2104,19 @@
     "writer.insert_table_index": insertTableIndex,
     "writer.add_captioned_figure": addCaptionedFigureNative,
     "writer.add_semantic_table": addSemanticTableNative,
-    "writer.add_equation": addEquationNumberNative,
-    "writer.add_cross_reference": addCrossReferenceParagraph,
+    "writer.add_equation": function (document, args, resources, context) {
+      if (args.renderMode === "native-m4") {
+        return addEquationNativeM4(document, args, resources, context);
+      }
+      return addEquationNumberNative(document, args, resources, context);
+    },
+    "writer.add_cross_reference": function (document, args, resources, context) {
+      if ((args.runs || []).some(function (run) {
+        return run.type === "citation" || run.type === "degradation";
+      })) return addCitationParagraph(document, args, resources, context);
+      return addCrossReferenceParagraph(document, args, resources, context);
+    },
+    "writer.add_bibliography": addBibliographyNative,
     // runFieldConvergence is the sole owner; operation dispatch is a no-op.
     "writer.finalize_fields": function () {},
     "writer.add_inline_degradation": addInlineDegradation,
@@ -1877,6 +2146,11 @@
         return row.map(safePublicText).join(" | ");
       }).join("\n");
     }
+    if (args.schemaVersion === 1 && Array.isArray(args.entries)) {
+      return args.entries.map(function (entry) {
+        return "[" + entry.number + "] " + safePublicText(entry.text);
+      }).join("\n");
+    }
     return "";
   }
 
@@ -1895,6 +2169,14 @@
     if (fallbackKind === "inline-fallback" &&
         operation.op === "writer.add_cross_reference") {
       addCrossReferenceFallback(document, operation.args || {});
+      return;
+    }
+    if (fallbackKind === "explicit-image-then-source-notice" &&
+        operation.op === "writer.add_equation" &&
+        operation.args && operation.args.renderMode === "native-m4") {
+      addFormulaNativeFallback(
+        document, operation.args || {}, resources || {}, context, code
+      );
       return;
     }
     if (fallbackKind === "inline" || fallbackKind === "inline-fallback") {
@@ -2028,10 +2310,16 @@
     }
     const expected = {};
     (plan.operations || []).forEach(function (operation) {
-      if (operation.op !== "writer.add_captioned_figure") return;
-      (operation.args.children || []).forEach(function (child) {
-        if (child.resourceId) expected[child.resourceId] = true;
-      });
+      const args = operation.args || {};
+      if (operation.op === "writer.add_captioned_figure") {
+        (args.children || []).forEach(function (child) {
+          if (child.resourceId) expected[child.resourceId] = true;
+        });
+      }
+      if (operation.op === "writer.add_equation" && args.renderMode === "native-m4") {
+        const fallback = args.fallbackResource || {};
+        if (fallback.fallbackResourceId) expected[fallback.fallbackResourceId] = true;
+      }
     });
     Object.keys(expected).forEach(function (resourceId) {
       if (typeof resources[resourceId] !== "string" || resources[resourceId].length === 0) {
@@ -2041,6 +2329,39 @@
     Object.keys(resources).forEach(function (resourceId) {
       if (!expected[resourceId]) throw nativeError("RESOURCE_HASH_MISMATCH");
     });
+  }
+
+  function validateLongformRequest(params) {
+    if (!params || typeof params !== "object" || Array.isArray(params) ||
+        !params.plan || typeof params.plan !== "object" ||
+        params.plan.component !== "writer" ||
+        typeof params.outputPath !== "string" || !params.outputPath) {
+      throw nativeError("PROTOCOL_MISMATCH");
+    }
+    const operations = Array.isArray(params.plan.operations) ? params.plan.operations : [];
+    const isM4 = operations.some(function (operation) {
+      const args = operation && operation.args || {};
+      return args.renderMode === "native-m4" || args.schemaVersion === 1 ||
+        hasOwn(args, "cellCitations") || hasOwn(args, "cellDegradations") ||
+        (args.runs || []).some(function (run) {
+          return run.type === "citation" || run.type === "degradation";
+        });
+    });
+    const keys = Object.keys(params).sort().join(",");
+    if ((isM4 && keys !== "outputPath,plan,resources") ||
+        (!isM4 && keys !== "outputPath,plan" && keys !== "outputPath,plan,resources") ||
+        (params.plan.protocolVersion !== undefined && params.plan.protocolVersion !== 2) ||
+        (isM4 && params.plan.protocolVersion !== 2)) {
+      throw nativeError("PROTOCOL_MISMATCH");
+    }
+    if (params.resources === undefined) params.resources = {};
+    if (!params.resources || typeof params.resources !== "object" ||
+        Array.isArray(params.resources)) throw nativeError("PROTOCOL_MISMATCH");
+    Object.keys(params.resources).forEach(function (resourceId) {
+      if (!resourceId || typeof params.resources[resourceId] !== "string" ||
+          !params.resources[resourceId]) throw nativeError("PROTOCOL_MISMATCH");
+    });
+    return params;
   }
 
   function requiredBookmark(document, name) {
@@ -2222,6 +2543,7 @@
   }
 
   function run(params) {
+    params = validateLongformRequest(params);
     const plan = params.plan;
     const outputPath = params.outputPath;
     const resources = params.resources || {};
@@ -2294,6 +2616,12 @@
       addCaptionedFigureNative: addCaptionedFigureNative,
       addSemanticTableNative: addSemanticTableNative,
       addEquationNumberNative: addEquationNumberNative,
+      addEquationNativeM4: addEquationNativeM4,
+      addFormulaNativeFallback: addFormulaNativeFallback,
+      addCitationParagraph: addCitationParagraph,
+      addBibliographyNative: addBibliographyNative,
+      applyTableCellMetadata: applyTableCellMetadata,
+      validateLongformRequest: validateLongformRequest,
       addCrossReferenceParagraph: addCrossReferenceParagraph,
       insertCaptionIndexNative: insertCaptionIndexNative,
       createNativeTable: createNativeTable,

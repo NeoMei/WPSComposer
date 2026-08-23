@@ -46,6 +46,40 @@ _LONGFORM_RESULT_KEYS = frozenset(
     }
 )
 
+_LONGFORM_REQUEST_KEYS = frozenset({"plan", "outputPath", "resources"})
+
+
+def validate_longform_generation_request(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the closed private Writer long-form request envelope."""
+
+    if not isinstance(raw, Mapping) or set(raw) != _LONGFORM_REQUEST_KEYS:
+        raise ProtocolError("Long-form generation request is invalid")
+    plan = raw.get("plan")
+    output = raw.get("outputPath")
+    resources = raw.get("resources")
+    if (
+        not isinstance(plan, Mapping)
+        or plan.get("protocolVersion") != 2
+        or plan.get("component") != "writer"
+        or not isinstance(output, str)
+        or not output
+        or not isinstance(resources, Mapping)
+    ):
+        raise ProtocolError("Long-form generation request is invalid")
+    if any(
+        not isinstance(resource_id, str)
+        or not resource_id
+        or not isinstance(locator, str)
+        or not locator
+        for resource_id, locator in resources.items()
+    ):
+        raise ProtocolError("Long-form generation request is invalid")
+    return {
+        "plan": dict(plan),
+        "outputPath": output,
+        "resources": dict(resources),
+    }
+
 
 def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]:
     """Validate the privacy-safe result envelope returned by the Writer add-in.

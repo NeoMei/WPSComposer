@@ -579,7 +579,7 @@ def _run_node(script: str) -> None:
         os.unlink(name)
 
 
-def test_addin_exposes_m3_native_handlers_and_only_bibliography_is_deferred() -> None:
+def test_addin_exposes_m3_native_handlers_and_m4_bibliography_is_native() -> None:
     source = (ROOT / "writer-longform-v2.js").read_text(encoding="utf-8")
     for name in (
         "addCaptionedFigureNative",
@@ -595,7 +595,8 @@ def test_addin_exposes_m3_native_handlers_and_only_bibliography_is_deferred() ->
     ):
         assert f"function {name}" in source
     deferred_body = source.split("const LONGFORM_DEFERRED =", 1)[1].split("};", 1)[0]
-    assert "writer.add_bibliography" in deferred_body
+    assert "writer.add_bibliography" not in deferred_body
+    assert "function addBibliographyNative" in source
     for operation in (
         "writer.add_captioned_figure",
         "writer.add_semantic_table",

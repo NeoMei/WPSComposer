@@ -79,7 +79,11 @@ class FakeLoopbackBridge:
         return cmd
 
     def wait_result(self, command_id: str, timeout: float) -> FakeBridgeResult:
-        return self._result
+        if not self._result.ok:
+            return self._result
+        value = dict(self._result.value)
+        value["outputPath"] = self.commands[-1].params["outputPath"]
+        return FakeBridgeResult(ok=True, value=value, error=self._result.error)
 
 
 @pytest.fixture
