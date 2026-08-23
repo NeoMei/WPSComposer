@@ -287,44 +287,6 @@
     };
   }
 
-  function observedHostDocumentEnds(document) {
-    if (!document || typeof document.Range !== "function") {
-      throw nativeError("CAPABILITY_MISMATCH");
-    }
-    let contentPosition = null;
-    let paragraphPosition = null;
-    const content = document.Content;
-    const rawContentEnd = content && content.End;
-    if (typeof rawContentEnd === "number") {
-      if (!Number.isInteger(rawContentEnd) || rawContentEnd < 0) {
-        throw nativeError("CAPABILITY_MISMATCH");
-      }
-      contentPosition = Math.max(0, rawContentEnd - 1);
-    }
-    const paragraphs = document.Paragraphs;
-    if (paragraphs) {
-      const count = Number(paragraphs.Count);
-      if (!Number.isInteger(count) || count <= 0 ||
-          (typeof paragraphs.Item !== "function" && typeof paragraphs !== "function")) {
-        throw nativeError("CAPABILITY_MISMATCH");
-      }
-      const paragraph = collectionItem(paragraphs, count);
-      const paragraphRange = paragraph && paragraph.Range;
-      const paragraphStart = Number(paragraphRange && paragraphRange.Start);
-      const paragraphEnd = Number(paragraphRange && paragraphRange.End);
-      if (!paragraphRange || !Number.isInteger(paragraphStart) ||
-          !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
-          paragraphEnd <= paragraphStart) {
-        throw nativeError("CAPABILITY_MISMATCH");
-      }
-      paragraphPosition = paragraphEnd - 1;
-    }
-    if (contentPosition === null && paragraphPosition === null) {
-      throw nativeError("CAPABILITY_MISMATCH");
-    }
-    return {content: contentPosition, paragraph: paragraphPosition};
-  }
-
   function documentContentText(document, failureCode) {
     const content = document && document.Content;
     if (!content || typeof content.Text !== "string") {
@@ -340,32 +302,20 @@
     return count;
   }
 
-  function commitSuccessfulHostAdvance(
-    document, hostBefore, minimumEnd
-  ) {
+  function commitSuccessfulHostAdvance(document, minimumEnd) {
     if (!document || document._wpscRunOwnsAppendCursor !== true) return;
     const cursor = appendCursorRange(document);
-    if (!cursor || !hostBefore || !Number.isInteger(minimumEnd)) {
+    if (!cursor || !Number.isInteger(minimumEnd)) {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const hostAfter = observedHostDocumentEnds(document);
-    const advanced = [];
-    ["content", "paragraph"].forEach(function (source) {
-      const before = hostBefore[source];
-      const after = hostAfter[source];
-      if (Number.isInteger(before) && Number.isInteger(after) && after > before &&
-          after >= minimumEnd && after >= cursor.End) {
-        exactDocumentRange(document, after, after);
-        advanced.push(after);
-      }
-    });
-    if (advanced.length) {
-      setAppendCursor(document, Math.max.apply(Math, advanced));
-      return;
-    }
-    // Some doubles and WPS builds keep the host endpoint unchanged when the
-    // returned Add Range already describes the complete built-up object.
-    if (cursor.End < minimumEnd) throw nativeError("EQUATION_INSERT_FAILED");
+    const content = document.Content;
+    const rawContentEnd = Number(content && content.End);
+    const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd >= 0
+      ? Math.max(0, rawContentEnd - 1) : null;
+    const candidate = contentPosition === null
+      ? minimumEnd : Math.max(minimumEnd, contentPosition);
+    exactDocumentRange(document, candidate, candidate);
+    setAppendCursor(document, candidate);
   }
 
   function endRange(document) {
@@ -885,6 +835,11 @@
     if (typeof range.InsertAfter === "function") range.InsertAfter(text);
     else range.Text = text;
     if (appending) {
+      const actualEnd = Number(range.End);
+      if (document && document._wpscRunOwnsAppendCursor === true &&
+          (!Number.isInteger(actualEnd) || actualEnd < beforeEnd + text.length)) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
       advanceAppendCursor(document, range, beforeEnd + text.length, [], beforeEnd);
     }
     return range;
@@ -909,6 +864,9 @@
     let field;
     const target = endRange(document);
     const start = target.End;
+    const beforeCount = Number(document.Fields && document.Fields.Count);
+    const strictProof = document._wpscRunOwnsAppendCursor === true &&
+      Number.isInteger(beforeCount) && beforeCount >= 0;
     try {
       field = document.Fields.Add(target, -1, code, true);
     } catch (error) {
@@ -916,6 +874,20 @@
     }
     const result = field && field.Result;
     const resultText = result && typeof result.Text === "string" ? result.Text : "";
+    if (strictProof) {
+      const afterCount = Number(document.Fields.Count);
+      const fieldRange = field && field.Range;
+      const proofRanges = [result, fieldRange];
+      const hasBoundedField = proofRanges.some(function (range) {
+        const proofStart = Number(range && range.Start);
+        const proofEnd = Number(range && range.End);
+        return Number.isInteger(proofStart) && Number.isInteger(proofEnd) &&
+          proofStart >= start && proofEnd > proofStart;
+      });
+      if (afterCount !== beforeCount + 1 || !hasBoundedField) {
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+    }
     try {
       advanceAppendCursor(
         document, target, start + resultText.length,
@@ -1711,10 +1683,6 @@
     const linearText = safeString(nativeMath.linearText);
     insertInlineText(document, linearText);
     const mathEnd = currentPosition(document);
-    let successHostBefore = null;
-    if (document._wpscRunOwnsAppendCursor === true) {
-      successHostBefore = observedHostDocumentEnds(document);
-    }
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
       throw nativeError("CAPABILITY_MISMATCH");
@@ -1782,9 +1750,7 @@
         Number(builtContent.End) !== builtAddedEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
-    commitSuccessfulHostAdvance(
-      document, successHostBefore, builtAddedEnd
-    );
+    commitSuccessfulHostAdvance(document, builtAddedEnd);
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
     if (mathCursorEnd === null || builtEnd > mathCursorEnd) {

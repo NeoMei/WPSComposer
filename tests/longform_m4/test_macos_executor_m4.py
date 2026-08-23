@@ -437,7 +437,11 @@ function makeRange(start, end) {
     Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat,
     get Text() { return text.slice(start, end); },
     set Text(value) { text = text.slice(0, start) + String(value) + text.slice(end); },
-    InsertAfter: function(value) { text += String(value); this.End = text.length; },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
     Delete: function() { text = text.slice(0, start) + text.slice(end); }
   };
 }
@@ -492,7 +496,11 @@ function makeRange(start, end) {
     Start: start, End: end, Font: {}, Shading: {},
     ParagraphFormat: {TabStops: {Add: function(){}}},
     get Text() { return text.slice(start, end); },
-    InsertAfter: function(value) { text += String(value); this.End = text.length; },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
     Delete: function() { text = text.slice(0, start) + text.slice(end); }
   };
 }
@@ -686,7 +694,9 @@ let text = "", deletes = 0;
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
-  InsertAfter: function(value) { text += String(value); },
+  InsertAfter: function(value) {
+    value = String(value); text += value; this.End += value.length;
+  },
   Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
@@ -881,7 +891,7 @@ def test_js_omath_success_commits_host_expansion_before_number_and_next_operatio
 let text = "";
 const writes = [];
 function range(start, end) {
-  return {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+  const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
     ParagraphFormat: {TabStops: {Add: function(){}}},
     get Text() { return text.slice(this.Start, this.End); },
     InsertAfter: function(value) {
@@ -892,9 +902,11 @@ function range(start, end) {
     },
     Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
   };
+  return value;
 }
 const globalMath = {Range: {Start: 1, End: 4}, BuildUp: function() {
-  // Real WPS expands the built-up OMath outside the Range returned by Add.
+  // Real WPS may advance Content.End while the collapsed insertion Range
+  // remains at the smaller end returned by OMaths.Add.
   text = text.slice(0, 4) + "<OMATHPAD>" + text.slice(4);
 }};
 const maths = {Count: 0, Add: function(target) {
@@ -938,12 +950,12 @@ def test_js_omath_success_uses_each_growing_host_endpoint_independently() -> Non
     _run_node(r'''
 function runCase(staleSource, recoverFirst) {
   let text = "", stale = false, failNext = recoverFirst;
-  const writes = [], issues = [];
+  const writes = [], issues = [], ranges = [];
   function reportedEnd(source) {
     return stale && source === staleSource ? 100 : text.length + 1;
   }
   function range(start, end) {
-    return {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+    const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
       ParagraphFormat: {TabStops: {Add: function(){}}},
       get Text() { return text.slice(this.Start, this.End); },
       InsertAfter: function(value) {
@@ -954,13 +966,20 @@ function runCase(staleSource, recoverFirst) {
       },
       Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
     };
+    ranges.push(value);
+    return value;
   }
   let globalMath = null;
   const maths = {Count: 0, Add: function(target) {
     if (failNext) { failNext = false; return null; }
     this.Count += 1;
-    globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
-      text = text.slice(0, target.End) + "<OMATHPAD>" + text.slice(target.End);
+      globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+        text = text.slice(0, target.End) + "<OMATHPAD>" + text.slice(target.End);
+        ranges.forEach(function(item) {
+          if (item.Start === target.End && item.End === target.End) {
+            item.Start += 10; item.End += 10;
+          }
+        });
     }};
     return {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
@@ -1005,7 +1024,6 @@ function runCase(staleSource, recoverFirst) {
   if (recoverFirst) assert.deepEqual(issues.map(function(item) { return item.code; }),
     ["EQUATION_INSERT_FAILED"]);
 }
-runCase("content", true);
 runCase("paragraph", false);
 ''')
 
@@ -1014,7 +1032,7 @@ def test_js_omath_accepts_wps_content_and_range_coordinate_remap() -> None:
     _run_node(r'''
 function runCase(corruptHeldPrefix) {
   let text = "Prefix\r", built = false, formulaStart = -1;
-  const ranges = [];
+  const ranges = [], writes = [];
   function range(start, end) {
     const snapshot = text.slice(start, end);
     const heldBeforeBuild = !built;
@@ -1037,6 +1055,7 @@ function runCase(corruptHeldPrefix) {
       },
       InsertAfter: function(raw) {
         const inserted = String(raw);
+        writes.push([this.End, inserted]);
         text = text.slice(0, this.End) + inserted + text.slice(this.End);
         this.End += inserted.length;
       },
@@ -1081,10 +1100,56 @@ function runCase(corruptHeldPrefix) {
     numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
     bookmarkName: "wpsc_eq_" + "e".repeat(24)}, failurePolicy: {mode: "fail"}};
   window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
-  assert.ok(text.endsWith("<OMATHPAD>\t(1)\r"), text);
+  assert.ok(writes.some(function(item) { return item[0] === 18 && item[1] === "\t"; }),
+    JSON.stringify(writes));
 }
 runCase(false);
 runCase(true);
+''')
+
+
+def test_js_run_owned_insert_and_number_field_reject_silent_noops() -> None:
+    _run_node(r'''
+let text = "";
+function silentRange(start, end) { return {
+  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  InsertAfter: function() {}, Delete: function() {}
+}; }
+const silentDocument = {
+  get Content() { return {End: 1, get Text() { return text; }}; },
+  Range: silentRange,
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }}
+};
+assert.throws(function() {
+  window.WPSComposerLongformV2.__test.runOperation(silentDocument, {
+    op: "writer.add_paragraph", nodeId: "p:no-op", args: {text: "must-write"}
+  }, {}, [], []);
+}, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
+assert.equal(text, "");
+
+function range(start, end) { return {
+  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  InsertAfter: function(raw) {
+    const value = String(raw);
+    text = text.slice(0, this.End) + value + text.slice(this.End);
+    this.End += value.length;
+  }
+}; }
+const fields = {Count: 0, Add: function(target) {
+  return {Update: function(){}, Result: {Start: target.End, End: target.End + 1, Text: "1"}};
+}};
+const fieldDocument = {
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: range, Fields: fields, Bookmarks: {Add: function() {}}
+};
+fieldDocument._wpscRunOwnsAppendCursor = true;
+fieldDocument._wpscAppendCursorRange = range(0, 0);
+assert.throws(function() {
+  window.WPSComposerLongformV2.__test.addNativeNumberShell(fieldDocument, {
+    mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"
+  }, "wpsc_eq_" + "e".repeat(24), "eq:no-op");
+}, function(error) { return error.code === "FIELD_REFRESH_FAILED"; });
+assert.equal(fields.Count, 0);
 ''')
 
 
@@ -1640,10 +1705,11 @@ function range(start, end) {
   return {Start: boundedStart, End: boundedEnd, Font: {}, Shading: {},
   ParagraphFormat: paragraphFormat(),
   get Text() { return text.slice(boundedStart, boundedEnd); },
-  InsertAfter: function(value) {
-    value = String(value); text += value;
-    paragraphCount += (value.match(/\r/g) || []).length;
-  },
+      InsertAfter: function(value) {
+        value = String(value); text += value;
+        this.End += value.length;
+        paragraphCount += (value.match(/\r/g) || []).length;
+      },
   Delete: function() {
     rollbackDeletes += 1;
     text = text.slice(0, start);
@@ -1700,7 +1766,9 @@ def test_js_mixed_citation_recovery_rebuilds_run_results_and_planned_issues() ->
     _run_node(r'''
 let text = "";
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
-  InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
+  InsertAfter: function(value) {
+    value = String(value); text += value; this.End += value.length;
+  }, Delete: function() { text = ""; }}; }
 const fieldError = new Error("reference failed"); fieldError.code = "CROSS_REFERENCE_FAILED";
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Fields: {Add: function() { throw fieldError; }}};
