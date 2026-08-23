@@ -708,16 +708,50 @@
     return paragraph;
   }
 
-  function rollbackMutation(document, start, end) {
+  function paragraphCount(document) {
+    const count = Number(document && document.Paragraphs && document.Paragraphs.Count);
+    return Number.isInteger(count) && count > 0 ? count : null;
+  }
+
+  function paragraphSafeRollbackToken(document, start) {
+    const count = paragraphCount(document);
+    if (count === null) throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    return {
+      start: start, paragraphCount: count, preserveParagraphBoundary: true
+    };
+  }
+
+  function rollbackMutation(document, checkpoint, end) {
+    const token = checkpoint && typeof checkpoint === "object" ? checkpoint : null;
+    const start = token ? Number(token.start) : Number(checkpoint);
     try {
       const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
       if (stop > start) document.Range(start, stop).Delete();
+      if (token && token.preserveParagraphBoundary === true) {
+        let currentCount = paragraphCount(document);
+        const expectedCount = Number(token.paragraphCount);
+        if (currentCount === null || !Number.isInteger(expectedCount) ||
+            expectedCount <= 0 || currentCount > expectedCount) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        for (let attempts = 0; currentCount < expectedCount && attempts < 4; attempts += 1) {
+          insertInlineText(document, "\r");
+          const nextCount = paragraphCount(document);
+          if (nextCount === null || nextCount <= currentCount) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+          currentCount = nextCount;
+        }
+        if (currentCount !== expectedCount) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+      }
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
   }
 
-  function checkpointRecoverableMutation(document) {
+  function checkpointRecoverableMutation(document, preserveParagraphBoundary) {
     try {
       if (!document || typeof document.Range !== "function") {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
@@ -736,7 +770,8 @@
       if (!Number.isFinite(start) || start < 0) {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
-      return start;
+      return preserveParagraphBoundary
+        ? paragraphSafeRollbackToken(document, start) : start;
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
@@ -1330,13 +1365,15 @@
     const builtEnd = Number(builtLocalMath.Range.End);
     const builtGlobalStart = Number(builtGlobalMath.Range.Start);
     const builtGlobalEnd = Number(builtGlobalMath.Range.End);
-    if (builtLocalMath !== math || builtGlobalMath !== documentMath ||
-        builtLocalMath !== builtGlobalMath || builtLocalCount !== 1 ||
-        builtGlobalCount !== after ||
+    const builtContent = document.Range(builtStart, builtEnd);
+    const builtText = safeString(builtContent && builtContent.Text);
+    if (builtLocalCount !== 1 || builtGlobalCount !== after ||
         builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
         builtEnd <= builtStart || builtStart < builtAddedStart ||
         builtEnd > builtAddedEnd || builtGlobalStart !== builtStart ||
-        builtGlobalEnd !== builtEnd) {
+        builtGlobalEnd !== builtEnd || !builtContent ||
+        Number(builtContent.Start) !== builtStart ||
+        Number(builtContent.End) !== builtEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     insertInlineText(document, "\t");
@@ -1374,8 +1411,15 @@
       if (!document.InlineShapes || typeof document.InlineShapes.AddPicture !== "function") {
         throw nativeError("CAPABILITY_MISMATCH");
       }
+      const imageBoundary = paragraphCount(document);
+      if (imageBoundary === null) throw nativeError("CAPABILITY_MISMATCH");
       const layout = beginFormulaLayout(document);
       const imageStart = layout.start;
+      const imageCheckpoint = {
+        start: imageStart,
+        paragraphCount: imageBoundary,
+        preserveParagraphBoundary: true
+      };
       try {
         const shape = document.InlineShapes.AddPicture(
           locator, false, true, endRange(document)
@@ -1399,7 +1443,7 @@
         return;
       } catch (error) {
         try {
-          rollbackMutation(document, imageStart);
+          rollbackMutation(document, imageCheckpoint);
         } catch (rollbackError) {
           throw preserveFallbackFatal(rollbackError);
         }
@@ -1425,19 +1469,7 @@
         insertInlineText(document, run.fallbackText);
         context.childResults.push({nodeId: run.nodeId, status: "applied"});
       } else if (run.type === "degradation") {
-        addLiteralInlineDegradation(document, run.fallbackText);
-        appendIssueOnce(context.issues, {
-          code: run.code,
-          message: "Citation used its planned fallback",
-          placement: "inline",
-          nodeId: run.nodeId,
-          stage: "preflight",
-          fallback: "inline",
-          recoverable: true
-        });
-        context.childResults.push({
-          nodeId: run.nodeId, status: "degraded", issueCode: run.code
-        });
+        addCitationDegradationRun(document, run, context);
       } else if (run.type === "reference") {
         insertInlineText(document, run.prefix);
         addNativeField(
@@ -1541,11 +1573,20 @@
     });
   }
 
-  function addCrossReferenceFallback(document, args) {
+  function addCrossReferenceFallback(document, args, context) {
     const paragraphStart = currentPosition(document);
     (args.runs || []).forEach(function (run) {
       if (run.type === "text") {
         insertInlineText(document, safeString(run.text));
+        return;
+      }
+      if (run.type === "citation") {
+        insertInlineText(document, safeString(run.fallbackText));
+        context.childResults.push({nodeId: run.nodeId, status: "applied"});
+        return;
+      }
+      if (run.type === "degradation") {
+        addCitationDegradationRun(document, run, context);
         return;
       }
       insertInlineText(document, safeString(run.prefix));
@@ -2011,6 +2052,22 @@
     return written;
   }
 
+  function addCitationDegradationRun(document, run, context) {
+    addLiteralInlineDegradation(document, run.fallbackText);
+    appendIssueOnce(context.issues, {
+      code: run.code,
+      message: "Citation used its planned fallback",
+      placement: "inline",
+      nodeId: run.nodeId,
+      stage: "preflight",
+      fallback: "inline",
+      recoverable: true
+    });
+    context.childResults.push({
+      nodeId: run.nodeId, status: "degraded", issueCode: run.code
+    });
+  }
+
   function insertDegradationBox(document, code, fallbackText, targetRange, rawDisplay) {
     if (!document.Tables || typeof document.Tables.Add !== "function") {
       throw nativeError("DEGRADATION_INSERT_FAILED");
@@ -2263,7 +2320,7 @@
     }
     if (fallbackKind === "inline-fallback" &&
         operation.op === "writer.add_cross_reference") {
-      addCrossReferenceFallback(document, operation.args || {});
+      addCrossReferenceFallback(document, operation.args || {}, context);
       return;
     }
     if (fallbackKind === "explicit-image-then-source-notice" &&
@@ -2349,7 +2406,9 @@
       });
       recoverable = true;
     }
-    const checkpoint = recoverable ? checkpointRecoverableMutation(document) : null;
+    const checkpoint = recoverable ? checkpointRecoverableMutation(
+      document, opName === "writer.add_equation"
+    ) : null;
     if (deferred) {
       recoverOperation(
         document, operation, resources, issues, context,

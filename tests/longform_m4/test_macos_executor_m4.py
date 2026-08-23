@@ -495,6 +495,7 @@ function makeRange(start, end) {
 }
 const document = {
   get Content() { return {End: text.length + 1}; }, Range: makeRange,
+  Paragraphs: {Count: 1},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
   InlineShapes: {AddPicture: function() { imageAttempts += 1;
@@ -611,6 +612,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   ParagraphFormat: {TabStops: {Add: function(){}}},
   InsertAfter: function(value) { text += String(value); }, Delete: function() {}}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  Paragraphs: {Count: 1},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function(locator) { imageAttempts += 1; assert.equal(locator, "/private/formula.png");
     return {Range: {Start: 1, End: 2, ParagraphFormat: {}}}; }},
@@ -641,6 +643,7 @@ function makeDocument(addPicture) {
     InsertAfter: function(value) { text += String(value); },
     Delete: function() { rollbacks += 1; text = ""; }}; }
   return {document: {get Content() { return {End: text.length + 1}; }, Range: range,
+    Paragraphs: {Count: 1},
     PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
     InlineShapes: {AddPicture: function() { return addPicture(function(value) { text += value; }); }},
     Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
@@ -680,6 +683,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   InsertAfter: function(value) { text += String(value); },
   Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
 const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  Paragraphs: {Count: 1},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
   InlineShapes: {AddPicture: function() { text += "partial"; return {}; }},
@@ -700,6 +704,7 @@ function range2(start, end) { return {Start: start, End: end, Font: {}, Shading:
   InsertAfter: function(value) { text += String(value); }, Delete: function() { rollbackCount += 1; text = ""; }}; }
 const fieldError = new Error("field failed"); fieldError.code = "FIELD_REFRESH_FAILED";
 const document2 = {get Content() { return {End: text.length + 1}; }, Range: range2,
+  Paragraphs: {Count: 1},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function() { return {Range: {Start: 0, End: 1, ParagraphFormat: {}}}; }},
   Fields: {Add: function() { throw fieldError; }}, Bookmarks: {Add: function() {}}};
@@ -711,7 +716,7 @@ assert.equal(rollbackCount, 1);
 ''')
 
 
-def test_js_omath_post_buildup_rechecks_local_and_global_identity() -> None:
+def test_js_omath_post_buildup_rechecks_local_and_global_ranges() -> None:
     _run_node(r'''
 let text = "";
 function range(start, end) { return {Start: start, End: end,
@@ -724,7 +729,7 @@ const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controller
 let local = null, globalItem = null;
 const original = {Range: {Start: 1, End: 4}, BuildUp: function() {
   local = {Range: {Start: 1, End: 4}, BuildUp: function(){}};
-  globalItem = {Range: {Start: 1, End: 4}, BuildUp: function(){}};
+  globalItem = {Range: {Start: 2, End: 4}, BuildUp: function(){}};
 }};
 local = original; globalItem = original;
 const localCollection = {Count: 1, Item: function() { return local; }};
@@ -747,6 +752,147 @@ const unknownDocument = {get Content() { return {End: text.length + 1}; }, Range
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(unknownDocument, args, {}, context),
   error => error === unknown);
+''')
+
+
+def test_js_omath_accepts_distinct_wps_proxy_wrappers_with_stable_ranges() -> None:
+    _run_node(r'''
+let text = "", buildUps = 0;
+function format() { return {TabStops: {Add: function(){}}}; }
+function range(start, end) { return {Start: start, End: end, ParagraphFormat: format(),
+  get Text() { return text.slice(start, end); }, InsertAfter: function(value) { text += String(value); }}; }
+const state = {start: 1, end: 4};
+function wrapper() { return {get Range() { return {Start: state.start, End: state.end}; },
+  BuildUp: function() { buildUps += 1; }}; }
+const local = {Count: 1, Item: function() { return wrapper(); }};
+const maths = {Count: 0, Add: function() { this.Count = 1; return {
+  Start: state.start, End: state.end, OMaths: local
+}; }, Item: function() { return wrapper(); }};
+const bookmarks = [], bookmarkByName = Object.create(null);
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
+  Fields: {Add: function(target, type, code) {
+    if (code.indexOf("REF ") === 0) {
+      const bookmark = bookmarkByName[code.split(/\s+/)[1]];
+      text += text.slice(bookmark.start, bookmark.end);
+    } else {
+      text += code.indexOf("STYLEREF") === 0 ? "1" : "9";
+    }
+    return {Update: function(){}, Result: {Text: "1"}};
+  }},
+  Styles: {Item: function() { return {NameLocal: "Heading 1"}; }},
+  Bookmarks: {Add: function(name, target) {
+    const value = {name: name, start: target.Start, end: target.End};
+    bookmarks.push(value); bookmarkByName[name] = value;
+  }}};
+const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "chapter", sequenceId: "WPSC_EQ", chapterStyleLevel: 1,
+    resetLevel: 1, prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"};
+window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {},
+  {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true});
+assert.equal(buildUps, 1);
+assert.equal(bookmarks.length, 1);
+assert.equal(text.slice(bookmarks[0].start, bookmarks[0].end), "1-9");
+assert.equal(text[bookmarks[0].start - 1], "(");
+assert.equal(text[bookmarks[0].end], ")");
+window.WPSComposerLongformV2.__test.addCrossReferenceParagraph(document, {runs: [
+  {type: "text", text: "Formula ref "},
+  {type: "reference", prefix: "(", bookmarkName: args.bookmarkName,
+    suffix: ")", fallbackText: "1-9"}
+]}, {}, {ownerNodeId: "p:ref", issues: [], childResults: [], controllerOwned: true});
+assert.ok(text.includes("Formula ref (1-9)"));
+''')
+
+
+def test_js_formula_recovery_restores_a_wps_consumed_paragraph_boundary() -> None:
+    _run_node(r'''
+let text = "citation\r", paragraphCount = 2, rollbackDeletes = 0;
+function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: paragraphFormat(),
+  InsertAfter: function(value) {
+    value = String(value); text += value;
+    paragraphCount += (value.match(/\r/g) || []).length;
+  },
+  Delete: function() {
+    rollbackDeletes += 1;
+    text = text.slice(0, start);
+    if (text.endsWith("\r")) { text = text.slice(0, -1); paragraphCount -= 1; }
+  }}; }
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  get Paragraphs() { return {Count: paragraphCount}; },
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
+  Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
+  Bookmarks: {Add: function() {}}};
+const operation = {op: "writer.add_equation", nodeId: "eq:one", args: {
+  renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  fallbackText: "x+y", numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+    fallback: "explicit-image-then-source-notice"}};
+window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
+assert.ok(rollbackDeletes >= 1);
+assert.ok(text.startsWith("citation\r\t[EQUATION_INSERT_FAILED: x+y]"));
+assert.equal(paragraphCount, 3);
+''')
+
+
+def test_js_formula_image_rollback_requires_a_paragraph_boundary_checkpoint() -> None:
+    _run_node(r'''
+let text = "", imageAttempts = 0;
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  InlineShapes: {AddPicture: function() { imageAttempts += 1; return {}; }},
+  Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
+  Bookmarks: {Add: function() {}}};
+assert.throws(() => window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+  document, {fallbackResource: {fallbackResourceId: "image"}, fallbackText: "x+y",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24)}, {image: "/private/image.png"},
+  {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true},
+  "EQUATION_INSERT_FAILED"
+), error => error.code === "CAPABILITY_MISMATCH");
+assert.equal(imageAttempts, 0);
+assert.equal(text, "");
+''')
+
+
+def test_js_mixed_citation_recovery_rebuilds_run_results_and_planned_issues() -> None:
+    _run_node(r'''
+let text = "";
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
+const fieldError = new Error("reference failed"); fieldError.code = "CROSS_REFERENCE_FAILED";
+const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+  Fields: {Add: function() { throw fieldError; }}};
+const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
+const issues = [], children = [];
+window.WPSComposerLongformV2.__test.runOperation(document, {
+  op: "writer.add_cross_reference", nodeId: "p", args: {runs: [
+    {type: "citation", nodeId: "p/cite:0", targetId: "a", targetNodeId: "ref:a",
+      number: 1, fallbackText: "[1]"},
+    {type: "text", text: " then "},
+    {type: "degradation", nodeId: "p/cite:1", code: "REFERENCE_UNRESOLVED", fallbackText: fallback},
+    {type: "text", text: " and "},
+    {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
+      suffix: ")", fallbackText: "1-1"}
+  ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+    fallback: "inline-fallback"}
+}, {}, issues, children);
+assert.equal(text, "[1] then " + fallback + " and (1-1)\r");
+assert.deepEqual(children, [
+  {nodeId: "p/cite:0", status: "applied"},
+  {nodeId: "p/cite:1", status: "degraded", issueCode: "REFERENCE_UNRESOLVED"}
+]);
+assert.deepEqual(issues.map(function(issue) { return [issue.code, issue.nodeId]; }), [
+  ["REFERENCE_UNRESOLVED", "p/cite:1"],
+  ["CROSS_REFERENCE_FAILED", "p"]
+]);
 ''')
 
 
