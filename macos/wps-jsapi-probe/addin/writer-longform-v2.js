@@ -1183,9 +1183,23 @@
   function addCrossReferenceFallback(document, args) {
     const paragraphStart = currentPosition(document);
     (args.runs || []).forEach(function (run) {
-      insertInlineText(document, run.type === "text"
-        ? safeString(run.text)
-        : safeString(run.prefix) + safeString(run.fallbackText) + safeString(run.suffix));
+      if (run.type === "text") {
+        insertInlineText(document, safeString(run.text));
+        return;
+      }
+      insertInlineText(document, safeString(run.prefix));
+      const start = currentPosition(document);
+      const fallbackText = safeString(run.fallbackText);
+      insertInlineText(document, fallbackText);
+      const inserted = document.Range(start, start + fallbackText.length);
+      if (inserted && inserted.Font) {
+        inserted.Font.Italic = -1;
+        inserted.Font.Color = colorFromHex("#9C0006");
+      }
+      if (inserted && inserted.Shading) {
+        inserted.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      insertInlineText(document, safeString(run.suffix));
     });
     if (args.listFormatting) {
       const paragraph = document.Range(paragraphStart, currentPosition(document));

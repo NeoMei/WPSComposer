@@ -1971,11 +1971,12 @@ class WriterComposer(BaseComposer):
             if run["type"] == "text":
                 self.selection.TypeText(run["text"])
             else:
-                self.selection.TypeText(
-                    str(run.get("prefix", ""))
-                    + str(run.get("fallbackText", ""))
-                    + str(run.get("suffix", ""))
-                )
+                self.selection.TypeText(str(run.get("prefix", "")))
+                start = self._native_position()
+                self.selection.TypeText(str(run.get("fallbackText", "")))
+                inserted = self._doc.Range(start, self._native_position())
+                self._style_degradation_range(inserted)
+                self.selection.TypeText(str(run.get("suffix", "")))
         self.selection.TypeParagraph()
         if listFormatting is not None:
             self._reset_selection_to_normal()
