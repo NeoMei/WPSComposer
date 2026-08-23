@@ -771,6 +771,18 @@ class WindowsLongformExecutor(LongformExecutor):
         ):
             native_args = dict(args)
             fallback_resource = native_args.pop("fallbackResource", None) or {}
+            if "plannedDegradation" in native_args.get("content", {}):
+                resource_id = fallback_resource.get("fallbackResourceId")
+                locator = (
+                    self._resource_locators.get(resource_id)
+                    if resource_id is not None
+                    else None
+                )
+                if resource_id is not None and locator is None:
+                    raise NativeWriterObjectError(
+                        "RESOURCE_HASH_MISMATCH", "formula resource unavailable"
+                    ) from None
+                native_args["fallback_resource_locator"] = locator
             result = composer.add_equation_native(
                 **native_args, owner_node_id=op.node_id, controller_owned=True
             )

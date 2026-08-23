@@ -1978,6 +1978,7 @@ class WriterComposer(BaseComposer):
     def add_equation_native(
         self, *, renderMode, content, numbering, bookmarkName, fallbackText,
         owner_node_id=None, controller_owned=False,
+        fallback_resource_locator=None,
     ):
         """Insert one M4 editable OMath; recovery remains controller-owned."""
         if renderMode != "native-m4":
@@ -1989,7 +1990,7 @@ class WriterComposer(BaseComposer):
                 numbering=numbering,
                 bookmarkName=bookmarkName,
                 fallbackText=fallbackText,
-                fallback_resource_locator=None,
+                fallback_resource_locator=fallback_resource_locator,
                 owner_node_id=owner_node_id,
                 failure_code=planned["code"],
             )
@@ -2027,16 +2028,18 @@ class WriterComposer(BaseComposer):
                     preserve_aspect=True,
                     alt=owner_node_id,
                 )
+                if shape is None:
+                    raise ValueError("formula fallback image was not created")
+                shape_range = shape.Range
+                shape_range.ParagraphFormat.Alignment = 1
+                shape_range.ParagraphFormat.KeepTogether = -1
+                image_inserted = True
             except Exception:
                 self._native_rollback(
                     image_start,
                     max(image_start, int(center.End) - 1),
                 )
                 self.selection.SetRange(int(center.Start), int(center.Start))
-            else:
-                shape.Range.ParagraphFormat.Alignment = 1
-                shape.Range.ParagraphFormat.KeepTogether = -1
-                image_inserted = True
         if image_inserted:
             self.add_inline_degradation(
                 failure_code,

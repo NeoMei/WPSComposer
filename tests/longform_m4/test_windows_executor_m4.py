@@ -320,6 +320,37 @@ def test_formula_resource_id_must_resolve_before_com_acquisition(tmp_path: Path)
     assert acquired is False
 
 
+def test_planned_formula_content_receives_its_validated_image_locator(tmp_path: Path):
+    resource = _resource()
+    composer = RecordingNativeComposer()
+    planned = {
+        "code": "FORMULA_MALFORMED",
+        "placement": "block",
+        "objectLabel": "formula",
+        "reason": "Formula is malformed.",
+        "fallbackText": "x+y",
+        "fallbackKind": "source",
+    }
+
+    WindowsLongformExecutor(
+        staging_dir=str(tmp_path), composer_factory=lambda: composer
+    ).execute(
+        _plan(
+            _equation(
+                content={"plannedDegradation": planned},
+                fallback_resource={"fallbackResourceId": resource.id},
+            ),
+            resources=(resource,),
+        ),
+        (resource,),
+    )
+
+    native = [kwargs for name, kwargs in composer.calls if name == "equation-native"]
+    assert len(native) == 1
+    assert native[0]["fallback_resource_locator"].endswith(".png")
+    assert all(not Path(path).exists() for path in composer.resource_paths_seen)
+
+
 def test_citations_reuse_static_number_in_one_owning_paragraph_and_bibliography_is_native(
     tmp_path: Path,
 ):
@@ -598,11 +629,13 @@ def test_writer_planned_formula_content_skips_omath_and_keeps_numbered_fallback_
         content={"plannedDegradation": planned},
         numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
         fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+        fallback_resource_locator="C:/validated/formula.png",
     )
 
     assert document.OMaths.Count == 0
     assert calls[0]["numbering"] == _numbering()
     assert calls[0]["bookmarkName"] == EQ_BOOKMARK
+    assert calls[0]["fallback_resource_locator"] == "C:/validated/formula.png"
     assert outcome["issues"] == [{
         "code": "FORMULA_MALFORMED",
         "message": "Formula is malformed.",
@@ -725,6 +758,64 @@ def test_writer_formula_image_failure_is_attempted_once_then_source_is_inside_te
     assert len(rollbacks) == 1
     assert inline == [("EQUATION_INSERT_FAILED", "x+y")]
     assert "(1)" in writer.selection.typed
+
+
+@pytest.mark.parametrize("boundary", ["none", "range", "alignment", "keep"])
+def test_writer_formula_image_postprocess_failure_rolls_back_to_source_once(boundary):
+    writer, _table, _document = _formula_writer()
+    rollbacks = []
+    inline = []
+
+    class FailingFormat(_PF):
+        def __setattr__(self, name, value):
+            if name == "Alignment" and boundary == "alignment":
+                raise RuntimeError("unknown alignment failure")
+            if name == "KeepTogether" and boundary == "keep":
+                raise RuntimeError("unknown keep failure")
+            object.__setattr__(self, name, value)
+
+    class FailingRangeShape:
+        @property
+        def Range(self):
+            if boundary == "range":
+                raise RuntimeError("unknown shape range failure")
+            rng = _Range(20, 30)
+            rng.ParagraphFormat = FailingFormat()
+            return rng
+
+    writer.add_image = lambda *args, **kwargs: (
+        None if boundary == "none" else FailingRangeShape()
+    )
+    writer._native_rollback = lambda start, end: rollbacks.append((start, end))
+    writer.add_inline_degradation = (
+        lambda code, message, fallback_text: inline.append((code, fallback_text))
+    )
+
+    writer.add_equation_native_fallback(
+        numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+        fallbackText="x+y", fallback_resource_locator="C:/validated/formula.png",
+        owner_node_id="eq:one",
+    )
+
+    assert len(rollbacks) == 1
+    assert inline == [("EQUATION_INSERT_FAILED", "x+y")]
+
+
+def test_writer_formula_image_rollback_failure_remains_fatal():
+    writer, _table, _document = _formula_writer()
+    writer.add_image = lambda *args, **kwargs: None
+
+    def fail_rollback(start, end):
+        raise NativeWriterObjectError("LOCAL_MUTATION_ROLLBACK_FAILED")
+
+    writer._native_rollback = fail_rollback
+    with pytest.raises(NativeWriterObjectError) as caught:
+        writer.add_equation_native_fallback(
+            numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+            fallbackText="x+y", fallback_resource_locator="C:/validated/formula.png",
+            owner_node_id="eq:one",
+        )
+    assert caught.value.code == "LOCAL_MUTATION_ROLLBACK_FAILED"
 
 
 def test_writer_figure_fallback_initializes_empty_issues_and_keeps_planned_order():
