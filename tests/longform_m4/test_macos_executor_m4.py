@@ -707,12 +707,16 @@ let rollbackCount = 0;
 function range2(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
-  InsertAfter: function(value) { text += String(value); }, Delete: function() { rollbackCount += 1; text = ""; }}; }
+  InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+  Delete: function() { rollbackCount += 1; text = ""; }}; }
 const fieldError = new Error("field failed"); fieldError.code = "FIELD_REFRESH_FAILED";
 const document2 = {get Content() { return {End: text.length + 1}; }, Range: range2,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
-  InlineShapes: {AddPicture: function() { return {Range: {Start: 0, End: 1, ParagraphFormat: {}}}; }},
+  InlineShapes: {AddPicture: function(locator, link, save, target) {
+    const start = target.End; target.InsertAfter("I");
+    return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
+  }},
   Fields: {Add: function() { throw fieldError; }}, Bookmarks: {Add: function() {}}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
   document2, operation.args, {"formula-image-1": "/private/formula.png"},
@@ -876,6 +880,248 @@ assert.ok(text.slice(citation.length).startsWith("\tx+y\t(1)\r"));
 ''')
 
 
+def test_js_runtime_cursor_survives_content_and_paragraph_collection_lag() -> None:
+    _run_node(r'''
+let text = "";
+function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
+function range(start, end) {
+  return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+    Style: null, ListFormat: {},
+    get Text() { return text.slice(start, end); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() { text = text.slice(0, start) + text.slice(end); }
+  };
+}
+const maths = {Count: 0, items: [], Add: function(target) {
+  const native = {Range: {Start: target.Start, End: target.End}, BuildUp: function(){}};
+  this.items.push(native); this.Count += 1;
+  return {Start: target.Start, End: target.End,
+    OMaths: {Count: 1, Item: function() { return native; }}};
+}, Item: function(index) { return this.items[index - 1]; }};
+const document = {
+  // Both collection views remain stale for the whole session. Only the actual
+  // insertion Range returned by WPS advances its End.
+  Content: {End: 1},
+  Range: range,
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }},
+  Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: maths,
+  Fields: {Add: function(target) {
+    target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+  }},
+  Bookmarks: {Add: function() {}}
+};
+const api = window.WPSComposerLongformV2.__test;
+const issues = [], children = [];
+api.runOperation(document, {op: "writer.add_heading", nodeId: "h:1",
+  args: {text: "Heading", level: 1, numbering: false}}, {}, issues, children);
+api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:1",
+  args: {text: "Plain"}}, {}, issues, children);
+api.runOperation(document, {op: "writer.add_cross_reference", nodeId: "p:2",
+  args: {runs: [{type: "text", text: "See "},
+    {type: "citation", nodeId: "p:2/c:0", targetId: "a", targetNodeId: "ref:a",
+      number: 1, fallbackText: "[1]"}, {type: "text", text: "."}]}}, {}, issues, children);
+api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1",
+  args: {renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+    fallbackText: "x+y",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+    fallback: "explicit-image-then-source-notice"}}, {}, issues, children);
+assert.equal(text, "Heading\rPlain\rSee [1].\r\tx+y\t(1)\r");
+assert.deepEqual(issues, []);
+assert.deepEqual(children, [{nodeId: "p:2/c:0", status: "applied"}]);
+''')
+
+
+def test_js_runtime_cursor_advances_after_table_image_and_break_objects() -> None:
+    _run_node(r'''
+function makeDocument() {
+  let text = "";
+  function range(start, end) {
+    return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+      get Text() { return text.slice(start, end); },
+      InsertAfter: function(value) {
+        value = String(value);
+        text = text.slice(0, this.End) + value + text.slice(this.End);
+        this.End += value.length;
+      },
+      InsertBreak: function() { this.InsertAfter("<BREAK>"); },
+      Delete: function() { text = text.slice(0, start) + text.slice(end); }
+    };
+  }
+  const document = {Content: {End: 1}, Range: range,
+    Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }},
+    Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
+  return {document: document, text: function() { return text; }};
+}
+const api = window.WPSComposerLongformV2.__test;
+
+let state = makeDocument();
+api.runOperation(state.document, {op: "writer.reset", args: {}}, {}, [], []);
+function border() { return {}; }
+function rows() { return {Borders: border}; }
+rows.AllowBreakAcrossPages = 0;
+state.document.Tables = {Add: function(target) {
+  const start = target.End;
+  target.InsertAfter("<TABLE>");
+  const cell = {Range: {Text: "", Font: {}, Shading: {}, ParagraphFormat: {}},
+    Merge: function(){}};
+  return {Range: {Start: start, End: target.End}, Cell: function() { return cell; },
+    Rows: rows, Borders: border};
+}};
+api.runOperation(state.document, {op: "writer.add_semantic_table", args: {
+  headers: ["A"], rows: [["B"]], keepCaptionWithFirstRow: true,
+  orientation: "portrait", plannedDegradation: [],
+  alignments: ["left"], cellIndentPt: 0, allowRowSplit: false,
+  repeatHeader: false, borderSpec: {top: 0, left: 0, bottom: 0, right: 0,
+    insideHorizontal: 0, insideVertical: 0, headerBottom: 0}, merges: [],
+  cellCitations: [], cellDegradations: []}}, {}, [], []);
+api.runOperation(state.document, {op: "writer.add_paragraph", args: {text: "After"}}, {}, [], []);
+assert.equal(state.text(), "<TABLE>\rAfter\r");
+
+state = makeDocument();
+api.runOperation(state.document, {op: "writer.reset", args: {}}, {}, [], []);
+state.document.InlineShapes = {Count: 0, AddPicture: function(locator, link, save, target) {
+  const start = target.End;
+  target.InsertAfter("<IMAGE>");
+  this.Count += 1;
+  return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
+}, Item: function(){}};
+api.runOperation(state.document, {op: "writer.add_captioned_figure", args: {
+  keepWithCaption: true,
+  orientation: "portrait", layout: "stack", children: [{nodeId: "fig:1/image:1",
+    resourceId: "image", displayWidthPt: 100, displayHeightPt: 50}]},
+  nodeId: "fig:1"}, {image: "/private/image.png"}, [], []);
+api.runOperation(state.document, {op: "writer.add_paragraph", args: {text: "After"}}, {}, [], []);
+assert.equal(state.text(), "<IMAGE>\rAfter\r");
+
+state = makeDocument();
+api.runOperation(state.document, {op: "writer.reset", args: {}}, {}, [], []);
+api.runOperation(state.document, {op: "writer.add_page_break", args: {}}, {}, [], []);
+api.runOperation(state.document, {op: "writer.add_paragraph", args: {text: "After"}}, {}, [], []);
+assert.equal(state.text(), "<BREAK>After\r");
+
+state = makeDocument();
+api.runOperation(state.document, {op: "writer.reset", args: {}}, {}, [], []);
+const footer = {PageNumbers: {}, Range: {Text: "", Collapse: function(){},
+  Fields: {Add: function(){}}}};
+const section = {PageSetup: {}, Range: {DocumentVariables: {Add: function(){}}},
+  Headers: {Item: function() { return {}; }},
+  Footers: {Item: function() { return footer; }}};
+state.document.Sections = {Count: 1, Item: function() { return section; }};
+state.document._wpscFirstSectionConfigured = true;
+api.runOperation(state.document, {op: "writer.configure_section", args: {
+  role: "body", pageNumberFormat: "none"
+}}, {}, [], []);
+api.runOperation(state.document, {op: "writer.add_paragraph", args: {text: "After"}}, {}, [], []);
+assert.equal(state.text(), "<BREAK>After\r");
+''')
+
+
+def test_js_run_owned_native_partial_writes_rollback_from_live_target_range() -> None:
+    _run_node(r'''
+function makeDocument() {
+  let text = "PREFIX\r";
+  function range(start, end) {
+    return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+      get Text() { return text.slice(start, end); },
+      InsertAfter: function(value) {
+        value = String(value);
+        text = text.slice(0, this.End) + value + text.slice(this.End);
+        this.End += value.length;
+      },
+      Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+    };
+  }
+  const document = {
+    get Content() { return {End: text.length + 1}; }, Range: range,
+    Paragraphs: {Count: 2, Item: function() {
+      return {Range: {Start: 7, End: text.length + 1}};
+    }},
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}
+  };
+  return {document: document, text: function() { return text; }};
+}
+const api = window.WPSComposerLongformV2.__test;
+
+let state = makeDocument();
+state.document.InlineShapes = {Count: 0, AddPicture: function(a, b, c, target) {
+  target.InsertAfter("<PARTIAL-IMAGE>");
+  const error = new Error("private image failure");
+  error.code = "IMAGE_INSERT_FAILED";
+  throw error;
+}};
+assert.throws(() => api.runOperation(state.document, {
+  op: "writer.add_captioned_figure", nodeId: "fig:partial",
+  failurePolicy: {mode: "fail"},
+  args: {keepWithCaption: true, orientation: "portrait", layout: "stack",
+    children: [{nodeId: "fig:partial/image:1", resourceId: "image",
+      displayWidthPt: 100, displayHeightPt: 50}]}
+}, {image: "/private/image.png"}, [], []),
+error => error.code === "EXECUTION_ABORTED");
+assert.equal(state.text(), "PREFIX\r");
+
+state = makeDocument();
+state.document.Tables = {Add: function(target) {
+  target.InsertAfter("<PARTIAL-TABLE>");
+  const error = new Error("private table failure");
+  error.code = "TABLE_INSERT_FAILED";
+  throw error;
+}};
+assert.throws(() => api.runOperation(state.document, {
+  op: "writer.add_semantic_table", nodeId: "table:partial",
+  failurePolicy: {mode: "fail"},
+  args: {headers: ["A"], rows: [["B"]], keepCaptionWithFirstRow: true,
+    orientation: "portrait", plannedDegradation: [], alignments: ["left"],
+    cellIndentPt: 0, allowRowSplit: false, repeatHeader: false,
+    borderSpec: {top: 0, left: 0, bottom: 0, right: 0,
+      insideHorizontal: 0, insideVertical: 0, headerBottom: 0},
+    merges: [], cellCitations: [], cellDegradations: []}
+}, {}, [], []), error => error.code === "EXECUTION_ABORTED");
+assert.equal(state.text(), "PREFIX\r");
+
+state = makeDocument();
+state.document.InlineShapes = {Count: 0, AddPicture: function() {
+  this.Count += 1;
+  return {};
+}};
+assert.throws(() => api.runOperation(state.document, {
+  op: "writer.add_captioned_figure", nodeId: "fig:no-range",
+  failurePolicy: {mode: "degrade", recoverableCodes: ["IMAGE_INSERT_FAILED"],
+    fallback: "figure-child-stack-then-notice"},
+  args: {keepWithCaption: true, orientation: "portrait", layout: "stack",
+    children: [{nodeId: "fig:no-range/image:1", resourceId: "image",
+      displayWidthPt: 100, displayHeightPt: 50}]}
+}, {image: "/private/image.png"}, [], []),
+error => error.code === "CAPABILITY_MISMATCH");
+assert.equal(state.text(), "PREFIX\r");
+
+state = makeDocument();
+state.document.Tables = {Add: function() { return {}; }};
+assert.throws(() => api.runOperation(state.document, {
+  op: "writer.add_semantic_table", nodeId: "table:no-range",
+  failurePolicy: {mode: "degrade", recoverableCodes: ["TABLE_INSERT_FAILED"],
+    fallback: "grid-then-text"},
+  args: {headers: ["A"], rows: [["B"]], keepCaptionWithFirstRow: true,
+    orientation: "portrait", plannedDegradation: [], alignments: ["left"],
+    cellIndentPt: 0, allowRowSplit: false, repeatHeader: false,
+    borderSpec: {top: 0, left: 0, bottom: 0, right: 0,
+      insideHorizontal: 0, insideVertical: 0, headerBottom: 0},
+    merges: [], cellCitations: [], cellDegradations: []}
+}, {}, [], []), error => error.code === "CAPABILITY_MISMATCH");
+assert.equal(state.text(), "PREFIX\r");
+''')
+
+
 def test_js_formula_recovery_never_deletes_before_authoritative_checkpoint() -> None:
     _run_node(r'''
 const citation = "Inline citation remains complete in this paragraph.\r";
@@ -926,6 +1172,131 @@ assert.equal(issues.length, 1);
 assert.equal(issues[0].code, "EQUATION_INSERT_FAILED");
 assert.ok(text.startsWith(citation));
 assert.equal(text.slice(citation.length), "\t[EQUATION_INSERT_FAILED: x+y]\t(1)\r");
+''')
+
+
+def test_js_formula_image_recovery_ignores_stale_ahead_host_end_after_rollback() -> None:
+    _run_node(r'''
+let text = "", reportedEnd = 1;
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  ParagraphFormat: {TabStops: {Add: function(){}}},
+  get Text() { return text.slice(start, end); },
+  InsertAfter: function(value) {
+    value = String(value);
+    text = text.slice(0, this.End) + value + text.slice(this.End);
+    this.End += value.length;
+  },
+  Delete: function() { text = text.slice(0, start) + text.slice(end); }
+}; }
+const document = {get Content() { return {End: reportedEnd}; }, Range: range,
+  get Paragraphs() { return {Count: 1, Item: function() {
+    return {Range: {Start: 0, End: reportedEnd}};
+  }}; },
+  Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
+  InlineShapes: {AddPicture: function() {
+    const error = new Error("image failed"); error.code = "IMAGE_INSERT_FAILED"; throw error;
+  }},
+  Fields: {Add: function(target) { target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+  }}, Bookmarks: {Add: function(){}}};
+const api = window.WPSComposerLongformV2.__test;
+api.runOperation(document, {op: "writer.add_paragraph", args: {text: "Prefix"}}, {}, [], []);
+reportedEnd = 100;
+const issues = [];
+api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1", args: {
+  renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  fallbackResource: {fallbackResourceId: "image"}, fallbackText: "x+y",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)}, failurePolicy: {mode: "degrade",
+    recoverableCodes: ["EQUATION_INSERT_FAILED"], fallback: "explicit-image-then-source-notice"}
+}, {image: "/private/image.png"}, issues, []);
+assert.equal(text, "Prefix\r\t[EQUATION_INSERT_FAILED: x+y]\t(1)\r");
+assert.equal(issues.length, 1);
+''')
+
+
+def test_js_formula_image_partial_write_is_fatal_and_postprocess_rollback_covers_tail() -> None:
+    _run_node(r'''
+function makeDocument() {
+  let text = "Prefix\r", reportedEnd = null;
+  function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+    ParagraphFormat: {TabStops: {Add: function(){}}},
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+  }; }
+  const document = {
+    get Content() { return {End: reportedEnd === null ? text.length + 1 : reportedEnd}; }, Range: range,
+    get Paragraphs() { return {Count: 2, Item: function() {
+      return {Range: {Start: 7, End: text.length + 1}};
+    }}; },
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+    OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
+    Bookmarks: {Add: function() {}}
+  };
+  return {document: document, text: function() { return text; },
+    appendUntracked: function(value) { text += value; },
+    freezeHostEnd: function() { reportedEnd = text.length + 1; }};
+}
+const api = window.WPSComposerLongformV2.__test;
+function operation() { return {op: "writer.add_equation", nodeId: "eq:image", args: {
+  renderMode: "native-m4",
+  content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  fallbackResource: {fallbackResourceId: "image"}, fallbackText: "x+y",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)},
+  failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+    fallback: "explicit-image-then-source-notice"}}; }
+
+let state = makeDocument();
+state.freezeHostEnd();
+state.document.InlineShapes = {Count: 0, AddPicture: function() {
+  state.appendUntracked("<UNRANGED-IMAGE>");
+  this.Count += 1;
+  const error = new Error("private partial image");
+  error.code = "IMAGE_INSERT_FAILED";
+  throw error;
+}};
+state.document.Fields = {Add: function() { return {Result: {Text: "1"}}; }};
+assert.throws(() => api.runOperation(
+  state.document, operation(), {image: "/private/image.png"}, [], []
+), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
+assert.ok(state.text().includes("<UNRANGED-IMAGE>"));
+
+state = makeDocument();
+const unknown = new Error("private unknown image failure");
+state.document.InlineShapes = {Count: 0, AddPicture: function() {
+  state.appendUntracked("<HOST-RANGED-IMAGE>");
+  throw unknown;
+}};
+state.document.Fields = {Add: function() { return {Result: {Text: "1"}}; }};
+assert.throws(() => api.runOperation(
+  state.document, operation(), {image: "/private/image.png"}, [], []
+), error => error === unknown);
+assert.equal(state.text(), "Prefix\r");
+
+state = makeDocument();
+state.document.InlineShapes = {Count: 0, AddPicture: function(a, b, c, target) {
+  const start = target.End;
+  target.InsertAfter("<IMAGE>");
+  this.Count += 1;
+  return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
+}};
+state.document.Fields = {Add: function() {
+  const error = new Error("private field failure");
+  error.code = "FIELD_REFRESH_FAILED";
+  throw error;
+}};
+assert.throws(() => api.runOperation(
+  state.document, operation(), {image: "/private/image.png"}, [], []
+), error => error.code === "FIELD_REFRESH_FAILED");
+assert.equal(state.text(), "Prefix\r");
 ''')
 
 
@@ -1089,21 +1460,21 @@ api.addBibliographyNative(document, {entries: [], style: "numbered"});
 assert.equal(text, beforeEmptyLegacy);
 
 const unknown = new Error("unknown insert API failure");
-const unknownDocument = {Content: {End: 1}, Range: function() { return {
-  Start: 0, End: 0, ParagraphFormat: {}, InsertAfter: function() { throw unknown; }
+const unknownDocument = {Content: {End: 1}, Range: function(start, end) { return {
+  Start: start, End: end, ParagraphFormat: {}, InsertAfter: function() { throw unknown; }
 }; }};
 assert.throws(() => api.addBibliographyNative(unknownDocument, {entries: ["Legacy"]}),
   error => error === unknown);
 const engine = new Error("engine lost"); engine.code = "ENGINE_LOST";
-const engineDocument = {Content: {End: 1}, Range: function() { return {
-  Start: 0, End: 0, InsertAfter: function(){},
+const engineDocument = {Content: {End: 1}, Range: function(start, end) { return {
+  Start: start, End: end, InsertAfter: function(value){ this.End += String(value).length; },
   get ParagraphFormat() { throw engine; }
 }; }};
 assert.throws(() => api.addBibliographyNative(engineDocument, {entries: ["Legacy"]}),
   error => error === engine);
 const recoverable = new Error("named format failure"); recoverable.code = "BIBLIOGRAPHY_INSERT_FAILED";
-const recoverableDocument = {Content: {End: 1}, Range: function() { return {
-  Start: 0, End: 0, InsertAfter: function(){},
+const recoverableDocument = {Content: {End: 1}, Range: function(start, end) { return {
+  Start: start, End: end, InsertAfter: function(value){ this.End += String(value).length; },
   get ParagraphFormat() { throw recoverable; }
 }; }};
 assert.throws(() => api.addBibliographyNative(recoverableDocument, {entries: ["Legacy"]}),

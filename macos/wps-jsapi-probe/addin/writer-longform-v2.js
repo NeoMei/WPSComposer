@@ -137,10 +137,96 @@
     return range;
   }
 
+  function appendCursorRange(document) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return null;
+    const cursor = document && document._wpscAppendCursorRange;
+    if (!cursor) return null;
+    const start = cursor.Start;
+    const end = cursor.End;
+    if (typeof start !== "number" || typeof end !== "number" ||
+        !Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || start !== end) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return cursor;
+  }
+
+  function setAppendCursor(document, position) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return null;
+    const cursor = exactDocumentRange(document, position, position);
+    document._wpscAppendCursorRange = cursor;
+    return cursor;
+  }
+
+  function advanceAppendCursor(document, target, minimumEnd, extraRanges, previousEnd) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return target;
+    const current = Number.isInteger(previousEnd) ? null : appendCursorRange(document);
+    const currentEnd = Number.isInteger(previousEnd)
+      ? previousEnd : (current ? current.End : 0);
+    const candidates = [target].concat(extraRanges || []);
+    let end = Number.isInteger(minimumEnd) ? minimumEnd : currentEnd;
+    let observedEnd = currentEnd;
+    candidates.forEach(function (range) {
+      const candidate = range && typeof range.End === "number" ? range.End : NaN;
+      if (Number.isInteger(candidate) && candidate >= 0) {
+        observedEnd = Math.max(observedEnd, candidate);
+        end = Math.max(end, candidate);
+      }
+    });
+    if (!Number.isInteger(end) || end < currentEnd) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    // Retain the M1-M3 zero-length recording double, whose Range intentionally
+    // does not model mutation. Real WPS blank documents expose End >= 1.
+    const rawContentEnd = document && document.Content && document.Content.End;
+    if (rawContentEnd === 0 && observedEnd === currentEnd && end > currentEnd) {
+      return current || target;
+    }
+    return setAppendCursor(document, end);
+  }
+
+  function advanceNativeObjectCursor(document, target, objectRanges, previousEnd) {
+    // Direct M1-M3 compatibility helpers can be invoked without a run-owned
+    // cursor. Production plans always initialize one before native insertion.
+    if (!document || document._wpscRunOwnsAppendCursor !== true ||
+        !document._wpscAppendCursorRange) return target;
+    const candidates = [target].concat(objectRanges || []);
+    let end = previousEnd;
+    let advanced = false;
+    candidates.forEach(function (range) {
+      const start = range && range.Start;
+      const finish = range && range.End;
+      if (typeof start === "number" && typeof finish === "number" &&
+          Number.isInteger(start) && Number.isInteger(finish) &&
+          start >= 0 && start <= previousEnd && finish > previousEnd) {
+        end = Math.max(end, finish);
+        advanced = true;
+      }
+    });
+    if (!advanced) throw nativeError("CAPABILITY_MISMATCH");
+    return setAppendCursor(document, end);
+  }
+
+  function appendTargetEnd(document, target) {
+    if (!target || typeof target.Start !== "number" || typeof target.End !== "number" ||
+        !Number.isInteger(target.Start) || !Number.isInteger(target.End) ||
+        target.Start !== target.End) return null;
+    const cursor = appendCursorRange(document);
+    if (cursor) {
+      return target.Start === cursor.Start && target.End === cursor.End
+        ? cursor.End : null;
+    }
+    const state = authoritativeDocumentEnd(document);
+    return target.Start === state.position && target.End === state.position
+      ? state.position : null;
+  }
+
   function authoritativeDocumentEnd(document) {
     if (!document || typeof document.Range !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
+    const trackedCursor = appendCursorRange(document);
+    const trackedPosition = trackedCursor ? trackedCursor.End : null;
     const content = document.Content;
     const rawContentEnd = content && typeof content.End === "number"
       ? content.End : NaN;
@@ -169,13 +255,17 @@
       lastParagraphStart = paragraphStart;
       lastParagraphEnd = paragraphEnd;
     }
-    if (contentPosition === null && paragraphPosition === null) {
+    if (trackedPosition === null && contentPosition === null && paragraphPosition === null) {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const position = Math.max(
+    // Host collections are used only before the first tracked write. WPS can
+    // expose stale-ahead endpoints after rollback, so native insertions must
+    // explicitly resynchronize from the returned target/object Range.
+    const hostPosition = Math.max(
       contentPosition === null ? 0 : contentPosition,
       paragraphPosition === null ? 0 : paragraphPosition
     );
+    const position = trackedPosition === null ? hostPosition : trackedPosition;
     if (lastParagraphStart !== null) {
       const textRange = exactDocumentRange(document, lastParagraphStart, position);
       if (typeof textRange.Text !== "string") {
@@ -189,9 +279,10 @@
         signature: checkpointTextSignature(paragraphText)
       };
     }
+    const resultRange = trackedCursor || exactDocumentRange(document, position, position);
     return {
       position: position,
-      range: exactDocumentRange(document, position, position),
+      range: resultRange,
       lastParagraph: lastParagraph
     };
   }
@@ -237,11 +328,7 @@
     formatting = formatting || {};
     const insertion = endRange(document);
     const start = typeof insertion.Start === "number" ? insertion.Start : 0;
-    if (typeof insertion.InsertAfter === "function") {
-      insertion.InsertAfter(text + "\r");
-    } else {
-      insertion.Text = String(text) + "\r";
-    }
+    insertInlineText(document, String(text) + "\r", insertion);
     let written = insertion;
     if (typeof document.Range === "function") {
       written = document.Range(start, start + String(text).length);
@@ -298,6 +385,7 @@
 
   function resetDocument(document) {
     document.Content.Text = "";
+    if (typeof document.Range === "function") setAppendCursor(document, 0);
   }
 
   function configurePage(document, args) {
@@ -431,14 +519,20 @@
     });
   }
 
+  function insertDocumentBreak(document, breakType) {
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    if (previousEnd === null || typeof target.InsertBreak !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    target.InsertBreak(breakType);
+    advanceAppendCursor(document, target, previousEnd + 1, [], previousEnd);
+  }
+
   function configureSection(document, args) {
     const first = !document._wpscFirstSectionConfigured;
     if (!first) {
-      try {
-        endRange(document).InsertBreak(2);
-      } catch (error) {
-        // ignore
-      }
+      insertDocumentBreak(document, 2);
     }
     document._wpscFirstSectionConfigured = true;
 
@@ -512,6 +606,8 @@
         }
       }
     } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [toc && toc.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("FIELD_REFRESH_FAILED");
     }
   }
@@ -560,9 +656,20 @@
     void resources;
     const density = args.density || document._wpscTocDensity || {};
     let toc;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
     try {
-      toc = document.TablesOfContents.Add(endRange(document), true, 1, args.levels || 3);
+      toc = document.TablesOfContents.Add(target, true, 1, args.levels || 3);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [toc && toc.Range], previousEnd
+        );
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
     } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("FIELD_REFRESH_FAILED");
     }
     trackNativeField(
@@ -685,8 +792,20 @@
   function insertInlineText(document, value, targetRange) {
     const text = safeString(value);
     const range = targetRange || endRange(document);
+    const cursor = appendCursorRange(document);
+    const beforeStart = Number(range && range.Start);
+    const beforeEnd = Number(range && range.End);
+    const appending = !targetRange || !cursor ||
+      (beforeStart === cursor.Start && beforeEnd === cursor.End);
+    if (!Number.isInteger(beforeStart) || !Number.isInteger(beforeEnd) ||
+        beforeStart < 0 || beforeEnd < beforeStart) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
     if (typeof range.InsertAfter === "function") range.InsertAfter(text);
     else range.Text = text;
+    if (appending) {
+      advanceAppendCursor(document, range, beforeEnd + text.length, [], beforeEnd);
+    }
     return range;
   }
 
@@ -707,8 +826,20 @@
 
   function addNativeField(document, code, ownerNodeId, fieldKind, category, failureCode) {
     let field;
+    const target = endRange(document);
+    const start = target.End;
     try {
-      field = document.Fields.Add(endRange(document), -1, code, true);
+      field = document.Fields.Add(target, -1, code, true);
+    } catch (error) {
+      throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+    }
+    const result = field && field.Result;
+    const resultText = result && typeof result.Text === "string" ? result.Text : "";
+    try {
+      advanceAppendCursor(
+        document, target, start + resultText.length,
+        [result, field && field.Range], start
+      );
     } catch (error) {
       throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
     }
@@ -858,6 +989,7 @@
         validateRollbackPrefix(document, token);
       }
       if (stop > start) document.Range(start, stop).Delete();
+      setAppendCursor(document, start);
       if (token && token.preserveParagraphBoundary === true) {
         validateRollbackPrefix(document, token);
         const currentCount = paragraphCount(document);
@@ -870,6 +1002,31 @@
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
+  }
+
+  function rollbackNativeInsertion(document, checkpoint, target, objectRanges) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      rollbackMutation(document, checkpoint);
+      return;
+    }
+    const start = checkpoint && typeof checkpoint === "object"
+      ? Number(checkpoint.start) : Number(checkpoint);
+    if (!Number.isInteger(start) || start < 0) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    const candidates = [target].concat(objectRanges || []);
+    let stop = null;
+    candidates.forEach(function (range) {
+      const candidateStart = Number(range && range.Start);
+      const candidateEnd = Number(range && range.End);
+      if (Number.isInteger(candidateStart) && Number.isInteger(candidateEnd) &&
+          candidateStart >= 0 && candidateEnd >= candidateStart &&
+          candidateEnd >= start) {
+        stop = stop === null ? candidateEnd : Math.max(stop, candidateEnd);
+      }
+    });
+    if (stop === null) throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    rollbackMutation(document, checkpoint, stop);
   }
 
   function checkpointRecoverableMutation(document, preserveParagraphBoundary) {
@@ -894,8 +1051,7 @@
   }
 
   function addExplicitOrientationSection(document, landscape) {
-    const range = endRange(document);
-    if (typeof range.InsertBreak === "function") range.InsertBreak(2);
+    insertDocumentBreak(document, 2);
     const sections = document.Sections;
     const section = sections ? collectionItem(sections, sections.Count) : null;
     const setup = section && section.PageSetup ? section.PageSetup : document.PageSetup;
@@ -906,18 +1062,41 @@
   function addFigureChild(document, child, locator, ownerNodeId, targetRange) {
     const start = currentPosition(document);
     let shape;
+    const insertionTarget = targetRange || endRange(document);
+    const previousEnd = appendTargetEnd(document, insertionTarget);
+    const rawHostEndBefore = document && document.Content &&
+      Number(document.Content.End);
     try {
       const rawBefore = document.InlineShapes && Number(document.InlineShapes.Count);
       const before = Number.isInteger(rawBefore) && rawBefore >= 0 ? rawBefore : -1;
-      shape = document.InlineShapes.AddPicture(locator, false, true, targetRange || endRange(document));
+      shape = document.InlineShapes.AddPicture(locator, false, true, insertionTarget);
       const rawAfter = document.InlineShapes && Number(document.InlineShapes.Count);
       const after = Number.isInteger(rawAfter) && rawAfter >= 0 ? rawAfter : -1;
       if ((shape === null || shape === undefined) && before >= 0 && after > before) {
         shape = collectionItem(document.InlineShapes, after);
       }
       if (shape === null || shape === undefined) throw nativeError("IMAGE_INSERT_FAILED");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, insertionTarget, [shape && shape.Range], previousEnd
+        );
+      } else if (!targetRange && document &&
+                 document._wpscRunOwnsAppendCursor === true) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
     } catch (error) {
-      rollbackMutation(document, start);
+      const rawHostEndAfter = document && document.Content &&
+        Number(document.Content.End);
+      if (!targetRange && previousEnd !== null &&
+          Number(insertionTarget && insertionTarget.End) === previousEnd &&
+          Number.isInteger(rawHostEndBefore) && Number.isInteger(rawHostEndAfter) &&
+          rawHostEndAfter !== rawHostEndBefore) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      if (!targetRange) {
+        rollbackNativeInsertion(document, start, insertionTarget, [shape && shape.Range]);
+      }
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("IMAGE_INSERT_FAILED");
     }
     try {
@@ -989,8 +1168,12 @@
 
   function createFigureColumns(document, children, resources, context) {
     let table;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
     try {
-      table = document.Tables.Add(endRange(document), 1, 3);
+      table = document.Tables.Add(target, 1, 3);
+      if (previousEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+      advanceNativeObjectCursor(document, target, [table && table.Range], previousEnd);
       try { table.AllowAutoFit = false; } catch (error) { /* ignore */ }
       [children[0].displayWidthPt, 12, children[1].displayWidthPt].forEach(function (width, index) {
         const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
@@ -1005,7 +1188,8 @@
         table.Range.ParagraphFormat.KeepWithNext = -1;
       }
     } catch (error) {
-      try { if (table && typeof table.Delete === "function") table.Delete(); } catch (deleteError) { /* ignore */ }
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("IMAGE_INSERT_FAILED");
     }
     try {
@@ -1135,9 +1319,15 @@
   function createNativeTable(document, args) {
     const data = [args.headers].concat(args.rows || []);
     let table;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
     try {
-      table = document.Tables.Add(endRange(document), data.length, args.headers.length);
+      table = document.Tables.Add(target, data.length, args.headers.length);
+      if (previousEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+      advanceNativeObjectCursor(document, target, [table && table.Range], previousEnd);
     } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("TABLE_INSERT_FAILED");
     }
     const alignmentCodes = {left: 0, center: 1, right: 2};
@@ -1373,7 +1563,8 @@
 
   function beginFormulaLayout(document) {
     let state = authoritativeDocumentEnd(document);
-    if (state.lastParagraph && state.lastParagraph.text.length > 0) {
+    if (state.lastParagraph && state.lastParagraph.text.length > 0 &&
+        !/\r$/.test(state.lastParagraph.text)) {
       insertInlineText(document, "\r", state.range);
       state = authoritativeDocumentEnd(document);
     }
@@ -1497,6 +1688,15 @@
         Number(builtContent.End) !== builtEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
+    const mathCursor = endRange(document);
+    const mathCursorEnd = appendTargetEnd(document, mathCursor);
+    if (mathCursorEnd === null || builtEnd > mathCursorEnd) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    advanceAppendCursor(
+      document, mathCursor, mathCursorEnd,
+      [builtContent, builtLocalMath.Range, builtGlobalMath.Range], mathCursorEnd
+    );
     insertInlineText(document, "\t");
     addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
     finishFormulaLayout(document, layout);
@@ -1539,17 +1739,34 @@
         throw nativeError("CAPABILITY_MISMATCH");
       }
       const layout = beginFormulaLayout(document);
+      let imageTarget = null;
+      let shapeRange = null;
+      let imageTargetEnd = null;
+      let imageHostEndBefore = null;
+      let imageCountBefore = null;
       try {
+        imageTarget = endRange(document);
+        imageTargetEnd = appendTargetEnd(document, imageTarget);
+        if (imageTargetEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+        const rawHostEnd = document && document.Content &&
+          Number(document.Content.End);
+        const rawImageCount = document && document.InlineShapes &&
+          Number(document.InlineShapes.Count);
+        imageHostEndBefore = Number.isInteger(rawHostEnd) ? rawHostEnd : null;
+        imageCountBefore = Number.isInteger(rawImageCount) ? rawImageCount : null;
         const shape = document.InlineShapes.AddPicture(
-          locator, false, true, endRange(document)
+          locator, false, true, imageTarget
         );
-        const shapeRange = shape && shape.Range;
+        shapeRange = shape && shape.Range;
         const shapeStart = Number(shapeRange && shapeRange.Start);
         const shapeEnd = Number(shapeRange && shapeRange.End);
         if (!shapeRange || !Number.isFinite(shapeStart) ||
             !Number.isFinite(shapeEnd) || shapeEnd <= shapeStart) {
           throw nativeError("IMAGE_INSERT_FAILED");
         }
+        advanceNativeObjectCursor(
+          document, imageTarget, [shapeRange], imageTargetEnd
+        );
         if (!shapeRange.ParagraphFormat) throw nativeError("CAPABILITY_MISMATCH");
         shapeRange.ParagraphFormat.KeepTogether = -1;
         addInlineDegradation(document, {
@@ -1561,8 +1778,45 @@
         insertInlineText(document, "\r");
         return;
       } catch (error) {
+        const rawHostEndAfter = document && document.Content &&
+          Number(document.Content.End);
+        const rawImageCountAfter = document && document.InlineShapes &&
+          Number(document.InlineShapes.Count);
+        const targetEndAfter = Number(imageTarget && imageTarget.End);
+        const shapeStartAfter = Number(shapeRange && shapeRange.Start);
+        const shapeEndAfter = Number(shapeRange && shapeRange.End);
+        const targetProvesMutation = Number.isInteger(imageTargetEnd) &&
+          Number.isInteger(targetEndAfter) && targetEndAfter > imageTargetEnd;
+        const shapeProvesMutation = Number.isInteger(imageTargetEnd) &&
+          Number.isInteger(shapeStartAfter) && Number.isInteger(shapeEndAfter) &&
+          shapeStartAfter <= imageTargetEnd && shapeEndAfter > imageTargetEnd;
+        const hostChanged = imageHostEndBefore !== null &&
+          Number.isInteger(rawHostEndAfter) && rawHostEndAfter !== imageHostEndBefore;
+        const hostProvesMutation = imageHostEndBefore !== null &&
+          Number.isInteger(rawHostEndAfter) &&
+          rawHostEndAfter > imageHostEndBefore && rawHostEndAfter > 0;
+        const countChanged = imageCountBefore !== null &&
+          Number.isInteger(rawImageCountAfter) && rawImageCountAfter !== imageCountBefore;
+        if (document && document._wpscRunOwnsAppendCursor === true &&
+            !targetProvesMutation && !shapeProvesMutation &&
+            !hostProvesMutation && (hostChanged || countChanged)) {
+          throw preserveFallbackFatal(
+            nativeError("LOCAL_MUTATION_ROLLBACK_FAILED")
+          );
+        }
         try {
-          rollbackMutation(document, imageCheckpoint);
+          const rollbackRanges = [shapeRange, appendCursorRange(document)];
+          if (hostProvesMutation) {
+            rollbackRanges.push({
+              Start: imageCheckpoint && typeof imageCheckpoint === "object"
+                ? imageCheckpoint.start : imageCheckpoint,
+              End: rawHostEndAfter - 1
+            });
+          }
+          rollbackNativeInsertion(
+            document, imageCheckpoint, imageTarget,
+            rollbackRanges
+          );
         } catch (rollbackError) {
           throw preserveFallbackFatal(rollbackError);
         }
@@ -1746,9 +2000,19 @@
       if (title.range && title.range.ParagraphFormat) title.range.ParagraphFormat.OutlineLevel = 10;
     }
     let index;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
     try {
-      index = document.TablesOfFigures.Add(endRange(document), args.sequenceId);
+      index = document.TablesOfFigures.Add(target, args.sequenceId);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [index && index.Range], previousEnd
+        );
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
     } catch (error) {
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("FIELD_REFRESH_FAILED");
     }
     trackNativeField(
@@ -1763,12 +2027,38 @@
 
   function insertFigureIndex(document, args, resources, context) {
     if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
-    document.TablesOfFigures.Add(endRange(document), "Figure");
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    let index;
+    try {
+      index = document.TablesOfFigures.Add(target, "Figure");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(document, target, [index && index.Range], previousEnd);
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      throw error;
+    }
   }
 
   function insertTableIndex(document, args, resources, context) {
     if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
-    document.TablesOfFigures.Add(endRange(document), "Table");
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    let index;
+    try {
+      index = document.TablesOfFigures.Add(target, "Table");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(document, target, [index && index.Range], previousEnd);
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      throw error;
+    }
   }
 
   function updateTrackedFields(document, kinds) {
@@ -2194,9 +2484,17 @@
     const safeCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(code))
       ? safeString(code) : "DEGRADATION";
     const target = targetRange || endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
     let table;
     try {
       table = document.Tables.Add(target, 1, 1);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [table && table.Range], previousEnd
+        );
+      } else if (document && document._wpscRunOwnsAppendCursor === true) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
       const cell = table.Cell(1, 1);
       cell.Range.Text = rawDisplay === undefined
         ? "[" + safeCode + "] " + safePublicText(fallbackText)
@@ -2210,6 +2508,8 @@
       if (table.Rows) table.Rows.AllowBreakAcrossPages = false;
       return table;
     } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("DEGRADATION_INSERT_FAILED");
     }
   }
@@ -2221,8 +2521,7 @@
     const start = safeNumber(target.Start, -1);
     if (start < 0) throw nativeError("DEGRADATION_INSERT_FAILED");
     try {
-      if (typeof target.InsertAfter === "function") target.InsertAfter(text);
-      else target.Text = text;
+      insertInlineText(document, text, target);
       const written = document.Range(start, start + text.length);
       if (!written) throw nativeError("DEGRADATION_INSERT_FAILED");
       if (written.Font) {
@@ -2356,7 +2655,7 @@
     "writer.add_heading": addHeadingNative,
     "writer.add_heading_native": addHeadingNative,
     "writer.add_list": addList,
-    "writer.add_page_break": function (document) { endRange(document).InsertBreak(7); },
+    "writer.add_page_break": function (document) { insertDocumentBreak(document, 7); },
     "writer.configure_section": configureSection,
     "writer.configure_front_matter": function (document, args) {
       document._wpscFrontMatter = args;
@@ -2497,7 +2796,7 @@
     });
   }
 
-  function runOperation(document, operation, resources, issues, childResults) {
+  function runOwnedOperation(document, operation, resources, issues, childResults) {
     const opName = operation.op;
     const issueCheckpoint = issues.length;
     const childCheckpoint = childResults.length;
@@ -2559,6 +2858,40 @@
         }
       }
       throw nativeError(error && error.code ? error.code : "EXECUTION_ABORTED");
+    }
+  }
+
+  function runOperation(document, operation, resources, issues, childResults) {
+    const alreadyOwned = Boolean(
+      document && document._wpscRunOwnsAppendCursor === true
+    );
+    if (document) document._wpscRunOwnsAppendCursor = true;
+    try {
+      if (document && typeof document.Range === "function" &&
+          !document._wpscAppendCursorRange) {
+        try {
+          const initialEnd = authoritativeDocumentEnd(document);
+          setAppendCursor(document, initialEnd.position);
+        } catch (error) {
+          const policy = operation && operation.failurePolicy || {};
+          const recoverable = Boolean(
+            operation && LONGFORM_DEFERRED[operation.op]
+          ) || (policy.mode === "degrade" &&
+                 Array.isArray(policy.recoverableCodes) &&
+                 policy.recoverableCodes.length > 0);
+          throw nativeError(
+            recoverable ? "LOCAL_MUTATION_CHECKPOINT_FAILED" :
+              (error && error.code ? error.code : "CAPABILITY_MISMATCH")
+          );
+        }
+      }
+      return runOwnedOperation(
+        document, operation, resources, issues, childResults
+      );
+    } finally {
+      if (document && !alreadyOwned) {
+        document._wpscRunOwnsAppendCursor = false;
+      }
     }
   }
 
@@ -2833,10 +3166,15 @@
       Application.ScreenUpdating = false;
       document = Application.Documents.Add();
       document._wpscFirstSectionConfigured = false;
+      document._wpscRunOwnsAppendCursor = true;
+      if (typeof document.Range === "function") {
+        const initialEnd = authoritativeDocumentEnd(document);
+        setAppendCursor(document, initialEnd.position);
+      }
 
       const operations = plan.operations || [];
       operations.forEach(function (operation) {
-        runOperation(document, operation, resources, issues, childResults);
+        runOwnedOperation(document, operation, resources, issues, childResults);
         appliedCount += 1;
       });
 
@@ -2903,6 +3241,7 @@
       buildPaginationMap: buildPaginationMap,
       hashVisible: hashVisible,
       rollbackMutation: rollbackMutation,
+      insertDocumentBreak: insertDocumentBreak,
       recoveryDecision: recoveryDecision,
       createLocalRecoveryController: createLocalRecoveryController,
       runLocalRecovery: runLocalRecovery,
