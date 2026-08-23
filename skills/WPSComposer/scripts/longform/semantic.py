@@ -1479,12 +1479,14 @@ def _resolve_table_citation_text(
         ):
             fallback_text = f"[{target['number']}]"
             pieces.append(fallback_text)
-            citations.append((
+            citation = (
                 target_id,
                 target["node_id"],
                 target["number"],
                 fallback_text,
-            ))
+            )
+            if citation not in citations:
+                citations.append(citation)
         else:
             pieces.append("[REFERENCE_UNRESOLVED 引用目标未解析]")
             degraded = True

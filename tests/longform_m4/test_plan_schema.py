@@ -291,18 +291,21 @@ def test_planned_formula_degradation_rejects_private_diagnostics(
         "data:text/plain;base64,QUJDRA==",
     ],
 )
-def test_quality_anchor_rejects_private_diagnostics(private_text) -> None:
+@pytest.mark.parametrize("field", ["message", "fallbackText"])
+def test_quality_anchor_rejects_private_diagnostics(private_text, field) -> None:
     plan = _plan()
     anchor = next(
         op for op in plan["operations"]
         if op["op"] == "writer.reserve_document_quality_anchor"
     )
-    anchor["args"]["notices"] = [{
+    notice = {
         "code": "CONFIG_VALUE_INVALID",
-        "message": private_text,
+        "message": "Invalid configuration.",
         "fallbackText": "CONFIG_VALUE_INVALID",
         "placement": "document",
-    }]
+    }
+    notice[field] = private_text
+    anchor["args"]["notices"] = [notice]
 
     with pytest.raises(OperationPlanError):
         validate_generation_plan(plan, "writer")

@@ -1348,6 +1348,12 @@ def _cell_citation(value: Any, path: str) -> None:
         _invalid(f"{path}.fallbackText", "numeric citation fallback matching number")
 
 
+def _cell_citations(value: Any, path: str) -> None:
+    _list_of(_cell_citation)(value, path)
+    if len(value) > 10_000:
+        _invalid(path, "at most 10,000 explicit table-cell citations")
+
+
 def _bibliography_text(value: Any, path: str) -> None:
     _m4_text(value, path, maximum=10_000)
     if value != value.strip() or any(char in value for char in "\r\n\t\v\f\u2028\u2029"):
@@ -1562,7 +1568,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
         cellIndentPt=_NONNEGATIVE_NUMBER,
         plannedDegradation=_list_of(_table_degradation),
         cellDegradations=_list_of(_cell_degradation),
-        cellCitations=_list_of(_cell_citation),
+        cellCitations=_cell_citations,
         keepCaptionWithFirstRow=_boolean,
     ),
     "writer.add_equation": _equation_args,

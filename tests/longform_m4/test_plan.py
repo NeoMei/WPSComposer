@@ -483,7 +483,7 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
 :::table {#tab:data caption="Citations"}
 | Citation | Literal |
 |---|---|
-| {{cite:smith}} | ordinary [999] text |
+| {{cite:smith}} then {{cite:smith}} | ordinary [999] text |
 :::
 
 :::bibliography
@@ -502,7 +502,7 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
         if operation["op"] == "writer.add_bibliography"
         for item in operation["args"]["entries"]
     )
-    assert table["args"]["rows"] == [["[1]", "ordinary [999] text"]]
+    assert table["args"]["rows"] == [["[1] then [1]", "ordinary [999] text"]]
     assert table["args"]["cellCitations"] == [{
         "row": 2,
         "column": 1,
