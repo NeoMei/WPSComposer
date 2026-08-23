@@ -1938,24 +1938,38 @@ class WriterComposer(BaseComposer):
         math_range = self._doc.Range(start, end)
         math_range.Text = descriptor["linearText"]
         maths = self._doc.OMaths
-        try:
-            before = int(maths.Count)
-            native = maths.Add(math_range)
-            if native is None:
-                native = self._native_collection_item(maths, before + 1)
-            native.BuildUp()
-            after = int(maths.Count)
-            native_range = native.Range
-            native_start = int(native_range.Start)
-            native_end = int(native_range.End)
-            if (
-                after != before + 1
-                or native_end <= native_start
-                or native_start < start
-                or native_end > end
-            ):
-                raise ValueError("native math verification failed")
-        except Exception:
+        before = int(maths.Count)
+        added_range = maths.Add(math_range)
+        after = int(maths.Count)
+        if added_range is None or after != before + 1:
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+        added_omaths = getattr(added_range, "OMaths", None)
+        if added_omaths is None or int(added_omaths.Count) != 1:
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+        native = self._native_collection_item(added_omaths, 1)
+        document_native = self._native_collection_item(maths, after)
+
+        added_start = int(added_range.Start)
+        added_end = int(added_range.End)
+        native_range = native.Range
+        document_range = document_native.Range
+        native_start = int(native_range.Start)
+        native_end = int(native_range.End)
+        document_start = int(document_range.Start)
+        document_end = int(document_range.End)
+        if (
+            added_end <= added_start
+            or added_start < start
+            or added_end > end
+            or native_end <= native_start
+            or native_start < added_start
+            or native_end > added_end
+            or (document_start, document_end) != (native_start, native_end)
+        ):
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+
+        native.BuildUp()
+        if int(maths.Count) != after:
             raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
         center.ParagraphFormat.Alignment = 1
         center.ParagraphFormat.KeepTogether = -1

@@ -417,6 +417,7 @@ class _Range:
         self.End = end
         self.ParagraphFormat = _PF()
         self.Text = ""
+        self.OMaths = _OMathView(()) if "_OMathView" in globals() else None
 
     def Collapse(self, direction):
         self.Start = self.End
@@ -499,6 +500,18 @@ class _OMath:
         self.built += 1
 
 
+class _OMathView:
+    def __init__(self, items):
+        self.items = list(items)
+
+    @property
+    def Count(self):
+        return len(self.items)
+
+    def Item(self, index):
+        return self.items[index - 1]
+
+
 class _OMaths:
     def __init__(self):
         self.items = []
@@ -512,7 +525,10 @@ class _OMaths:
         self.added_ranges.append((rng.Start, rng.End, rng.Text))
         item = _OMath(rng)
         self.items.append(item)
-        return item
+        added_range = _Range(rng.Start, rng.End)
+        added_range.Text = rng.Text
+        added_range.OMaths = _OMathView((item,))
+        return added_range
 
     def Item(self, index):
         return self.items[index - 1]
@@ -616,6 +632,69 @@ def test_writer_omath_count_verification_failure_is_exact_recoverable_code():
             fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
         )
     assert caught.value.code == "EQUATION_INSERT_FAILED"
+
+
+@pytest.mark.parametrize("boundary", ["count", "add", "buildup", "range"])
+def test_writer_unknown_omath_boundary_errors_remain_fatal(boundary):
+    writer, _table, document = _formula_writer()
+
+    class UnknownComError(RuntimeError):
+        pass
+
+    if boundary == "count":
+        class BadCount:
+            @property
+            def Count(self):
+                raise UnknownComError("unknown count failure")
+        document.OMaths = BadCount()
+    elif boundary == "add":
+        class BadAdd(_OMaths):
+            def Add(self, rng):
+                raise UnknownComError("unknown add failure")
+        document.OMaths = BadAdd()
+    elif boundary == "buildup":
+        class BadBuild(_OMath):
+            def BuildUp(self):
+                raise UnknownComError("unknown buildup failure")
+
+        class BadBuildCollection(_OMaths):
+            def Add(self, rng):
+                self.added_ranges.append((rng.Start, rng.End, rng.Text))
+                item = BadBuild(rng)
+                self.items.append(item)
+                added_range = _Range(rng.Start, rng.End)
+                added_range.OMaths = _OMathView((item,))
+                return added_range
+        document.OMaths = BadBuildCollection()
+    else:
+        class BadRangeOMath(_OMath):
+            @property
+            def Range(self):
+                raise UnknownComError("unknown range failure")
+
+            @Range.setter
+            def Range(self, value):
+                pass
+
+        class BadRangeCollection(_OMaths):
+            def Add(self, rng):
+                item = BadRangeOMath(rng)
+                self.items.append(item)
+                added_range = _Range(rng.Start, rng.End)
+                added_range.OMaths = _OMathView((item,))
+                return added_range
+        document.OMaths = BadRangeCollection()
+
+    with pytest.raises(UnknownComError):
+        writer.add_equation_native(
+            renderMode="native-m4",
+            content={"nativeMath": {
+                "syntax": "wps-linear-v1", "linearText": "x+y",
+                "sourceHash": "2" * 64,
+            }},
+            numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+            fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+        )
 
 
 def test_writer_formula_image_failure_is_attempted_once_then_source_is_inside_terminal_notice():
