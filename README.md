@@ -4,7 +4,7 @@
 
 WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS Office 生成高质量排版的 DOCX、PDF、XLSX、PPTX 文档。
 
-> 当前审计状态（2026-08-18）：生成、转换、检查和编辑链路已完成多轮完整审查；测试套件 **821 passed**。本轮加固覆盖原子发布与回滚、WPS 进程安全、macOS JSAPI 会话认证、端到端超时、OOXML/PDF 语义校验以及跨进程验证器资源回收。
+> 当前审计状态（2026-08-23）：DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS WPS 12.1.26055 的 6 类原生样例和 63 页压力文档已连续通过三轮。0.8.0 尚未发布，仍需完成最终 Windows 原生证据门。
 
 ## ✨ 核心特性
 
@@ -68,6 +68,21 @@ generate("slides.md", format="pptx", preset="business", output="slides.pptx")
 # 生成 XLSX 电子表格
 generate("data.md", format="xlsx", output="data.xlsx")
 ```
+
+DOCX/PDF 默认使用长文档引擎。需要临时对比旧 Writer 路径时，可在
+frontmatter 中显式设置（该逃生口已弃用，不能作为协议或引擎错误的自动降级）：
+
+```yaml
+---
+layout_engine: legacy
+---
+```
+
+长文档生命周期共享一个默认 600 秒截止时间，最多进行两次原生生成、
+一次提示补丁和三次 PDF 导出。可恢复的对象级错误会在对应位置留下可见标记；
+`ENGINE_LOST`、协议/能力不匹配、保存、导出、校验或发布失败会立即终止，
+不会转入 legacy，也不会发布半成品。完整语法见
+[`docs/longform-markdown.md`](docs/longform-markdown.md)。
 
 ### 转换、检查与编辑
 
@@ -323,6 +338,7 @@ Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
 - **Windows**：WPS Office 或 MS Office，`pywin32`
 - **macOS**：WPS Office 12.1.26035 或更高版本，Node.js 20+（JSAPI 运行时）
 - **PDF 编辑**：`pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`
+- **DOCX/PDF 长文档质量门**：`Pillow>=10`、`pypdf>=4`、`pdfplumber>=0.11`
 
 ### 可选依赖
 

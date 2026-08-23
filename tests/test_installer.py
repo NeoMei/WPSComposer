@@ -50,6 +50,13 @@ def test_installer_copies_plugin_and_merges_personal_marketplace(tmp_path):
     assert result.destination == codex_home / "plugins" / "wps-composer"
     assert (result.destination / ".codex-plugin" / "plugin.json").is_file()
     assert (result.destination / "skills" / "WPSComposer" / "SKILL.md").is_file()
+    for name in (
+        "windows-verification.md",
+        "longform-markdown.md",
+        "macos-longform-m5-verification.md",
+    ):
+        assert (result.destination / "docs" / name).is_file()
+    assert not (result.destination / "docs" / "superpowers").exists()
     assert not (result.destination / ".git").exists()
     assert not (result.destination / "tests").exists()
     assert not (result.destination / "macos/wps-jsapi-probe/node_modules").exists()

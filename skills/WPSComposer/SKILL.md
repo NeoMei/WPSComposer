@@ -250,13 +250,18 @@ Generate and deliver only the requested artifact format. During development,
 create PDF evidence separately when a native WPS layout change needs visual
 verification; do not make that PDF an automatic public companion output.
 
-## Long-form formulas, citations, and marked recovery (M4)
+## Long-form generation and PDF quality lifecycle (M5)
 
-The M4 long-form pipeline is an advanced Python integration boundary for
-WPSComposer/SuperWriter agents, plugin maintainers, and applications that need
-to inspect a deterministic offline plan before choosing a native executor. It
-is not the normal end-user entry point: ordinary document requests continue to
-use `generate()`, and M4 does not change that routing.
+Public `generate()` now routes DOCX/PDF through the M5 long-form engine by
+default. PPTX/XLSX retain their existing route. An explicit deprecated
+frontmatter escape hatch, `layout_engine: legacy`, selects the old Writer route;
+engine loss, protocol mismatch, save/export failure, or validation failure must
+never fall back to it automatically. The lifecycle uses the public 600-second
+timeout as one absolute deadline and publishes only the requested artifact.
+
+The lower-level API remains available to WPSComposer/SuperWriter agents,
+plugin maintainers, and applications that need to inspect a deterministic
+offline plan before choosing a native executor:
 
 ```python
 from skills.WPSComposer.scripts.longform import (
@@ -352,10 +357,23 @@ terminal source/notice fallback are fatal. A recoverable image-rung failure may
 still roll back into the declared source notice; an unavailable engine stops
 immediately.
 
-M5/final work is separate: PDF-driven quality and bbox mapping, automatic full
-re-layout and notice-only patching, performance gates, migration of public
-`generate()` defaults, real Windows verification, and release/version work.
-M4 does not change the requested-format-only public output rule.
+M5 exports the staged DOCX to PDF for geometry analysis before publication.
+The normalized top-left point-coordinate page model checks blank pages,
+boundaries, headings, captions, images, tables, TOC density, fields, and final
+page utilization. Only high-confidence findings in the closed repair matrix may
+trigger one full relayout; remaining material findings receive at most one
+notice-only patch. The hard caps are two generations, one notice patch, and
+three PDF exports. `Pillow>=10`, `pypdf>=4`, and `pdfplumber>=0.11` are core
+dependencies and are checked before WPS starts.
+
+Recoverable object failures remain visible where the object belongs. Fatal
+conditions including `ENGINE_LOST`, protocol/capability mismatch, cleanup,
+save/export, validation, and publication failure abort without a public partial
+artifact. On macOS WPS 12.1.26055, native formula BuildUp is still honestly
+reported through the marked image/source ladder. Three consecutive real macOS
+M5 gates passed; 0.8.0 remains unreleased until the equivalent Windows gate
+passes. See `docs/longform-markdown.md` and
+`docs/macos-longform-m5-verification.md`.
 
 ## Native heading numbering (docx)
 

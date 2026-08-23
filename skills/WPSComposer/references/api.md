@@ -1,11 +1,29 @@
 # WPS Composer API Reference
 
+## Public DOCX/PDF M5 route
+
+`generate()` keeps its existing signature and absolute-path return. DOCX/PDF
+default to the M5 long-form lifecycle; PPTX/XLSX are unchanged. To compare with
+the deprecated Writer path, set this frontmatter explicitly:
+
+```yaml
+---
+layout_engine: legacy
+---
+```
+
+The escape hatch is never selected automatically. `ENGINE_LOST`, protocol or
+capability mismatch, save/export/validation/publication failure, and missing
+quality dependencies are fatal. The default 600-second timeout is one absolute
+deadline across generation, PDF export, analysis, optional relayout, optional
+notice patch, validation, and atomic publication. Public generation returns
+only the requested DOCX/PDF artifact.
+
 ## Long-form offline plan and optional native execution
 
 This Python API is for WPSComposer/SuperWriter orchestration code, plugin
 maintainers, and advanced integrations that need a deterministic plan before
-starting WPS. Normal users should keep using `generate()`; M4 does not reroute
-that public entry point.
+starting WPS. Normal users should keep using public `generate()`.
 
 ```python
 from skills.WPSComposer.scripts.longform import (
@@ -138,10 +156,14 @@ notices never expose paths, payload/base64,
 resource hashes or locators, bookmark maps, field values/hashes, or exception
 representations.
 
-M5/final work owns PDF geometry/bbox quality checks, deterministic full
-re-layout and notice-only patches, performance gates, public `generate()`
-default migration, the real Windows cross-platform gate, and release/version
-publication. M4 still returns only the artifact format requested by the caller.
+The production M5 coordinator exports an internal PDF and maps its normalized
+top-left point geometry through the native pagination map. Only closed,
+high-confidence repairs may cause one relayout. Lifecycle caps are two native
+generations, one notice-only patch, and three PDF exports. Core analysis
+dependencies are `Pillow>=10`, `pypdf>=4`, and `pdfplumber>=0.11`; absence or an
+unsupported version fails before WPS starts. The public result still contains
+only the artifact format requested by the caller. Real macOS verification is
+complete; the final Windows cross-platform gate and 0.8.0 release remain open.
 
 ## Office-to-PDF conversion
 
