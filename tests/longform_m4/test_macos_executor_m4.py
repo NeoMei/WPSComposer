@@ -829,19 +829,27 @@ assert.ok(text.includes("Formula ref (1-9)"));
 ''')
 
 
-def test_js_omath_accepts_empty_returned_local_collection_with_unique_global_tail() -> None:
+def test_js_omath_recovers_fresh_exact_local_and_never_builds_global_proxy() -> None:
     _run_node(r'''
-let text = "", buildUps = 0;
-function range(start, end) { return {Start: start, End: end, Font: {},
-  ParagraphFormat: {TabStops: {Add: function(){}}},
-  get Text() { return text.slice(start, end); },
-  InsertAfter: function(value) { text += String(value); }}; }
-const globalMath = {get Range() { throw new Error("global Range is not trusted"); },
-  BuildUp: function() { buildUps += 1; }};
+let text = "", buildUps = 0, freshEnabled = true;
+const freshMath = {Range: {Start: 1, End: 4}, BuildUp: function() { buildUps += 1; }};
+function range(start, end) {
+  const result = {Start: start, End: end, Font: {},
+    ParagraphFormat: {TabStops: {Add: function(){}}},
+    get Text() { return text.slice(start, end); },
+    InsertAfter: function(value) { text += String(value); }};
+  if (freshEnabled && start === 1 && end === 4 && document.OMaths.Count === 1) {
+    result.OMaths = {Count: 0, Item: function(index) {
+      if (index === 1) return freshMath;
+      throw new Error("no second local math");
+    }};
+  }
+  return result;
+}
 const local = {Count: 0, Item: function() { throw new Error("missing local proxy"); }};
 const maths = {Count: 0, Add: function() { this.Count = 1;
   return {Start: 1, End: 4, OMaths: local};
-}, Item: function() { return globalMath; }};
+}, Item: function() { throw new Error("global Item must not be read"); }};
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
   Fields: {Add: function(target) { text += "1";
@@ -856,6 +864,7 @@ assert.equal(buildUps, 1);
 assert.ok(text.includes("x+y"));
 
 text = "";
+freshEnabled = false;
 let localBuildUps = 0;
 const truthfulLocalMath = {Range: {Start: 1, End: 4},
   BuildUp: function() { localBuildUps += 1; }};
@@ -883,7 +892,7 @@ assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(docu
   numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
   bookmarkName: "wpsc_eq_" + "a".repeat(24), fallbackText: "x+y"
 }, {}, {ownerNodeId: "eq:wrong", issues: [], childResults: [], controllerOwned: true}),
-error => error.code === "CAPABILITY_MISMATCH");
+error => error.code === "EQUATION_INSERT_FAILED");
 ''')
 
 
@@ -891,6 +900,7 @@ def test_js_omath_success_commits_host_expansion_before_number_and_next_operatio
     _run_node(r'''
 let text = "";
 const writes = [];
+let localMath = null;
 function range(start, end) {
   const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
     ParagraphFormat: {TabStops: {Add: function(){}}},
@@ -903,15 +913,21 @@ function range(start, end) {
     },
     Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
   };
+  if (localMath && start === localMath.Range.Start && end === localMath.Range.End) {
+    value.OMaths = {Count: 0, Item: function() { return localMath; }};
+  }
   return value;
 }
-const globalMath = {Range: {Start: 1, End: 4}, BuildUp: function() {
-  // Real WPS may advance Content.End while the collapsed insertion Range
-  // remains at the smaller end returned by OMaths.Add.
-  text = text.slice(0, 4) + "<OMATHPAD>" + text.slice(4);
+const globalMath = {Range: {Start: 0, End: 20}, BuildUp: function() {
+  throw new Error("global proxy must not build");
 }};
 const maths = {Count: 0, Add: function(target) {
   this.Count = 1;
+  localMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+  // Real WPS may advance Content.End while the collapsed insertion Range
+  // remains at the smaller end returned by OMaths.Add.
+  text = text.slice(0, 4) + "<OMATHPAD>" + text.slice(4);
+  }};
   return {Start: target.Start, End: target.End,
     OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
 }, Item: function() { return globalMath; }};
@@ -952,6 +968,7 @@ def test_js_omath_success_uses_each_growing_host_endpoint_independently() -> Non
 function runCase(staleSource, recoverFirst) {
   let text = "", stale = false, failNext = recoverFirst;
   const writes = [], issues = [], ranges = [];
+  let freshMath = null;
   function reportedEnd(source) {
     return stale && source === staleSource ? 100 : text.length + 1;
   }
@@ -967,6 +984,9 @@ function runCase(staleSource, recoverFirst) {
       },
       Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
     };
+    if (freshMath && start === freshMath.Range.Start && end === freshMath.Range.End) {
+      value.OMaths = {Count: 0, Item: function() { return freshMath; }};
+    }
     ranges.push(value);
     return value;
   }
@@ -974,13 +994,16 @@ function runCase(staleSource, recoverFirst) {
   const maths = {Count: 0, Add: function(target) {
     if (failNext) { failNext = false; return null; }
     this.Count += 1;
-      globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+      freshMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
         text = text.slice(0, target.End) + "<OMATHPAD>" + text.slice(target.End);
         ranges.forEach(function(item) {
           if (item.Start === target.End && item.End === target.End) {
             item.Start += 10; item.End += 10;
           }
         });
+      }};
+    globalMath = {Range: {Start: 0, End: target.End + 20}, BuildUp: function() {
+      throw new Error("global proxy must not build");
     }};
     return {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
@@ -1034,6 +1057,7 @@ def test_js_omath_accepts_wps_content_and_range_coordinate_remap() -> None:
 function runCase(corruptHeldPrefix) {
   let text = "Prefix\r", built = false, formulaStart = -1;
   const ranges = [], writes = [];
+  let freshMath = null;
   function range(start, end) {
     const snapshot = text.slice(start, end);
     const heldBeforeBuild = !built;
@@ -1062,6 +1086,9 @@ function runCase(corruptHeldPrefix) {
       },
       Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
     };
+    if (freshMath && start === freshMath.Range.Start && end === freshMath.Range.End) {
+      value.OMaths = {Count: 0, Item: function() { return freshMath; }};
+    }
     ranges.push(value);
     return value;
   }
@@ -1069,7 +1096,7 @@ function runCase(corruptHeldPrefix) {
   const maths = {Count: 0, Add: function(target) {
     this.Count = 1;
     formulaStart = target.Start;
-    globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+    freshMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
       const oldEnd = target.End;
       text = text.slice(0, oldEnd) + "<OMATHPAD>" + text.slice(oldEnd);
       built = true;
@@ -1078,6 +1105,9 @@ function runCase(corruptHeldPrefix) {
           item.Start += 10; item.End += 10;
         }
       });
+    }};
+    globalMath = {Range: {Start: 0, End: target.End + 20}, BuildUp: function() {
+      throw new Error("global proxy must not build");
     }};
     return {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};

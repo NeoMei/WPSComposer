@@ -1714,6 +1714,12 @@
     if (!addedRange || after !== before + 1) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
+    const addedStart = Number(addedRange.Start);
+    const addedEnd = Number(addedRange.End);
+    if (!Number.isFinite(addedStart) || !Number.isFinite(addedEnd) ||
+        addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
     const addedMaths = addedRange.OMaths;
     const addedLocalCount = Number(addedMaths && addedMaths.Count);
     if (!addedMaths || (addedLocalCount !== 0 && addedLocalCount !== 1)) {
@@ -1729,20 +1735,38 @@
     if (addedLocalCount === 1 && !localMath) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
-    const documentMath = collectionItem(document.OMaths, after);
-    const math = localMath || documentMath;
-    const chosenLocalMath = Boolean(localMath);
-    if (!math || !documentMath || typeof math.BuildUp !== "function") {
+    let chosenMaths = addedMaths;
+    let chosenMathCount = addedLocalCount;
+    if (!localMath) {
+      const freshRange = document.Range(addedStart, addedEnd);
+      if (!freshRange || Number(freshRange.Start) !== addedStart ||
+          Number(freshRange.End) !== addedEnd) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      const freshMaths = freshRange.OMaths;
+      const freshCount = Number(freshMaths && freshMaths.Count);
+      if (!freshMaths || (freshCount !== 0 && freshCount !== 1)) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      try {
+        localMath = collectionItem(freshMaths, 1);
+      } catch (error) {
+        if (freshCount === 1) throw error;
+        localMath = null;
+      }
+      if (!localMath) throw nativeError("EQUATION_INSERT_FAILED");
+      chosenMaths = freshMaths;
+      chosenMathCount = freshCount;
+    }
+    const math = localMath;
+    if (!math || typeof math.BuildUp !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const chosenMathRange = chosenLocalMath ? math.Range : addedRange;
-    const addedStart = Number(addedRange.Start);
-    const addedEnd = Number(addedRange.End);
+    const chosenMathRange = math.Range;
+    if (!chosenMathRange) throw nativeError("EQUATION_INSERT_FAILED");
     const mathStart = Number(chosenMathRange.Start);
     const mathFinish = Number(chosenMathRange.End);
-    if (!Number.isFinite(addedStart) || !Number.isFinite(addedEnd) ||
-        !Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
-        addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd ||
+    if (!Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
         mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
@@ -1750,21 +1774,14 @@
     const builtAddedStart = Number(addedRange.Start);
     const builtAddedEnd = Number(addedRange.End);
     const builtLocalCount = Number(addedMaths.Count);
+    const builtChosenCount = Number(chosenMaths.Count);
     const builtGlobalCount = Number(document.OMaths.Count);
-    let builtLocalMath = null;
-    try {
-      builtLocalMath = collectionItem(addedMaths, 1);
-    } catch (error) {
-      if (chosenLocalMath) throw error;
-      builtLocalMath = null;
-    }
-    const builtGlobalMath = collectionItem(document.OMaths, after);
     const builtStart = Number(chosenMathRange.Start);
     const builtEnd = Number(chosenMathRange.End);
     const builtContent = document.Range(builtAddedStart, builtAddedEnd);
     const builtText = safeString(builtContent && builtContent.Text);
-    if (builtLocalCount !== addedLocalCount || builtGlobalCount !== after ||
-        !builtGlobalMath || (chosenLocalMath && !builtLocalMath) ||
+    if (builtLocalCount !== addedLocalCount ||
+        builtChosenCount !== chosenMathCount || builtGlobalCount !== after ||
         builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
         builtEnd <= builtStart || builtStart < builtAddedStart ||
         builtEnd > builtAddedEnd || !builtContent ||
