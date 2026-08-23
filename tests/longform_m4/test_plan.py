@@ -545,6 +545,9 @@ def test_real_markdown_table_citation_emits_explicit_closed_cell_metadata() -> N
         (r"\includegraphics{assets/private.png}", "assets/private.png"),
         (r"\input{..\secret\x.tex}", "secret"),
         (r"\input{path:../secret/x.tex}", "../secret"),
+        (r"\madeup{secrets/private.tex}", "secrets/private.tex"),
+        (r"\text{secrets/private.tex}", "secrets/private.tex"),
+        (r"\text{assets/../secret/x.tex}", "assets/../secret"),
         ("blob:" + "A" * 76, "A" * 76),
     ],
 )

@@ -2331,6 +2331,7 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
     def own(node_id: Any) -> None:
         if not node_id:
             return
+        _m4_node_id(node_id, "M4 semantic owner nodeId")
         if node_id in owned:
             raise OperationPlanError(f"semantic node is owned more than once: {node_id}")
         owned.add(node_id)
@@ -2346,6 +2347,8 @@ def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
         op = item["op"]
         args = item["args"]
         if op == "writer.configure_section":
+            if item.get("nodeId") is not None:
+                _m4_node_id(item["nodeId"], "M4 section nodeId")
             current_role = args.get("role")
             if bibliography_started and current_role in {"body", "landscape"}:
                 raise OperationPlanError(

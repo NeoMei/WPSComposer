@@ -229,6 +229,7 @@ def test_native_equation_is_closed_and_has_exact_content_one_of(mutate) -> None:
 @pytest.mark.parametrize("linear_text", [
     r"\input{/Users/alice/private.tex}", r"\write18{calc.exe}", r"\madeup{x}",
     "/Users/alice/private.tex", r"C:\private\input.tex", "source=file:///tmp/private.tex",
+    "secrets/private.tex", "assets/../secret/x.tex",
 ])
 def test_native_math_linear_text_is_independently_trusted(linear_text) -> None:
     plan = _plan()
@@ -238,8 +239,17 @@ def test_native_math_linear_text_is_independently_trusted(linear_text) -> None:
         validate_generation_plan(plan, "writer")
 
 
+@pytest.mark.parametrize("linear_text", ["x)", "(x", "{■(x&y)", "([x)]"])
+def test_native_math_linear_text_preserves_valid_asymmetric_delimiters(linear_text) -> None:
+    plan = _plan()
+    equation = next(op for op in plan["operations"] if op["op"] == "writer.add_equation")
+    equation["args"]["content"]["nativeMath"]["linearText"] = linear_text
+    assert validate_generation_plan(plan, "writer")
+
+
 @pytest.mark.parametrize("fallback_text", [
-    "path:/Users/alice/private.tex", r"path:C:\private\input.tex", "A" * 76,
+    "path:/Users/alice/private.tex", r"path:C:\private\input.tex",
+    "secrets/private.tex", "assets/../secret/x.tex", "A" * 76,
 ])
 def test_native_equation_fallback_text_is_privacy_safe(fallback_text) -> None:
     plan = _plan()
@@ -298,6 +308,7 @@ def test_planned_formula_content_suppresses_native_math_but_keeps_shell() -> Non
         "path:/Users/alice/private.tex", "source=file:///Users/alice/private.tex",
         r"path:C:\private\input.tex", r"source=\\server\share\input.tex",
         "path:/home/alice/input.tex", "path:/tmp/input.tex", "path:~/input.tex",
+        "secrets/private.tex", "assets/../secret/x.tex",
         "A" * 76, "A" * 76 + "\n" + "B" * 76, "blob:" + "A" * 76,
     ],
 )
@@ -327,6 +338,7 @@ def test_planned_formula_degradation_rejects_private_diagnostics(
         "path:/Users/alice/private.tex", "source=file:///Users/alice/private.tex",
         r"path:C:\private\input.tex", r"source=\\server\share\input.tex",
         "path:/home/alice/input.tex", "path:/tmp/input.tex", "path:~/input.tex",
+        "secrets/private.tex", "assets/../secret/x.tex",
         "A" * 76, "A" * 76 + "\n" + "B" * 76, "blob:" + "A" * 76,
     ],
 )
@@ -396,7 +408,8 @@ def test_privacy_checks_do_not_reject_short_text_or_logical_node_slashes() -> No
     bibliography["args"]["entries"][0]["nodeId"] = "scheme:logical/entry:1"
     anchor = next(op for op in plan["operations"] if op["op"] == "writer.reserve_document_quality_anchor")
     anchor["args"]["notices"] = [{
-        "code": "SAFE_NOTICE", "message": "abc123", "fallbackText": "short-safe", "placement": "document",
+        "code": "SAFE_NOTICE", "message": "abc123 and/or ratio a/b",
+        "fallbackText": "short-safe", "placement": "document",
     }]
     assert validate_generation_plan(plan, "writer")
 
@@ -437,6 +450,24 @@ def test_m4_node_ids_reject_absolute_paths_and_uri_disguises(node_id) -> None:
         for run in op["args"]["runs"] if run["type"] == "citation"
     )
     citation["targetNodeId"] = node_id
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan, "writer")
+
+
+@pytest.mark.parametrize(
+    "op_name,node_id",
+    [
+        ("writer.add_cross_reference", "/Users/alice/body.md"),
+        ("writer.add_equation", "file:///Users/alice/formula.tex"),
+        ("writer.configure_section", r"C:\private\section"),
+    ],
+)
+def test_m4_top_level_semantic_and_section_node_ids_are_privacy_safe(
+    op_name, node_id
+) -> None:
+    plan = _plan()
+    operation = next(op for op in plan["operations"] if op["op"] == op_name)
+    operation["nodeId"] = node_id
     with pytest.raises(OperationPlanError):
         validate_generation_plan(plan, "writer")
 
