@@ -1009,6 +1009,13 @@
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
     const documentPrefix = exactDocumentRange(document, 0, state.position);
+    const immutablePrefixEnd = Math.max(0, state.position - 1);
+    const immutablePrefix = state.position === 0
+      ? null : exactDocumentRange(document, 0, immutablePrefixEnd);
+    const paragraphImmutableEnd = Math.max(snapshot.start, state.position - 1);
+    const paragraphImmutable = state.position === 0 ||
+      paragraphImmutableEnd === snapshot.start
+      ? null : exactDocumentRange(document, snapshot.start, paragraphImmutableEnd);
     if (typeof documentPrefix.Text !== "string") {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
@@ -1020,15 +1027,16 @@
       lastParagraphEnd: snapshot.end,
       lastParagraphText: snapshot.text,
       lastParagraphSignature: snapshot.signature,
-      lastParagraphPrefixRange: snapshot.text === "" && snapshot.start === state.position
-        ? null : exactDocumentRange(document, snapshot.start, state.position),
-      documentPrefixRange: documentPrefix,
+      lastParagraphImmutableRange: paragraphImmutable,
+      lastParagraphImmutableText: paragraphImmutable ? paragraphImmutable.Text : "",
+      documentImmutableRange: immutablePrefix,
+      documentImmutableText: immutablePrefix ? immutablePrefix.Text : "",
       documentPrefixText: documentPrefix.Text,
       documentPrefixSignature: checkpointTextSignature(documentPrefix.Text)
     };
   }
 
-  function validateRollbackPrefix(document, token) {
+  function validateRollbackPrefix(document, token, afterRollback) {
     const start = Number(token.start);
     const paragraphStart = Number(token.lastParagraphStart);
     const paragraphEnd = Number(token.lastParagraphEnd);
@@ -1044,20 +1052,48 @@
         typeof expectedPrefixSignature !== "string") {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
+    if (afterRollback === true) {
+      if (!(expectedText === "" && paragraphStart === start)) {
+        const restoredParagraph = exactDocumentRange(document, paragraphStart, start);
+        if (typeof restoredParagraph.Text !== "string" ||
+            restoredParagraph.Text !== expectedText ||
+            checkpointTextSignature(restoredParagraph.Text) !== expectedSignature) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+      }
+      const restoredPrefix = exactDocumentRange(document, 0, start);
+      if (typeof restoredPrefix.Text !== "string" ||
+          restoredPrefix.Text !== expectedPrefixText ||
+          checkpointTextSignature(restoredPrefix.Text) !== expectedPrefixSignature) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      return;
+    }
     if (expectedText === "" && paragraphStart === start) {
       if (expectedSignature !== checkpointTextSignature("")) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
     } else {
-      const prefix = token.lastParagraphPrefixRange;
-      if (typeof prefix.Text !== "string" || prefix.Text !== expectedText ||
-          checkpointTextSignature(prefix.Text) !== expectedSignature) {
+      const paragraphGuard = token.lastParagraphImmutableRange;
+      const paragraphGuardText = token.lastParagraphImmutableText;
+      const emptyParagraphGuard = !paragraphGuard && paragraphGuardText === "" &&
+        start - paragraphStart <= 1;
+      if (!emptyParagraphGuard && (!paragraphGuard ||
+          typeof paragraphGuardText !== "string" ||
+          typeof paragraphGuard.Text !== "string" ||
+          paragraphGuard.Text !== paragraphGuardText ||
+          checkpointTextSignature(paragraphGuard.Text) !==
+            checkpointTextSignature(paragraphGuardText))) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
     }
-    const documentPrefix = token.documentPrefixRange;
-    if (typeof documentPrefix.Text !== "string" || documentPrefix.Text !== expectedPrefixText ||
-        checkpointTextSignature(documentPrefix.Text) !== expectedPrefixSignature) {
+    const documentGuard = token.documentImmutableRange;
+    const documentGuardText = token.documentImmutableText;
+    if (start > 0 && (!documentGuard || typeof documentGuardText !== "string" ||
+        typeof documentGuard.Text !== "string" ||
+        documentGuard.Text !== documentGuardText ||
+        checkpointTextSignature(documentGuard.Text) !==
+          checkpointTextSignature(documentGuardText))) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
   }
@@ -1071,12 +1107,12 @@
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
       if (token && token.preserveParagraphBoundary === true) {
-        validateRollbackPrefix(document, token);
+        validateRollbackPrefix(document, token, false);
       }
       if (stop > start) document.Range(start, stop).Delete();
       setAppendCursor(document, start);
       if (token && token.preserveParagraphBoundary === true) {
-        validateRollbackPrefix(document, token);
+        validateRollbackPrefix(document, token, true);
         const currentCount = paragraphCount(document);
         const expectedCount = Number(token.paragraphCount);
         if (currentCount === null || !Number.isInteger(expectedCount) ||
@@ -1725,7 +1761,7 @@
     let successPrefixText = null;
     if (document._wpscRunOwnsAppendCursor === true) {
       successHostBefore = observedHostDocumentEnds(document);
-      successPrefixRange = exactDocumentRange(document, 0, start);
+      successPrefixRange = exactDocumentRange(document, 0, layout.start);
       if (typeof successPrefixRange.Text !== "string") {
         throw nativeError("CAPABILITY_MISMATCH");
       }

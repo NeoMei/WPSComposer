@@ -1011,7 +1011,7 @@ runCase("paragraph", false);
 def test_js_omath_holds_prefix_range_across_wps_coordinate_remap() -> None:
     _run_node(r'''
 function runCase(corruptHeldPrefix) {
-  let text = "Prefix\r", built = false;
+  let text = "Prefix\r", built = false, formulaStart = -1;
   const ranges = [];
   function range(start, end) {
     const snapshot = text.slice(start, end);
@@ -1020,7 +1020,11 @@ function runCase(corruptHeldPrefix) {
       ParagraphFormat: {TabStops: {Add: function(){}}},
       get Text() {
         if (heldBeforeBuild && this.Start === 0 && built) {
-          return corruptHeldPrefix ? snapshot.slice(0, -1) : snapshot;
+          if (this.End === formulaStart) return snapshot + "<ABSORBED>";
+          if (corruptHeldPrefix && this.End === formulaStart - 1) {
+            return snapshot.slice(0, -1);
+          }
+          return snapshot;
         }
         // Rebuilding the old numeric prefix after BuildUp is deliberately
         // wrong, matching WPS's remapped character coordinates.
@@ -1042,6 +1046,7 @@ function runCase(corruptHeldPrefix) {
   let globalMath = null;
   const maths = {Count: 0, Add: function(target) {
     this.Count = 1;
+    formulaStart = target.Start;
     globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
       const oldEnd = target.End;
       text = text.slice(0, oldEnd) + "<OMATHPAD>" + text.slice(oldEnd);
