@@ -325,22 +325,39 @@
     return {content: contentPosition, paragraph: paragraphPosition};
   }
 
+  function documentContentText(document, failureCode) {
+    const content = document && document.Content;
+    if (!content || typeof content.Text !== "string") {
+      throw nativeError(failureCode || "CAPABILITY_MISMATCH");
+    }
+    return content.Text;
+  }
+
+  function logicalContentPrefix(text) {
+    let value = safeString(text);
+    if (value.slice(-1) === "\u0007") value = value.slice(0, -1);
+    if (value.slice(-1) === "\r") value = value.slice(0, -1);
+    return value;
+  }
+
+  function optionalCollectionCount(collection, failureCode) {
+    if (!collection || collection.Count === undefined) return null;
+    const count = Number(collection.Count);
+    if (!Number.isInteger(count) || count < 0) throw nativeError(failureCode);
+    return count;
+  }
+
   function commitSuccessfulHostAdvance(
-    document, hostBefore, minimumEnd, prefixRange, prefixText
+    document, hostBefore, minimumEnd, contentPrefix
   ) {
     if (!document || document._wpscRunOwnsAppendCursor !== true) return;
     const cursor = appendCursorRange(document);
     if (!cursor || !hostBefore || !Number.isInteger(minimumEnd) ||
-        !prefixRange || typeof prefixText !== "string") {
+        typeof contentPrefix !== "string") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const prefixStart = Number(prefixRange.Start);
-    const prefixEnd = Number(prefixRange.End);
-    const currentPrefixText = prefixRange.Text;
-    if (!Number.isInteger(prefixStart) || !Number.isInteger(prefixEnd) ||
-        prefixStart !== 0 || prefixEnd < prefixStart || prefixEnd > cursor.End ||
-        typeof currentPrefixText !== "string" || currentPrefixText !== prefixText ||
-        checkpointTextSignature(currentPrefixText) !== checkpointTextSignature(prefixText)) {
+    const currentContent = documentContentText(document, "EQUATION_INSERT_FAILED");
+    if (currentContent.slice(0, contentPrefix.length) !== contentPrefix) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const hostAfter = observedHostDocumentEnds(document);
@@ -1002,123 +1019,72 @@
     return Number.isInteger(count) && count > 0 ? count : null;
   }
 
-  function paragraphSafeRollbackToken(document, state) {
+  function paragraphSafeRollbackToken(document, state, countKeys) {
     const count = paragraphCount(document);
-    const snapshot = state && state.lastParagraph;
-    if (count === null || !snapshot) {
+    if (count === null || !state || !Number.isInteger(state.position)) {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
-    const documentPrefix = exactDocumentRange(document, 0, state.position);
-    const immutablePrefixEnd = Math.max(0, state.position - 1);
-    const immutablePrefix = state.position === 0
-      ? null : exactDocumentRange(document, 0, immutablePrefixEnd);
-    const paragraphImmutableEnd = Math.max(snapshot.start, state.position - 1);
-    const paragraphImmutable = state.position === 0 ||
-      paragraphImmutableEnd === snapshot.start
-      ? null : exactDocumentRange(document, snapshot.start, paragraphImmutableEnd);
-    if (typeof documentPrefix.Text !== "string") {
-      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
-    }
+    const contentText = documentContentText(
+      document, "LOCAL_MUTATION_CHECKPOINT_FAILED"
+    );
+    const counts = {};
+    (countKeys || []).forEach(function (key) {
+      const collections = {
+        omaths: "OMaths", inlineShapes: "InlineShapes",
+        tables: "Tables", fields: "Fields"
+      };
+      counts[key] = optionalCollectionCount(
+        document[collections[key]], "LOCAL_MUTATION_CHECKPOINT_FAILED"
+      );
+    });
     return {
       start: state.position,
+      anchorRange: exactDocumentRange(document, state.position, state.position),
       paragraphCount: count,
       preserveParagraphBoundary: true,
-      lastParagraphStart: snapshot.start,
-      lastParagraphEnd: snapshot.end,
-      lastParagraphText: snapshot.text,
-      lastParagraphSignature: snapshot.signature,
-      lastParagraphImmutableRange: paragraphImmutable,
-      lastParagraphImmutableText: paragraphImmutable ? paragraphImmutable.Text : "",
-      documentImmutableRange: immutablePrefix,
-      documentImmutableText: immutablePrefix ? immutablePrefix.Text : "",
-      documentPrefixText: documentPrefix.Text,
-      documentPrefixSignature: checkpointTextSignature(documentPrefix.Text)
+      contentText: contentText,
+      contentSignature: checkpointTextSignature(contentText),
+      collectionCounts: counts
     };
   }
 
-  function validateRollbackPrefix(document, token, afterRollback) {
-    const start = Number(token.start);
-    const paragraphStart = Number(token.lastParagraphStart);
-    const paragraphEnd = Number(token.lastParagraphEnd);
-    const expectedText = token.lastParagraphText;
-    const expectedSignature = token.lastParagraphSignature;
-    const expectedPrefixText = token.documentPrefixText;
-    const expectedPrefixSignature = token.documentPrefixSignature;
-    if (!Number.isInteger(start) || !Number.isInteger(paragraphStart) ||
-        !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
-        paragraphEnd <= paragraphStart || paragraphStart > start ||
-        typeof expectedText !== "string" || typeof expectedSignature !== "string" ||
-        typeof expectedPrefixText !== "string" ||
-        typeof expectedPrefixSignature !== "string") {
+  function validateRollbackSnapshot(document, token) {
+    const restored = documentContentText(document, "LOCAL_MUTATION_ROLLBACK_FAILED");
+    if (restored !== token.contentText ||
+        checkpointTextSignature(restored) !== token.contentSignature ||
+        paragraphCount(document) !== token.paragraphCount) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
     }
-    if (afterRollback === true) {
-      if (!(expectedText === "" && paragraphStart === start)) {
-        const restoredParagraph = exactDocumentRange(document, paragraphStart, start);
-        if (typeof restoredParagraph.Text !== "string" ||
-            restoredParagraph.Text !== expectedText ||
-            checkpointTextSignature(restoredParagraph.Text) !== expectedSignature) {
-          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-        }
-      }
-      const restoredPrefix = exactDocumentRange(document, 0, start);
-      if (typeof restoredPrefix.Text !== "string" ||
-          restoredPrefix.Text !== expectedPrefixText ||
-          checkpointTextSignature(restoredPrefix.Text) !== expectedPrefixSignature) {
+    const expected = token.collectionCounts || {};
+    [
+      ["omaths", document.OMaths],
+      ["inlineShapes", document.InlineShapes],
+      ["tables", document.Tables],
+      ["fields", document.Fields]
+    ].forEach(function (item) {
+      if (hasOwn(expected, item[0]) && expected[item[0]] !== null &&
+          optionalCollectionCount(item[1], "LOCAL_MUTATION_ROLLBACK_FAILED") !==
+            expected[item[0]]) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
-      return;
-    }
-    if (expectedText === "" && paragraphStart === start) {
-      if (expectedSignature !== checkpointTextSignature("")) {
-        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-      }
-    } else {
-      const paragraphGuard = token.lastParagraphImmutableRange;
-      const paragraphGuardText = token.lastParagraphImmutableText;
-      const emptyParagraphGuard = !paragraphGuard && paragraphGuardText === "" &&
-        start - paragraphStart <= 1;
-      if (!emptyParagraphGuard && (!paragraphGuard ||
-          typeof paragraphGuardText !== "string" ||
-          typeof paragraphGuard.Text !== "string" ||
-          paragraphGuard.Text !== paragraphGuardText ||
-          checkpointTextSignature(paragraphGuard.Text) !==
-            checkpointTextSignature(paragraphGuardText))) {
-        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-      }
-    }
-    const documentGuard = token.documentImmutableRange;
-    const documentGuardText = token.documentImmutableText;
-    if (start > 0 && (!documentGuard || typeof documentGuardText !== "string" ||
-        typeof documentGuard.Text !== "string" ||
-        documentGuard.Text !== documentGuardText ||
-        checkpointTextSignature(documentGuard.Text) !==
-          checkpointTextSignature(documentGuardText))) {
-      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-    }
+    });
   }
 
   function rollbackMutation(document, checkpoint, end) {
     const token = checkpoint && typeof checkpoint === "object" ? checkpoint : null;
-    const start = token ? Number(token.start) : Number(checkpoint);
+    const anchor = token && token.anchorRange;
+    const start = token ? Number(anchor && anchor.Start) : Number(checkpoint);
     try {
       const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
-      if (!Number.isInteger(start) || start < 0 || !Number.isInteger(stop) || stop < start) {
+      if (!Number.isInteger(start) || start < 0 ||
+          (token && start !== Number(token.start)) ||
+          !Number.isInteger(stop) || stop < start) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-      }
-      if (token && token.preserveParagraphBoundary === true) {
-        validateRollbackPrefix(document, token, false);
       }
       if (stop > start) document.Range(start, stop).Delete();
       setAppendCursor(document, start);
       if (token && token.preserveParagraphBoundary === true) {
-        validateRollbackPrefix(document, token, true);
-        const currentCount = paragraphCount(document);
-        const expectedCount = Number(token.paragraphCount);
-        if (currentCount === null || !Number.isInteger(expectedCount) ||
-            expectedCount <= 0 || currentCount !== expectedCount) {
-          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
-        }
+        validateRollbackSnapshot(document, token);
       }
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1150,7 +1116,9 @@
     rollbackMutation(document, checkpoint, stop);
   }
 
-  function checkpointRecoverableMutation(document, preserveParagraphBoundary) {
+  function checkpointRecoverableMutation(
+    document, preserveParagraphBoundary, countKeys
+  ) {
     try {
       if (!document || typeof document.Range !== "function") {
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
@@ -1165,7 +1133,7 @@
         throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
       }
       return preserveParagraphBoundary
-        ? paragraphSafeRollbackToken(document, state) : start;
+        ? paragraphSafeRollbackToken(document, state, countKeys) : start;
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
     }
@@ -1751,21 +1719,20 @@
     if (!document.OMaths || typeof document.OMaths.Add !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
+    let successContentPrefix = null;
+    if (document._wpscRunOwnsAppendCursor === true) {
+      successContentPrefix = logicalContentPrefix(
+        documentContentText(document, "CAPABILITY_MISMATCH")
+      );
+    }
     const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
     const linearText = safeString(nativeMath.linearText);
     insertInlineText(document, linearText);
     const mathEnd = currentPosition(document);
     let successHostBefore = null;
-    let successPrefixRange = null;
-    let successPrefixText = null;
     if (document._wpscRunOwnsAppendCursor === true) {
       successHostBefore = observedHostDocumentEnds(document);
-      successPrefixRange = exactDocumentRange(document, 0, layout.start);
-      if (typeof successPrefixRange.Text !== "string") {
-        throw nativeError("CAPABILITY_MISMATCH");
-      }
-      successPrefixText = successPrefixRange.Text;
     }
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
@@ -1835,7 +1802,7 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     commitSuccessfulHostAdvance(
-      document, successHostBefore, builtAddedEnd, successPrefixRange, successPrefixText
+      document, successHostBefore, builtAddedEnd, successContentPrefix
     );
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
@@ -1884,7 +1851,9 @@
       }
       let imageCheckpoint;
       try {
-        imageCheckpoint = checkpointRecoverableMutation(document, true);
+        imageCheckpoint = checkpointRecoverableMutation(
+          document, true, ["inlineShapes", "fields"]
+        );
       } catch (error) {
         throw nativeError("CAPABILITY_MISMATCH");
       }
@@ -2974,8 +2943,18 @@
       });
       recoverable = true;
     }
+    const equationArgs = operation.args || {};
+    const plannedEquation = Boolean(
+      equationArgs.content && equationArgs.content.plannedDegradation
+    );
     const checkpoint = recoverable ? checkpointRecoverableMutation(
-      document, opName === "writer.add_equation"
+      document,
+      opName === "writer.add_equation",
+      opName === "writer.add_equation"
+        ? (plannedEquation
+          ? ["inlineShapes", "fields"]
+          : ["omaths", "inlineShapes", "fields"])
+        : []
     ) : null;
     if (deferred) {
       recoverOperation(

@@ -452,7 +452,7 @@ const maths = {
   Item: function(index) { return this.items[index - 1]; }
 };
 const document = {
-  get Content() { return {End: text.length + 1}; },
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
   Range: makeRange,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: maths,
@@ -495,7 +495,7 @@ function makeRange(start, end) {
   };
 }
 const document = {
-  get Content() { return {End: text.length + 1}; }, Range: makeRange,
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: makeRange,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
@@ -534,7 +534,7 @@ function makeRange(start, end) {
   return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: format,
     InsertAfter: function(value) { text += String(value); this.End = text.length; }};
 }
-const document = {get Content() { return {End: text.length + 1}; }, Range: makeRange};
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: makeRange};
 const context = {ownerNodeId: "p:one", issues: [], childResults: [], controllerOwned: true};
 window.WPSComposerLongformV2.__test.addCitationParagraph(document, {runs: [
   {type: "text", text: "See "},
@@ -593,7 +593,7 @@ const context = {ownerNodeId: "eq:one", issues: [], childResults: [], controller
 const native = {Range: {Start: 1, End: 4}, BuildUp: function() { this.Range.End = 99; }};
 const escaping = {Count: 0, Item: function() { return native; },
   Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: {Count: 1, Item: function() { return native; }}}; }};
-const document = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: escaping,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range, OMaths: escaping,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {}, context),
   error => error.code === "EQUATION_INSERT_FAILED");
@@ -613,7 +613,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); }, Delete: function() {}}; }
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function(locator) { imageAttempts += 1; assert.equal(locator, "/private/formula.png");
@@ -645,7 +645,7 @@ function makeDocument(addPicture) {
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) { text += String(value); },
     Delete: function() { rollbacks += 1; text = ""; }}; }
-  return {document: {get Content() { return {End: text.length + 1}; }, Range: range,
+  return {document: {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
     Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
     PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
     InlineShapes: {AddPicture: function() { return addPicture(function(value) { text += value; }); }},
@@ -686,7 +686,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { text += String(value); },
   Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
@@ -710,7 +710,7 @@ function range2(start, end) { return {Start: start, End: end, Font: {}, Shading:
   InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
   Delete: function() { rollbackCount += 1; text = ""; }}; }
 const fieldError = new Error("field failed"); fieldError.code = "FIELD_REFRESH_FAILED";
-const document2 = {get Content() { return {End: text.length + 1}; }, Range: range2,
+const document2 = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range2,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function(locator, link, save, target) {
@@ -744,7 +744,7 @@ local = original; globalItem = original;
 const localCollection = {Count: 1, Item: function() { return local; }};
 const globalCollection = {Count: 0, Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: localCollection}; },
   Item: function() { return globalItem; }};
-const document = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: globalCollection,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range, OMaths: globalCollection,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(document, args, {}, context),
   error => error.code === "EQUATION_INSERT_FAILED");
@@ -758,7 +758,7 @@ const unknownMath = {Range: unknownRange, BuildUp: function() { failRange = true
 const unknownLocal = {Count: 1, Item: function() { return unknownMath; }};
 const unknownGlobal = {Count: 0, Add: function() { this.Count = 1; return {Start: 1, End: 4, OMaths: unknownLocal}; },
   Item: function() { return unknownMath; }};
-const unknownDocument = {get Content() { return {End: text.length + 1}; }, Range: range, OMaths: unknownGlobal,
+const unknownDocument = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range, OMaths: unknownGlobal,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(unknownDocument, args, {}, context),
   error => error === unknown);
@@ -780,7 +780,7 @@ const maths = {Count: 0, Add: function() { this.Count = 1; return {
   Start: state.start, End: state.end, OMaths: local
 }; }, Item: function() { return globalWrapper(); }};
 const bookmarks = [], bookmarkByName = Object.create(null);
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
   Fields: {Add: function(target, type, code) {
     if (code.indexOf("REF ") === 0) {
@@ -829,7 +829,7 @@ const local = {Count: 0, Item: function() { throw new Error("missing local proxy
 const maths = {Count: 0, Add: function() { this.Count = 1;
   return {Start: 1, End: 4, OMaths: local};
 }, Item: function() { return globalMath; }};
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
   Fields: {Add: function(target) { text += "1";
     return {Update: function(){}, Result: {Text: "1"}};
@@ -901,7 +901,7 @@ const maths = {Count: 0, Add: function(target) {
     OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
 }, Item: function() { return globalMath; }};
 const document = {
-  get Content() { return {End: text.length + 1}; }, Range: range,
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: 1, Item: function() {
     return {Range: {Start: 0, End: text.length + 1}};
   }}; },
@@ -964,7 +964,7 @@ function runCase(staleSource, recoverFirst) {
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
   }, Item: function() { return globalMath; }};
   const document = {
-    get Content() { return {End: reportedEnd("content")}; }, Range: range,
+    get Content() { return {End: reportedEnd("content"), get Text() { return text; }}; }, Range: range,
     get Paragraphs() { return {
       get Count() { return (text.match(/\r/g) || []).length + 1; },
       Item: function() {
@@ -1060,7 +1060,8 @@ function runCase(corruptHeldPrefix) {
     return {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
   }, Item: function() { return globalMath; }};
-  const document = {get Content() { return {End: built ? 19 : text.length + 1}; },
+  const document = {get Content() { return {End: built ? 19 : text.length + 1,
+    get Text() { return corruptHeldPrefix && built ? "X" + text.slice(1) : text; }}; },
     Range: range,
     get Paragraphs() { return {Count: 2, Item: function() {
       return {Range: {Start: 7, End: text.length + 1}};
@@ -1125,7 +1126,7 @@ const maths = {
 };
 const document = {
   // Real WPS can lag by the length of the most recently inserted run.
-  get Content() { return {End: Math.max(1, text.length + 1 - 9)}; },
+  get Content() { return {End: Math.max(1, text.length + 1 - 9), get Text() { return text; }}; },
   Range: range,
   get Paragraphs() { return {
     get Count() { return (text.match(/\r/g) || []).length + 1; },
@@ -1180,7 +1181,7 @@ const maths = {Count: 0, items: [], Add: function(target) {
 const document = {
   // Both collection views remain stale for the whole session. Only the actual
   // insertion Range returned by WPS advances its End.
-  Content: {End: 1},
+  Content: {End: 1, get Text() { return text; }},
   Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }},
   Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
@@ -1318,7 +1319,7 @@ function makeDocument() {
     };
   }
   const document = {
-    get Content() { return {End: text.length + 1}; }, Range: range,
+    get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
     Paragraphs: {Count: 2, Item: function() {
       return {Range: {Start: 7, End: text.length + 1}};
     }},
@@ -1414,7 +1415,7 @@ function range(start, end) {
   };
 }
 const document = {
-  get Content() { return {End: Math.max(1, text.length + 1 - 9)}; },
+  get Content() { return {End: Math.max(1, text.length + 1 - 9), get Text() { return text; }}; },
   Range: range,
   get Paragraphs() { return {
     get Count() { return (text.match(/\r/g) || []).length + 1; },
@@ -1469,7 +1470,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
 }; }
 const document = {
-  get Content() { return {End: text.length + 1}; }, Range: range,
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: (text.match(/\r/g) || []).length + 1,
     Item: function() {
       const start = text.lastIndexOf("\r") + 1;
@@ -1510,7 +1511,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   },
   Delete: function() { text = text.slice(0, start) + text.slice(end); }
 }; }
-const document = {get Content() { return {End: reportedEnd}; }, Range: range,
+const document = {get Content() { return {End: reportedEnd, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: 1, Item: function() {
     return {Range: {Start: 0, End: reportedEnd}};
   }}; },
@@ -1554,7 +1555,7 @@ function makeDocument() {
     Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
   }; }
   const document = {
-    get Content() { return {End: reportedEnd === null ? text.length + 1 : reportedEnd}; }, Range: range,
+    get Content() { return {End: reportedEnd === null ? text.length + 1 : reportedEnd, get Text() { return text; }}; }, Range: range,
     get Paragraphs() { return {Count: 2, Item: function() {
       return {Range: {Start: 7, End: text.length + 1}};
     }}; },
@@ -1610,6 +1611,16 @@ state.document.InlineShapes = {Count: 0, AddPicture: function(a, b, c, target) {
   this.Count += 1;
   return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
 }};
+const deleteRange = state.document.Range;
+state.document.Range = function(start, end) {
+  const value = deleteRange(start, end);
+  const remove = value.Delete;
+  value.Delete = function() {
+    remove.call(value);
+    state.document.InlineShapes.Count = 0;
+  };
+  return value;
+};
 state.document.Fields = {Add: function() {
   const error = new Error("private field failure");
   error.code = "FIELD_REFRESH_FAILED";
@@ -1641,7 +1652,7 @@ function range(start, end) {
     text = text.slice(0, start);
     if (text.endsWith("\r")) { text = text.slice(0, -1); paragraphCount -= 1; }
   }}; }
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: paragraphCount, Item: function(index) {
     assert.equal(index, paragraphCount);
     const start = text.lastIndexOf("\r") + 1;
@@ -1671,7 +1682,7 @@ let text = "", imageAttempts = 0;
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   InlineShapes: {AddPicture: function() { imageAttempts += 1; return {}; }},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
@@ -1694,7 +1705,7 @@ let text = "";
 function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
   InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
 const fieldError = new Error("reference failed"); fieldError.code = "CROSS_REFERENCE_FAILED";
-const document = {get Content() { return {End: text.length + 1}; }, Range: range,
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Fields: {Add: function() { throw fieldError; }}};
 const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
 const issues = [], children = [];
@@ -1730,7 +1741,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
 const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
 const context = {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true};
 window.WPSComposerLongformV2.__test.addCitationParagraph({
-  get Content() { return {End: text.length + 1}; }, Range: range
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range
 }, {runs: [
   {type: "text", text: "before "},
   {type: "citation", nodeId: "p/cite:0", targetId: "ref:a", targetNodeId: "ref:a",
@@ -1760,7 +1771,7 @@ function range(start, end) {
   return {Start: start, End: end, ParagraphFormat: format,
     InsertAfter: function(value) { text += String(value); }};
 }
-const document = {get Content() { return {End: text.length + 1}; }, Range: range};
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range};
 const api = window.WPSComposerLongformV2.__test;
 api.addBibliographyNative(document, {entries: ["Legacy entry", "[2] Already numbered"], style: "numbered"});
 assert.equal(text, "Legacy entry\r[2] Already numbered\r");
