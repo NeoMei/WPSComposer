@@ -155,7 +155,7 @@ def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
     fixture = report["fixtures"][0]
     assert fixture["fixture"] == "plain_short"
     assert fixture["status"] == "passed"
-    assert fixture["appliedOperations"] == 9
+    assert fixture["appliedOperations"] == 10
     assert Path(fixture["artifact"]).is_file()
     assert report["wpsVersion"] != "unknown"
     assert runtime._activated == ["writer"]

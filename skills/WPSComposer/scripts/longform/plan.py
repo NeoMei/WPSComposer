@@ -12,6 +12,8 @@ from types import SimpleNamespace
 from typing import Any, Optional
 
 from ..document_model import (
+    BibliographyEntry,
+    BlockQuote,
     CaptionBinding,
     DegradationBlock,
     DocumentIssue,
@@ -118,9 +120,15 @@ def build_longform_plan(
     )
 
     _build_begin(state, semantic.document, policy)
-    _build_page_skeleton(state, semantic.document, semantic.config, policy, preflight)
+    _build_page_skeleton(
+        state,
+        semantic.document,
+        semantic.config,
+        policy,
+        preflight,
+        semantic.issues,
+    )
     _build_indexes(state, policy)
-    _build_quality_notices(state, semantic.issues)
     _build_finalize(state)
 
     digest = preflight.manifest.get("digest", "sha256:" + "0" * 64)
@@ -270,6 +278,7 @@ def _build_page_skeleton(
     config: Any,
     policy: LongformPolicy,
     preflight: ResourcePreflight,
+    issues: tuple[DocumentIssue, ...],
 ) -> None:
     """Emit configure_section operations and render each role's content."""
     skeleton = build_page_policy(document, config, policy)
@@ -278,10 +287,15 @@ def _build_page_skeleton(
 
     state.has_figures, state.has_tables = _scan_document_indexes(document)
 
+    anchor_emitted = False
     for index, section_policy in enumerate(skeleton.sections):
         if section_policy.role == "cover":
             _emit_configure_section(state, index, section_policy, landscape=False)
             continue
+
+        if not anchor_emitted:
+            _build_quality_anchor(state, issues)
+            anchor_emitted = True
 
         if section_policy.role == "front_matter":
             _emit_configure_section(state, index, section_policy, landscape=False)
@@ -305,6 +319,9 @@ def _build_page_skeleton(
         for section in sections:
             _render_section(state, section, policy, preflight)
 
+    if not anchor_emitted:
+        _build_quality_anchor(state, issues)
+
 
 def _render_front_matter(
     state: _BuilderState,
@@ -317,7 +334,7 @@ def _render_front_matter(
             text = paragraph.plain_text
             if text:
                 paragraph_node_id = paragraph.node_id or f"doc:abstract:{index}"
-                if any(_is_resolved_reference(span) for span in paragraph.spans):
+                if any(_has_structured_inline_run(span) for span in paragraph.spans):
                     _render_cross_reference_paragraph(
                         state, paragraph, paragraph_node_id
                     )
@@ -415,7 +432,7 @@ def _render_element(
         return
 
     if isinstance(node, Paragraph):
-        if any(_is_resolved_reference(span) for span in node.spans):
+        if any(_has_structured_inline_run(span) for span in node.spans):
             _render_cross_reference_paragraph(state, node, node_id)
         else:
             state.add(
@@ -425,7 +442,7 @@ def _render_element(
             )
     elif isinstance(node, ListBlock):
         if any(
-            _is_resolved_reference(span)
+            _has_structured_inline_run(span)
             for item in node.items
             for span in item
         ):
@@ -463,13 +480,38 @@ def _render_element(
     elif isinstance(node, SemanticTableBlock):
         _render_semantic_table(state, node, node_id)
     elif isinstance(node, (FormulaBlock, MathBlock)):
-        _render_equation(state, node, node_id)
+        _render_equation(state, node, node_id, preflight)
     elif isinstance(node, ReferenceListBlock):
         _render_bibliography(state, node, node_id)
     elif isinstance(node, DegradationBlock):
         _render_degradation(state, node, node_id)
+    elif isinstance(node, BlockQuote):
+        for index, paragraph in enumerate(node.paragraphs, start=1):
+            paragraph_node_id = paragraph.node_id or f"{node_id or 'blockquote'}/paragraph:{index}"
+            if any(_has_structured_inline_run(span) for span in paragraph.spans):
+                _render_cross_reference_paragraph(
+                    state, paragraph, paragraph_node_id
+                )
+            else:
+                state.add(
+                    "writer.add_paragraph",
+                    {"text": paragraph.plain_text, "style": "Body Text"},
+                    node_id=paragraph_node_id,
+                )
     elif isinstance(node, PageBreakBlock):
         state.add("writer.add_page_break", {}, node_id=node_id)
+        for index, paragraph in enumerate(node.content, start=1):
+            paragraph_node_id = paragraph.node_id or f"{node_id or 'page-break'}/paragraph:{index}"
+            if any(_has_structured_inline_run(span) for span in paragraph.spans):
+                _render_cross_reference_paragraph(
+                    state, paragraph, paragraph_node_id
+                )
+            else:
+                state.add(
+                    "writer.add_paragraph",
+                    {"text": paragraph.plain_text, "style": "Body Text"},
+                    node_id=paragraph_node_id,
+                )
 
 
 def _render_figure(
@@ -604,6 +646,16 @@ def _render_semantic_table(
         "plannedDegradation": [issue.to_dict() for issue in table_issues],
         "keepCaptionWithFirstRow": True,
     }
+    if node.cell_degradations:
+        args["cellDegradations"] = [
+            {
+                "row": item.row,
+                "column": item.column,
+                "code": item.code,
+                "fallbackText": item.fallback_text,
+            }
+            for item in node.cell_degradations
+        ]
     if binding.bookmark_name is not None:
         args["bookmarkName"] = binding.bookmark_name
     state.add(
@@ -627,6 +679,7 @@ def _render_equation(
     state: _BuilderState,
     node: Any,
     node_id: Optional[str],
+    preflight: ResourcePreflight,
 ) -> None:
     state.equation_count += 1
     if not node_id:
@@ -635,17 +688,100 @@ def _render_equation(
     binding = _binding_or_legacy(
         getattr(node, "caption_binding", None), "equation", node_id, True
     )
+    native_math = getattr(node, "native_math", None)
+    content_issue = getattr(node, "content_degradation", None)
+    if native_math is None and content_issue is None:
+        state.add(
+            "writer.add_equation",
+            {
+                "source": source,
+                "numbering": caption_numbering_descriptor("equation", binding),
+                "bookmarkName": binding.bookmark_name,
+                "fallbackText": source,
+            },
+            node_id=node_id,
+            failure_policy={"mode": "fail"},
+        )
+        return
+
+    fallback_text = source or "[FORMULA_MALFORMED 公式源不可用]"
+    if native_math is not None:
+        content = {
+            "nativeMath": {
+                "syntax": native_math.syntax,
+                "linearText": native_math.linear_text,
+                "sourceHash": native_math.source_hash,
+            }
+        }
+    else:
+        code = content_issue.code
+        content = {
+            "plannedDegradation": _formula_degradation_descriptor(
+                code=code,
+                reason="Formula content was rejected during native-math preflight.",
+                fallback_text=fallback_text,
+                fallback_kind="source",
+            )
+        }
+
+    args: dict[str, Any] = {
+        "renderMode": "native-m4",
+        "content": content,
+        "numbering": caption_numbering_descriptor("equation", binding),
+        "bookmarkName": binding.bookmark_name,
+        "fallbackText": fallback_text,
+    }
+    resource_id = preflight.formula_bindings.get(node_id)
+    if resource_id is not None:
+        args["fallbackResource"] = {"fallbackResourceId": resource_id}
+    else:
+        resource_degradation = next(
+            (
+                item
+                for item in preflight.degradations
+                if item.node_id == node_id
+                and item.code == "FORMULA_FALLBACK_IMAGE_UNAVAILABLE"
+            ),
+            None,
+        )
+        if resource_degradation is not None:
+            args["fallbackResource"] = {
+                "fallbackResourcePlannedDegradation": _formula_degradation_descriptor(
+                    code=resource_degradation.code,
+                    reason="Formula fallback image is unavailable.",
+                    fallback_text=(
+                        "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]"
+                    ),
+                    fallback_kind="none",
+                )
+            }
     state.add(
         "writer.add_equation",
-        {
-            "source": source,
-            "numbering": caption_numbering_descriptor("equation", binding),
-            "bookmarkName": binding.bookmark_name,
-            "fallbackText": source,
-        },
+        args,
         node_id=node_id,
-        failure_policy={"mode": "fail"},
+        failure_policy={
+            "mode": "degrade",
+            "recoverableCodes": ["EQUATION_INSERT_FAILED"],
+            "fallback": "explicit-image-then-source-notice",
+        },
     )
+
+
+def _formula_degradation_descriptor(
+    *,
+    code: str,
+    reason: str,
+    fallback_text: str,
+    fallback_kind: str,
+) -> dict[str, Any]:
+    return {
+        "code": code,
+        "placement": "block",
+        "objectLabel": "formula",
+        "reason": reason,
+        "fallbackText": fallback_text,
+        "fallbackKind": fallback_kind,
+    }
 
 
 def _render_cross_reference_paragraph(
@@ -660,6 +796,26 @@ def _render_cross_reference_paragraph(
     if prefix_text:
         runs.append({"type": "text", "text": prefix_text})
     for span in node.spans:
+        if span.citation is not None:
+            citation = span.citation
+            runs.append({
+                "type": "citation",
+                "nodeId": citation.node_id,
+                "targetId": citation.target_id,
+                "targetNodeId": citation.target_node_id,
+                "number": citation.number,
+                "fallbackText": citation.fallback_text,
+            })
+            continue
+        if span.inline_degradation is not None:
+            degradation = span.inline_degradation
+            runs.append({
+                "type": "degradation",
+                "nodeId": degradation.node_id,
+                "code": degradation.code,
+                "fallbackText": degradation.fallback_text,
+            })
+            continue
         if span.cross_reference is None:
             if span.text:
                 runs.append({"type": "text", "text": span.text})
@@ -696,6 +852,14 @@ def _is_resolved_reference(span: Span) -> bool:
         and run.target_node_id
         and run.target_kind in {"fig", "tab", "eq", "figure", "table", "equation"}
         and run.bookmark_name
+    )
+
+
+def _has_structured_inline_run(span: Span) -> bool:
+    return bool(
+        span.citation is not None
+        or span.inline_degradation is not None
+        or _is_resolved_reference(span)
     )
 
 
@@ -770,6 +934,57 @@ def _render_bibliography(
     node: ReferenceListBlock,
     node_id: Optional[str],
 ) -> None:
+    if node.resolved_items:
+        segment = 0
+        batch: list[BibliographyEntry] = []
+
+        def flush_batch() -> None:
+            nonlocal segment
+            if not batch:
+                return
+            segment += 1
+            owner = (
+                node_id
+                if segment == 1
+                else f"{node_id or 'bibliography'}/segment:{segment}"
+            )
+            state.add(
+                "writer.add_bibliography",
+                {
+                    "schemaVersion": 1,
+                    "entries": [
+                        {
+                            "id": item.identifier,
+                            "nodeId": item.node_id,
+                            "number": item.number,
+                            "text": item.text,
+                            "cited": item.cited,
+                        }
+                        for item in batch
+                    ],
+                    "style": "numeric",
+                    "hangingIndentPt": 18.0,
+                    "leftIndentPt": 18.0,
+                    "spaceAfterPt": 6.0,
+                },
+                node_id=owner,
+                failure_policy={
+                    "mode": "degrade",
+                    "recoverableCodes": ["BIBLIOGRAPHY_INSERT_FAILED"],
+                    "fallback": "notice",
+                },
+            )
+            batch.clear()
+
+        for item in node.resolved_items:
+            if isinstance(item, BibliographyEntry):
+                batch.append(item)
+            elif isinstance(item, DegradationBlock):
+                flush_batch()
+                _render_degradation(state, item, item.node_id)
+        flush_batch()
+        return
+
     entries = [line.strip() for line in node.entries if line.strip()]
     if entries:
         state.add(
@@ -842,7 +1057,7 @@ def _build_indexes(state: _BuilderState, policy: LongformPolicy) -> None:
         )
 
 
-def _build_quality_notices(
+def _build_quality_anchor(
     state: _BuilderState,
     issues: tuple[DocumentIssue, ...],
 ) -> None:
@@ -856,12 +1071,12 @@ def _build_quality_notices(
         for issue in issues
         if getattr(issue, "placement", "document") == "document"
     ]
-    if notices:
-        state.add(
-            "writer.add_document_quality_notice",
-            {"notices": notices},
-            node_id="doc:quality",
-        )
+    state.add(
+        "writer.reserve_document_quality_anchor",
+        {"title": "生成质量提示", "notices": notices},
+        node_id="doc:quality",
+        failure_policy={"mode": "fail"},
+    )
 
 
 def _build_finalize(state: _BuilderState) -> None:

@@ -58,6 +58,10 @@
     }
   },
   {
+    "op": "writer.reserve_document_quality_anchor",
+    "args": {}
+  },
+  {
     "op": "writer.configure_section",
     "args": {
       "role": "body",

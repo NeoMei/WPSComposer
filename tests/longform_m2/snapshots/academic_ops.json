@@ -58,6 +58,10 @@
     }
   },
   {
+    "op": "writer.reserve_document_quality_anchor",
+    "args": {}
+  },
+  {
     "op": "writer.configure_section",
     "args": {
       "role": "front_matter",
@@ -258,45 +262,6 @@
     "args": {
       "text": "决策模型综合考虑多维特征。",
       "style": "Body Text"
-    }
-  },
-  {
-    "op": "writer.add_document_quality_notice",
-    "args": {
-      "notices": [
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        },
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        }
-      ]
     }
   },
   {

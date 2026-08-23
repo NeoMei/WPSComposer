@@ -58,6 +58,10 @@
     }
   },
   {
+    "op": "writer.reserve_document_quality_anchor",
+    "args": {}
+  },
+  {
     "op": "writer.configure_section",
     "args": {
       "role": "front_matter",
@@ -126,6 +130,13 @@
     "args": {}
   },
   {
+    "op": "writer.add_paragraph",
+    "args": {
+      "text": "本页断开后的内容不应丢失。",
+      "style": "Body Text"
+    }
+  },
+  {
     "op": "writer.add_heading",
     "args": {
       "text": "1.1 后续内容",
@@ -139,17 +150,6 @@
     "args": {
       "text": "这是分页符之后的内容，应继续出现在下一页。",
       "style": "Body Text"
-    }
-  },
-  {
-    "op": "writer.add_document_quality_notice",
-    "args": {
-      "notices": [
-        {
-          "code": "HEADING_PREFIX_AMBIGUOUS",
-          "placement": "document"
-        }
-      ]
     }
   },
   {

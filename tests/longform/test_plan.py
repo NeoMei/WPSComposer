@@ -494,7 +494,7 @@ def test_build_longform_plan_emits_degradation_for_preflight_failure(tmp_path):
     assert children[0]["plannedDegradation"]["code"] == "RESOURCE_ABSOLUTE_PATH_OUTSIDE"
 
 
-def test_build_longform_plan_includes_document_quality_notices():
+def test_build_longform_plan_reserves_document_quality_anchor():
     issue = DocumentIssue(
         code="CONFIG_VALUE_INVALID",
         message="Invalid config.",
@@ -504,9 +504,15 @@ def test_build_longform_plan_includes_document_quality_notices():
     preflight = preflight_resources([], ".")
     plan = build_longform_plan(semantic, preflight)
     ops = plan.to_dict()["operations"]
-    notice_ops = [op for op in ops if op["op"] == "writer.add_document_quality_notice"]
-    assert len(notice_ops) == 1
-    assert notice_ops[0]["args"]["notices"][0]["code"] == "CONFIG_VALUE_INVALID"
+    anchors = [
+        op for op in ops
+        if op["op"] == "writer.reserve_document_quality_anchor"
+    ]
+    assert len(anchors) == 1
+    assert anchors[0]["nodeId"] == "doc:quality"
+    assert anchors[0]["failurePolicy"] == {"mode": "fail"}
+    assert anchors[0]["args"]["notices"][0]["code"] == "CONFIG_VALUE_INVALID"
+    assert not [op for op in ops if op["op"] == "writer.add_document_quality_notice"]
 
 
 def test_build_longform_plan_includes_inline_degradation():

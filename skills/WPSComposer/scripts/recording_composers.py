@@ -107,6 +107,7 @@ class RecordingWriterComposer:
             "writer.add_inline_degradation",
             "writer.add_degradation_notice",
             "writer.add_document_quality_notice",
+            "writer.reserve_document_quality_anchor",
             "writer.finalize_fields",
         }:
             self._protocol_version = 2
@@ -500,7 +501,7 @@ class RecordingWriterComposer:
         self, *, node_id, caption, headers, rows, alignments=None,
         numbering=None, bookmarkName=None, style="grid", orientation="portrait",
         borderSpec=None, merges=None, repeatHeader=True, allowRowSplit=False,
-        cellIndentPt=0.0, plannedDegradation=None,
+        cellIndentPt=0.0, plannedDegradation=None, cellDegradations=None,
         keepCaptionWithFirstRow=True, failure_policy=None,
     ):
         column_count = len(headers)
@@ -528,6 +529,7 @@ class RecordingWriterComposer:
             allowRowSplit=allowRowSplit,
             cellIndentPt=cellIndentPt,
             plannedDegradation=plannedDegradation or [],
+            cellDegradations=cellDegradations,
             keepCaptionWithFirstRow=keepCaptionWithFirstRow,
             failure_policy={
                 "mode": "degrade",
@@ -541,7 +543,32 @@ class RecordingWriterComposer:
             },
         )
 
-    def add_equation(self, *, node_id, source, number=None, numbering=None, bookmarkName=None, fallback_text=None, failure_policy=None):
+    def add_equation(
+        self, *, node_id, source=None, number=None, numbering=None,
+        bookmarkName=None, fallback_text=None, render_mode=None, content=None,
+        fallback_resource=None, failure_policy=None,
+    ):
+        if render_mode == "native-m4":
+            if fallback_text is None and isinstance(content, dict):
+                descriptor = content.get("nativeMath") or content.get("plannedDegradation")
+                if isinstance(descriptor, dict):
+                    fallback_text = descriptor.get("linearText") or descriptor.get("fallbackText")
+            self._record_v2(
+                "writer.add_equation",
+                node_id=node_id,
+                renderMode="native-m4",
+                content=content,
+                fallbackResource=fallback_resource,
+                numbering=numbering or _m3_numbering("eq"),
+                bookmarkName=bookmarkName or _m3_bookmark("eq", node_id),
+                fallbackText=fallback_text,
+                failure_policy=failure_policy or {
+                    "mode": "degrade",
+                    "recoverableCodes": ["EQUATION_INSERT_FAILED"],
+                    "fallback": "explicit-image-then-source-notice",
+                },
+            )
+            return
         self._record_v2(
             "writer.add_equation",
             node_id=node_id,
@@ -587,12 +614,20 @@ class RecordingWriterComposer:
     def insert_table_index(self, *, title=None, sequenceId="WPSC_TAB", titleStyleId="WPSC_INDEX_TITLE"):
         self._record_v2("writer.insert_table_index", title=title, sequenceId=sequenceId, titleStyleId=titleStyleId)
 
-    def add_bibliography(self, *, node_id, entries, style="numbered", failure_policy=None):
+    def add_bibliography(
+        self, *, node_id, entries, style="numbered", schema_version=None,
+        hanging_indent_pt=None, left_indent_pt=None, space_after_pt=None,
+        failure_policy=None,
+    ):
         self._record_v2(
             "writer.add_bibliography",
             node_id=node_id,
+            schemaVersion=schema_version,
             entries=entries,
             style=style,
+            hangingIndentPt=hanging_indent_pt,
+            leftIndentPt=left_indent_pt,
+            spaceAfterPt=space_after_pt,
             failure_policy=failure_policy,
         )
 
@@ -621,6 +656,15 @@ class RecordingWriterComposer:
         self._record_v2(
             "writer.add_document_quality_notice",
             notices=notices,
+        )
+
+    def reserve_document_quality_anchor(self, *, notices=()):
+        self._record_v2(
+            "writer.reserve_document_quality_anchor",
+            node_id="doc:quality",
+            title="生成质量提示",
+            notices=list(notices),
+            failure_policy={"mode": "fail"},
         )
 
     def finalize_fields(self, *, max_rounds=3):

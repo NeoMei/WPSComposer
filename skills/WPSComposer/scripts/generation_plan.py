@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -103,6 +104,7 @@ _LONGFORM_WRITER_OPERATIONS = frozenset(
         "writer.add_inline_degradation",
         "writer.add_degradation_notice",
         "writer.add_document_quality_notice",
+        "writer.reserve_document_quality_anchor",
         "writer.finalize_fields",
         "writer.set_page_role",
         "writer.set_page_numbering",
@@ -352,7 +354,7 @@ _POSITIVE_INT = _bounded_integer(1)
 _POSITIVE_NUMBER = _bounded_number(0, exclusive=True)
 _NONNEGATIVE_NUMBER = _bounded_number(0)
 
-_PAGE_ROLES = frozenset({"cover", "front_matter", "body", "landscape"})
+_PAGE_ROLES = frozenset({"cover", "front_matter", "body", "landscape", "bibliography"})
 _PAGE_NUMBER_FORMATS = frozenset({"none", "roman", "arabic", "continue"})
 _NUMBERING_SCHEMES = frozenset({"none", "chinese-formal", "decimal", "hybrid-bid"})
 _TOC_DENSITY_LEVELS = frozenset({"toc1", "toc2", "toc3"})
@@ -761,12 +763,19 @@ def _validate_m3_failure_policy(
     op: str,
     value: Optional[Mapping[str, Any]],
     native_mode: str,
+    args: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if native_mode != "m3":
         return
     if value is not None and value.get("mode") == "fail" and set(value) != {"mode"}:
         _invalid(f"{op}.failurePolicy", "fatal policy containing only mode=fail")
-    expected = _M3_FAILURE_POLICIES.get(op)
+    expected = (
+        (("EQUATION_INSERT_FAILED",), "explicit-image-then-source-notice")
+        if op == "writer.add_equation"
+        and args is not None
+        and args.get("renderMode") == "native-m4"
+        else _M3_FAILURE_POLICIES.get(op)
+    )
     if expected is not None:
         if value is None:
             raise OperationPlanError(f"{op}.failurePolicy is required")
@@ -821,6 +830,7 @@ def _validate_v2_failure_policy(
     op: str,
     value: Optional[Mapping[str, Any]],
     native_mode: str,
+    args: Optional[Mapping[str, Any]] = None,
 ) -> None:
     """Reject recovery policies outside the closed longform-v2 allowlist."""
     if value is None:
@@ -832,11 +842,21 @@ def _validate_v2_failure_policy(
 
     expected = _M3_EXISTING_LOCAL_FAILURE_POLICIES.get(op)
     if expected is None:
-        expected = (
-            _M3_FAILURE_POLICIES.get(op)
-            if native_mode == "m3"
-            else _M2_FAILURE_POLICIES.get(op)
-        )
+        if (
+            op == "writer.add_equation"
+            and args is not None
+            and args.get("renderMode") == "native-m4"
+        ):
+            expected = (
+                ("EQUATION_INSERT_FAILED",),
+                "explicit-image-then-source-notice",
+            )
+        else:
+            expected = (
+                _M3_FAILURE_POLICIES.get(op)
+                if native_mode == "m3"
+                else _M2_FAILURE_POLICIES.get(op)
+            )
     if expected is None:
         _invalid(f"{op}.failurePolicy", "fatal policy or exact named recovery")
     codes, fallback = expected
@@ -1081,6 +1101,176 @@ _REFERENCE_RUN_SCHEMA = _schema(
     fallbackText=_string,
 )
 
+_M4_FORMULA_CONTENT_CODES = frozenset({
+    "FORMULA_FORBIDDEN_PRIMITIVE",
+    "FORMULA_MALFORMED",
+    "FORMULA_NATIVE_EQUIVALENCE_UNSUPPORTED",
+    "FORMULA_NESTING_TOO_DEEP",
+    "FORMULA_TOO_COMPLEX",
+    "FORMULA_TOO_LONG",
+    "FORMULA_UNKNOWN_COMMAND",
+})
+_M4_FORMULA_RESOURCE_CODES = frozenset({"FORMULA_FALLBACK_IMAGE_UNAVAILABLE"})
+_M4_INLINE_DEGRADATION_CODES = frozenset({"REFERENCE_UNRESOLVED"})
+_M4_SOURCE_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _m4_text(value: Any, path: str, *, maximum: int = 10_000) -> None:
+    _string(value, path)
+    if not value or len(value) > maximum:
+        _invalid(path, f"non-empty string no longer than {maximum} Unicode code points")
+    if any(
+        unicodedata.category(char) in {"Cf", "Cs"}
+        or (unicodedata.category(char) == "Cc" and char not in "\t\n\r")
+        for char in value
+    ):
+        _invalid(path, "Unicode text without control characters")
+    if re.search(r"data:[^,;]{0,80};base64,", value, re.IGNORECASE):
+        _invalid(path, "privacy-safe text without embedded base64 payloads")
+
+
+def _m4_id(value: Any, path: str) -> None:
+    _m4_text(value, path, maximum=128)
+    if (
+        "/" in value
+        or "\\" in value
+        or any(unicodedata.category(char).startswith("C") for char in value)
+    ):
+        _invalid(path, "bounded logical identifier")
+
+
+def _m4_node_id(value: Any, path: str) -> None:
+    _m4_text(value, path, maximum=256)
+    if "\\" in value or any(
+        unicodedata.category(char).startswith("C") for char in value
+    ):
+        _invalid(path, "bounded semantic node identifier")
+
+
+_NATIVE_MATH_SCHEMA = _schema(
+    ("syntax", "linearText", "sourceHash"),
+    syntax=_enum(frozenset({"wps-linear-v1"}), "trusted native-math syntax"),
+    linearText=lambda value, path: _m4_text(value, path, maximum=10_000),
+    sourceHash=lambda value, path: (
+        None
+        if isinstance(value, str) and _M4_SOURCE_HASH_RE.fullmatch(value)
+        else _invalid(path, "64 lowercase hexadecimal characters")
+    ),
+)
+
+
+def _native_math(value: Any, path: str) -> None:
+    _validate_object(value, path, _NATIVE_MATH_SCHEMA)
+    if any(
+        unicodedata.category(char).startswith("C")
+        for char in value["linearText"]
+    ):
+        _invalid(f"{path}.linearText", "trusted linear text without controls")
+
+
+_M4_DEGRADATION_SCHEMA = _schema(
+    ("code", "placement", "objectLabel", "reason", "fallbackText", "fallbackKind"),
+    code=lambda value, path: _m4_text(value, path, maximum=64),
+    placement=_enum(frozenset({"block"}), "block placement"),
+    objectLabel=lambda value, path: _m4_text(value, path, maximum=64),
+    reason=lambda value, path: _m4_text(value, path, maximum=500),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=10_000),
+    fallbackKind=_enum(frozenset({"source", "none"}), "controlled formula fallback kind"),
+)
+
+
+def _m4_formula_degradation(value: Any, path: str) -> None:
+    _validate_object(value, path, _M4_DEGRADATION_SCHEMA)
+    code = value["code"]
+    if code in _M4_FORMULA_CONTENT_CODES:
+        expected = ("block", "formula", "source")
+    elif code in _M4_FORMULA_RESOURCE_CODES:
+        expected = ("block", "formula", "none")
+    else:
+        _invalid(f"{path}.code", "controlled M4 formula degradation code")
+    if (value["placement"], value["objectLabel"], value["fallbackKind"]) != expected:
+        _invalid(path, "exact controlled formula degradation placement and fallback")
+
+
+def _m4_formula_content(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "object")
+    if set(value) == {"nativeMath"}:
+        _native_math(value["nativeMath"], f"{path}.nativeMath")
+    elif set(value) == {"plannedDegradation"}:
+        _m4_formula_degradation(
+            value["plannedDegradation"], f"{path}.plannedDegradation"
+        )
+        if value["plannedDegradation"]["code"] not in _M4_FORMULA_CONTENT_CODES:
+            _invalid(f"{path}.plannedDegradation.code", "formula content degradation code")
+    else:
+        _invalid(path, "exactly one nativeMath or plannedDegradation member")
+
+
+def _m4_formula_fallback_resource(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "object")
+    if set(value) == {"fallbackResourceId"}:
+        _m4_id(value["fallbackResourceId"], f"{path}.fallbackResourceId")
+    elif set(value) == {"fallbackResourcePlannedDegradation"}:
+        descriptor = value["fallbackResourcePlannedDegradation"]
+        _m4_formula_degradation(
+            descriptor, f"{path}.fallbackResourcePlannedDegradation"
+        )
+        if descriptor["code"] not in _M4_FORMULA_RESOURCE_CODES:
+            _invalid(
+                f"{path}.fallbackResourcePlannedDegradation.code",
+                "formula fallback-resource degradation code",
+            )
+    else:
+        _invalid(
+            path,
+            "exactly one fallbackResourceId or fallbackResourcePlannedDegradation member",
+        )
+
+
+_M3_EQUATION_SCHEMA = _schema(
+    ("source", "numbering", "bookmarkName", "fallbackText"),
+    source=_string,
+    numbering=_numbering,
+    bookmarkName=_bookmark,
+    fallbackText=_string,
+)
+_M4_EQUATION_SCHEMA = _schema(
+    ("renderMode", "content", "numbering", "bookmarkName", "fallbackText"),
+    renderMode=_enum(frozenset({"native-m4"}), "native-m4 render mode"),
+    content=_m4_formula_content,
+    fallbackResource=_m4_formula_fallback_resource,
+    numbering=_numbering,
+    bookmarkName=_bookmark,
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=10_000),
+)
+
+
+def _equation_args(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "object")
+    schema = _M4_EQUATION_SCHEMA if "renderMode" in value else _M3_EQUATION_SCHEMA
+    _validate_object(value, path, schema)
+
+
+_CITATION_RUN_SCHEMA = _schema(
+    ("type", "nodeId", "targetId", "targetNodeId", "number", "fallbackText"),
+    type=_enum(frozenset({"citation"}), "citation run"),
+    nodeId=_m4_node_id,
+    targetId=_m4_id,
+    targetNodeId=_m4_id,
+    number=_bounded_integer(1, 10_000),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=128),
+)
+_INLINE_DEGRADATION_RUN_SCHEMA = _schema(
+    ("type", "nodeId", "code", "fallbackText"),
+    type=_enum(frozenset({"degradation"}), "degradation run"),
+    nodeId=_m4_node_id,
+    code=_enum(_M4_INLINE_DEGRADATION_CODES, "controlled inline degradation code"),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=500),
+)
+
 
 def _reference_run(value: Any, path: str) -> None:
     if not isinstance(value, dict):
@@ -1089,14 +1279,124 @@ def _reference_run(value: Any, path: str) -> None:
         _validate_object(value, path, _TEXT_RUN_SCHEMA)
     elif value.get("type") == "reference":
         _validate_object(value, path, _REFERENCE_RUN_SCHEMA)
+    elif value.get("type") == "citation":
+        _validate_object(value, path, _CITATION_RUN_SCHEMA)
+        if value["fallbackText"] != f"[{value['number']}]":
+            _invalid(f"{path}.fallbackText", "numeric citation fallback matching number")
+    elif value.get("type") == "degradation":
+        _validate_object(value, path, _INLINE_DEGRADATION_RUN_SCHEMA)
+        if value["fallbackText"] != "[REFERENCE_UNRESOLVED 引用目标未解析]":
+            _invalid(f"{path}.fallbackText", "controlled unresolved-reference fallback")
     else:
-        _invalid(f"{path}.type", "text or reference")
+        _invalid(f"{path}.type", "text, reference, citation, or degradation")
 
 
 def _reference_runs(value: Any, path: str) -> None:
     _list_of(_reference_run)(value, path)
-    if not value:
-        _invalid(path, "non-empty text/reference runs")
+    if not 1 <= len(value) <= 10_000:
+        _invalid(path, "one to 10,000 closed inline runs")
+
+
+_CELL_DEGRADATION_SCHEMA = _schema(
+    ("row", "column", "code", "fallbackText"),
+    row=_bounded_integer(1, 10_001),
+    column=_bounded_integer(1, 10_000),
+    code=_enum(_M4_INLINE_DEGRADATION_CODES, "controlled cell degradation code"),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=500),
+)
+
+
+def _cell_degradation(value: Any, path: str) -> None:
+    _validate_object(value, path, _CELL_DEGRADATION_SCHEMA)
+    if value["fallbackText"] != "[REFERENCE_UNRESOLVED 引用目标未解析]":
+        _invalid(f"{path}.fallbackText", "controlled unresolved-reference fallback")
+
+
+_BIBLIOGRAPHY_ENTRY_SCHEMA = _schema(
+    ("id", "nodeId", "number", "text", "cited"),
+    id=_m4_id,
+    nodeId=_m4_id,
+    number=_bounded_integer(1, 10_000),
+    text=lambda value, path: _m4_text(value, path, maximum=10_000),
+    cited=_boolean,
+)
+
+
+def _bibliography_entry(value: Any, path: str) -> None:
+    _validate_object(value, path, _BIBLIOGRAPHY_ENTRY_SCHEMA)
+
+
+_LEGACY_BIBLIOGRAPHY_SCHEMA = _schema(
+    ("entries",), entries=_STRING_LIST, style=_string
+)
+_STRUCTURED_BIBLIOGRAPHY_SCHEMA = _schema(
+    (
+        "schemaVersion", "entries", "style", "hangingIndentPt",
+        "leftIndentPt", "spaceAfterPt",
+    ),
+    schemaVersion=_bounded_integer(1, 1),
+    entries=_list_of(_bibliography_entry),
+    style=_enum(frozenset({"numeric"}), "numeric bibliography style"),
+    hangingIndentPt=_NONNEGATIVE_NUMBER,
+    leftIndentPt=_NONNEGATIVE_NUMBER,
+    spaceAfterPt=_NONNEGATIVE_NUMBER,
+)
+
+
+def _bibliography_args(value: Any, path: str) -> None:
+    if not isinstance(value, dict):
+        _invalid(path, "object")
+    if "schemaVersion" not in value:
+        _validate_object(value, path, _LEGACY_BIBLIOGRAPHY_SCHEMA)
+        return
+    _validate_object(value, path, _STRUCTURED_BIBLIOGRAPHY_SCHEMA)
+    entries = value["entries"]
+    if not entries or len(entries) > 10_000:
+        _invalid(f"{path}.entries", "one to 10,000 structured entries")
+    numbers = [entry["number"] for entry in entries]
+    if numbers != sorted(set(numbers)):
+        _invalid(f"{path}.entries", "strictly increasing unique numeric order")
+    if len({entry["id"] for entry in entries}) != len(entries):
+        _invalid(f"{path}.entries", "unique bibliography identifiers")
+    if len({entry["nodeId"] for entry in entries}) != len(entries):
+        _invalid(f"{path}.entries", "unique bibliography node owners")
+    seen_uncited = False
+    for entry in entries:
+        if not entry["cited"]:
+            seen_uncited = True
+        elif seen_uncited:
+            _invalid(f"{path}.entries", "cited entries before uncited entries")
+    if (
+        value["hangingIndentPt"] != 18.0
+        or value["leftIndentPt"] != 18.0
+        or value["spaceAfterPt"] != 6.0
+    ):
+        _invalid(path, "fixed numeric bibliography geometry")
+
+
+_M4_NOTICE_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+_M4_NOTICE_SCHEMA = _schema(
+    ("code", "message", "fallbackText", "placement"),
+    code=lambda value, path: (
+        None
+        if isinstance(value, str) and _M4_NOTICE_CODE_RE.fullmatch(value)
+        else _invalid(path, "bounded stable issue code")
+    ),
+    message=lambda value, path: _m4_text(value, path, maximum=500),
+    fallbackText=lambda value, path: _m4_text(value, path, maximum=500),
+    placement=_enum(frozenset({"document"}), "document placement"),
+)
+
+
+def _m4_notice(value: Any, path: str) -> None:
+    _validate_object(value, path, _M4_NOTICE_SCHEMA)
+
+
+_QUALITY_ANCHOR_SCHEMA = _schema(
+    ("title", "notices"),
+    title=_enum(frozenset({"生成质量提示"}), "fixed quality-anchor title"),
+    notices=_list_of(_m4_notice),
+)
 
 
 _LIST_FORMATTING_SCHEMA = _schema(
@@ -1111,7 +1411,7 @@ def _list_formatting(value: Any, path: str) -> None:
     if type(value["indentPt"]) not in {int, float} or value["indentPt"] != 24.0:
         _invalid(f"{path}.indentPt", "24.0")
 
-_LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
+_LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, Any] = {
     "writer.configure_front_matter": _schema(
         (),
         title=_nullable_string,
@@ -1212,15 +1512,10 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         allowRowSplit=_boolean,
         cellIndentPt=_NONNEGATIVE_NUMBER,
         plannedDegradation=_list_of(_table_degradation),
+        cellDegradations=_list_of(_cell_degradation),
         keepCaptionWithFirstRow=_boolean,
     ),
-    "writer.add_equation": _schema(
-        ("source", "numbering", "bookmarkName", "fallbackText"),
-        source=_string,
-        numbering=_numbering,
-        bookmarkName=_bookmark,
-        fallbackText=_string,
-    ),
+    "writer.add_equation": _equation_args,
     "writer.add_cross_reference": _schema(
         ("runs",),
         runs=_reference_runs,
@@ -1238,11 +1533,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         sequenceId=_enum(frozenset({"WPSC_TAB"}), "table sequence identifier"),
         titleStyleId=_enum(frozenset({"WPSC_INDEX_TITLE"}), "index title style"),
     ),
-    "writer.add_bibliography": _schema(
-        ("entries",),
-        entries=_STRING_LIST,
-        style=_string,
-    ),
+    "writer.add_bibliography": _bibliography_args,
     "writer.add_inline_degradation": _schema(
         ("code", "message", "fallbackText"),
         code=_string,
@@ -1260,6 +1551,7 @@ _LONGFORM_OPERATION_ARG_SCHEMAS: dict[str, _ObjectSchema] = {
         ("notices",),
         notices=_list_of(_notice_item),
     ),
+    "writer.reserve_document_quality_anchor": _QUALITY_ANCHOR_SCHEMA,
     "writer.finalize_fields": _schema(
         (),
         maxRounds=_bounded_integer(1, 3),
@@ -1362,7 +1654,10 @@ def _validate_operation_args(
         schema = _LONGFORM_OPERATION_ARG_SCHEMAS.get(op)
     if schema is None:
         raise OperationPlanError(f"unknown operation schema: {op}")
-    _validate_object(args, f"{op}.args", schema)
+    if isinstance(schema, _ObjectSchema):
+        _validate_object(args, f"{op}.args", schema)
+    else:
+        schema(args, f"{op}.args")
     _validate_table_shape(op, args)
     if native_mode == "m3" and op in _NATIVE_OBJECT_OPERATIONS:
         _validate_m3_operation_contract(op, args)
@@ -1417,6 +1712,8 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
 
     if op == "writer.add_semantic_table":
         width = len(args["headers"])
+        if width * (1 + len(args["rows"])) > MAX_TABLE_CELLS:
+            _invalid(f"{op}.args.rows", "table no larger than 10,000 cells")
         if width == 0 or len(args["alignments"]) != width:
             _invalid(f"{op}.args.alignments", "one alignment per table column")
         if any(len(row) != width for row in args["rows"]):
@@ -1506,9 +1803,26 @@ def _validate_m3_operation_contract(op: str, args: Mapping[str, Any]) -> None:
                     f"{op}.args.plannedDegradation[{index}].rowGroup",
                     "an indivisible vertical merge group",
                 )
+        occupied_degradations: set[tuple[int, int]] = set()
+        for index, degradation in enumerate(args.get("cellDegradations", [])):
+            coordinate = (degradation["row"], degradation["column"])
+            if coordinate[0] > row_count or coordinate[1] > width:
+                _invalid(
+                    f"{op}.args.cellDegradations[{index}]",
+                    "coordinates inside table grid",
+                )
+            if coordinate in occupied_degradations:
+                _invalid(
+                    f"{op}.args.cellDegradations[{index}]",
+                    "one degradation per table cell",
+                )
+            occupied_degradations.add(coordinate)
 
     if op == "writer.add_cross_reference":
-        has_reference = any(run["type"] == "reference" for run in args["runs"])
+        has_reference = any(
+            run["type"] in {"reference", "citation", "degradation"}
+            for run in args["runs"]
+        )
         list_formatting = args.get("listFormatting")
         if not has_reference and list_formatting is None:
             _invalid(f"{op}.args.runs", "a resolved reference outside list paragraphs")
@@ -1761,9 +2075,13 @@ def validate_generation_plan(
         _validate_image_args(op_name, args)
         _validate_operation_args(op_name, args, native_mode)
         if is_v2:
-            _validate_m3_failure_policy(op_name, failure_policy, native_mode)
+            _validate_m3_failure_policy(
+                op_name, failure_policy, native_mode, args
+            )
             _validate_m2_failure_policy(op_name, failure_policy, native_mode)
-            _validate_v2_failure_policy(op_name, failure_policy, native_mode)
+            _validate_v2_failure_policy(
+                op_name, failure_policy, native_mode, args
+            )
         parsed.append(
             GenerationOperation(
                 op_name,
@@ -1779,6 +2097,7 @@ def validate_generation_plan(
             _validate_m3_plan_state(normalized["operations"])
         else:
             _validate_m2_plan_state(normalized["operations"])
+        _validate_m4_plan_state(normalized["operations"])
         return GenerationPlan(
             component,
             tuple(parsed),
@@ -1795,6 +2114,196 @@ def _validate_v2_plan_lifecycle(operations: list[dict[str, Any]]) -> None:
     finalizers = [index for index, item in enumerate(operations) if item["op"] == "writer.finalize_fields"]
     if len(finalizers) != 1 or finalizers[0] != len(operations) - 1:
         raise OperationPlanError("writer.finalize_fields must occur exactly once and last")
+
+
+def _is_m4_plan(operations: list[dict[str, Any]]) -> bool:
+    for item in operations:
+        op = item["op"]
+        args = item.get("args", {})
+        if op == "writer.reserve_document_quality_anchor":
+            return True
+        if op == "writer.add_equation" and args.get("renderMode") == "native-m4":
+            return True
+        if op == "writer.add_bibliography" and args.get("schemaVersion") == 1:
+            return True
+        if op == "writer.add_semantic_table" and "cellDegradations" in args:
+            return True
+        if op == "writer.add_cross_reference" and any(
+            run.get("type") in {"citation", "degradation"}
+            for run in args.get("runs", [])
+        ):
+            return True
+    return False
+
+
+def _validate_m4_plan_state(operations: list[dict[str, Any]]) -> None:
+    """Validate M4 ownership, anchor, citation, and bibliography invariants."""
+    if not _is_m4_plan(operations):
+        return
+
+    anchors = [
+        (index, item)
+        for index, item in enumerate(operations)
+        if item["op"] == "writer.reserve_document_quality_anchor"
+    ]
+    if len(anchors) != 1:
+        raise OperationPlanError(
+            "M4 plans require writer.reserve_document_quality_anchor exactly once"
+        )
+    anchor_index, anchor = anchors[0]
+    if (
+        anchor.get("nodeId") != "doc:quality"
+        or anchor.get("failurePolicy") != {"mode": "fail"}
+    ):
+        raise OperationPlanError(
+            "document quality anchor must own doc:quality and fail hard"
+        )
+    if len(anchor["args"]["notices"]) > 1_000:
+        raise OperationPlanError("document quality anchor has too many initial notices")
+    if any(
+        item["op"] == "writer.add_document_quality_notice"
+        for item in operations
+    ):
+        raise OperationPlanError(
+            "M4 quality issues must upsert through the reserved anchor"
+        )
+    cover_positions = [
+        index
+        for index, item in enumerate(operations)
+        if item["op"] == "writer.configure_section"
+        and item["args"].get("role") == "cover"
+    ]
+    if cover_positions and anchor_index <= max(cover_positions):
+        raise OperationPlanError("document quality anchor must follow the cover transition")
+    content_ops = {
+        "writer.insert_toc",
+        "writer.insert_figure_index",
+        "writer.insert_table_index",
+        "writer.add_heading",
+        "writer.add_paragraph",
+        "writer.add_list",
+        "writer.add_captioned_figure",
+        "writer.add_semantic_table",
+        "writer.add_equation",
+        "writer.add_cross_reference",
+        "writer.add_bibliography",
+        "writer.add_inline_degradation",
+        "writer.add_degradation_notice",
+        "writer.add_page_break",
+    }
+    first_content = min(
+        (index for index, item in enumerate(operations) if item["op"] in content_ops),
+        default=len(operations),
+    )
+    if anchor_index >= first_content:
+        raise OperationPlanError(
+            "document quality anchor must precede TOC, indexes, and body content"
+        )
+
+    semantic_owner_ops = {
+        "writer.add_heading",
+        "writer.add_paragraph",
+        "writer.add_list",
+        "writer.add_captioned_figure",
+        "writer.add_semantic_table",
+        "writer.add_equation",
+        "writer.add_cross_reference",
+        "writer.add_bibliography",
+        "writer.add_inline_degradation",
+        "writer.add_degradation_notice",
+        "writer.add_page_break",
+        "writer.reserve_document_quality_anchor",
+    }
+    owned: set[str] = set()
+
+    def own(node_id: Any) -> None:
+        if not node_id:
+            return
+        if node_id in owned:
+            raise OperationPlanError(f"semantic node is owned more than once: {node_id}")
+        owned.add(node_id)
+
+    current_role: Optional[str] = None
+    bibliography_started = False
+    bibliography: dict[str, tuple[str, int, bool]] = {}
+    bibliography_numbers: dict[int, str] = {}
+    bibliography_sequence: list[tuple[int, bool]] = []
+    citations: list[dict[str, Any]] = []
+    for item in operations:
+        op = item["op"]
+        args = item["args"]
+        if op == "writer.configure_section":
+            current_role = args.get("role")
+            if bibliography_started and current_role in {"body", "landscape"}:
+                raise OperationPlanError(
+                    "bibliography back matter must remain after all body content"
+                )
+        if op in semantic_owner_ops:
+            own(item.get("nodeId"))
+        if op == "writer.add_captioned_figure":
+            for child in args["children"]:
+                own(child["nodeId"])
+        if op == "writer.add_cross_reference":
+            for run in args["runs"]:
+                if run["type"] in {"citation", "degradation"}:
+                    own(run["nodeId"])
+                if run["type"] == "citation":
+                    citations.append(run)
+        if op == "writer.add_bibliography" and args.get("schemaVersion") == 1:
+            if current_role != "bibliography":
+                raise OperationPlanError(
+                    "structured bibliography must be emitted in a bibliography section"
+                )
+            bibliography_started = True
+            for entry in args["entries"]:
+                own(entry["nodeId"])
+                if entry["id"] in bibliography:
+                    raise OperationPlanError(
+                        f"duplicate structured bibliography id: {entry['id']}"
+                    )
+                if entry["number"] in bibliography_numbers:
+                    raise OperationPlanError(
+                        "bibliography numbers must map to exactly one target"
+                    )
+                bibliography[entry["id"]] = (
+                    entry["nodeId"], entry["number"], entry["cited"]
+                )
+                bibliography_numbers[entry["number"]] = entry["id"]
+                bibliography_sequence.append((entry["number"], entry["cited"]))
+
+    if bibliography_sequence:
+        if [number for number, _ in bibliography_sequence] != list(
+            range(1, len(bibliography_sequence) + 1)
+        ):
+            raise OperationPlanError(
+                "structured bibliography must be emitted in unique gap-free numeric order"
+            )
+        seen_uncited = False
+        for _, cited in bibliography_sequence:
+            if not cited:
+                seen_uncited = True
+            elif seen_uncited:
+                raise OperationPlanError(
+                    "structured bibliography must emit cited entries before uncited entries"
+                )
+
+    citation_numbers: dict[int, str] = {}
+    for run in citations:
+        target = bibliography.get(run["targetId"])
+        if (
+            target is None
+            or target[:2] != (run["targetNodeId"], run["number"])
+            or target[2] is not True
+        ):
+            raise OperationPlanError(
+                "citation target id, node, number, and cited flag must exactly match the final bibliography"
+            )
+        previous_target = citation_numbers.get(run["number"])
+        if previous_target is not None and previous_target != run["targetId"]:
+            raise OperationPlanError(
+                "one citation number cannot identify multiple bibliography targets"
+            )
+        citation_numbers[run["number"]] = run["targetId"]
 
 
 def _validate_m3_plan_state(operations: list[dict[str, Any]]) -> None:
