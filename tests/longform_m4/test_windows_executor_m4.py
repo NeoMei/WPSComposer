@@ -733,6 +733,36 @@ def test_writer_unknown_omath_boundary_errors_remain_fatal(boundary):
         )
 
 
+def test_writer_rejects_omath_that_moves_outside_added_range_during_buildup():
+    writer, _table, document = _formula_writer()
+
+    class EscapingOMath(_OMath):
+        def BuildUp(self):
+            super().BuildUp()
+            self.Range.End = 999
+
+    class EscapingCollection(_OMaths):
+        def Add(self, rng):
+            item = EscapingOMath(rng)
+            self.items.append(item)
+            added_range = _Range(rng.Start, rng.End)
+            added_range.OMaths = _OMathView((item,))
+            return added_range
+
+    document.OMaths = EscapingCollection()
+    with pytest.raises(NativeWriterObjectError) as caught:
+        writer.add_equation_native(
+            renderMode="native-m4",
+            content={"nativeMath": {
+                "syntax": "wps-linear-v1", "linearText": "x+y",
+                "sourceHash": "2" * 64,
+            }},
+            numbering=_numbering(), bookmarkName=EQ_BOOKMARK,
+            fallbackText="x+y", owner_node_id="eq:one", controller_owned=True,
+        )
+    assert caught.value.code == "EQUATION_INSERT_FAILED"
+
+
 def test_writer_native_formula_uses_real_m3_fields_and_bookmark_shell():
     from tests.longform_m3.test_windows_executor_m3 import _writer_with_native_fakes
 

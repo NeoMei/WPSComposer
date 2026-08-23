@@ -1987,6 +1987,20 @@ class WriterComposer(BaseComposer):
         native.BuildUp()
         if int(maths.Count) != after:
             raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
+        built_range = native.Range
+        built_document_range = document_native.Range
+        built_start = int(built_range.Start)
+        built_end = int(built_range.End)
+        if (
+            built_end <= built_start
+            or built_start < added_start
+            or built_end > added_end
+            or (
+                int(built_document_range.Start),
+                int(built_document_range.End),
+            ) != (built_start, built_end)
+        ):
+            raise NativeWriterObjectError("EQUATION_INSERT_FAILED") from None
         center.ParagraphFormat.Alignment = 1
         center.ParagraphFormat.KeepTogether = -1
         return native
