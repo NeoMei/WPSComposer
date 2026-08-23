@@ -1120,10 +1120,12 @@ const silentDocument = {
   Range: silentRange,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }}
 };
+silentDocument._wpscRunOwnsAppendCursor = true;
+silentDocument._wpscAppendCursorRange = silentRange(0, 0);
 assert.throws(function() {
-  window.WPSComposerLongformV2.__test.runOperation(silentDocument, {
-    op: "writer.add_paragraph", nodeId: "p:no-op", args: {text: "must-write"}
-  }, {}, [], []);
+  window.WPSComposerLongformV2.__test.addNativeNumberShell(silentDocument, {
+    mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"
+  }, "wpsc_eq_" + "d".repeat(24), "eq:insert-no-op", true);
 }, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
 assert.equal(text, "");
 
@@ -1147,9 +1149,44 @@ fieldDocument._wpscAppendCursorRange = range(0, 0);
 assert.throws(function() {
   window.WPSComposerLongformV2.__test.addNativeNumberShell(fieldDocument, {
     mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"
-  }, "wpsc_eq_" + "e".repeat(24), "eq:no-op");
+  }, "wpsc_eq_" + "e".repeat(24), "eq:no-op", true);
 }, function(error) { return error.code === "FIELD_REFRESH_FAILED"; });
 assert.equal(fields.Count, 0);
+
+text = "";
+const writes = [];
+function provenRange(start, end) { return {
+  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  InsertAfter: function(raw) {
+    const value = String(raw);
+    writes.push([this.End, value]);
+    text = text.slice(0, this.End) + value + text.slice(this.End);
+    this.End += value.length;
+  }
+}; }
+const provenFields = {Count: 0, Add: function(target) {
+  const start = target.End;
+  text = text.slice(0, start) + "1" + text.slice(start);
+  this.Count += 1;
+  // WPS field/result proxies may inflate End after insertion. Their Start
+  // still binds the object to the collapsed Add target.
+  return {Update: function(){}, Range: {Start: start, End: start + 50},
+    Result: {Start: start, End: start + 50, Text: "1"}};
+}};
+const provenDocument = {
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: provenRange, Fields: provenFields, Bookmarks: {Add: function() {}}
+};
+provenDocument._wpscRunOwnsAppendCursor = true;
+provenDocument._wpscAppendCursorRange = provenRange(0, 0);
+window.WPSComposerLongformV2.__test.addNativeNumberShell(provenDocument, {
+  mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"
+}, "wpsc_eq_" + "f".repeat(24), "eq:bound", true);
+assert.deepEqual(writes, [[0, "("], [2, ")"]]);
+window.WPSComposerLongformV2.__test.runOperation(provenDocument, {
+  op: "writer.add_paragraph", nodeId: "p:after-field", args: {text: "After"}
+}, {}, [], []);
+assert.equal(text, "(1)After\r");
 ''')
 
 

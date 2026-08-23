@@ -820,7 +820,7 @@
     return safeNumber(range && range.Start, safeNumber(range && range.End, 0));
   }
 
-  function insertInlineText(document, value, targetRange) {
+  function insertInlineText(document, value, targetRange, requireAdvance) {
     const text = safeString(value);
     const range = targetRange || endRange(document);
     const cursor = appendCursorRange(document);
@@ -836,7 +836,8 @@
     else range.Text = text;
     if (appending) {
       const actualEnd = Number(range.End);
-      if (document && document._wpscRunOwnsAppendCursor === true &&
+      if (requireAdvance === true &&
+          document && document._wpscRunOwnsAppendCursor === true &&
           (!Number.isInteger(actualEnd) || actualEnd < beforeEnd + text.length)) {
         throw nativeError("CAPABILITY_MISMATCH");
       }
@@ -882,11 +883,23 @@
         const proofStart = Number(range && range.Start);
         const proofEnd = Number(range && range.End);
         return Number.isInteger(proofStart) && Number.isInteger(proofEnd) &&
-          proofStart >= start && proofEnd > proofStart;
+          proofStart === start && proofEnd > proofStart;
       });
-      if (afterCount !== beforeCount + 1 || !hasBoundedField) {
+      const content = document.Content;
+      const rawContentEnd = Number(content && content.End);
+      const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd > 0
+        ? rawContentEnd - 1 : null;
+      if (afterCount !== beforeCount + 1 || !hasBoundedField ||
+          !resultText || contentPosition === null || contentPosition <= start) {
         throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
       }
+      try {
+        exactDocumentRange(document, contentPosition, contentPosition);
+        setAppendCursor(document, contentPosition);
+      } catch (error) {
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+      return trackNativeField(document, ownerNodeId, fieldKind, field, category);
     }
     try {
       advanceAppendCursor(
@@ -921,9 +934,11 @@
     return name;
   }
 
-  function addNativeNumberShell(document, numbering, bookmarkName, ownerNodeId) {
+  function addNativeNumberShell(
+    document, numbering, bookmarkName, ownerNodeId, requireAdvance
+  ) {
     validateNumbering(numbering);
-    insertInlineText(document, numbering.prefix);
+    insertInlineText(document, numbering.prefix, null, requireAdvance);
     const numberStart = currentPosition(document);
     if (numbering.mode === "chapter") {
       // WPS for macOS interprets numeric STYLEREF style arguments as literal
@@ -934,7 +949,7 @@
       // built-in style (-2 for H1), then emit its NameLocal at runtime.
       const headingStyle = nativeHeadingStyleName(document, 1);
       addNativeField(document, 'STYLEREF "' + headingStyle + '" \\s', ownerNodeId, "STYLEREF", "numbering");
-      insertInlineText(document, "-");
+      insertInlineText(document, "-", null, requireAdvance);
     }
     const sequenceCode = "SEQ " + numbering.sequenceId + " \\* ARABIC" +
       (numbering.mode === "chapter" ? " \\s 1" : "");
@@ -956,7 +971,9 @@
         throw nativeError("FIELD_REFRESH_FAILED");
       }
     }
-    if (numbering.suffix) insertInlineText(document, numbering.suffix);
+    if (numbering.suffix) {
+      insertInlineText(document, numbering.suffix, null, requireAdvance);
+    }
     return {start: numberStart, end: numberEnd};
   }
 
@@ -1613,7 +1630,7 @@
     let state = authoritativeDocumentEnd(document);
     if (state.lastParagraph && state.lastParagraph.text.length > 0 &&
         !/\r$/.test(state.lastParagraph.text)) {
-      insertInlineText(document, "\r", state.range);
+      insertInlineText(document, "\r", state.range, true);
       state = authoritativeDocumentEnd(document);
     }
     const start = state.position;
@@ -1623,7 +1640,7 @@
     if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    insertInlineText(document, "\t");
+    insertInlineText(document, "\t", null, true);
     return {start: start, center: layout.center, right: layout.right};
   }
 
@@ -1648,10 +1665,12 @@
       code: code,
       fallbackText: args.fallbackText || ""
     });
-    insertInlineText(document, "\t");
-    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    insertInlineText(document, "\t", null, true);
+    addNativeNumberShell(
+      document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+    );
     finishFormulaLayout(document, layout);
-    insertInlineText(document, "\r");
+    insertInlineText(document, "\r", null, true);
   }
 
   function addEquationNativeM4(document, args, resources, context) {
@@ -1681,7 +1700,7 @@
     const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
     const linearText = safeString(nativeMath.linearText);
-    insertInlineText(document, linearText);
+    insertInlineText(document, linearText, null, true);
     const mathEnd = currentPosition(document);
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
@@ -1761,10 +1780,12 @@
       document, mathCursor, mathCursorEnd,
       localCursorRanges, mathCursorEnd
     );
-    insertInlineText(document, "\t");
-    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    insertInlineText(document, "\t", null, true);
+    addNativeNumberShell(
+      document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+    );
     finishFormulaLayout(document, layout);
-    insertInlineText(document, "\r");
+    insertInlineText(document, "\r", null, true);
 
     emitFormulaResourceDegradation(document, args, context);
   }
@@ -1838,10 +1859,12 @@
         addInlineDegradation(document, {
           code: code, fallbackText: "formula image fallback"
         });
-        insertInlineText(document, "\t");
-        addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+        insertInlineText(document, "\t", null, true);
+        addNativeNumberShell(
+          document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+        );
         finishFormulaLayout(document, layout);
-        insertInlineText(document, "\r");
+        insertInlineText(document, "\r", null, true);
         return;
       } catch (error) {
         const rawHostEndAfter = document && document.Content &&
