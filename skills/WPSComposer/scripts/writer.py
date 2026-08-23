@@ -10,6 +10,7 @@ import os
 import re
 import unicodedata
 import zipfile
+from types import SimpleNamespace
 from xml.etree import ElementTree
 
 from ._dispatch import (
@@ -19,7 +20,7 @@ from ._dispatch import (
 )
 from ._colors import hex_to_rgb_long
 from ._base import BaseComposer
-from .longform.degradation import redact_private_text
+from .longform.privacy import redact_private_text
 from .formatting import (
     apply_fill,
     apply_font,
@@ -2153,6 +2154,7 @@ class WriterComposer(BaseComposer):
 
     def _insert_degradation_box(self, display, target_range=None):
         """Insert one non-outline, single-cell degradation box."""
+        target = None
         try:
             target = target_range or self._doc.Range(
                 int(self.selection.End), int(self.selection.End)
@@ -2171,13 +2173,21 @@ class WriterComposer(BaseComposer):
             raise
         except Exception:
             try:
-                self.add_paragraph(
-                    display,
-                    italic=True,
-                    color="#9C0006",
-                    space_after=3,
-                )
-                return None
+                if target is None:
+                    raise AttributeError("degradation anchor unavailable")
+                start = int(target.Start)
+                insert_after = getattr(target, "InsertAfter", None)
+                if callable(insert_after):
+                    insert_after(display)
+                else:
+                    target.Text = display
+                inserted = self._doc.Range(start, start + len(display))
+                self._style_degradation_range(inserted)
+                inserted.ParagraphFormat.SpaceBefore = 0
+                inserted.ParagraphFormat.SpaceAfter = 3
+                inserted.ParagraphFormat.KeepTogether = True
+                inserted.ParagraphFormat.OutlineLevel = 10
+                return SimpleNamespace(Range=inserted)
             except Exception:
                 raise NativeWriterObjectError(
                     "DEGRADATION_INSERT_FAILED", "degradation box insertion failed"

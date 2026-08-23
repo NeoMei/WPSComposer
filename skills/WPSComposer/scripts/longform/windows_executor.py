@@ -31,8 +31,8 @@ from .degradation import (
     DegradationDescriptor,
     LocalRecoveryController,
     RecoveryFatalError,
-    redact_private_text,
 )
+from .privacy import redact_private_text
 
 
 WINDOWS_DEDICATED_HOST_UNAVAILABLE = "WINDOWS_DEDICATED_HOST_UNAVAILABLE"

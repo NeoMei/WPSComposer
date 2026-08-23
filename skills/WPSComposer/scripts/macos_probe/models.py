@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Union
 from uuid import uuid4
 
-from ..longform.degradation import controlled_token, redact_private_text
+from ..longform.degradation import controlled_token
+from ..longform.privacy import redact_private_text
 
 COMPONENTS = ("writer", "presentation", "spreadsheet")
 METHOD_COMPONENT = {

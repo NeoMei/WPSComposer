@@ -17,6 +17,11 @@ from skills.WPSComposer.scripts.longform.degradation import (
     decide_recovery,
     render_js_recovery_matrix,
 )
+from skills.WPSComposer.scripts.longform.privacy import (
+    contains_private_plan_text,
+    redact_private_text,
+    render_js_privacy_filter,
+)
 from skills.WPSComposer.scripts.longform.executor import ExecutionIssue
 from skills.WPSComposer.scripts.generation_plan import GenerationOperation
 from skills.WPSComposer.scripts.longform.windows_executor import (
@@ -251,9 +256,18 @@ def _marked_block(text: str) -> str:
     return text[start:stop]
 
 
+def _privacy_marked_block(text: str) -> str:
+    begin = "  // BEGIN WPSCOMPOSER GENERATED PRIVACY FILTER\n"
+    end = "  // END WPSCOMPOSER GENERATED PRIVACY FILTER\n"
+    start = text.index(begin)
+    stop = text.index(end, start) + len(end)
+    return text[start:stop]
+
+
 def test_generated_js_matrix_is_byte_exact_and_regeneration_is_idempotent(tmp_path: Path) -> None:
     tracked = ADDIN.read_text(encoding="utf-8")
     assert _marked_block(tracked) == render_js_recovery_matrix()
+    assert _privacy_marked_block(tracked) == render_js_privacy_filter()
 
     copy = tmp_path / ADDIN.name
     copy.write_text(tracked, encoding="utf-8")
@@ -270,6 +284,37 @@ def test_generated_js_matrix_is_byte_exact_and_regeneration_is_idempotent(tmp_pa
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    "private_text",
+    [
+        "assets/private/figure.png",
+        "sourcePath=assets/private/figure.png",
+        "data:image/png;base64," + "A" * 76,
+        "blob:opaque-secret",
+        "A" * 76,
+        "Traceback (most recent call last):",
+        "RuntimeError('private detail')",
+    ],
+)
+def test_canonical_privacy_filter_redacts_extended_private_forms_in_python_and_js(
+    private_text: str,
+) -> None:
+    assert contains_private_plan_text(private_text)
+    assert redact_private_text(private_text) == "<redacted>"
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+process.stdout.write(JSON.stringify(
+  window.WPSComposerLongformV2.__test.safePublicText({json.dumps(private_text)})
+));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    assert json.loads(completed.stdout) == "<redacted>"
 
 
 def test_javascript_decisions_match_python_matrix_and_fatal_boundaries() -> None:
@@ -464,6 +509,22 @@ def test_writer_block_notice_is_a_restrained_one_cell_box() -> None:
     assert cell_range.Shading.BackgroundPatternColor != 0
 
 
+def test_writer_quality_notice_minimal_fallback_stays_at_reserved_anchor() -> None:
+    writer, selection, document = _writer_double()
+    document.Tables.Add = lambda *args: (_ for _ in ()).throw(
+        RuntimeError("table unavailable")
+    )
+    anchor = document.Range(9, 9)
+
+    result = writer._insert_degradation_box("[FIELD_REFRESH_UNSTABLE] unstable", anchor)
+
+    assert result.Range.Start == 9
+    assert result.Range.End == 9 + len("[FIELD_REFRESH_UNSTABLE] unstable")
+    assert anchor.Text == "[FIELD_REFRESH_UNSTABLE] unstable"
+    assert selection.typed == []
+    assert selection.paragraphs == 0
+
+
 def test_writer_quality_anchor_is_reserved_when_empty_and_upserts_once() -> None:
     writer, selection, document = _writer_double()
     writer.add_paragraph = lambda text, **kwargs: (
@@ -588,6 +649,51 @@ process.stdout.write(JSON.stringify(code));
         ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
     )
     assert json.loads(completed.stdout) == "DEGRADATION_INSERT_FAILED"
+
+
+def test_javascript_quality_notice_minimal_fallback_stays_at_reserved_anchor() -> None:
+    script = f"""
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
+const api = window.WPSComposerLongformV2.__test;
+const ranges = [];
+function makeRange(start, end) {{
+  const item = {{
+    Start: start, End: end, Text: "", Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+    InsertAfter: function(value) {{ this.Text += value; this.End += value.length; }}
+  }};
+  ranges.push(item);
+  return item;
+}}
+const document = {{
+  Content: {{End: 101}},
+  Range: makeRange,
+  Tables: {{Add: function() {{ throw new Error("table unavailable"); }}}},
+  Bookmarks: {{Add: function() {{}}}}
+}};
+document._wpscQualityAnchor = {{title: "Quality", position: 9, empty: true}};
+document._wpscQualityNoticeSeen = Object.create(null);
+api.upsertDocumentQualityNotice(document, {{
+  code: "FIELD_REFRESH_UNSTABLE", placement: "document", message: "unstable"
+}});
+process.stdout.write(JSON.stringify({{
+  anchor: document._wpscQualityAnchor,
+  writes: ranges.filter(function(item) {{ return item.Text; }}).map(function(item) {{
+    return {{start: item.Start, end: item.End, text: item.Text}};
+  }})
+}}));
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    actual = json.loads(completed.stdout)
+    assert actual["writes"] == [{
+        "start": 9,
+        "end": 9 + len("Quality\r[FIELD_REFRESH_UNSTABLE] unstable"),
+        "text": "Quality\r[FIELD_REFRESH_UNSTABLE] unstable",
+    }]
+    assert actual["anchor"]["position"] == actual["writes"][0]["end"]
 
 
 class _RecoveryComposer:

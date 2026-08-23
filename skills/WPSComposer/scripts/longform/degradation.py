@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Callable, Mapping, Optional, Tuple
 
+from .privacy import redact_private_text
+
 
 _PLACEMENTS = frozenset({"inline", "block", "document"})
 _CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
@@ -80,31 +82,6 @@ FATAL_BOUNDARY_CODES = frozenset({
     "UNKNOWN_OPERATION",
     "WINDOWS_DEDICATED_HOST_UNAVAILABLE",
 })
-
-
-_PRIVATE_PATTERNS = (
-    re.compile(r"(?i)sha256:[0-9a-f]{64}"),
-    re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])"),
-    re.compile(r"wpsc-rsrc:[A-Za-z0-9_-]+"),
-    re.compile(r"(?i)\bwpsc_(?:fig|tab|eq)_[a-z0-9]{24}\b"),
-    re.compile(r"\bWPSC_[A-Z0-9_]{4,}\b"),
-    re.compile(
-        r"(?i)\b(?:fieldResult|bookmarkMap|payload|resourceId)"
-        r"\s*[:=]\s*[^|,;\s]+"
-    ),
-    re.compile(r"\b(?:RuntimeError|ValueError|TypeError|Exception)\([^)]*\)"),
-    re.compile(r"(?<!\w)[A-Za-z]:\\[^|\r\n]+"),
-    re.compile(r"(?<!\w)/(?:[^\s|]+/)*[^\s|]+"),
-)
-
-
-def redact_private_text(value: Any) -> str:
-    """Return readable controlled text with known private evidence removed."""
-
-    text = str(value or "")
-    for pattern in _PRIVATE_PATTERNS:
-        text = pattern.sub("<redacted>", text)
-    return text
 
 
 def controlled_token(value: Any) -> Optional[str]:
@@ -376,6 +353,5 @@ __all__ = [
     "RecoveryRule",
     "controlled_token",
     "decide_recovery",
-    "redact_private_text",
     "render_js_recovery_matrix",
 ]

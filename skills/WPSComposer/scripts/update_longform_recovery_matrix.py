@@ -17,6 +17,11 @@ from skills.WPSComposer.scripts.longform.degradation import (  # noqa: E402
     JS_RECOVERY_MATRIX_END,
     render_js_recovery_matrix,
 )
+from skills.WPSComposer.scripts.longform.privacy import (  # noqa: E402
+    JS_PRIVACY_FILTER_BEGIN,
+    JS_PRIVACY_FILTER_END,
+    render_js_privacy_filter,
+)
 
 
 DEFAULT_ADDIN = (
@@ -24,14 +29,33 @@ DEFAULT_ADDIN = (
 )
 
 
+def _replace_marked_block(
+    source: str, begin: str, end: str, rendered: str, *, label: str
+) -> str:
+    if source.count(begin) != 1:
+        raise ValueError(f"{label} begin marker must appear exactly once")
+    if source.count(end) != 1:
+        raise ValueError(f"{label} end marker must appear exactly once")
+    start = source.index(begin)
+    stop = source.index(end, start) + len(end)
+    return source[:start] + rendered + source[stop:]
+
+
 def _replace_generated_block(source: str) -> str:
-    if source.count(JS_RECOVERY_MATRIX_BEGIN) != 1:
-        raise ValueError("recovery matrix begin marker must appear exactly once")
-    if source.count(JS_RECOVERY_MATRIX_END) != 1:
-        raise ValueError("recovery matrix end marker must appear exactly once")
-    start = source.index(JS_RECOVERY_MATRIX_BEGIN)
-    stop = source.index(JS_RECOVERY_MATRIX_END, start) + len(JS_RECOVERY_MATRIX_END)
-    return source[:start] + render_js_recovery_matrix() + source[stop:]
+    updated = _replace_marked_block(
+        source,
+        JS_RECOVERY_MATRIX_BEGIN,
+        JS_RECOVERY_MATRIX_END,
+        render_js_recovery_matrix(),
+        label="recovery matrix",
+    )
+    return _replace_marked_block(
+        updated,
+        JS_PRIVACY_FILTER_BEGIN,
+        JS_PRIVACY_FILTER_END,
+        render_js_privacy_filter(),
+        label="privacy filter",
+    )
 
 
 def update_recovery_matrix(path: Path, *, check: bool) -> bool:

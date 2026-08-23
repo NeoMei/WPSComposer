@@ -66,15 +66,31 @@
     return value === null || value === undefined ? "" : String(value);
   }
 
+  // BEGIN WPSCOMPOSER GENERATED PRIVACY FILTER
+  const WPSCOMPOSER_PRIVATE_PATTERNS = Object.freeze([
+    Object.freeze({"flags":"i","source":"[0-9a-f]{64}"}),
+    Object.freeze({"flags":"","source":"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\\s*(?:\\(|\\b)"}),
+    Object.freeze({"flags":"i","source":"[A-Za-z][A-Za-z0-9+.-]*://"}),
+    Object.freeze({"flags":"i","source":"(?:data|blob):"}),
+    Object.freeze({"flags":"i","source":"[A-Za-z]:[\\\\/][^\\s|,;]+"}),
+    Object.freeze({"flags":"","source":"(?:\\\\\\\\|//)[A-Za-z0-9_.-]+[\\\\/][^\\s|,;]+"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])~[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\\\/])\\.\\.[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])\\.\\.?[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[^A-Za-z0-9_:-])(?:[A-Za-z0-9_.-]+[\\\\/])+[A-Za-z0-9_.-]+\\.[A-Za-z][A-Za-z0-9]{0,15}(?:$|[^A-Za-z0-9_.-])"}),
+    Object.freeze({"flags":"","source":"(?:^|[^A-Za-z0-9+/])[A-Za-z0-9+/]{76,}={0,2}(?:$|[^A-Za-z0-9+/])"}),
+    Object.freeze({"flags":"i","source":"\\b(?:path|source|sourcePath|stagingPath|file)\\s*[:=]\\s*(?:\\.\\.?[\\\\/]|[^\\s|,;]+[\\\\/][^\\s|,;]+)"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"']|:(?!/))/(?!/)(?=\\S)"})
+  ]);
+
   function safePublicText(value) {
-    return safeString(value)
-      .replace(/[A-Za-z]:\\[^\s|;,)]+/g, "<redacted>")
-      .replace(/\/(?:Users|private|tmp|var\/folders)\/[^\s|;,)]+/g, "<redacted>")
-      .replace(/(?:sha256:)?[0-9a-fA-F]{64}/g, "<redacted>")
-      .replace(/wpsc-rsrc:[A-Za-z0-9_-]+/g, "<redacted>")
-      .replace(/wpsc_(?:fig|tab|eq)_[0-9a-fA-F]{24}/g, "<redacted>")
-      .replace(/(?:fieldResult|bookmarkMap|payload)\s*[:=]\s*[^\s|;,)]+/gi, "<redacted>");
+    const text = safeString(value);
+    const privateValue = WPSCOMPOSER_PRIVATE_PATTERNS.some(function (item) {
+      return new RegExp(item.source, item.flags).test(text);
+    });
+    return privateValue ? "<redacted>" : text;
   }
+  // END WPSCOMPOSER GENERATED PRIVACY FILTER
 
   function setValue(target, name, value) {
     if (target !== null && typeof target !== "undefined" && typeof value !== "undefined") {
@@ -1590,24 +1606,50 @@
     }
   }
 
+  function insertStyledDegradationAtRange(document, target, text) {
+    if (!target || typeof document.Range !== "function") {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const start = safeNumber(target.Start, -1);
+    if (start < 0) throw nativeError("DEGRADATION_INSERT_FAILED");
+    try {
+      if (typeof target.InsertAfter === "function") target.InsertAfter(text);
+      else target.Text = text;
+      const written = document.Range(start, start + text.length);
+      if (!written) throw nativeError("DEGRADATION_INSERT_FAILED");
+      if (written.Font) {
+        written.Font.Italic = -1;
+        written.Font.Color = colorFromHex("#9C0006");
+      }
+      if (written.Shading) {
+        written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      applyParagraphFormat(written.ParagraphFormat, {
+        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+      });
+      return {Range: written};
+    } catch (error) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+  }
+
   function addDegradationNotice(document, args) {
     const placement = args.placement || "block";
     if (placement === "inline") {
       return addInlineDegradation(document, args);
     }
+    const target = endRange(document);
     try {
-      return insertDegradationBox(document, args.code, args.fallbackText);
+      return insertDegradationBox(document, args.code, args.fallbackText, target);
     } catch (error) {
       // A table failure may remove the one-cell styling API itself. Preserve
       // the minimal visible notice at the same block anchor before declaring
       // insertion fatal.
       try {
-        return insertText(
-          document,
+        return insertStyledDegradationAtRange(
+          document, target,
           "[" + safeString(args.code || "DEGRADATION") + "] " +
-            safePublicText(args.fallbackText),
-          "Body Text",
-          {italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10}
+            safePublicText(args.fallbackText)
         );
       } catch (minimalError) {
         throw nativeError("DEGRADATION_INSERT_FAILED");
@@ -1654,12 +1696,14 @@
       ? document._wpscQualityAnchor.title + "\r[" + code + "] " + fallbackText
       : fallbackText;
     let table = null;
+    let target = null;
     try {
+      target = document.Range(position, position);
       table = insertDegradationBox(
         document,
         code,
         fallbackText,
-        document.Range(position, position),
+        target,
         document._wpscQualityAnchor.empty ? visibleText : undefined
       );
       document._wpscQualityAnchor.position = safeNumber(
@@ -1669,10 +1713,11 @@
       const minimal = document._wpscQualityAnchor.empty
         ? visibleText : "[" + code + "] " + fallbackText;
       try {
-        insertText(document, minimal, "Body Text", {
-          italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10
-        });
-        document._wpscQualityAnchor.position = currentPosition(document);
+        const inserted = insertStyledDegradationAtRange(document, target, minimal);
+        document._wpscQualityAnchor.position = safeNumber(
+          inserted && inserted.Range && inserted.Range.End,
+          position + minimal.length
+        );
       } catch (minimalError) {
         throw nativeError("DEGRADATION_INSERT_FAILED");
       }
@@ -2134,6 +2179,7 @@
       recoveryDecision: recoveryDecision,
       createLocalRecoveryController: createLocalRecoveryController,
       runLocalRecovery: runLocalRecovery,
+      safePublicText: safePublicText,
       addInlineDegradation: addInlineDegradation,
       addDegradationNotice: addDegradationNotice,
       reserveDocumentQualityAnchor: reserveDocumentQualityAnchor,

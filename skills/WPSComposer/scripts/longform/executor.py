@@ -10,7 +10,8 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol, Tuple, runtime_checkable
 
 from ..generation_plan import GenerationPlan
-from .degradation import controlled_token, redact_private_text
+from .degradation import controlled_token
+from .privacy import redact_private_text
 from .resources import PreparedLongformResource
 
 
