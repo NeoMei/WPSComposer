@@ -724,9 +724,18 @@ const pages = [1, 2, 3, 4];
 const document = {{
   Content: {{ End: 0, Text: "" }},
   Range: function(start, end) {{ return {{
-    Start: start, End: end, Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+    Start: start, End: end,
+    Document: document,
+    Font: {{ Italic: 0, Color: 0 }},
+    Shading: {{ BackgroundPatternColor: 0 }},
+    ParagraphFormat: {{}},
+    Select: function() {{
+      document.ActiveWindow.Selection.Range = this;
+      document.ActiveWindow.Selection.Document = document;
+    }},
     InsertAfter: function(value) {{ document.Content.Text += String(value); }}
   }}; }},
+  ActiveWindow: {{ Selection: {{ Range: null, Document: null }} }},
   TablesOfContents: {{ Count: 0, Item: function() {{}} }},
   TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
   Sections: {{ Count: 0, Item: function() {{}} }},

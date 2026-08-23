@@ -663,7 +663,7 @@ const written = [];
 const tables = [];
 function makeRange(start, end) {{
   return {{
-    Start: start, End: end, Text: "", Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+    Start: start, End: end, Text: "", Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}}, ParagraphFormat: {{}},
     InsertAfter: function(value) {{ this.Text += value; written.push(value); }}
   }};
 }}
@@ -751,7 +751,7 @@ const api = window.WPSComposerLongformV2.__test;
 const ranges = [];
 function makeRange(start, end) {{
   const item = {{
-    Start: start, End: end, Text: "", Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+    Start: start, End: end, Text: "", Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}}, ParagraphFormat: {{}},
     InsertAfter: function(value) {{ this.Text += value; this.End += value.length; }}
   }};
   ranges.push(item);
@@ -1073,7 +1073,7 @@ global.window = {{}};
 eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
 const api = window.WPSComposerLongformV2.__test;
 function range(start, end) {{ return {{
-  Start: start, End: end, Font: {{}}, Shading: {{}},
+  Start: start, End: end, Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}},
   get ParagraphFormat() {{
     const error = new Error("named bibliography formatting failure");
     error.code = "BIBLIOGRAPHY_INSERT_FAILED";
@@ -1087,7 +1087,7 @@ const document = {{
   Range: range,
   Tables: {{Add: function(target, rows, columns) {{
     const cellRange = {{Start: target.Start, End: target.End + 1, Text: "",
-      Font: {{}}, Shading: {{}}, ParagraphFormat: {{}}}};
+      Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}}, ParagraphFormat: {{}}}};
     const table = {{Range: cellRange, Rows: {{}}, Cell: function() {{ return {{Range: cellRange}}; }}}};
     tables.push(table); return table;
   }}}}
@@ -1132,18 +1132,30 @@ global.window = {{}};
 eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
 const api = window.WPSComposerLongformV2.__test;
 let text = "";
+const selection = {{Document: null, Range: null}};
 function range(start, end) {{
   return {{
     Start: start, End: end, ParagraphFormat: {{}},
+    Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}},
+    Select: function() {{ selection.Range = this; }},
+    get Text() {{ return text.slice(this.Start, this.End); }},
     InsertAfter: function(value) {{ text += String(value); this.End += String(value).length; }},
     Delete: function() {{ text = text.slice(0, start); }}
   }};
 }}
-const document = {{
-  Content: {{get End() {{ return text.length + 1; }}}},
+const document = {{Name: "ReferenceRecovery.docx", ActiveWindow: {{Selection: selection}},
+  Content: {{get End() {{ return text.length + 1; }}, get Text() {{ return text; }}}},
   Range: range,
-  Fields: {{Add: function() {{ throw new Error("private native failure"); }}}}
+  Paragraphs: {{Count: 1, Item: function() {{ return {{Range: {{Start: 0, End: text.length + 1}}}}; }}}},
+  Bookmarks: {{Exists: function() {{ return true; }},
+    Item: function() {{ return {{Range: {{Fields: {{Count: 1}}}}}}; }}}},
+  Fields: {{Count: 0, Add: function() {{
+    const error = new Error("private native failure");
+    error.code = "CROSS_REFERENCE_FAILED";
+    throw error;
+  }}}}
 }};
+selection.Document = document;
 const issues = [];
 api.runOperation(document, {{
   op: "writer.add_cross_reference", nodeId: "para:1",
@@ -1192,7 +1204,7 @@ const content = {{
 }};
 function makeRange(start, end) {{
   const result = {{
-    Start: start, End: end, ParagraphFormat: {{}}, Font: {{}}, Shading: {{}},
+    Start: start, End: end, ParagraphFormat: {{}}, Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}},
     InsertAfter: function(value) {{ events.push("native-write"); text += String(value); }},
     Delete: function() {{ events.push("rollback"); text = text.slice(0, start); }}
   }};
@@ -1240,22 +1252,30 @@ eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
 const api = window.WPSComposerLongformV2.__test;
 let text = "";
 const events = [];
+const selection = {{Document: null, Range: null}};
 function range(start, end) {{
   events.push("range");
-  return {{
-    Start: start, End: end, ParagraphFormat: {{}}, Font: {{}}, Shading: {{}},
-    InsertAfter: function(value) {{
-      if (value === "PARTIAL") events.push("native");
-      if (value === "[missing]") events.push("fallback");
-      text += String(value);
-    }},
-    Delete: function() {{ events.push("rollback"); text = text.slice(0, start); }}
+    return {{
+      Start: start, End: end, ParagraphFormat: {{}}, Font: {{Italic: 0, Color: 0}}, Shading: {{BackgroundPatternColor: 0}},
+      Select: function() {{ selection.Range = this; }},
+      get Text() {{ return text.slice(this.Start, this.End); }},
+      InsertAfter: function(value) {{
+        if (value === "PARTIAL") events.push("native");
+        if (value === "[missing]") events.push("fallback");
+        text += String(value);
+        this.End += String(value).length;
+      }},
+      Delete: function() {{ events.push("rollback"); text = text.slice(0, start); }}
+    }};
+  }}
+  const document = {{Name: "RecoveryOrder.docx", ActiveWindow: {{Selection: selection}},
+      Content: {{get End() {{ return text.length + 1; }}, get Text() {{ return text; }}}}, Range: range,
+      Paragraphs: {{Count: 1, Item: function() {{ return {{Range: {{Start: 0, End: text.length + 1}}}}; }}}},
+      Bookmarks: {{Exists: function() {{ return true; }},
+        Item: function() {{ return {{Range: {{Fields: {{Count: 1}}}}}}; }}}},
+      Fields: {{Count: 0, Add: function() {{ const error = new Error("native"); error.code = "CROSS_REFERENCE_FAILED"; throw error; }}}}
   }};
-}}
-const document = {{
-  Content: {{get End() {{ return text.length + 1; }}}}, Range: range,
-  Fields: {{Add: function() {{ const error = new Error("native"); error.code = "CROSS_REFERENCE_FAILED"; throw error; }}}}
-}};
+selection.Document = document;
 api.runOperation(document, {{
   op: "writer.add_cross_reference", nodeId: "para:order",
   args: {{runs: [

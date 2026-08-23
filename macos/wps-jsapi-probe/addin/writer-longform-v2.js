@@ -338,6 +338,26 @@
     return null;
   }
 
+  function documentOwnedSelection(document, expectedStart, expectedEnd) {
+    const activeWindow = document && document.ActiveWindow;
+    const selection = activeWindow && activeWindow.Selection;
+    const selectedRange = selection && selection.Range;
+    if (!selection || !selectedRange ||
+        Number(selectedRange.Start) !== expectedStart ||
+        Number(selectedRange.End) !== expectedEnd) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const owner = selection.Document || selectedRange.Document || selectedRange.Parent;
+    const targetName = document && document.Name;
+    const ownerName = owner && owner.Name;
+    if (owner !== document &&
+        (typeof targetName !== "string" || !targetName ||
+         typeof ownerName !== "string" || ownerName !== targetName)) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return selection;
+  }
+
   function getStyle(document, name) {
     if (!document.Styles) {
       return null;
@@ -861,18 +881,82 @@
     return native;
   }
 
-  function addNativeField(document, code, ownerNodeId, fieldKind, category, failureCode) {
+  function expectedReferenceFieldDelta(document, bookmarkName) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return 1;
+    const bookmarks = document.Bookmarks;
+    if (!bookmarks || typeof bookmarks.Exists !== "function" ||
+        typeof bookmarks.Item !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (!bookmarks.Exists(bookmarkName)) {
+      throw nativeError("CROSS_REFERENCE_FAILED");
+    }
+    const bookmark = collectionItem(bookmarks, bookmarkName);
+    const sourceFields = bookmark && bookmark.Range && bookmark.Range.Fields;
+    const count = Number(sourceFields && sourceFields.Count);
+    if (count !== 1 && count !== 2) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return count;
+  }
+
+  function addNativeField(
+    document, code, ownerNodeId, fieldKind, category, failureCode, expectedCountDelta
+  ) {
     let field;
     const target = endRange(document);
     const start = target.End;
     const contentEndBefore = Number(document.Content && document.Content.End) - 1;
     const beforeCount = Number(document.Fields && document.Fields.Count);
+    const countDelta = expectedCountDelta === undefined ? 1 : Number(expectedCountDelta);
+    if (!Number.isInteger(countDelta) || countDelta < 1 || countDelta > 2) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
     const strictProof = document._wpscRunOwnsAppendCursor === true &&
       Number.isInteger(beforeCount) && beforeCount >= 0;
+    if (document._wpscRunOwnsAppendCursor === true && document.ActiveWindow) {
+      if (typeof target.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      target.Select();
+      documentOwnedSelection(document, start, start);
+    }
     try {
       field = document.Fields.Add(target, -1, code, true);
     } catch (error) {
-      throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      if (document._wpscRunOwnsAppendCursor === true) {
+        const targetStartAfter = Number(target && target.Start);
+        const targetEndAfter = Number(target && target.End);
+        const countAfter = Number(document.Fields && document.Fields.Count);
+        const rawContentEndAfter = Number(document.Content && document.Content.End);
+        const contentEndAfter = Number.isInteger(rawContentEndAfter) && rawContentEndAfter > 0
+          ? rawContentEndAfter - 1 : null;
+        const targetProvesMutation = targetStartAfter === start &&
+          Number.isInteger(targetEndAfter) && targetEndAfter > start;
+        const hostMayHaveMutated = targetProvesMutation ||
+          (Number.isInteger(beforeCount) && Number.isInteger(countAfter) &&
+            countAfter !== beforeCount) ||
+          (Number.isInteger(contentEndBefore) && contentEndAfter !== null &&
+            contentEndAfter > contentEndBefore);
+        if (targetProvesMutation) {
+          try {
+            exactDocumentRange(document, start, targetEndAfter);
+            setAppendCursor(document, targetEndAfter);
+          } catch (proofError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+        } else if (hostMayHaveMutated) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+      } else {
+        // Historical direct helpers expose their caller-declared degradation
+        // code; only production run-owned plans enforce the closed fatal code.
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+      const errorCode = error && typeof error.code === "string" &&
+        /^[A-Z][A-Z0-9_]{2,63}$/.test(error.code)
+        ? error.code : "EXECUTION_ABORTED";
+      throw nativeError(errorCode);
     }
     const result = field && field.Result;
     const resultText = result && typeof result.Text === "string" ? result.Text : "";
@@ -891,9 +975,26 @@
           proofStart >= start && proofEnd > proofStart &&
           contentPosition !== null && proofEnd <= contentPosition;
       });
-      if (afterCount !== beforeCount + 1 || !hasBoundedField ||
-          !resultText || contentPosition === null || contentPosition <= start ||
-          !Number.isInteger(contentEndBefore) || contentPosition <= contentEndBefore) {
+      const validField = afterCount === beforeCount + countDelta && hasBoundedField &&
+        Boolean(resultText) && contentPosition !== null && contentPosition > start &&
+        Number.isInteger(contentEndBefore) && contentPosition > contentEndBefore;
+      if (!validField) {
+        const returnedFieldProvesInsertion = Boolean(field) &&
+          afterCount === beforeCount + countDelta && contentPosition !== null &&
+          contentPosition > start && Number.isInteger(contentEndBefore) &&
+          contentPosition > contentEndBefore;
+        if (returnedFieldProvesInsertion) {
+          try {
+            exactDocumentRange(document, start, contentPosition);
+            setAppendCursor(document, contentPosition);
+          } catch (proofError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+        } else if (afterCount !== beforeCount ||
+                   (contentPosition !== null && Number.isInteger(contentEndBefore) &&
+                    contentPosition > contentEndBefore)) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
         throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
       }
       try {
@@ -1011,7 +1112,7 @@
     (countKeys || []).forEach(function (key) {
       const collections = {
         omaths: "OMaths", inlineShapes: "InlineShapes",
-        tables: "Tables", fields: "Fields"
+        tables: "Tables", fields: "Fields", bookmarks: "Bookmarks"
       };
       counts[key] = optionalCollectionCount(
         document[collections[key]], "LOCAL_MUTATION_CHECKPOINT_FAILED"
@@ -1024,7 +1125,8 @@
       preserveParagraphBoundary: true,
       contentText: contentText,
       contentSignature: checkpointTextSignature(contentText),
-      collectionCounts: counts
+      collectionCounts: counts,
+      nativeFieldCount: nativeFields(document).length
     };
   }
 
@@ -1040,7 +1142,8 @@
       ["omaths", document.OMaths],
       ["inlineShapes", document.InlineShapes],
       ["tables", document.Tables],
-      ["fields", document.Fields]
+      ["fields", document.Fields],
+      ["bookmarks", document.Bookmarks]
     ].forEach(function (item) {
       if (hasOwn(expected, item[0]) && expected[item[0]] !== null &&
           optionalCollectionCount(item[1], "LOCAL_MUTATION_ROLLBACK_FAILED") !==
@@ -1064,6 +1167,13 @@
       setAppendCursor(document, start);
       if (token && token.preserveParagraphBoundary === true) {
         validateRollbackSnapshot(document, token);
+        const tracked = document._wpscNativeFields;
+        if (!Array.isArray(tracked) ||
+            !Number.isInteger(token.nativeFieldCount) ||
+            tracked.length < token.nativeFieldCount) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        tracked.length = token.nativeFieldCount;
       }
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1662,6 +1772,141 @@
     format.TabStops.Add(layout.right, 2, 0);
   }
 
+  function structuralWpsLinearText(linearText) {
+    return safeString(linearText).replace(/"[^"]*"/g, "");
+  }
+
+  function countLinearToken(text, token) {
+    let count = 0;
+    let offset = 0;
+    while (offset < text.length) {
+      const found = text.indexOf(token, offset);
+      if (found < 0) break;
+      count += 1;
+      offset = found + token.length;
+    }
+    return count;
+  }
+
+  function scriptOperandEnd(text, markerIndex) {
+    const start = markerIndex + 1;
+    if (start >= text.length) return start;
+    if (text.charAt(start) !== "(") return start + 1;
+    let depth = 0;
+    for (let index = start; index < text.length; index += 1) {
+      const char = text.charAt(index);
+      if (char === "(") depth += 1;
+      else if (char === ")") {
+        depth -= 1;
+        if (depth === 0) return index + 1;
+      }
+    }
+    return text.length;
+  }
+
+  function naryLimitMarkers(text) {
+    const exempt = Object.create(null);
+    const nary = "∑∏∫∮∬∭⨌";
+    for (let index = 0; index < text.length; index += 1) {
+      if (nary.indexOf(text.charAt(index)) < 0) continue;
+      let cursor = index + 1;
+      while (cursor < text.length && text.charAt(cursor) === " ") cursor += 1;
+      for (let limit = 0; limit < 2; limit += 1) {
+        const marker = text.charAt(cursor);
+        if (marker !== "_" && marker !== "^") break;
+        exempt[cursor] = true;
+        cursor = scriptOperandEnd(text, cursor);
+        while (cursor < text.length && text.charAt(cursor) === " ") cursor += 1;
+      }
+    }
+    return exempt;
+  }
+
+  function expectedProfessionalFunctionCounts(linearText) {
+    const text = structuralWpsLinearText(linearText);
+    const expected = Object.create(null);
+    function requireType(type, count) {
+      if (count > 0) expected[type] = (expected[type] || 0) + count;
+    }
+    requireType(7, countLinearToken(text, "/"));
+    const binomialCount = countLinearToken(text, "¦");
+    requireType(7, binomialCount);
+    requireType(5, binomialCount);
+    requireType(16, countLinearToken(text, "√"));
+    let naryCount = 0;
+    const nary = "∑∏∫∮∬∭⨌";
+    for (let index = 0; index < text.length; index += 1) {
+      if (nary.indexOf(text.charAt(index)) >= 0) naryCount += 1;
+    }
+    requireType(13, naryCount);
+
+    const matrixOffsets = [];
+    let matrixOffset = 0;
+    while (matrixOffset < text.length) {
+      const found = text.indexOf("■(", matrixOffset);
+      if (found < 0) break;
+      matrixOffsets.push(found);
+      matrixOffset = found + 2;
+    }
+    requireType(12, matrixOffsets.length);
+    const delimiterCount = matrixOffsets.filter(function (offset) {
+      return offset > 0 && "([{|‖".indexOf(text.charAt(offset - 1)) >= 0;
+    }).length;
+    requireType(5, delimiterCount);
+    const ambiguousMatrix = delimiterCount !== matrixOffsets.length;
+
+    const exempt = naryLimitMarkers(text);
+    const subscripts = [];
+    const superscripts = [];
+    for (let index = 0; index < text.length; index += 1) {
+      if (exempt[index]) continue;
+      if (text.charAt(index) === "_") subscripts.push(index);
+      else if (text.charAt(index) === "^") superscripts.push(index);
+    }
+    let pairedScripts = 0;
+    subscripts.forEach(function (offset) {
+      const next = scriptOperandEnd(text, offset);
+      if (text.charAt(next) === "^" && !exempt[next]) pairedScripts += 1;
+    });
+    requireType(18, pairedScripts);
+    requireType(17, subscripts.length - pairedScripts);
+    requireType(19, superscripts.length - pairedScripts);
+    return {counts: expected, ambiguousMatrix: ambiguousMatrix};
+  }
+
+  function requiresProfessionalMath(linearText) {
+    const requirements = expectedProfessionalFunctionCounts(linearText);
+    return requirements.ambiguousMatrix || Object.keys(requirements.counts).length > 0;
+  }
+
+  function verifyProfessionalMath(math, linearText) {
+    if (!requiresProfessionalMath(linearText)) return;
+    const functions = math && math.Functions;
+    const count = Number(functions && functions.Count);
+    if (!Number.isInteger(count) || count < 1) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const typeCounts = Object.create(null);
+    for (let index = 1; index <= count; index += 1) {
+      const item = collectionItem(functions, index);
+      const type = Number(item && item.Type);
+      if (!Number.isInteger(type)) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    }
+    const requirements = expectedProfessionalFunctionCounts(linearText);
+    if (requirements.ambiguousMatrix) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const expected = requirements.counts;
+    Object.keys(expected).forEach(function (type) {
+      if ((typeCounts[type] || 0) < expected[type]) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+    });
+  }
+
   function addFormulaSourceTerminalNotice(document, args, code, context) {
     const layout = beginFormulaLayout(document);
     addInlineDegradation(document, {
@@ -1702,14 +1947,66 @@
     }
     const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
-    const linearText = safeString(nativeMath.linearText);
+    const descriptorLinearText = safeString(nativeMath.linearText);
+    const linearText = descriptorLinearText;
     insertInlineText(document, linearText, null, true);
     const mathEnd = currentPosition(document);
+    const inputRange = exactDocumentRange(document, start, mathEnd);
+    const selectionOwned = document._wpscRunOwnsAppendCursor === true;
+    let addCollection = null;
+    if (selectionOwned) {
+      if (typeof inputRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      inputRange.Select();
+      const selection = documentOwnedSelection(document, start, mathEnd);
+      if (!selection.OMaths || typeof selection.OMaths.Add !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addCollection = selection.OMaths;
+    } else {
+      // Direct compatibility helpers keep their historical document-scoped
+      // adapter; production M4 plans are always selection-owned above.
+      addCollection = document.OMaths;
+    }
+    let formulaOperationEnd = null;
+    if (selectionOwned) {
+      // Build the complete number shell while the document is still in normal
+      // text mode. WPS otherwise stamps w:oMath on fields inserted after
+      // BuildUp, and a later REF can materialize those field runs as OMaths.
+      insertInlineText(document, "\t", null, true);
+      const numberBoundaryEnd = currentPosition(document);
+      if (!Number.isInteger(numberBoundaryEnd) || numberBoundaryEnd <= mathEnd) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addNativeNumberShell(
+        document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+      );
+      finishFormulaLayout(document, layout);
+      insertInlineText(document, "\r", null, true);
+      formulaOperationEnd = currentPosition(document);
+    }
+    let addInputRange = inputRange;
+    if (selectionOwned) {
+      // WPS Range proxies are live: inserting the adjacent number shell can
+      // expand the earlier input range. Reacquire and reselect the exact
+      // linear-only bounds immediately before OMaths.Add.
+      addInputRange = exactDocumentRange(document, start, mathEnd);
+      if (typeof addInputRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addInputRange.Select();
+      const selection = documentOwnedSelection(document, start, mathEnd);
+      if (!selection.OMaths || typeof selection.OMaths.Add !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addCollection = selection.OMaths;
+    }
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const addedRange = document.OMaths.Add(document.Range(start, mathEnd));
+    const addedRange = addCollection.Add(addInputRange);
     const after = Number(document.OMaths.Count);
     if (!addedRange || after !== before + 1) {
       throw nativeError("EQUATION_INSERT_FAILED");
@@ -1721,6 +2018,14 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const addedMaths = addedRange.OMaths;
+    let selectedMaths = null;
+    if (selectionOwned) {
+      if (typeof addedRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addedRange.Select();
+      selectedMaths = documentOwnedSelection(document, addedStart, addedEnd).OMaths;
+    }
     const addedLocalCount = Number(addedMaths && addedMaths.Count);
     if (!addedMaths || (addedLocalCount !== 0 && addedLocalCount !== 1)) {
       throw nativeError("EQUATION_INSERT_FAILED");
@@ -1737,7 +2042,21 @@
     }
     let chosenMaths = addedMaths;
     let chosenMathCount = addedLocalCount;
-    if (!localMath) {
+    if (!localMath && selectionOwned) {
+      const selectedCount = Number(selectedMaths && selectedMaths.Count);
+      if (!selectedMaths || (selectedCount !== 0 && selectedCount !== 1)) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      try {
+        localMath = collectionItem(selectedMaths, 1);
+      } catch (error) {
+        if (selectedCount === 1) throw error;
+        localMath = null;
+      }
+      chosenMaths = selectedMaths;
+      chosenMathCount = selectedCount;
+    }
+    if (!localMath && !selectionOwned) {
       const freshRange = document.Range(addedStart, addedEnd);
       if (!freshRange || Number(freshRange.Start) !== addedStart ||
           Number(freshRange.End) !== addedEnd) {
@@ -1754,10 +2073,10 @@
         if (freshCount === 1) throw error;
         localMath = null;
       }
-      if (!localMath) throw nativeError("EQUATION_INSERT_FAILED");
       chosenMaths = freshMaths;
       chosenMathCount = freshCount;
     }
+    if (!localMath) throw nativeError("EQUATION_INSERT_FAILED");
     const math = localMath;
     if (!math || typeof math.BuildUp !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
@@ -1771,6 +2090,7 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     math.BuildUp();
+    verifyProfessionalMath(math, descriptorLinearText);
     const builtAddedStart = Number(addedRange.Start);
     const builtAddedEnd = Number(addedRange.End);
     const builtLocalCount = Number(addedMaths.Count);
@@ -1789,10 +2109,13 @@
         Number(builtContent.End) !== builtAddedEnd || !builtText.trim()) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
-    commitSuccessfulHostAdvance(document, builtAddedEnd);
+    const committedMinimum = selectionOwned
+      ? Math.max(builtAddedEnd, formulaOperationEnd) : builtAddedEnd;
+    commitSuccessfulHostAdvance(document, committedMinimum);
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
-    if (mathCursorEnd === null || builtEnd > mathCursorEnd) {
+    if (mathCursorEnd === null ||
+        (selectionOwned ? builtEnd >= mathCursorEnd : builtEnd > mathCursorEnd)) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const localCursorRanges = [builtContent, chosenMathRange];
@@ -1800,12 +2123,24 @@
       document, mathCursor, mathCursorEnd,
       localCursorRanges, mathCursorEnd
     );
-    insertInlineText(document, "\t", null, true);
-    addNativeNumberShell(
-      document, args.numbering, args.bookmarkName, context.ownerNodeId, true
-    );
-    finishFormulaLayout(document, layout);
-    insertInlineText(document, "\r", null, true);
+    if (selectionOwned) {
+      const finalPosition = currentPosition(document);
+      const finalCursor = exactDocumentRange(
+        document, finalPosition, finalPosition
+      );
+      if (typeof finalCursor.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      finalCursor.Select();
+      documentOwnedSelection(document, finalPosition, finalPosition);
+    } else {
+      insertInlineText(document, "\t", null, true);
+      addNativeNumberShell(
+        document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+      );
+      finishFormulaLayout(document, layout);
+      insertInlineText(document, "\r", null, true);
+    }
 
     emitFormulaResourceDegradation(document, args, context);
   }
@@ -1840,7 +2175,7 @@
       let imageCheckpoint;
       try {
         imageCheckpoint = checkpointRecoverableMutation(
-          document, true, ["inlineShapes", "fields"]
+          document, true, ["inlineShapes", "fields", "tables", "bookmarks"]
         );
       } catch (error) {
         throw nativeError("CAPABILITY_MISMATCH");
@@ -1876,14 +2211,17 @@
         );
         if (!shapeRange.ParagraphFormat) throw nativeError("CAPABILITY_MISMATCH");
         shapeRange.ParagraphFormat.KeepTogether = -1;
-        addInlineDegradation(document, {
-          code: code, fallbackText: "formula image fallback"
-        });
         insertInlineText(document, "\t", null, true);
         addNativeNumberShell(
           document, args.numbering, args.bookmarkName, context.ownerNodeId, true
         );
         finishFormulaLayout(document, layout);
+        insertInlineText(document, "\r", null, true);
+        addDegradationNotice(document, {
+          code: code,
+          fallbackText: "formula image fallback",
+          placement: "block"
+        });
         insertInlineText(document, "\r", null, true);
         return;
       } catch (error) {
@@ -1956,7 +2294,8 @@
         insertInlineText(document, run.prefix);
         addNativeField(
           document, "REF " + run.bookmarkName + " \\h",
-          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED"
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED",
+          expectedReferenceFieldDelta(document, run.bookmarkName)
         );
         if (run.suffix) insertInlineText(document, run.suffix);
       } else {
@@ -2022,7 +2361,8 @@
       try {
         addNativeField(
           document, "REF " + run.bookmarkName + " \\h",
-          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED"
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED",
+          expectedReferenceFieldDelta(document, run.bookmarkName)
         );
       } catch (error) {
         if (error.code !== "CROSS_REFERENCE_FAILED" || context.controllerOwned) throw error;
@@ -2074,6 +2414,8 @@
       insertInlineText(document, safeString(run.prefix));
       const start = currentPosition(document);
       const fallbackText = safeString(run.fallbackText);
+      const insertionTarget = endRange(document);
+      const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
       insertInlineText(document, fallbackText);
       const inserted = document.Range(start, start + fallbackText.length);
       if (inserted && inserted.Font) {
@@ -2083,6 +2425,7 @@
       if (inserted && inserted.Shading) {
         inserted.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
       }
+      restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
       insertInlineText(document, safeString(run.suffix));
     });
     if (args.listFormatting) {
@@ -2540,6 +2883,8 @@
     const code = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(args.code))
       ? safeString(args.code) : "DEGRADATION";
     const text = "[" + code + ": " + safePublicText(args.fallbackText) + "]";
+    const insertionTarget = endRange(document);
+    const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
     const start = currentPosition(document);
     insertInlineText(document, text);
     const written = typeof document.Range === "function"
@@ -2551,11 +2896,68 @@
     if (written && written.Shading) {
       written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
     }
+    restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
     return written;
+  }
+
+  function degradationStyleScalar(document, owner, name) {
+    const value = owner && owner[name];
+    if ((typeof value === "number" && Number.isFinite(value)) ||
+        typeof value === "boolean") return value;
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return undefined;
+  }
+
+  function captureDegradationInsertionStyle(document, targetRange) {
+    const targetStart = Number(targetRange && targetRange.Start);
+    if (!Number.isInteger(targetStart) || targetStart < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const cursor = exactDocumentRange(document, targetStart, targetStart);
+    const font = cursor && cursor.Font;
+    const shading = cursor && cursor.Shading;
+    return {
+      italic: degradationStyleScalar(document, font, "Italic"),
+      color: degradationStyleScalar(document, font, "Color"),
+      background: degradationStyleScalar(
+        document, shading, "BackgroundPatternColor"
+      )
+    };
+  }
+
+  function restoreDegradationInsertionStyle(document, style, rawPosition) {
+    const position = Number(rawPosition);
+    if (!Number.isInteger(position) || position < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const cursor = exactDocumentRange(document, position, position);
+    const targets = [cursor];
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (!cursor || typeof cursor.Select !== "function" || !document.ActiveWindow) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      cursor.Select();
+      targets.push(documentOwnedSelection(document, position, position));
+    }
+    targets.forEach(function (target) {
+      if (target && target.Font) {
+        if (style.italic !== undefined) target.Font.Italic = style.italic;
+        if (style.color !== undefined) target.Font.Color = style.color;
+      }
+      if (target && target.Shading) {
+        if (style.background !== undefined) {
+          target.Shading.BackgroundPatternColor = style.background;
+        }
+      }
+    });
   }
 
   function addLiteralInlineDegradation(document, fallbackText) {
     const text = safePublicText(fallbackText);
+    const insertionTarget = endRange(document);
+    const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
     const start = currentPosition(document);
     insertInlineText(document, text);
     const written = typeof document.Range === "function"
@@ -2567,6 +2969,7 @@
     if (written && written.Shading) {
       written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
     }
+    restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
     return written;
   }
 
@@ -2629,6 +3032,7 @@
     }
     const start = safeNumber(target.Start, -1);
     if (start < 0) throw nativeError("DEGRADATION_INSERT_FAILED");
+    const insertionStyle = captureDegradationInsertionStyle(document, target);
     try {
       insertInlineText(document, text, target);
       const written = document.Range(start, start + text.length);
@@ -2643,6 +3047,7 @@
       applyParagraphFormat(written.ParagraphFormat, {
         spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
       });
+      restoreDegradationInsertionStyle(document, insertionStyle, Number(written.End));
       return {Range: written};
     } catch (error) {
       throw nativeError("DEGRADATION_INSERT_FAILED");
@@ -2937,14 +3342,16 @@
     const plannedEquation = Boolean(
       equationArgs.content && equationArgs.content.plannedDegradation
     );
+    const rollbackOwnsParagraph = opName === "writer.add_equation" ||
+      opName === "writer.add_cross_reference";
     const checkpoint = recoverable ? checkpointRecoverableMutation(
       document,
-      opName === "writer.add_equation",
+      rollbackOwnsParagraph,
       opName === "writer.add_equation"
         ? (plannedEquation
-          ? ["inlineShapes", "fields"]
-          : ["omaths", "inlineShapes", "fields"])
-        : []
+          ? ["inlineShapes", "fields", "bookmarks"]
+          : ["omaths", "inlineShapes", "fields", "bookmarks"])
+        : (opName === "writer.add_cross_reference" ? ["fields"] : [])
     ) : null;
     if (deferred) {
       recoverOperation(
@@ -2974,6 +3381,12 @@
             checkpoint, code, policy.fallback
           );
           return;
+        }
+        if (checkpoint) {
+          try { rollbackMutation(document, checkpoint); }
+          catch (rollbackError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
         }
       }
       throw nativeError(error && error.code ? error.code : "EXECUTION_ABORTED");
@@ -3367,6 +3780,7 @@
       appendIssueOnce: appendIssueOnce,
       safePublicText: safePublicText,
       addInlineDegradation: addInlineDegradation,
+      insertStyledDegradationAtRange: insertStyledDegradationAtRange,
       addDegradationNotice: addDegradationNotice,
       reserveDocumentQualityAnchor: reserveDocumentQualityAnchor,
       upsertDocumentQualityNotice: upsertDocumentQualityNotice,

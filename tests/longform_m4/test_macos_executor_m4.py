@@ -393,6 +393,7 @@ def test_addin_exposes_m4_native_handlers_and_bibliography_is_not_deferred() -> 
     assert ".BuildUp()" in source
     assert "_wpscNumericFormulaDebug" not in source
     assert "_wpscFieldNumericDebug" not in source
+    assert "_wpscFormulaLocalDebug" not in source
     assert "failure.message =" not in source
 
 
@@ -435,7 +436,7 @@ function makeRange(start, end) {
   }}, _tabStops: tabStops};
   paragraphFormats.push(paragraphFormat);
   return {
-    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat,
+    Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: paragraphFormat,
     get Text() { return text.slice(start, end); },
     set Text(value) { text = text.slice(0, start) + String(value) + text.slice(end); },
     InsertAfter: function(value) {
@@ -463,7 +464,10 @@ const document = {
   Range: makeRange,
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: maths,
-  Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
+  Fields: {Add: function(target) { const fieldStart = target.End;
+    target.InsertAfter("1");
+    return {Update: function(){}, Result: {Text: "1", Start: fieldStart, End: target.End}};
+  }},
   Bookmarks: {Add: function(name) { bookmarks.push(name); }}
 };
 const args = {
@@ -488,39 +492,139 @@ assert.deepEqual(formulaFormat._tabStops, [[233.5, 1, 0], [467, 2, 0]]);
 ''')
 
 
+def test_js_native_formula_preserves_canonical_linear_text_and_requires_complete_professional_structure() -> None:
+    _run_node(r'''
+function exercise(linearText, functionTypes) {
+  let text = "", addedText = null;
+  function range(start, end) {
+    return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
+      ParagraphFormat: {TabStops: {Add: function(){}}},
+      get Text() { return text.slice(this.Start, this.End); },
+      InsertAfter: function(value) {
+        value = String(value);
+        text = text.slice(0, this.End) + value + text.slice(this.End);
+        this.End += value.length;
+      }};
+  }
+  const native = {Range: null, Functions: {Count: functionTypes.length,
+    Item: function(index) { return {Type: functionTypes[index - 1]}; }},
+    BuildUp: function(){}};
+  const maths = {Count: 0, Add: function(target) {
+    addedText = target.Text;
+    native.Range = {Start: target.Start, End: target.End};
+    this.Count += 1;
+    return {Start: target.Start, End: target.End,
+      OMaths: {Count: 1, Item: function() { return native; }}};
+  }};
+  const document = {
+    get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+    Range: range, OMaths: maths,
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+    Fields: {Add: function(target) { const start = target.End; target.InsertAfter("1");
+      return {Update: function(){}, Result: {Text: "1", Start: start, End: target.End}};
+    }},
+    Bookmarks: {Add: function(){}}
+  };
+  const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: linearText}},
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: linearText};
+  return {run: function() {
+    window.WPSComposerLongformV2.__test.addEquationNativeM4(
+      document, args, {},
+      {ownerNodeId: "eq:matrix", issues: [], childResults: [], controllerOwned: true}
+    );
+    return addedText;
+  }};
+}
+assert.equal(exercise("(■(a&b@c&d))", [12, 5]).run(), "(■(a&b@c&d))");
+assert.throws(function() { exercise("■(a&b@c&d)", [12]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise('"a/b^c_d"', [20]).run(), '"a/b^c_d"');
+assert.throws(function() { exercise("x^2", []).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.throws(function() { exercise("x^2", [20]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.throws(function() { exercise("x^2+y^3", [19]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("x^2+y^3", [19, 19]).run(), "x^2+y^3");
+assert.throws(function() { exercise("√(x)+√(y)", [16]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("√(x)+√(y)", [16, 16]).run(), "√(x)+√(y)");
+assert.throws(function() { exercise("(a)/(b)+(c)/(d)", [7]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("(a)/(b)+(c)/(d)", [7, 7]).run(), "(a)/(b)+(c)/(d)");
+assert.throws(function() { exercise("∑_i^n i+∏_j^m j", [13]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("∑_i^n i+∏_j^m j", [13, 13]).run(), "∑_i^n i+∏_j^m j");
+assert.equal(exercise("(√(x_i^2))/(∑_j^n j)", [7, 16, 18, 13]).run(),
+  "(√(x_i^2))/(∑_j^n j)");
+assert.throws(function() { exercise("(■(a&b@c&d))", [12]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("{■(x&x>0@-x&x≤0)", [12, 5]).run(),
+  "{■(x&x>0@-x&x≤0)");
+assert.throws(function() { exercise("((n)¦(k))", []).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("((n)¦(k))", [7, 5]).run(), "((n)¦(k))");
+assert.throws(function() { exercise("((n)¦(k))+((a)¦(b))", [7, 5]).run(); },
+  function(error) { return error.code === "EQUATION_INSERT_FAILED"; });
+assert.equal(exercise("((n)¦(k))+((a)¦(b))", [7, 7, 5, 5]).run(),
+  "((n)¦(k))+((a)¦(b))");
+''')
+
+
 def test_js_formula_controller_attempts_image_once_then_places_source_notice_and_continues() -> None:
     _run_node(r'''
 let text = "";
 let imageAttempts = 0;
+let bookmarkNames = [];
+let nativeMathCount = 0;
+const selection = {Document: null, Range: null, OMaths: null};
 function makeRange(start, end) {
-  return {
-    Start: start, End: end, Font: {}, Shading: {},
+  const value = {
+    Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
     ParagraphFormat: {TabStops: {Add: function(){}}},
+    OMaths: {Add: function(target) {
+      nativeMathCount += 1;
+      const native = {Range: {Start: target.Start, End: target.End},
+        Functions: {Count: 1, Item: function() { return {Type: 20}; }},
+        BuildUp: function(){}};
+      const added = makeRange(target.Start, target.End);
+      added.OMaths = {Count: 1, Item: function() { return native; }};
+      return added;
+    }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) {
       value = String(value);
       text = text.slice(0, this.End) + value + text.slice(this.End);
       this.End += value.length;
     },
-    Delete: function() { text = text.slice(0, start) + text.slice(end); }
+    Delete: function() { text = text.slice(0, start) + text.slice(end);
+      bookmarkNames = []; nativeMathCount = 0; }
   };
+  return value;
 }
 const document = {
+  Name: "Recovery.docx", ActiveWindow: {Selection: selection},
   get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: makeRange,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
-  OMaths: {Count: 0, Add: function() { return null; }, Item: function() { return null; }},
+  OMaths: {get Count() { return nativeMathCount; },
+    Add: function() { throw new Error("global add forbidden"); },
+    Item: function() { throw new Error("global item forbidden"); }},
   InlineShapes: {AddPicture: function() { imageAttempts += 1;
     const error = new Error("image failed"); error.code = "IMAGE_INSERT_FAILED"; throw error; }},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
-  Bookmarks: {Add: function() {}},
+  Bookmarks: {get Count() { return bookmarkNames.length; },
+    Add: function(name) { bookmarkNames.push(name); }},
   _wpscRecoveryController: window.WPSComposerLongformV2.__test.createLocalRecoveryController()
 };
+selection.Document = document;
 const issues = [], children = [];
 const equation = {
   op: "writer.add_equation", nodeId: "eq:one",
-  args: {renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y", sourceHash: "2".repeat(64)}},
-    fallbackResource: {fallbackResourceId: "formula-image-1"}, fallbackText: "x+y",
+  args: {renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x^2", sourceHash: "2".repeat(64)}},
+    fallbackResource: {fallbackResourceId: "formula-image-1"}, fallbackText: "x^2",
     numbering: {mode: "global", sequenceId: "WPSC_EQ", chapterStyleLevel: null, resetLevel: null, prefix: "(", suffix: ")"},
     bookmarkName: "wpsc_eq_" + "e".repeat(24)},
   failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"], fallback: "explicit-image-then-source-notice"}
@@ -529,9 +633,130 @@ window.WPSComposerLongformV2.__test.runOperation(document, equation, {"formula-i
 window.WPSComposerLongformV2.__test.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:later", args: {text: "later"}}, {}, issues, children);
 assert.equal(imageAttempts, 1);
 assert.equal(issues.filter(x => x.code === "EQUATION_INSERT_FAILED").length, 1);
-assert.ok(text.includes("x+y"));
+assert.ok(text.includes("x^2"));
 assert.ok(text.includes("later"));
 assert.ok(!JSON.stringify(issues).includes("/private"));
+assert.equal(nativeMathCount, 0);
+assert.equal(document._wpscNativeFields.length, 1);
+assert.equal(document.Bookmarks.Count, 1);
+''')
+
+
+def test_js_partial_professional_formula_degrades_then_keeps_number_reference_and_later_flow() -> None:
+    _run_node(r'''
+function exercise(imageSucceeds) {
+  let text = "", mathCount = 0, shapeCount = 0, fieldCount = 0;
+  let fieldRefreshes = 0;
+  const bookmarkEntries = Object.create(null);
+  const selection = {Document: null, Range: null, OMaths: null};
+  function paragraphCount() { return 1 + (text.match(/\r/g) || []).length; }
+  function range(start, end) {
+    const value = {Start: start, End: end,
+      Font: {Italic: 0, Color: 0},
+      Shading: {BackgroundPatternColor: 0},
+      ParagraphFormat: {TabStops: {Add: function(){}}},
+      OMaths: null,
+      Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
+      get Text() { return text.slice(this.Start, this.End); },
+      InsertAfter: function(inserted) {
+        inserted = String(inserted);
+        text = text.slice(0, this.End) + inserted + text.slice(this.End);
+        this.End += inserted.length;
+      },
+      Delete: function() {
+        text = text.slice(0, this.Start) + text.slice(this.End);
+        mathCount = 0; shapeCount = 0; fieldCount = 0;
+        Object.keys(bookmarkEntries).forEach(function(name) { delete bookmarkEntries[name]; });
+      }};
+    value.OMaths = {Add: function(target) {
+      mathCount += 1;
+      const native = {Range: {Start: target.Start, End: target.End},
+        Functions: {Count: 1, Item: function() { return {Type: 19}; }},
+        BuildUp: function(){}};
+      const added = range(target.Start, target.End);
+      added.OMaths = {Count: 1, Item: function() { return native; }};
+      return added;
+    }};
+    return value;
+  }
+  const document = {
+    Name: imageSucceeds ? "Image.docx" : "Source.docx",
+    ActiveWindow: {Selection: selection},
+    get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+    Range: range,
+    get Paragraphs() { return {Count: paragraphCount(), Item: function() {
+      const last = text.lastIndexOf("\r");
+      return {Range: {Start: last < 0 ? 0 : last + 1, End: text.length + 1}};
+    }}; },
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+    OMaths: {get Count() { return mathCount; },
+      Add: function() { throw new Error("global OMath add forbidden"); },
+      Item: function() { throw new Error("global OMath item forbidden"); }},
+    InlineShapes: {get Count() { return shapeCount; }, AddPicture: function(a, b, c, target) {
+      if (!imageSucceeds) {
+        const failure = new Error("image failed");
+        failure.code = "IMAGE_INSERT_FAILED";
+        throw failure;
+      }
+      const start = target.End;
+      target.InsertAfter("I");
+      shapeCount += 1;
+      return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
+    }},
+    Fields: {get Count() { return fieldCount; }, Add: function(target) {
+      const start = target.End;
+      target.InsertAfter("1");
+      fieldCount += 1;
+      return {Update: function() { fieldRefreshes += 1; },
+        Range: {Start: start, End: target.End},
+        Result: {Text: "1", Start: start, End: target.End}};
+    }},
+    Bookmarks: {get Count() { return Object.keys(bookmarkEntries).length; },
+      Add: function(name) { bookmarkEntries[name] = {Range: {Fields: {Count: 1}}}; },
+      Exists: function(name) { return Boolean(bookmarkEntries[name]); },
+      Item: function(name) { return bookmarkEntries[name]; }}
+  };
+  selection.Document = document;
+  const bookmarkName = "wpsc_eq_" + "e".repeat(24);
+  const issues = [], children = [];
+  const equation = {op: "writer.add_equation", nodeId: "eq:one", args: {
+    renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x^2+y^3"}},
+    fallbackResource: {fallbackResourceId: "image"}, fallbackText: "x^2+y^3",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: bookmarkName},
+    failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+      fallback: "explicit-image-then-source-notice"}};
+  const api = window.WPSComposerLongformV2.__test;
+  api.runOperation(document, equation, {image: "/private/staged.png"}, issues, children);
+  api.runOperation(document, {op: "writer.add_cross_reference", nodeId: "p:ref", args: {runs: [
+    {type: "reference", prefix: "(", bookmarkName: bookmarkName,
+      suffix: ")", fallbackText: "1"}
+  ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+    fallback: "inline-fallback"}}, {}, issues, children);
+  api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:later",
+    args: {text: "later"}}, {}, issues, children);
+  assert.equal(mathCount, 0, "partial native OMath must be rolled back");
+  assert.equal(document.Bookmarks.Count, 1, "only the fallback number bookmark remains");
+  assert.equal(fieldCount, 2, "one fallback number and one REF remain");
+  assert.equal(document._wpscNativeFields.length, 2);
+  assert.equal(document._wpscNativeFields[0].fieldKind, "SEQ_EQ");
+  assert.equal(document._wpscNativeFields[1].fieldKind, "REF");
+  document._wpscNativeFields[1].native.Update();
+  assert.equal(fieldRefreshes, 1);
+  assert.equal(issues.filter(function(issue) {
+    return issue.code === "EQUATION_INSERT_FAILED";
+  }).length, 1);
+  assert.ok(text.includes("later"));
+  assert.ok(text.includes("(1)"));
+  return {shapeCount: shapeCount, text: text};
+}
+const image = exercise(true);
+assert.equal(image.shapeCount, 1);
+assert.ok(image.text.includes("formula image fallback"));
+const source = exercise(false);
+assert.equal(source.shapeCount, 0);
+assert.ok(source.text.includes("[EQUATION_INSERT_FAILED: x^2+y^3]"));
 ''')
 
 
@@ -542,7 +767,7 @@ const formats = [];
 function makeRange(start, end) {
   const format = {};
   formats.push(format);
-  return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: format,
+  return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: format,
     InsertAfter: function(value) { text += String(value); this.End = text.length; }};
 }
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: makeRange};
@@ -559,8 +784,8 @@ window.WPSComposerLongformV2.__test.addBibliographyNative(document, {
 });
 assert.equal(text, "See [1].\r[1] Alpha.\r[2] Beta.\r");
 assert.equal(formats.filter(f => f.LeftIndent === 18 && f.FirstLineIndent === -18 && f.SpaceAfter === 6).length, 2);
-const cells = {"2:1": {Range: {Text: "[1]", Font: {}, Shading: {}}},
-               "2:2": {Range: {Text: "[REFERENCE_UNRESOLVED \u5f15\u7528\u76ee\u6807\u672a\u89e3\u6790]", Font: {}, Shading: {}}}};
+const cells = {"2:1": {Range: {Text: "[1]", Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}}},
+               "2:2": {Range: {Text: "[REFERENCE_UNRESOLVED \u5f15\u7528\u76ee\u6807\u672a\u89e3\u6790]", Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}}}};
 const table = {Cell: function(row, col) { return cells[row + ":" + col]; }};
 window.WPSComposerLongformV2.__test.applyTableCellMetadata(table, {
   cellCitations: [{row: 2, column: 1}],
@@ -568,7 +793,7 @@ window.WPSComposerLongformV2.__test.applyTableCellMetadata(table, {
 });
 assert.equal(cells["2:1"].Range.Text, "[1]");
 assert.equal(cells["2:2"].Range.Text, "[REFERENCE_UNRESOLVED \u5f15\u7528\u76ee\u6807\u672a\u89e3\u6790]");
-assert.equal(cells["2:1"].Range.Font.Italic, undefined);
+assert.equal(cells["2:1"].Range.Font.Italic, 0);
 assert.equal(cells["2:2"].Range.Font.Italic, -1);
 assert.ok(cells["2:2"].Range.Shading.BackgroundPatternColor !== undefined);
 ''')
@@ -587,6 +812,55 @@ assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(
   document, {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x"}}}, {},
   {ownerNodeId: "eq:one", issues: [], childResults: [], controllerOwned: true}
 ), error => error.code === "CAPABILITY_MISMATCH");
+''')
+
+
+def test_js_formula_selection_requires_target_document_window_and_owner() -> None:
+    _run_node(r'''
+function makeDocument(mode) {
+  let text = "", addCalls = 0;
+  const selection = {Document: {Name: "Foreign.docx"}, Range: null, OMaths: null};
+  function range(start, end) {
+    const reportedStart = mode === "clamped-input" && start !== end ? start + 1 : start;
+    const value = {Start: reportedStart, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
+      ParagraphFormat: {TabStops: {Add: function(){}}},
+      OMaths: {Add: function() { addCalls += 1; return null; }},
+      Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
+      get Text() { return text.slice(this.Start, this.End); },
+      InsertAfter: function(raw) {
+        const inserted = String(raw);
+        text = text.slice(0, this.End) + inserted + text.slice(this.End);
+        this.End += inserted.length;
+      },
+      Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+    };
+    return value;
+  }
+  const document = {Name: "Target.docx",
+    get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+    Range: range, Paragraphs: {Count: 1, Item: function() {
+      return {Range: {Start: 0, End: text.length + 1}};
+    }}, PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+    OMaths: {Count: 0, Add: function() { throw new Error("global add forbidden"); }}}
+  if (mode !== "missing-window") document.ActiveWindow = {Selection: selection};
+  if (mode === "clamped-input") selection.Document = document;
+  document._wpscRunOwnsAppendCursor = true;
+  document._wpscAppendCursorRange = range(0, 0);
+  return {document: document, addCalls: function() { return addCalls; }};
+}
+const args = {content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24), fallbackText: "x+y"};
+const context = {ownerNodeId: "eq:owner", issues: [], childResults: [], controllerOwned: true};
+for (const mode of ["foreign-owner", "missing-window", "clamped-input"]) {
+  const state = makeDocument(mode);
+  assert.throws(function() {
+    window.WPSComposerLongformV2.__test.addEquationNativeM4(
+      state.document, args, {}, context
+    );
+  }, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
+  assert.equal(state.addCalls(), 0);
+}
 ''')
 
 
@@ -620,10 +894,11 @@ def test_js_planned_formula_uses_validated_image_without_entering_omath() -> Non
     _run_node(r'''
 let text = "";
 let imageAttempts = 0;
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
-  InsertAfter: function(value) { text += String(value); }, Delete: function() {}}; }
+  InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+  Delete: function() {}}; }
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
@@ -644,6 +919,135 @@ assert.equal(imageAttempts, 1);
 assert.equal(context.issues.length, 1);
 assert.equal(context.issues[0].code, "FORMULA_MALFORMED");
 assert.ok(text.includes("formula image fallback"));
+const noticeAt = text.indexOf("formula image fallback");
+assert.ok(noticeAt > 0);
+assert.ok(text.slice(0, noticeAt).includes("\r"));
+assert.ok(text.indexOf("\t") < text.indexOf("\r"));
+''')
+
+
+def test_js_degradation_styling_is_scoped_to_the_exact_visible_span() -> None:
+    _run_node(r'''
+let text = "";
+const normal = {italic: 0, color: 17, background: 23, texture: 0};
+const style = Object.assign({}, normal);
+function styledRange(start, end) {
+  const font = {};
+  Object.defineProperties(font, {
+    Italic: {get: function() { return style.italic; }, set: function(value) { style.italic = value; }},
+    Color: {get: function() { return style.color; }, set: function(value) { style.color = value; }}
+  });
+  const shading = {};
+  Object.defineProperties(shading, {
+    BackgroundPatternColor: {get: function() { return style.background; },
+      set: function(value) { style.background = value; }},
+    Texture: {get: function() { return style.texture; }, set: function(value) { style.texture = value; }}
+  });
+  return {Start: start, End: end, Font: font, Shading: shading, ParagraphFormat: {},
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; }};
+}
+const document = {
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: styledRange
+};
+const context = {ownerNodeId: "p:one", issues: [], childResults: [], controllerOwned: true};
+window.WPSComposerLongformV2.__test.addCitationParagraph(document, {runs: [
+  {type: "degradation", nodeId: "p:one/c:0", code: "REFERENCE_UNRESOLVED",
+    fallbackText: "[REFERENCE_UNRESOLVED 引用目标未解析]"}
+]}, {}, context);
+assert.deepEqual(style, normal);
+window.WPSComposerLongformV2.__test.addBibliographyNative(document, {
+  schemaVersion: 1, style: "numeric", hangingIndentPt: 18, leftIndentPt: 18,
+  spaceAfterPt: 6,
+  entries: [{id: "a", nodeId: "ref:a", number: 1, text: "Alpha.", cited: true}]
+});
+assert.deepEqual(style, normal);
+assert.ok(text.endsWith("[1] Alpha.\r"));
+''')
+
+
+def test_js_degradation_style_restore_is_target_local_owner_bound_and_closed() -> None:
+    _run_node(r'''
+let text = "BODY";
+const writes = [];
+const selection = {Document: null, Range: null};
+function range(start, end) {
+  const anchorStyle = start <= 1
+    ? {italic: 0, color: 11, background: 22}
+    : {italic: -1, color: 33, background: 44};
+  const font = {Italic: anchorStyle.italic, Color: anchorStyle.color};
+  const shading = {BackgroundPatternColor: anchorStyle.background};
+  return {Start: start, End: end, Font: font, Shading: shading, ParagraphFormat: {},
+    Select: function() { selection.Range = this; },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    }};
+}
+const document = {Name: "Style.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: function(start, end) {
+    const value = range(start, end);
+    const font = value.Font, shading = value.Shading;
+    Object.defineProperties(font, {
+      Italic: {get: function() { return this._italic; }, set: function(raw) {
+        this._italic = raw; writes.push([start, "italic", raw]); }},
+      Color: {get: function() { return this._color; }, set: function(raw) {
+        this._color = raw; writes.push([start, "color", raw]); }}
+    });
+    font._italic = start <= 1 ? 0 : -1;
+    font._color = start <= 1 ? 11 : 33;
+    Object.defineProperty(shading, "BackgroundPatternColor", {
+      get: function() { return this._background; }, set: function(raw) {
+        this._background = raw; writes.push([start, "background", raw]); }
+    });
+    shading._background = start <= 1 ? 22 : 44;
+    return value;
+  }};
+selection.Document = document;
+document._wpscRunOwnsAppendCursor = true;
+document._wpscAppendCursorRange = document.Range(4, 4);
+const target = document.Range(0, 0);
+window.WPSComposerLongformV2.__test.insertStyledDegradationAtRange(
+  document, target, "[NOTICE]"
+);
+assert.ok(writes.some(function(item) {
+  return item[0] === 8 && item[1] === "color" && item[2] === 11;
+}));
+assert.ok(writes.some(function(item) {
+  return item[0] === 8 && item[1] === "background" && item[2] === 22;
+}));
+
+const missingStyleSelection = {Document: null, Range: null};
+const missingStyle = {Name: "MissingStyle.docx",
+  ActiveWindow: {Selection: missingStyleSelection},
+  get Content() { return {End: 1, Text: ""}; },
+  Range: function(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+    Select: function() { missingStyleSelection.Range = this; },
+    InsertAfter: function(){}}; }};
+missingStyleSelection.Document = missingStyle;
+missingStyle._wpscRunOwnsAppendCursor = true;
+missingStyle._wpscAppendCursorRange = missingStyle.Range(0, 0);
+assert.throws(function() {
+  window.WPSComposerLongformV2.__test.addInlineDegradation(
+    missingStyle, {code: "NOTICE", fallbackText: "safe"}
+  );
+}, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
+
+const missingSelection = {Name: "MissingSelection.docx",
+  get Content() { return {End: 1, Text: ""}; },
+  Range: function(start, end) { return {Start: start, End: end,
+    Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0},
+    InsertAfter: function(value) { this.End += String(value).length; }}; }};
+missingSelection._wpscRunOwnsAppendCursor = true;
+missingSelection._wpscAppendCursorRange = missingSelection.Range(0, 0);
+assert.throws(function() {
+  window.WPSComposerLongformV2.__test.addInlineDegradation(
+    missingSelection, {code: "NOTICE", fallbackText: "safe"}
+  );
+}, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
 ''')
 
 
@@ -651,7 +1055,7 @@ def test_js_formula_image_rung_only_recovers_named_image_failures() -> None:
     _run_node(r'''
 function makeDocument(addPicture) {
   let text = "", rollbacks = 0;
-  function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
     ParagraphFormat: {TabStops: {Add: function(){}}},
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) { text += String(value); },
@@ -692,19 +1096,24 @@ assert.ok(state.text().includes("x+y"));
 def test_js_formula_inner_rollback_and_number_failures_remain_exact_fatal_codes() -> None:
     _run_node(r'''
 let text = "", deletes = 0;
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+const selection = {Document: null, Range: null, OMaths: null};
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  OMaths: {Add: function() { return null; }},
+  Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) {
     value = String(value); text += value; this.End += value.length;
   },
   Delete: function() { deletes += 1; if (deletes === 2) { const e = new Error("rollback"); e.code = "LOCAL_MUTATION_ROLLBACK_FAILED"; throw e; } text = ""; }}; }
-const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+const document = {Name: "Rollback.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
   InlineShapes: {AddPicture: function() { text += "partial"; return {}; }},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }}, Bookmarks: {Add: function() {}}};
+selection.Document = document;
 const operation = {op: "writer.add_equation", nodeId: "eq:one", args: {
   renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
   fallbackResource: {fallbackResourceId: "formula-image-1"}, fallbackText: "x+y",
@@ -717,7 +1126,7 @@ assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
 
 text = "";
 let rollbackCount = 0;
-function range2(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+function range2(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
@@ -831,14 +1240,14 @@ assert.ok(text.includes("Formula ref (1-9)"));
 
 def test_js_omath_recovers_fresh_exact_local_and_never_builds_global_proxy() -> None:
     _run_node(r'''
-let text = "", buildUps = 0, freshEnabled = true;
+let text = "", buildUps = 0, freshEnabled = "item";
 const freshMath = {Range: {Start: 1, End: 4}, BuildUp: function() { buildUps += 1; }};
 function range(start, end) {
   const result = {Start: start, End: end, Font: {},
     ParagraphFormat: {TabStops: {Add: function(){}}},
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) { text += String(value); }};
-  if (freshEnabled && start === 1 && end === 4 && document.OMaths.Count === 1) {
+  if (freshEnabled === "item" && start === 1 && end === 4 && document.OMaths.Count === 1) {
     result.OMaths = {Count: 0, Item: function(index) {
       if (index === 1) return freshMath;
       throw new Error("no second local math");
@@ -883,6 +1292,7 @@ window.WPSComposerLongformV2.__test.addEquationNativeM4(document, {
 assert.equal(localBuildUps, 1);
 
 text = "";
+freshEnabled = false;
 const wrongGlobal = {Range: {Start: 0, End: 10}};
 document.OMaths = {Count: 0, Add: function() { this.Count = 1;
   return {Start: 1, End: 4, OMaths: {Count: 0}};
@@ -901,9 +1311,12 @@ def test_js_omath_success_commits_host_expansion_before_number_and_next_operatio
 let text = "";
 const writes = [];
 let localMath = null;
+const selection = {Document: null, Range: null, OMaths: null};
 function range(start, end) {
-  const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+  const value = {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, Style: null,
     ParagraphFormat: {TabStops: {Add: function(){}}},
+    OMaths: {Add: function(target) { return maths.Add(target); }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
     get Text() { return text.slice(this.Start, this.End); },
     InsertAfter: function(value) {
       value = String(value);
@@ -928,10 +1341,15 @@ const maths = {Count: 0, Add: function(target) {
   // remains at the smaller end returned by OMaths.Add.
   text = text.slice(0, 4) + "<OMATHPAD>" + text.slice(4);
   }};
-  return {Start: target.Start, End: target.End,
+  const result = {Start: target.Start, End: target.End,
     OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+  result.Select = function() { selection.Range = result; selection.OMaths = {
+    Count: 0, Item: function() { return localMath; }
+  }; };
+  return result;
 }, Item: function() { return globalMath; }};
 const document = {
+  Name: "SelectionOwned.docx", ActiveWindow: {Selection: selection},
   get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: 1, Item: function() {
     return {Range: {Start: 0, End: text.length + 1}};
@@ -942,6 +1360,7 @@ const document = {
     return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
   }}, Bookmarks: {Add: function() {}}
 };
+selection.Document = document;
 const api = window.WPSComposerLongformV2.__test;
 api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1", args: {
   renderMode: "native-m4",
@@ -950,9 +1369,8 @@ api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1", args: {
   numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
   bookmarkName: "wpsc_eq_" + "e".repeat(24)
 }}, {}, [], []);
-const builtHostEnd = "\tx+y<OMATHPAD>".length;
 const numberTab = writes.find(function(item) {
-  return item[1] === "\t" && item[0] >= builtHostEnd;
+  return item[1] === "\t" && item[0] === "\tx+y".length;
 });
 assert.ok(numberTab, JSON.stringify(writes));
 api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:after",
@@ -969,12 +1387,15 @@ function runCase(staleSource, recoverFirst) {
   let text = "", stale = false, failNext = recoverFirst;
   const writes = [], issues = [], ranges = [];
   let freshMath = null;
+  const selection = {Document: null, Range: null, OMaths: null};
   function reportedEnd(source) {
     return stale && source === staleSource ? 100 : text.length + 1;
   }
   function range(start, end) {
-    const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+    const value = {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, Style: null,
       ParagraphFormat: {TabStops: {Add: function(){}}},
+      OMaths: {Add: function(target) { return maths.Add(target); }},
+      Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
       get Text() { return text.slice(this.Start, this.End); },
       InsertAfter: function(value) {
         value = String(value);
@@ -1005,10 +1426,15 @@ function runCase(staleSource, recoverFirst) {
     globalMath = {Range: {Start: 0, End: target.End + 20}, BuildUp: function() {
       throw new Error("global proxy must not build");
     }};
-    return {Start: target.Start, End: target.End,
+    const result = {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+    result.Select = function() { selection.Range = result; selection.OMaths = {
+      Count: 0, Item: function() { return freshMath; }
+    }; };
+    return result;
   }, Item: function() { return globalMath; }};
   const document = {
+    Name: "SelectionOwned.docx", ActiveWindow: {Selection: selection},
     get Content() { return {End: reportedEnd("content"), get Text() { return text; }}; }, Range: range,
     get Paragraphs() { return {
       get Count() { return (text.match(/\r/g) || []).length + 1; },
@@ -1023,6 +1449,7 @@ function runCase(staleSource, recoverFirst) {
       return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
     }}, Bookmarks: {Add: function() {}}
   };
+  selection.Document = document;
   const api = window.WPSComposerLongformV2.__test;
   api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:prefix",
     args: {text: "Prefix"}}, {}, issues, []);
@@ -1039,7 +1466,7 @@ function runCase(staleSource, recoverFirst) {
   const beforeSuccess = text.length;
   api.runOperation(document, operation("eq:second"), {}, issues, []);
   const numberTab = writes.find(function(item) {
-    return item[1] === "\t" && item[0] >= beforeSuccess + "\tx+y<OMATHPAD>".length;
+    return item[1] === "\t" && item[0] === beforeSuccess + "\tx+y".length;
   });
   assert.ok(numberTab, staleSource + ":" + JSON.stringify(writes));
   api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:after",
@@ -1047,6 +1474,7 @@ function runCase(staleSource, recoverFirst) {
   assert.ok(text.endsWith("\t(1)\rAfter\r"), staleSource + ":" + text);
   if (recoverFirst) assert.deepEqual(issues.map(function(item) { return item.code; }),
     ["EQUATION_INSERT_FAILED"]);
+  else assert.deepEqual(issues, []);
 }
 runCase("paragraph", false);
 ''')
@@ -1058,11 +1486,14 @@ function runCase(corruptHeldPrefix) {
   let text = "Prefix\r", built = false, formulaStart = -1;
   const ranges = [], writes = [];
   let freshMath = null;
+  const selection = {Document: null, Range: null, OMaths: null};
   function range(start, end) {
     const snapshot = text.slice(start, end);
     const heldBeforeBuild = !built;
-    const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+    const value = {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, Style: null,
       ParagraphFormat: {TabStops: {Add: function(){}}},
+      OMaths: {Add: function(target) { return maths.Add(target); }},
+      Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
       get Text() {
         if (heldBeforeBuild && this.Start === 0 && built) {
           if (this.End === formulaStart) return snapshot + "<ABSORBED>";
@@ -1109,10 +1540,14 @@ function runCase(corruptHeldPrefix) {
     globalMath = {Range: {Start: 0, End: target.End + 20}, BuildUp: function() {
       throw new Error("global proxy must not build");
     }};
-    return {Start: target.Start, End: target.End,
+    const result = {Start: target.Start, End: target.End,
       OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+    result.Select = function() { selection.Range = result; selection.OMaths = {
+      Count: 0, Item: function() { return freshMath; }
+    }; };
+    return result;
   }, Item: function() { return globalMath; }};
-  const document = {get Content() { return {End: built ? 19 : text.length + 1,
+  const document = {get Content() { return {End: text.length + 1,
     get Text() { return corruptHeldPrefix && built ? "X" + text.slice(1) : text; }}; },
     Range: range,
     get Paragraphs() { return {Count: 2, Item: function() {
@@ -1124,6 +1559,9 @@ function runCase(corruptHeldPrefix) {
       return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
     }}, Bookmarks: {Add: function() {}}
   };
+  document.Name = "SelectionOwned.docx";
+  document.ActiveWindow = {Selection: selection};
+  selection.Document = document;
   const operation = {op: "writer.add_equation", nodeId: "eq:remap", args: {
     renderMode: "native-m4",
     content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
@@ -1131,7 +1569,7 @@ function runCase(corruptHeldPrefix) {
     numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
     bookmarkName: "wpsc_eq_" + "e".repeat(24)}, failurePolicy: {mode: "fail"}};
   window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
-  assert.ok(writes.some(function(item) { return item[0] === 18 && item[1] === "\t"; }),
+  assert.ok(writes.some(function(item) { return item[0] === 11 && item[1] === "\t"; }),
     JSON.stringify(writes));
 }
 runCase(false);
@@ -1143,7 +1581,7 @@ def test_js_run_owned_insert_and_number_field_reject_silent_noops() -> None:
     _run_node(r'''
 let text = "";
 function silentRange(start, end) { return {
-  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
   InsertAfter: function() {}, Delete: function() {}
 }; }
 const silentDocument = {
@@ -1161,7 +1599,7 @@ assert.throws(function() {
 assert.equal(text, "");
 
 function range(start, end) { return {
-  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
   InsertAfter: function(raw) {
     const value = String(raw);
     text = text.slice(0, this.End) + value + text.slice(this.End);
@@ -1188,7 +1626,7 @@ text = "";
 const writes = [];
 let provenContentPosition = 0;
 function provenRange(start, end) { return {
-  Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
   InsertAfter: function(raw) {
     const value = String(raw);
     writes.push([this.End, value]);
@@ -1231,7 +1669,7 @@ const added = [];
 function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
 function range(start, end) {
   return {
-    Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+    Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: paragraphFormat(),
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) {
       value = String(value);
@@ -1291,26 +1729,57 @@ assert.ok(text.slice(citation.length).startsWith("\tx+y\t(1)\r"));
 def test_js_runtime_cursor_survives_content_and_paragraph_collection_lag() -> None:
     _run_node(r'''
 let text = "";
+let forbiddenGlobalAdds = 0, forbiddenGlobalItems = 0;
+let mathBounds = null;
+const numberFieldTargets = [];
+const fieldCodes = [], bookmarkNames = [];
+const events = [];
+const selection = {Document: null, Range: null, OMaths: null, InMath: false};
+const liveRanges = [];
 function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
 function range(start, end) {
-  return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+  const value = {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: paragraphFormat(),
     Style: null, ListFormat: {},
-    get Text() { return text.slice(start, end); },
+    OMaths: {Add: function(target) { return maths.Add(target); }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths;
+      selection.InMath = false;
+      if (this.Text === "x+y") mathBounds = {Start: this.Start, End: this.End}; },
+    get Text() { return text.slice(this.Start, this.End); },
     InsertAfter: function(value) {
       value = String(value);
+      const insertionPoint = this.End;
+      liveRanges.forEach(function(item) {
+        if (item !== this && item.End === insertionPoint) item.End += value.length;
+      }, this);
       text = text.slice(0, this.End) + value + text.slice(this.End);
       this.End += value.length;
     },
     Delete: function() { text = text.slice(0, start) + text.slice(end); }
   };
+  liveRanges.push(value);
+  return value;
 }
 const maths = {Count: 0, items: [], Add: function(target) {
-  const native = {Range: {Start: target.Start, End: target.End}, BuildUp: function(){}};
+  assert.equal(target.Text, "x+y");
+  assert.equal(text.slice(target.End, target.End + 1), "\t");
+  assert.deepEqual(mathBounds, {Start: target.Start, End: target.End});
+  const native = {Range: {Start: target.Start, End: target.End}, BuildUp: function(){
+    events.push("build");
+  }};
   this.items.push(native); this.Count += 1;
-  return {Start: target.Start, End: target.End,
+  const result = {Start: target.Start, End: target.End,
     OMaths: {Count: 1, Item: function() { return native; }}};
+  result.Select = function() { selection.Range = result; selection.OMaths = result.OMaths;
+    selection.InMath = true; };
+  return result;
 }, Item: function(index) { return this.items[index - 1]; }};
+const globalMaths = {get Count() { return maths.Count; }, Add: function() {
+  forbiddenGlobalAdds += 1; throw new Error("global add must not run");
+}, Item: function() {
+  forbiddenGlobalItems += 1; throw new Error("global item must not run");
+}};
 const document = {
+  Name: "SelectionOwned.docx", ActiveWindow: {Selection: selection},
   // Both collection views remain stale for the whole session. Only the actual
   // insertion Range returned by WPS advances its End.
   Content: {End: 1, get Text() { return text; }},
@@ -1318,13 +1787,21 @@ const document = {
   Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: 1}}; }},
   Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
-  OMaths: maths,
-  Fields: {Add: function(target) {
+  OMaths: globalMaths,
+  Fields: {Add: function(target, type, code) {
+    assert.equal(selection.InMath, false);
+    assert.ok(mathBounds && target.Start >= mathBounds.End + 1);
+    numberFieldTargets.push(target.Start);
+    fieldCodes.push(code);
+    events.push("field:" + code);
     target.InsertAfter("1");
     return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
   }},
-  Bookmarks: {Add: function() {}}
+  Bookmarks: {Add: function(name) { bookmarkNames.push(name); },
+    Exists: function(name) { return bookmarkNames.indexOf(name) !== -1; },
+    Item: function() { return {Range: {Fields: {Count: 1}}}; }}
 };
+selection.Document = document;
 const api = window.WPSComposerLongformV2.__test;
 const issues = [], children = [];
 api.runOperation(document, {op: "writer.add_heading", nodeId: "h:1",
@@ -1343,9 +1820,23 @@ api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:1",
     bookmarkName: "wpsc_eq_" + "e".repeat(24)},
   failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
     fallback: "explicit-image-then-source-notice"}}, {}, issues, children);
-assert.equal(text, "Heading\rPlain\rSee [1].\r\tx+y\t(1)\r");
+api.runOperation(document, {op: "writer.add_cross_reference", nodeId: "p:ref",
+  args: {runs: [{type: "text", text: "Ref "}, {type: "reference",
+    targetNodeId: "eq:1", targetKind: "equation",
+    bookmarkName: "wpsc_eq_" + "e".repeat(24), prefix: "(", suffix: ")",
+    fallbackText: "1"}]}}, {}, issues, children);
+assert.equal(text, "Heading\rPlain\rSee [1].\r\tx+y\t(1)\rRef (1)\r");
 assert.deepEqual(issues, []);
 assert.deepEqual(children, [{nodeId: "p:2/c:0", status: "applied"}]);
+assert.equal(forbiddenGlobalAdds, 0);
+assert.equal(forbiddenGlobalItems, 0);
+assert.equal(numberFieldTargets.length, 2);
+assert.ok(bookmarkNames.includes("wpsc_eq_" + "e".repeat(24)));
+assert.ok(fieldCodes.includes("REF wpsc_eq_" + "e".repeat(24) + " \\h"));
+assert.ok(events.indexOf("field:SEQ WPSC_EQ \\* ARABIC") < events.indexOf("build"));
+assert.ok(events.indexOf("field:REF wpsc_eq_" + "e".repeat(24) + " \\h") >
+  events.indexOf("build"));
+assert.equal(selection.InMath, false);
 ''')
 
 
@@ -1354,7 +1845,7 @@ def test_js_runtime_cursor_advances_after_table_image_and_break_objects() -> Non
 function makeDocument() {
   let text = "";
   function range(start, end) {
-    return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+    return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
       get Text() { return text.slice(start, end); },
       InsertAfter: function(value) {
         value = String(value);
@@ -1381,7 +1872,7 @@ rows.AllowBreakAcrossPages = 0;
 state.document.Tables = {Add: function(target) {
   const start = target.End;
   target.InsertAfter("<TABLE>");
-  const cell = {Range: {Text: "", Font: {}, Shading: {}, ParagraphFormat: {}},
+  const cell = {Range: {Text: "", Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {}},
     Merge: function(){}};
   return {Range: {Start: start, End: target.End}, Cell: function() { return cell; },
     Rows: rows, Borders: border};
@@ -1440,7 +1931,7 @@ def test_js_run_owned_native_partial_writes_rollback_from_live_target_range() ->
 function makeDocument() {
   let text = "PREFIX\r";
   function range(start, end) {
-    return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+    return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
       get Text() { return text.slice(start, end); },
       InsertAfter: function(value) {
         value = String(value);
@@ -1534,9 +2025,12 @@ def test_js_formula_recovery_never_deletes_before_authoritative_checkpoint() -> 
     _run_node(r'''
 const citation = "Inline citation remains complete in this paragraph.\r";
 let text = citation;
+const selection = {Document: null, Range: null, OMaths: null};
 function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
 function range(start, end) {
-  return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: paragraphFormat(),
+  return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: paragraphFormat(),
+    OMaths: {Add: function() { return null; }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
     get Text() { return text.slice(start, end); },
     InsertAfter: function(value) {
       value = String(value);
@@ -1547,6 +2041,7 @@ function range(start, end) {
   };
 }
 const document = {
+  Name: "Recovery.docx", ActiveWindow: {Selection: selection},
   get Content() { return {End: Math.max(1, text.length + 1 - 9), get Text() { return text; }}; },
   Range: range,
   get Paragraphs() { return {
@@ -1565,6 +2060,7 @@ const document = {
   }},
   Bookmarks: {Add: function() {}}
 };
+selection.Document = document;
 const issues = [];
 window.WPSComposerLongformV2.__test.runOperation(document, {
   op: "writer.add_equation", nodeId: "eq:one",
@@ -1586,8 +2082,11 @@ assert.equal(text.slice(citation.length), "\t[EQUATION_INSERT_FAILED: x+y]\t(1)\
 def test_js_formula_rollback_accepts_empty_checkpoint_when_collapsed_range_view_drifts() -> None:
     _run_node(r'''
 let text = "P\r";
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+const selection = {Document: null, Range: null, OMaths: null};
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  OMaths: {Add: function() { return null; }},
+  Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
   get Text() {
     if (this.Start === this.End && text.length > this.Start) {
       return text.slice(this.Start, this.Start + 1);
@@ -1602,6 +2101,7 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
 }; }
 const document = {
+  Name: "Recovery.docx", ActiveWindow: {Selection: selection},
   get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: (text.match(/\r/g) || []).length + 1,
     Item: function() {
@@ -1614,6 +2114,7 @@ const document = {
     return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
   }}, Bookmarks: {Add: function() {}}
 };
+selection.Document = document;
 const issues = [];
 window.WPSComposerLongformV2.__test.runOperation(document, {
   op: "writer.add_equation", nodeId: "eq:collapsed", args: {
@@ -1633,8 +2134,11 @@ assert.deepEqual(issues.map(function(issue) { return issue.code; }), ["EQUATION_
 def test_js_formula_image_recovery_ignores_stale_ahead_host_end_after_rollback() -> None:
     _run_node(r'''
 let text = "", reportedEnd = 1;
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+const selection = {Document: null, Range: null, OMaths: null};
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
+  OMaths: {Add: function() { return null; }},
+  Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
   get Text() { return text.slice(start, end); },
   InsertAfter: function(value) {
     value = String(value);
@@ -1643,7 +2147,8 @@ function range(start, end) { return {Start: start, End: end, Font: {}, Shading: 
   },
   Delete: function() { text = text.slice(0, start) + text.slice(end); }
 }; }
-const document = {get Content() { return {End: reportedEnd, get Text() { return text; }}; }, Range: range,
+const document = {Name: "Recovery.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: reportedEnd, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: 1, Item: function() {
     return {Range: {Start: 0, End: reportedEnd}};
   }}; },
@@ -1656,6 +2161,7 @@ const document = {get Content() { return {End: reportedEnd, get Text() { return 
   Fields: {Add: function(target) { target.InsertAfter("1");
     return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
   }}, Bookmarks: {Add: function(){}}};
+selection.Document = document;
 const api = window.WPSComposerLongformV2.__test;
 api.runOperation(document, {op: "writer.add_paragraph", args: {text: "Prefix"}}, {}, [], []);
 reportedEnd = 100;
@@ -1676,8 +2182,11 @@ def test_js_formula_image_partial_write_is_fatal_and_postprocess_rollback_covers
     _run_node(r'''
 function makeDocument() {
   let text = "Prefix\r", reportedEnd = null;
-  function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  const selection = {Document: null, Range: null, OMaths: null};
+  function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
     ParagraphFormat: {TabStops: {Add: function(){}}},
+    OMaths: {Add: function() { return null; }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
     get Text() { return text.slice(this.Start, this.End); },
     InsertAfter: function(value) {
       value = String(value);
@@ -1687,6 +2196,7 @@ function makeDocument() {
     Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
   }; }
   const document = {
+    Name: "Recovery.docx", ActiveWindow: {Selection: selection},
     get Content() { return {End: reportedEnd === null ? text.length + 1 : reportedEnd, get Text() { return text; }}; }, Range: range,
     get Paragraphs() { return {Count: 2, Item: function() {
       return {Range: {Start: 7, End: text.length + 1}};
@@ -1695,6 +2205,7 @@ function makeDocument() {
     OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
     Bookmarks: {Add: function() {}}
   };
+  selection.Document = document;
   return {document: document, text: function() { return text; },
     appendUntracked: function(value) { text += value; },
     freezeHostEnd: function() { reportedEnd = text.length + 1; }};
@@ -1718,7 +2229,9 @@ state.document.InlineShapes = {Count: 0, AddPicture: function() {
   error.code = "IMAGE_INSERT_FAILED";
   throw error;
 }};
-state.document.Fields = {Add: function() { return {Result: {Text: "1"}}; }};
+state.document.Fields = {Add: function(target) { const start = target.End;
+  target.InsertAfter("1"); return {Result: {Text: "1", Start: start, End: target.End}};
+}};
 assert.throws(() => api.runOperation(
   state.document, operation(), {image: "/private/image.png"}, [], []
 ), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1730,7 +2243,9 @@ state.document.InlineShapes = {Count: 0, AddPicture: function() {
   state.appendUntracked("<HOST-RANGED-IMAGE>");
   throw unknown;
 }};
-state.document.Fields = {Add: function() { return {Result: {Text: "1"}}; }};
+state.document.Fields = {Add: function(target) { const start = target.End;
+  target.InsertAfter("1"); return {Result: {Text: "1", Start: start, End: target.End}};
+}};
 assert.throws(() => api.runOperation(
   state.document, operation(), {image: "/private/image.png"}, [], []
 ), error => error === unknown);
@@ -1753,10 +2268,13 @@ state.document.Range = function(start, end) {
   };
   return value;
 };
-state.document.Fields = {Add: function() {
+let fieldCalls = 0;
+state.document.Fields = {Add: function(target) {
+  fieldCalls += 1;
+  if (fieldCalls === 1) { const start = target.End; target.InsertAfter("1");
+    return {Result: {Text: "1", Start: start, End: target.End}}; }
   const error = new Error("private field failure");
-  error.code = "FIELD_REFRESH_FAILED";
-  throw error;
+  error.code = "FIELD_REFRESH_FAILED"; throw error;
 }};
 assert.throws(() => api.runOperation(
   state.document, operation(), {image: "/private/image.png"}, [], []
@@ -1765,15 +2283,96 @@ assert.equal(state.text(), "Prefix\r");
 ''')
 
 
+def test_js_formula_image_postprocess_failure_restores_bookmark_field_and_object_transaction() -> None:
+    _run_node(r'''
+let text = "Prefix\r";
+let shapeCount = 0, fieldCount = 0, bookmarkCount = 0, tableCount = 0;
+let bookmarkCountReads = 0, failLayout = false;
+const selection = {Document: null, Range: null, OMaths: null};
+const postFailure = new Error("postprocess failed");
+postFailure.code = "FIELD_REFRESH_FAILED";
+function range(start, end) {
+  return {Start: start, End: end,
+    Font: {Italic: 0, Color: 0},
+    Shading: {BackgroundPatternColor: 0},
+    ParagraphFormat: {TabStops: {Add: function() {
+      if (failLayout) throw postFailure;
+    }}},
+    OMaths: {Add: function() { return null; }},
+    Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+    },
+    Delete: function() {
+      text = text.slice(0, this.Start) + text.slice(this.End);
+      shapeCount = 0; fieldCount = 0; bookmarkCount = 0; tableCount = 0;
+    }};
+}
+const document = {
+  Name: "Image-postprocess.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: range,
+  get Paragraphs() { return {Count: 2, Item: function() {
+    return {Range: {Start: 7, End: text.length + 1}};
+  }}; },
+  PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64},
+  OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
+  InlineShapes: {get Count() { return shapeCount; }, AddPicture: function(a, b, c, target) {
+    const start = target.End;
+    target.InsertAfter("<IMAGE>");
+    shapeCount += 1;
+    return {Range: {Start: start, End: target.End, ParagraphFormat: {}}};
+  }},
+  Fields: {get Count() { return fieldCount; }, Add: function(target) {
+    const start = target.End;
+    target.InsertAfter("1");
+    fieldCount += 1;
+    return {Update: function(){}, Result: {Text: "1", Start: start, End: target.End}};
+  }},
+  Bookmarks: {get Count() { bookmarkCountReads += 1; return bookmarkCount; },
+    Add: function() { bookmarkCount += 1; failLayout = true; }},
+  Tables: {get Count() { return tableCount; }}
+};
+selection.Document = document;
+document._wpscRunOwnsAppendCursor = true;
+document._wpscAppendCursorRange = document.Range(7, 7);
+document._wpscNativeFields = [];
+const args = {
+  fallbackResource: {fallbackResourceId: "image"}, fallbackText: "x^2",
+  numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+  bookmarkName: "wpsc_eq_" + "e".repeat(24)};
+assert.throws(function() {
+  window.WPSComposerLongformV2.__test.addFormulaNativeFallback(
+    document, args, {image: "/private/image.png"},
+    {ownerNodeId: "eq:image", issues: [], childResults: [], controllerOwned: true},
+    "EQUATION_INSERT_FAILED"
+  );
+}, function(error) { return error === postFailure; });
+assert.equal(text, "Prefix\r");
+assert.equal(shapeCount, 0);
+assert.equal(fieldCount, 0);
+assert.equal(bookmarkCount, 0);
+assert.equal(tableCount, 0);
+assert.equal(document._wpscNativeFields.length, 0);
+assert.ok(bookmarkCountReads >= 2, "bookmarks must be captured and revalidated");
+''')
+
+
 def test_js_formula_recovery_is_fatal_if_rollback_consumes_prior_paragraph_boundary() -> None:
     _run_node(r'''
 let text = "citation\r", paragraphCount = 2, rollbackDeletes = 0;
+const selection = {Document: null, Range: null, OMaths: null};
 function paragraphFormat() { return {TabStops: {Add: function(){}}}; }
 function range(start, end) {
   const boundedStart = Math.min(start, text.length);
   const boundedEnd = Math.min(end, text.length);
-  return {Start: boundedStart, End: boundedEnd, Font: {}, Shading: {},
+  return {Start: boundedStart, End: boundedEnd, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: paragraphFormat(),
+  OMaths: {Add: function() { return null; }},
+  Select: function() { selection.Range = this; selection.OMaths = this.OMaths; },
   get Text() { return text.slice(boundedStart, boundedEnd); },
       InsertAfter: function(value) {
         value = String(value); text += value;
@@ -1785,7 +2384,8 @@ function range(start, end) {
     text = text.slice(0, start);
     if (text.endsWith("\r")) { text = text.slice(0, -1); paragraphCount -= 1; }
   }}; }
-const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+const document = {Name: "Recovery.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
   get Paragraphs() { return {Count: paragraphCount, Item: function(index) {
     assert.equal(index, paragraphCount);
     const start = text.lastIndexOf("\r") + 1;
@@ -1795,6 +2395,7 @@ const document = {get Content() { return {End: text.length + 1, get Text() { ret
   OMaths: {Count: 0, Add: function() { return null; }, Item: function() {}},
   Fields: {Add: function() { return {Update: function(){}, Result: {Text: "1"}}; }},
   Bookmarks: {Add: function() {}}};
+selection.Document = document;
 const operation = {op: "writer.add_equation", nodeId: "eq:one", args: {
   renderMode: "native-m4", content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
   fallbackText: "x+y", numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
@@ -1812,7 +2413,7 @@ assert.equal(text, "citation");
 def test_js_formula_image_rollback_requires_a_paragraph_boundary_checkpoint() -> None:
     _run_node(r'''
 let text = "", imageAttempts = 0;
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0},
   ParagraphFormat: {TabStops: {Add: function(){}}},
   InsertAfter: function(value) { text += String(value); }, Delete: function() { text = ""; }}; }
 const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
@@ -1835,13 +2436,30 @@ assert.equal(text, "");
 def test_js_mixed_citation_recovery_rebuilds_run_results_and_planned_issues() -> None:
     _run_node(r'''
 let text = "";
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+const selection = {Document: null, Range: null};
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
+  get Text() { return text.slice(this.Start, this.End); },
+  Select: function() { selection.Range = this; },
   InsertAfter: function(value) {
     value = String(value); text += value; this.End += value.length;
-  }, Delete: function() { text = ""; }}; }
-const fieldError = new Error("reference failed"); fieldError.code = "CROSS_REFERENCE_FAILED";
-const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
-  Fields: {Add: function() { throw fieldError; }}};
+  }, Delete: function() { text = ""; document.Fields.Count = 0; }}; }
+const document = {Name: "CitationRecovery.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
+  Bookmarks: {Exists: function() { return true; },
+    Item: function() { return {Range: {Fields: {Count: 2}}}; }},
+  Fields: {Count: 0, Add: function(target) {
+    const start = target.End;
+    if (this.Count === 0) {
+      target.InsertAfter("1"); this.Count = 2;
+      return {Result: {Text: "1", Start: start, End: target.End}};
+    }
+    const hostStart = target.End;
+    text += "<GHOST>"; this.Count = 4;
+    return {Result: {Text: "", Start: hostStart + 1, End: text.length},
+      Range: {Start: 0, End: text.length}};
+  }}};
+selection.Document = document;
 const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
 const issues = [], children = [];
 window.WPSComposerLongformV2.__test.runOperation(document, {
@@ -1852,11 +2470,16 @@ window.WPSComposerLongformV2.__test.runOperation(document, {
     {type: "degradation", nodeId: "p/cite:1", code: "REFERENCE_UNRESOLVED", fallbackText: fallback},
     {type: "text", text: " and "},
     {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
-      suffix: ")", fallbackText: "1-1"}
+      suffix: ")", fallbackText: "1-1"},
+    {type: "text", text: " and "},
+    {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "f".repeat(24),
+      suffix: ")", fallbackText: "1-2"}
   ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
     fallback: "inline-fallback"}
 }, {}, issues, children);
-assert.equal(text, "[1] then " + fallback + " and (1-1)\r");
+assert.equal(text, "[1] then " + fallback + " and (1-1) and (1-2)\r");
+assert.equal(document.Fields.Count, 0);
+assert.equal(document._wpscNativeFields.length, 0);
 assert.deepEqual(children, [
   {nodeId: "p/cite:0", status: "applied"},
   {nodeId: "p/cite:1", status: "degraded", issueCode: "REFERENCE_UNRESOLVED"}
@@ -1868,10 +2491,127 @@ assert.deepEqual(issues.map(function(issue) { return [issue.code, issue.nodeId];
 ''')
 
 
+def test_js_partial_reference_without_a_bounded_target_is_fatal() -> None:
+    _run_node(r'''
+let text = "";
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
+  get Text() { return text.slice(this.Start, this.End); },
+  InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+  Delete: function() { throw new Error("rollback must not guess"); }}; }
+const fieldError = new Error("private partial reference"); fieldError.code = "CROSS_REFERENCE_FAILED";
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
+  Bookmarks: {Exists: function() { return true; },
+    Item: function() { return {Range: {Fields: {Count: 1}}}; }},
+  Fields: {Count: 0, Add: function() {
+    text += "<UNBOUNDED-GHOST>"; this.Count = 1; throw fieldError;
+  }}};
+assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(document, {
+  op: "writer.add_cross_reference", nodeId: "p", args: {runs: [
+    {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
+      suffix: ")", fallbackText: "1-1"}
+  ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+    fallback: "inline-fallback"}
+}, {}, [], []), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
+assert.ok(text.includes("<UNBOUNDED-GHOST>"));
+assert.equal(document.Fields.Count, 1);
+''')
+
+
+def test_js_returned_reference_without_field_count_proof_is_fatal() -> None:
+    _run_node(r'''
+let text = "";
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
+  get Text() { return text.slice(this.Start, this.End); },
+  InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+  Delete: function() { throw new Error("rollback must not guess"); }}; }
+const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+  Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
+  Bookmarks: {Exists: function() { return true; },
+    Item: function() { return {Range: {Fields: {Count: 1}}}; }},
+  Fields: {Count: 0, Add: function(target) {
+    const start = target.End; text += "<UNPROVEN-FIELD>";
+    return {Result: {Text: "", Start: start, End: text.length}};
+  }}};
+assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(document, {
+  op: "writer.add_cross_reference", nodeId: "p", args: {runs: [
+    {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
+      suffix: ")", fallbackText: "1-1"}
+  ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+    fallback: "inline-fallback"}
+}, {}, [], []), error => error.code === "LOCAL_MUTATION_ROLLBACK_FAILED");
+assert.ok(text.includes("<UNPROVEN-FIELD>"));
+assert.equal(document.Fields.Count, 0);
+''')
+
+
+def test_js_reference_field_delta_must_match_a_closed_number_shell() -> None:
+    _run_node(r'''
+[0, 3].forEach(function(sourceFieldCount) {
+  let text = "", addCalls = 0;
+  function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+    Delete: function() { text = ""; }}; }
+  const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+    Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
+    Bookmarks: {Exists: function() { return true; },
+      Item: function() { return {Range: {Fields: {Count: sourceFieldCount}}}; }},
+    Fields: {Count: 0, Add: function() { addCalls += 1; return {}; }}};
+  assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(document, {
+    op: "writer.add_cross_reference", nodeId: "p", args: {runs: [
+      {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
+        suffix: ")", fallbackText: "1-1"}
+    ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+      fallback: "inline-fallback"}
+  }, {}, [], []), error => error.code === "CAPABILITY_MISMATCH");
+  assert.equal(addCalls, 0);
+  assert.equal(text, "");
+});
+''')
+
+
+def test_js_reference_engine_and_unknown_failures_never_degrade() -> None:
+    _run_node(r'''
+function exercise(error, partial) {
+  let text = "";
+  function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) { value = String(value); text += value; this.End += value.length; },
+    Delete: function() { text = ""; document.Fields.Count = 0; }}; }
+  const document = {get Content() { return {End: text.length + 1, get Text() { return text; }}; }, Range: range,
+    Paragraphs: {Count: 1, Item: function() { return {Range: {Start: 0, End: text.length + 1}}; }},
+    Bookmarks: {Exists: function() { return true; },
+      Item: function() { return {Range: {Fields: {Count: 1}}}; }},
+    Fields: {Count: 0, Add: function(target) {
+      if (partial) { target.InsertAfter("<BOUNDED-GHOST>"); this.Count = 1; }
+      throw error;
+    }}};
+  const issues = [];
+  assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(document, {
+    op: "writer.add_cross_reference", nodeId: "p", args: {runs: [
+      {type: "reference", prefix: "(", bookmarkName: "wpsc_eq_" + "e".repeat(24),
+        suffix: ")", fallbackText: "1-1"}
+    ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
+      fallback: "inline-fallback"}
+  }, {}, issues, []), failure => failure.code === (error.code || "EXECUTION_ABORTED"));
+  assert.equal(text, "");
+  assert.equal(document.Fields.Count, 0);
+  assert.equal(document._wpscNativeFields.length, 0);
+  assert.deepEqual(issues, []);
+}
+const engine = new Error("private engine detail"); engine.code = "ENGINE_LOST";
+exercise(engine, false);
+exercise(engine, true);
+exercise(new Error("private raw detail"), false);
+exercise(new Error("private raw detail"), true);
+''')
+
+
 def test_js_citation_degradations_are_literal_and_keep_run_occurrences() -> None:
     _run_node(r'''
 let text = "";
-function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+function range(start, end) { return {Start: start, End: end, Font: {Italic: 0, Color: 0}, Shading: {BackgroundPatternColor: 0, Texture: 0}, ParagraphFormat: {},
   InsertAfter: function(value) { text += String(value); }}; }
 const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
 const context = {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true};
