@@ -144,6 +144,7 @@ def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]
             not isinstance(item, dict)
             or set(item) - {"nodeId", "status", "issueCode"}
             or not isinstance(item.get("nodeId"), str)
+            or redact_private_text(item.get("nodeId")) != item.get("nodeId")
             or status not in {"applied", "degraded", "skipped"}
             or (
                 issue_code is not None

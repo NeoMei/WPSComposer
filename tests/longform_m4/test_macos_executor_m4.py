@@ -22,6 +22,7 @@ from skills.WPSComposer.scripts.macos_probe.models import (
     ProbeResult,
     ProtocolError,
     validate_longform_generation_request,
+    validate_longform_generation_value,
 )
 
 
@@ -154,6 +155,16 @@ class _Bridge:
         }, None)
 
 
+class _FailureBridge(_Bridge):
+    def __init__(self, error: Mapping[str, Any]) -> None:
+        super().__init__()
+        self.error = error
+
+    def wait_result(self, command_id: str, timeout: float) -> ProbeResult:
+        assert self.params is not None
+        return ProbeResult(command_id, False, {}, self.error)
+
+
 def test_closed_bridge_request_preserves_protocol_v2_shape() -> None:
     request = {
         "plan": _plan(_equation()).to_dict(),
@@ -219,6 +230,149 @@ def test_changed_staged_payload_is_fatal_and_cleanup_still_runs(
         executor.execute(_plan(_equation(resource.id), resources=(resource,)), (resource,))
     assert bridge.params is None
     assert not tuple(tmp_path.glob("wpsc-resource-*"))
+
+
+@pytest.mark.parametrize("private_code", [
+    "/Users/alice/private.tex",
+    "file:///tmp/private.tex",
+    "A" * 64,
+])
+def test_bridge_error_code_and_detail_are_closed_and_privacy_safe(
+    tmp_path: Path, private_code: str
+) -> None:
+    bridge = _FailureBridge({
+        "code": private_code,
+        "message": private_code + ":writer./Users/alice/private.tex",
+    })
+    with pytest.raises(MacOSLongformExecutorError) as captured:
+        MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_path)).execute(
+            _plan(_equation()), ()
+        )
+    message = str(captured.value)
+    assert "EXECUTION_ABORTED" in message
+    assert private_code not in message
+    assert "/Users/alice" not in message
+
+
+def test_bridge_error_keeps_a_closed_stable_code_and_controlled_detail(
+    tmp_path: Path,
+) -> None:
+    bridge = _FailureBridge({
+        "code": "ENGINE_LOST",
+        "message": "ENGINE_LOST:writer.OMathsAdd",
+    })
+    with pytest.raises(MacOSLongformExecutorError) as captured:
+        MacOSLongformExecutor(bridge=bridge, staging_dir=str(tmp_path)).execute(
+            _plan(_equation()), ()
+        )
+    assert str(captured.value).endswith(
+        "(ENGINE_LOST: ENGINE_LOST:writer.OMathsAdd)"
+    )
+
+
+def _citation_degradation_plan() -> GenerationPlan:
+    fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]"
+    return GenerationPlan(
+        component="writer",
+        operations=(
+            GenerationOperation(
+                "writer.reserve_document_quality_anchor",
+                {"title": "生成质量提示", "notices": []},
+                node_id="doc:quality", failure_policy={"mode": "fail"},
+            ),
+            GenerationOperation(
+                "writer.configure_section", {"role": "body"},
+                node_id="doc:section:body",
+            ),
+            GenerationOperation(
+                "writer.add_cross_reference",
+                {"runs": [
+                    {"type": "text", "text": "before "},
+                    {"type": "citation", "nodeId": "p/cite:0",
+                     "targetId": "ref:a", "targetNodeId": "ref:a",
+                     "number": 1, "fallbackText": "[1]"},
+                    {"type": "text", "text": " then "},
+                    {"type": "degradation", "nodeId": "p/cite:1",
+                     "code": "REFERENCE_UNRESOLVED", "fallbackText": fallback},
+                    {"type": "text", "text": " middle "},
+                    {"type": "degradation", "nodeId": "p/cite:2",
+                     "code": "REFERENCE_UNRESOLVED", "fallbackText": fallback},
+                ]},
+                node_id="p", failure_policy={
+                    "mode": "degrade",
+                    "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+                    "fallback": "inline-fallback",
+                },
+            ),
+            GenerationOperation(
+                "writer.configure_section", {"role": "bibliography"},
+                node_id="doc:section:bibliography",
+            ),
+            GenerationOperation(
+                "writer.add_bibliography",
+                {"schemaVersion": 1, "entries": [{
+                    "id": "ref:a", "nodeId": "ref:a", "number": 1,
+                    "text": "Alpha.", "cited": True,
+                }], "style": "numeric", "hangingIndentPt": 18.0,
+                 "leftIndentPt": 18.0, "spaceAfterPt": 6.0},
+                node_id="bib:block", failure_policy={
+                    "mode": "degrade",
+                    "recoverableCodes": ["BIBLIOGRAPHY_INSERT_FAILED"],
+                    "fallback": "notice",
+                },
+            ),
+            GenerationOperation(
+                "writer.finalize_fields", {"maxRounds": 3},
+                node_id="doc:finalize",
+            ),
+        ),
+        protocol_version=2,
+        semantic_version="longform-1",
+        resource_manifest_version=1,
+        resource_manifest_digest=EMPTY_MANIFEST_DIGEST,
+    )
+
+
+def test_closed_result_preserves_citation_run_children_and_ownership() -> None:
+    plan = _citation_degradation_plan()
+    fallback_children = [
+        {"nodeId": "p/cite:0", "status": "applied"},
+        {"nodeId": "p/cite:1", "status": "degraded",
+         "issueCode": "REFERENCE_UNRESOLVED"},
+        {"nodeId": "p/cite:2", "status": "degraded",
+         "issueCode": "REFERENCE_UNRESOLVED"},
+    ]
+    value = validate_longform_generation_value({
+        "outputPath": "/private/staged.docx",
+        "appliedOperations": len(plan.operations),
+        "issueCodes": [{
+            "code": "REFERENCE_UNRESOLVED",
+            "message": "Citation used its planned fallback",
+            "placement": "inline", "nodeId": node_id,
+        } for node_id in ("p/cite:1", "p/cite:2")],
+        "childResults": fallback_children,
+        "paginationMap": {"version": "M2-stub", "nodes": []},
+    })
+    MacOSLongformExecutor._validate_result_references(value, plan)
+
+    for changed in (
+        {**value, "childResults": [
+            {**fallback_children[0], "nodeId": "p/cite:1"},
+            fallback_children[1],
+            fallback_children[2],
+        ]},
+        {**value, "childResults": [
+            fallback_children[0],
+            {**fallback_children[1], "status": "applied", "issueCode": None},
+            fallback_children[2],
+        ]},
+        {**value, "issueCodes": [
+            {**value["issueCodes"][0], "nodeId": "p"},
+            value["issueCodes"][1],
+        ]},
+    ):
+        with pytest.raises(MacOSLongformExecutorError, match="result was invalid"):
+            MacOSLongformExecutor._validate_result_references(changed, plan)
 
 
 def test_addin_exposes_m4_native_handlers_and_bibliography_is_not_deferred() -> None:
@@ -593,4 +747,86 @@ const unknownDocument = {get Content() { return {End: text.length + 1}; }, Range
   PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}};
 assert.throws(() => window.WPSComposerLongformV2.__test.addEquationNativeM4(unknownDocument, args, {}, context),
   error => error === unknown);
+''')
+
+
+def test_js_citation_degradations_are_literal_and_keep_run_occurrences() -> None:
+    _run_node(r'''
+let text = "";
+function range(start, end) { return {Start: start, End: end, Font: {}, Shading: {}, ParagraphFormat: {},
+  InsertAfter: function(value) { text += String(value); }}; }
+const fallback = "[REFERENCE_UNRESOLVED 引用目标未解析]";
+const context = {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true};
+window.WPSComposerLongformV2.__test.addCitationParagraph({
+  get Content() { return {End: text.length + 1}; }, Range: range
+}, {runs: [
+  {type: "text", text: "before "},
+  {type: "citation", nodeId: "p/cite:0", targetId: "ref:a", targetNodeId: "ref:a",
+    number: 1, fallbackText: "[1]"},
+  {type: "text", text: " then "},
+  {type: "degradation", nodeId: "p/cite:1", code: "REFERENCE_UNRESOLVED", fallbackText: fallback},
+  {type: "text", text: " middle "},
+  {type: "degradation", nodeId: "p/cite:2", code: "REFERENCE_UNRESOLVED", fallbackText: fallback}
+]}, {}, context);
+assert.equal(text, "before [1] then " + fallback + " middle " + fallback + "\r");
+assert.deepEqual(context.issues.map(function(issue) { return issue.nodeId; }), ["p/cite:1", "p/cite:2"]);
+assert.deepEqual(context.childResults, [
+  {nodeId: "p/cite:0", status: "applied"},
+  {nodeId: "p/cite:1", status: "degraded", issueCode: "REFERENCE_UNRESOLVED"},
+  {nodeId: "p/cite:2", status: "degraded", issueCode: "REFERENCE_UNRESOLVED"}
+]);
+''')
+
+
+def test_js_bibliography_preserves_legacy_text_and_has_closed_failure_boundary() -> None:
+    _run_node(r'''
+let text = "";
+const formats = [];
+function range(start, end) {
+  const format = {};
+  formats.push(format);
+  return {Start: start, End: end, ParagraphFormat: format,
+    InsertAfter: function(value) { text += String(value); }};
+}
+const document = {get Content() { return {End: text.length + 1}; }, Range: range};
+const api = window.WPSComposerLongformV2.__test;
+api.addBibliographyNative(document, {entries: ["Legacy entry", "[2] Already numbered"], style: "numbered"});
+assert.equal(text, "Legacy entry\r[2] Already numbered\r");
+text = ""; formats.length = 0;
+api.addBibliographyNative(document, {schemaVersion: 1, entries: [
+  {id: "a", nodeId: "ref:a", number: 1, text: "Alpha.", cited: true}
+], style: "numeric", hangingIndentPt: 18, leftIndentPt: 18, spaceAfterPt: 6});
+assert.equal(text, "[1] Alpha.\r");
+const structured = formats.find(function(format) { return format.LeftIndent === 18; });
+assert.equal(structured.FirstLineIndent, -18);
+assert.equal(structured.SpaceBefore, 0);
+assert.equal(structured.SpaceAfter, 6);
+assert.equal(structured.KeepTogether, -1);
+assert.throws(() => api.addBibliographyNative(document, {}), error => error.code === "CONFIGURATION_INVALID");
+assert.throws(() => api.addBibliographyNative(document, {schemaVersion: 1, entries: []}),
+  error => error.code === "CONFIGURATION_INVALID");
+const beforeEmptyLegacy = text;
+api.addBibliographyNative(document, {entries: [], style: "numbered"});
+assert.equal(text, beforeEmptyLegacy);
+
+const unknown = new Error("unknown insert API failure");
+const unknownDocument = {Content: {End: 1}, Range: function() { return {
+  Start: 0, End: 0, ParagraphFormat: {}, InsertAfter: function() { throw unknown; }
+}; }};
+assert.throws(() => api.addBibliographyNative(unknownDocument, {entries: ["Legacy"]}),
+  error => error === unknown);
+const engine = new Error("engine lost"); engine.code = "ENGINE_LOST";
+const engineDocument = {Content: {End: 1}, Range: function() { return {
+  Start: 0, End: 0, InsertAfter: function(){},
+  get ParagraphFormat() { throw engine; }
+}; }};
+assert.throws(() => api.addBibliographyNative(engineDocument, {entries: ["Legacy"]}),
+  error => error === engine);
+const recoverable = new Error("named format failure"); recoverable.code = "BIBLIOGRAPHY_INSERT_FAILED";
+const recoverableDocument = {Content: {End: 1}, Range: function() { return {
+  Start: 0, End: 0, InsertAfter: function(){},
+  get ParagraphFormat() { throw recoverable; }
+}; }};
+assert.throws(() => api.addBibliographyNative(recoverableDocument, {entries: ["Legacy"]}),
+  error => error === recoverable);
 ''')

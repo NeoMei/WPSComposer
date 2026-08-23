@@ -1073,7 +1073,12 @@ global.window = {{}};
 eval(fs.readFileSync({json.dumps(str(ADDIN))}, "utf8"));
 const api = window.WPSComposerLongformV2.__test;
 function range(start, end) {{ return {{
-  Start: start, End: end, Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+  Start: start, End: end, Font: {{}}, Shading: {{}},
+  get ParagraphFormat() {{
+    const error = new Error("named bibliography formatting failure");
+    error.code = "BIBLIOGRAPHY_INSERT_FAILED";
+    throw error;
+  }},
   Delete: function() {{}}
 }}; }}
 const tables = [];
@@ -1081,14 +1086,19 @@ const document = {{
   Content: {{End: 3}},
   Range: range,
   Tables: {{Add: function(target, rows, columns) {{
-    const cellRange = range(target.Start, target.End + 1); cellRange.Text = "";
+    const cellRange = {{Start: target.Start, End: target.End + 1, Text: "",
+      Font: {{}}, Shading: {{}}, ParagraphFormat: {{}}}};
     const table = {{Range: cellRange, Rows: {{}}, Cell: function() {{ return {{Range: cellRange}}; }}}};
     tables.push(table); return table;
   }}}}
 }};
 const issues = [];
 api.runOperation(document, {{
-  op: "writer.add_bibliography", nodeId: "bib:1", args: {{fallbackText: "Alpha."}},
+  op: "writer.add_bibliography", nodeId: "bib:1", args: {{
+    schemaVersion: 1,
+    entries: [{{id: "a", nodeId: "ref:a", number: 1, text: "Alpha.", cited: true}}],
+    style: "numeric", hangingIndentPt: 18, leftIndentPt: 18, spaceAfterPt: 6
+  }},
   failurePolicy: {{mode: "degrade", recoverableCodes: ["BIBLIOGRAPHY_INSERT_FAILED"], fallback: "notice"}}
 }}, {{}}, issues, []);
 let fatal = null;
@@ -1111,7 +1121,7 @@ process.stdout.write(JSON.stringify({{issues: issues, fatal: fatal, text: tables
             "recoverable": True,
         }],
         "fatal": "UNKNOWN_OPERATION",
-        "text": "[BIBLIOGRAPHY_INSERT_FAILED] Alpha.",
+        "text": "[BIBLIOGRAPHY_INSERT_FAILED] [1] Alpha.",
     }
 
 

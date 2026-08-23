@@ -1423,16 +1423,20 @@
         insertInlineText(document, run.text);
       } else if (run.type === "citation") {
         insertInlineText(document, run.fallbackText);
+        context.childResults.push({nodeId: run.nodeId, status: "applied"});
       } else if (run.type === "degradation") {
-        addInlineDegradation(document, run);
+        addLiteralInlineDegradation(document, run.fallbackText);
         appendIssueOnce(context.issues, {
           code: run.code,
           message: "Citation used its planned fallback",
           placement: "inline",
-          nodeId: context.ownerNodeId,
+          nodeId: run.nodeId,
           stage: "preflight",
           fallback: "inline",
           recoverable: true
+        });
+        context.childResults.push({
+          nodeId: run.nodeId, status: "degraded", issueCode: run.code
         });
       } else if (run.type === "reference") {
         insertInlineText(document, run.prefix);
@@ -1459,32 +1463,35 @@
   }
 
   function addBibliographyNative(document, args) {
-    const structured = args.schemaVersion === 1;
-    const entries = args.entries || [];
-    try {
-      entries.forEach(function (entry, index) {
-        const start = currentPosition(document);
-        const text = structured
-          ? "[" + entry.number + "] " + safeString(entry.text)
-          : (args.style === "numbered" ? "[" + (index + 1) + "] " : "") + safeString(entry);
-        insertInlineText(document, text);
-        const paragraph = document.Range(start, currentPosition(document));
-        if (!paragraph || !paragraph.ParagraphFormat) {
-          throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
-        }
-        const format = paragraph.ParagraphFormat;
-        format.Alignment = 0;
-        if (structured) {
-          format.LeftIndent = safeNumber(args.leftIndentPt, 18);
-          format.FirstLineIndent = -safeNumber(args.hangingIndentPt, 18);
-          format.SpaceAfter = safeNumber(args.spaceAfterPt, 6);
-        }
-        insertInlineText(document, "\r");
-      });
-    } catch (error) {
-      if (error && error.code === "BIBLIOGRAPHY_INSERT_FAILED") throw error;
-      throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
+    if (!args || !Array.isArray(args.entries)) {
+      throw nativeError("CONFIGURATION_INVALID");
     }
+    const structured = args.schemaVersion === 1;
+    const entries = args.entries;
+    if (structured && entries.length === 0) {
+      throw nativeError("CONFIGURATION_INVALID");
+    }
+    entries.forEach(function (entry) {
+      const start = currentPosition(document);
+      const text = structured
+        ? "[" + entry.number + "] " + safeString(entry.text)
+        : safeString(entry);
+      insertInlineText(document, text);
+      const paragraph = document.Range(start, currentPosition(document));
+      if (!paragraph || !paragraph.ParagraphFormat) {
+        throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
+      }
+      const format = paragraph.ParagraphFormat;
+      format.Alignment = 0;
+      if (structured) {
+        format.LeftIndent = safeNumber(args.leftIndentPt, 18);
+        format.FirstLineIndent = -safeNumber(args.hangingIndentPt, 18);
+        format.SpaceBefore = 0;
+        format.SpaceAfter = safeNumber(args.spaceAfterPt, 6);
+        format.KeepTogether = -1;
+      }
+      insertInlineText(document, "\r");
+    });
   }
 
   function addCrossReferenceParagraph(document, args, resources, context) {
@@ -1988,6 +1995,22 @@
     return written;
   }
 
+  function addLiteralInlineDegradation(document, fallbackText) {
+    const text = safePublicText(fallbackText);
+    const start = currentPosition(document);
+    insertInlineText(document, text);
+    const written = typeof document.Range === "function"
+      ? document.Range(start, start + text.length) : endRange(document);
+    if (written && written.Font) {
+      written.Font.Italic = -1;
+      written.Font.Color = colorFromHex("#9C0006");
+    }
+    if (written && written.Shading) {
+      written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+    }
+    return written;
+  }
+
   function insertDegradationBox(document, code, fallbackText, targetRange, rawDisplay) {
     if (!document.Tables || typeof document.Tables.Add !== "function") {
       throw nativeError("DEGRADATION_INSERT_FAILED");
@@ -2219,6 +2242,9 @@
       return args.entries.map(function (entry) {
         return "[" + entry.number + "] " + safePublicText(entry.text);
       }).join("\n");
+    }
+    if (Array.isArray(args.entries)) {
+      return args.entries.map(safePublicText).join("\n");
     }
     return "";
   }

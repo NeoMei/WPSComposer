@@ -44,6 +44,7 @@ from .field_contract import (
 )
 from .resources import PreparedLongformResource
 from .degradation import controlled_token
+from .privacy import redact_private_text
 
 
 MACOS_DEDICATED_HOST_UNAVAILABLE = "MACOS_DEDICATED_HOST_UNAVAILABLE"
@@ -353,13 +354,11 @@ class MacOSLongformExecutor(LongformExecutor):
         plan: GenerationPlan,
     ) -> ExecutionOutcome:
         if not result.ok:
-            code = str((result.error or {}).get("code", EXECUTION_ABORTED))
-            detail = str((result.error or {}).get("message", ""))
-            if not (
-                detail.startswith(code + ":writer.")
-                and detail.replace(code + ":writer.", "").replace("_", "").isalnum()
-            ):
-                detail = ""
+            error = result.error if isinstance(result.error, Mapping) else {}
+            code = _safe_issue_code(
+                error.get("code"), fallback=EXECUTION_ABORTED
+            )
+            detail = _safe_bridge_error_detail(error.get("message"), code)
             raise MacOSLongformExecutorError(
                 f"Execution aborted by WPS JSAPI ({code}{': ' + detail if detail else ''})"
             ) from None
@@ -422,13 +421,29 @@ class MacOSLongformExecutor(LongformExecutor):
             if operation.node_id is not None
         }
         child_order: List[str] = []
+        expected_run_children: dict[str, Tuple[str, Optional[str]]] = {}
         for operation in plan.operations:
-            if operation.op != "writer.add_captioned_figure":
+            if operation.op == "writer.add_captioned_figure":
+                for child in operation.args.get("children", ()):
+                    node_id = child.get("nodeId")
+                    if isinstance(node_id, str):
+                        child_order.append(node_id)
                 continue
-            for child in operation.args.get("children", ()):
-                node_id = child.get("nodeId")
-                if isinstance(node_id, str):
+            if operation.op == "writer.add_cross_reference":
+                for run in operation.args.get("runs", ()):
+                    if run.get("type") not in {"citation", "degradation"}:
+                        continue
+                    node_id = run.get("nodeId")
+                    if not isinstance(node_id, str):
+                        continue
                     child_order.append(node_id)
+                    if run.get("type") == "citation":
+                        expected_run_children[node_id] = ("applied", None)
+                    else:
+                        expected_run_children[node_id] = (
+                            "degraded", run.get("code")
+                        )
+        allowed_nodes.update(child_order)
         child_positions = {node_id: index for index, node_id in enumerate(child_order)}
         allowed_issue_codes = set(_FIXED_PUBLIC_ISSUE_CODES)
         for operation in plan.operations:
@@ -459,6 +474,22 @@ class MacOSLongformExecutor(LongformExecutor):
                     and child.get("issueCode") not in allowed_issue_codes
                 )
             ):
+                invalid = True
+            expected = expected_run_children.get(node_id)
+            if expected is not None and (
+                child.get("status"), child.get("issueCode")
+            ) != expected:
+                invalid = True
+        returned_issues = value.get("issueCodes", ())
+        for node_id, (status, issue_code) in expected_run_children.items():
+            matching = [
+                issue for issue in returned_issues
+                if issue.get("nodeId") == node_id
+            ]
+            if status == "degraded":
+                if len(matching) != 1 or matching[0].get("code") != issue_code:
+                    invalid = True
+            elif matching:
                 invalid = True
         seen_pagination: set[str] = set()
         for node in value.get("paginationMap", {}).get("nodes", ()):
@@ -502,8 +533,8 @@ def _execution_issue(raw: Mapping[str, Any]) -> ExecutionIssue:
     )
 
 
-def _safe_issue_code(value: Any) -> str:
-    code = str(value or EXECUTION_FAILED)
+def _safe_issue_code(value: Any, *, fallback: str = EXECUTION_FAILED) -> str:
+    code = str(value or fallback)
     if (
         not 3 <= len(code) <= 64
         or not code[0].isalpha()
@@ -511,9 +542,25 @@ def _safe_issue_code(value: Any) -> str:
             character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
             for character in code
         )
+        or redact_private_text(code) != code
     ):
-        return EXECUTION_FAILED
+        return fallback
     return code
+
+
+def _safe_bridge_error_detail(value: Any, code: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 160:
+        return ""
+    if redact_private_text(value) != value:
+        return ""
+    prefix = code + ":writer."
+    suffix = value[len(prefix):] if value.startswith(prefix) else ""
+    if not suffix or any(
+        character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"
+        for character in suffix
+    ):
+        return ""
+    return value
 
 
 def _collect_plan_issue_codes(value: Any, target: set[str]) -> None:
