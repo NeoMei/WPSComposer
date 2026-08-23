@@ -1185,6 +1185,7 @@ const tableDocument = {Name: "TableNotice.docx",
   ActiveWindow: {Selection: tableSelection},
   get Content() { return {End: tableText.length + 1, get Text() { return tableText; }}; },
   Range: tableRange,
+  Bookmarks: {Add: function() {}},
   Tables: {Add: function(target) {
     const start = target.End;
     target.InsertAfter("T");
@@ -1209,6 +1210,13 @@ window.WPSComposerLongformV2.__test.addDegradationNotice(tableDocument,
 assert.equal(tableCellText,
   "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]",
   "a planned fallback that already names its issue code is not prefixed twice");
+window.WPSComposerLongformV2.__test.reserveDocumentQualityAnchor(tableDocument, {
+  title: "生成质量提示",
+  notices: [{code: "HEADING_PREFIX_AMBIGUOUS",
+    fallbackText: "HEADING_PREFIX_AMBIGUOUS", placement: "document"}]
+});
+assert.equal((tableCellText.match(/HEADING_PREFIX_AMBIGUOUS/g) || []).length, 1,
+  "a document-level quality notice displays its issue code only once");
 
 const missingStyleSelection = {Document: null, Range: null};
 const missingStyle = {Name: "MissingStyle.docx",

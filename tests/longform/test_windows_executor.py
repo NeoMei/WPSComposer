@@ -32,6 +32,17 @@ from skills.WPSComposer.scripts.longform.windows_executor import (
     WindowsLongformExecutor,
     WindowsLongformExecutorError,
 )
+from skills.WPSComposer.scripts.writer import WriterComposer
+
+
+def test_windows_degradation_display_deduplicates_an_identical_issue_code():
+    assert WriterComposer._degradation_display(
+        "HEADING_PREFIX_AMBIGUOUS", "HEADING_PREFIX_AMBIGUOUS"
+    ) == "[HEADING_PREFIX_AMBIGUOUS]"
+    assert WriterComposer._degradation_display(
+        "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]",
+    ) == "[FORMULA_FALLBACK_IMAGE_UNAVAILABLE 公式图像备选不可用]"
 
 
 EMPTY_RESOURCE_MANIFEST_DIGEST = (

@@ -488,13 +488,15 @@ def test_addin_routes_add_heading_to_native_numbering(project_root: Path):
 const fs = require("fs");
 const assert = require("assert");
 global.window = {{}};
-let appliedLevel = null;
 let templateName = null;
-function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}} }}; }}
+const linkedLevels = [];
+function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}},
+  LinkToListTemplate: function(template, level) {{ linkedLevels.push([template, level]); }}
+}}; }}
 function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return {{ NumberFormat: null }}; }} }}; }}
 const writtenRange = {{
   Font: {{}}, ParagraphFormat: {{}}, Style: null,
-  ListFormat: {{ListString: "1", ApplyListTemplateWithLevel: function(t, restart, a, b, level) {{ appliedLevel = level; }}}}
+  ListFormat: {{ListString: "1", ListLevelNumber: null}}
 }};
 const document = {{
   _wpscFirstSectionConfigured: false,
@@ -523,8 +525,9 @@ window.WPSComposerLongformV2.run({{
     ]
   }}
 }});
-assert.equal(appliedLevel, 1);
 assert.equal(templateName, "wpsc_m3_decimal");
+assert.deepEqual(linkedLevels.map(function(item) {{ return item[1]; }}), [1, 2, 3, 4]);
+assert.equal(writtenRange.ListFormat.ListLevelNumber, 1);
 """
     path = Path(tempfile.mkdtemp()) / "heading_native_test.js"
     path.write_text(js, encoding="utf-8")

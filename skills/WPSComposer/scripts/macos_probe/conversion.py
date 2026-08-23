@@ -128,7 +128,13 @@ def _run_conversion(
     runtime.prepare_profiles()
     require_remaining(deadline)
     runtime.start_servers(deadline=deadline)
-    runtime.activate_component(request.component, deadline=deadline)
+    # A reused WPS process can retain a disconnected add-in WebView from a
+    # previous short-lived bridge session.  Start an owned isolated host so
+    # this conversion always loads the current authenticated profile; runtime
+    # cleanup terminates only the process whose ownership it proved.
+    runtime.activate_component(
+        request.component, deadline=deadline, isolated=True
+    )
     try:
         _wait_for_registration(bridge, runtime, request.component, deadline)
     except TimeoutError as exc:

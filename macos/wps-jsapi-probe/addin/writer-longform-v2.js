@@ -3202,7 +3202,7 @@
   function addInlineDegradation(document, args) {
     const code = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(args.code))
       ? safeString(args.code) : "DEGRADATION";
-    const text = "[" + code + ": " + safePublicText(args.fallbackText) + "]";
+    const text = degradationDisplay(code, args.fallbackText, true);
     if (!document || document._wpscRunOwnsAppendCursor !== true) {
       const insertionTarget = endRange(document);
       const insertionStyle = captureDegradationInsertionStyle(
@@ -3350,13 +3350,8 @@
         throw nativeError("CAPABILITY_MISMATCH");
       }
       const cell = table.Cell(1, 1);
-      const safeFallback = safePublicText(fallbackText);
-      const codePrefix = "[" + safeCode;
-      const fallbackNamesCode = safeFallback.indexOf(codePrefix) === 0 &&
-        (safeFallback.charAt(codePrefix.length) === "]" ||
-          safeFallback.charAt(codePrefix.length) === " ");
       cell.Range.Text = rawDisplay === undefined
-        ? (fallbackNamesCode ? safeFallback : "[" + safeCode + "] " + safeFallback)
+        ? degradationDisplay(safeCode, fallbackText, false)
         : safePublicText(rawDisplay);
       cell.Range.Font.Italic = -1;
       cell.Range.Font.Color = colorFromHex("#9C0006");
@@ -3371,6 +3366,21 @@
       if (error && error.code === "CAPABILITY_MISMATCH") throw error;
       throw nativeError("DEGRADATION_INSERT_FAILED");
     }
+  }
+
+  function degradationDisplay(code, fallbackText, inline) {
+    const safeCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(code))
+      ? safeString(code) : "DEGRADATION";
+    const safeFallback = safePublicText(fallbackText);
+    const codePrefix = "[" + safeCode;
+    const suffix = safeFallback.charAt(codePrefix.length);
+    const fallbackNamesCode = safeFallback.indexOf(codePrefix) === 0 &&
+      (suffix === "]" || suffix === " " || suffix === ":");
+    if (fallbackNamesCode) return safeFallback;
+    if (!safeFallback || safeFallback === safeCode) return "[" + safeCode + "]";
+    return inline
+      ? "[" + safeCode + ": " + safeFallback + "]"
+      : "[" + safeCode + "] " + safeFallback;
   }
 
   function insertStyledDegradationAtRange(document, target, text) {
@@ -3502,9 +3512,10 @@
     if (document._wpscQualityNoticeSeen[identity]) return;
     const position = document._wpscQualityAnchor.position;
     const fallbackText = safePublicText(issue && (issue.fallbackText || issue.message));
+    const noticeDisplay = degradationDisplay(code, fallbackText, false);
     const visibleText = document._wpscQualityAnchor.empty
-      ? document._wpscQualityAnchor.title + "\r[" + code + "] " + fallbackText
-      : fallbackText;
+      ? document._wpscQualityAnchor.title + "\r" + noticeDisplay
+      : noticeDisplay;
     let table = null;
     let target = null;
     try {
@@ -3520,8 +3531,7 @@
         table && table.Range && table.Range.End, position + 1
       );
     } catch (error) {
-      const minimal = document._wpscQualityAnchor.empty
-        ? visibleText : "[" + code + "] " + fallbackText;
+      const minimal = visibleText;
       try {
         const inserted = insertStyledDegradationAtRange(document, target, minimal);
         document._wpscQualityAnchor.position = safeNumber(

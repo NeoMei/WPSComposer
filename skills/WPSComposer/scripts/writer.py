@@ -2690,6 +2690,15 @@ class WriterComposer(BaseComposer):
             else "DEGRADATION"
         )
         safe_text = redact_private_text(str(fallback_text or ""))
+        prefix = f"[{safe_code}"
+        if safe_text.startswith(prefix) and safe_text[len(prefix):len(prefix) + 1] in {
+            "]",
+            " ",
+            ":",
+        }:
+            return safe_text
+        if not safe_text or safe_text == safe_code:
+            return f"[{safe_code}]"
         if inline:
             return f"[{safe_code}: {safe_text}]"
         return f"[{safe_code}] {safe_text}"
