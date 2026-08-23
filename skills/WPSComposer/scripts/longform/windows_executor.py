@@ -27,6 +27,12 @@ from .executor import (
 )
 from .resources import PreparedLongformResource
 from .field_contract import NativeFieldAdapter, finalize_native_fields
+from .degradation import (
+    DegradationDescriptor,
+    LocalRecoveryController,
+    RecoveryFatalError,
+    redact_private_text,
+)
 
 
 WINDOWS_DEDICATED_HOST_UNAVAILABLE = "WINDOWS_DEDICATED_HOST_UNAVAILABLE"
@@ -52,10 +58,14 @@ _M3_NATIVE_OPERATIONS = frozenset({
 })
 
 _LEGACY_OBJECT_DEFERRED = {
-    "writer.add_captioned_figure": ("IMAGE_INSERT_FAILED", "notice"),
-    "writer.add_semantic_table": ("TABLE_INSERT_FAILED", "notice"),
-    "writer.add_equation": ("EQUATION_INSERT_FAILED", "inline"),
-    "writer.add_cross_reference": ("CROSS_REFERENCE_FAILED", "inline"),
+    "writer.add_captioned_figure": (
+        "IMAGE_INSERT_FAILED", "figure-child-stack-then-notice"
+    ),
+    "writer.add_semantic_table": ("TABLE_INSERT_FAILED", "grid-then-text"),
+    "writer.add_equation": (
+        "EQUATION_INSERT_FAILED", "explicit-image-then-source-notice"
+    ),
+    "writer.add_cross_reference": ("CROSS_REFERENCE_FAILED", "inline-fallback"),
 }
 
 
@@ -88,23 +98,20 @@ def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterCompo
         import win32com.client as client
 
     pythoncom.CoInitialize()
-    last_error: Optional[Exception] = None
     app: Any = None
 
     for progid in WriterComposer._progids:
         try:
             app = client.DispatchEx(progid)
             break
-        except Exception as exc:  # pragma: no cover - exercised via mocks
-            last_error = exc
+        except Exception:  # pragma: no cover - exercised via mocks
             continue
 
     if app is None:
         pythoncom.CoUninitialize()
-        detail = f": {last_error}" if last_error else ""
         raise WindowsDedicatedHostUnavailableError(
-            f"Could not create dedicated WPS application{detail}"
-        )
+            "Could not create dedicated WPS application"
+        ) from None
 
     composer = WriterComposer.__new__(WriterComposer)
     composer._app = app
@@ -155,6 +162,7 @@ class WindowsLongformExecutor(LongformExecutor):
         self._issues: List[ExecutionIssue] = []
         self._toc_density: dict[str, Any] = {}
         self._resource_locators: dict[str, str] = {}
+        self._recovery_controller = LocalRecoveryController()
 
     # ----------------------------------------------------------------------
     # Public interface
@@ -166,6 +174,7 @@ class WindowsLongformExecutor(LongformExecutor):
         deadline: Optional[float] = None,
     ) -> ExecutionOutcome:
         self._issues = []
+        self._recovery_controller = LocalRecoveryController()
         validate_generation_plan(plan.to_dict(), component="writer")
         paths = self._resolve_paths()
         staged_resources: Tuple[str, ...] = ()
@@ -420,6 +429,10 @@ class WindowsLongformExecutor(LongformExecutor):
         deferred = _M2_DEFERRED_OPERATIONS.get(op.op)
         if deferred is None and not _is_m3_operation(op):
             deferred = _LEGACY_OBJECT_DEFERRED.get(op.op)
+        checkpoint = self._checkpoint_local(composer) if (
+            deferred is not None
+            or (policy is not None and policy.get("mode") == "degrade")
+        ) else None
 
         try:
             if deferred is not None:
@@ -433,58 +446,98 @@ class WindowsLongformExecutor(LongformExecutor):
         except _DeferredOperationError as exc:
             # Deterministic M2 degradation.  Record the stable issue and apply
             # the declared fallback without treating it as a primitive failure.
-            self._record_issue(
-                code=exc.code,
-                message=f"{op.op} is deferred to fallback in M2",
-                node_id=op.node_id,
+            self._recover_after_failure(
+                composer, op, exc, exc.code, exc.fallback, checkpoint=checkpoint
             )
-            self._apply_fallback(composer, op, exc.fallback)
         except Exception as exc:
             code = _error_code(exc)
             if policy is not None and policy.get("mode") == "degrade":
                 if code in policy.get("recoverableCodes", []):
-                    self._degrade_op(composer, op, exc, code, policy["fallback"])
+                    self._recover_after_failure(
+                        composer, op, exc, code, policy["fallback"], checkpoint=checkpoint
+                    )
                     return
-            if _is_m3_operation(op):
-                raise _ExecutionAbort(op.op, exc) from exc
-            self._record_issue(
-                code=EXECUTION_FAILED,
-                message=f"{op.op} failed",
-                node_id=op.node_id,
-            )
-            if policy is not None and policy.get("mode") == "fail":
-                raise _ExecutionAbort(op.op, exc) from exc
-            # No explicit fail policy: record the issue and continue so the
-            # document is not left empty.
+            raise _ExecutionAbort(op.op, exc) from exc
 
-    def _degrade_op(
+    def _recover_after_failure(
         self,
         composer: WriterComposer,
         op: GenerationOperation,
         exc: Exception,
         code: str,
         fallback: str,
+        checkpoint: Any,
     ) -> None:
-        self._record_issue(
+        placement = _fallback_placement(fallback)
+        descriptor = DegradationDescriptor(
             code=code,
-            message=f"{op.op} used its declared native fallback",
-            node_id=op.node_id,
+            placement=placement,
+            object_label=_operation_label(op.op),
+            reason=f"{op.op} native rendering failed",
+            fallback_text=_operation_fallback_text(op),
+            fallback_kind=fallback,
         )
         try:
-            self._apply_fallback(composer, op, fallback)
-        except Exception as fb_exc:
-            self._record_issue(
-                code=DEGRADATION_FALLBACK_FAILED,
-                message=f"Fallback for {op.op} failed",
-                node_id=op.node_id,
+            self._recovery_controller.recover_after_failure(
+                node_id=op.node_id or op.op,
+                descriptor=descriptor,
+                checkpoint_token=checkpoint,
+                native_code=code,
+                rollback=lambda token: self._rollback_local(composer, token),
+                fallback_attempt=lambda item: self._apply_fallback(
+                    composer, op, item.fallback_kind, code=item.code
+                ),
+                # The inline fallback or block box is itself the required
+                # same-location visible notice; this callback verifies that
+                # the insertion path completed before the issue is recorded.
+                insert_notice=lambda node_id, item: None,
             )
-            raise _ExecutionAbort(op.op, fb_exc) from fb_exc
+        except RecoveryFatalError as recovery_error:
+            raise _ExecutionAbort(op.op, recovery_error) from recovery_error
+        self._record_issue(
+            code=code,
+            message=(
+                f"{op.op} is deferred to fallback in M2"
+                if isinstance(exc, _DeferredOperationError)
+                else f"{op.op} used its declared native fallback"
+            ),
+            node_id=op.node_id,
+            placement=placement,
+            stage="native",
+            fallback=fallback,
+            recoverable=True,
+        )
+
+    @staticmethod
+    def _checkpoint_local(composer: WriterComposer) -> Any:
+        checkpoint = getattr(composer, "degradation_checkpoint", None)
+        if checkpoint is None:
+            return None
+        if not callable(checkpoint):
+            raise _ExecutionAbort(
+                "local-checkpoint", RuntimeError("checkpoint API unavailable")
+            )
+        try:
+            return checkpoint()
+        except Exception as exc:
+            raise _ExecutionAbort("local-checkpoint", exc) from exc
+
+    @staticmethod
+    def _rollback_local(composer: WriterComposer, checkpoint: Any) -> None:
+        if checkpoint is None:
+            return
+        rollback = getattr(composer, "rollback_degradation_checkpoint", None)
+        if not callable(rollback):
+            raise RuntimeError("rollback API unavailable")
+        rollback(checkpoint)
 
     def _apply_fallback(
         self,
         composer: WriterComposer,
         op: GenerationOperation,
         fallback: str,
+        *,
+        code: Optional[str] = None,
     ) -> None:
         args = op.args
         if fallback in {"inline", "inline-fallback"}:
@@ -496,12 +549,13 @@ class WindowsLongformExecutor(LongformExecutor):
                 or ""
             )
             composer.add_inline_degradation(
-                code=_op_fallback_code(op),
+                code=code or _op_fallback_code(op),
                 message=_op_fallback_message(op),
                 fallback_text=text,
             )
         elif fallback in {
-            "notice", "figure-child-stack-then-notice", "grid-then-text"
+            "notice", "figure-child-stack-then-notice", "grid-then-text",
+            "explicit-image-then-source-notice",
         }:
             text = str(
                 args.get("fallbackText")
@@ -512,18 +566,15 @@ class WindowsLongformExecutor(LongformExecutor):
                 or ""
             )
             composer.add_degradation_notice(
-                code=_op_fallback_code(op),
+                code=code or _op_fallback_code(op),
                 message=_op_fallback_message(op),
                 fallback_text=text,
                 placement=args.get("placement", "block"),
             )
         else:
-            composer.add_degradation_notice(
-                code=UNKNOWN_OPERATION,
-                message=f"No fallback implementation for {op.op}",
-                fallback_text=f"[{UNKNOWN_OPERATION}] {op.op}",
-                placement="block",
-            )
+            raise RecoveryFatalError(
+                DEGRADATION_FALLBACK_FAILED, "fallback kind is not implemented"
+            ) from None
 
     def _dispatch_one(self, composer: WriterComposer, op: GenerationOperation) -> None:
         name = op.op
@@ -644,28 +695,33 @@ class WindowsLongformExecutor(LongformExecutor):
                 owner_node_id=op.node_id,
                 resource_locators=dict(self._resource_locators),
             )
-            self._consume_native_result(result, op.node_id)
+            self._consume_native_result(result, op)
             return
 
         if name == "writer.add_semantic_table" and "numbering" in args:
+            native_args = dict(args)
+            # Citation metadata is plan-only because table cell text is already
+            # the resolved static [n]. Cell degradations remain native styling
+            # metadata and must reach the Writer primitive.
+            native_args.pop("cellCitations", None)
             result = composer.add_semantic_table_native(
-                **args, owner_node_id=op.node_id
+                **native_args, owner_node_id=op.node_id
             )
-            self._consume_native_result(result, op.node_id)
+            self._consume_native_result(result, op)
             return
 
         if name == "writer.add_equation" and "numbering" in args:
             result = composer.add_equation_number_native(
                 **args, owner_node_id=op.node_id
             )
-            self._consume_native_result(result, op.node_id)
+            self._consume_native_result(result, op)
             return
 
         if name == "writer.add_cross_reference" and "runs" in args:
             result = composer.add_cross_reference_paragraph(
                 **args, owner_node_id=op.node_id
             )
-            self._consume_native_result(result, op.node_id)
+            self._consume_native_result(result, op)
             return
 
         if name == "writer.add_list":
@@ -695,6 +751,13 @@ class WindowsLongformExecutor(LongformExecutor):
 
         if name == "writer.add_document_quality_notice":
             composer.add_document_quality_notice(args.get("notices", []))
+            return
+
+        if name == "writer.reserve_document_quality_anchor":
+            composer.reserve_document_quality_anchor(
+                title=args.get("title", "生成质量提示"),
+                notices=args.get("notices", []),
+            )
             return
 
         if name == "writer.insert_toc":
@@ -733,10 +796,13 @@ class WindowsLongformExecutor(LongformExecutor):
             # must not pre-refresh fields or create a second convergence owner.
             return
 
-        # Fallback for anything else that reaches the executor.
-        self._apply_fallback(composer, op, "notice")
+        raise NativeWriterObjectError(
+            UNKNOWN_OPERATION, "operation is not implemented"
+        )
 
-    def _consume_native_result(self, result: Any, node_id: Optional[str]) -> None:
+    def _consume_native_result(
+        self, result: Any, op: GenerationOperation
+    ) -> None:
         if not isinstance(result, dict):
             return
         for raw in result.get("issues", ()):
@@ -745,12 +811,19 @@ class WindowsLongformExecutor(LongformExecutor):
             self._record_issue(
                 code=str(raw.get("code") or EXECUTION_FAILED),
                 message="Native object used its declared recovery",
-                node_id=node_id,
+                node_id=op.node_id,
                 placement=(
                     str(raw["placement"])
                     if raw.get("placement") in {"block", "inline", "document"}
                     else "document"
                 ),
+                stage="native",
+                fallback=(
+                    str(raw.get("fallback"))
+                    if raw.get("fallback")
+                    else str((op.failure_policy or {}).get("fallback") or "")
+                ) or None,
+                recoverable=True,
             )
 
     # ----------------------------------------------------------------------
@@ -762,22 +835,28 @@ class WindowsLongformExecutor(LongformExecutor):
         message: str,
         node_id: Optional[str] = None,
         placement: str = "document",
+        stage: Optional[str] = None,
+        fallback: Optional[str] = None,
+        recoverable: Optional[bool] = None,
     ) -> None:
         issue = ExecutionIssue(
             code=code,
             message=message,
             placement=placement,
             node_id=node_id,
+            stage=stage,
+            fallback=fallback,
+            recoverable=recoverable,
         )
         self._extend_issues((issue,))
 
     def _extend_issues(self, issues: Tuple[ExecutionIssue, ...]) -> None:
         identities = {
-            (issue.code, issue.message, issue.placement, issue.node_id)
+            (issue.code, issue.placement, issue.node_id)
             for issue in self._issues
         }
         for issue in issues:
-            identity = (issue.code, issue.message, issue.placement, issue.node_id)
+            identity = (issue.code, issue.placement, issue.node_id)
             if identity not in identities:
                 self._issues.append(issue)
                 identities.add(identity)
@@ -828,7 +907,7 @@ def _is_m3_operation(op: GenerationOperation) -> bool:
 def _reference_fallback_text(runs: Any) -> str:
     parts = []
     for run in runs or ():
-        if not isinstance(run, dict):
+        if not isinstance(run, Mapping):
             continue
         parts.append(str(run.get("text") if run.get("type") == "text" else run.get("fallbackText", "")))
     return "".join(parts)
@@ -840,6 +919,37 @@ def _table_fallback_text(args: Any) -> str:
     if not headers:
         return ""
     return "\n".join(" | ".join(str(cell) for cell in row) for row in [headers, *(rows or ())])
+
+
+def _fallback_placement(fallback: str) -> str:
+    if fallback in {"inline", "inline-fallback"}:
+        return "inline"
+    if fallback == "document-quality-notice":
+        return "document"
+    return "block"
+
+
+def _operation_label(op_name: str) -> str:
+    return {
+        "writer.add_bibliography": "参考文献",
+        "writer.add_captioned_figure": "图像",
+        "writer.add_cross_reference": "引用",
+        "writer.add_equation": "公式",
+        "writer.add_semantic_table": "表格",
+    }.get(op_name, "文档对象")
+
+
+def _operation_fallback_text(op: GenerationOperation) -> str:
+    args = op.args
+    return redact_private_text(str(
+        args.get("fallbackText")
+        or args.get("source")
+        or args.get("text")
+        or _reference_fallback_text(args.get("runs", ()))
+        or _table_fallback_text(args)
+        or args.get("caption")
+        or ""
+    ))
 
 
 def _op_fallback_code(op: GenerationOperation) -> str:

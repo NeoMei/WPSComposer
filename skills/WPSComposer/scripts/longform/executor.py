@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol, Tuple, runtime_checkable
 
 from ..generation_plan import GenerationPlan
+from .degradation import controlled_token, redact_private_text
 from .resources import PreparedLongformResource
 
 
@@ -110,16 +111,30 @@ class ExecutionIssue:
     message: str
     placement: str = "document"
     node_id: Optional[str] = None
+    stage: Optional[str] = None
+    fallback: Optional[str] = None
+    recoverable: Optional[bool] = None
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
             "code": self.code,
-            "message": self.message,
+            "message": redact_private_text(self.message),
             "placement": self.placement,
         }
         if self.node_id is not None:
-            result["nodeId"] = self.node_id
+            result["nodeId"] = redact_private_text(self.node_id)
+        stage = controlled_token(self.stage)
+        fallback = controlled_token(self.fallback)
+        if stage is not None:
+            result["stage"] = stage
+        if fallback is not None:
+            result["fallback"] = fallback
+        if type(self.recoverable) is bool:
+            result["recoverable"] = self.recoverable
         return result
+
+    def __repr__(self) -> str:
+        return f"ExecutionIssue({self.to_dict()!r})"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ExecutionIssue:
@@ -128,6 +143,13 @@ class ExecutionIssue:
             message=str(data["message"]),
             placement=str(data.get("placement", "document")),
             node_id=data.get("nodeId"),
+            stage=controlled_token(data.get("stage")),
+            fallback=controlled_token(data.get("fallback")),
+            recoverable=(
+                data.get("recoverable")
+                if type(data.get("recoverable")) is bool
+                else None
+            ),
         )
 
 
@@ -289,6 +311,11 @@ def finalize_fields_with_convergence(executor: Any, max_rounds: int = 3) -> Conv
 
         def snapshot_fields(self) -> Tuple[FieldSnapshot, ...]:
             return self.cached_snapshot
+
+        def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
+            # Compatibility adapters have no native document. Concrete WPS
+            # adapters implement the required reserved-anchor mutation.
+            return None
 
     return _finalize_native_fields(
         _LegacyRefreshAdapter(),

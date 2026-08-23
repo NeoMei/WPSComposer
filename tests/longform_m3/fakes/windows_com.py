@@ -77,6 +77,9 @@ class RecordingNativeComposer:
             ),
         )
 
+    def upsert_document_quality_notice(self, issue) -> None:
+        self._call("quality-notice", code=issue.code)
+
     def add_degradation_notice(self, **kwargs: Any) -> None:
         self._call("notice", **kwargs)
 

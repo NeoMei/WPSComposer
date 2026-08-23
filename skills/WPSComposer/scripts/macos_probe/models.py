@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Union
 from uuid import uuid4
 
+from ..longform.degradation import controlled_token, redact_private_text
+
 COMPONENTS = ("writer", "presentation", "spreadsheet")
 METHOD_COMPONENT = {
     "probe_capabilities": None,
@@ -71,13 +73,32 @@ def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]
     for item in issues:
         if (
             not isinstance(item, dict)
-            or set(item) - {"code", "message", "placement", "nodeId"}
+            or set(item) - {
+                "code", "message", "placement", "nodeId",
+                "stage", "fallback", "recoverable",
+            }
             or not _is_closed_issue_code(item.get("code"))
             or not isinstance(item.get("message"), str)
+            or redact_private_text(item.get("message")) != item.get("message")
             or item.get("placement") not in {"block", "inline", "document"}
             or (
                 item.get("nodeId") is not None
-                and not isinstance(item.get("nodeId"), str)
+                and (
+                    not isinstance(item.get("nodeId"), str)
+                    or redact_private_text(item.get("nodeId")) != item.get("nodeId")
+                )
+            )
+            or (
+                item.get("stage") is not None
+                and controlled_token(item.get("stage")) != item.get("stage")
+            )
+            or (
+                item.get("fallback") is not None
+                and controlled_token(item.get("fallback")) != item.get("fallback")
+            )
+            or (
+                "recoverable" in item
+                and type(item.get("recoverable")) is not bool
             )
         ):
             raise ProtocolError("Long-form generation result is invalid")

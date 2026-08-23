@@ -38,6 +38,7 @@ from .field_contract import (
     evaluate_field_snapshot_history,
 )
 from .resources import PreparedLongformResource
+from .degradation import controlled_token
 
 
 MACOS_DEDICATED_HOST_UNAVAILABLE = "MACOS_DEDICATED_HOST_UNAVAILABLE"
@@ -46,6 +47,8 @@ EXECUTION_ABORTED = "EXECUTION_ABORTED"
 _FIXED_PUBLIC_ISSUE_CODES = frozenset({
     "BIBLIOGRAPHY_INSERT_FAILED",
     "CROSS_REFERENCE_FAILED",
+    "DEGRADATION_INSERT_FAILED",
+    "EQUATION_INSERT_FAILED",
     "FIELD_REFRESH_UNSTABLE",
     "IMAGE_INSERT_FAILED",
     "TABLE_INSERT_FAILED",
@@ -444,6 +447,13 @@ def _execution_issue(raw: Mapping[str, Any]) -> ExecutionIssue:
             else "document"
         ),
         node_id=raw.get("nodeId"),
+        stage=controlled_token(raw.get("stage")),
+        fallback=controlled_token(raw.get("fallback")),
+        recoverable=(
+            raw.get("recoverable")
+            if type(raw.get("recoverable")) is bool
+            else None
+        ),
     )
 
 

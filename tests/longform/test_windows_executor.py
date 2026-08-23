@@ -593,8 +593,8 @@ def test_finalize_dispatch_has_one_owner_uses_plan_bound_and_freezes_without_mut
 
     outcome = executor.execute(bounded_plan, ())
 
-    assert fake_composer._snapshot_index == 2
-    assert fake_composer.refresh_rounds == [0, 1]
+    assert fake_composer._snapshot_index == 3
+    assert fake_composer.refresh_rounds == [0, 1, 2]
     assert not [call for call in fake_composer.primitives if call.name == "finalize_fields"]
     assert outcome.issues[0].code == FIELD_REFRESH_UNSTABLE
 
@@ -759,16 +759,15 @@ def test_staged_artifact_path_is_inside_staging_dir(tmp_path, fake_composer):
 # Errors are surfaced as issues, not hidden
 # -----------------------------------------------------------------------------
 
-def test_operation_failure_is_recorded_as_execution_issue(
+def test_operation_failure_without_declared_recovery_is_fatal(
     executor, fake_composer, simple_plan
 ):
     def boom(**kwargs):
         raise RuntimeError("boom")
 
     fake_composer.add_paragraph = boom
-    outcome = executor.execute(simple_plan, ())
-
-    assert any(issue.code == "EXECUTION_FAILED" for issue in outcome.issues)
+    with pytest.raises(WindowsLongformExecutorError, match="writer.add_paragraph"):
+        executor.execute(simple_plan, ())
 
 
 
@@ -834,7 +833,7 @@ def test_deferred_ops_emit_stable_issues_and_fallbacks(executor, fake_composer):
 
     names = {call.name for call in fake_composer.primitives}
     assert "add_degradation_notice" in names
-    assert "add_inline_degradation" in names
+    assert "add_inline_degradation" not in names
 
 
 def test_index_placeholders_are_inserted(executor, fake_composer):
@@ -864,7 +863,7 @@ def test_index_placeholders_are_inserted(executor, fake_composer):
     assert "insert_table_index" in names
 
 
-def test_degrade_policy_runs_fallback_and_records_issue(
+def test_generic_execution_failure_cannot_be_marked_recoverable(
     executor, fake_composer, simple_plan
 ):
     def boom(**kwargs):
@@ -891,9 +890,11 @@ def test_degrade_policy_runs_fallback_and_records_issue(
         else:
             new_ops.append(op)
     paragraph = next(op for op in new_ops if op.op == "writer.add_paragraph")
-    executor._run_op(fake_composer, paragraph)
-    assert any(issue.code == "EXECUTION_FAILED" for issue in executor._issues)
-    assert any(call.name == "add_degradation_notice" for call in fake_composer.primitives)
+    with pytest.raises(Exception) as exc_info:
+        executor._run_op(fake_composer, paragraph)
+    assert getattr(exc_info.value, "op_name", None) == "writer.add_paragraph"
+    assert executor._issues == []
+    assert not any(call.name == "add_degradation_notice" for call in fake_composer.primitives)
 
 
 def test_fail_policy_aborts_execution(

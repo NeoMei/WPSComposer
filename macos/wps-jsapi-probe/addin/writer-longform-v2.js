@@ -1,6 +1,42 @@
 (function () {
   "use strict";
 
+  // BEGIN WPSCOMPOSER GENERATED RECOVERY MATRIX
+  const WPSCOMPOSER_RECOVERY_MATRIX = Object.freeze({
+    "BIBLIOGRAPHY_INSERT_FAILED": Object.freeze({
+      "notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "CROSS_REFERENCE_FAILED": Object.freeze({
+      "inline-fallback": Object.freeze({"fallbackAttempts":1,"placement":"inline"})
+    }),
+    "DEGRADATION_INSERT_FAILED": Object.freeze({
+      "inline": Object.freeze({"fallbackAttempts":1,"placement":"inline"}),
+      "notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "EQUATION_INSERT_FAILED": Object.freeze({
+      "explicit-image-then-source-notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "FIELD_REFRESH_UNSTABLE": Object.freeze({
+      "document-quality-notice": Object.freeze({"fallbackAttempts":1,"placement":"document"})
+    }),
+    "IMAGE_INSERT_FAILED": Object.freeze({
+      "figure-child-stack-then-notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_INSERT_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_MERGE_APPLY_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_ROW_FORCED_SPLIT": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_STYLE_APPLY_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    })
+  });
+  // END WPSCOMPOSER GENERATED RECOVERY MATRIX
+
   const LONGFORM_DEFERRED = {
     "writer.add_bibliography": ["BIBLIOGRAPHY_INSERT_FAILED", "notice"]
   };
@@ -28,6 +64,16 @@
 
   function safeString(value) {
     return value === null || value === undefined ? "" : String(value);
+  }
+
+  function safePublicText(value) {
+    return safeString(value)
+      .replace(/[A-Za-z]:\\[^\s|;,)]+/g, "<redacted>")
+      .replace(/\/(?:Users|private|tmp|var\/folders)\/[^\s|;,)]+/g, "<redacted>")
+      .replace(/(?:sha256:)?[0-9a-fA-F]{64}/g, "<redacted>")
+      .replace(/wpsc-rsrc:[A-Za-z0-9_-]+/g, "<redacted>")
+      .replace(/wpsc_(?:fig|tab|eq)_[0-9a-fA-F]{24}/g, "<redacted>")
+      .replace(/(?:fieldResult|bookmarkMap|payload)\s*[:=]\s*[^\s|;,)]+/gi, "<redacted>");
   }
 
   function setValue(target, name, value) {
@@ -453,6 +499,71 @@
     return error;
   }
 
+  function recoveryDecision(code, fallbackKind, placement) {
+    const branches = WPSCOMPOSER_RECOVERY_MATRIX[code];
+    const rule = branches && branches[fallbackKind];
+    if (!rule || rule.placement !== placement) {
+      throw nativeError(typeof code === "string" && code ? code : "EXECUTION_FAILED");
+    }
+    return {
+      code: code,
+      recoverable: true,
+      placement: placement,
+      fallbackKind: fallbackKind,
+      fallbackAttempts: rule.fallbackAttempts
+    };
+  }
+
+  function createLocalRecoveryController() {
+    return {byIdentity: Object.create(null), decisions: []};
+  }
+
+  function runLocalRecovery(controller, spec) {
+    if (!controller || !spec || !spec.descriptor) {
+      throw nativeError("CONFIGURATION_INVALID");
+    }
+    const descriptor = spec.descriptor;
+    const identity = safeString(spec.nodeId) + "\u0000" + safeString(descriptor.code);
+    if (controller.byIdentity[identity]) return controller.byIdentity[identity];
+
+    let checkpoint;
+    try { checkpoint = spec.checkpoint(); }
+    catch (error) { throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED"); }
+
+    let nativeCode = null;
+    try {
+      spec.nativeAttempt();
+      return {
+        code: descriptor.code,
+        recoverable: false,
+        placement: descriptor.placement,
+        fallbackKind: descriptor.fallbackKind,
+        fallbackAttempts: 0
+      };
+    } catch (error) {
+      nativeCode = error && typeof error.code === "string" ? error.code : "EXECUTION_FAILED";
+    }
+    return recoverLocalFailure(controller, spec, checkpoint, nativeCode);
+  }
+
+  function recoverLocalFailure(controller, spec, checkpoint, nativeCode) {
+    const descriptor = spec.descriptor;
+    const identity = safeString(spec.nodeId) + "\u0000" + safeString(descriptor.code);
+    if (controller.byIdentity[identity]) return controller.byIdentity[identity];
+    if (nativeCode !== descriptor.code) throw nativeError(nativeCode);
+    const decision = recoveryDecision(nativeCode, descriptor.fallbackKind, descriptor.placement);
+    try { spec.rollback(checkpoint); }
+    catch (error) { throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED"); }
+    try { spec.fallbackAttempt(descriptor); }
+    catch (error) { throw nativeError("DEGRADATION_FALLBACK_FAILED"); }
+    try { spec.insertNotice(safeString(spec.nodeId), descriptor); }
+    catch (error) { throw nativeError("DEGRADATION_INSERT_FAILED"); }
+
+    controller.byIdentity[identity] = decision;
+    controller.decisions.push(decision);
+    return decision;
+  }
+
   function currentPosition(document) {
     const range = endRange(document);
     return safeNumber(range && range.Start, safeNumber(range && range.End, 0));
@@ -863,7 +974,11 @@
 
   function addNativeTableNotice(document, code) {
     const start = currentPosition(document);
-    addDegradationNotice(document, {code: code, fallbackText: "", placement: "block"});
+    // A table recovery cannot depend on another Tables.Add call. Preserve a
+    // minimal styled block notice beside the fallback grid/text instead.
+    insertText(document, "[" + safeString(code) + "]", "Body Text", {
+      italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10
+    });
     const range = document.Range(start, currentPosition(document));
     if (range.ParagraphFormat) {
       range.ParagraphFormat.KeepTogether = -1;
@@ -1309,12 +1424,29 @@
   }
 
   function appendIssueOnce(issues, issue) {
+    issue = normalizeRuntimeIssue(issue);
     const duplicate = issues.some(function (existing) {
       return existing.code === issue.code &&
         (existing.placement || "document") === (issue.placement || "document") &&
         (existing.nodeId || null) === (issue.nodeId || null);
     });
     if (!duplicate) issues.push(issue);
+  }
+
+  function normalizeRuntimeIssue(issue) {
+    if (!issue || issue.recoverable !== undefined) return issue;
+    const branches = WPSCOMPOSER_RECOVERY_MATRIX[issue.code];
+    if (!branches) return issue;
+    const placement = issue.placement || "document";
+    const fallbackKinds = Object.keys(branches).filter(function (fallbackKind) {
+      return branches[fallbackKind].placement === placement;
+    });
+    if (fallbackKinds.length !== 1) return issue;
+    return Object.assign({}, issue, {
+      stage: "native",
+      fallback: fallbackKinds[0],
+      recoverable: true
+    });
   }
 
   function unstableFieldIssue(snapshot, rounds) {
@@ -1328,7 +1460,10 @@
         ", figure_index_pages=" + representative.figureIndexPageCount +
         ", table_index_pages=" + representative.tableIndexPageCount +
         ", total_pages=" + representative.totalPages,
-      placement: "document"
+      placement: "document",
+      stage: "field-refresh",
+      fallback: "document-quality-notice",
+      recoverable: true
     };
   }
 
@@ -1338,7 +1473,13 @@
       refreshBookmarksAndReferences: function () { refreshBookmarksAndReferences(document); },
       refreshIndexes: function () { refreshIndexes(document); },
       repaginateAndUpdatePageFields: function () { repaginateAndUpdatePageFields(document); },
-      snapshotFields: function () { return snapshotFields(document); }
+      snapshotFields: function () { return snapshotFields(document); },
+      upsertDocumentQualityNotice: function (issue) {
+        if (!document._wpscQualityAnchor) {
+          reserveDocumentQualityAnchor(document, {title: "生成质量提示", notices: []});
+        }
+        upsertDocumentQualityNotice(document, issue);
+      }
     };
   }
 
@@ -1346,6 +1487,19 @@
     if (!Number.isInteger(rawMaxRounds) || rawMaxRounds < 1 || rawMaxRounds > 3) {
       const boundError = nativeError("FIELD_REFRESH_CONTRACT_INVALID");
       throw boundError;
+    }
+    const required = [
+      "repaginateAndUpdateNumbering",
+      "refreshBookmarksAndReferences",
+      "refreshIndexes",
+      "repaginateAndUpdatePageFields",
+      "snapshotFields",
+      "upsertDocumentQualityNotice"
+    ];
+    if (!adapter || required.some(function (name) {
+      return typeof adapter[name] !== "function";
+    })) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
     }
     const fieldSnapshots = [];
     let previousSignature = null;
@@ -1361,9 +1515,17 @@
         if (previousSignature !== null && signature === previousSignature) return fieldSnapshots;
         previousSignature = signature;
       }
+      const issue = unstableFieldIssue(
+        fieldSnapshots[fieldSnapshots.length - 1], rawMaxRounds
+      );
+      appendIssueOnce(issues, issue);
+      adapter.upsertDocumentQualityNotice(issue);
+      adapter.repaginateAndUpdateNumbering();
+      adapter.refreshBookmarksAndReferences();
+      adapter.refreshIndexes();
+      adapter.repaginateAndUpdatePageFields();
       const frozen = adapter.snapshotFields();
       fieldSnapshots.push(frozen);
-      appendIssueOnce(issues, unstableFieldIssue(frozen, rawMaxRounds + 1));
       return fieldSnapshots;
     } catch (error) {
       if (error && error.code === "FIELD_REFRESH_CONTRACT_INVALID") throw error;
@@ -1384,28 +1546,148 @@
   }
 
   function addInlineDegradation(document, args) {
+    const code = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(args.code))
+      ? safeString(args.code) : "DEGRADATION";
+    const text = "[" + code + ": " + safePublicText(args.fallbackText) + "]";
+    const start = currentPosition(document);
+    insertInlineText(document, text);
+    const written = typeof document.Range === "function"
+      ? document.Range(start, start + text.length) : endRange(document);
+    if (written && written.Font) {
+      written.Font.Italic = -1;
+      written.Font.Color = colorFromHex("#9C0006");
+    }
+    if (written && written.Shading) {
+      written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+    }
+    return written;
+  }
 
-
-
-
-    insertText(document, safeString(args.fallbackText), null, {});
+  function insertDegradationBox(document, code, fallbackText, targetRange, rawDisplay) {
+    if (!document.Tables || typeof document.Tables.Add !== "function") {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const safeCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(code))
+      ? safeString(code) : "DEGRADATION";
+    const target = targetRange || endRange(document);
+    let table;
+    try {
+      table = document.Tables.Add(target, 1, 1);
+      const cell = table.Cell(1, 1);
+      cell.Range.Text = rawDisplay === undefined
+        ? "[" + safeCode + "] " + safePublicText(fallbackText)
+        : safePublicText(rawDisplay);
+      cell.Range.Font.Italic = -1;
+      cell.Range.Font.Color = colorFromHex("#9C0006");
+      cell.Range.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      applyParagraphFormat(cell.Range.ParagraphFormat, {
+        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+      });
+      if (table.Rows) table.Rows.AllowBreakAcrossPages = false;
+      return table;
+    } catch (error) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
   }
 
   function addDegradationNotice(document, args) {
     const placement = args.placement || "block";
-    const text = "[" + args.code + "] " + safeString(args.fallbackText);
     if (placement === "inline") {
-      insertText(document, text, null, {});
-    } else {
-      insertText(document, text, null, { italic: true });
+      return addInlineDegradation(document, args);
     }
+    try {
+      return insertDegradationBox(document, args.code, args.fallbackText);
+    } catch (error) {
+      // A table failure may remove the one-cell styling API itself. Preserve
+      // the minimal visible notice at the same block anchor before declaring
+      // insertion fatal.
+      try {
+        return insertText(
+          document,
+          "[" + safeString(args.code || "DEGRADATION") + "] " +
+            safePublicText(args.fallbackText),
+          "Body Text",
+          {italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10}
+        );
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+  }
+
+  function reserveDocumentQualityAnchor(document, args) {
+    args = args || {};
+    if (!document._wpscQualityAnchor) {
+      const title = safeString(args.title || "生成质量提示");
+      const position = currentPosition(document);
+      try {
+        if (!document.Bookmarks || typeof document.Bookmarks.Add !== "function" ||
+            typeof document.Range !== "function") {
+          throw nativeError("DEGRADATION_INSERT_FAILED");
+        }
+        document.Bookmarks.Add(
+          "wpsc_document_quality_anchor", document.Range(position, position)
+        );
+      } catch (error) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+      document._wpscQualityAnchor = {title: title, position: position, empty: true};
+      document._wpscQualityNoticeSeen = Object.create(null);
+    }
+    (args.notices || []).forEach(function (notice) {
+      upsertDocumentQualityNotice(document, notice);
+    });
+  }
+
+  function upsertDocumentQualityNotice(document, issue) {
+    if (!document._wpscQualityAnchor || !document._wpscQualityNoticeSeen) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const code = safeString(issue && issue.code) || "QUALITY_NOTICE";
+    const placement = safeString(issue && issue.placement) || "document";
+    const nodeId = safeString(issue && (issue.nodeId || issue.node_id));
+    const identity = code + "\u0000" + placement + "\u0000" + nodeId;
+    if (document._wpscQualityNoticeSeen[identity]) return;
+    const position = document._wpscQualityAnchor.position;
+    const fallbackText = safePublicText(issue && (issue.fallbackText || issue.message));
+    const visibleText = document._wpscQualityAnchor.empty
+      ? document._wpscQualityAnchor.title + "\r[" + code + "] " + fallbackText
+      : fallbackText;
+    let table = null;
+    try {
+      table = insertDegradationBox(
+        document,
+        code,
+        fallbackText,
+        document.Range(position, position),
+        document._wpscQualityAnchor.empty ? visibleText : undefined
+      );
+      document._wpscQualityAnchor.position = safeNumber(
+        table && table.Range && table.Range.End, position + 1
+      );
+    } catch (error) {
+      const minimal = document._wpscQualityAnchor.empty
+        ? visibleText : "[" + code + "] " + fallbackText;
+      try {
+        insertText(document, minimal, "Body Text", {
+          italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10
+        });
+        document._wpscQualityAnchor.position = currentPosition(document);
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+    document._wpscQualityAnchor.empty = false;
+    document._wpscQualityNoticeSeen[identity] = true;
   }
 
   function addDocumentQualityNotice(document, args) {
     const notices = args.notices || [];
-    notices.forEach(function (notice) {
-      addDegradationNotice(document, notice);
-    });
+    if (!document._wpscQualityAnchor) {
+      reserveDocumentQualityAnchor(document, {notices: notices});
+      return;
+    }
+    notices.forEach(function (notice) { upsertDocumentQualityNotice(document, notice); });
   }
 
   const OPERATIONS = {
@@ -1438,40 +1720,91 @@
     "writer.finalize_fields": function () {},
     "writer.add_inline_degradation": addInlineDegradation,
     "writer.add_degradation_notice": addDegradationNotice,
-    "writer.add_document_quality_notice": addDocumentQualityNotice
+    "writer.add_document_quality_notice": addDocumentQualityNotice,
+    "writer.reserve_document_quality_anchor": reserveDocumentQualityAnchor
   };
+
+  function fallbackPlacement(fallbackKind) {
+    if (fallbackKind === "inline" || fallbackKind === "inline-fallback") return "inline";
+    if (fallbackKind === "document-quality-notice") return "document";
+    return "block";
+  }
+
+  function operationFallbackText(operation) {
+    const args = operation.args || {};
+    if (args.fallbackText || args.source || args.text || args.caption) {
+      return safePublicText(args.fallbackText || args.source || args.text || args.caption);
+    }
+    if (Array.isArray(args.runs)) {
+      return args.runs.map(function (run) {
+        return run.type === "text" ? safePublicText(run.text) : safePublicText(run.fallbackText);
+      }).join("");
+    }
+    if (Array.isArray(args.headers)) {
+      return [args.headers].concat(args.rows || []).map(function (row) {
+        return row.map(safePublicText).join(" | ");
+      }).join("\n");
+    }
+    return "";
+  }
+
+  function applyOperationFallback(document, operation, code, fallbackKind) {
+    const text = operationFallbackText(operation);
+    if (fallbackKind === "inline" || fallbackKind === "inline-fallback") {
+      addInlineDegradation(document, {code: code, fallbackText: text});
+      return;
+    }
+    if (fallbackKind === "notice" || fallbackKind === "grid-then-text" ||
+        fallbackKind === "figure-child-stack-then-notice" ||
+        fallbackKind === "explicit-image-then-source-notice") {
+      addDegradationNotice(document, {
+        code: code, fallbackText: text, placement: "block"
+      });
+      return;
+    }
+    throw nativeError("DEGRADATION_FALLBACK_FAILED");
+  }
+
+  function recoverOperation(document, operation, issues, checkpoint, code, fallbackKind) {
+    const placement = fallbackPlacement(fallbackKind);
+    const controller = document._wpscRecoveryController || createLocalRecoveryController();
+    document._wpscRecoveryController = controller;
+    recoverLocalFailure(controller, {
+      nodeId: operation.nodeId || operation.op,
+      descriptor: {
+        code: code, placement: placement, fallbackKind: fallbackKind,
+        fallbackText: operationFallbackText(operation)
+      },
+      rollback: function (token) { rollbackMutation(document, token); },
+      fallbackAttempt: function () {
+        applyOperationFallback(document, operation, code, fallbackKind);
+      },
+      // The local inline fallback or restrained block is itself the visible
+      // same-node notice. Reaching this callback proves insertion completed.
+      insertNotice: function () {}
+    }, checkpoint, code);
+    appendIssueOnce(issues, {
+      code: code,
+      message: operation.op + " used its declared fallback",
+      placement: placement,
+      nodeId: operation.nodeId,
+      stage: "native",
+      fallback: fallbackKind,
+      recoverable: true
+    });
+  }
 
   function runOperation(document, operation, resources, issues, childResults) {
     const opName = operation.op;
+    const checkpoint = currentPosition(document);
     const deferred = LONGFORM_DEFERRED[opName];
     if (deferred) {
-      appendIssueOnce(issues, {
-        code: deferred[0],
-        message: opName + " is deferred to fallback",
-        placement: "document",
-        nodeId: operation.nodeId
-      });
-      if (deferred[1] === "inline") {
-        addInlineDegradation(document, { fallbackText: operation.args.fallbackText || operation.args.source || operation.args.text || "" });
-      } else {
-        addDegradationNotice(document, {
-          code: deferred[0],
-          message: opName + " is deferred",
-          fallbackText: operation.args.fallbackText || operation.args.source || operation.args.text || "",
-          placement: operation.args.placement || "block"
-        });
-      }
+      recoverOperation(document, operation, issues, checkpoint, deferred[0], deferred[1]);
       return;
     }
     const handler = OPERATIONS[opName];
     if (!handler) {
-      issues.push({
-        code: "UNKNOWN_OPERATION",
-        message: "No handler for " + opName,
-        placement: "document",
-        nodeId: operation.nodeId
-      });
-      return;
+      throw nativeError("UNKNOWN_OPERATION");
     }
     const context = {
       ownerNodeId: operation.nodeId || null,
@@ -1493,36 +1826,13 @@
         const allowed = Array.isArray(policy.recoverableCodes) &&
           policy.recoverableCodes.indexOf(code) !== -1;
         if (allowed) {
-          appendIssueOnce(issues, {
-            code: code,
-            message: opName + " used its declared fallback",
-            placement: opName === "writer.add_cross_reference" ? "inline" : "block",
-            nodeId: operation.nodeId
-          });
-          try {
-            if (opName === "writer.add_cross_reference") {
-              addInlineDegradation(document, {
-                fallbackText: (operation.args.runs || []).map(function (run) {
-                  return run.type === "text" ? run.text : run.fallbackText;
-                }).join("")
-              });
-            } else {
-              addDegradationNotice(document, {
-                code: code,
-                fallbackText: operation.args.fallbackText || operation.args.source || operation.args.caption || "",
-                placement: operation.args.placement || "block"
-              });
-            }
-          } catch (fallbackError) {
-            throw nativeError("DEGRADATION_FALLBACK_FAILED");
-          }
+          recoverOperation(
+            document, operation, issues, checkpoint, code, policy.fallback
+          );
           return;
         }
       }
-      const wrapped = nativeError(error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED"
-        ? "LOCAL_MUTATION_ROLLBACK_FAILED" : "EXECUTION_ABORTED");
-      wrapped.message = wrapped.code + ":" + opName;
-      throw wrapped;
+      throw nativeError(error && error.code ? error.code : "EXECUTION_ABORTED");
     }
   }
 
@@ -1821,6 +2131,13 @@
       buildPaginationMap: buildPaginationMap,
       hashVisible: hashVisible,
       rollbackMutation: rollbackMutation,
+      recoveryDecision: recoveryDecision,
+      createLocalRecoveryController: createLocalRecoveryController,
+      runLocalRecovery: runLocalRecovery,
+      addInlineDegradation: addInlineDegradation,
+      addDegradationNotice: addDegradationNotice,
+      reserveDocumentQualityAnchor: reserveDocumentQualityAnchor,
+      upsertDocumentQualityNotice: upsertDocumentQualityNotice,
       applyLongformMutation: applyLongformMutation,
       runOperation: runOperation
     })

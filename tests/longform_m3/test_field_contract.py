@@ -39,6 +39,7 @@ class _Adapter:
         self.round_index = 0
         self.calls: list[str] = []
         self.bookmark_by_owner = {"fig:1": "WPSC_FIG_1"}
+        self.quality_notices: list[dict] = []
 
     def repaginate_and_update_numbering(self) -> None:
         self.calls.append("numbering")
@@ -67,6 +68,12 @@ class _Adapter:
             )
             for item in selected
         )
+
+    def upsert_document_quality_notice(self, issue) -> None:
+        self.calls.append("quality_notice")
+        payload = issue.to_dict()
+        if not any(item["code"] == payload["code"] for item in self.quality_notices):
+            self.quality_notices.append(payload)
 
 
 def _field(owner: str, kind: str, ordinal: int, text: str) -> _VisibleField:
@@ -133,7 +140,7 @@ def test_snapshot_hash_normalizes_nfc_and_all_newline_spellings_without_text_sto
     assert variants[0] not in repr(snapshots[0])
 
 
-def test_three_changing_rounds_get_one_frozen_fourth_snapshot_without_mutation():
+def test_three_changing_rounds_upsert_notice_then_refresh_and_freeze_fourth_snapshot():
     rounds = tuple(
         (_field("fig:1", "SEQ_FIG", 0, str(number)),)
         for number in ("1", "2", "3", "4")
@@ -145,10 +152,15 @@ def test_three_changing_rounds_get_one_frozen_fourth_snapshot_without_mutation()
     mutating_phases = [
         call for call in adapter.calls if call in {"numbering", "references", "indexes", "pages"}
     ]
-    assert len(mutating_phases) == 12
-    assert adapter.calls[-2:] == ["snapshot", "snapshot"]
+    assert len(mutating_phases) == 16
+    assert adapter.calls[-6:] == [
+        "quality_notice", "numbering", "references", "indexes", "pages", "snapshot"
+    ]
     assert result.rounds == 4
     assert [issue.code for issue in result.issues] == ["FIELD_REFRESH_UNSTABLE"]
+    assert [notice["code"] for notice in adapter.quality_notices] == [
+        "FIELD_REFRESH_UNSTABLE"
+    ]
     assert result.snapshot[0].result_hash == snapshot_visible_field(
         owner_node_id="fig:1",
         field_kind="SEQ_FIG",
@@ -167,6 +179,7 @@ def test_three_changing_rounds_get_one_frozen_fourth_snapshot_without_mutation()
         "refresh_indexes",
         "repaginate_and_update_page_fields",
         "snapshot_fields",
+        "upsert_document_quality_notice",
     ),
 )
 def test_missing_required_native_api_is_fatal(missing: str):
@@ -274,7 +287,13 @@ def test_unstable_issue_evidence_has_counts_only_no_text_hash_or_bookmark_mappin
     assert secret not in evidence
     assert adapter.bookmark_by_owner["fig:1"] not in evidence
     assert all(item.result_hash not in evidence for item in result.snapshot)
-    assert set(issue_json) <= {"code", "message", "placement", "nodeId"}
+    assert set(issue_json) <= {
+        "code", "message", "placement", "nodeId",
+        "stage", "fallback", "recoverable",
+    }
+    assert issue_json["stage"] == "field-refresh"
+    assert issue_json["fallback"] == "document-quality-notice"
+    assert issue_json["recoverable"] is True
 
 
 @pytest.mark.parametrize("mutation", ("move", "insert", "delete"))
@@ -369,7 +388,7 @@ def test_remote_history_stops_only_on_its_final_adjacent_equal_pair():
     assert exc_info.value.__context__ is None
 
 
-def test_remote_unstable_history_uses_the_read_only_fourth_snapshot_not_third():
+def test_remote_unstable_history_uses_the_refreshed_fourth_snapshot_not_third():
     rounds = tuple(
         (
             snapshot_visible_field(

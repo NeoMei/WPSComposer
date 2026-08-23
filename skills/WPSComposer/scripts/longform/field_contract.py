@@ -71,6 +71,9 @@ class NativeFieldAdapter(Protocol):
     def snapshot_fields(self) -> Tuple[FieldSnapshot, ...]:
         ...
 
+    def upsert_document_quality_notice(self, issue: ExecutionIssue) -> None:
+        ...
+
 
 def _normalize_visible_result(value: Any) -> str:
     text = str(value).replace("\r\n", "\n").replace("\r", "\n")
@@ -114,7 +117,11 @@ _PHASES = (
 
 def _require_adapter(adapter: Any) -> None:
     failed_phase = None
-    for phase in (*_PHASES, "snapshot_fields"):
+    for phase in (
+        *_PHASES,
+        "snapshot_fields",
+        "upsert_document_quality_notice",
+    ):
         try:
             available = callable(getattr(adapter, phase, None))
         except Exception:
@@ -252,6 +259,9 @@ def _unstable_issue(snapshot: Tuple[FieldSnapshot, ...], rounds: int) -> Executi
         code=FIELD_REFRESH_UNSTABLE,
         message=message,
         placement="document",
+        stage="field-refresh",
+        fallback="document-quality-notice",
+        recoverable=True,
     )
 
 
@@ -281,14 +291,26 @@ def _finalize_native_fields(
             return ConvergenceResult(snapshot=snapshot, issues=(), rounds=round_index + 1)
         previous_digest = digest
 
-    # One frozen diagnostic snapshot: no native mutation phase may run here.
+    # Three changing rounds commit one document notice at the reserved runtime
+    # anchor.  That insertion is itself a document mutation, so run one exact
+    # fourth refresh round and freeze its resulting saved-state snapshot.
+    issue = _unstable_issue(snapshot, rounds_limit)
+    upsert_failed = False
+    try:
+        adapter.upsert_document_quality_notice(issue)
+    except Exception:
+        upsert_failed = True
+    if upsert_failed:
+        raise NativeFieldContractError("upsert_document_quality_notice") from None
+    for phase in _PHASES:
+        _invoke(adapter, phase)
     frozen = _canonical_snapshot(
         _invoke(adapter, "snapshot_fields"),
         allow_legacy_hashes=allow_legacy_hashes,
     )
     return ConvergenceResult(
         snapshot=frozen,
-        issues=(_unstable_issue(frozen, rounds_limit + 1),),
+        issues=(issue,),
         rounds=rounds_limit + 1,
     )
 
@@ -302,8 +324,9 @@ def evaluate_field_snapshot_history(
     """Validate convergence already executed by a remote native adapter.
 
     A remote executor must stop immediately after the second adjacent equal
-    snapshot.  If all mutation rounds change, it appends exactly one read-only
-    diagnostic snapshot.  This function never replays or mutates native state.
+    snapshot. If all bounded rounds change, the supplied history must include
+    the exact refreshed fourth saved-state snapshot produced after the quality
+    notice upsert. This evaluator never replays or mutates native state.
     """
 
     if type(max_rounds) is not int or not 1 <= max_rounds <= 3:
@@ -351,7 +374,7 @@ def evaluate_field_snapshot_history(
         frozen = rounds[-1]
         return ConvergenceResult(
             snapshot=frozen,
-            issues=(_unstable_issue(frozen, max_rounds + 1),),
+            issues=(_unstable_issue(frozen, max_rounds),),
             rounds=max_rounds + 1,
         )
 

@@ -19,6 +19,7 @@ from ._dispatch import (
 )
 from ._colors import hex_to_rgb_long
 from ._base import BaseComposer
+from .longform.degradation import redact_private_text
 from .formatting import (
     apply_fill,
     apply_font,
@@ -51,6 +52,7 @@ _LINE_SPACING_RULES = {
 
 _NATIVE_SEQUENCE_IDS = frozenset({"WPSC_FIG", "WPSC_TAB", "WPSC_EQ"})
 _NATIVE_BOOKMARK_RE = re.compile(r"^wpsc_(?:fig|tab|eq)_[0-9a-f]{24}$")
+_PUBLIC_ISSUE_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
 
 
 class NativeWriterObjectError(RuntimeError):
@@ -1684,6 +1686,7 @@ class WriterComposer(BaseComposer):
         alignments, style, orientation, borderSpec, merges, repeatHeader,
         allowRowSplit, cellIndentPt, plannedDegradation,
         keepCaptionWithFirstRow, owner_node_id=None, bookmarkName=None,
+        cellDegradations=(),
     ):
         """Insert a caption, planned notices, and a resolved native table."""
         del indexable, referenceable, style
@@ -1782,7 +1785,7 @@ class WriterComposer(BaseComposer):
                 })
                 grid_start = self._native_position()
                 try:
-                    self._create_native_table(
+                    table = self._create_native_table(
                         headers, rows, alignments, grid, repeatHeader,
                         True, cellIndentPt, (),
                     )
@@ -1806,6 +1809,19 @@ class WriterComposer(BaseComposer):
                         "message": "Table used the deterministic text fallback",
                         "placement": "block",
                     })
+            for cell_notice in cellDegradations or ():
+                try:
+                    cell_range = table.Cell(
+                        int(cell_notice["row"]), int(cell_notice["column"])
+                    ).Range
+                    cell_range.Shading.BackgroundPatternColor = hex_to_rgb_long(
+                        "#FCE8E6"
+                    )
+                except Exception:
+                    raise NativeWriterObjectError(
+                        "DEGRADATION_INSERT_FAILED",
+                        "cell degradation styling failed",
+                    ) from None
         finally:
             if landscape:
                 self.add_section(landscape=False)
@@ -2098,31 +2114,184 @@ class WriterComposer(BaseComposer):
 
 
     # ---- long-form M2 fallback / placeholder primitives ----
-    def add_degradation_notice(self, code, message, fallback_text, placement="block"):
-        """Insert a deterministic block-level degradation notice."""
-        display = f"[{code}] {fallback_text}"
+    def degradation_checkpoint(self):
+        """Return a local end-of-document checkpoint for one plan node."""
         try:
-            self.add_paragraph(display, style="Body Text", italic=True, color="#C00000")
+            return self._native_document_end()
         except Exception:
-            self.add_paragraph(display)
+            raise NativeWriterObjectError(
+                "LOCAL_MUTATION_CHECKPOINT_FAILED", "checkpoint failed"
+            ) from None
+
+    def rollback_degradation_checkpoint(self, checkpoint):
+        """Roll back one failed plan-node mutation to its saved checkpoint."""
+        try:
+            self._native_rollback(int(checkpoint), self._native_document_end())
+        except Exception:
+            raise NativeWriterObjectError(
+                "LOCAL_MUTATION_ROLLBACK_FAILED", "rollback failed"
+            ) from None
+
+    @staticmethod
+    def _degradation_display(code, fallback_text, *, inline=False):
+        safe_code = (
+            code
+            if isinstance(code, str) and _PUBLIC_ISSUE_CODE_RE.fullmatch(code)
+            else "DEGRADATION"
+        )
+        safe_text = redact_private_text(str(fallback_text or ""))
+        if inline:
+            return f"[{safe_code}: {safe_text}]"
+        return f"[{safe_code}] {safe_text}"
+
+    @staticmethod
+    def _style_degradation_range(native_range):
+        """Apply the shared restrained fallback style to one native range."""
+        native_range.Font.Italic = True
+        native_range.Font.Color = hex_to_rgb_long("#9C0006")
+        native_range.Shading.BackgroundPatternColor = hex_to_rgb_long("#FCE8E6")
+
+    def _insert_degradation_box(self, display, target_range=None):
+        """Insert one non-outline, single-cell degradation box."""
+        try:
+            target = target_range or self._doc.Range(
+                int(self.selection.End), int(self.selection.End)
+            )
+            table = self._doc.Tables.Add(target, 1, 1)
+            cell_range = table.Cell(1, 1).Range
+            cell_range.Text = display
+            self._style_degradation_range(cell_range)
+            cell_range.ParagraphFormat.SpaceBefore = 0
+            cell_range.ParagraphFormat.SpaceAfter = 3
+            cell_range.ParagraphFormat.KeepTogether = True
+            cell_range.ParagraphFormat.OutlineLevel = 10
+            table.Rows.AllowBreakAcrossPages = False
+            return table
+        except NativeWriterObjectError:
+            raise
+        except Exception:
+            try:
+                self.add_paragraph(
+                    display,
+                    italic=True,
+                    color="#9C0006",
+                    space_after=3,
+                )
+                return None
+            except Exception:
+                raise NativeWriterObjectError(
+                    "DEGRADATION_INSERT_FAILED", "degradation box insertion failed"
+                ) from None
+
+    def add_degradation_notice(self, code, message, fallback_text, placement="block"):
+        """Insert a deterministic styled degradation at its semantic anchor."""
+        if placement == "inline":
+            return self.add_inline_degradation(code, message, fallback_text)
+        display = self._degradation_display(code, fallback_text)
+        return self._insert_degradation_box(display)
 
     def add_inline_degradation(self, code, message, fallback_text):
-        """Insert a deterministic inline degradation fallback as its own paragraph."""
-        display = f"[{code}: {fallback_text}]"
+        """Insert and style a fallback without creating a new paragraph."""
+        display = self._degradation_display(code, fallback_text, inline=True)
+        selection = self.selection
+        start = int(selection.End)
         try:
-            self.add_paragraph(display, style="Body Text", italic=True, color="#C00000")
+            selection.TypeText(display)
+            inserted = self._doc.Range(start, int(selection.End))
+            self._style_degradation_range(inserted)
+            return inserted
         except Exception:
-            self.add_paragraph(display)
+            raise NativeWriterObjectError(
+                "DEGRADATION_INSERT_FAILED", "inline degradation insertion failed"
+            ) from None
+
+    def reserve_document_quality_anchor(self, title="生成质量提示", notices=()):
+        """Reserve the fixed, body-style quality anchor even when it is empty."""
+        if not hasattr(self, "_quality_notice_seen"):
+            self._quality_notice_seen = set()
+        if not hasattr(self, "_quality_notice_anchor_position"):
+            safe_title = redact_private_text(str(title or "生成质量提示"))
+            try:
+                position = int(self.selection.End)
+                anchor = self._doc.Range(
+                    position,
+                    position,
+                )
+                bookmarks = getattr(self._doc, "Bookmarks", None)
+                if bookmarks is None or not callable(getattr(bookmarks, "Add", None)):
+                    raise AttributeError("bookmark API unavailable")
+                bookmarks.Add("wpsc_document_quality_anchor", anchor)
+                self._quality_notice_anchor_position = position
+                self._quality_notice_title = safe_title
+            except Exception:
+                raise NativeWriterObjectError(
+                    "DEGRADATION_INSERT_FAILED", "quality anchor insertion failed"
+                ) from None
+        for notice in notices or ():
+            self._upsert_quality_notice_mapping(notice)
+
+    def _upsert_quality_notice_mapping(self, notice):
+        raw_code = (
+            notice.get("code")
+            if isinstance(notice, dict)
+            else getattr(notice, "code", None)
+        )
+        code = (
+            raw_code
+            if isinstance(raw_code, str) and _PUBLIC_ISSUE_CODE_RE.fullmatch(raw_code)
+            else "QUALITY_NOTICE"
+        )
+        placement = (
+            notice.get("placement", "document")
+            if isinstance(notice, dict)
+            else getattr(notice, "placement", "document")
+        )
+        node_id = (
+            notice.get("nodeId")
+            if isinstance(notice, dict)
+            else getattr(notice, "node_id", None)
+        )
+        identity = (code, placement, redact_private_text(str(node_id or "")))
+        if identity in self._quality_notice_seen:
+            return
+        fallback_text = (
+            notice.get("fallbackText") or notice.get("message", "")
+            if isinstance(notice, dict)
+            else getattr(notice, "message", "")
+        )
+        try:
+            position = int(self._quality_notice_anchor_position)
+            target = self._doc.Range(position, position)
+            display = self._degradation_display(code, fallback_text)
+            if not self._quality_notice_seen:
+                display = f"{self._quality_notice_title}\r{display}"
+            table = self._insert_degradation_box(
+                display, target
+            )
+            self._quality_notice_anchor_position = int(
+                getattr(getattr(table, "Range", None), "End", self.selection.End)
+            )
+        except Exception:
+            raise NativeWriterObjectError(
+                "DEGRADATION_INSERT_FAILED", "quality notice upsert failed"
+            ) from None
+        self._quality_notice_seen.add(identity)
+
+    def upsert_document_quality_notice(self, issue):
+        """Upsert one runtime document issue at the reserved quality anchor."""
+        if not hasattr(self, "_quality_notice_anchor_position"):
+            raise NativeWriterObjectError(
+                "DEGRADATION_INSERT_FAILED", "quality anchor is unavailable"
+            )
+        self._upsert_quality_notice_mapping(issue)
 
     def add_document_quality_notice(self, notices):
-        """Insert document-level quality notices as degradation blocks."""
-        for notice in notices:
-            self.add_degradation_notice(
-                notice.get("code", "QUALITY_NOTICE"),
-                notice.get("message", ""),
-                notice.get("fallbackText", ""),
-                placement=notice.get("placement", "document"),
-            )
+        """Backward-compatible document notice API using the fixed anchor."""
+        if not hasattr(self, "_quality_notice_anchor_position"):
+            self.reserve_document_quality_anchor(notices=notices)
+            return
+        for notice in notices or ():
+            self._upsert_quality_notice_mapping(notice)
 
     def insert_figure_index(self, title=None):
         """Insert a figure index placeholder (content population is M3)."""

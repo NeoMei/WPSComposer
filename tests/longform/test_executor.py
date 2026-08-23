@@ -310,13 +310,13 @@ def test_finalize_emits_unstable_after_three_changing_rounds():
     executor = _ChangingExecutor()
     result = finalize_fields_with_convergence(executor, max_rounds=3)
 
-    assert result.snapshot == snapshots[2]
+    assert result.snapshot == snapshots[3]
     assert len(result.issues) == 1
     issue = result.issues[0]
     assert issue.code == FIELD_REFRESH_UNSTABLE
     assert issue.placement == "document"
     assert result.rounds == 4
-    assert executor.calls == [0, 1, 2]
+    assert executor.calls == [0, 1, 2, 3]
 
 def test_finalize_deterministic_ordering_of_stable_keys():
     """Snapshots with the same fields in different order compare equal after sorting."""
@@ -380,11 +380,11 @@ def test_recording_executor_can_inject_snapshots_for_convergence():
     executor = RecordingLongformExecutor(snapshots=snapshots)
     result = finalize_fields_with_convergence(executor, max_rounds=3)
     assert result.issues[0].code == FIELD_REFRESH_UNSTABLE
-    assert result.snapshot == snapshots[2]
-    assert len(executor.refresh_calls) == 3
+    assert result.snapshot == snapshots[3]
+    assert len(executor.refresh_calls) == 4
 
 
-def test_m2_legacy_adapter_caches_each_mutation_snapshot_and_freezes_without_refresh():
+def test_m2_legacy_adapter_refreshes_and_freezes_exact_fourth_snapshot():
     snapshots = [
         _make_snapshot("doc:body", "h1"),
         _make_snapshot("doc:body", "h2"),
@@ -395,8 +395,8 @@ def test_m2_legacy_adapter_caches_each_mutation_snapshot_and_freezes_without_ref
 
     result = finalize_fields_with_convergence(executor, max_rounds=3)
 
-    assert executor.refresh_calls == [0, 1, 2]
-    assert result.snapshot == snapshots[2]
+    assert executor.refresh_calls == [0, 1, 2, 3]
+    assert result.snapshot == snapshots[3]
     assert result.rounds == 4
 
 

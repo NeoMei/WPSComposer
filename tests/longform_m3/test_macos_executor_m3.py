@@ -686,14 +686,40 @@ const adapter = {{
   refreshBookmarksAndReferences: function() {{ events.push("references"); }},
   refreshIndexes: function() {{ events.push("indexes"); }},
   repaginateAndUpdatePageFields: function() {{ events.push("pages"); }},
-  snapshotFields: function() {{ events.push("snapshot"); snapshot += 1; return [{{stableKey: ["doc:finalize", "PAGE", 0], fieldCategory: "page", resultHash: String(snapshot), tocPageCount: 0, figureIndexPageCount: 0, tableIndexPageCount: 0, totalPages: snapshot}}]; }}
+  snapshotFields: function() {{ events.push("snapshot"); snapshot += 1; return [{{stableKey: ["doc:finalize", "PAGE", 0], fieldCategory: "page", resultHash: String(snapshot), tocPageCount: 0, figureIndexPageCount: 0, tableIndexPageCount: 0, totalPages: snapshot}}]; }},
+  upsertDocumentQualityNotice: function(issue) {{ events.push("quality:" + issue.code); }}
 }};
 const issues = [];
 const history = window.WPSComposerLongformV2.__test.runNativeFieldConvergence(adapter, 3, issues);
 assert.equal(history.length, 4);
-assert.equal(events.filter(x => x === "numbering").length, 3);
+assert.equal(events.filter(x => x === "numbering").length, 4);
 assert.equal(events.filter(x => x === "snapshot").length, 4);
+assert.equal(events.filter(x => x === "quality:FIELD_REFRESH_UNSTABLE").length, 1);
+assert.deepEqual(events.slice(-6), [
+  "quality:FIELD_REFRESH_UNSTABLE", "numbering", "references", "indexes", "pages", "snapshot"
+]);
 assert.equal(issues.filter(x => x.code === "FIELD_REFRESH_UNSTABLE").length, 1);
+"""
+    _run_node(script)
+
+
+def test_addin_field_convergence_requires_quality_anchor_upsert_api() -> None:
+    asset = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+eval(fs.readFileSync({asset}, "utf8"));
+const adapter = {{
+  repaginateAndUpdateNumbering: function() {{}},
+  refreshBookmarksAndReferences: function() {{}},
+  refreshIndexes: function() {{}},
+  repaginateAndUpdatePageFields: function() {{}},
+  snapshotFields: function() {{ return []; }}
+}};
+assert.throws(function() {{
+  window.WPSComposerLongformV2.__test.runNativeFieldConvergence(adapter, 3, []);
+}}, function(error) {{ return error.code === "FIELD_REFRESH_CONTRACT_INVALID"; }});
 """
     _run_node(script)
 

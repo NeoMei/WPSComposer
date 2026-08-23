@@ -719,10 +719,14 @@ let snapshotCount = 0;
 const pages = [1, 2, 3, 4];
 const document = {{
   Content: {{ End: 0, Text: "" }},
+  Range: function(start, end) {{ return {{
+    Start: start, End: end, Font: {{}}, Shading: {{}}, ParagraphFormat: {{}},
+    InsertAfter: function(value) {{ document.Content.Text += String(value); }}
+  }}; }},
   TablesOfContents: {{ Count: 0, Item: function() {{}} }},
   TablesOfFigures: {{ Count: 0, Item: function() {{}} }},
   Sections: {{ Count: 0, Item: function() {{}} }},
-  Bookmarks: {{ Count: 0 }},
+  Bookmarks: {{ Count: 0, Add: function() {{}} }},
   Repaginate: function() {{}},
   Fields: {{ Update: function() {{ mutationCount += 1; }} }},
   ComputeStatistics: function() {{ return pages[snapshotCount++]; }},
@@ -741,7 +745,7 @@ const result = window.WPSComposerLongformV2.run({{
     {{op: "writer.finalize_fields", args: {{maxRounds: 3}}, nodeId: "doc:finalize"}}
   ]}}
 }});
-assert.equal(mutationCount, 3);
+assert.equal(mutationCount, 4);
 assert.equal(snapshotCount, 4);
 assert.equal(result.fieldSnapshots.length, 4);
 assert.equal(result.fieldSnapshots[3][0].totalPages, 4);
