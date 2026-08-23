@@ -1,4 +1,4 @@
-"""Real macOS WPS evidence runner for the M5 public quality lifecycle."""
+"""Real macOS/Windows WPS evidence runner for the M5 quality lifecycle."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import json
 import platform
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import time
 from typing import Any, Callable
@@ -14,7 +15,8 @@ from typing import Any, Callable
 from .artifact_transport import validate_pdf
 from .longform.lifecycle import run_longform_lifecycle
 from .longform.pipeline import build_longform_generation
-from .longform.platform_runtime import MacLongformAdapter
+from .longform.platform_runtime import MacLongformAdapter, WindowsLongformAdapter
+from .longform.windows_executor import _create_dedicated_composer
 from .macos_probe.runtime import read_wps_version
 
 
@@ -62,7 +64,7 @@ def _performance_markdown(page_count: int = 60) -> str:
 
 
 class _InstrumentedAdapter:
-    def __init__(self, adapter: MacLongformAdapter) -> None:
+    def __init__(self, adapter: Any) -> None:
         self.adapter = adapter
         self.counts = {key: 0 for key in _COUNT_KEYS}
         self.durations = {key: 0.0 for key in _STAGE_KEYS if key != "total"}
@@ -107,6 +109,11 @@ class _InstrumentedAdapter:
 
 
 def _render_representative_pages(pdf: Path, output: Path, pages: int) -> list[str]:
+    renderer = shutil.which("pdftoppm")
+    if not renderer:
+        raise RuntimeError(
+            "M5 visual evidence requires pdftoppm (Poppler) on PATH"
+        )
     screenshots = output / "screenshots"
     screenshots.mkdir(exist_ok=True)
     selected = range(1, pages + 1) if pages <= 8 else (1, (pages + 1) // 2, pages)
@@ -115,7 +122,7 @@ def _render_representative_pages(pdf: Path, output: Path, pages: int) -> list[st
         target = screenshots / f"{pdf.stem}-{page}"
         subprocess.run(
             [
-                "pdftoppm", "-png", "-r", "120", "-f", str(page), "-l",
+                renderer, "-png", "-r", "120", "-f", str(page), "-l",
                 str(page), "-singlefile", str(pdf), str(target),
             ],
             check=True,
@@ -147,9 +154,10 @@ def _run_one(
     base_dir: Path,
     output: Path,
     timeout: float,
+    adapter_factory: Callable[[Any], Any],
 ) -> dict[str, Any]:
     build = build_longform_generation(markdown, base_dir=str(base_dir))
-    adapter = MacLongformAdapter(build)
+    adapter = adapter_factory(build)
     measured = _InstrumentedAdapter(adapter)
     target = output / f"{name}.pdf"
     started = time.monotonic()
@@ -200,7 +208,14 @@ def validate_m5_evidence_report(report: Any) -> None:
         "system", "machine", "wpsVersion", "protocolVersion", "semanticVersion",
     }:
         raise ValueError("M5 evidence environment is invalid")
-    if environment["system"] != "Darwin" or environment["protocolVersion"] != 2:
+    if (
+        environment["system"] not in {"Darwin", "Windows"}
+        or environment["protocolVersion"] != 2
+        or not isinstance(environment["machine"], str)
+        or not environment["machine"]
+        or not isinstance(environment["wpsVersion"], str)
+        or not environment["wpsVersion"]
+    ):
         raise ValueError("M5 evidence platform contract is invalid")
     entries = report["fixtures"] + [report["performance"]]
     if len(report["fixtures"]) != 6:
@@ -238,7 +253,7 @@ def validate_m5_evidence_report(report: Any) -> None:
             or not re.fullmatch(r"[0-9a-f]{64}", artifact["sha256"])
         ):
             raise ValueError("M5 artifact evidence is invalid")
-        if any(
+        if not isinstance(entry["screenshots"], list) or not entry["screenshots"] or any(
             Path(name).is_absolute() or not name.startswith("screenshots/")
             for name in entry["screenshots"]
         ):
@@ -253,11 +268,32 @@ def validate_m5_evidence_report(report: Any) -> None:
         raise ValueError("M5 evidence contains a private path")
 
 
+def _read_windows_wps_version() -> str:
+    composer = _create_dedicated_composer()
+    try:
+        version = getattr(composer._app, "Version", None)
+        if callable(version):
+            version = version()
+        value = str(version or "").strip()
+        if not value:
+            raise RuntimeError("Windows WPS version is unavailable")
+        return value
+    finally:
+        composer.close(save_changes=False)
+
+
 def run_longform_m5_evidence(output: Path, timeout: float = 300.0) -> Path:
-    if platform.system() != "Darwin":
-        raise RuntimeError("M5 real evidence requires macOS WPS")
+    system = platform.system()
+    if system not in {"Darwin", "Windows"}:
+        raise RuntimeError("M5 real evidence requires macOS or Windows WPS")
     output = Path(output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=False)
+    if system == "Darwin":
+        adapter_factory: Callable[[Any], Any] = MacLongformAdapter
+        wps_version = read_wps_version()
+    else:
+        adapter_factory = WindowsLongformAdapter
+        wps_version = _read_windows_wps_version()
     fixtures = []
     for name in FIXTURE_NAMES:
         fixtures.append(
@@ -267,6 +303,7 @@ def run_longform_m5_evidence(output: Path, timeout: float = 300.0) -> Path:
                 FIXTURES,
                 output,
                 timeout,
+                adapter_factory,
             )
         )
     performance = _run_one(
@@ -275,13 +312,14 @@ def run_longform_m5_evidence(output: Path, timeout: float = 300.0) -> Path:
         FIXTURES,
         output,
         min(600.0, max(timeout, 300.0)),
+        adapter_factory,
     )
     report = {
         "version": "M5",
         "environment": {
-            "system": platform.system(),
+            "system": system,
             "machine": platform.machine(),
-            "wpsVersion": read_wps_version(),
+            "wpsVersion": wps_version,
             "protocolVersion": 2,
             "semanticVersion": "longform-1",
         },

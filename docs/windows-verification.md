@@ -1,7 +1,82 @@
 # Windows COM verification handoff
 
 > **Start here on Windows.** Read `AGENTS.md` first, then this file.
-> Verification **completed on Windows** — see "Windows run results" below.
+> The conversational-edit A-G gate below was completed in July. The new M5
+> long-form final gate is still pending and must be run before 0.8.0.
+
+## M5 final Windows gate (pending)
+
+The branch now includes a cross-platform evidence runner. Do not reuse the old
+600-test result as M5 evidence. Start from a clean checkout of the latest pushed
+`codex/longform-m3` branch and record `git log -1 --oneline` in the handoff.
+
+Prerequisites:
+
+- Windows WPS Office or Microsoft Word with `pywin32` support;
+- Python 3.9+;
+- Poppler `pdftoppm` on `PATH` for required screenshot evidence;
+- no unrelated WPSComposer process changing global add-in registration;
+- a separate user WPS document may remain open for ownership-safety checks.
+
+PowerShell setup and platform-independent gate:
+
+```powershell
+git status --short
+git log -1 --oneline
+py -m venv .venv-win
+.\.venv-win\Scripts\python -m pip install -e ".[dev,windows]"
+where.exe pdftoppm
+.\.venv-win\Scripts\python -m pytest -q
+```
+
+Run the real M5 gate three consecutive times, each with a fresh evidence
+directory:
+
+```powershell
+$env:WPSCOMPOSER_RUN_WINDOWS_M5 = "1"
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-1
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-2
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-3
+```
+
+Each run must produce `evidence/evidence.json`, six fixture PDFs, one 50-100
+page performance PDF, and representative screenshots. The report must say
+`"system": "Windows"`, protocol `2`, semantic version `longform-1`, no private
+absolute paths, no operation-cap overflow, and performance below 600 seconds.
+
+Required visual/semantic inspection:
+
+1. `academic`: heading sequence is `1`, `1.1`, `1.2`, `2`, `2.1`, `2.2`, `3`,
+   `3.1`; bibliography/citations and centered page numbers remain visible.
+2. `toc_dense`: compact TOC spacing, no oversized gaps, no trailing blank page.
+3. `wide_objects`: the table page is landscape, all columns fit, following
+   content returns to portrait.
+4. `degradation`: `FORMULA_MALFORMED` and
+   `FORMULA_FALLBACK_IMAGE_UNAVAILABLE` are visible locally, with each code
+   displayed once and later body content preserved.
+5. `unicode`: Unicode/code content survives and any `HEADING_ORPHAN` notice is
+   placed at its mapped heading rather than on the cover.
+6. `plain_short`: remains one concise normal document without forced expansion.
+7. Performance: 50-100 pages, no unexpected terminal blank page, no clipping,
+   and no unnecessary relayout/notice patch when the report is clean.
+
+Also run public-route and conversion regressions:
+
+```powershell
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_public_routing.py tests/test_generation.py tests/test_conversion.py tests/test_recording_composers.py
+```
+
+Generate one real DOCX, PDF, PPTX, and XLSX through public `generate()`. Convert
+the PPTX and XLSX to development evidence PDFs and inspect them. Confirm
+`layout_engine: legacy` uses the old Writer route only when explicitly present;
+`ENGINE_LOST`, protocol/capability mismatch, save/export/validation failure, and
+timeout must not fall back or publish a partial artifact.
+
+If Windows changes shared Python, schema, or plan code, rerun affected macOS
+tests and at least one complete macOS M5 evidence gate. If it changes native
+heading numbering, page sections, degradation display, or lifecycle bounds,
+rerun all three macOS gates. Commit fixes, push them, then repeat the Windows
+gate from a clean checkout. Do not bump or publish 0.8.0 yet.
 
 ## Status
 

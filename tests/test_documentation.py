@@ -13,6 +13,9 @@ API = (ROOT / "skills" / "WPSComposer" / "references" / "api.md").read_text(
 )
 LONGFORM_MARKDOWN_PATH = ROOT / "docs" / "longform-markdown.md"
 MACOS_M5_PATH = ROOT / "docs" / "macos-longform-m5-verification.md"
+WINDOWS_VERIFICATION = (ROOT / "docs" / "windows-verification.md").read_text(
+    encoding="utf-8"
+)
 PROGRESS = (ROOT / ".superpowers" / "sdd" / "progress.md").read_text(
     encoding="utf-8"
 )
@@ -106,3 +109,19 @@ def test_m5_macos_evidence_is_explicit_and_windows_release_gate_remains_open():
         assert token in evidence
     for token in ("M5 Task 8", "0d61345", "three consecutive"):
         assert token in PROGRESS
+
+
+def test_m5_windows_handoff_has_one_runnable_three_round_gate():
+    for token in (
+        "WPSCOMPOSER_RUN_WINDOWS_M5",
+        "test_windows_real_wps_m5.py",
+        "windows-real-1",
+        "windows-real-2",
+        "windows-real-3",
+        "pdftoppm",
+        '"system": "Windows"',
+        "layout_engine: legacy",
+        "ENGINE_LOST",
+        "Do not bump or publish 0.8.0 yet",
+    ):
+        assert token in WINDOWS_VERIFICATION

@@ -50,4 +50,6 @@ M4 carry-forward only: M5 PDF geometry/bbox quality mapping, deterministic full 
 M5 plan: commit 7c913d0; Tasks 1-7 complete in commits bd1a326..30596af (typed quality model, normalized PDF analysis, closed relayout, notice patching, bounded lifecycle, production adapters, default DOCX/PDF route).
 M5 Task 8: complete (commit 0d61345; 1228 M2-M5 tests passed + 8 gated skips; macOS WPS 12.1.26055 arm64 evidence under build/longform-m5/pytest-real-5, -6, and -7).
 M5 Task 8 real gate: three consecutive post-fix runs passed; each produced six fixtures plus a 63-page performance PDF with one generation/export/analysis, zero performance issue codes, zero patch, and approximately 139-140 seconds total.
-M5 Task 9: in progress (public default/legacy, quality, degradation/fatal, Markdown, privacy, coordinate, dependency, macOS evidence, and pending Windows release-gate documentation).
+M5 Task 9: complete (commit 8574b6e; public docs, Markdown guide, macOS verification truth, selected operator-doc installation, wheel/import and fresh-plugin installation checks).
+M5 Task 10 local audit: Round A found and fixed stale heading-numbering expectations, disconnected Presentation conversion WebView reuse, and duplicate quality-notice codes (6907311); Round B found test-double interface drift (165b3da); Round C full suite passed 2537 + 8 gated skips.
+M5 Windows handoff: runnable cross-platform evidence contract and `test_windows_real_wps_m5.py` added locally; final three-round Windows COM/UI/performance evidence remains pending before 0.8.0.
