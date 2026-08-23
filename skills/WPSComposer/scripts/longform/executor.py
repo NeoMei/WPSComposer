@@ -27,10 +27,20 @@ class PaginationFragment:
     """A single physical page fragment for a pagination node."""
 
     page: int
-    bounds: Optional[dict[str, Any]] = None
+    bounds: Optional[Tuple[float, float, float, float]] = None
+
+    def __post_init__(self) -> None:
+        from .quality import normalize_bounds
+
+        if type(self.page) is not int or self.page <= 0:
+            raise ValueError("pagination fragment page must be a positive integer")
+        object.__setattr__(self, "bounds", normalize_bounds(self.bounds))
 
     def to_dict(self) -> dict[str, Any]:
-        return {"page": self.page, "bounds": self.bounds}
+        return {
+            "page": self.page,
+            "bounds": None if self.bounds is None else list(self.bounds),
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PaginationFragment:
