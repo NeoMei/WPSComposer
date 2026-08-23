@@ -862,6 +862,9 @@
         throw nativeError("CAPABILITY_MISMATCH");
       }
       advanceAppendCursor(document, range, beforeEnd + text.length, [], beforeEnd);
+      if (text.indexOf("\r") >= 0) {
+        flushPendingDegradationStyles(document, currentPosition(document));
+      }
     }
     return range;
   }
@@ -869,6 +872,66 @@
   function nativeFields(document) {
     if (!Array.isArray(document._wpscNativeFields)) document._wpscNativeFields = [];
     return document._wpscNativeFields;
+  }
+
+  function pendingDegradationStyles(document) {
+    if (!Array.isArray(document._wpscPendingDegradationStyles)) {
+      document._wpscPendingDegradationStyles = [];
+    }
+    return document._wpscPendingDegradationStyles;
+  }
+
+  function queueDegradationStyle(document, start, end) {
+    if (!Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end <= start) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    exactDocumentRange(document, start, end);
+    pendingDegradationStyles(document).push({start: start, end: end});
+  }
+
+  function styleExactDegradationSpan(document, span) {
+    const written = exactDocumentRange(document, span.start, span.end);
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (typeof written.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      written.Select();
+      documentOwnedSelection(document, span.start, span.end);
+    }
+    if (!written.Font || !written.Shading) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    written.Font.Italic = -1;
+    written.Font.Color = colorFromHex("#9C0006");
+    written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+    return written;
+  }
+
+  function flushPendingDegradationStyles(document, rawBoundaryEnd) {
+    const boundaryEnd = Number(rawBoundaryEnd);
+    if (!Number.isInteger(boundaryEnd) || boundaryEnd < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const pending = pendingDegradationStyles(document);
+    const ready = [];
+    const later = [];
+    pending.forEach(function (span) {
+      (span.end <= boundaryEnd ? ready : later).push(span);
+    });
+    ready.forEach(function (span) {
+      styleExactDegradationSpan(document, span);
+    });
+    pending.length = 0;
+    later.forEach(function (span) { pending.push(span); });
+    if (ready.length > 0 && document._wpscRunOwnsAppendCursor === true) {
+      const cursor = exactDocumentRange(document, boundaryEnd, boundaryEnd);
+      if (typeof cursor.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      cursor.Select();
+      documentOwnedSelection(document, boundaryEnd, boundaryEnd);
+    }
   }
 
   function trackNativeField(document, ownerNodeId, fieldKind, native, category) {
@@ -1126,7 +1189,8 @@
       contentText: contentText,
       contentSignature: checkpointTextSignature(contentText),
       collectionCounts: counts,
-      nativeFieldCount: nativeFields(document).length
+      nativeFieldCount: nativeFields(document).length,
+      pendingDegradationCount: pendingDegradationStyles(document).length
     };
   }
 
@@ -1174,6 +1238,13 @@
           throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
         }
         tracked.length = token.nativeFieldCount;
+        const pending = document._wpscPendingDegradationStyles;
+        if (!Array.isArray(pending) ||
+            !Number.isInteger(token.pendingDegradationCount) ||
+            pending.length < token.pendingDegradationCount) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        pending.length = token.pendingDegradationCount;
       }
     } catch (error) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1879,30 +1950,39 @@
     return requirements.ambiguousMatrix || Object.keys(requirements.counts).length > 0;
   }
 
+  function rejectProfessionalMath(unavailableForRun) {
+    const error = nativeError("EQUATION_INSERT_FAILED");
+    if (unavailableForRun === true) {
+      error._wpscProfessionalMathUnavailable = true;
+    }
+    throw error;
+  }
+
   function verifyProfessionalMath(math, linearText) {
     if (!requiresProfessionalMath(linearText)) return;
     const functions = math && math.Functions;
     const count = Number(functions && functions.Count);
     if (!Number.isInteger(count) || count < 1) {
-      throw nativeError("EQUATION_INSERT_FAILED");
+      rejectProfessionalMath(false);
     }
     const typeCounts = Object.create(null);
     for (let index = 1; index <= count; index += 1) {
       const item = collectionItem(functions, index);
       const type = Number(item && item.Type);
       if (!Number.isInteger(type)) {
-        throw nativeError("EQUATION_INSERT_FAILED");
+        rejectProfessionalMath(false);
       }
       typeCounts[type] = (typeCounts[type] || 0) + 1;
     }
     const requirements = expectedProfessionalFunctionCounts(linearText);
+    const textOnly = (typeCounts[20] || 0) === count;
     if (requirements.ambiguousMatrix) {
-      throw nativeError("EQUATION_INSERT_FAILED");
+      rejectProfessionalMath(textOnly);
     }
     const expected = requirements.counts;
     Object.keys(expected).forEach(function (type) {
       if ((typeCounts[type] || 0) < expected[type]) {
-        throw nativeError("EQUATION_INSERT_FAILED");
+        rejectProfessionalMath(textOnly);
       }
     });
   }
@@ -1944,6 +2024,9 @@
     }
     if (!document.OMaths || typeof document.OMaths.Add !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (document._wpscProfessionalMathUnavailable === true) {
+      throw nativeError("EQUATION_INSERT_FAILED");
     }
     const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
@@ -2412,20 +2495,7 @@
         return;
       }
       insertInlineText(document, safeString(run.prefix));
-      const start = currentPosition(document);
-      const fallbackText = safeString(run.fallbackText);
-      const insertionTarget = endRange(document);
-      const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
-      insertInlineText(document, fallbackText);
-      const inserted = document.Range(start, start + fallbackText.length);
-      if (inserted && inserted.Font) {
-        inserted.Font.Italic = -1;
-        inserted.Font.Color = colorFromHex("#9C0006");
-      }
-      if (inserted && inserted.Shading) {
-        inserted.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
-      }
-      restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
+      addLiteralInlineDegradation(document, safeString(run.fallbackText));
       insertInlineText(document, safeString(run.suffix));
     });
     if (args.listFormatting) {
@@ -2883,21 +2953,32 @@
     const code = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(args.code))
       ? safeString(args.code) : "DEGRADATION";
     const text = "[" + code + ": " + safePublicText(args.fallbackText) + "]";
-    const insertionTarget = endRange(document);
-    const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      const insertionTarget = endRange(document);
+      const insertionStyle = captureDegradationInsertionStyle(
+        document, insertionTarget
+      );
+      const directStart = currentPosition(document);
+      insertInlineText(document, text);
+      const directWritten = exactDocumentRange(
+        document, directStart, directStart + text.length
+      );
+      if (directWritten.Font) {
+        directWritten.Font.Italic = -1;
+        directWritten.Font.Color = colorFromHex("#9C0006");
+      }
+      if (directWritten.Shading) {
+        directWritten.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      restoreDegradationInsertionStyle(
+        document, insertionStyle, currentPosition(document)
+      );
+      return directWritten;
+    }
     const start = currentPosition(document);
     insertInlineText(document, text);
-    const written = typeof document.Range === "function"
-      ? document.Range(start, start + text.length) : endRange(document);
-    if (written && written.Font) {
-      written.Font.Italic = -1;
-      written.Font.Color = colorFromHex("#9C0006");
-    }
-    if (written && written.Shading) {
-      written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
-    }
-    restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
-    return written;
+    queueDegradationStyle(document, start, start + text.length);
+    return exactDocumentRange(document, start, start + text.length);
   }
 
   function degradationStyleScalar(document, owner, name) {
@@ -2956,21 +3037,32 @@
 
   function addLiteralInlineDegradation(document, fallbackText) {
     const text = safePublicText(fallbackText);
-    const insertionTarget = endRange(document);
-    const insertionStyle = captureDegradationInsertionStyle(document, insertionTarget);
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      const insertionTarget = endRange(document);
+      const insertionStyle = captureDegradationInsertionStyle(
+        document, insertionTarget
+      );
+      const directStart = currentPosition(document);
+      insertInlineText(document, text);
+      const directWritten = exactDocumentRange(
+        document, directStart, directStart + text.length
+      );
+      if (directWritten.Font) {
+        directWritten.Font.Italic = -1;
+        directWritten.Font.Color = colorFromHex("#9C0006");
+      }
+      if (directWritten.Shading) {
+        directWritten.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      restoreDegradationInsertionStyle(
+        document, insertionStyle, currentPosition(document)
+      );
+      return directWritten;
+    }
     const start = currentPosition(document);
     insertInlineText(document, text);
-    const written = typeof document.Range === "function"
-      ? document.Range(start, start + text.length) : endRange(document);
-    if (written && written.Font) {
-      written.Font.Italic = -1;
-      written.Font.Color = colorFromHex("#9C0006");
-    }
-    if (written && written.Shading) {
-      written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
-    }
-    restoreDegradationInsertionStyle(document, insertionStyle, currentPosition(document));
-    return written;
+    queueDegradationStyle(document, start, start + text.length);
+    return exactDocumentRange(document, start, start + text.length);
   }
 
   function addCitationDegradationRun(document, run, context) {
@@ -3363,6 +3455,9 @@
     try {
       handler(document, operation.args || {}, resources || {}, context);
     } catch (error) {
+      const professionalMathUnavailable = Boolean(
+        error && error._wpscProfessionalMathUnavailable === true
+      );
       if (error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED") {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
@@ -3380,6 +3475,9 @@
             document, operation, resources, issues, context,
             checkpoint, code, policy.fallback
           );
+          if (professionalMathUnavailable) {
+            document._wpscProfessionalMathUnavailable = true;
+          }
           return;
         }
         if (checkpoint) {
@@ -3648,10 +3746,15 @@
       Application.DisplayAlerts = 0;
       Application.ScreenUpdating = false;
       document = Application.Documents.Open(sourcePath, false, false);
+      document._wpscProfessionalMathUnavailable = false;
       mutations.forEach(function (mutation) {
         applyLongformMutation(document, mutation, resources, issues, childResults);
         refreshRounds.push(runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues).length);
       });
+      flushPendingDegradationStyles(document, currentPosition(document));
+      if (pendingDegradationStyles(document).length !== 0) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
       document.SaveAs2(outputPath, 12);
       document.Close(0);
       document = Application.Documents.Open(outputPath, false, false);
@@ -3699,6 +3802,7 @@
       document = Application.Documents.Add();
       document._wpscFirstSectionConfigured = false;
       document._wpscRunOwnsAppendCursor = true;
+      document._wpscProfessionalMathUnavailable = false;
       if (typeof document.Range === "function") {
         const initialEnd = authoritativeDocumentEnd(document);
         setAppendCursor(document, initialEnd.position);
@@ -3709,6 +3813,11 @@
         runOwnedOperation(document, operation, resources, issues, childResults);
         appliedCount += 1;
       });
+
+      flushPendingDegradationStyles(document, currentPosition(document));
+      if (pendingDegradationStyles(document).length !== 0) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
 
       const fieldSnapshots = runFieldConvergence(document, operations, issues);
 

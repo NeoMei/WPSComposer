@@ -644,8 +644,8 @@ assert.equal(document.Bookmarks.Count, 1);
 
 def test_js_partial_professional_formula_degrades_then_keeps_number_reference_and_later_flow() -> None:
     _run_node(r'''
-function exercise(imageSucceeds) {
-  let text = "", mathCount = 0, shapeCount = 0, fieldCount = 0;
+function exercise(imageSucceeds, firstFunctionType, expectLatch) {
+  let text = "", mathCount = 0, mathAttempts = 0, shapeCount = 0, fieldCount = 0;
   let fieldRefreshes = 0;
   const bookmarkEntries = Object.create(null);
   const selection = {Document: null, Range: null, OMaths: null};
@@ -669,9 +669,12 @@ function exercise(imageSucceeds) {
         Object.keys(bookmarkEntries).forEach(function(name) { delete bookmarkEntries[name]; });
       }};
     value.OMaths = {Add: function(target) {
+      mathAttempts += 1;
       mathCount += 1;
       const native = {Range: {Start: target.Start, End: target.End},
-        Functions: {Count: 1, Item: function() { return {Type: 19}; }},
+        Functions: {Count: 1, Item: function() {
+          return {Type: mathAttempts === 1 ? firstFunctionType : 20};
+        }},
         BuildUp: function(){}};
       const added = range(target.Start, target.End);
       added.OMaths = {Count: 1, Item: function() { return native; }};
@@ -718,6 +721,7 @@ function exercise(imageSucceeds) {
   };
   selection.Document = document;
   const bookmarkName = "wpsc_eq_" + "e".repeat(24);
+  const plainBookmarkName = "wpsc_eq_" + "f".repeat(24);
   const issues = [], children = [];
   const equation = {op: "writer.add_equation", nodeId: "eq:one", args: {
     renderMode: "native-m4",
@@ -729,34 +733,54 @@ function exercise(imageSucceeds) {
       fallback: "explicit-image-then-source-notice"}};
   const api = window.WPSComposerLongformV2.__test;
   api.runOperation(document, equation, {image: "/private/staged.png"}, issues, children);
+  api.runOperation(document, {op: "writer.add_equation", nodeId: "eq:plain", args: {
+    renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "α+β"}},
+    fallbackText: "α+β",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: plainBookmarkName},
+    failurePolicy: {mode: "degrade", recoverableCodes: ["EQUATION_INSERT_FAILED"],
+      fallback: "explicit-image-then-source-notice"}}, {}, issues, children);
   api.runOperation(document, {op: "writer.add_cross_reference", nodeId: "p:ref", args: {runs: [
     {type: "reference", prefix: "(", bookmarkName: bookmarkName,
-      suffix: ")", fallbackText: "1"}
+      suffix: ")", fallbackText: "1"},
+    {type: "text", text: " then "},
+    {type: "reference", prefix: "(", bookmarkName: plainBookmarkName,
+      suffix: ")", fallbackText: "2"}
   ]}, failurePolicy: {mode: "degrade", recoverableCodes: ["CROSS_REFERENCE_FAILED"],
     fallback: "inline-fallback"}}, {}, issues, children);
   api.runOperation(document, {op: "writer.add_paragraph", nodeId: "p:later",
     args: {text: "later"}}, {}, issues, children);
-  assert.equal(mathCount, 0, "partial native OMath must be rolled back");
-  assert.equal(document.Bookmarks.Count, 1, "only the fallback number bookmark remains");
-  assert.equal(fieldCount, 2, "one fallback number and one REF remain");
-  assert.equal(document._wpscNativeFields.length, 2);
+  assert.equal(mathCount, expectLatch ? 0 : 1,
+    "the failed formula is rolled back while a later formula may remain native");
+  assert.equal(mathAttempts, expectLatch ? 1 : 2,
+    "only a text-only professional no-op latches for the run");
+  assert.equal(document.Bookmarks.Count, 2, "only the two fallback number bookmarks remain");
+  assert.equal(fieldCount, 4, "two fallback numbers and two REF fields remain");
+  assert.equal(document._wpscNativeFields.length, 4);
   assert.equal(document._wpscNativeFields[0].fieldKind, "SEQ_EQ");
-  assert.equal(document._wpscNativeFields[1].fieldKind, "REF");
-  document._wpscNativeFields[1].native.Update();
+  assert.equal(document._wpscNativeFields[1].fieldKind, "SEQ_EQ");
+  assert.equal(document._wpscNativeFields[2].fieldKind, "REF");
+  assert.equal(document._wpscNativeFields[3].fieldKind, "REF");
+  document._wpscNativeFields[2].native.Update();
   assert.equal(fieldRefreshes, 1);
   assert.equal(issues.filter(function(issue) {
     return issue.code === "EQUATION_INSERT_FAILED";
-  }).length, 1);
+  }).length, expectLatch ? 2 : 1);
   assert.ok(text.includes("later"));
   assert.ok(text.includes("(1)"));
+  assert.equal(text.includes("[EQUATION_INSERT_FAILED: α+β]"), expectLatch);
   return {shapeCount: shapeCount, text: text};
 }
-const image = exercise(true);
+const image = exercise(true, 20, true);
 assert.equal(image.shapeCount, 1);
 assert.ok(image.text.includes("formula image fallback"));
-const source = exercise(false);
+const source = exercise(false, 20, true);
 assert.equal(source.shapeCount, 0);
 assert.ok(source.text.includes("[EQUATION_INSERT_FAILED: x^2+y^3]"));
+const partialStructure = exercise(false, 19, false);
+assert.equal(partialStructure.shapeCount, 0);
+assert.ok(partialStructure.text.includes("α+β"));
 ''')
 
 
@@ -967,6 +991,65 @@ assert.ok(text.endsWith("[1] Alpha.\r"));
 ''')
 
 
+def test_js_inline_degradation_styles_retrospectively_after_paragraph_boundary() -> None:
+    _run_node(r'''
+let text = "";
+let paragraphLatch = {italic: 0, color: 17, background: 23};
+let nextParagraphStyle = null;
+let noticeStyled = 0;
+const selection = {Document: null, Range: null};
+function range(start, end) {
+  const font = {};
+  const shading = {};
+  function record(name, value) {
+    if (start < end) {
+      noticeStyled += 1;
+      if (text.indexOf("\r") < 0) paragraphLatch[name] = value;
+    }
+  }
+  Object.defineProperties(font, {
+    Italic: {get: function() { return paragraphLatch.italic; },
+      set: function(value) { record("italic", value); }},
+    Color: {get: function() { return paragraphLatch.color; },
+      set: function(value) { record("color", value); }}
+  });
+  Object.defineProperty(shading, "BackgroundPatternColor", {
+    get: function() { return paragraphLatch.background; },
+    set: function(value) { record("background", value); }
+  });
+  return {Start: start, End: end, Document: document,
+    Font: font, Shading: shading, ParagraphFormat: {},
+    Select: function() { selection.Range = this; selection.Document = document; },
+    get Text() { return text.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      text = text.slice(0, this.End) + value + text.slice(this.End);
+      this.End += value.length;
+      if (value.indexOf("\r") >= 0) {
+        nextParagraphStyle = Object.assign({}, paragraphLatch);
+      }
+    }};
+}
+const document = {Name: "Deferred-style.docx", ActiveWindow: {Selection: selection},
+  get Content() { return {End: text.length + 1, get Text() { return text; }}; },
+  Range: range};
+selection.Document = document;
+document._wpscRunOwnsAppendCursor = true;
+document._wpscAppendCursorRange = document.Range(0, 0);
+window.WPSComposerLongformV2.__test.addCitationParagraph(document, {runs: [
+  {type: "text", text: "before "},
+  {type: "degradation", nodeId: "p/c:0", code: "REFERENCE_UNRESOLVED",
+    fallbackText: "[REFERENCE_UNRESOLVED 引用目标未解析]"},
+  {type: "text", text: " after."}
+]}, {}, {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true});
+assert.ok(noticeStyled >= 3, "the exact notice span must be styled");
+assert.deepEqual(nextParagraphStyle, {italic: 0, color: 17, background: 23});
+assert.equal(paragraphLatch.italic, 0);
+assert.equal(paragraphLatch.color, 17);
+assert.equal(paragraphLatch.background, 23);
+''')
+
+
 def test_js_degradation_style_restore_is_target_local_owner_bound_and_closed() -> None:
     _run_node(r'''
 let text = "BODY";
@@ -1024,16 +1107,16 @@ const missingStyleSelection = {Document: null, Range: null};
 const missingStyle = {Name: "MissingStyle.docx",
   ActiveWindow: {Selection: missingStyleSelection},
   get Content() { return {End: 1, Text: ""}; },
-  Range: function(start, end) { return {Start: start, End: end, Font: {}, Shading: {},
+  Range: function(start, end) { return {Start: start, End: end, Font: null, Shading: null,
     Select: function() { missingStyleSelection.Range = this; },
-    InsertAfter: function(){}}; }};
+    InsertAfter: function(value){ this.End += String(value).length; }}; }};
 missingStyleSelection.Document = missingStyle;
 missingStyle._wpscRunOwnsAppendCursor = true;
 missingStyle._wpscAppendCursorRange = missingStyle.Range(0, 0);
 assert.throws(function() {
-  window.WPSComposerLongformV2.__test.addInlineDegradation(
-    missingStyle, {code: "NOTICE", fallbackText: "safe"}
-  );
+  window.WPSComposerLongformV2.__test.addCitationParagraph(missingStyle, {runs: [
+    {type: "degradation", nodeId: "p/c:0", code: "NOTICE", fallbackText: "safe"}
+  ]}, {}, {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true});
 }, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
 
 const missingSelection = {Name: "MissingSelection.docx",
@@ -1044,9 +1127,9 @@ const missingSelection = {Name: "MissingSelection.docx",
 missingSelection._wpscRunOwnsAppendCursor = true;
 missingSelection._wpscAppendCursorRange = missingSelection.Range(0, 0);
 assert.throws(function() {
-  window.WPSComposerLongformV2.__test.addInlineDegradation(
-    missingSelection, {code: "NOTICE", fallbackText: "safe"}
-  );
+  window.WPSComposerLongformV2.__test.addCitationParagraph(missingSelection, {runs: [
+    {type: "degradation", nodeId: "p/c:0", code: "NOTICE", fallbackText: "safe"}
+  ]}, {}, {ownerNodeId: "p", issues: [], childResults: [], controllerOwned: true});
 }, function(error) { return error.code === "CAPABILITY_MISMATCH"; });
 ''')
 
