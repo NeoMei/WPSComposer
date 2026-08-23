@@ -1,0 +1,404 @@
+{
+  "fixtures": {
+    "acceptance_chapter": {
+      "bibliography": [
+        {
+          "cited": true,
+          "id": "b",
+          "number": 1
+        },
+        {
+          "cited": true,
+          "id": "a",
+          "number": 2
+        },
+        {
+          "cited": false,
+          "id": "c",
+          "number": 3
+        }
+      ],
+      "citations": [
+        {
+          "number": 1,
+          "targetId": "b"
+        },
+        {
+          "number": 1,
+          "targetId": "b"
+        },
+        {
+          "number": 2,
+          "targetId": "a"
+        }
+      ],
+      "formulas": [
+        {
+          "fallback": "resource",
+          "id": "eq:power",
+          "nativeMath": {
+            "linearText": "E=mc^2",
+            "sourceHash": "2820951a377c18ce3e89093ca7c31c204b1196a7e571781c6080f8207524a8dc",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:scripts",
+          "nativeMath": {
+            "linearText": "a_i^2+b^n",
+            "sourceHash": "23eb26a6a9b7bdade77db2bd388df0fa5015ad23d3732bfa56c963c19f56625d",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:fraction",
+          "nativeMath": {
+            "linearText": "(a+b)/(c)",
+            "sourceHash": "07df0f5905bfa1d6f9bb5666705912e9c6165fb11eba889bf94d63847903bf87",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:radical",
+          "nativeMath": {
+            "linearText": "√(x)+√(3&y)",
+            "sourceHash": "57f897214c2ce8508f56a8323dcca33b9bee148b21450bab2ba0525a490f7870",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:large-operators",
+          "nativeMath": {
+            "linearText": "∑_(i=1)^n i+∏_(j=1)^m j",
+            "sourceHash": "803eb5057aeb4c40be65767a3be5251b94f1e79158082ee3d9100f042fd6c5f6",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:integral",
+          "nativeMath": {
+            "linearText": "∫_0^1 xdx",
+            "sourceHash": "10e869fe269b9ebe099c345ce2905c9f3e4587c99b85dc193efd530b48e2cf81",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:delimiters",
+          "nativeMath": {
+            "linearText": "((x)/(y))",
+            "sourceHash": "e33968bf197e8a369e32938cd6badfc6c707c3fff0aaf98a1543a1029e5ba571",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:symbols",
+          "nativeMath": {
+            "linearText": "α+Γ≤∞",
+            "sourceHash": "47096bdf4311570152a6189a22a6d7e18c828f4a66c81f9c5c212248192c06d6",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:matrix",
+          "nativeMath": {
+            "linearText": "(■(a&b@c&d))",
+            "sourceHash": "07cb8af7adf91e894af3e204fdc36bf2bdd00c8f7fdd44603498d33fb8f2192b",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:cases",
+          "nativeMath": {
+            "linearText": "{■(x&x>0@-x&x≤0)",
+            "sourceHash": "07c4173c4e3fe3bc6763cecdfc6955fa3c2300e823916009d09c29b4bb796690",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:nested",
+          "nativeMath": {
+            "linearText": "(1)/(1+√(x_i^2))",
+            "sourceHash": "503b635a41e6a18589350b1ee310b44b77d128f5982a66883181df7eb8e8a864",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        },
+        {
+          "id": "eq:unicode",
+          "nativeMath": {
+            "linearText": "α+中文变量=é",
+            "sourceHash": "154790b92dc7a7bb9f0d54d57207e170fdfff39682027c29a01ed911f7da3c96",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": 1,
+            "mode": "chapter",
+            "prefix": "(",
+            "resetLevel": 1,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        }
+      ],
+      "issueCodes": [
+        "BIBLIOGRAPHY_ENTRY_MALFORMED",
+        "REFERENCE_UNRESOLVED"
+      ],
+      "noticePlacements": [
+        "block",
+        "inline"
+      ],
+      "recovery": [
+        {
+          "fallback": "explicit-image-then-source-notice",
+          "op": "writer.add_equation",
+          "recoverableCodes": [
+            "EQUATION_INSERT_FAILED"
+          ]
+        },
+        {
+          "fallback": "inline-fallback",
+          "op": "writer.add_cross_reference",
+          "recoverableCodes": [
+            "CROSS_REFERENCE_FAILED"
+          ]
+        },
+        {
+          "fallback": "notice",
+          "op": "writer.add_bibliography",
+          "recoverableCodes": [
+            "BIBLIOGRAPHY_INSERT_FAILED"
+          ]
+        }
+      ]
+    },
+    "acceptance_global": {
+      "bibliography": [
+        {
+          "cited": false,
+          "id": "unused",
+          "number": 1
+        }
+      ],
+      "citations": [],
+      "formulas": [
+        {
+          "id": "eq:global-one",
+          "nativeMath": {
+            "linearText": "x+y",
+            "sourceHash": "cb4c3af716b8b9310afb0276c0c84d2cafa7de9e9bc491317cb080c6a2af574e",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": null,
+            "mode": "global",
+            "prefix": "(",
+            "resetLevel": null,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        }
+      ],
+      "issueCodes": [],
+      "noticePlacements": [],
+      "recovery": [
+        {
+          "fallback": "explicit-image-then-source-notice",
+          "op": "writer.add_equation",
+          "recoverableCodes": [
+            "EQUATION_INSERT_FAILED"
+          ]
+        },
+        {
+          "fallback": "inline-fallback",
+          "op": "writer.add_cross_reference",
+          "recoverableCodes": [
+            "CROSS_REFERENCE_FAILED"
+          ]
+        },
+        {
+          "fallback": "notice",
+          "op": "writer.add_bibliography",
+          "recoverableCodes": [
+            "BIBLIOGRAPHY_INSERT_FAILED"
+          ]
+        }
+      ]
+    },
+    "degradation": {
+      "bibliography": [
+        {
+          "cited": false,
+          "id": "valid",
+          "number": 1
+        }
+      ],
+      "citations": [],
+      "formulas": [
+        {
+          "fallback": "resource",
+          "id": "eq:invalid-source",
+          "numbering": {
+            "chapterStyleLevel": null,
+            "mode": "global",
+            "prefix": "(",
+            "resetLevel": null,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          },
+          "plannedDegradation": {
+            "code": "FORMULA_MALFORMED",
+            "fallbackKind": "source",
+            "placement": "block"
+          }
+        },
+        {
+          "fallback": "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+          "id": "eq:invalid-image",
+          "nativeMath": {
+            "linearText": "x+y",
+            "sourceHash": "cb4c3af716b8b9310afb0276c0c84d2cafa7de9e9bc491317cb080c6a2af574e",
+            "syntax": "wps-linear-v1"
+          },
+          "numbering": {
+            "chapterStyleLevel": null,
+            "mode": "global",
+            "prefix": "(",
+            "resetLevel": null,
+            "sequenceId": "WPSC_EQ",
+            "suffix": ")"
+          }
+        }
+      ],
+      "issueCodes": [
+        "BIBLIOGRAPHY_ENTRY_MALFORMED",
+        "CONFIG_VALUE_INVALID",
+        "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "FORMULA_MALFORMED",
+        "REFERENCE_UNRESOLVED"
+      ],
+      "noticePlacements": [
+        "block",
+        "block",
+        "block",
+        "document",
+        "inline"
+      ],
+      "recovery": [
+        {
+          "fallback": "explicit-image-then-source-notice",
+          "op": "writer.add_equation",
+          "recoverableCodes": [
+            "EQUATION_INSERT_FAILED"
+          ]
+        },
+        {
+          "fallback": "inline-fallback",
+          "op": "writer.add_cross_reference",
+          "recoverableCodes": [
+            "CROSS_REFERENCE_FAILED"
+          ]
+        },
+        {
+          "fallback": "notice",
+          "op": "writer.add_bibliography",
+          "recoverableCodes": [
+            "BIBLIOGRAPHY_INSERT_FAILED"
+          ]
+        }
+      ]
+    }
+  },
+  "privacyFailureCodes": [
+    "FORMULA_FORBIDDEN_PRIMITIVE",
+    "FORMULA_FORBIDDEN_PRIMITIVE"
+  ],
+  "version": "M4-offline-1"
+}
