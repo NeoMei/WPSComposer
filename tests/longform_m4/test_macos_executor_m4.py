@@ -1008,6 +1008,83 @@ runCase("paragraph", false);
 ''')
 
 
+def test_js_omath_holds_prefix_range_across_wps_coordinate_remap() -> None:
+    _run_node(r'''
+function runCase(corruptHeldPrefix) {
+  let text = "Prefix\r", built = false;
+  const ranges = [];
+  function range(start, end) {
+    const snapshot = text.slice(start, end);
+    const heldBeforeBuild = !built;
+    const value = {Start: start, End: end, Font: {}, Shading: {}, Style: null,
+      ParagraphFormat: {TabStops: {Add: function(){}}},
+      get Text() {
+        if (heldBeforeBuild && this.Start === 0 && built) {
+          return corruptHeldPrefix ? snapshot.slice(0, -1) : snapshot;
+        }
+        // Rebuilding the old numeric prefix after BuildUp is deliberately
+        // wrong, matching WPS's remapped character coordinates.
+        if (!heldBeforeBuild && built && this.Start === 0) {
+          return text.slice(0, Math.max(0, this.End - 2));
+        }
+        return text.slice(this.Start, this.End);
+      },
+      InsertAfter: function(raw) {
+        const inserted = String(raw);
+        text = text.slice(0, this.End) + inserted + text.slice(this.End);
+        this.End += inserted.length;
+      },
+      Delete: function() { text = text.slice(0, this.Start) + text.slice(this.End); }
+    };
+    ranges.push(value);
+    return value;
+  }
+  let globalMath = null;
+  const maths = {Count: 0, Add: function(target) {
+    this.Count = 1;
+    globalMath = {Range: {Start: target.Start, End: target.End}, BuildUp: function() {
+      const oldEnd = target.End;
+      text = text.slice(0, oldEnd) + "<OMATHPAD>" + text.slice(oldEnd);
+      built = true;
+      ranges.forEach(function(item) {
+        if (item.Start === oldEnd && item.End === oldEnd) {
+          item.Start += 10; item.End += 10;
+        }
+      });
+    }};
+    return {Start: target.Start, End: target.End,
+      OMaths: {Count: 0, Item: function() { throw new Error("no local proxy"); }}};
+  }, Item: function() { return globalMath; }};
+  const document = {get Content() { return {End: built ? 19 : text.length + 1}; },
+    Range: range,
+    get Paragraphs() { return {Count: 2, Item: function() {
+      return {Range: {Start: 7, End: text.length + 1}};
+    }}; },
+    Styles: {Item: function() { return {Font: {}, ParagraphFormat: {}}; }},
+    PageSetup: {PageWidth: 595, LeftMargin: 64, RightMargin: 64}, OMaths: maths,
+    Fields: {Add: function(target) { target.InsertAfter("1");
+      return {Update: function(){}, Result: {Text: "1", Start: target.Start, End: target.End}};
+    }}, Bookmarks: {Add: function() {}}
+  };
+  const operation = {op: "writer.add_equation", nodeId: "eq:remap", args: {
+    renderMode: "native-m4",
+    content: {nativeMath: {syntax: "wps-linear-v1", linearText: "x+y"}},
+    fallbackText: "x+y",
+    numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
+    bookmarkName: "wpsc_eq_" + "e".repeat(24)}, failurePolicy: {mode: "fail"}};
+  if (corruptHeldPrefix) {
+    assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
+      document, operation, {}, [], []), error => error.code === "EXECUTION_ABORTED");
+  } else {
+    window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
+    assert.ok(text.endsWith("<OMATHPAD>\t(1)\r"), text);
+  }
+}
+runCase(false);
+runCase(true);
+''')
+
+
 def test_js_formula_uses_last_paragraph_end_when_content_end_is_stale() -> None:
     _run_node(r'''
 const citation = "Inline citation remains complete in this paragraph.\r";

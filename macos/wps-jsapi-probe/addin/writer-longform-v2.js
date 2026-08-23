@@ -326,17 +326,21 @@
   }
 
   function commitSuccessfulHostAdvance(
-    document, hostBefore, minimumEnd, prefixEnd, prefixText
+    document, hostBefore, minimumEnd, prefixRange, prefixText
   ) {
     if (!document || document._wpscRunOwnsAppendCursor !== true) return;
     const cursor = appendCursorRange(document);
     if (!cursor || !hostBefore || !Number.isInteger(minimumEnd) ||
-        !Number.isInteger(prefixEnd) || typeof prefixText !== "string") {
+        !prefixRange || typeof prefixText !== "string") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    const prefix = exactDocumentRange(document, 0, prefixEnd);
-    if (typeof prefix.Text !== "string" || prefix.Text !== prefixText ||
-        checkpointTextSignature(prefix.Text) !== checkpointTextSignature(prefixText)) {
+    const prefixStart = Number(prefixRange.Start);
+    const prefixEnd = Number(prefixRange.End);
+    const currentPrefixText = prefixRange.Text;
+    if (!Number.isInteger(prefixStart) || !Number.isInteger(prefixEnd) ||
+        prefixStart !== 0 || prefixEnd < prefixStart || prefixEnd > cursor.End ||
+        typeof currentPrefixText !== "string" || currentPrefixText !== prefixText ||
+        checkpointTextSignature(currentPrefixText) !== checkpointTextSignature(prefixText)) {
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     const hostAfter = observedHostDocumentEnds(document);
@@ -344,10 +348,8 @@
     ["content", "paragraph"].forEach(function (source) {
       const before = hostBefore[source];
       const after = hostAfter[source];
-      if (Number.isInteger(before) && Number.isInteger(after) && after > before) {
-        if (after < minimumEnd || after < cursor.End) {
-          throw nativeError("EQUATION_INSERT_FAILED");
-        }
+      if (Number.isInteger(before) && Number.isInteger(after) && after > before &&
+          after >= minimumEnd && after >= cursor.End) {
         exactDocumentRange(document, after, after);
         advanced.push(after);
       }
@@ -1018,6 +1020,9 @@
       lastParagraphEnd: snapshot.end,
       lastParagraphText: snapshot.text,
       lastParagraphSignature: snapshot.signature,
+      lastParagraphPrefixRange: snapshot.text === "" && snapshot.start === state.position
+        ? null : exactDocumentRange(document, snapshot.start, state.position),
+      documentPrefixRange: documentPrefix,
       documentPrefixText: documentPrefix.Text,
       documentPrefixSignature: checkpointTextSignature(documentPrefix.Text)
     };
@@ -1044,13 +1049,13 @@
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
     } else {
-      const prefix = exactDocumentRange(document, paragraphStart, start);
+      const prefix = token.lastParagraphPrefixRange;
       if (typeof prefix.Text !== "string" || prefix.Text !== expectedText ||
           checkpointTextSignature(prefix.Text) !== expectedSignature) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
     }
-    const documentPrefix = exactDocumentRange(document, 0, start);
+    const documentPrefix = token.documentPrefixRange;
     if (typeof documentPrefix.Text !== "string" || documentPrefix.Text !== expectedPrefixText ||
         checkpointTextSignature(documentPrefix.Text) !== expectedPrefixSignature) {
       throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
@@ -1716,14 +1721,15 @@
     insertInlineText(document, linearText);
     const mathEnd = currentPosition(document);
     let successHostBefore = null;
+    let successPrefixRange = null;
     let successPrefixText = null;
     if (document._wpscRunOwnsAppendCursor === true) {
       successHostBefore = observedHostDocumentEnds(document);
-      const successPrefix = exactDocumentRange(document, 0, start);
-      if (typeof successPrefix.Text !== "string") {
+      successPrefixRange = exactDocumentRange(document, 0, start);
+      if (typeof successPrefixRange.Text !== "string") {
         throw nativeError("CAPABILITY_MISMATCH");
       }
-      successPrefixText = successPrefix.Text;
+      successPrefixText = successPrefixRange.Text;
     }
     const before = Number(document.OMaths.Count);
     if (!Number.isInteger(before) || before < 0) {
@@ -1793,7 +1799,7 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     commitSuccessfulHostAdvance(
-      document, successHostBefore, builtAddedEnd, start, successPrefixText
+      document, successHostBefore, builtAddedEnd, successPrefixRange, successPrefixText
     );
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
