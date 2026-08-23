@@ -1079,6 +1079,7 @@ function range(start, end) {{ return {{
     error.code = "BIBLIOGRAPHY_INSERT_FAILED";
     throw error;
   }},
+  InsertAfter: function(value) {{ this.End += String(value).length; }},
   Delete: function() {{}}
 }}; }}
 const tables = [];

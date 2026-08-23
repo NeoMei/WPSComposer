@@ -2377,7 +2377,6 @@
           fallbackText: "formula image fallback",
           placement: "block"
         });
-        insertInlineText(document, "\r", null, true);
         return;
       } catch (error) {
         const rawHostEndAfter = document && document.Content &&
@@ -3208,11 +3207,6 @@
       if (!written) throw nativeError("DEGRADATION_INSERT_FAILED");
       if (appendOwned) {
         queueDegradationStyle(document, start, start + text.length);
-        insertInlineText(document, "\r", null, true);
-        applyParagraphFormat(
-          exactDocumentRange(document, start, start + text.length).ParagraphFormat,
-          {spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10}
-        );
       } else if (!document || document._wpscRunOwnsAppendCursor !== true) {
         applyParagraphFormat(written.ParagraphFormat, {
           spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
@@ -3258,22 +3252,35 @@
     }
     if (placement !== "block") throw nativeError("DEGRADATION_INSERT_FAILED");
     const target = endRange(document);
+    let notice;
+    let minimalTextNotice = false;
     try {
-      return insertDegradationBox(document, args.code, args.fallbackText, target);
+      notice = insertDegradationBox(document, args.code, args.fallbackText, target);
     } catch (error) {
       // A table failure may remove the one-cell styling API itself. Preserve
       // the minimal visible notice at the same block anchor before declaring
       // insertion fatal.
       try {
-        return insertStyledDegradationAtRange(
+        notice = insertStyledDegradationAtRange(
           document, target,
           "[" + safeString(args.code || "DEGRADATION") + "] " +
             safePublicText(args.fallbackText)
         );
+        minimalTextNotice = true;
       } catch (minimalError) {
         throw nativeError("DEGRADATION_INSERT_FAILED");
       }
     }
+    insertInlineText(
+      document, "\r", null,
+      Boolean(document && document._wpscRunOwnsAppendCursor === true)
+    );
+    if (minimalTextNotice && notice && notice.Range) {
+      applyParagraphFormat(notice.Range.ParagraphFormat, {
+        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+      });
+    }
+    return notice;
   }
 
   function reserveDocumentQualityAnchor(document, args) {

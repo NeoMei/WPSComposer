@@ -1163,7 +1163,42 @@ appendDocument._wpscAppendCursorRange = appendDocument.Range(0, 0);
 window.WPSComposerLongformV2.__test.addDegradationNotice(appendDocument,
   {code: "NOTICE", fallbackText: "safe", placement: "block"});
 assert.ok(appendText.endsWith("\r"), "append-owned block notice closes safely");
+assert.equal((appendText.match(/\r/g) || []).length, 1,
+  "text fallback owns exactly one block boundary");
 assert.equal(appendDocument._wpscPendingDegradationStyles.length, 0);
+
+let tableText = "";
+const tableSelection = {Document: null, Range: null};
+function tableRange(start, end) {
+  return {Start: start, End: end, Font: {Italic: 0, Color: 11},
+    Shading: {BackgroundPatternColor: 22}, ParagraphFormat: {},
+    Select: function() { tableSelection.Range = this; },
+    get Text() { return tableText.slice(this.Start, this.End); },
+    InsertAfter: function(value) {
+      value = String(value);
+      tableText = tableText.slice(0, this.End) + value + tableText.slice(this.End);
+      this.End += value.length;
+    }};
+}
+const tableDocument = {Name: "TableNotice.docx",
+  ActiveWindow: {Selection: tableSelection},
+  get Content() { return {End: tableText.length + 1, get Text() { return tableText; }}; },
+  Range: tableRange,
+  Tables: {Add: function(target) {
+    const start = target.End;
+    target.InsertAfter("T");
+    return {Range: {Start: start, End: target.End}, Rows: {},
+      Cell: function() { return {Range: {Text: "", Font: {}, Shading: {},
+        ParagraphFormat: {}}}; }};
+  }}
+};
+tableSelection.Document = tableDocument;
+tableDocument._wpscRunOwnsAppendCursor = true;
+tableDocument._wpscAppendCursorRange = tableDocument.Range(0, 0);
+window.WPSComposerLongformV2.__test.addDegradationNotice(tableDocument,
+  {code: "NOTICE", fallbackText: "safe", placement: "block"});
+assert.equal((tableText.match(/\r/g) || []).length, 1,
+  "table notice owns exactly one block boundary");
 
 const missingStyleSelection = {Document: null, Range: null};
 const missingStyle = {Name: "MissingStyle.docx",
