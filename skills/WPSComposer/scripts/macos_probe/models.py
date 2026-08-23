@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from pathlib import Path
+import re
 from typing import Any, Mapping, Optional, Union
 from uuid import uuid4
 
@@ -28,6 +30,7 @@ METHOD_COMPONENT = {
     "probe_longform_m0": "writer",
     "generate_longform_document": "writer",
     "mutate_longform_document": "writer",
+    "patch_longform_quality_notices": "writer",
 }
 
 
@@ -47,6 +50,11 @@ _LONGFORM_RESULT_KEYS = frozenset(
 )
 
 _LONGFORM_REQUEST_KEYS = frozenset({"plan", "outputPath", "resources"})
+_NOTICE_PATCH_REQUEST_KEYS = frozenset({"sourcePath", "outputPath", "notices"})
+_NOTICE_PATCH_RESULT_KEYS = frozenset({
+    "outputPath", "appliedNotices", "issueCodes", "fieldSnapshots", "paginationMap",
+})
+_BOOKMARK_RE = re.compile(r"^wpsc_(?:fig|tab|eq|ref|head|para)_[0-9a-f]{24}$")
 
 
 def validate_longform_generation_request(raw: Mapping[str, Any]) -> dict[str, Any]:
@@ -154,29 +162,7 @@ def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]
             or (status != "applied" and issue_code is None)
         ):
             raise ProtocolError("Long-form generation result is invalid")
-    if set(pagination) - {"version", "nodes"}:
-        raise ProtocolError("Long-form generation result is invalid")
-    if pagination.get("version") != "M2-stub" or not isinstance(
-        pagination.get("nodes", []), list
-    ):
-        raise ProtocolError("Long-form generation result is invalid")
-    for node in pagination.get("nodes", []):
-        if (
-            not isinstance(node, dict)
-            or set(node) - {"nodeId", "fragments"}
-            or not isinstance(node.get("nodeId"), str)
-            or not isinstance(node.get("fragments"), list)
-        ):
-            raise ProtocolError("Long-form generation result is invalid")
-        for fragment in node["fragments"]:
-            if (
-                not isinstance(fragment, dict)
-                or set(fragment) != {"page"}
-                or not isinstance(fragment.get("page"), int)
-                or isinstance(fragment.get("page"), bool)
-                or fragment["page"] < 1
-            ):
-                raise ProtocolError("Long-form generation result is invalid")
+    _validate_pagination_map(pagination, "Long-form generation result is invalid")
     # Reject sensitive response key names recursively.  Field snapshot hashes
     # are deliberately allowed; raw visible field results are not.
     def walk(value: Any) -> None:
@@ -199,6 +185,157 @@ def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]
     result.setdefault("appliedOperations", applied)
     result.setdefault("childResults", list(children))
     return result
+
+
+def _positive_integer(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _valid_bounds(value: Any) -> bool:
+    if value is None:
+        return True
+    if not isinstance(value, list) or len(value) != 4:
+        return False
+    if any(
+        not isinstance(item, (int, float))
+        or isinstance(item, bool)
+        or not math.isfinite(float(item))
+        for item in value
+    ):
+        return False
+    x0, y0, x1, y1 = (float(item) for item in value)
+    return x0 >= 0 and y0 >= 0 and x1 > x0 and y1 > y0
+
+
+def _validate_pagination_map(value: Any, message: str) -> None:
+    if not isinstance(value, dict) or set(value) - {"version", "nodes"}:
+        raise ProtocolError(message)
+    version = value.get("version")
+    nodes = value.get("nodes", [])
+    if version not in {"M2-stub", "M5-v1"} or not isinstance(nodes, list):
+        raise ProtocolError(message)
+    for node in nodes:
+        if not isinstance(node, dict) or not isinstance(node.get("nodeId"), str):
+            raise ProtocolError(message)
+        if redact_private_text(node["nodeId"]) != node["nodeId"]:
+            raise ProtocolError(message)
+        fragments = node.get("fragments")
+        if not isinstance(fragments, list):
+            raise ProtocolError(message)
+        if version == "M2-stub":
+            if set(node) - {"nodeId", "fragments"}:
+                raise ProtocolError(message)
+        else:
+            if set(node) - {
+                "nodeId", "story", "sections", "pageStart", "pageEnd", "range", "fragments",
+            }:
+                raise ProtocolError(message)
+            if node.get("story") is not None and node.get("story") not in {
+                "main", "header", "footer", "footnote",
+            }:
+                raise ProtocolError(message)
+            if not isinstance(node.get("sections", []), list) or any(
+                not isinstance(item, str) or controlled_token(item) != item
+                for item in node.get("sections", [])
+            ):
+                raise ProtocolError(message)
+            start = node.get("pageStart")
+            end = node.get("pageEnd")
+            if start is not None and not _positive_integer(start):
+                raise ProtocolError(message)
+            if end is not None and not _positive_integer(end):
+                raise ProtocolError(message)
+            if start is not None and end is not None and end < start:
+                raise ProtocolError(message)
+            range_value = node.get("range")
+            if range_value is not None and not re.fullmatch(r"[0-9]+:[0-9]+", str(range_value)):
+                raise ProtocolError(message)
+        for fragment in fragments:
+            if not isinstance(fragment, dict) or not _positive_integer(fragment.get("page")):
+                raise ProtocolError(message)
+            if version == "M2-stub":
+                if set(fragment) != {"page"}:
+                    raise ProtocolError(message)
+            elif set(fragment) - {"page", "bounds"} or not _valid_bounds(fragment.get("bounds")):
+                raise ProtocolError(message)
+
+
+def validate_longform_notice_patch_request(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the one-shot, privacy-bounded notice patch envelope."""
+
+    if not isinstance(raw, Mapping) or set(raw) != _NOTICE_PATCH_REQUEST_KEYS:
+        raise ProtocolError("Long-form notice patch request is invalid")
+    source = raw.get("sourcePath")
+    output = raw.get("outputPath")
+    notices = raw.get("notices")
+    if (
+        not isinstance(source, str) or not source
+        or not isinstance(output, str) or not output
+        or not isinstance(notices, list) or not notices
+    ):
+        raise ProtocolError("Long-form notice patch request is invalid")
+    for notice in notices:
+        if (
+            not isinstance(notice, dict)
+            or set(notice) != {
+                "code", "message", "fallback", "placement", "nodeId", "page", "bookmarkName",
+            }
+            or not _is_closed_issue_code(notice.get("code"))
+            or not isinstance(notice.get("message"), str)
+            or redact_private_text(notice["message"]) != notice["message"]
+            or controlled_token(notice.get("fallback")) != notice.get("fallback")
+            or notice.get("placement") not in {"block", "document"}
+            or not isinstance(notice.get("nodeId"), str)
+            or redact_private_text(notice["nodeId"]) != notice["nodeId"]
+            or not _positive_integer(notice.get("page"))
+            or (
+                notice.get("bookmarkName") is not None
+                and (
+                    not isinstance(notice.get("bookmarkName"), str)
+                    or not _BOOKMARK_RE.fullmatch(notice["bookmarkName"])
+                )
+            )
+            or (notice.get("placement") == "block" and notice.get("bookmarkName") is None)
+        ):
+            raise ProtocolError("Long-form notice patch request is invalid")
+    return {"sourcePath": source, "outputPath": output, "notices": [dict(item) for item in notices]}
+
+
+def validate_longform_notice_patch_value(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the closed result returned by a notice-only native patch."""
+
+    if not isinstance(raw, Mapping) or set(raw) - _NOTICE_PATCH_RESULT_KEYS:
+        raise ProtocolError("Long-form notice patch result is invalid")
+    output = raw.get("outputPath")
+    applied = raw.get("appliedNotices")
+    issues = raw.get("issueCodes", [])
+    history = raw.get("fieldSnapshots", [])
+    pagination = raw.get("paginationMap", {})
+    if (
+        not isinstance(output, str) or not output
+        or not _positive_integer(applied)
+        or not isinstance(issues, list)
+        or not isinstance(history, list)
+    ):
+        raise ProtocolError("Long-form notice patch result is invalid")
+    try:
+        validated = validate_longform_generation_value({
+            "outputPath": output,
+            "appliedOperations": applied,
+            "issueCodes": issues,
+            "fieldSnapshots": history,
+            "childResults": [],
+            "paginationMap": pagination,
+        })
+    except ProtocolError:
+        raise ProtocolError("Long-form notice patch result is invalid") from None
+    return {
+        "outputPath": output,
+        "appliedNotices": applied,
+        "issueCodes": list(validated.get("issueCodes", [])),
+        "fieldSnapshots": list(validated.get("fieldSnapshots", [])),
+        "paginationMap": dict(validated.get("paginationMap", {})),
+    }
 
 
 def _is_closed_issue_code(value: Any) -> bool:

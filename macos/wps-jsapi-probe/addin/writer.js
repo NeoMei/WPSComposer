@@ -1354,6 +1354,13 @@
     return window.WPSComposerLongformV2.mutate(params);
   }
 
+  async function patchLongformQualityNotices(params) {
+    if (!window.WPSComposerLongformV2 || typeof window.WPSComposerLongformV2.patchNotices !== "function") {
+      throw new Error("WPSComposer longform v2 notice patch support is not loaded");
+    }
+    return window.WPSComposerLongformV2.patchNotices(params);
+  }
+
   const handlers = {
     "probe_capabilities": function () { return probe(); },
     "smoke_docx": saveDocx,
@@ -1363,7 +1370,8 @@
     "inspect_document": inspectDocument,
     "probe_longform_m0": function (params) { return window.WPSComposerLongformM0.run(params); },
     "generate_longform_document": generateLongformDocument,
-    "mutate_longform_document": mutateLongformDocument
+    "mutate_longform_document": mutateLongformDocument,
+    "patch_longform_quality_notices": patchLongformQualityNotices
   };
 
 

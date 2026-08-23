@@ -7,6 +7,7 @@ merged tables, TOC, and auto-populated fields.
 from __future__ import annotations
 
 import os
+import math
 import re
 import unicodedata
 import zipfile
@@ -2684,6 +2685,68 @@ class WriterComposer(BaseComposer):
             return
         for notice in notices or ():
             self._upsert_quality_notice_mapping(notice)
+
+    def add_quality_notice_at_bookmark(
+        self, *, code, message, fallback, node_id, page, bookmark_name=None
+    ):
+        """Insert one M5 notice beside a persisted native semantic bookmark."""
+        try:
+            name = bookmark_name or "wpsc_document_quality_anchor"
+            bookmarks = self._doc.Bookmarks
+            exists = getattr(bookmarks, "Exists", None)
+            if callable(exists) and not exists(name):
+                raise KeyError(name)
+            try:
+                bookmark = bookmarks(name)
+            except Exception:
+                bookmark = bookmarks.Item(name)
+            anchor = bookmark.Range
+            if bookmark_name:
+                paragraph = anchor.Paragraphs(1).Range
+                position = int(paragraph.End)
+            else:
+                position = int(anchor.Start)
+            target = self._doc.Range(position, position)
+            display = self._degradation_display(
+                code,
+                f"{redact_private_text(str(message))} "
+                f"(page {int(page)}; {redact_private_text(str(fallback))})",
+            )
+            return self._insert_degradation_box(display, target)
+        except Exception:
+            raise NativeWriterObjectError(
+                "DEGRADATION_INSERT_FAILED", "quality notice insertion failed"
+            ) from None
+
+    def pagination_fragment_for_bookmark(self, node_id, bookmark_name):
+        """Return privacy-safe M5 point geometry for one persisted bookmark."""
+        try:
+            bookmarks = self._doc.Bookmarks
+            try:
+                bookmark = bookmarks(bookmark_name)
+            except Exception:
+                bookmark = bookmarks.Item(bookmark_name)
+            rng = bookmark.Range.Paragraphs(1).Range
+            start, end = int(rng.Start), int(rng.End)
+            page = int(rng.Information(3))
+            x = float(rng.Information(5))
+            y = float(rng.Information(6))
+            fragment = {"page": page}
+            if all(math.isfinite(value) and value >= 0 for value in (x, y)):
+                fragment["bounds"] = [x, y, x + 1.0, y + 12.0]
+            return {
+                "nodeId": redact_private_text(str(node_id)),
+                "story": "main",
+                "sections": ["body"],
+                "pageStart": page,
+                "pageEnd": page,
+                "range": f"{start}:{end}",
+                "fragments": [fragment],
+            }
+        except Exception:
+            raise NativeWriterObjectError(
+                "PAGINATION_SNAPSHOT_FAILED", "pagination snapshot failed"
+            ) from None
 
     def insert_figure_index(self, title=None):
         """Insert a figure index placeholder (content population is M3)."""

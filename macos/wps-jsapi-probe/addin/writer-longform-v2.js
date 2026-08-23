@@ -3891,6 +3891,154 @@
     }
   }
 
+  function validateNoticePatchRequest(params) {
+    const keys = params && typeof params === "object"
+      ? Object.keys(params).sort().join(",") : "";
+    if (keys !== "notices,outputPath,sourcePath" ||
+        typeof params.sourcePath !== "string" || !params.sourcePath ||
+        typeof params.outputPath !== "string" || !params.outputPath ||
+        !Array.isArray(params.notices) || params.notices.length === 0) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const seen = Object.create(null);
+    params.notices.forEach(function (notice) {
+      const noticeKeys = notice && typeof notice === "object"
+        ? Object.keys(notice).sort().join(",") : "";
+      const bookmarkValid = notice.bookmarkName === null ||
+        /^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$/.test(notice.bookmarkName);
+      const identity = safeString(notice.code) + "\u0000" +
+        safeString(notice.placement) + "\u0000" + safeString(notice.nodeId);
+      if (noticeKeys !== "bookmarkName,code,fallback,message,nodeId,page,placement" ||
+          !/^[A-Z][A-Z0-9_]{2,63}$/.test(safeString(notice.code)) ||
+          safePublicText(notice.message) !== notice.message ||
+          !/^[a-z][a-z0-9-]{0,63}$/.test(safeString(notice.fallback)) ||
+          (notice.placement !== "block" && notice.placement !== "document") ||
+          typeof notice.nodeId !== "string" ||
+          safePublicText(notice.nodeId) !== notice.nodeId ||
+          !Number.isInteger(notice.page) || notice.page < 1 ||
+          !bookmarkValid || (notice.placement === "block" && notice.bookmarkName === null) ||
+          seen[identity]) {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      seen[identity] = true;
+    });
+    return params;
+  }
+
+  function noticeBookmarkRange(document, notice) {
+    if (notice.bookmarkName === null) {
+      const qualityName = "wpsc_document_quality_anchor";
+      if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+          !document.Bookmarks.Exists(qualityName)) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+      return collectionItem(document.Bookmarks, qualityName).Range;
+    }
+    if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+        !document.Bookmarks.Exists(notice.bookmarkName)) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    return collectionItem(document.Bookmarks, notice.bookmarkName).Range;
+  }
+
+  function insertMappedQualityNotice(document, notice) {
+    const anchor = noticeBookmarkRange(document, notice);
+    const paragraph = paragraphRangeFor(anchor);
+    const position = notice.placement === "document"
+      ? safeNumber(anchor.Start, -1) : safeNumber(paragraph.End, -1);
+    if (!Number.isInteger(position) || position < 0) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const target = document.Range(position, position);
+    const fallbackText = safePublicText(notice.message) +
+      " (page " + notice.page + "; " + safeString(notice.fallback) + ")";
+    try {
+      return insertDegradationBox(
+        document, notice.code, fallbackText, target
+      );
+    } catch (error) {
+      try {
+        return insertStyledDegradationAtRange(
+          document,
+          target,
+          "[" + notice.code + "] " + fallbackText + "\r"
+        );
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+  }
+
+  function noticePaginationMap(document, notices) {
+    const nodes = notices.map(function (notice) {
+      const range = noticeBookmarkRange(document, notice);
+      const paragraph = paragraphRangeFor(range);
+      const start = safeNumber(paragraph.Start, 0);
+      const end = Math.max(start, safeNumber(paragraph.End, start));
+      const page = safeNumber(paragraph.Information(3), notice.page);
+      const x = safeNumber(paragraph.Information(5), NaN);
+      const y = safeNumber(paragraph.Information(6), NaN);
+      const fragment = {page: Math.max(1, Math.floor(page))};
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        fragment.bounds = [
+          Math.max(0, x), Math.max(0, y),
+          Math.max(1, x + 1), Math.max(1, y + 12)
+        ];
+      }
+      return {
+        nodeId: notice.nodeId,
+        story: "main",
+        sections: ["body"],
+        pageStart: fragment.page,
+        pageEnd: fragment.page,
+        range: start + ":" + end,
+        fragments: [fragment]
+      };
+    });
+    return {version: "M5-v1", nodes: nodes};
+  }
+
+  function patchNotices(params) {
+    params = validateNoticePatchRequest(params);
+    const previousAlerts = Application.DisplayAlerts;
+    const previousScreenUpdating = Application.ScreenUpdating;
+    let document = null;
+    let history = [];
+    const issues = [];
+    try {
+      Application.DisplayAlerts = 0;
+      Application.ScreenUpdating = false;
+      document = Application.Documents.Open(params.sourcePath, false, false);
+      params.notices.forEach(function (notice) {
+        insertMappedQualityNotice(document, notice);
+      });
+      history = runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues);
+      document.SaveAs2(params.outputPath, 12);
+      document.Close(0);
+      document = Application.Documents.Open(params.outputPath, false, false);
+      history = runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues);
+      const paginationMap = noticePaginationMap(document, params.notices);
+      document.Save();
+      document.Close(0);
+      document = null;
+      return {
+        outputPath: params.outputPath,
+        appliedNotices: params.notices.length,
+        issueCodes: issues,
+        fieldSnapshots: history,
+        paginationMap: paginationMap
+      };
+    } catch (error) {
+      if (document !== null) {
+        try { document.Close(0); } catch (closeError) { /* ignore */ }
+      }
+      throw error && error.code ? error : nativeError("EXECUTION_ABORTED");
+    } finally {
+      try { Application.ScreenUpdating = previousScreenUpdating; }
+      finally { Application.DisplayAlerts = previousAlerts; }
+    }
+  }
+
   function run(params) {
     params = validateLongformRequest(params);
     const plan = params.plan;
@@ -3969,6 +4117,7 @@
   window.WPSComposerLongformV2 = Object.freeze({
     run: run,
     mutate: mutate,
+    patchNotices: patchNotices,
     OPERATIONS: Object.keys(OPERATIONS),
     __test: Object.freeze({
       addNativeNumberShell: addNativeNumberShell,
@@ -4002,6 +4151,9 @@
       reserveDocumentQualityAnchor: reserveDocumentQualityAnchor,
       upsertDocumentQualityNotice: upsertDocumentQualityNotice,
       applyLongformMutation: applyLongformMutation,
+      validateNoticePatchRequest: validateNoticePatchRequest,
+      insertMappedQualityNotice: insertMappedQualityNotice,
+      noticePaginationMap: noticePaginationMap,
       runOperation: runOperation
     })
   });

@@ -28,6 +28,8 @@ from ..macos_probe.models import (
     ProtocolError,
     validate_longform_generation_request,
     validate_longform_generation_value,
+    validate_longform_notice_patch_request,
+    validate_longform_notice_patch_value,
 )
 from .executor import (
     ExecutionIssue,
@@ -45,6 +47,7 @@ from .field_contract import (
 from .resources import PreparedLongformResource
 from .degradation import controlled_token
 from .privacy import redact_private_text
+from .quality import QualityFinding
 
 
 MACOS_DEDICATED_HOST_UNAVAILABLE = "MACOS_DEDICATED_HOST_UNAVAILABLE"
@@ -173,6 +176,67 @@ class MacOSLongformExecutor(LongformExecutor):
         if outcome is None:
             raise MacOSLongformExecutorError("Bridge result was unavailable") from None
         return outcome
+
+    def patch_quality_notices(
+        self,
+        source_path: Path,
+        notices: Tuple[QualityFinding, ...],
+        bookmark_by_node: Mapping[str, str],
+        deadline: Optional[float] = None,
+    ) -> ExecutionOutcome:
+        """Apply one closed notice-only patch and return fresh pagination."""
+
+        if self._bridge is None:
+            raise MacOSDedicatedHostUnavailableError(
+                "No LoopbackBridge available for macOS WPS execution"
+            )
+        if not notices:
+            raise ValueError("notice patch requires at least one notice")
+        source = Path(source_path).expanduser().resolve()
+        target = Path(self._resolve_paths().staged_docx).resolve()
+        payload = []
+        for notice in notices:
+            bookmark = bookmark_by_node.get(notice.node_id or "")
+            if notice.node_id and not bookmark:
+                raise ValueError("mapped block notice requires a native bookmark")
+            payload.append({
+                "code": notice.code,
+                "message": notice.message,
+                "fallback": notice.repair_key or "notice-only",
+                "placement": "block" if bookmark else "document",
+                "nodeId": notice.node_id or "doc:quality",
+                "page": notice.page or 1,
+                "bookmarkName": bookmark,
+            })
+        request = validate_longform_notice_patch_request({
+            "sourcePath": str(source),
+            "outputPath": str(target),
+            "notices": payload,
+        })
+        try:
+            command = self._bridge.issue(
+                "writer", "patch_longform_quality_notices", request
+            )
+            timeout = 300.0
+            if deadline is not None:
+                timeout = max(0.0, min(timeout, deadline - time.monotonic()))
+            result = self._bridge.wait_result(command.id, timeout=timeout)
+        except Exception:
+            raise MacOSLongformExecutorError("Bridge notice patch failed") from None
+        if not result.ok:
+            raise MacOSLongformExecutorError("Bridge notice patch failed") from None
+        try:
+            value = validate_longform_notice_patch_value(result.value or {})
+        except ProtocolError:
+            raise MacOSLongformExecutorError("Bridge result was invalid") from None
+        if value["outputPath"] != str(target):
+            raise MacOSLongformExecutorError("Bridge result was invalid") from None
+        return ExecutionOutcome(
+            staged_artifact=str(target),
+            issues=tuple(_execution_issue(item) for item in value.get("issueCodes", ())),
+            pagination_map=_parse_pagination_map(value.get("paginationMap") or {}),
+            applied_operations=value.get("appliedNotices"),
+        )
 
     # ----------------------------------------------------------------------
     # Helpers

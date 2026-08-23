@@ -9,8 +9,10 @@ import inspect
 import hashlib
 import json
 import os
+from pathlib import Path
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
@@ -33,6 +35,7 @@ from .degradation import (
     RecoveryFatalError,
 )
 from .privacy import redact_private_text
+from .quality import QualityFinding
 
 
 WINDOWS_DEDICATED_HOST_UNAVAILABLE = "WINDOWS_DEDICATED_HOST_UNAVAILABLE"
@@ -264,6 +267,71 @@ class WindowsLongformExecutor(LongformExecutor):
             pagination_map=_build_pagination_map(plan.operations),
             applied_operations=len(plan.operations),
         )
+
+    def patch_quality_notices(
+        self,
+        source_path: Path,
+        notices: Tuple[QualityFinding, ...],
+        bookmark_by_node: Mapping[str, str],
+        deadline: Optional[float] = None,
+    ) -> ExecutionOutcome:
+        """Apply one notice-only patch in a dedicated Writer instance."""
+
+        if not notices:
+            raise ValueError("notice patch requires at least one notice")
+        if deadline is not None and time.monotonic() >= deadline:
+            raise WindowsLongformExecutorError("Notice patch deadline expired")
+        source = Path(source_path).expanduser().resolve()
+        target = Path(self._resolve_paths().staged_docx).resolve()
+        composer: Optional[WriterComposer] = None
+        try:
+            composer = self._acquire_composer()
+            opener = getattr(composer, "open_existing_for_patch", None)
+            if callable(opener):
+                opener(str(source))
+            else:
+                if getattr(composer, "_doc", None) is not None:
+                    composer._doc.Close(False)
+                composer._doc = composer._app.Documents.Open(str(source), False, False)
+            nodes = []
+            for notice in notices:
+                bookmark = bookmark_by_node.get(notice.node_id or "")
+                if notice.node_id and not bookmark:
+                    raise ValueError("mapped block notice requires a native bookmark")
+                composer.add_quality_notice_at_bookmark(
+                    code=notice.code,
+                    message=notice.message,
+                    fallback=notice.repair_key or "notice-only",
+                    node_id=notice.node_id or "doc:quality",
+                    page=notice.page or 1,
+                    bookmark_name=bookmark,
+                )
+                nodes.append(
+                    composer.pagination_fragment_for_bookmark(
+                        notice.node_id or "doc:quality",
+                        bookmark or "wpsc_document_quality_anchor",
+                    )
+                )
+            convergence = finalize_fields_with_convergence(composer, max_rounds=3)
+            composer.save_docx(str(target))
+            return ExecutionOutcome(
+                staged_artifact=str(target),
+                issues=convergence.issues,
+                pagination_map=PaginationMap.from_dict({
+                    "version": "M5-v1", "nodes": nodes,
+                }),
+                applied_operations=len(notices),
+            )
+        except ValueError:
+            raise
+        except Exception:
+            raise WindowsLongformExecutorError("Windows notice patch failed") from None
+        finally:
+            if composer is not None:
+                try:
+                    composer.close(save_changes=False)
+                except Exception:
+                    pass
 
     def _validate_resource_manifest(
         self,
