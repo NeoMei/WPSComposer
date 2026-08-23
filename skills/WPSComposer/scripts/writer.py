@@ -1718,6 +1718,29 @@ class WriterComposer(BaseComposer):
         notice.ParagraphFormat.KeepTogether = -1
         notice.ParagraphFormat.KeepWithNext = -1
 
+    def _apply_native_table_cell_degradations(self, table, degradations):
+        for descriptor in degradations or ():
+            try:
+                cell_range = table.Cell(
+                    int(descriptor["row"]), int(descriptor["column"])
+                ).Range
+                fallback_text = str(descriptor["fallbackText"])
+                existing = str(getattr(cell_range, "Text", "")).rstrip(
+                    "\r\n\x07"
+                )
+                if fallback_text not in existing:
+                    cell_range.Text = (
+                        f"{existing} {fallback_text}" if existing else fallback_text
+                    )
+                cell_range.Shading.BackgroundPatternColor = hex_to_rgb_long(
+                    "#FCE8E6"
+                )
+            except Exception:
+                raise NativeWriterObjectError(
+                    "DEGRADATION_INSERT_FAILED",
+                    "cell degradation styling failed",
+                ) from None
+
     def add_semantic_table_native(
         self, *, caption, numbering, indexable, referenceable, headers, rows,
         alignments, style, orientation, borderSpec, merges, repeatHeader,
@@ -1807,19 +1830,9 @@ class WriterComposer(BaseComposer):
                     self._native_rollback(grid_start, self._native_document_end())
                     self._add_native_table_text_fallback(headers, rows)
                     issues.append({"code": "TABLE_INSERT_FAILED", "message": "Overflow grid used deterministic text fallback", "placement": "block"})
-            for cell_notice in cellDegradations or ():
-                try:
-                    cell_range = table.Cell(
-                        int(cell_notice["row"]), int(cell_notice["column"])
-                    ).Range
-                    cell_range.Shading.BackgroundPatternColor = hex_to_rgb_long(
-                        "#FCE8E6"
-                    )
-                except Exception:
-                    raise NativeWriterObjectError(
-                        "DEGRADATION_INSERT_FAILED",
-                        "cell degradation styling failed",
-                    ) from None
+            self._apply_native_table_cell_degradations(
+                table, cellDegradations
+            )
         finally:
             if landscape:
                 self.add_section(landscape=False)
@@ -1829,7 +1842,7 @@ class WriterComposer(BaseComposer):
         self, *, headers, rows, alignments, repeatHeader=True,
         cellIndentPt=0.0, orientation="portrait", failure_code="TABLE_INSERT_FAILED",
         owner_node_id=None, caption="", numbering=None, bookmarkName=None,
-        plannedDegradation=(), **kwargs,
+        plannedDegradation=(), cellDegradations=(), **kwargs,
     ):
         """Run the controller-owned grid-then-text table fallback once."""
         del kwargs
@@ -1858,9 +1871,12 @@ class WriterComposer(BaseComposer):
                 "insideHorizontal": .75, "insideVertical": .75,
             }
             try:
-                self._create_native_table(
+                table = self._create_native_table(
                     headers, rows, alignments, grid, repeatHeader,
                     True, cellIndentPt, (),
+                )
+                self._apply_native_table_cell_degradations(
+                    table, cellDegradations
                 )
             except NativeWriterObjectError as error:
                 if error.code not in {

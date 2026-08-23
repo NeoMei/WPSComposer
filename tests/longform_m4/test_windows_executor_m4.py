@@ -13,6 +13,7 @@ from skills.WPSComposer.scripts.longform.windows_executor import (
     WindowsLongformExecutorError,
 )
 from skills.WPSComposer.scripts.writer import NativeWriterObjectError, WriterComposer
+from skills.WPSComposer.scripts._colors import hex_to_rgb_long
 from tests.longform_m3.fakes.windows_com import RecordingNativeComposer
 
 
@@ -837,6 +838,46 @@ def test_writer_figure_fallback_initializes_empty_issues_and_keeps_planned_order
 
     assert notices == ["RESOURCE_NOT_FOUND", "RESOURCE_NORMALIZATION_FAILED"]
     assert [issue["code"] for issue in outcome["issues"]] == notices
+
+
+def test_writer_controller_table_fallback_keeps_grid_and_styles_exact_unresolved_cell():
+    from tests.longform_m3.test_windows_executor_m3 import (
+        _SemanticTableFake,
+        _writer_with_native_fakes,
+    )
+
+    writer = _writer_with_native_fakes()
+    table = _SemanticTableFake(2, 2)
+    for cell in table.cells.values():
+        cell.Range.Shading = type("Shading", (), {
+            "BackgroundPatternColor": None,
+        })()
+    writer._doc.Tables = type(
+        "Tables", (), {"Add": lambda self, rng, rows, cols: table}
+    )()
+    writer._apply_native_table_borders = lambda native, spec: None
+    writer._add_native_table_notice = lambda *args: None
+    unresolved = "[REFERENCE_UNRESOLVED 引用目标未解析]"
+
+    writer.add_semantic_table_fallback(
+        headers=["Resolved", "Missing"],
+        rows=[["value [1]", unresolved]],
+        alignments=["left", "left"],
+        cellDegradations=[{
+            "row": 2, "column": 2, "code": "REFERENCE_UNRESOLVED",
+            "fallbackText": unresolved,
+        }],
+        failure_code="TABLE_INSERT_FAILED",
+    )
+
+    assert table.Cell(1, 1).Range.Text == "Resolved"
+    assert table.Cell(1, 2).Range.Text == "Missing"
+    assert table.Cell(2, 1).Range.Text == "value [1]"
+    assert table.Cell(2, 2).Range.Text == unresolved
+    assert table.Cell(2, 1).Range.Shading.BackgroundPatternColor is None
+    assert table.Cell(2, 2).Range.Shading.BackgroundPatternColor == hex_to_rgb_long(
+        "#FCE8E6"
+    )
 
 
 def test_writer_citation_and_bibliography_preserve_runs_order_and_fixed_paragraph_geometry():
