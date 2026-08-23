@@ -21,6 +21,7 @@ from skills.WPSComposer.scripts.macos_probe.models import (
 
 
 BOOKMARK = "wpsc_fig_" + "a" * 24
+HEADING_BOOKMARK = "wpsc_head_" + "b" * 24
 
 
 def _notice():
@@ -39,6 +40,10 @@ def _request():
     return {
         "sourcePath": "/private/source.docx",
         "outputPath": "/private/output.docx",
+        "bookmarks": [
+            {"nodeId": "fig:one", "bookmarkName": BOOKMARK},
+            {"nodeId": "head:one", "bookmarkName": HEADING_BOOKMARK},
+        ],
         "notices": [
             {
                 "code": "IMAGE_LOW_DPI",
@@ -140,6 +145,9 @@ def test_macos_executor_patches_once_and_returns_fresh_m5_pagination(tmp_path: P
     )
 
     assert bridge.params["notices"][0]["bookmarkName"] == BOOKMARK
+    assert bridge.params["bookmarks"] == [
+        {"nodeId": "fig:one", "bookmarkName": BOOKMARK}
+    ]
     assert bridge.params["notices"][0]["page"] == 2
     assert outcome.pagination_map.version == "M5-v1"
     assert outcome.pagination_map.nodes[0].fragments[0].bounds == (72, 90, 300, 240)
@@ -213,11 +221,17 @@ def test_windows_executor_patches_in_dedicated_composer_and_refreshes(tmp_path: 
         staging_dir=str(tmp_path), composer_factory=lambda: composer
     )
     outcome = executor.patch_quality_notices(
-        source, (_notice(),), {"fig:one": BOOKMARK}, deadline=None
+        source,
+        (_notice(),),
+        {"fig:one": BOOKMARK, "head:one": HEADING_BOOKMARK},
+        deadline=None,
     )
     assert composer.opened == str(source.resolve())
     assert composer.notices[0]["bookmark_name"] == BOOKMARK
     assert composer.refresh_rounds == 2
     assert composer.closed is True
     assert outcome.pagination_map.version == "M5-v1"
+    assert [node.node_id for node in outcome.pagination_map.nodes] == [
+        "fig:one", "head:one"
+    ]
     assert outcome.applied_operations == 1

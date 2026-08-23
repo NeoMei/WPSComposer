@@ -50,7 +50,9 @@ _LONGFORM_RESULT_KEYS = frozenset(
 )
 
 _LONGFORM_REQUEST_KEYS = frozenset({"plan", "outputPath", "resources"})
-_NOTICE_PATCH_REQUEST_KEYS = frozenset({"sourcePath", "outputPath", "notices"})
+_NOTICE_PATCH_REQUEST_KEYS = frozenset({
+    "sourcePath", "outputPath", "bookmarks", "notices",
+})
 _NOTICE_PATCH_RESULT_KEYS = frozenset({
     "outputPath", "appliedNotices", "issueCodes", "fieldSnapshots", "paginationMap",
 })
@@ -235,7 +237,8 @@ def _validate_pagination_map(value: Any, message: str) -> None:
             }:
                 raise ProtocolError(message)
             if not isinstance(node.get("sections", []), list) or any(
-                not isinstance(item, str) or controlled_token(item) != item
+                not isinstance(item, str)
+                or re.fullmatch(r"[a-z][a-z0-9_-]{0,63}", item) is None
                 for item in node.get("sections", [])
             ):
                 raise ProtocolError(message)
@@ -267,13 +270,29 @@ def validate_longform_notice_patch_request(raw: Mapping[str, Any]) -> dict[str, 
         raise ProtocolError("Long-form notice patch request is invalid")
     source = raw.get("sourcePath")
     output = raw.get("outputPath")
+    bookmarks = raw.get("bookmarks")
     notices = raw.get("notices")
     if (
         not isinstance(source, str) or not source
         or not isinstance(output, str) or not output
+        or not isinstance(bookmarks, list)
         or not isinstance(notices, list) or not notices
     ):
         raise ProtocolError("Long-form notice patch request is invalid")
+    bookmark_nodes: set[str] = set()
+    for bookmark in bookmarks:
+        if (
+            not isinstance(bookmark, dict)
+            or set(bookmark) != {"nodeId", "bookmarkName"}
+            or not isinstance(bookmark.get("nodeId"), str)
+            or not bookmark["nodeId"]
+            or redact_private_text(bookmark["nodeId"]) != bookmark["nodeId"]
+            or not isinstance(bookmark.get("bookmarkName"), str)
+            or not _BOOKMARK_RE.fullmatch(bookmark["bookmarkName"])
+            or bookmark["nodeId"] in bookmark_nodes
+        ):
+            raise ProtocolError("Long-form notice patch request is invalid")
+        bookmark_nodes.add(bookmark["nodeId"])
     for notice in notices:
         if (
             not isinstance(notice, dict)
@@ -298,7 +317,12 @@ def validate_longform_notice_patch_request(raw: Mapping[str, Any]) -> dict[str, 
             or (notice.get("placement") == "block" and notice.get("bookmarkName") is None)
         ):
             raise ProtocolError("Long-form notice patch request is invalid")
-    return {"sourcePath": source, "outputPath": output, "notices": [dict(item) for item in notices]}
+    return {
+        "sourcePath": source,
+        "outputPath": output,
+        "bookmarks": [dict(item) for item in bookmarks],
+        "notices": [dict(item) for item in notices],
+    }
 
 
 def validate_longform_notice_patch_value(raw: Mapping[str, Any]) -> dict[str, Any]:

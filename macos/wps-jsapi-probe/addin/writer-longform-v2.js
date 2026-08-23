@@ -538,13 +538,19 @@
   function addHeadingNative(document, args) {
     if (!args.numbering) {
       const styleName = unnumberedHeadingStyle(document, args.level, args.sequenceTransparent === true);
-      insertText(document, args.text, styleName, args);
+      const inserted = insertText(document, args.text, styleName, args);
+      if (args.keepWithNext === true && inserted.range && inserted.range.ParagraphFormat) {
+        inserted.range.ParagraphFormat.KeepWithNext = -1;
+      }
       return;
     }
     const levelIndex = safeNumber(args.level, 1);
     try {
       const template = headingListTemplate(document, args.numberingScheme || "decimal");
       const inserted = addHeading(document, args);
+      if (args.keepWithNext === true && inserted.range && inserted.range.ParagraphFormat) {
+        inserted.range.ParagraphFormat.KeepWithNext = -1;
+      }
       const builtInStyle = collectionItem(document.Styles, -1 - levelIndex);
       if (builtInStyle) inserted.range.Style = builtInStyle;
       inserted.range.ListFormat.ApplyListTemplateWithLevel(template, false, 0, 0, levelIndex);
@@ -3633,19 +3639,104 @@
     }
   }
 
-  function buildPaginationMap(operations) {
+  function paginationPoint(document, rawPosition, fallbackPage) {
+    const maxPosition = Math.max(0, safeNumber(document.Content && document.Content.End, 1) - 1);
+    const position = Math.max(0, Math.min(maxPosition, Math.floor(rawPosition)));
+    const range = document.Range(position, position);
+    if (!range || typeof range.Information !== "function") {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    const page = safeNumber(range.Information(3), fallbackPage);
+    const x = safeNumber(range.Information(5), NaN);
+    const y = safeNumber(range.Information(6), NaN);
+    if (!Number.isInteger(page) || page < 1) {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    return {page: page, x: x, y: y};
+  }
+
+  function paginationVisualOperation(opName) {
+    return opName === "writer.add_captioned_figure" ||
+      opName === "writer.add_semantic_table" ||
+      opName === "writer.add_equation" ||
+      opName === "writer.add_degradation_notice" ||
+      opName === "writer.add_document_quality_notice";
+  }
+
+  function paginationFragments(document, start, end, visual) {
+    const first = paginationPoint(document, start, 1);
+    const finalPosition = end > start ? end - 1 : end;
+    const last = paginationPoint(document, finalPosition, first.page);
+    if (last.page < first.page) throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    const setup = document.PageSetup || {};
+    const pageWidth = safeNumber(setup.PageWidth, 595.28);
+    const pageHeight = safeNumber(setup.PageHeight, 841.89);
+    const leftMargin = Math.max(0, safeNumber(setup.LeftMargin, 72));
+    const rightMargin = Math.max(0, safeNumber(setup.RightMargin, 72));
+    const topMargin = Math.max(0, safeNumber(setup.TopMargin, 72));
+    const bottomMargin = Math.max(0, safeNumber(setup.BottomMargin, 72));
+    const fragments = [];
+    for (let page = first.page; page <= last.page; page += 1) {
+      const fragment = {page: page};
+      if (visual) {
+        const x0 = page === first.page && Number.isFinite(first.x)
+          ? Math.max(0, first.x) : leftMargin;
+        const y0 = page === first.page && Number.isFinite(first.y)
+          ? Math.max(0, first.y) : topMargin;
+        const x1 = Math.max(x0 + 1, pageWidth - rightMargin);
+        const y1 = page === last.page && Number.isFinite(last.y)
+          ? Math.max(y0 + 1, Math.min(pageHeight, last.y + 12))
+          : Math.max(y0 + 1, pageHeight - bottomMargin);
+        if (![x0, y0, x1, y1].every(Number.isFinite)) {
+          throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+        }
+        fragment.bounds = [x0, y0, x1, y1];
+      }
+      fragments.push(fragment);
+    }
+    return fragments;
+  }
+
+  function buildPaginationMap(document, trackedNodes) {
+    if (!document || !Array.isArray(trackedNodes)) {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
     const nodes = [];
-    const seen = {};
-    operations.forEach(function (operation) {
+    const seen = Object.create(null);
+    trackedNodes.forEach(function (tracked) {
+      if (!tracked.nodeId || seen[tracked.nodeId] || !tracked.range) return;
+      const start = safeNumber(tracked.range.Start, NaN);
+      const end = safeNumber(tracked.range.End, NaN);
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start) {
+        throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+      }
+      const fragments = paginationFragments(
+        document, start, end, paginationVisualOperation(tracked.op)
+      );
+      seen[tracked.nodeId] = true;
+      nodes.push({
+        nodeId: tracked.nodeId,
+        story: "main",
+        sections: [tracked.role || "body"],
+        pageStart: fragments[0].page,
+        pageEnd: fragments[fragments.length - 1].page,
+        range: start + ":" + end,
+        fragments: fragments
+      });
+    });
+    return { version: "M5-v1", nodes: nodes };
+  }
+
+  function buildLegacyPaginationMap(operations) {
+    const nodes = [];
+    const seen = Object.create(null);
+    (operations || []).forEach(function (operation) {
       if (operation.nodeId && !seen[operation.nodeId]) {
         seen[operation.nodeId] = true;
-        nodes.push({
-          nodeId: operation.nodeId,
-          fragments: [{ page: 1 }]
-        });
+        nodes.push({nodeId: operation.nodeId, fragments: [{page: 1}]});
       }
     });
-    return { version: "M2-stub", nodes: nodes };
+    return {version: "M2-stub", nodes: nodes};
   }
 
   function validatePrivateResourceMap(plan, resources) {
@@ -3894,12 +3985,27 @@
   function validateNoticePatchRequest(params) {
     const keys = params && typeof params === "object"
       ? Object.keys(params).sort().join(",") : "";
-    if (keys !== "notices,outputPath,sourcePath" ||
+    if (keys !== "bookmarks,notices,outputPath,sourcePath" ||
         typeof params.sourcePath !== "string" || !params.sourcePath ||
         typeof params.outputPath !== "string" || !params.outputPath ||
+        !Array.isArray(params.bookmarks) ||
         !Array.isArray(params.notices) || params.notices.length === 0) {
       throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
     }
+    const bookmarkNodes = Object.create(null);
+    params.bookmarks.forEach(function (bookmark) {
+      const bookmarkKeys = bookmark && typeof bookmark === "object"
+        ? Object.keys(bookmark).sort().join(",") : "";
+      if (bookmarkKeys !== "bookmarkName,nodeId" ||
+          typeof bookmark.nodeId !== "string" || !bookmark.nodeId ||
+          safePublicText(bookmark.nodeId) !== bookmark.nodeId ||
+          !/^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$/.test(
+            safeString(bookmark.bookmarkName)
+          ) || bookmarkNodes[bookmark.nodeId]) {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      bookmarkNodes[bookmark.nodeId] = true;
+    });
     const seen = Object.create(null);
     params.notices.forEach(function (notice) {
       const noticeKeys = notice && typeof notice === "object"
@@ -3969,13 +4075,11 @@
     }
   }
 
-  function noticePaginationMap(document, notices) {
-    const nodes = notices.map(function (notice) {
-      const range = noticeBookmarkRange(document, notice);
+  function paginationNodeForRange(document, nodeId, range, fallbackPage) {
       const paragraph = paragraphRangeFor(range);
       const start = safeNumber(paragraph.Start, 0);
       const end = Math.max(start, safeNumber(paragraph.End, start));
-      const page = safeNumber(paragraph.Information(3), notice.page);
+      const page = safeNumber(paragraph.Information(3), fallbackPage || 1);
       const x = safeNumber(paragraph.Information(5), NaN);
       const y = safeNumber(paragraph.Information(6), NaN);
       const fragment = {page: Math.max(1, Math.floor(page))};
@@ -3986,7 +4090,7 @@
         ];
       }
       return {
-        nodeId: notice.nodeId,
+        nodeId: nodeId,
         story: "main",
         sections: ["body"],
         pageStart: fragment.page,
@@ -3994,6 +4098,30 @@
         range: start + ":" + end,
         fragments: [fragment]
       };
+  }
+
+  function noticePaginationMap(document, bookmarks, notices) {
+    const seen = Object.create(null);
+    const nodes = bookmarks.map(function (bookmark) {
+      if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+          !document.Bookmarks.Exists(bookmark.bookmarkName)) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+      seen[bookmark.nodeId] = true;
+      return paginationNodeForRange(
+        document,
+        bookmark.nodeId,
+        collectionItem(document.Bookmarks, bookmark.bookmarkName).Range,
+        1
+      );
+    });
+    notices.forEach(function (notice) {
+      if (!seen[notice.nodeId]) {
+        nodes.push(paginationNodeForRange(
+          document, notice.nodeId, noticeBookmarkRange(document, notice), notice.page
+        ));
+        seen[notice.nodeId] = true;
+      }
     });
     return {version: "M5-v1", nodes: nodes};
   }
@@ -4017,7 +4145,9 @@
       document.Close(0);
       document = Application.Documents.Open(params.outputPath, false, false);
       history = runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues);
-      const paginationMap = noticePaginationMap(document, params.notices);
+      const paginationMap = noticePaginationMap(
+        document, params.bookmarks, params.notices
+      );
       document.Save();
       document.Close(0);
       document = null;
@@ -4050,6 +4180,9 @@
     let appliedCount = 0;
     const issues = [];
     const childResults = [];
+    const trackedNodes = [];
+    let activePageRole = "body";
+    const requireM5Pagination = plan.protocolVersion === 2;
 
     try {
       validatePrivateResourceMap(plan, resources);
@@ -4066,7 +4199,20 @@
 
       const operations = plan.operations || [];
       operations.forEach(function (operation) {
+        const before = requireM5Pagination ? currentPosition(document) : 0;
         runOwnedOperation(document, operation, resources, issues, childResults);
+        const after = requireM5Pagination ? currentPosition(document) : 0;
+        if (operation.op === "writer.configure_section" && operation.args && operation.args.role) {
+          activePageRole = operation.args.role;
+        }
+        if (requireM5Pagination && operation.nodeId) {
+          trackedNodes.push({
+            nodeId: operation.nodeId,
+            op: operation.op,
+            role: activePageRole,
+            range: document.Range(Math.min(before, after), Math.max(before, after))
+          });
+        }
         appliedCount += 1;
       });
 
@@ -4076,6 +4222,16 @@
       }
 
       const fieldSnapshots = runFieldConvergence(document, operations, issues);
+      let paginationMap;
+      if (requireM5Pagination) {
+        if (typeof document.Repaginate !== "function") {
+          throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+        }
+        document.Repaginate();
+        paginationMap = buildPaginationMap(document, trackedNodes);
+      } else {
+        paginationMap = buildLegacyPaginationMap(operations);
+      }
 
       try {
         document.SaveAs2(outputPath, 12);
@@ -4088,7 +4244,7 @@
         outputPath: outputPath,
         appliedOperations: appliedCount,
         issueCodes: issues,
-        paginationMap: buildPaginationMap(operations),
+        paginationMap: paginationMap,
         fieldSnapshots: fieldSnapshots,
         childResults: childResults
       };

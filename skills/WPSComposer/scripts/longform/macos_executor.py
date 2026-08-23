@@ -211,6 +211,10 @@ class MacOSLongformExecutor(LongformExecutor):
         request = validate_longform_notice_patch_request({
             "sourcePath": str(source),
             "outputPath": str(target),
+            "bookmarks": [
+                {"nodeId": node_id, "bookmarkName": bookmark}
+                for node_id, bookmark in sorted(bookmark_by_node.items())
+            ],
             "notices": payload,
         })
         try:

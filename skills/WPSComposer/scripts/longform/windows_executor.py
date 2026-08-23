@@ -168,6 +168,7 @@ class WindowsLongformExecutor(LongformExecutor):
         self._toc_density: dict[str, Any] = {}
         self._resource_locators: dict[str, str] = {}
         self._recovery_controller = LocalRecoveryController()
+        self._pagination_ranges: list[dict[str, Any]] = []
 
     # ----------------------------------------------------------------------
     # Public interface
@@ -180,6 +181,7 @@ class WindowsLongformExecutor(LongformExecutor):
     ) -> ExecutionOutcome:
         self._issues = []
         self._recovery_controller = LocalRecoveryController()
+        self._pagination_ranges = []
         validate_generation_plan(plan.to_dict(), component="writer")
         paths = self._resolve_paths()
         staged_resources: Tuple[str, ...] = ()
@@ -188,6 +190,7 @@ class WindowsLongformExecutor(LongformExecutor):
         composer: Optional[WriterComposer] = None
         primary_error: Optional[Exception] = None
         cleanup_failed = False
+        pagination_map = _build_pagination_map(plan.operations)
         try:
             self._validate_resource_manifest(plan, resources)
             self._resource_locators, staged_resources = self._stage_resources(resources)
@@ -202,6 +205,11 @@ class WindowsLongformExecutor(LongformExecutor):
                     composer, max_rounds=_extract_max_rounds(plan.operations)
                 )
             self._extend_issues(convergence.issues)
+            snapshotter = getattr(composer, "pagination_map_for_ranges", None)
+            if callable(snapshotter):
+                pagination_map = PaginationMap.from_dict(
+                    snapshotter(tuple(self._pagination_ranges))
+                )
             composer.save_docx(paths.staged_docx)
             # WPS may retain an image handle until the document closes.  Try
             # once while the host is alive, then retry only locked paths after
@@ -264,7 +272,7 @@ class WindowsLongformExecutor(LongformExecutor):
         return ExecutionOutcome(
             staged_artifact=paths.staged_docx,
             issues=tuple(self._issues),
-            pagination_map=_build_pagination_map(plan.operations),
+            pagination_map=pagination_map,
             applied_operations=len(plan.operations),
         )
 
@@ -293,7 +301,6 @@ class WindowsLongformExecutor(LongformExecutor):
                 if getattr(composer, "_doc", None) is not None:
                     composer._doc.Close(False)
                 composer._doc = composer._app.Documents.Open(str(source), False, False)
-            nodes = []
             for notice in notices:
                 bookmark = bookmark_by_node.get(notice.node_id or "")
                 if notice.node_id and not bookmark:
@@ -306,13 +313,20 @@ class WindowsLongformExecutor(LongformExecutor):
                     page=notice.page or 1,
                     bookmark_name=bookmark,
                 )
-                nodes.append(
-                    composer.pagination_fragment_for_bookmark(
-                        notice.node_id or "doc:quality",
-                        bookmark or "wpsc_document_quality_anchor",
-                    )
-                )
             convergence = finalize_fields_with_convergence(composer, max_rounds=3)
+            # Snapshot every stable generation bookmark only after fields have
+            # converged; returning notice nodes alone leaves the final issue
+            # pages fresh while the rest of the document remains stale.
+            nodes = [
+                composer.pagination_fragment_for_bookmark(node_id, bookmark)
+                for node_id, bookmark in sorted(bookmark_by_node.items())
+            ]
+            if not nodes:
+                nodes = [
+                    composer.pagination_fragment_for_bookmark(
+                        "doc:quality", "wpsc_document_quality_anchor"
+                    )
+                ]
             composer.save_docx(str(target))
             return ExecutionOutcome(
                 staged_artifact=str(target),
@@ -499,8 +513,27 @@ class WindowsLongformExecutor(LongformExecutor):
         composer: WriterComposer,
         operations: Tuple[GenerationOperation, ...],
     ) -> None:
+        active_role = "body"
+        position = getattr(composer, "_native_position", None)
+        range_factory = getattr(getattr(composer, "_doc", None), "Range", None)
         for op in operations:
+            before = position() if callable(position) else None
             self._run_op(composer, op)
+            after = position() if callable(position) else None
+            if op.op == "writer.configure_section" and op.args.get("role"):
+                active_role = str(op.args["role"])
+            if (
+                op.node_id
+                and isinstance(before, int)
+                and isinstance(after, int)
+                and callable(range_factory)
+            ):
+                self._pagination_ranges.append({
+                    "nodeId": op.node_id,
+                    "op": op.op,
+                    "role": active_role,
+                    "range": range_factory(min(before, after), max(before, after)),
+                })
 
     def _run_op(self, composer: WriterComposer, op: GenerationOperation) -> None:
         policy = op.failure_policy
@@ -796,12 +829,17 @@ class WindowsLongformExecutor(LongformExecutor):
             return
 
         if name == "writer.add_heading":
-            composer.add_heading_level_native(
-                text=args["text"],
-                level=args.get("level", 1),
-                numbering=args.get("numbering"),
-                scheme=args.get("numberingScheme"),
-            )
+            heading_args = {
+                "text": args["text"],
+                "level": args.get("level", 1),
+                "numbering": args.get("numbering"),
+                "scheme": args.get("numberingScheme"),
+            }
+            # Keep compatibility with injected and older composer adapters.
+            # The new argument is only required by the one bounded M5 relayout.
+            if args.get("keepWithNext") is True:
+                heading_args["keep_with_next"] = True
+            composer.add_heading_level_native(**heading_args)
             return
 
         if name == "writer.add_paragraph":

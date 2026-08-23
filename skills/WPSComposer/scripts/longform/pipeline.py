@@ -266,6 +266,7 @@ def _aggregate_issues(
 def build_longform_generation(
     markdown: str,
     base_dir: str = "",
+    design_preset: Optional[str] = None,
 ) -> LongformBuild:
     """Build an offline long-form generation plan from Markdown.
 
@@ -279,6 +280,8 @@ def build_longform_generation(
         deterministic issue list.
     """
     document = parse_markdown(markdown, base_dir=base_dir, longform=True)
+    if design_preset is not None:
+        document.metadata["design"] = str(design_preset)
     semantic = normalize_longform_document(document)
     preflight = preflight_resources(semantic.document.sections, base_dir)
     plan = build_longform_plan(semantic, preflight)

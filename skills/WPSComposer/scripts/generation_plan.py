@@ -612,6 +612,7 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             spaceAfter=_number,
             numbering=_boolean,
             numberingScheme=_enum(_NUMBERING_SCHEMES, "numbering scheme"),
+            keepWithNext=_boolean,
         ),
         "writer.add_list": _schema(
             ("items", "ordered"),

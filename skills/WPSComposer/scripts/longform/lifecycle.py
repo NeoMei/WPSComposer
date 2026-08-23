@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import time
 from typing import Any, Callable, Optional, Protocol, Sequence
 
 from .executor import ExecutionOutcome
 from .pdf_quality import require_quality_dependencies
-from .quality import GenerationOutcome, QualityFinding, QualityReport
+from .quality import (
+    GenerationOutcome,
+    QualityConfidence,
+    QualityFinding,
+    QualityReport,
+    QualitySeverity,
+)
 from .relayout import RelayoutDirective, build_relayout_directives
 
 
@@ -91,6 +98,46 @@ def _as_staged_path(outcome: ExecutionOutcome) -> Path:
     return path
 
 
+def _page_for_node(outcome: ExecutionOutcome, node_id: Optional[str]) -> Optional[int]:
+    if node_id is None:
+        return None
+    for node in outcome.pagination_map.nodes:
+        if node.node_id == node_id:
+            if node.fragments:
+                return min(fragment.page for fragment in node.fragments)
+            return node.page_start
+    return None
+
+
+def _refresh_finding_pages(
+    findings: Sequence[QualityFinding], outcome: ExecutionOutcome
+) -> tuple[QualityFinding, ...]:
+    refreshed = []
+    for finding in findings:
+        page = _page_for_node(outcome, finding.node_id)
+        if page is not None and page != finding.page:
+            refreshed.append(replace(finding, page=page, bounds=None))
+        else:
+            refreshed.append(finding)
+    return tuple(refreshed)
+
+
+def _execution_findings(outcome: ExecutionOutcome) -> tuple[QualityFinding, ...]:
+    findings = []
+    for issue in outcome.issues:
+        findings.append(
+            QualityFinding(
+                code=issue.code,
+                severity=QualitySeverity.DEGRADED,
+                confidence=QualityConfidence.HIGH,
+                message=issue.message,
+                node_id=issue.node_id,
+                page=_page_for_node(outcome, issue.node_id),
+            )
+        )
+    return tuple(findings)
+
+
 def run_longform_lifecycle(
     build: Any,
     adapter: LongformLifecycleAdapter,
@@ -134,9 +181,10 @@ def run_longform_lifecycle(
     current_docx: Optional[Path] = None
     current_pdf: Optional[Path] = None
     final_report = QualityReport()
+    current_execution_findings: tuple[QualityFinding, ...] = ()
 
     def execute(directives: Sequence[RelayoutDirective]) -> ExecutionOutcome:
-        nonlocal generation_count, current_docx
+        nonlocal generation_count, current_docx, current_execution_findings
         if generation_count >= 2:
             raise LongformLifecycleError(
                 "LIFECYCLE_BOUND_EXCEEDED", "Full generation pass limit exceeded"
@@ -148,6 +196,7 @@ def run_longform_lifecycle(
             lambda: adapter.execute(build, directives, deadline),
         )
         generation_count += 1
+        current_execution_findings = _execution_findings(outcome)
         current_docx = _as_staged_path(outcome)
         staged_paths.append(current_docx)
         return outcome
@@ -218,6 +267,12 @@ def run_longform_lifecycle(
                 ),
             )
             patch_count += 1
+            current_execution_findings = tuple(
+                sorted(
+                    current_execution_findings + _execution_findings(current_outcome),
+                    key=lambda item: item.sort_key(),
+                )
+            )
             patched_docx = _as_staged_path(current_outcome)
             if patched_docx != current_docx:
                 current_docx = patched_docx
@@ -230,6 +285,10 @@ def run_longform_lifecycle(
                 lambda: adapter.validate_patch(
                     current_docx, current_pdf, notices, current_outcome
                 ),
+            )
+            final_report = QualityReport(
+                _refresh_finding_pages(final_report.findings, current_outcome),
+                final_report.page_count,
             )
 
         _check_deadline(deadline, clock)
@@ -247,7 +306,14 @@ def run_longform_lifecycle(
                 ),
             )
         ).expanduser().resolve()
-        return GenerationOutcome(path=str(published), issues=final_report.findings)
+        final_quality = _refresh_finding_pages(
+            final_report.findings, current_outcome
+        ) if current_outcome is not None else final_report.findings
+        combined = QualityReport(
+            tuple(final_quality) + tuple(current_execution_findings),
+            final_report.page_count,
+        ).findings
+        return GenerationOutcome(path=str(published), issues=combined)
     finally:
         # The public artifact is never one of the private staging files in the
         # production adapter.  The equality guard also keeps injected adapters safe.

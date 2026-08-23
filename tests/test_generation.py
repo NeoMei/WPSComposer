@@ -437,13 +437,13 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
             raise AssertionError(f"Darwin route imported {name}")
         return real_import(name, *args, **kwargs)
 
-    def fake_generate(doc, format_name, output, preset, *, timeout, overwrite):
-        calls.append((doc, format_name, output, preset, timeout, overwrite))
-        return output
+    def fake_generate(build, format_name, output, timeout, overwrite):
+        calls.append((build, format_name, output, timeout, overwrite))
+        return SimpleNamespace(path=str(output))
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
     monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
-    monkeypatch.setattr(orchestrator, "generate_macos", fake_generate)
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_generate)
 
     output = tmp_path / "report.docx"
     result = orchestrator.generate(
@@ -452,11 +452,10 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
 
     assert result == str(output.resolve())
     assert len(calls) == 1
-    doc, format_name, routed_output, preset, timeout, overwrite = calls[0]
-    assert isinstance(doc, StructuredDocument)
+    build, format_name, routed_output, timeout, overwrite = calls[0]
+    assert build.plan.protocol_version == 2
     assert format_name == "docx"
     assert routed_output == output.resolve()
-    assert preset is None
     assert timeout == 600
     assert overwrite is False
 
@@ -510,7 +509,7 @@ def test_generate_overwrite_backend_failure_preserves_existing_output(
     output.write_bytes(b"keep old artifact")
     observed = []
 
-    def fail_generate(doc, format_name, routed_output, preset, *, timeout, overwrite):
+    def fail_generate(build, format_name, routed_output, timeout, overwrite):
         observed.append((Path(routed_output), overwrite))
         raise GenerationError(
             code="GENERATION_COMMAND_FAILED",
@@ -521,7 +520,7 @@ def test_generate_overwrite_backend_failure_preserves_existing_output(
         )
 
     monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
-    monkeypatch.setattr(orchestrator, "generate_macos", fail_generate)
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fail_generate)
 
     with pytest.raises(GenerationError, match="backend failed"):
         orchestrator.generate(
@@ -608,7 +607,10 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
 
     output = tmp_path / "windows.docx"
     result = orchestrator.generate(
-        "# Windows", format="docx", output=str(output), source_is_text=True
+        "---\nlayout_engine: legacy\n---\n# Windows",
+        format="docx",
+        output=str(output),
+        source_is_text=True,
     )
 
     assert result == str(output.resolve())
@@ -640,7 +642,7 @@ def test_generate_does_not_apply_chinese_native_numbering_to_english_document(
     )
 
     orchestrator.generate(
-        "# Report\n\n## Details",
+        "---\nlayout_engine: legacy\n---\n# Report\n\n## Details",
         format="docx",
         output=str(output),
         source_is_text=True,

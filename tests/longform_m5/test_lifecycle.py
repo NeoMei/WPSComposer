@@ -7,6 +7,7 @@ import shutil
 import pytest
 
 from skills.WPSComposer.scripts.longform.executor import (
+    ExecutionIssue,
     ExecutionOutcome,
     PaginationFragment,
     PaginationMap,
@@ -191,6 +192,59 @@ def test_notice_only_issue_skips_second_generation(tmp_path):
     assert len(adapter.execute_calls) == 1
     assert len(adapter.patch_calls) == 1
     assert len(adapter.export_calls) == 2
+
+
+def test_notice_patch_refreshes_final_issue_page_from_fresh_pagination(tmp_path):
+    finding = _finding("low-dpi-notice")
+    adapter = _Adapter(tmp_path)
+
+    def patch_on_page_three(docx, notices, deadline):
+        adapter.patch_calls.append((str(docx), tuple(notices), deadline))
+        return ExecutionOutcome(
+            staged_artifact=str(docx),
+            pagination_map=PaginationMap(
+                version="M5-v1",
+                nodes=(
+                    PaginationNode(
+                        node_id="fig:one",
+                        page_start=3,
+                        page_end=3,
+                        fragments=(PaginationFragment(page=3),),
+                    ),
+                ),
+            ),
+        )
+
+    adapter.patch_quality_notices = patch_on_page_three
+    result = _run(tmp_path, adapter, _Analyzer(QualityReport((finding,), 1)))
+    assert result.issues[0].page == 3
+
+
+def test_native_execution_issues_are_preserved_in_private_outcome(tmp_path):
+    adapter = _Adapter(tmp_path)
+    original_execute = adapter.execute
+
+    def execute_with_degradation(build, directives, deadline):
+        outcome = original_execute(build, directives, deadline)
+        return ExecutionOutcome(
+            staged_artifact=outcome.staged_artifact,
+            pagination_map=outcome.pagination_map,
+            issues=(
+                ExecutionIssue(
+                    code="IMAGE_INSERT_FAILED",
+                    message="Image insertion degraded to a visible notice",
+                    placement="block",
+                    node_id="fig:one",
+                    fallback="notice",
+                    recoverable=True,
+                ),
+            ),
+        )
+
+    adapter.execute = execute_with_degradation
+    result = _run(tmp_path, adapter, _Analyzer(QualityReport((), 1)))
+    assert [issue.code for issue in result.issues] == ["IMAGE_INSERT_FAILED"]
+    assert result.degraded is True
 
 
 @pytest.mark.parametrize(("severity", "confidence"), [("warning", "high"), ("info", "low"), ("degraded", "medium")])

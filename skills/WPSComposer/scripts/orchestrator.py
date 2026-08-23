@@ -34,6 +34,19 @@ from .artifact_transport import (
 from .heading_numbering import detect_numbering_scheme
 
 
+def _generate_longform_outcome(build, format_name, output, timeout, overwrite):
+    """Private indirection keeps platform runtime imports lazy and testable."""
+    from .longform.platform_runtime import generate_longform
+
+    return generate_longform(
+        build,
+        format_name=format_name,
+        output=output,
+        timeout=timeout,
+        overwrite=overwrite,
+    )
+
+
 def generate(
     source: str,
     format: str = "docx",
@@ -125,6 +138,37 @@ def generate(
             f"Use overwrite=True to replace it."
         )
     output = str(output_path)
+
+    # DOCX/PDF now default to the protocol-v2 long-form engine.  The legacy
+    # route remains available only through an explicit frontmatter request.
+    if format in {"docx", "pdf"}:
+        from .longform.pipeline import build_longform_generation
+
+        longform_build = build_longform_generation(
+            content,
+            base_dir=base_dir,
+            design_preset=preset,
+        )
+        if longform_build.semantic.config.layout_engine != "legacy":
+            if sys.platform not in {"darwin", "win32"}:
+                raise GenerationError(
+                    code="MACOS_CAPABILITY_UNAVAILABLE",
+                    output=output,
+                    component="writer",
+                    backend="unsupported-platform",
+                    message=(
+                        "WPS long-form generation is unavailable on platform "
+                        f"{sys.platform}"
+                    ),
+                )
+            outcome = _generate_longform_outcome(
+                longform_build,
+                format,
+                output_path,
+                timeout,
+                overwrite,
+            )
+            return str(Path(outcome.path).expanduser().resolve())
 
     # Route to renderer
     if sys.platform == "darwin":

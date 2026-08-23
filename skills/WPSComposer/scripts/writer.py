@@ -1298,9 +1298,19 @@ class WriterComposer(BaseComposer):
             except Exception:
                 pass
 
-    def add_heading_level_native(self, text, level, numbering=None, scheme=None):
+    def add_heading_level_native(
+        self, text, level, numbering=None, scheme=None, keep_with_next=False
+    ):
         """Add a heading and, when requested, link it to native numbering."""
         self.add_heading_level(text, level=level)
+        if keep_with_next:
+            try:
+                paragraph = self.selection.Paragraphs(1).Previous()
+                paragraph.Range.ParagraphFormat.KeepWithNext = True
+            except Exception:
+                raise NativeWriterObjectError(
+                    "PAGINATION_SNAPSHOT_FAILED", "heading cohesion failed"
+                ) from None
         if not numbering:
             return
         try:
@@ -2743,6 +2753,82 @@ class WriterComposer(BaseComposer):
                 "range": f"{start}:{end}",
                 "fragments": [fragment],
             }
+        except Exception:
+            raise NativeWriterObjectError(
+                "PAGINATION_SNAPSHOT_FAILED", "pagination snapshot failed"
+            ) from None
+
+    def pagination_map_for_ranges(self, tracked_ranges):
+        """Build the M5 native range/page snapshot after final repagination."""
+        try:
+            repaginate = getattr(self._doc, "Repaginate", None)
+            if not callable(repaginate):
+                raise AttributeError("repagination API unavailable")
+            repaginate()
+            setup = self._doc.PageSetup
+            page_width = float(getattr(setup, "PageWidth", 595.28))
+            page_height = float(getattr(setup, "PageHeight", 841.89))
+            left_margin = max(0.0, float(getattr(setup, "LeftMargin", 72.0)))
+            right_margin = max(0.0, float(getattr(setup, "RightMargin", 72.0)))
+            top_margin = max(0.0, float(getattr(setup, "TopMargin", 72.0)))
+            bottom_margin = max(0.0, float(getattr(setup, "BottomMargin", 72.0)))
+            visual_ops = {
+                "writer.add_captioned_figure",
+                "writer.add_semantic_table",
+                "writer.add_equation",
+                "writer.add_degradation_notice",
+                "writer.add_document_quality_notice",
+            }
+            nodes = []
+            seen = set()
+            content_end = max(0, int(self._doc.Content.End) - 1)
+            for tracked in tracked_ranges:
+                node_id = str(tracked.get("nodeId") or "")
+                if not node_id or node_id in seen:
+                    continue
+                rng = tracked["range"]
+                start, end = int(rng.Start), int(rng.End)
+                if start < 0 or end < start:
+                    raise ValueError("invalid native range")
+                first_range = self._doc.Range(min(start, content_end), min(start, content_end))
+                last_position = end - 1 if end > start else end
+                last_position = min(max(0, last_position), content_end)
+                last_range = self._doc.Range(last_position, last_position)
+                first_page = int(first_range.Information(3))
+                last_page = int(last_range.Information(3))
+                if first_page < 1 or last_page < first_page:
+                    raise ValueError("invalid native page span")
+                visual = tracked.get("op") in visual_ops
+                first_x = float(first_range.Information(5))
+                first_y = float(first_range.Information(6))
+                last_y = float(last_range.Information(6))
+                fragments = []
+                for page in range(first_page, last_page + 1):
+                    fragment = {"page": page}
+                    if visual:
+                        x0 = max(0.0, first_x) if page == first_page and math.isfinite(first_x) else left_margin
+                        y0 = max(0.0, first_y) if page == first_page and math.isfinite(first_y) else top_margin
+                        x1 = max(x0 + 1.0, page_width - right_margin)
+                        y1 = (
+                            max(y0 + 1.0, min(page_height, last_y + 12.0))
+                            if page == last_page and math.isfinite(last_y)
+                            else max(y0 + 1.0, page_height - bottom_margin)
+                        )
+                        if not all(math.isfinite(value) for value in (x0, y0, x1, y1)):
+                            raise ValueError("invalid native bounds")
+                        fragment["bounds"] = [x0, y0, x1, y1]
+                    fragments.append(fragment)
+                seen.add(node_id)
+                nodes.append({
+                    "nodeId": redact_private_text(node_id),
+                    "story": "main",
+                    "sections": [str(tracked.get("role") or "body")],
+                    "pageStart": first_page,
+                    "pageEnd": last_page,
+                    "range": f"{start}:{end}",
+                    "fragments": fragments,
+                })
+            return {"version": "M5-v1", "nodes": nodes}
         except Exception:
             raise NativeWriterObjectError(
                 "PAGINATION_SNAPSHOT_FAILED", "pagination snapshot failed"
