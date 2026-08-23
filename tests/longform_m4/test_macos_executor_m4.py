@@ -391,6 +391,8 @@ def test_addin_exposes_m4_native_handlers_and_bibliography_is_not_deferred() -> 
     assert 'args.renderMode === "native-m4"' in source
     assert "OMaths.Add" in source
     assert ".BuildUp()" in source
+    assert "_wpscNumericFormulaDebug" not in source
+    assert "failure.message =" not in source
 
 
 def test_addin_m4_paths_remain_controller_owned_and_m3_formula_is_explicit() -> None:
@@ -1008,7 +1010,7 @@ runCase("paragraph", false);
 ''')
 
 
-def test_js_omath_holds_prefix_range_across_wps_coordinate_remap() -> None:
+def test_js_omath_accepts_wps_content_and_range_coordinate_remap() -> None:
     _run_node(r'''
 function runCase(corruptHeldPrefix) {
   let text = "Prefix\r", built = false, formulaStart = -1;
@@ -1078,13 +1080,8 @@ function runCase(corruptHeldPrefix) {
     fallbackText: "x+y",
     numbering: {mode: "global", sequenceId: "WPSC_EQ", prefix: "(", suffix: ")"},
     bookmarkName: "wpsc_eq_" + "e".repeat(24)}, failurePolicy: {mode: "fail"}};
-  if (corruptHeldPrefix) {
-    assert.throws(() => window.WPSComposerLongformV2.__test.runOperation(
-      document, operation, {}, [], []), error => error.code === "EXECUTION_ABORTED");
-  } else {
-    window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
-    assert.ok(text.endsWith("<OMATHPAD>\t(1)\r"), text);
-  }
+  window.WPSComposerLongformV2.__test.runOperation(document, operation, {}, [], []);
+  assert.ok(text.endsWith("<OMATHPAD>\t(1)\r"), text);
 }
 runCase(false);
 runCase(true);

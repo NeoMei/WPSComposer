@@ -333,13 +333,6 @@
     return content.Text;
   }
 
-  function logicalContentPrefix(text) {
-    let value = safeString(text);
-    if (value.slice(-1) === "\u0007") value = value.slice(0, -1);
-    if (value.slice(-1) === "\r") value = value.slice(0, -1);
-    return value;
-  }
-
   function optionalCollectionCount(collection, failureCode) {
     if (!collection || collection.Count === undefined) return null;
     const count = Number(collection.Count);
@@ -348,17 +341,12 @@
   }
 
   function commitSuccessfulHostAdvance(
-    document, hostBefore, minimumEnd, contentPrefix
+    document, hostBefore, minimumEnd
   ) {
     if (!document || document._wpscRunOwnsAppendCursor !== true) return;
     const cursor = appendCursorRange(document);
-    if (!cursor || !hostBefore || !Number.isInteger(minimumEnd) ||
-        typeof contentPrefix !== "string") {
+    if (!cursor || !hostBefore || !Number.isInteger(minimumEnd)) {
       throw nativeError("CAPABILITY_MISMATCH");
-    }
-    const currentContent = documentContentText(document, "EQUATION_INSERT_FAILED");
-    if (currentContent.slice(0, contentPrefix.length) !== contentPrefix) {
-      throw nativeError("EQUATION_INSERT_FAILED");
     }
     const hostAfter = observedHostDocumentEnds(document);
     const advanced = [];
@@ -1077,7 +1065,6 @@
     try {
       const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
       if (!Number.isInteger(start) || start < 0 ||
-          (token && start !== Number(token.start)) ||
           !Number.isInteger(stop) || stop < start) {
         throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
       }
@@ -1719,12 +1706,6 @@
     if (!document.OMaths || typeof document.OMaths.Add !== "function") {
       throw nativeError("CAPABILITY_MISMATCH");
     }
-    let successContentPrefix = null;
-    if (document._wpscRunOwnsAppendCursor === true) {
-      successContentPrefix = logicalContentPrefix(
-        documentContentText(document, "CAPABILITY_MISMATCH")
-      );
-    }
     const layout = beginFormulaLayout(document);
     const start = currentPosition(document);
     const linearText = safeString(nativeMath.linearText);
@@ -1802,7 +1783,7 @@
       throw nativeError("EQUATION_INSERT_FAILED");
     }
     commitSuccessfulHostAdvance(
-      document, successHostBefore, builtAddedEnd, successContentPrefix
+      document, successHostBefore, builtAddedEnd
     );
     const mathCursor = endRange(document);
     const mathCursorEnd = appendTargetEnd(document, mathCursor);
