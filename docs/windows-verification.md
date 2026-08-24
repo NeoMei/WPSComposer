@@ -180,18 +180,17 @@ All on `codex/longform-m3` blind-written Windows paths:
   env-gated (`WPSCOMPOSER_RUN_REAL_WPS=1`) like the M3/M5 gates so the
   platform-independent suite stays green on Windows.
 
-### macOS follow-up required before 0.8.0
+### macOS follow-up completed before the final Windows rerun
 
-The fixes above touch shared Python (`resources.py`, `plan.py`,
+The fixes above touched shared Python (`resources.py`, `plan.py`,
 `writer.py`, `_dispatch.py`, `_base.py`, `slide.py`, `sheet.py`,
 `windows_executor.py`, m3/m4/m5 evidence validators) and regenerated
-`tests/longform_m3/snapshots/*.json`. Per this document's policy: rerun
-the affected macOS tests and at least one complete macOS M5 evidence
-gate on a clean checkout of the pushed branch; if native
-caption/heading/cover behavior differs on macOS (it should not — all
-three mirror the add-in's own logic), rerun all three macOS gates.
-(The suite-app pool is Windows-only COM code and does not affect the
-macOS JSAPI bridge; the macOS conversational attach path is untouched.)
+`tests/longform_m3/snapshots/*.json`. macOS subsequently completed the full
+suite and three consecutive M5 gates under
+`build/longform-m5/final-postfix-{1,2,3}`. The final Windows rerun recorded at
+the top of this document then closed the remaining cross-platform gate. The
+suite-app pool remains Windows-only COM code and does not affect the macOS
+JSAPI bridge; the macOS conversational attach path is untouched.
 
 ### M5 gate re-run recipe (as executed on 2026-08-24)
 
@@ -257,11 +256,13 @@ the PPTX and XLSX to development evidence PDFs and inspect them. Confirm
 `ENGINE_LOST`, protocol/capability mismatch, save/export/validation failure, and
 timeout must not fall back or publish a partial artifact.
 
-If Windows changes shared Python, schema, or plan code, rerun affected macOS
-tests and at least one complete macOS M5 evidence gate. If it changes native
+If future Windows work changes shared Python, schema, or plan code, rerun
+affected macOS tests and at least one complete macOS M5 evidence gate. If it changes native
 heading numbering, page sections, degradation display, or lifecycle bounds,
 rerun all three macOS gates. Commit fixes, push them, then repeat the Windows
-gate from a clean checkout. Do not bump or publish 0.8.0 yet.
+gate from a clean checkout. The current cross-platform acceptance gate is
+complete; version bump, merge, and publication remain separate authorized
+release operations.
 
 ## Status
 

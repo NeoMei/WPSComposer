@@ -370,9 +370,10 @@ Recoverable object failures remain visible where the object belongs. Fatal
 conditions including `ENGINE_LOST`, protocol/capability mismatch, cleanup,
 save/export, validation, and publication failure abort without a public partial
 artifact. On macOS WPS 12.1.26055, native formula BuildUp is still honestly
-reported through the marked image/source ladder. Three consecutive real macOS
-M5 gates passed; 0.8.0 remains unreleased until the equivalent Windows gate
-passes. See `docs/longform-markdown.md` and
+reported through the marked image/source ladder. cross-platform acceptance: COMPLETED
+after three consecutive real M5 gates on both macOS and Windows, including the
+post-acceptance Windows rerun. 0.8.0 remains unreleased; version bump, merge,
+and publication are separate release operations. See `docs/longform-markdown.md` and
 `docs/macos-longform-m5-verification.md`.
 
 ## Native heading numbering (docx)

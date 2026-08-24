@@ -19,6 +19,7 @@ WINDOWS_VERIFICATION = (ROOT / "docs" / "windows-verification.md").read_text(
 PROGRESS = (ROOT / ".superpowers" / "sdd" / "progress.md").read_text(
     encoding="utf-8"
 )
+PYPROJECT = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
 
 def test_docs_use_supported_public_import():
@@ -44,6 +45,22 @@ def test_docs_describe_current_install_and_output_contract():
     assert "do not split" not in AGENTS.lower()
 
 
+def test_dev_extra_includes_platform_independent_test_dependencies():
+    assert 'dev = ["pytest>=8", "reportlab>=4"]' in PYPROJECT
+
+
+def test_public_status_docs_record_completed_cross_platform_gate():
+    longform = LONGFORM_MARKDOWN_PATH.read_text(encoding="utf-8")
+    macos_evidence = MACOS_M5_PATH.read_text(encoding="utf-8")
+    for document in (README, SKILL, longform):
+        assert "cross-platform acceptance: COMPLETED" in document
+        assert "0.8.0 remains unreleased" in " ".join(document.split())
+    assert "Windows native gate is completed" in LONGFORM_M0
+    assert "overall decision is go" in LONGFORM_M0
+    assert "Windows post-acceptance rerun status: COMPLETED" in macos_evidence
+    assert "M5 CROSS-PLATFORM ACCEPTANCE COMPLETE" in PROGRESS
+
+
 def test_longform_m0_docs_cover_matrix_gate_and_recovery():
     for capability_id in range(1, 16):
         assert f"| {capability_id} |" in LONGFORM_M0
@@ -60,7 +77,7 @@ def test_longform_m0_docs_cover_matrix_gate_and_recovery():
         "registration",
         "relative filename",
         "must not contain",
-        "Windows native gate is pending",
+        "Windows native gate is completed",
     ):
         assert required in LONGFORM_M0
 
@@ -108,7 +125,9 @@ def test_m5_macos_evidence_records_windows_completion_and_postfix_gate():
         "FORMULA_MALFORMED",
         "Windows gate status: COMPLETED",
         "macOS re-verification status: COMPLETED",
-        "Windows must perform one final clean-checkout post-acceptance rerun",
+        "Windows post-acceptance rerun status: COMPLETED",
+        "45a178f",
+        "7ffbd5b",
     ):
         assert token in evidence
     for token in ("M5 Task 8", "0d61345", "three consecutive"):
@@ -126,7 +145,7 @@ def test_m5_windows_handoff_has_one_runnable_three_round_gate():
         '"system": "Windows"',
         "layout_engine: legacy",
         "ENGINE_LOST",
-        "Do not bump or publish 0.8.0 yet",
+        "version bump, merge, and publication remain separate",
         "Post-acceptance Windows rerun (COMPLETED",
         "windows-post-acceptance-1",
         "2517 passed",

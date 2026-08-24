@@ -27,7 +27,7 @@ dependencies = ["Pillow>=10", "pypdf>=4", "pdfplumber>=0.11"]
 windows = ["pywin32>=306; platform_system == 'Windows'"]
 pdf = ["reportlab>=4"]
 math = ["matplotlib>=3.5"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "reportlab>=4"]
 
 [tool.setuptools.packages.find]
 include = ["skills*"]

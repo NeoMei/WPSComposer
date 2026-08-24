@@ -107,10 +107,16 @@ the obsolete Windows-pending wording; a reused Windows executor leaked prior
 front matter; failed pooled COM construction left the apartment initialized;
 and fenced code blocks were omitted from long-form plans.
 
-Because the last two document-generation fixes touch Windows execution and the
-shared plan, Windows must perform one final clean-checkout post-acceptance rerun
-on the new pushed commit before 0.8.0 is released. This is a new-code gate, not
-a reopening of the already accepted `5148b1a` Windows evidence.
+## Windows post-acceptance rerun status: COMPLETED (2026-08-24)
+
+Because the last two document-generation fixes touched Windows execution and
+the shared plan, Windows performed a final clean-checkout post-acceptance rerun
+starting from `46a1221`. Commit `45a178f` records 2517 passing tests plus three
+consecutive real M5 gates; `7ffbd5b` corrects the WPS host build to
+12.1.0.28043. The Unicode code block remained visible and monospace, and all
+three 63-page performance runs stayed below 600 seconds without patches or
+issues. No shared generation/runtime code changed after the accepted macOS
+evidence. 0.8.0 remains unreleased pending separate release authorization.
 
 ### What Windows changed and why macOS should be unaffected
 

@@ -4,7 +4,7 @@
 
 WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS Office 生成高质量排版的 DOCX、PDF、XLSX、PPTX 文档。
 
-> 当前审计状态（2026-08-23）：DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS WPS 12.1.26055 的 6 类原生样例和 63 页压力文档已连续通过三轮。0.8.0 尚未发布，仍需完成最终 Windows 原生证据门。
+> cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 remains unreleased；版本号更新、合并和发布属于后续独立操作。
 
 ## ✨ 核心特性
 

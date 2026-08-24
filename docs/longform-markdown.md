@@ -172,6 +172,9 @@ On that build, professional formula BuildUp is a structural no-op for the
 supported families, so the postcondition correctly uses the marked image/source
 ladder instead of claiming native success.
 
-Windows shares the semantic plan and recovery contracts, but its final M5 COM
-visual/performance evidence is still required. Version 0.8.0 remains unreleased
-until that Windows gate passes and any shared fixes are rechecked on macOS.
+cross-platform acceptance: COMPLETED on 2026-08-24. Windows WPS Office
+12.1.0.28043 passed the final clean-checkout post-acceptance M5 COM/UI,
+Unicode-code-block, and performance gate three consecutive times; the shared
+fixes were already rechecked through three consecutive macOS M5 runs. 0.8.0
+remains unreleased; version bump, merge, and publication are separate release
+operations.
