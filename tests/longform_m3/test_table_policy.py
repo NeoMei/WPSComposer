@@ -1,0 +1,293 @@
+from __future__ import annotations
+
+from dataclasses import FrozenInstanceError, asdict
+import json
+
+import pytest
+
+from skills.WPSComposer.scripts.design_presets import PRESETS
+from skills.WPSComposer.scripts.document_model import (
+    DocumentIssue,
+    SemanticTableBlock,
+    TableMerge,
+)
+from skills.WPSComposer.scripts.longform.policy import resolve_table_policy
+from skills.WPSComposer.scripts.longform.semantic import _canonical_value
+from skills.WPSComposer.scripts.longform.table_policy import (
+    TABLE_ROW_FORCED_SPLIT,
+    TableDegradationMetadata,
+    TablePolicy,
+    row_forced_split_degradation,
+)
+
+
+def _table(*, style: str = "", repeat_header: bool = True) -> SemanticTableBlock:
+    return SemanticTableBlock(
+        caption="Data",
+        headers=["Name", "Value", "Status"],
+        rows=[["alpha", "1", "ok"], ["beta", "2", "ok"]],
+        alignments=["left", "right", "center"],
+        style=style,
+        repeat_header=repeat_header,
+    )
+
+
+@pytest.mark.parametrize("preset", ["academic", PRESETS["academic"]])
+def test_academic_preset_defaults_to_three_line(preset: object) -> None:
+    policy, issues = resolve_table_policy(_table(), preset)
+
+    assert policy.style == "three-line"
+    assert issues == ()
+
+
+@pytest.mark.parametrize("preset", ["business", "consultant", "tech", "proposal"])
+def test_nonacademic_presets_default_to_grid(preset: str) -> None:
+    policy, issues = resolve_table_policy(_table(), preset)
+
+    assert policy.style == "grid"
+    assert issues == ()
+
+
+@pytest.mark.parametrize(
+    ("preset", "explicit_style"),
+    [("academic", "grid"), ("business", "three-line"), ("tech", " THREE-LINE ")],
+)
+def test_explicit_style_overrides_preset(preset: str, explicit_style: str) -> None:
+    policy, _ = resolve_table_policy(_table(style=explicit_style), preset)
+
+    assert policy.style == explicit_style.strip().lower()
+
+
+def test_three_line_policy_declares_only_the_three_visible_rules() -> None:
+    policy, _ = resolve_table_policy(_table(style="three-line"), "business")
+
+    assert policy.borders == {
+        "top": 1.5,
+        "bottom": 1.5,
+        "header_bottom": 0.75,
+        "left": 0.0,
+        "right": 0.0,
+        "inside_horizontal": 0.0,
+        "inside_vertical": 0.0,
+    }
+
+
+def test_grid_policy_declares_all_grid_borders() -> None:
+    policy, _ = resolve_table_policy(_table(style="grid"), "academic")
+
+    assert policy.borders == {
+        "top": 0.75,
+        "bottom": 0.75,
+        "header_bottom": 0.75,
+        "left": 0.75,
+        "right": 0.75,
+        "inside_horizontal": 0.75,
+        "inside_vertical": 0.75,
+    }
+
+
+def test_table_policy_repeats_header_disables_row_split_and_uses_zero_indent() -> None:
+    policy, _ = resolve_table_policy(_table(repeat_header=False), "business")
+
+    assert policy.repeat_header is False
+    assert policy.allow_row_split is False
+    assert policy.cell_indent_pt == 0.0
+
+
+def test_declared_cell_alignments_remain_direct_and_unchanged() -> None:
+    table = _table()
+    original_alignments = list(table.alignments)
+
+    resolve_table_policy(table, "academic")
+
+    assert table.alignments == ["left", "right", "center"]
+    assert table.alignments == original_alignments
+
+
+def test_policy_and_merge_coordinates_are_immutable() -> None:
+    merge = TableMerge(2, 1, 3, 1)
+    policy = TablePolicy("grid", {}, (merge,), True, False, 0.0)
+
+    with pytest.raises(FrozenInstanceError):
+        merge.top = 1  # type: ignore[misc]
+    with pytest.raises(FrozenInstanceError):
+        policy.style = "three-line"  # type: ignore[misc]
+
+
+def test_policy_borders_are_deeply_immutable_and_serialization_is_stable() -> None:
+    first, _ = resolve_table_policy(_table(style="three-line"), "business")
+    second, _ = resolve_table_policy(_table(style="three-line"), "business")
+
+    with pytest.raises(TypeError):
+        first.borders["top"] = 99.0  # type: ignore[index]
+    assert first == second
+    assert first.to_dict() == second.to_dict()
+    assert json.dumps(first.to_dict(), sort_keys=True) == json.dumps(
+        second.to_dict(), sort_keys=True
+    )
+    assert first.to_dict()["borders"]["top"] == 1.5
+
+
+def test_policy_supports_shared_canonical_and_dataclass_serialization() -> None:
+    policy, _ = resolve_table_policy(_table(style="three-line"), "business")
+    borders = {
+        "top": 1.5,
+        "bottom": 1.5,
+        "header_bottom": 0.75,
+        "left": 0.0,
+        "right": 0.0,
+        "inside_horizontal": 0.0,
+        "inside_vertical": 0.0,
+    }
+
+    assert asdict(policy) == {
+        "style": "three-line",
+        "borders": borders,
+        "merges": (),
+        "repeat_header": True,
+        "allow_row_split": False,
+        "cell_indent_pt": 0.0,
+    }
+    assert _canonical_value(policy) == {
+        "allow_row_split": False,
+        "borders": dict(sorted(borders.items())),
+        "cell_indent_pt": 0.0,
+        "merges": [],
+        "repeat_header": True,
+        "style": "three-line",
+    }
+    assert policy.to_dict() == {
+        "style": "three-line",
+        "borders": dict(sorted(borders.items())),
+        "merges": [],
+        "repeatHeader": True,
+        "allowRowSplit": False,
+        "cellIndentPt": 0.0,
+    }
+
+
+def test_plain_document_issue_serialization_remains_backward_compatible() -> None:
+    issue = DocumentIssue("EXISTING", "existing", "document")
+
+    assert asdict(issue) == {
+        "code": "EXISTING",
+        "message": "existing",
+        "placement": "document",
+    }
+    assert _canonical_value(issue) == {
+        "code": "EXISTING",
+        "message": "existing",
+        "placement": "document",
+    }
+
+
+def test_direct_policy_construction_defensively_freezes_nested_values() -> None:
+    source_borders = {"top": 1.5}
+    source_merges = [TableMerge(2, 1, 3, 1)]
+    policy = TablePolicy("three-line", source_borders, source_merges, True, False, 0.0)  # type: ignore[arg-type]
+
+    source_borders["top"] = 99.0
+    source_merges.clear()
+
+    assert policy.borders["top"] == 1.5
+    assert policy.merges == (TableMerge(2, 1, 3, 1),)
+    with pytest.raises(TypeError):
+        policy.borders["top"] = 2.0  # type: ignore[index]
+
+
+def test_degradation_metadata_defensively_freezes_nested_values() -> None:
+    source_actions = ["allow-row-split"]
+    source_group = [3, 3]
+    metadata = TableDegradationMetadata(
+        code=TABLE_ROW_FORCED_SPLIT,
+        message="row",
+        trigger="row-exceeds-available-page",
+        recovery_scope="row",
+        actions=source_actions,  # type: ignore[arg-type]
+        row_group=source_group,  # type: ignore[arg-type]
+    )
+
+    source_actions.append("discard-all-merges")
+    source_group[0] = 2
+
+    assert metadata.actions == ("allow-row-split",)
+    assert metadata.row_group == (3, 3)
+
+
+def test_vertical_body_merges_mark_the_transitive_row_group_indivisible() -> None:
+    table = SemanticTableBlock(
+        headers=["A", "B", "C"],
+        rows=[
+            ["one", "x", ""],
+            ["", "two", "y"],
+            ["three", "", "z"],
+        ],
+        merge_spec="A2:A3;B3:B4",
+    )
+
+    policy, issues = resolve_table_policy(table, "business")
+
+    assert issues == ()
+    assert policy.indivisible_row_groups == ((2, 4),)
+    assert policy.allow_row_split is False
+
+
+def test_normal_rows_have_no_indivisible_group() -> None:
+    policy, _ = resolve_table_policy(_table(), "business")
+
+    assert policy.indivisible_row_groups == ()
+    assert policy.allow_row_split is False
+
+
+def test_forced_split_metadata_is_runtime_only_and_caption_anchored() -> None:
+    metadata = row_forced_split_degradation(2, 4)
+
+    assert isinstance(metadata, DocumentIssue)
+    assert metadata.to_dict() == {
+        "code": TABLE_ROW_FORCED_SPLIT,
+        "message": (
+            "Table row group 2:4 exceeded the available page height; "
+            "render the complete table as an unmerged splittable grid."
+        ),
+        "placement": "block",
+        "insertAfter": "caption",
+        "trigger": "vertical-merge-group-exceeds-available-page",
+        "recoveryScope": "complete-table",
+        "actions": ["discard-all-merges", "apply-grid-style", "allow-row-split"],
+        "rowGroup": {"top": 2, "bottom": 4},
+    }
+
+
+def test_forced_split_metadata_for_merged_group_is_immutable() -> None:
+    metadata = row_forced_split_degradation(2, 4)
+
+    with pytest.raises(FrozenInstanceError):
+        metadata.recovery_scope = "row"  # type: ignore[misc]
+    with pytest.raises(TypeError):
+        metadata.actions[0] = "preserve-merges"  # type: ignore[index]
+
+
+def test_forced_split_metadata_also_supports_one_oversized_normal_row() -> None:
+    metadata = row_forced_split_degradation(3, 3)
+
+    assert isinstance(metadata, DocumentIssue)
+    assert metadata.to_dict() == {
+        "code": TABLE_ROW_FORCED_SPLIT,
+        "message": (
+            "Table row 3 exceeded the available page height; allow that row "
+            "to split without removing table merges."
+        ),
+        "placement": "block",
+        "insertAfter": "caption",
+        "trigger": "row-exceeds-available-page",
+        "recoveryScope": "row",
+        "actions": ["allow-row-split"],
+        "rowGroup": {"top": 3, "bottom": 3},
+    }
+
+
+def test_forced_split_metadata_does_not_measure_pages() -> None:
+    with pytest.raises(ValueError, match="body row group"):
+        row_forced_split_degradation(1, 2)
+    with pytest.raises(ValueError, match="ordered"):
+        row_forced_split_degradation(4, 3)

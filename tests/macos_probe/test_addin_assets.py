@@ -60,6 +60,16 @@ def test_writer_uses_wps_save_and_pdf_export():
     assert '"smoke_pdf"' in source
 
 
+def test_writer_exposes_closed_longform_notice_patch_handler():
+    writer = (ROOT / "writer.js").read_text()
+    longform = (ROOT / "writer-longform-v2.js").read_text()
+    assert '"patch_longform_quality_notices"' in writer
+    assert "function patchNotices(params)" in longform
+    assert "validateNoticePatchRequest(params)" in longform
+    assert "insertMappedQualityNotice(document, notice)" in longform
+    assert "runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues)" in longform
+
+
 def test_writer_waits_for_wps_file_completion_event_before_close():
     source = (ROOT / "writer.js").read_text()
     assert 'AddApiEventListener("FileAfterSave", onFileAfterSave)' in source

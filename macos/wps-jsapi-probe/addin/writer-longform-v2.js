@@ -1,0 +1,4550 @@
+(function () {
+  "use strict";
+
+  // BEGIN WPSCOMPOSER GENERATED RECOVERY MATRIX
+  const WPSCOMPOSER_RECOVERY_MATRIX = Object.freeze({
+    "BIBLIOGRAPHY_INSERT_FAILED": Object.freeze({
+      "notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "CROSS_REFERENCE_FAILED": Object.freeze({
+      "inline-fallback": Object.freeze({"fallbackAttempts":1,"placement":"inline"})
+    }),
+    "DEGRADATION_INSERT_FAILED": Object.freeze({
+      "inline": Object.freeze({"fallbackAttempts":1,"placement":"inline"}),
+      "notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "EQUATION_INSERT_FAILED": Object.freeze({
+      "explicit-image-then-source-notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "FIELD_REFRESH_UNSTABLE": Object.freeze({
+      "document-quality-notice": Object.freeze({"fallbackAttempts":1,"placement":"document"})
+    }),
+    "IMAGE_INSERT_FAILED": Object.freeze({
+      "figure-child-stack-then-notice": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_INSERT_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_MERGE_APPLY_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_ROW_FORCED_SPLIT": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    }),
+    "TABLE_STYLE_APPLY_FAILED": Object.freeze({
+      "grid-then-text": Object.freeze({"fallbackAttempts":1,"placement":"block"})
+    })
+  });
+  // END WPSCOMPOSER GENERATED RECOVERY MATRIX
+
+  const LONGFORM_DEFERRED = {};
+
+  const NATIVE_SEQUENCE_KIND = Object.freeze({
+    WPSC_FIG: "SEQ_FIG",
+    WPSC_TAB: "SEQ_TAB",
+    WPSC_EQ: "SEQ_EQ"
+  });
+  const RECOVERABLE_TABLE_CODES = Object.freeze({
+    TABLE_STYLE_APPLY_FAILED: true,
+    TABLE_MERGE_APPLY_FAILED: true,
+    TABLE_ROW_FORCED_SPLIT: true,
+    TABLE_INSERT_FAILED: true
+  });
+
+  function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  function safeNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function safeString(value) {
+    return value === null || value === undefined ? "" : String(value);
+  }
+
+  // BEGIN WPSCOMPOSER GENERATED PRIVACY FILTER
+  const WPSCOMPOSER_PRIVATE_PATTERNS = Object.freeze([
+    Object.freeze({"flags":"i","source":"(?:^|[^0-9a-f])[0-9a-f]{64}(?:$|[^0-9a-f])"}),
+    Object.freeze({"flags":"","source":"(?:Traceback|[A-Za-z_][A-Za-z0-9_.]*(?:Error|Exception))\\s*(?:\\(|\\b)"}),
+    Object.freeze({"flags":"i","source":"(?:^|[^A-Za-z0-9])[A-Za-z][A-Za-z0-9+.-]*://"}),
+    Object.freeze({"flags":"i","source":"(?:^|[^A-Za-z0-9])(?:data|blob):"}),
+    Object.freeze({"flags":"i","source":"[A-Za-z]:[\\\\/][^\\s|,;]+"}),
+    Object.freeze({"flags":"","source":"(?:\\\\\\\\|//)[A-Za-z0-9_.-]+[\\\\/][^\\s|,;]+"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])~[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\\\/])\\.\\.[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"'])\\.\\.?[\\\\/]"}),
+    Object.freeze({"flags":"","source":"(?:^|[^A-Za-z0-9_:-])(?:[A-Za-z0-9_.-]+[\\\\/])+[A-Za-z0-9_.-]+\\.[A-Za-z][A-Za-z0-9]{0,15}(?:$|[^A-Za-z0-9_.-])"}),
+    Object.freeze({"flags":"i","source":"\\b(?:path|source|sourcePath|stagingPath|file)\\s*[:=]\\s*(?:\\.\\.?[\\\\/]|[^\\s|,;]+[\\\\/][^\\s|,;]+)"}),
+    Object.freeze({"flags":"","source":"(?:^|[\\s({=:\\\"']|:(?!/))/(?!/)(?=\\S)"})
+  ]);
+  const WPSCOMPOSER_BASE64_PATTERN = "[A-Za-z0-9+/]{76,}={0,2}";
+
+  function wpscHasBase64Payload(text) {
+    const matches = text.match(new RegExp(WPSCOMPOSER_BASE64_PATTERN, "g")) || [];
+    return matches.some(function (candidate) {
+      return candidate.length % 4 === 0;
+    });
+  }
+
+  function safePublicText(value) {
+    const text = safeString(value);
+    const privateValue = WPSCOMPOSER_PRIVATE_PATTERNS.some(function (item) {
+      return new RegExp(item.source, item.flags).test(text);
+    }) || wpscHasBase64Payload(text);
+    return privateValue ? "<redacted>" : text;
+  }
+  // END WPSCOMPOSER GENERATED PRIVACY FILTER
+
+  function setValue(target, name, value) {
+    if (target !== null && typeof target !== "undefined" && typeof value !== "undefined") {
+      target[name] = value;
+    }
+  }
+
+  function colorFromHex(value) {
+    if (typeof value !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+      return value;
+    }
+    const red = parseInt(value.slice(1, 3), 16);
+    const green = parseInt(value.slice(3, 5), 16);
+    const blue = parseInt(value.slice(5, 7), 16);
+    return red | (green << 8) | (blue << 16);
+  }
+
+  function checkpointTextSignature(value) {
+    const text = safeString(value);
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return text.length + ":" + (hash >>> 0).toString(16);
+  }
+
+  function exactDocumentRange(document, start, end) {
+    if (!document || typeof document.Range !== "function" ||
+        !Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end < start) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const range = document.Range(start, end);
+    if (!range || typeof range.Start !== "number" || typeof range.End !== "number" ||
+        range.Start !== start || range.End !== end) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return range;
+  }
+
+  function appendCursorRange(document) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return null;
+    const cursor = document && document._wpscAppendCursorRange;
+    if (!cursor) return null;
+    const start = cursor.Start;
+    const end = cursor.End;
+    if (typeof start !== "number" || typeof end !== "number" ||
+        !Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || start !== end) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return cursor;
+  }
+
+  function setAppendCursor(document, position) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return null;
+    const cursor = exactDocumentRange(document, position, position);
+    document._wpscAppendCursorRange = cursor;
+    return cursor;
+  }
+
+  function advanceAppendCursor(document, target, minimumEnd, extraRanges, previousEnd) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return target;
+    const current = Number.isInteger(previousEnd) ? null : appendCursorRange(document);
+    const currentEnd = Number.isInteger(previousEnd)
+      ? previousEnd : (current ? current.End : 0);
+    const candidates = [target].concat(extraRanges || []);
+    let end = Number.isInteger(minimumEnd) ? minimumEnd : currentEnd;
+    let observedEnd = currentEnd;
+    candidates.forEach(function (range) {
+      const candidate = range && typeof range.End === "number" ? range.End : NaN;
+      if (Number.isInteger(candidate) && candidate >= 0) {
+        observedEnd = Math.max(observedEnd, candidate);
+        end = Math.max(end, candidate);
+      }
+    });
+    if (!Number.isInteger(end) || end < currentEnd) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    // Retain the M1-M3 zero-length recording double, whose Range intentionally
+    // does not model mutation. Real WPS blank documents expose End >= 1.
+    const rawContentEnd = document && document.Content && document.Content.End;
+    if (rawContentEnd === 0 && observedEnd === currentEnd && end > currentEnd) {
+      return current || target;
+    }
+    return setAppendCursor(document, end);
+  }
+
+  function advanceNativeObjectCursor(document, target, objectRanges, previousEnd) {
+    // Direct M1-M3 compatibility helpers can be invoked without a run-owned
+    // cursor. Production plans always initialize one before native insertion.
+    if (!document || document._wpscRunOwnsAppendCursor !== true ||
+        !document._wpscAppendCursorRange) return target;
+    const candidates = [target].concat(objectRanges || []);
+    let end = previousEnd;
+    let advanced = false;
+    candidates.forEach(function (range) {
+      const start = range && range.Start;
+      const finish = range && range.End;
+      if (typeof start === "number" && typeof finish === "number" &&
+          Number.isInteger(start) && Number.isInteger(finish) &&
+          start >= 0 && start <= previousEnd && finish > previousEnd) {
+        end = Math.max(end, finish);
+        advanced = true;
+      }
+    });
+    if (!advanced) throw nativeError("CAPABILITY_MISMATCH");
+    return setAppendCursor(document, end);
+  }
+
+  function appendTargetEnd(document, target) {
+    if (!target || typeof target.Start !== "number" || typeof target.End !== "number" ||
+        !Number.isInteger(target.Start) || !Number.isInteger(target.End) ||
+        target.Start !== target.End) return null;
+    const cursor = appendCursorRange(document);
+    if (cursor) {
+      return target.Start === cursor.Start && target.End === cursor.End
+        ? cursor.End : null;
+    }
+    const state = authoritativeDocumentEnd(document);
+    return target.Start === state.position && target.End === state.position
+      ? state.position : null;
+  }
+
+  function authoritativeDocumentEnd(document) {
+    if (!document || typeof document.Range !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const trackedCursor = appendCursorRange(document);
+    const trackedPosition = trackedCursor ? trackedCursor.End : null;
+    const content = document.Content;
+    const rawContentEnd = content && typeof content.End === "number"
+      ? content.End : NaN;
+    const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd >= 0
+      ? Math.max(0, rawContentEnd - 1) : null;
+    let paragraphPosition = null;
+    let lastParagraph = null;
+    let lastParagraphStart = null;
+    let lastParagraphEnd = null;
+    const paragraphs = document.Paragraphs;
+    const count = Number(paragraphs && paragraphs.Count);
+    if (Number.isInteger(count) && count > 0 &&
+        (typeof paragraphs.Item === "function" || typeof paragraphs === "function")) {
+      const paragraph = collectionItem(paragraphs, count);
+      const paragraphRange = paragraph && paragraph.Range;
+      const paragraphStart = paragraphRange && typeof paragraphRange.Start === "number"
+        ? paragraphRange.Start : NaN;
+      const paragraphEnd = paragraphRange && typeof paragraphRange.End === "number"
+        ? paragraphRange.End : NaN;
+      if (!paragraphRange || !Number.isInteger(paragraphStart) ||
+          !Number.isInteger(paragraphEnd) || paragraphStart < 0 ||
+          paragraphEnd <= paragraphStart) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      paragraphPosition = paragraphEnd - 1;
+      lastParagraphStart = paragraphStart;
+      lastParagraphEnd = paragraphEnd;
+    }
+    if (trackedPosition === null && contentPosition === null && paragraphPosition === null) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    // Host collections are used only before the first tracked write. WPS can
+    // expose stale-ahead endpoints after rollback, so native insertions must
+    // explicitly resynchronize from the returned target/object Range.
+    const hostPosition = Math.max(
+      contentPosition === null ? 0 : contentPosition,
+      paragraphPosition === null ? 0 : paragraphPosition
+    );
+    const position = trackedPosition === null ? hostPosition : trackedPosition;
+    if (lastParagraphStart !== null) {
+      const textRange = exactDocumentRange(document, lastParagraphStart, position);
+      if (typeof textRange.Text !== "string") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const paragraphText = textRange.Text;
+      lastParagraph = {
+        start: lastParagraphStart,
+        end: lastParagraphEnd,
+        text: paragraphText,
+        signature: checkpointTextSignature(paragraphText)
+      };
+    }
+    const resultRange = trackedCursor || exactDocumentRange(document, position, position);
+    return {
+      position: position,
+      range: resultRange,
+      lastParagraph: lastParagraph
+    };
+  }
+
+  function documentContentText(document, failureCode) {
+    const content = document && document.Content;
+    if (!content || typeof content.Text !== "string") {
+      throw nativeError(failureCode || "CAPABILITY_MISMATCH");
+    }
+    return content.Text;
+  }
+
+  function optionalCollectionCount(collection, failureCode) {
+    if (!collection || collection.Count === undefined) return null;
+    const count = Number(collection.Count);
+    if (!Number.isInteger(count) || count < 0) throw nativeError(failureCode);
+    return count;
+  }
+
+  function commitSuccessfulHostAdvance(document, minimumEnd) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return;
+    const cursor = appendCursorRange(document);
+    if (!cursor || !Number.isInteger(minimumEnd)) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const content = document.Content;
+    const rawContentEnd = Number(content && content.End);
+    const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd >= 0
+      ? Math.max(0, rawContentEnd - 1) : null;
+    const candidate = contentPosition === null
+      ? minimumEnd : Math.max(minimumEnd, contentPosition);
+    exactDocumentRange(document, candidate, candidate);
+    setAppendCursor(document, candidate);
+  }
+
+  function endRange(document) {
+    if (document && typeof document.Range !== "function") {
+      const content = document.Content;
+      const rawEnd = content && typeof content.End === "number" ? content.End : NaN;
+      if (content && Number.isInteger(rawEnd) && rawEnd >= 0) return content;
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return authoritativeDocumentEnd(document).range;
+  }
+
+  function collectionItem(collection, index) {
+    if (collection && typeof collection.Item === "function") {
+      return collection.Item(index);
+    }
+    if (typeof collection === "function") {
+      return collection(index);
+    }
+    return null;
+  }
+
+  function documentOwnedSelection(document, expectedStart, expectedEnd) {
+    const activeWindow = document && document.ActiveWindow;
+    const selection = activeWindow && activeWindow.Selection;
+    const selectedRange = selection && selection.Range;
+    if (!selection || !selectedRange ||
+        Number(selectedRange.Start) !== expectedStart ||
+        Number(selectedRange.End) !== expectedEnd) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const owner = selection.Document || selectedRange.Document || selectedRange.Parent;
+    const targetName = document && document.Name;
+    const ownerName = owner && owner.Name;
+    if (owner !== document &&
+        (typeof targetName !== "string" || !targetName ||
+         typeof ownerName !== "string" || ownerName !== targetName)) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return selection;
+  }
+
+  function getStyle(document, name) {
+    if (!document.Styles) {
+      return null;
+    }
+    try {
+      if (typeof document.Styles.Item === "function") {
+        return document.Styles.Item(name);
+      }
+      if (typeof document.Styles === "function") {
+        return document.Styles(name);
+      }
+    } catch (error) {
+      return null;
+    }
+    return null;
+  }
+
+  function insertText(document, text, styleName, formatting) {
+    formatting = formatting || {};
+    const insertion = endRange(document);
+    const start = typeof insertion.Start === "number" ? insertion.Start : 0;
+    insertInlineText(document, String(text) + "\r", insertion);
+    let written = insertion;
+    if (typeof document.Range === "function") {
+      written = document.Range(start, start + String(text).length);
+    }
+    if (styleName) {
+      const style = getStyle(document, styleName);
+      if (style) {
+        written.Style = style;
+      }
+    }
+    applyFont(written.Font, formatting);
+    applyParagraphFormat(written.ParagraphFormat, formatting);
+    return { range: written, start: start };
+  }
+
+  function applyFont(font, args) {
+    if (!font) {
+      return;
+    }
+    setValue(font, "Name", args.fontName);
+    setValue(font, "NameFarEast", args.fontName);
+    setValue(font, "NameAscii", args.fontNameAscii || args.fontName);
+    setValue(font, "NameOther", args.fontNameAscii || args.fontName);
+    setValue(font, "Size", args.fontSize !== undefined ? args.fontSize : args.size);
+    setValue(font, "Bold", args.bold === undefined ? undefined : (args.bold ? -1 : 0));
+    setValue(font, "Italic", args.italic === undefined ? undefined : (args.italic ? -1 : 0));
+    setValue(font, "Underline", args.underline === undefined ? undefined : (args.underline ? 1 : 0));
+    setValue(font, "Color", colorFromHex(args.color));
+  }
+
+  function applyParagraphFormat(format, args) {
+    if (!format) {
+      return;
+    }
+    const alignments = { left: 0, center: 1, right: 2, justified: 3 };
+    const alignValue = args.align;
+    if (alignValue !== undefined) {
+      setValue(format, "Alignment", typeof alignValue === "string" ? alignments[alignValue] : alignValue);
+    }
+    setValue(format, "FirstLineIndent", args.indentFirst);
+    setValue(format, "LeftIndent", args.leftIndent);
+    setValue(format, "RightIndent", args.rightIndent);
+    setValue(format, "LineSpacing", args.lineSpacing);
+    if (args.lineSpacingRule !== undefined) {
+      const rules = { single: 0, one_and_half: 1, double: 2, at_least: 3, exact: 4, multiple: 5 };
+      setValue(format, "LineSpacingRule", hasOwn(rules, args.lineSpacingRule) ? rules[args.lineSpacingRule] : args.lineSpacingRule);
+    }
+    setValue(format, "SpaceBefore", args.spaceBefore);
+    setValue(format, "SpaceAfter", args.spaceAfter);
+    setValue(format, "KeepTogether", args.keepTogether);
+    setValue(format, "KeepWithNext", args.keepWithNext);
+    setValue(format, "OutlineLevel", args.outlineLevel);
+  }
+
+  let activeHeadingTemplates = Object.create(null);
+
+  function resetDocument(document) {
+    activeHeadingTemplates = Object.create(null);
+    document.Content.Text = "";
+    if (typeof document.Range === "function") setAppendCursor(document, 0);
+  }
+
+  function configurePage(document, args) {
+    const setup = document.PageSetup;
+    setValue(setup, "TopMargin", args.marginTop);
+    setValue(setup, "BottomMargin", args.marginBottom);
+    setValue(setup, "LeftMargin", args.marginLeft);
+    setValue(setup, "RightMargin", args.marginRight);
+    setValue(setup, "PageWidth", args.pageWidth);
+    setValue(setup, "PageHeight", args.pageHeight);
+    setValue(setup, "Orientation", args.landscape === undefined ? undefined : (args.landscape ? 1 : 0));
+  }
+
+  function setDocumentMetadata(document, args) {
+    const properties = document && document.BuiltInDocumentProperties;
+    const title = collectionItem(properties, "Title");
+    const author = collectionItem(properties, "Author");
+    if (!title || !author) throw nativeError("CAPABILITY_MISMATCH");
+    try {
+      title.Value = safePublicText(args.title || "");
+      // Always write Author, including the empty string, so WPS cannot export
+      // the signed-in host identity into a customer-facing PDF.
+      author.Value = safePublicText(args.author || "");
+    } catch (error) {
+      throw nativeError("EXECUTION_ABORTED");
+    }
+  }
+
+  function ensureStyles(document, args) {
+    const styles = args.styles || [];
+    styles.forEach(function (definition) {
+      let style = null;
+      try {
+        style = getStyle(document, definition.name);
+      } catch (error) {
+        style = null;
+      }
+      if (!style && document.Styles && typeof document.Styles.Add === "function") {
+        try {
+          style = document.Styles.Add(definition.name, definition.type === "character" ? 2 : 1);
+        } catch (error) {
+          style = null;
+        }
+      }
+      if (!style) {
+        return;
+      }
+      if (definition.basedOn !== undefined) {
+        const base = getStyle(document, definition.basedOn);
+        try {
+          style.BaseStyle = base || definition.basedOn;
+        } catch (error) {
+          // ignore
+        }
+      }
+      applyFont(style.Font, definition);
+      applyParagraphFormat(style.ParagraphFormat, definition);
+    });
+  }
+
+  function addParagraph(document, args) {
+    insertText(document, args.text, args.style, args);
+  }
+
+  function addHeading(document, args) {
+    const styleName = args.style || ("Heading " + args.level);
+    return insertText(document, args.text, styleName, args);
+  }
+
+  function unnumberedHeadingStyle(document, level, sequenceTransparent) {
+    const name = (sequenceTransparent ? "WPSC Sequence Transparent Heading " : "WPSC Unnumbered Heading ") + level;
+    let style = null;
+    try { style = getStyle(document, name); } catch (error) { style = null; }
+    if (!style && document.Styles && typeof document.Styles.Add === "function") {
+      style = document.Styles.Add(name, 1);
+      const source = getStyle(document, "Heading " + level);
+      if (source && source.Font && style.Font) {
+        style.Font.Name = source.Font.Name;
+        style.Font.NameFarEast = source.Font.NameFarEast;
+        style.Font.NameAscii = source.Font.NameAscii;
+        style.Font.Size = source.Font.Size;
+        style.Font.Bold = source.Font.Bold;
+      }
+      // SEQ \\s 1 resets on any outline-level-1 paragraph, even if that
+      // paragraph has no list number. Explicit sequence-transparent headings
+      // keep the H1 visual treatment but use body outline; ordinary globally
+      // unnumbered headings remain outline-visible for TOC population.
+      style.ParagraphFormat.OutlineLevel = sequenceTransparent ? 10 : level;
+    }
+    return name;
+  }
+
+  function headingListTemplate(document, scheme) {
+    if (activeHeadingTemplates[scheme]) return activeHeadingTemplates[scheme];
+    const safeScheme = String(scheme || "decimal").replace(/[^a-z0-9_-]/gi, "_");
+    const template = document.ListTemplates.Add(true, "wpsc_m3_" + safeScheme);
+    const formats = scheme === "chinese-formal"
+      ? ["第%1章", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"]
+      : ["%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"];
+    for (let level = 1; level <= 4; level += 1) {
+      const listLevel = collectionItem(template.ListLevels, level);
+      listLevel.NumberFormat = formats[level - 1];
+      listLevel.NumberStyle = scheme === "chinese-formal" && level === 1 ? 37 : 0;
+      listLevel.NumberPosition = (level - 1) * 18;
+      listLevel.TextPosition = level * 18;
+      listLevel.ResetOnHigher = level === 1 ? 0 : level - 1;
+      listLevel.StartAt = 1;
+    }
+    linkHeadingStyles(document, template);
+    activeHeadingTemplates[scheme] = template;
+    return template;
+  }
+
+  function linkHeadingStyles(document, template) {
+    for (let level = 1; level <= 4; level += 1) {
+      const style = collectionItem(document.Styles, -1 - level);
+      if (!style || typeof style.LinkToListTemplate !== "function") {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      style.LinkToListTemplate(template, level);
+    }
+  }
+
+  function addHeadingNative(document, args) {
+    function persistHeadingBookmark(range) {
+      if (args.bookmarkName === undefined || args.bookmarkName === null) return;
+      if (!/^wpsc_head_[0-9a-f]{24}$/.test(args.bookmarkName) ||
+          !document.Bookmarks || typeof document.Bookmarks.Add !== "function") {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      document.Bookmarks.Add(args.bookmarkName, range);
+    }
+    if (!args.numbering) {
+      const styleName = unnumberedHeadingStyle(document, args.level, args.sequenceTransparent === true);
+      const inserted = insertText(document, args.text, styleName, args);
+      if (args.keepWithNext === true && inserted.range && inserted.range.ParagraphFormat) {
+        inserted.range.ParagraphFormat.KeepWithNext = -1;
+      }
+      document._wpscLastHeadingStart = safeNumber(inserted.range && inserted.range.Start, -1);
+      persistHeadingBookmark(inserted.range);
+      return;
+    }
+    const levelIndex = safeNumber(args.level, 1);
+    try {
+      const template = headingListTemplate(document, args.numberingScheme || "decimal");
+      const inserted = addHeading(document, args);
+      if (args.keepWithNext === true && inserted.range && inserted.range.ParagraphFormat) {
+        inserted.range.ParagraphFormat.KeepWithNext = -1;
+      }
+      const builtInStyle = collectionItem(document.Styles, -1 - levelIndex);
+      if (builtInStyle) inserted.range.Style = builtInStyle;
+      inserted.range.ListFormat.ListLevelNumber = levelIndex;
+      if (!String(inserted.range.ListFormat.ListString || "").replace(/\s+/g, "")) {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      document._wpscLastHeadingStart = safeNumber(inserted.range && inserted.range.Start, -1);
+      persistHeadingBookmark(inserted.range);
+    } catch (error) {
+      throw nativeError("EXECUTION_ABORTED");
+    }
+  }
+
+  function addList(document, args) {
+    const items = args.items || [];
+    const ordered = !!args.ordered;
+    items.forEach(function (item, index) {
+      const prefix = ordered ? (index + 1) + ".\t" : (args.glyph || "\u2022") + "\t";
+      const formatting = {
+        leftIndent: args.indent === undefined ? 24 : args.indent,
+        indentFirst: -(args.indent === undefined ? 24 : args.indent)
+      };
+      insertText(document, prefix + item, "List Paragraph", formatting);
+    });
+  }
+
+  function insertDocumentBreak(document, breakType) {
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    if (previousEnd === null || typeof target.InsertBreak !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    target.InsertBreak(breakType);
+    advanceAppendCursor(document, target, previousEnd + 1, [], previousEnd);
+  }
+
+  function configureSection(document, args) {
+    const first = !document._wpscFirstSectionConfigured;
+    if (!first) {
+      insertDocumentBreak(document, 2);
+    }
+    document._wpscFirstSectionConfigured = true;
+
+    const setup = currentSectionPageSetup(document);
+    // Historic plans only mark landscape sections.  Resolve an omitted value
+    // to portrait here so the prior section's orientation cannot leak.
+    setValue(setup, "Orientation", args.landscape ? 1 : 0);
+    if (args.margins) {
+      setValue(setup, "TopMargin", args.margins.top);
+      setValue(setup, "BottomMargin", args.margins.bottom);
+      setValue(setup, "LeftMargin", args.margins.left);
+      setValue(setup, "RightMargin", args.margins.right);
+    }
+
+    setPageRole(document, args.role || "body");
+    setHeaderFooter(document, {
+      headerText: args.headerText,
+      footerText: args.footerText,
+      linkToPreviousHeader: args.linkToPreviousHeader,
+      linkToPreviousFooter: args.linkToPreviousFooter
+    });
+    setPageNumbering(document, {
+      format: args.pageNumberFormat || "continue",
+      start: args.startPageNumber,
+      restart: args.restartPageNumbering
+    });
+    const front = document._wpscFrontMatter || {};
+    if (args.role === "cover" && front.titlePage) {
+      insertText(document, front.title || "", "Title", {
+        align: "center", size: 24, bold: true, spaceAfter: 24
+      });
+      if (front.author) insertText(document, front.author, "Body Text", {align: "center", size: 14});
+      if (front.date) insertText(document, front.date, "Body Text", {align: "center", size: 12});
+    }
+  }
+
+  function setPageRole(document, role) {
+    try {
+      const section = collectionItem(document.Sections, document.Sections.Count);
+      if (section && section.Range && section.Range.DocumentVariables && typeof section.Range.DocumentVariables.Add === "function") {
+        section.Range.DocumentVariables.Add("WpsComposerSectionRole_" + document.Sections.Count, String(role));
+      }
+    } catch (error) {
+      // ignore
+    }
+  }
+
+  function setPageNumbering(document, args) {
+    try {
+      const section = collectionItem(document.Sections, document.Sections.Count);
+      const footer = collectionItem(section.Footers, 1);
+      const pageNumbers = footer.PageNumbers;
+      if (args.restart !== undefined) {
+        pageNumbers.RestartNumberingAtSection = args.restart ? -1 : 0;
+      }
+      if (args.start !== undefined && args.start !== null) {
+        pageNumbers.StartingNumber = safeNumber(args.start, 1);
+      }
+      const styleMap = { none: 0, roman: 2, arabic: 0, continue: 0 };
+      if (args.format in styleMap) {
+        pageNumbers.NumberStyle = styleMap[args.format];
+      }
+      if (args.format === "none") {
+        footer.Range.Text = "";
+      } else {
+        try {
+          if (footer.Range.ParagraphFormat) footer.Range.ParagraphFormat.Alignment = 1;
+          footer.Range.Collapse(0);
+          footer.Range.Fields.Add(footer.Range, 33);
+        } catch (error) {
+          throw nativeError("FIELD_REFRESH_FAILED");
+        }
+      }
+    } catch (error) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+  }
+
+  function setHeaderFooter(document, args) {
+    try {
+      const section = collectionItem(document.Sections, document.Sections.Count);
+      const header = collectionItem(section.Headers, 1);
+      const footer = collectionItem(section.Footers, 1);
+      if (args.linkToPreviousHeader !== undefined) {
+        try {
+          header.LinkToPrevious = args.linkToPreviousHeader ? -1 : 0;
+        } catch (error) {
+          // ignore
+        }
+      }
+      if (args.linkToPreviousFooter !== undefined) {
+        try {
+          footer.LinkToPrevious = args.linkToPreviousFooter ? -1 : 0;
+        } catch (error) {
+          // ignore
+        }
+      }
+      if (args.headerText !== undefined && args.headerText !== null) {
+        header.Range.Text = String(args.headerText);
+        try {
+          header.Range.ParagraphFormat.Alignment = 1;
+          header.Range.ParagraphFormat.Borders(-3).LineStyle = 1;
+          header.Range.ParagraphFormat.Borders(-3).LineWidth = 6;
+          header.Range.ParagraphFormat.Borders(-3).Color = 0;
+        } catch (error) {
+          // ignore
+        }
+      }
+      if (args.footerText !== undefined && args.footerText !== null) {
+        if (String(args.footerText) !== "") {
+          footer.Range.Text = String(args.footerText);
+        }
+      }
+    } catch (error) {
+      // ignore
+    }
+  }
+
+  function insertTocWithStyles(document, args, resources, context) {
+    void resources;
+    const density = args.density || document._wpscTocDensity || {};
+    let toc;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    try {
+      toc = document.TablesOfContents.Add(target, true, 1, args.levels || 3);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [toc && toc.Range], previousEnd
+        );
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    trackNativeField(
+      document,
+      context && context.ownerNodeId ? context.ownerNodeId : "doc:toc",
+      "TOC",
+      toc,
+      "index"
+    );
+    ["toc1", "toc2", "toc3"].forEach(function (key, index) {
+      try {
+        const style = getStyle(document, "TOC " + (index + 1));
+        if (!style) {
+          return;
+        }
+        const minFont = density.minFontSizePt && density.minFontSizePt[key];
+        if (minFont !== undefined && minFont !== null) {
+          style.Font.Size = safeNumber(minFont, style.Font.Size);
+        }
+        const minBefore = density.minSpaceBeforePt && density.minSpaceBeforePt[key];
+        if (minBefore !== undefined && minBefore !== null) {
+          style.ParagraphFormat.SpaceBefore = safeNumber(minBefore, 0);
+        }
+        const minAfter = density.minSpaceAfterPt && density.minSpaceAfterPt[key];
+        if (minAfter !== undefined && minAfter !== null) {
+          style.ParagraphFormat.SpaceAfter = safeNumber(minAfter, 0);
+        }
+      } catch (error) {
+        // ignore
+      }
+    });
+  }
+
+  function nativeError(code) {
+    const error = new Error(code);
+    error.code = code;
+    return error;
+  }
+
+  function recoveryDecision(code, fallbackKind, placement) {
+    const branches = WPSCOMPOSER_RECOVERY_MATRIX[code];
+    const rule = branches && branches[fallbackKind];
+    if (!rule || rule.placement !== placement) {
+      throw nativeError(typeof code === "string" && code ? code : "EXECUTION_FAILED");
+    }
+    return {
+      code: code,
+      recoverable: true,
+      placement: placement,
+      fallbackKind: fallbackKind,
+      fallbackAttempts: rule.fallbackAttempts
+    };
+  }
+
+  function createLocalRecoveryController() {
+    return {byIdentity: Object.create(null), decisions: []};
+  }
+
+  function runLocalRecovery(controller, spec) {
+    if (!controller || !spec || !spec.descriptor) {
+      throw nativeError("CONFIGURATION_INVALID");
+    }
+    const descriptor = spec.descriptor;
+    const identity = safeString(spec.nodeId) + "\u0000" + safeString(descriptor.code);
+    if (controller.byIdentity[identity]) return controller.byIdentity[identity];
+
+    let checkpoint;
+    try { checkpoint = spec.checkpoint(); }
+    catch (error) { throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED"); }
+
+    let nativeCode = null;
+    try {
+      spec.nativeAttempt();
+      return {
+        code: descriptor.code,
+        recoverable: false,
+        placement: descriptor.placement,
+        fallbackKind: descriptor.fallbackKind,
+        fallbackAttempts: 0
+      };
+    } catch (error) {
+      nativeCode = error && typeof error.code === "string" ? error.code : "EXECUTION_FAILED";
+    }
+    return recoverLocalFailure(controller, spec, checkpoint, nativeCode);
+  }
+
+  function recoverLocalFailure(controller, spec, checkpoint, nativeCode) {
+    const descriptor = spec.descriptor;
+    const identity = safeString(spec.nodeId) + "\u0000" + safeString(descriptor.code);
+    if (controller.byIdentity[identity]) return controller.byIdentity[identity];
+    if (nativeCode !== descriptor.code) throw nativeError(nativeCode);
+    const decision = recoveryDecision(nativeCode, descriptor.fallbackKind, descriptor.placement);
+    try { spec.rollback(checkpoint); }
+    catch (error) { throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED"); }
+    try { spec.fallbackAttempt(descriptor); }
+    catch (error) {
+      if (error && error._wpscPreserveFallbackFatal === true) throw error;
+      throw nativeError("DEGRADATION_FALLBACK_FAILED");
+    }
+    try { spec.insertNotice(safeString(spec.nodeId), descriptor); }
+    catch (error) { throw nativeError("DEGRADATION_INSERT_FAILED"); }
+
+    controller.byIdentity[identity] = decision;
+    controller.decisions.push(decision);
+    return decision;
+  }
+
+  function preserveFallbackFatal(error) {
+    const failure = error && typeof error === "object"
+      ? error : nativeError("EXECUTION_ABORTED");
+    failure._wpscPreserveFallbackFatal = true;
+    return failure;
+  }
+
+  function currentPosition(document) {
+    const range = endRange(document);
+    return safeNumber(range && range.Start, safeNumber(range && range.End, 0));
+  }
+
+  function insertInlineText(document, value, targetRange, requireAdvance) {
+    const text = safeString(value);
+    const range = targetRange || endRange(document);
+    const cursor = appendCursorRange(document);
+    const beforeStart = Number(range && range.Start);
+    const beforeEnd = Number(range && range.End);
+    const appending = !targetRange || !cursor ||
+      (beforeStart === cursor.Start && beforeEnd === cursor.End);
+    if (!Number.isInteger(beforeStart) || !Number.isInteger(beforeEnd) ||
+        beforeStart < 0 || beforeEnd < beforeStart) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (typeof range.InsertAfter === "function") range.InsertAfter(text);
+    else range.Text = text;
+    if (appending) {
+      const actualEnd = Number(range.End);
+      if (requireAdvance === true &&
+          document && document._wpscRunOwnsAppendCursor === true &&
+          (!Number.isInteger(actualEnd) || actualEnd < beforeEnd + text.length)) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      advanceAppendCursor(document, range, beforeEnd + text.length, [], beforeEnd);
+      if (text.indexOf("\r") >= 0) {
+        flushPendingDegradationStyles(document, currentPosition(document));
+      }
+    }
+    return range;
+  }
+
+  function nativeFields(document) {
+    if (!Array.isArray(document._wpscNativeFields)) document._wpscNativeFields = [];
+    return document._wpscNativeFields;
+  }
+
+  function pendingDegradationStyles(document) {
+    if (!Array.isArray(document._wpscPendingDegradationStyles)) {
+      document._wpscPendingDegradationStyles = [];
+    }
+    return document._wpscPendingDegradationStyles;
+  }
+
+  function queueDegradationStyle(document, start, end) {
+    if (!Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end <= start) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const written = exactDocumentRange(document, start, end);
+    const font = written && written.Font;
+    const shading = written && written.Shading;
+    const originalStyle = {
+      italic: degradationStyleScalar(document, font, "Italic"),
+      color: degradationStyleScalar(document, font, "Color"),
+      background: degradationStyleScalar(
+        document, shading, "BackgroundPatternColor"
+      )
+    };
+    pendingDegradationStyles(document).push({
+      start: start, end: end, originalStyle: originalStyle
+    });
+  }
+
+  function styleExactDegradationSpan(document, span) {
+    const written = exactDocumentRange(document, span.start, span.end);
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (typeof written.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      written.Select();
+      documentOwnedSelection(document, span.start, span.end);
+    }
+    if (!written.Font || !written.Shading) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    written.Font.Italic = -1;
+    written.Font.Color = colorFromHex("#9C0006");
+    written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+    return written;
+  }
+
+  function restoreExactDegradationSpan(document, span) {
+    const written = exactDocumentRange(document, span.start, span.end);
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (typeof written.Select !== "function") {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      written.Select();
+      documentOwnedSelection(document, span.start, span.end);
+    }
+    const style = span.originalStyle || {};
+    if (!written.Font || !written.Shading ||
+        style.italic === undefined || style.color === undefined ||
+        style.background === undefined) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    written.Font.Italic = style.italic;
+    written.Font.Color = style.color;
+    written.Shading.BackgroundPatternColor = style.background;
+  }
+
+  function copyPendingDegradationStyles(document) {
+    return pendingDegradationStyles(document).map(function (span) {
+      return {
+        start: span.start,
+        end: span.end,
+        originalStyle: {
+          italic: span.originalStyle.italic,
+          color: span.originalStyle.color,
+          background: span.originalStyle.background
+        }
+      };
+    });
+  }
+
+  function flushPendingDegradationStyles(document, rawBoundaryEnd) {
+    const boundaryEnd = Number(rawBoundaryEnd);
+    if (!Number.isInteger(boundaryEnd) || boundaryEnd < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const pending = pendingDegradationStyles(document);
+    const ready = [];
+    const later = [];
+    pending.forEach(function (span) {
+      (span.end <= boundaryEnd ? ready : later).push(span);
+    });
+    ready.forEach(function (span) {
+      styleExactDegradationSpan(document, span);
+    });
+    pending.length = 0;
+    later.forEach(function (span) { pending.push(span); });
+    if (ready.length > 0 && document._wpscRunOwnsAppendCursor === true) {
+      const cursor = exactDocumentRange(document, boundaryEnd, boundaryEnd);
+      if (typeof cursor.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      cursor.Select();
+      documentOwnedSelection(document, boundaryEnd, boundaryEnd);
+    }
+  }
+
+  function trackNativeField(document, ownerNodeId, fieldKind, native, category) {
+    nativeFields(document).push({
+      ownerNodeId: ownerNodeId || "doc:native",
+      fieldKind: fieldKind,
+      native: native,
+      category: category
+    });
+    return native;
+  }
+
+  function expectedReferenceFieldDelta(document, bookmarkName) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) return 1;
+    const bookmarks = document.Bookmarks;
+    if (!bookmarks || typeof bookmarks.Exists !== "function" ||
+        typeof bookmarks.Item !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (!bookmarks.Exists(bookmarkName)) {
+      throw nativeError("CROSS_REFERENCE_FAILED");
+    }
+    const bookmark = collectionItem(bookmarks, bookmarkName);
+    const sourceFields = bookmark && bookmark.Range && bookmark.Range.Fields;
+    const count = Number(sourceFields && sourceFields.Count);
+    if (count !== 1 && count !== 2) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return count;
+  }
+
+  function addNativeField(
+    document, code, ownerNodeId, fieldKind, category, failureCode, expectedCountDelta
+  ) {
+    let field;
+    const target = endRange(document);
+    const start = target.End;
+    const contentEndBefore = Number(document.Content && document.Content.End) - 1;
+    const beforeCount = Number(document.Fields && document.Fields.Count);
+    const countDelta = expectedCountDelta === undefined ? 1 : Number(expectedCountDelta);
+    if (!Number.isInteger(countDelta) || countDelta < 1 || countDelta > 2) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const strictProof = document._wpscRunOwnsAppendCursor === true &&
+      Number.isInteger(beforeCount) && beforeCount >= 0;
+    if (document._wpscRunOwnsAppendCursor === true && document.ActiveWindow) {
+      if (typeof target.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      target.Select();
+      documentOwnedSelection(document, start, start);
+    }
+    try {
+      field = document.Fields.Add(target, -1, code, true);
+    } catch (error) {
+      if (document._wpscRunOwnsAppendCursor === true) {
+        const targetStartAfter = Number(target && target.Start);
+        const targetEndAfter = Number(target && target.End);
+        const countAfter = Number(document.Fields && document.Fields.Count);
+        const rawContentEndAfter = Number(document.Content && document.Content.End);
+        const contentEndAfter = Number.isInteger(rawContentEndAfter) && rawContentEndAfter > 0
+          ? rawContentEndAfter - 1 : null;
+        const targetProvesMutation = targetStartAfter === start &&
+          Number.isInteger(targetEndAfter) && targetEndAfter > start;
+        const hostMayHaveMutated = targetProvesMutation ||
+          (Number.isInteger(beforeCount) && Number.isInteger(countAfter) &&
+            countAfter !== beforeCount) ||
+          (Number.isInteger(contentEndBefore) && contentEndAfter !== null &&
+            contentEndAfter > contentEndBefore);
+        if (targetProvesMutation) {
+          try {
+            exactDocumentRange(document, start, targetEndAfter);
+            setAppendCursor(document, targetEndAfter);
+          } catch (proofError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+        } else if (hostMayHaveMutated) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+      } else {
+        // Historical direct helpers expose their caller-declared degradation
+        // code; only production run-owned plans enforce the closed fatal code.
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+      const errorCode = error && typeof error.code === "string" &&
+        /^[A-Z][A-Z0-9_]{2,63}$/.test(error.code)
+        ? error.code : "EXECUTION_ABORTED";
+      throw nativeError(errorCode);
+    }
+    const result = field && field.Result;
+    const resultText = result && typeof result.Text === "string" ? result.Text : "";
+    if (strictProof) {
+      const afterCount = Number(document.Fields.Count);
+      const fieldRange = field && field.Range;
+      const proofRanges = [result, fieldRange];
+      const content = document.Content;
+      const rawContentEnd = Number(content && content.End);
+      const contentPosition = Number.isInteger(rawContentEnd) && rawContentEnd > 0
+        ? rawContentEnd - 1 : null;
+      const hasBoundedField = proofRanges.some(function (range) {
+        const proofStart = Number(range && range.Start);
+        const proofEnd = Number(range && range.End);
+        return Number.isInteger(proofStart) && Number.isInteger(proofEnd) &&
+          proofStart >= start && proofEnd > proofStart &&
+          contentPosition !== null && proofEnd <= contentPosition;
+      });
+      const validField = afterCount === beforeCount + countDelta && hasBoundedField &&
+        Boolean(resultText) && contentPosition !== null && contentPosition > start &&
+        Number.isInteger(contentEndBefore) && contentPosition > contentEndBefore;
+      if (!validField) {
+        const returnedFieldProvesInsertion = Boolean(field) &&
+          afterCount === beforeCount + countDelta && contentPosition !== null &&
+          contentPosition > start && Number.isInteger(contentEndBefore) &&
+          contentPosition > contentEndBefore;
+        if (returnedFieldProvesInsertion) {
+          try {
+            exactDocumentRange(document, start, contentPosition);
+            setAppendCursor(document, contentPosition);
+          } catch (proofError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+        } else if (afterCount !== beforeCount ||
+                   (contentPosition !== null && Number.isInteger(contentEndBefore) &&
+                    contentPosition > contentEndBefore)) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+      try {
+        exactDocumentRange(document, contentPosition, contentPosition);
+        setAppendCursor(document, contentPosition);
+      } catch (error) {
+        throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+      }
+      return trackNativeField(document, ownerNodeId, fieldKind, field, category);
+    }
+    try {
+      advanceAppendCursor(
+        document, target, start + resultText.length,
+        [result, field && field.Range], start
+      );
+    } catch (error) {
+      throw nativeError(failureCode || "FIELD_REFRESH_FAILED");
+    }
+    return trackNativeField(document, ownerNodeId, fieldKind, field, category);
+  }
+
+  function validateNumbering(numbering) {
+    if (!numbering || !hasOwn(NATIVE_SEQUENCE_KIND, numbering.sequenceId)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (numbering.mode !== "global" && numbering.mode !== "chapter") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (numbering.mode === "chapter" &&
+        (numbering.chapterStyleLevel !== 1 || numbering.resetLevel !== 1)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+  }
+
+  function nativeHeadingStyleName(document, level) {
+    const style = collectionItem(document.Styles, -1 - level);
+    const name = style && (style.NameLocal || style.Name);
+    if (typeof name !== "string" || !name || name.indexOf('"') !== -1) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return name;
+  }
+
+  function addNativeNumberShell(
+    document, numbering, bookmarkName, ownerNodeId, requireAdvance
+  ) {
+    validateNumbering(numbering);
+    insertInlineText(document, numbering.prefix, null, requireAdvance);
+    const numberStart = currentPosition(document);
+    if (numbering.mode === "chapter") {
+      // WPS for macOS interprets numeric STYLEREF style arguments as literal
+      // style names. Translate the closed level-1 descriptor to the stable
+      // built-in English style ID used by this executor.
+      // WPS field lookup uses the localized UI name even though styles.xml
+      // persists an English built-in name. Resolve the locale-independent
+      // built-in style (-2 for H1), then emit its NameLocal at runtime.
+      const headingStyle = nativeHeadingStyleName(document, 1);
+      addNativeField(document, 'STYLEREF "' + headingStyle + '" \\s', ownerNodeId, "STYLEREF", "numbering");
+      insertInlineText(document, "-", null, requireAdvance);
+    }
+    const sequenceCode = "SEQ " + numbering.sequenceId + " \\* ARABIC" +
+      (numbering.mode === "chapter" ? " \\s 1" : "");
+    addNativeField(
+      document,
+      sequenceCode,
+      ownerNodeId,
+      NATIVE_SEQUENCE_KIND[numbering.sequenceId],
+      "numbering"
+    );
+    const numberEnd = currentPosition(document);
+    if (bookmarkName !== undefined && bookmarkName !== null) {
+      if (!/^wpsc_(fig|tab|eq)_[a-z0-9]{24}$/.test(bookmarkName)) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+      try {
+        document.Bookmarks.Add(bookmarkName, document.Range(numberStart, numberEnd));
+      } catch (error) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+    }
+    if (numbering.suffix) {
+      insertInlineText(document, numbering.suffix, null, requireAdvance);
+    }
+    return {start: numberStart, end: numberEnd};
+  }
+
+  function addNativeCaption(document, args, ownerNodeId, keepWithNext) {
+    const start = currentPosition(document);
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, ownerNodeId);
+    if (args.caption) insertInlineText(document, " " + safeString(args.caption));
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 1;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+      paragraph.ParagraphFormat.KeepWithNext = keepWithNext ? -1 : 0;
+    }
+    insertInlineText(document, "\r");
+    return paragraph;
+  }
+
+  function paragraphCount(document) {
+    const count = Number(document && document.Paragraphs && document.Paragraphs.Count);
+    return Number.isInteger(count) && count > 0 ? count : null;
+  }
+
+  function paragraphSafeRollbackToken(document, state, countKeys) {
+    const count = paragraphCount(document);
+    if (count === null || !state || !Number.isInteger(state.position)) {
+      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    }
+    const contentText = documentContentText(
+      document, "LOCAL_MUTATION_CHECKPOINT_FAILED"
+    );
+    const counts = {};
+    (countKeys || []).forEach(function (key) {
+      const collections = {
+        omaths: "OMaths", inlineShapes: "InlineShapes",
+        tables: "Tables", fields: "Fields", bookmarks: "Bookmarks"
+      };
+      counts[key] = optionalCollectionCount(
+        document[collections[key]], "LOCAL_MUTATION_CHECKPOINT_FAILED"
+      );
+    });
+    return {
+      start: state.position,
+      anchorRange: exactDocumentRange(document, state.position, state.position),
+      paragraphCount: count,
+      preserveParagraphBoundary: true,
+      contentText: contentText,
+      contentSignature: checkpointTextSignature(contentText),
+      collectionCounts: counts,
+      nativeFieldCount: nativeFields(document).length,
+      pendingDegradationSnapshot: copyPendingDegradationStyles(document)
+    };
+  }
+
+  function lightweightRollbackToken(document, state) {
+    return {
+      start: state.position,
+      anchorRange: exactDocumentRange(document, state.position, state.position),
+      preserveParagraphBoundary: false,
+      pendingDegradationSnapshot: copyPendingDegradationStyles(document)
+    };
+  }
+
+  function validateRollbackSnapshot(document, token) {
+    const restored = documentContentText(document, "LOCAL_MUTATION_ROLLBACK_FAILED");
+    if (restored !== token.contentText ||
+        checkpointTextSignature(restored) !== token.contentSignature ||
+        paragraphCount(document) !== token.paragraphCount) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    const expected = token.collectionCounts || {};
+    [
+      ["omaths", document.OMaths],
+      ["inlineShapes", document.InlineShapes],
+      ["tables", document.Tables],
+      ["fields", document.Fields],
+      ["bookmarks", document.Bookmarks]
+    ].forEach(function (item) {
+      if (hasOwn(expected, item[0]) && expected[item[0]] !== null &&
+          optionalCollectionCount(item[1], "LOCAL_MUTATION_ROLLBACK_FAILED") !==
+            expected[item[0]]) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+    });
+  }
+
+  function rollbackMutation(document, checkpoint, end) {
+    const token = checkpoint && typeof checkpoint === "object" ? checkpoint : null;
+    const anchor = token && token.anchorRange;
+    const start = token ? Number(anchor && anchor.Start) : Number(checkpoint);
+    try {
+      const stop = end === undefined ? currentPosition(document) : safeNumber(end, start);
+      if (!Number.isInteger(start) || start < 0 ||
+          !Number.isInteger(stop) || stop < start) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      if (stop > start) document.Range(start, stop).Delete();
+      setAppendCursor(document, start);
+      if (token && token.preserveParagraphBoundary === true) {
+        validateRollbackSnapshot(document, token);
+        const tracked = document._wpscNativeFields;
+        if (!Array.isArray(tracked) ||
+            !Number.isInteger(token.nativeFieldCount) ||
+            tracked.length < token.nativeFieldCount) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        tracked.length = token.nativeFieldCount;
+      }
+      if (token) {
+        const snapshot = token.pendingDegradationSnapshot;
+        if (!Array.isArray(snapshot)) {
+          throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+        }
+        snapshot.forEach(function (span) {
+          restoreExactDegradationSpan(document, span);
+        });
+        const pending = pendingDegradationStyles(document);
+        pending.length = 0;
+        snapshot.forEach(function (span) { pending.push(span); });
+        if (snapshot.length > 0 &&
+            document._wpscRunOwnsAppendCursor === true) {
+          const cursor = exactDocumentRange(document, start, start);
+          if (typeof cursor.Select !== "function") {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+          cursor.Select();
+          documentOwnedSelection(document, start, start);
+        }
+      }
+    } catch (error) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+  }
+
+  function rollbackNativeInsertion(document, checkpoint, target, objectRanges) {
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      rollbackMutation(document, checkpoint);
+      return;
+    }
+    const start = checkpoint && typeof checkpoint === "object"
+      ? Number(checkpoint.start) : Number(checkpoint);
+    if (!Number.isInteger(start) || start < 0) {
+      throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    }
+    const candidates = [target].concat(objectRanges || []);
+    let stop = null;
+    candidates.forEach(function (range) {
+      const candidateStart = Number(range && range.Start);
+      const candidateEnd = Number(range && range.End);
+      if (Number.isInteger(candidateStart) && Number.isInteger(candidateEnd) &&
+          candidateStart >= 0 && candidateEnd >= candidateStart &&
+          candidateEnd >= start) {
+        stop = stop === null ? candidateEnd : Math.max(stop, candidateEnd);
+      }
+    });
+    if (stop === null) throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+    rollbackMutation(document, checkpoint, stop);
+  }
+
+  function checkpointRecoverableMutation(
+    document, preserveParagraphBoundary, countKeys
+  ) {
+    try {
+      if (!document || typeof document.Range !== "function") {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      const state = authoritativeDocumentEnd(document);
+      const checkpointRange = state.range;
+      if (!checkpointRange || typeof checkpointRange.Delete !== "function") {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      const start = Number(checkpointRange.Start);
+      if (!Number.isInteger(start) || start < 0 || start !== state.position) {
+        throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+      }
+      return preserveParagraphBoundary
+        ? paragraphSafeRollbackToken(document, state, countKeys)
+        : lightweightRollbackToken(document, state);
+    } catch (error) {
+      throw nativeError("LOCAL_MUTATION_CHECKPOINT_FAILED");
+    }
+  }
+
+  function setLastSectionOrientation(document, landscape) {
+    const sections = document.Sections;
+    const section = sections ? collectionItem(sections, sections.Count) : null;
+    const setup = section && section.PageSetup ? section.PageSetup : document.PageSetup;
+    if (!setup) throw nativeError("EXECUTION_ABORTED");
+    setup.Orientation = landscape ? 1 : 0;
+  }
+
+  function currentSectionPageSetup(document) {
+    const sections = document && document.Sections;
+    const section = sections ? collectionItem(sections, sections.Count) : null;
+    return section && section.PageSetup ? section.PageSetup : document.PageSetup;
+  }
+
+  function currentSectionIsLandscape(document) {
+    const setup = currentSectionPageSetup(document);
+    return safeNumber(setup && setup.Orientation, 0) === 1;
+  }
+
+  function addExplicitOrientationSection(document, landscape, continuous) {
+    insertDocumentBreak(document, continuous ? 3 : 2);
+    setLastSectionOrientation(document, landscape);
+  }
+
+  function addLandscapeSectionBeforePendingHeading(document) {
+    const start = safeNumber(document._wpscLastHeadingStart, -1);
+    if (!Number.isInteger(start) || start < 0 || typeof document.Range !== "function") {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    const target = document.Range(start, start);
+    if (!target || typeof target.InsertBreak !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    target.InsertBreak(2);
+    setAppendCursor(document, authoritativeDocumentEnd(document).position);
+    setLastSectionOrientation(document, true);
+  }
+
+  function addFigureChild(document, child, locator, ownerNodeId, targetRange) {
+    const start = currentPosition(document);
+    let shape;
+    const insertionTarget = targetRange || endRange(document);
+    const previousEnd = appendTargetEnd(document, insertionTarget);
+    const rawHostEndBefore = document && document.Content &&
+      Number(document.Content.End);
+    try {
+      const rawBefore = document.InlineShapes && Number(document.InlineShapes.Count);
+      const before = Number.isInteger(rawBefore) && rawBefore >= 0 ? rawBefore : -1;
+      shape = document.InlineShapes.AddPicture(locator, false, true, insertionTarget);
+      const rawAfter = document.InlineShapes && Number(document.InlineShapes.Count);
+      const after = Number.isInteger(rawAfter) && rawAfter >= 0 ? rawAfter : -1;
+      if ((shape === null || shape === undefined) && before >= 0 && after > before) {
+        shape = collectionItem(document.InlineShapes, after);
+      }
+      if (shape === null || shape === undefined) throw nativeError("IMAGE_INSERT_FAILED");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, insertionTarget, [shape && shape.Range], previousEnd
+        );
+      } else if (!targetRange && document &&
+                 document._wpscRunOwnsAppendCursor === true) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      const rawHostEndAfter = document && document.Content &&
+        Number(document.Content.End);
+      if (!targetRange && previousEnd !== null &&
+          Number(insertionTarget && insertionTarget.End) === previousEnd &&
+          Number.isInteger(rawHostEndBefore) && Number.isInteger(rawHostEndAfter) &&
+          rawHostEndAfter !== rawHostEndBefore) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      if (!targetRange) {
+        rollbackNativeInsertion(document, start, insertionTarget, [shape && shape.Range]);
+      }
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("IMAGE_INSERT_FAILED");
+    }
+    try {
+      shape.Width = safeNumber(child.displayWidthPt, shape.Width);
+      shape.Height = safeNumber(child.displayHeightPt, shape.Height);
+      if (hasOwn(shape, "AlternativeText")) shape.AlternativeText = ownerNodeId || "";
+      if (shape.Range && shape.Range.ParagraphFormat) {
+        shape.Range.ParagraphFormat.Alignment = 1;
+        shape.Range.ParagraphFormat.KeepTogether = -1;
+        shape.Range.ParagraphFormat.KeepWithNext = -1;
+      }
+      if (!targetRange) insertInlineText(document, "\r");
+      return shape;
+    } catch (error) {
+      rollbackMutation(document, start);
+      throw error;
+    }
+  }
+
+  function addFigureNotice(document, code) {
+    addDegradationNotice(document, {
+      code: code,
+      fallbackText: "[" + code + "]",
+      placement: "block"
+    });
+  }
+
+  function renderFigureStack(document, children, resources, context, retryOnce) {
+    let degraded = false;
+    children.forEach(function (child) {
+      if (child.plannedDegradation) {
+        const planned = child.plannedDegradation;
+        addDegradationNotice(document, {
+          code: planned.code,
+          fallbackText: planned.fallback,
+          placement: planned.placement || "block"
+        });
+        context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: planned.code});
+        appendIssueOnce(context.issues, {
+          code: planned.code,
+          message: "Figure child used its planned fallback",
+          placement: planned.placement || "block",
+          nodeId: context.ownerNodeId
+        });
+        return;
+      }
+      const locator = resources[child.resourceId];
+      if (typeof locator !== "string" || locator.length === 0) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+      try {
+        addFigureChild(document, child, locator, context.ownerNodeId, null);
+        context.childResults.push({nodeId: child.nodeId, status: "applied"});
+      } catch (error) {
+        if (error.code !== "IMAGE_INSERT_FAILED" || !retryOnce) throw error;
+        try {
+          addFigureChild(document, child, locator, context.ownerNodeId, null);
+          context.childResults.push({nodeId: child.nodeId, status: "applied"});
+        } catch (retryError) {
+          if (retryError.code !== "IMAGE_INSERT_FAILED") throw retryError;
+          addFigureNotice(document, "IMAGE_INSERT_FAILED");
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: "IMAGE_INSERT_FAILED"});
+        }
+        degraded = true;
+      }
+    });
+    return degraded;
+  }
+
+  function createFigureColumns(document, children, resources, context) {
+    let table;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    try {
+      table = document.Tables.Add(target, 1, 3);
+      if (previousEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+      advanceNativeObjectCursor(document, target, [table && table.Range], previousEnd);
+      try { table.AllowAutoFit = false; } catch (error) { /* ignore */ }
+      [children[0].displayWidthPt, 12, children[1].displayWidthPt].forEach(function (width, index) {
+        const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
+        if (typeof column.SetWidth === "function") column.SetWidth(width, 0);
+        else column.Width = width;
+      });
+      for (let borderId = -6; borderId <= -1; borderId += 1) {
+        tableBorder(table, borderId).LineStyle = 0;
+      }
+      if (table.Range && table.Range.ParagraphFormat) {
+        table.Range.ParagraphFormat.KeepTogether = -1;
+        table.Range.ParagraphFormat.KeepWithNext = -1;
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("IMAGE_INSERT_FAILED");
+    }
+    try {
+      children.forEach(function (child, index) {
+        const locator = resources[child.resourceId];
+        if (typeof locator !== "string" || locator.length === 0) {
+          throw nativeError("RESOURCE_HASH_MISMATCH");
+        }
+        const cell = table.Cell(1, index === 0 ? 1 : 3);
+        const target = cell.Range.Duplicate;
+        target.End = target.Start;
+        if (target.ParagraphFormat) {
+          target.ParagraphFormat.Alignment = 1;
+          target.ParagraphFormat.KeepTogether = -1;
+          target.ParagraphFormat.KeepWithNext = -1;
+        }
+        addFigureChild(document, child, locator, context.ownerNodeId, target);
+      });
+      return table;
+    } catch (error) {
+      try {
+        if (table && typeof table.Delete === "function") table.Delete();
+      } catch (deleteError) {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      throw error;
+    }
+  }
+
+  function addCaptionedFigureNative(document, args, resources, context) {
+    if (args.keepWithCaption !== true) throw nativeError("EXECUTION_ABORTED");
+    const landscape = args.orientation === "landscape";
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) addExplicitOrientationSection(document, true);
+    let degraded = false;
+    try {
+      if (args.layout === "columns") {
+        const start = currentPosition(document);
+        try {
+          createFigureColumns(document, args.children, resources, context);
+          args.children.forEach(function (child) {
+            context.childResults.push({nodeId: child.nodeId, status: "applied"});
+          });
+          insertInlineText(document, "\r");
+        } catch (error) {
+          if (error.code !== "IMAGE_INSERT_FAILED" || context.controllerOwned) throw error;
+          rollbackMutation(document, start);
+          context.childResults.length = 0;
+          renderFigureStack(document, args.children, resources, context, false);
+          degraded = true;
+        }
+      } else {
+        degraded = renderFigureStack(
+          document, args.children, resources, context, !context.controllerOwned
+        );
+      }
+      if (degraded) appendIssueOnce(context.issues, {
+        code: "IMAGE_INSERT_FAILED", message: "Figure used deterministic stack recovery",
+        placement: "block", nodeId: context.ownerNodeId
+      });
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
+    } finally {
+      if (ownsLandscapeSection) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function addCaptionedFigureFallback(document, args, resources, context, code) {
+    const landscape = args.orientation === "landscape";
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) addExplicitOrientationSection(document, true);
+    try {
+      (args.children || []).forEach(function (child) {
+        if (child.plannedDegradation) {
+          const planned = child.plannedDegradation;
+          addDegradationNotice(document, {
+            code: planned.code, fallbackText: planned.fallback,
+            placement: planned.placement || "block"
+          });
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: planned.code});
+          appendIssueOnce(context.issues, {
+            code: planned.code, message: "Figure child used its planned fallback",
+            placement: planned.placement || "block", nodeId: context.ownerNodeId
+          });
+          return;
+        }
+        const locator = resources[child.resourceId];
+        if (typeof locator !== "string" || locator.length === 0) {
+          throw nativeError("RESOURCE_HASH_MISMATCH");
+        }
+        try {
+          addFigureChild(document, child, locator, context.ownerNodeId, null);
+          context.childResults.push({nodeId: child.nodeId, status: "applied"});
+        } catch (error) {
+          if (error.code !== "IMAGE_INSERT_FAILED") throw error;
+          addFigureNotice(document, code);
+          context.childResults.push({nodeId: child.nodeId, status: "degraded", issueCode: code});
+        }
+      });
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, false);
+    } finally {
+      if (ownsLandscapeSection) addExplicitOrientationSection(document, false);
+    }
+  }
+
+  function tableBorder(table, id) {
+    if (typeof table.Borders === "function") return table.Borders(id);
+    return collectionItem(table.Borders, id);
+  }
+
+  function tableRows(table, index) {
+    if (typeof table.Rows === "function") return table.Rows(index);
+    return collectionItem(table.Rows, index);
+  }
+
+  function applyTableBorders(table, spec) {
+    const mapping = {top: -1, left: -2, bottom: -3, right: -4, insideHorizontal: -5, insideVertical: -6};
+    Object.keys(mapping).forEach(function (name) {
+      const points = safeNumber(spec[name], 0);
+      const border = tableBorder(table, mapping[name]);
+      border.LineStyle = points === 0 ? 0 : 1;
+      if (points !== 0) border.LineWidth = points === 1.5 ? 12 : (points === 0.75 ? 6 : 2);
+    });
+    const headerPoints = safeNumber(spec.headerBottom, 0);
+    const headerBorder = tableBorder(tableRows(table, 1), -3);
+    headerBorder.LineStyle = headerPoints === 0 ? 0 : 1;
+    if (headerPoints !== 0) headerBorder.LineWidth = headerPoints === 1.5 ? 12 : (headerPoints === 0.75 ? 6 : 2);
+  }
+
+  function visualTextWidth(value) {
+    return Array.from(safeString(value)).reduce(function (total, character) {
+      return total + (character.charCodeAt(0) > 255 ? 2 : 1);
+    }, 0);
+  }
+
+  function contentColumnWidths(data, availableWidth) {
+    const cols = data.length ? data[0].length : 0;
+    if (cols <= 0) return [];
+    const representatives = [];
+    for (let column = 0; column < cols; column += 1) {
+      const samples = data.map(function (row) {
+        return column < row.length ? visualTextWidth(row[column]) : 0;
+      }).filter(function (value) { return value > 0; });
+      if (!samples.length) {
+        representatives.push(4);
+        continue;
+      }
+      const header = samples[0] * 1.15;
+      samples.sort(function (left, right) { return left - right; });
+      const q75 = samples[Math.round((samples.length - 1) * 0.75)];
+      representatives.push(Math.max(4, Math.min(80, Math.max(header, q75))));
+    }
+    const weights = representatives.map(function (value) { return Math.pow(value, 0.7); });
+    const fixedMinimums = {1: 1, 2: 0.24, 3: 0.15, 4: 0.11, 5: 0.085};
+    const minimum = hasOwn(fixedMinimums, cols)
+      ? fixedMinimums[cols] : Math.min(0.08, 0.6 / cols);
+    const maximum = cols === 2 ? 0.72 : 0.65;
+    const ratios = new Array(cols).fill(0);
+    let active = weights.map(function (_, index) { return index; });
+    let remaining = 1;
+    while (active.length) {
+      const totalWeight = active.reduce(function (total, index) {
+        return total + weights[index];
+      }, 0) || active.length;
+      let constrained = false;
+      active.slice().forEach(function (index) {
+        const trial = remaining * weights[index] / totalWeight;
+        if (trial < minimum || trial > maximum) {
+          ratios[index] = trial < minimum ? minimum : maximum;
+          remaining -= ratios[index];
+          active = active.filter(function (item) { return item !== index; });
+          constrained = true;
+        }
+      });
+      if (!constrained) {
+        active.forEach(function (index) {
+          ratios[index] = remaining * weights[index] / totalWeight;
+        });
+        break;
+      }
+    }
+    const total = ratios.reduce(function (sum, value) { return sum + value; }, 0) || 1;
+    return ratios.map(function (ratio) { return availableWidth * ratio / total; });
+  }
+
+  function fitNativeTableToBody(document, table, data) {
+    if (!table || !table.Columns) return;
+    const setup = currentSectionPageSetup(document);
+    const pageWidth = safeNumber(setup.PageWidth, NaN);
+    const leftMargin = safeNumber(setup.LeftMargin, NaN);
+    const rightMargin = safeNumber(setup.RightMargin, NaN);
+    const availableWidth = pageWidth - leftMargin - rightMargin;
+    if (!Number.isFinite(availableWidth) || availableWidth < 72 || availableWidth > 2000) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
+    try {
+      if (typeof table.AutoFitBehavior === "function") table.AutoFitBehavior(0);
+      table.AllowAutoFit = false;
+      table.PreferredWidthType = 3;
+      table.PreferredWidth = availableWidth;
+      contentColumnWidths(data, availableWidth).forEach(function (width, index) {
+        const column = collectionItem(table.Columns, index + 1) || table.Columns(index + 1);
+        if (typeof column.SetWidth === "function") column.SetWidth(width, 0);
+        else column.Width = width;
+      });
+    } catch (error) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
+  }
+
+  function createNativeTable(document, args) {
+    const data = [args.headers].concat(args.rows || []);
+    let table;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    try {
+      table = document.Tables.Add(target, data.length, args.headers.length);
+      if (previousEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+      advanceNativeObjectCursor(document, target, [table && table.Range], previousEnd);
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("TABLE_INSERT_FAILED");
+    }
+    const alignmentCodes = {left: 0, center: 1, right: 2};
+    try {
+      data.forEach(function (row, rowIndex) {
+        row.forEach(function (value, columnIndex) {
+          const cell = table.Cell(rowIndex + 1, columnIndex + 1);
+          cell.Range.Text = safeString(value);
+          const format = cell.Range.ParagraphFormat;
+          format.FirstLineIndent = safeNumber(args.cellIndentPt, 0);
+          format.LeftIndent = 0;
+          format.RightIndent = 0;
+          format.Alignment = alignmentCodes[args.alignments[columnIndex]];
+        });
+      });
+      table.Rows.AllowBreakAcrossPages = args.allowRowSplit ? -1 : 0;
+      if (args.repeatHeader) tableRows(table, 1).HeadingFormat = -1;
+      fitNativeTableToBody(document, table, data);
+      applyTableBorders(table, args.borderSpec);
+      applyTableCellMetadata(table, args);
+    } catch (error) {
+      throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    }
+    const mergePageAnchors = [];
+    try {
+      (args.merges || []).forEach(function (merge) {
+        const firstRange = table.Cell(merge.top, merge.left).Range;
+        const lastRange = table.Cell(merge.bottom, merge.right).Range;
+        mergePageAnchors.push({
+          merge: merge,
+          first: firstRange.Duplicate || firstRange,
+          last: lastRange.Duplicate || lastRange
+        });
+        table.Cell(merge.top, merge.left).Merge(table.Cell(merge.bottom, merge.right));
+      });
+    } catch (error) {
+      throw nativeError("TABLE_MERGE_APPLY_FAILED");
+    }
+    table._wpscMergePageAnchors = mergePageAnchors;
+    insertInlineText(document, "\r");
+    return table;
+  }
+
+  function applyTableCellMetadata(table, args) {
+    // Citation cells already contain their resolved static [n]. Metadata is
+    // deliberately non-mutating so visible cell data cannot be duplicated or
+    // lost. Only explicit unresolved degradations receive local styling.
+    (args.cellCitations || []).forEach(function (citation) {
+      const cell = table.Cell(citation.row, citation.column);
+      if (!cell || !cell.Range) throw nativeError("TABLE_STYLE_APPLY_FAILED");
+    });
+    (args.cellDegradations || []).forEach(function (degradation) {
+      const cell = table.Cell(degradation.row, degradation.column);
+      const range = cell && cell.Range;
+      if (!range) throw nativeError("TABLE_STYLE_APPLY_FAILED");
+      try {
+        if (range.Font) {
+          range.Font.Italic = -1;
+          range.Font.Color = colorFromHex("#9C0006");
+        }
+        if (range.Shading) {
+          range.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+        }
+      } catch (error) {
+        throw nativeError("TABLE_STYLE_APPLY_FAILED");
+      }
+    });
+  }
+
+  function gridTableArgs(args) {
+    const clone = Object.assign({}, args);
+    clone.borderSpec = {
+      top: 0.75, bottom: 0.75, headerBottom: 0.75,
+      left: 0.75, right: 0.75, insideHorizontal: 0.75, insideVertical: 0.75
+    };
+    clone.merges = [];
+    clone.allowRowSplit = true;
+    return clone;
+  }
+
+  function tableOverflowGroup(table, merges) {
+    const anchors = Array.isArray(table._wpscMergePageAnchors)
+      ? table._wpscMergePageAnchors : [];
+    for (let index = 0; index < anchors.length; index += 1) {
+      const merge = anchors[index].merge;
+      if (merge.top < 2 || merge.bottom <= merge.top) continue;
+      const first = anchors[index].first;
+      const last = anchors[index].last;
+      try {
+        if (safeNumber(first.Information(3), 0) !== safeNumber(last.Information(3), 0)) return true;
+      } catch (error) {
+        throw nativeError("TABLE_ROW_FORCED_SPLIT");
+      }
+    }
+    return false;
+  }
+
+  function addTableTextFallback(document, args) {
+    [args.headers].concat(args.rows || []).forEach(function (row) {
+      insertInlineText(document, row.map(safeString).join(" | ") + "\r");
+    });
+  }
+
+  function addNativeTableNotice(document, code) {
+    const start = currentPosition(document);
+    // A table recovery cannot depend on another Tables.Add call. Preserve a
+    // minimal styled block notice beside the fallback grid/text instead.
+    insertText(document, "[" + safeString(code) + "]", "Body Text", {
+      italic: true, color: "#9C0006", spaceAfter: 3, outlineLevel: 10
+    });
+    const range = document.Range(start, currentPosition(document));
+    if (range.ParagraphFormat) {
+      range.ParagraphFormat.KeepTogether = -1;
+      range.ParagraphFormat.KeepWithNext = -1;
+    }
+  }
+
+  function addSemanticTableNative(document, args, resources, context) {
+    void resources;
+    if (args.keepCaptionWithFirstRow !== true) throw nativeError("EXECUTION_ABORTED");
+    const landscape = args.orientation === "landscape";
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) {
+      if (args.includePreviousHeading === true) {
+        addLandscapeSectionBeforePendingHeading(document);
+      } else {
+        addExplicitOrientationSection(document, true, false);
+      }
+    }
+    try {
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
+      (args.plannedDegradation || []).forEach(function (planned) {
+        addNativeTableNotice(document, planned.code);
+        appendIssueOnce(context.issues, {
+          code: planned.code,
+          message: "Table used its planned fallback",
+          placement: planned.placement || "block",
+          nodeId: context.ownerNodeId
+        });
+      });
+      const tableStart = currentPosition(document);
+      let table;
+      try {
+        table = createNativeTable(document, args);
+      } catch (error) {
+        if (context.controllerOwned || !RECOVERABLE_TABLE_CODES[error.code]) throw error;
+        rollbackMutation(document, tableStart);
+        addNativeTableNotice(document, error.code);
+        const gridStart = currentPosition(document);
+        try {
+          table = createNativeTable(document, gridTableArgs(args));
+          appendIssueOnce(context.issues, {code: error.code, message: "Table used deterministic grid fallback", placement: "block", nodeId: context.ownerNodeId});
+        } catch (gridError) {
+          if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
+          rollbackMutation(document, gridStart);
+          addTableTextFallback(document, args);
+          appendIssueOnce(context.issues, {code: "TABLE_INSERT_FAILED", message: "Table used deterministic text fallback", placement: "block", nodeId: context.ownerNodeId});
+          return;
+        }
+      }
+      if (tableOverflowGroup(table, args.merges || [])) {
+        if (context.controllerOwned) throw nativeError("TABLE_ROW_FORCED_SPLIT");
+        rollbackMutation(document, tableStart);
+        addNativeTableNotice(document, "TABLE_ROW_FORCED_SPLIT");
+        appendIssueOnce(context.issues, {code: "TABLE_ROW_FORCED_SPLIT", message: "Vertical merge group rendered as splittable grid", placement: "block", nodeId: context.ownerNodeId});
+        const gridStart = currentPosition(document);
+        try {
+          createNativeTable(document, gridTableArgs(args));
+        } catch (gridError) {
+          if (!RECOVERABLE_TABLE_CODES[gridError.code]) throw gridError;
+          rollbackMutation(document, gridStart);
+          addTableTextFallback(document, args);
+          appendIssueOnce(context.issues, {code: "TABLE_INSERT_FAILED", message: "Overflow grid used deterministic text fallback", placement: "block", nodeId: context.ownerNodeId});
+        }
+      }
+    } finally {
+      if (ownsLandscapeSection) {
+        addExplicitOrientationSection(
+          document, false, args.continuousExit === true
+        );
+      }
+    }
+  }
+
+  function addSemanticTableFallback(document, args, resources, context, code) {
+    void resources;
+    const landscape = args.orientation === "landscape";
+    const ownsLandscapeSection = landscape && !currentSectionIsLandscape(document);
+    if (ownsLandscapeSection) {
+      if (args.includePreviousHeading === true) {
+        addLandscapeSectionBeforePendingHeading(document);
+      } else {
+        addExplicitOrientationSection(document, true, false);
+      }
+    }
+    try {
+      if (args.caption) addNativeCaption(document, args, context.ownerNodeId, true);
+      (args.plannedDegradation || []).forEach(function (planned) {
+        addNativeTableNotice(document, planned.code);
+        appendIssueOnce(context.issues, {
+          code: planned.code, message: "Table used its planned fallback",
+          placement: planned.placement || "block", nodeId: context.ownerNodeId
+        });
+      });
+      addNativeTableNotice(document, code);
+      const gridStart = currentPosition(document);
+      try {
+        createNativeTable(document, gridTableArgs(args));
+      } catch (error) {
+        if (!RECOVERABLE_TABLE_CODES[error.code]) throw error;
+        rollbackMutation(document, gridStart);
+        addTableTextFallback(document, args);
+      }
+    } finally {
+      if (ownsLandscapeSection) {
+        addExplicitOrientationSection(
+          document, false, args.continuousExit === true
+        );
+      }
+    }
+  }
+
+  function addEquationNumberNative(document, args, resources, context) {
+    void resources;
+    const start = currentPosition(document);
+    insertInlineText(document, args.source || args.fallbackText || "");
+    insertInlineText(document, "\t");
+    addNativeNumberShell(document, args.numbering, args.bookmarkName, context.ownerNodeId);
+    const paragraph = document.Range(start, currentPosition(document));
+    if (paragraph.ParagraphFormat) {
+      paragraph.ParagraphFormat.Alignment = 2;
+      paragraph.ParagraphFormat.KeepTogether = -1;
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function formulaLayoutSpec(document) {
+    let setup = document && document.PageSetup;
+    const sections = document && document.Sections;
+    const sectionCount = sections && Number(sections.Count);
+    if (Number.isInteger(sectionCount) && sectionCount > 0) {
+      const section = collectionItem(sections, sectionCount);
+      if (section && section.PageSetup) setup = section.PageSetup;
+    }
+    const pageWidth = Number(setup && setup.PageWidth);
+    const leftMargin = Number(setup && setup.LeftMargin);
+    const rightMargin = Number(setup && setup.RightMargin);
+    const usableWidth = pageWidth - leftMargin - rightMargin;
+    if (!Number.isFinite(pageWidth) || !Number.isFinite(leftMargin) ||
+        !Number.isFinite(rightMargin) || pageWidth <= 0 ||
+        leftMargin < 0 || rightMargin < 0 || usableWidth <= 72) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return {center: usableWidth / 2, right: usableWidth};
+  }
+
+  function beginFormulaLayout(document) {
+    let state = authoritativeDocumentEnd(document);
+    if (state.lastParagraph && state.lastParagraph.text.length > 0 &&
+        !/\r$/.test(state.lastParagraph.text)) {
+      insertInlineText(document, "\r", state.range, true);
+      state = authoritativeDocumentEnd(document);
+    }
+    const start = state.position;
+    const layout = formulaLayoutSpec(document);
+    const probe = document.Range(start, start);
+    const format = probe && probe.ParagraphFormat;
+    if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    insertInlineText(document, "\t", null, true);
+    return {start: start, center: layout.center, right: layout.right};
+  }
+
+  function finishFormulaLayout(document, layout, spaceBefore) {
+    const paragraph = document.Range(layout.start, currentPosition(document));
+    const format = paragraph && paragraph.ParagraphFormat;
+    if (!format || !format.TabStops || typeof format.TabStops.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    format.Alignment = 0;
+    format.LeftIndent = 0;
+    format.RightIndent = 0;
+    format.FirstLineIndent = 0;
+    format.KeepTogether = -1;
+    if (spaceBefore !== undefined) {
+      format.SpaceBefore = safeNumber(spaceBefore, 0);
+    }
+    format.TabStops.Add(layout.center, 1, 0);
+    format.TabStops.Add(layout.right, 2, 0);
+  }
+
+  function structuralWpsLinearText(linearText) {
+    return safeString(linearText).replace(/"[^"]*"/g, "");
+  }
+
+  function countLinearToken(text, token) {
+    let count = 0;
+    let offset = 0;
+    while (offset < text.length) {
+      const found = text.indexOf(token, offset);
+      if (found < 0) break;
+      count += 1;
+      offset = found + token.length;
+    }
+    return count;
+  }
+
+  function scriptOperandEnd(text, markerIndex) {
+    const start = markerIndex + 1;
+    if (start >= text.length) return start;
+    if (text.charAt(start) !== "(") return start + 1;
+    let depth = 0;
+    for (let index = start; index < text.length; index += 1) {
+      const char = text.charAt(index);
+      if (char === "(") depth += 1;
+      else if (char === ")") {
+        depth -= 1;
+        if (depth === 0) return index + 1;
+      }
+    }
+    return text.length;
+  }
+
+  function naryLimitMarkers(text) {
+    const exempt = Object.create(null);
+    const nary = "∑∏∫∮∬∭⨌";
+    for (let index = 0; index < text.length; index += 1) {
+      if (nary.indexOf(text.charAt(index)) < 0) continue;
+      let cursor = index + 1;
+      while (cursor < text.length && text.charAt(cursor) === " ") cursor += 1;
+      for (let limit = 0; limit < 2; limit += 1) {
+        const marker = text.charAt(cursor);
+        if (marker !== "_" && marker !== "^") break;
+        exempt[cursor] = true;
+        cursor = scriptOperandEnd(text, cursor);
+        while (cursor < text.length && text.charAt(cursor) === " ") cursor += 1;
+      }
+    }
+    return exempt;
+  }
+
+  function expectedProfessionalFunctionCounts(linearText) {
+    const text = structuralWpsLinearText(linearText);
+    const expected = Object.create(null);
+    function requireType(type, count) {
+      if (count > 0) expected[type] = (expected[type] || 0) + count;
+    }
+    requireType(7, countLinearToken(text, "/"));
+    const binomialCount = countLinearToken(text, "¦");
+    requireType(7, binomialCount);
+    requireType(5, binomialCount);
+    requireType(16, countLinearToken(text, "√"));
+    let naryCount = 0;
+    const nary = "∑∏∫∮∬∭⨌";
+    for (let index = 0; index < text.length; index += 1) {
+      if (nary.indexOf(text.charAt(index)) >= 0) naryCount += 1;
+    }
+    requireType(13, naryCount);
+
+    const matrixOffsets = [];
+    let matrixOffset = 0;
+    while (matrixOffset < text.length) {
+      const found = text.indexOf("■(", matrixOffset);
+      if (found < 0) break;
+      matrixOffsets.push(found);
+      matrixOffset = found + 2;
+    }
+    requireType(12, matrixOffsets.length);
+    const delimiterCount = matrixOffsets.filter(function (offset) {
+      return offset > 0 && "([{|‖".indexOf(text.charAt(offset - 1)) >= 0;
+    }).length;
+    requireType(5, delimiterCount);
+    const ambiguousMatrix = delimiterCount !== matrixOffsets.length;
+
+    const exempt = naryLimitMarkers(text);
+    const subscripts = [];
+    const superscripts = [];
+    for (let index = 0; index < text.length; index += 1) {
+      if (exempt[index]) continue;
+      if (text.charAt(index) === "_") subscripts.push(index);
+      else if (text.charAt(index) === "^") superscripts.push(index);
+    }
+    let pairedScripts = 0;
+    subscripts.forEach(function (offset) {
+      const next = scriptOperandEnd(text, offset);
+      if (text.charAt(next) === "^" && !exempt[next]) pairedScripts += 1;
+    });
+    requireType(18, pairedScripts);
+    requireType(17, subscripts.length - pairedScripts);
+    requireType(19, superscripts.length - pairedScripts);
+    return {counts: expected, ambiguousMatrix: ambiguousMatrix};
+  }
+
+  function requiresProfessionalMath(linearText) {
+    const requirements = expectedProfessionalFunctionCounts(linearText);
+    return requirements.ambiguousMatrix || Object.keys(requirements.counts).length > 0;
+  }
+
+  function rejectProfessionalMath(unavailableForRun) {
+    const error = nativeError("EQUATION_INSERT_FAILED");
+    if (unavailableForRun === true) {
+      error._wpscProfessionalMathUnavailable = true;
+    }
+    throw error;
+  }
+
+  function verifyProfessionalMath(math, linearText) {
+    if (!requiresProfessionalMath(linearText)) return;
+    const functions = math && math.Functions;
+    const count = Number(functions && functions.Count);
+    if (!Number.isInteger(count) || count < 1) {
+      rejectProfessionalMath(false);
+    }
+    const typeCounts = Object.create(null);
+    for (let index = 1; index <= count; index += 1) {
+      const item = collectionItem(functions, index);
+      const type = Number(item && item.Type);
+      if (!Number.isInteger(type)) {
+        rejectProfessionalMath(false);
+      }
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    }
+    const requirements = expectedProfessionalFunctionCounts(linearText);
+    const hasTextFunction = (typeCounts[20] || 0) > 0;
+    if (requirements.ambiguousMatrix) {
+      rejectProfessionalMath(hasTextFunction);
+    }
+    const expected = requirements.counts;
+    Object.keys(expected).forEach(function (type) {
+      if ((typeCounts[type] || 0) < expected[type]) {
+        rejectProfessionalMath(hasTextFunction);
+      }
+    });
+  }
+
+  function addFormulaSourceTerminalNotice(document, args, code, context) {
+    const layout = beginFormulaLayout(document);
+    addInlineDegradation(document, {
+      code: code,
+      fallbackText: args.fallbackText || ""
+    });
+    insertInlineText(document, "\t", null, true);
+    addNativeNumberShell(
+      document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+    );
+    finishFormulaLayout(document, layout);
+    insertInlineText(document, "\r", null, true);
+  }
+
+  function addEquationNativeM4(document, args, resources, context) {
+    const content = args.content || {};
+    if (content.plannedDegradation) {
+      const planned = content.plannedDegradation;
+      addFormulaNativeFallback(document, args, resources, context, planned.code);
+      appendIssueOnce(context.issues, {
+        code: planned.code,
+        message: "Formula used its planned content fallback",
+        placement: planned.placement,
+        nodeId: context.ownerNodeId,
+        stage: "preflight",
+        fallback: planned.fallbackKind,
+        recoverable: true
+      });
+      emitFormulaResourceDegradation(document, args, context);
+      return;
+    }
+    const nativeMath = content.nativeMath || {};
+    if (nativeMath.syntax !== "wps-linear-v1") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (!document.OMaths || typeof document.OMaths.Add !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    if (document._wpscProfessionalMathUnavailable === true) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const layout = beginFormulaLayout(document);
+    const start = currentPosition(document);
+    const descriptorLinearText = safeString(nativeMath.linearText);
+    const linearText = descriptorLinearText;
+    insertInlineText(document, linearText, null, true);
+    const mathEnd = currentPosition(document);
+    const inputRange = exactDocumentRange(document, start, mathEnd);
+    const selectionOwned = document._wpscRunOwnsAppendCursor === true;
+    let addCollection = null;
+    if (selectionOwned) {
+      if (typeof inputRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      inputRange.Select();
+      const selection = documentOwnedSelection(document, start, mathEnd);
+      if (!selection.OMaths || typeof selection.OMaths.Add !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addCollection = selection.OMaths;
+    } else {
+      // Direct compatibility helpers keep their historical document-scoped
+      // adapter; production M4 plans are always selection-owned above.
+      addCollection = document.OMaths;
+    }
+    let formulaOperationEnd = null;
+    if (selectionOwned) {
+      // Build the complete number shell while the document is still in normal
+      // text mode. WPS otherwise stamps w:oMath on fields inserted after
+      // BuildUp, and a later REF can materialize those field runs as OMaths.
+      insertInlineText(document, "\t", null, true);
+      const numberBoundaryEnd = currentPosition(document);
+      if (!Number.isInteger(numberBoundaryEnd) || numberBoundaryEnd <= mathEnd) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addNativeNumberShell(
+        document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+      );
+      finishFormulaLayout(document, layout);
+      insertInlineText(document, "\r", null, true);
+      formulaOperationEnd = currentPosition(document);
+    }
+    let addInputRange = inputRange;
+    if (selectionOwned) {
+      // WPS Range proxies are live: inserting the adjacent number shell can
+      // expand the earlier input range. Reacquire and reselect the exact
+      // linear-only bounds immediately before OMaths.Add.
+      addInputRange = exactDocumentRange(document, start, mathEnd);
+      if (typeof addInputRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addInputRange.Select();
+      const selection = documentOwnedSelection(document, start, mathEnd);
+      if (!selection.OMaths || typeof selection.OMaths.Add !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addCollection = selection.OMaths;
+    }
+    const before = Number(document.OMaths.Count);
+    if (!Number.isInteger(before) || before < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const addedRange = addCollection.Add(addInputRange);
+    const after = Number(document.OMaths.Count);
+    if (!addedRange || after !== before + 1) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const addedStart = Number(addedRange.Start);
+    const addedEnd = Number(addedRange.End);
+    if (!Number.isFinite(addedStart) || !Number.isFinite(addedEnd) ||
+        addedEnd <= addedStart || addedStart < start || addedEnd > mathEnd) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const addedMaths = addedRange.OMaths;
+    let selectedMaths = null;
+    if (selectionOwned) {
+      if (typeof addedRange.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      addedRange.Select();
+      selectedMaths = documentOwnedSelection(document, addedStart, addedEnd).OMaths;
+    }
+    const addedLocalCount = Number(addedMaths && addedMaths.Count);
+    if (!addedMaths || (addedLocalCount !== 0 && addedLocalCount !== 1)) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    let localMath = null;
+    try {
+      localMath = collectionItem(addedMaths, 1);
+    } catch (error) {
+      if (addedLocalCount === 1) throw error;
+      localMath = null;
+    }
+    if (addedLocalCount === 1 && !localMath) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    let chosenMaths = addedMaths;
+    let chosenMathCount = addedLocalCount;
+    if (!localMath && selectionOwned) {
+      const selectedCount = Number(selectedMaths && selectedMaths.Count);
+      if (!selectedMaths || (selectedCount !== 0 && selectedCount !== 1)) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      try {
+        localMath = collectionItem(selectedMaths, 1);
+      } catch (error) {
+        if (selectedCount === 1) throw error;
+        localMath = null;
+      }
+      chosenMaths = selectedMaths;
+      chosenMathCount = selectedCount;
+    }
+    if (!localMath && !selectionOwned) {
+      const freshRange = document.Range(addedStart, addedEnd);
+      if (!freshRange || Number(freshRange.Start) !== addedStart ||
+          Number(freshRange.End) !== addedEnd) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      const freshMaths = freshRange.OMaths;
+      const freshCount = Number(freshMaths && freshMaths.Count);
+      if (!freshMaths || (freshCount !== 0 && freshCount !== 1)) {
+        throw nativeError("EQUATION_INSERT_FAILED");
+      }
+      try {
+        localMath = collectionItem(freshMaths, 1);
+      } catch (error) {
+        if (freshCount === 1) throw error;
+        localMath = null;
+      }
+      chosenMaths = freshMaths;
+      chosenMathCount = freshCount;
+    }
+    if (!localMath) throw nativeError("EQUATION_INSERT_FAILED");
+    const math = localMath;
+    if (!math || typeof math.BuildUp !== "function") {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const chosenMathRange = math.Range;
+    if (!chosenMathRange) throw nativeError("EQUATION_INSERT_FAILED");
+    const mathStart = Number(chosenMathRange.Start);
+    const mathFinish = Number(chosenMathRange.End);
+    if (!Number.isFinite(mathStart) || !Number.isFinite(mathFinish) ||
+        mathFinish <= mathStart || mathStart < addedStart || mathFinish > addedEnd) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    math.BuildUp();
+    verifyProfessionalMath(math, descriptorLinearText);
+    const builtAddedStart = Number(addedRange.Start);
+    const builtAddedEnd = Number(addedRange.End);
+    const builtLocalCount = Number(addedMaths.Count);
+    const builtChosenCount = Number(chosenMaths.Count);
+    const builtGlobalCount = Number(document.OMaths.Count);
+    const builtStart = Number(chosenMathRange.Start);
+    const builtEnd = Number(chosenMathRange.End);
+    const builtContent = document.Range(builtAddedStart, builtAddedEnd);
+    const builtText = safeString(builtContent && builtContent.Text);
+    if (builtLocalCount !== addedLocalCount ||
+        builtChosenCount !== chosenMathCount || builtGlobalCount !== after ||
+        builtAddedStart !== addedStart || builtAddedEnd !== addedEnd ||
+        builtEnd <= builtStart || builtStart < builtAddedStart ||
+        builtEnd > builtAddedEnd || !builtContent ||
+        Number(builtContent.Start) !== builtAddedStart ||
+        Number(builtContent.End) !== builtAddedEnd || !builtText.trim()) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const committedMinimum = selectionOwned
+      ? Math.max(builtAddedEnd, formulaOperationEnd) : builtAddedEnd;
+    commitSuccessfulHostAdvance(document, committedMinimum);
+    const mathCursor = endRange(document);
+    const mathCursorEnd = appendTargetEnd(document, mathCursor);
+    if (mathCursorEnd === null ||
+        (selectionOwned ? builtEnd >= mathCursorEnd : builtEnd > mathCursorEnd)) {
+      throw nativeError("EQUATION_INSERT_FAILED");
+    }
+    const localCursorRanges = [builtContent, chosenMathRange];
+    advanceAppendCursor(
+      document, mathCursor, mathCursorEnd,
+      localCursorRanges, mathCursorEnd
+    );
+    if (selectionOwned) {
+      const finalPosition = currentPosition(document);
+      const finalCursor = exactDocumentRange(
+        document, finalPosition, finalPosition
+      );
+      if (typeof finalCursor.Select !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      finalCursor.Select();
+      documentOwnedSelection(document, finalPosition, finalPosition);
+    } else {
+      insertInlineText(document, "\t", null, true);
+      addNativeNumberShell(
+        document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+      );
+      finishFormulaLayout(document, layout);
+      insertInlineText(document, "\r", null, true);
+    }
+
+    emitFormulaResourceDegradation(document, args, context);
+  }
+
+  function emitFormulaResourceDegradation(document, args, context) {
+    const planned = (args.fallbackResource || {}).fallbackResourcePlannedDegradation;
+    if (planned) {
+      addDegradationNotice(document, planned);
+      appendIssueOnce(context.issues, {
+        code: "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        message: "Optional formula fallback image is unavailable",
+        placement: planned.placement,
+        nodeId: context.ownerNodeId,
+        stage: "native",
+        fallback: "none",
+        recoverable: true
+      });
+    }
+  }
+
+  function addFormulaNativeFallback(document, args, resources, context, code) {
+    const fallback = args.fallbackResource || {};
+    const resourceId = fallback.fallbackResourceId;
+    if (resourceId !== undefined) {
+      const locator = resources[resourceId];
+      if (typeof locator !== "string" || !locator) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+      if (!document.InlineShapes || typeof document.InlineShapes.AddPicture !== "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      let imageCheckpoint;
+      try {
+        imageCheckpoint = checkpointRecoverableMutation(
+          document, true, ["inlineShapes", "fields", "tables", "bookmarks"]
+        );
+      } catch (error) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const layout = beginFormulaLayout(document);
+      let imageTarget = null;
+      let shapeRange = null;
+      let imageTargetEnd = null;
+      let imageHostEndBefore = null;
+      let imageCountBefore = null;
+      try {
+        imageTarget = endRange(document);
+        imageTargetEnd = appendTargetEnd(document, imageTarget);
+        if (imageTargetEnd === null) throw nativeError("CAPABILITY_MISMATCH");
+        const rawHostEnd = document && document.Content &&
+          Number(document.Content.End);
+        const rawImageCount = document && document.InlineShapes &&
+          Number(document.InlineShapes.Count);
+        imageHostEndBefore = Number.isInteger(rawHostEnd) ? rawHostEnd : null;
+        imageCountBefore = Number.isInteger(rawImageCount) ? rawImageCount : null;
+        const shape = document.InlineShapes.AddPicture(
+          locator, false, true, imageTarget
+        );
+        shapeRange = shape && shape.Range;
+        const shapeStart = Number(shapeRange && shapeRange.Start);
+        const shapeEnd = Number(shapeRange && shapeRange.End);
+        if (!shapeRange || !Number.isFinite(shapeStart) ||
+            !Number.isFinite(shapeEnd) || shapeEnd <= shapeStart) {
+          throw nativeError("IMAGE_INSERT_FAILED");
+        }
+        advanceNativeObjectCursor(
+          document, imageTarget, [shapeRange], imageTargetEnd
+        );
+        if (!shapeRange.ParagraphFormat) throw nativeError("CAPABILITY_MISMATCH");
+        shapeRange.ParagraphFormat.KeepTogether = -1;
+        insertInlineText(document, "\t", null, true);
+        addNativeNumberShell(
+          document, args.numbering, args.bookmarkName, context.ownerNodeId, true
+        );
+        finishFormulaLayout(document, layout, 6);
+        insertInlineText(document, "\r", null, true);
+        addDegradationNotice(document, {
+          code: code,
+          fallbackText: "formula image fallback",
+          placement: "block"
+        });
+        return;
+      } catch (error) {
+        const rawHostEndAfter = document && document.Content &&
+          Number(document.Content.End);
+        const rawImageCountAfter = document && document.InlineShapes &&
+          Number(document.InlineShapes.Count);
+        const targetEndAfter = Number(imageTarget && imageTarget.End);
+        const shapeStartAfter = Number(shapeRange && shapeRange.Start);
+        const shapeEndAfter = Number(shapeRange && shapeRange.End);
+        const targetProvesMutation = Number.isInteger(imageTargetEnd) &&
+          Number.isInteger(targetEndAfter) && targetEndAfter > imageTargetEnd;
+        const shapeProvesMutation = Number.isInteger(imageTargetEnd) &&
+          Number.isInteger(shapeStartAfter) && Number.isInteger(shapeEndAfter) &&
+          shapeStartAfter <= imageTargetEnd && shapeEndAfter > imageTargetEnd;
+        const hostChanged = imageHostEndBefore !== null &&
+          Number.isInteger(rawHostEndAfter) && rawHostEndAfter !== imageHostEndBefore;
+        const hostProvesMutation = imageHostEndBefore !== null &&
+          Number.isInteger(rawHostEndAfter) &&
+          rawHostEndAfter > imageHostEndBefore && rawHostEndAfter > 0;
+        const countChanged = imageCountBefore !== null &&
+          Number.isInteger(rawImageCountAfter) && rawImageCountAfter !== imageCountBefore;
+        if (document && document._wpscRunOwnsAppendCursor === true &&
+            !targetProvesMutation && !shapeProvesMutation &&
+            !hostProvesMutation && (hostChanged || countChanged)) {
+          throw preserveFallbackFatal(
+            nativeError("LOCAL_MUTATION_ROLLBACK_FAILED")
+          );
+        }
+        try {
+          const rollbackRanges = [shapeRange, appendCursorRange(document)];
+          if (hostProvesMutation) {
+            rollbackRanges.push({
+              Start: imageCheckpoint && typeof imageCheckpoint === "object"
+                ? imageCheckpoint.start : imageCheckpoint,
+              End: rawHostEndAfter - 1
+            });
+          }
+          rollbackNativeInsertion(
+            document, imageCheckpoint, imageTarget,
+            rollbackRanges
+          );
+        } catch (rollbackError) {
+          throw preserveFallbackFatal(rollbackError);
+        }
+        if (!error || error.code !== "IMAGE_INSERT_FAILED") {
+          throw preserveFallbackFatal(error);
+        }
+      }
+    }
+    try {
+      addFormulaSourceTerminalNotice(document, args, code, context);
+    } catch (error) {
+      throw preserveFallbackFatal(error);
+    }
+  }
+
+  function addCitationParagraph(document, args, resources, context) {
+    void resources;
+    const paragraphStart = currentPosition(document);
+    (args.runs || []).forEach(function (run) {
+      if (run.type === "text") {
+        insertInlineText(document, run.text);
+      } else if (run.type === "citation") {
+        insertInlineText(document, run.fallbackText);
+        context.childResults.push({nodeId: run.nodeId, status: "applied"});
+      } else if (run.type === "degradation") {
+        addCitationDegradationRun(document, run, context);
+      } else if (run.type === "reference") {
+        insertInlineText(document, run.prefix);
+        addNativeField(
+          document, "REF " + run.bookmarkName + " \\h",
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED",
+          expectedReferenceFieldDelta(document, run.bookmarkName)
+        );
+        if (run.suffix) insertInlineText(document, run.suffix);
+      } else {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const format = paragraph && paragraph.ParagraphFormat;
+      if (!format) throw nativeError("CAPABILITY_MISMATCH");
+      const indent = safeNumber(args.listFormatting.indentPt, 24);
+      format.LeftIndent = indent;
+      format.FirstLineIndent = -indent;
+      format.SpaceBefore = 0;
+      format.SpaceAfter = 3;
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function addBibliographyNative(document, args) {
+    if (!args || !Array.isArray(args.entries)) {
+      throw nativeError("CONFIGURATION_INVALID");
+    }
+    const structured = args.schemaVersion === 1;
+    const entries = args.entries;
+    if (structured && entries.length === 0) {
+      throw nativeError("CONFIGURATION_INVALID");
+    }
+    entries.forEach(function (entry) {
+      const start = currentPosition(document);
+      const text = structured
+        ? "[" + entry.number + "] " + safeString(entry.text)
+        : safeString(entry);
+      insertInlineText(document, text);
+      const paragraph = document.Range(start, currentPosition(document));
+      if (!paragraph || !paragraph.ParagraphFormat) {
+        throw nativeError("BIBLIOGRAPHY_INSERT_FAILED");
+      }
+      const format = paragraph.ParagraphFormat;
+      format.Alignment = 0;
+      if (structured) {
+        format.LeftIndent = safeNumber(args.leftIndentPt, 18);
+        format.FirstLineIndent = -safeNumber(args.hangingIndentPt, 18);
+        format.SpaceBefore = 0;
+        format.SpaceAfter = safeNumber(args.spaceAfterPt, 6);
+        format.KeepTogether = -1;
+      }
+      insertInlineText(document, "\r");
+    });
+  }
+
+  function addCrossReferenceParagraph(document, args, resources, context) {
+    void resources;
+    const paragraphStart = currentPosition(document);
+    let degraded = false;
+    (args.runs || []).forEach(function (run) {
+      if (run.type === "text") {
+        insertInlineText(document, run.text);
+        return;
+      }
+      insertInlineText(document, run.prefix);
+      const start = currentPosition(document);
+      try {
+        addNativeField(
+          document, "REF " + run.bookmarkName + " \\h",
+          context.ownerNodeId, "REF", "reference", "CROSS_REFERENCE_FAILED",
+          expectedReferenceFieldDelta(document, run.bookmarkName)
+        );
+      } catch (error) {
+        if (error.code !== "CROSS_REFERENCE_FAILED" || context.controllerOwned) throw error;
+        rollbackMutation(document, start);
+        insertInlineText(document, run.fallbackText);
+        degraded = true;
+      }
+      if (run.suffix) insertInlineText(document, run.suffix);
+    });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const style = getStyle(document, "List Paragraph");
+      if (style) paragraph.Style = style;
+      const format = paragraph.ParagraphFormat;
+      if (format) {
+        const indent = safeNumber(args.listFormatting.indentPt, 24);
+        format.LeftIndent = indent;
+        format.FirstLineIndent = -indent;
+        format.SpaceBefore = 0;
+        format.SpaceAfter = 3;
+        if (format.TabStops && typeof format.TabStops.Add === "function") {
+          format.TabStops.Add(indent);
+        }
+      }
+    }
+    insertInlineText(document, "\r");
+    if (degraded) appendIssueOnce(context.issues, {
+      code: "CROSS_REFERENCE_FAILED", message: "Cross-reference used inline fallback",
+      placement: "inline", nodeId: context.ownerNodeId
+    });
+  }
+
+  function addCrossReferenceFallback(document, args, context) {
+    const paragraphStart = currentPosition(document);
+    (args.runs || []).forEach(function (run) {
+      if (run.type === "text") {
+        insertInlineText(document, safeString(run.text));
+        return;
+      }
+      if (run.type === "citation") {
+        insertInlineText(document, safeString(run.fallbackText));
+        context.childResults.push({nodeId: run.nodeId, status: "applied"});
+        return;
+      }
+      if (run.type === "degradation") {
+        addCitationDegradationRun(document, run, context);
+        return;
+      }
+      insertInlineText(document, safeString(run.prefix));
+      addLiteralInlineDegradation(document, safeString(run.fallbackText));
+      insertInlineText(document, safeString(run.suffix));
+    });
+    if (args.listFormatting) {
+      const paragraph = document.Range(paragraphStart, currentPosition(document));
+      const format = paragraph && paragraph.ParagraphFormat;
+      if (format) {
+        const indent = safeNumber(args.listFormatting.indentPt, 24);
+        format.LeftIndent = indent;
+        format.FirstLineIndent = -indent;
+        format.SpaceBefore = 0;
+        format.SpaceAfter = 3;
+      }
+    }
+    insertInlineText(document, "\r");
+  }
+
+  function insertCaptionIndexNative(document, args, resources, context) {
+    void resources;
+    if (args.sequenceId !== "WPSC_FIG" && args.sequenceId !== "WPSC_TAB") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (args.title) {
+      const title = insertText(document, args.title, args.titleStyleId, {});
+      if (title.range && title.range.ParagraphFormat) title.range.ParagraphFormat.OutlineLevel = 10;
+    }
+    let index;
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    try {
+      index = document.TablesOfFigures.Add(target, args.sequenceId);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [index && index.Range], previousEnd
+        );
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    trackNativeField(
+      document,
+      context.ownerNodeId,
+      args.sequenceId === "WPSC_FIG" ? "TOF_FIG" : "TOF_TAB",
+      index,
+      "index"
+    );
+    insertInlineText(document, "\r");
+  }
+
+  function insertFigureIndex(document, args, resources, context) {
+    if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    let index;
+    try {
+      index = document.TablesOfFigures.Add(target, "Figure");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(document, target, [index && index.Range], previousEnd);
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      throw error;
+    }
+  }
+
+  function insertTableIndex(document, args, resources, context) {
+    if (args.sequenceId) return insertCaptionIndexNative(document, args, resources, context);
+    const target = endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    let index;
+    try {
+      index = document.TablesOfFigures.Add(target, "Table");
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(document, target, [index && index.Range], previousEnd);
+      } else if (typeof document.Range === "function") {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [index && index.Range]);
+      throw error;
+    }
+  }
+
+  function updateTrackedFields(document, kinds) {
+    nativeFields(document).forEach(function (entry) {
+      if (kinds[entry.fieldKind]) entry.native.Update();
+    });
+  }
+
+  function requiredCollectionCount(collection) {
+    if (!collection) throw nativeError("FIELD_REFRESH_FAILED");
+    const count = Number(collection.Count);
+    if (!Number.isInteger(count) || count < 0) throw nativeError("FIELD_REFRESH_FAILED");
+    return count;
+  }
+
+  function repaginateAndUpdateNumbering(document) {
+    if (typeof document.Repaginate !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    document.Repaginate();
+    const tracked = nativeFields(document);
+    updateTrackedFields(document, {STYLEREF: true, SEQ_FIG: true, SEQ_TAB: true, SEQ_EQ: true});
+    // Compatibility for M1/M2 plans that predate tracked native fields.
+    if (tracked.length === 0) {
+      if (!document.Fields || typeof document.Fields.Update !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+      document.Fields.Update();
+    }
+  }
+
+  function refreshBookmarksAndReferences(document) {
+    requiredCollectionCount(document.Bookmarks);
+    updateTrackedFields(document, {REF: true});
+  }
+
+  function refreshIndexes(document) {
+    const tocCount = requiredCollectionCount(document.TablesOfContents);
+    const figureCount = requiredCollectionCount(document.TablesOfFigures);
+    for (let index = 1; index <= tocCount; index += 1) {
+      collectionItem(document.TablesOfContents, index).Update();
+    }
+    for (let index = 1; index <= figureCount; index += 1) {
+      collectionItem(document.TablesOfFigures, index).Update();
+    }
+  }
+
+  function sectionPageFields(document) {
+    const entries = [];
+    const sectionCount = requiredCollectionCount(document.Sections);
+    for (let sectionIndex = 1; sectionIndex <= sectionCount; sectionIndex += 1) {
+      const section = collectionItem(document.Sections, sectionIndex);
+      ["Headers", "Footers"].forEach(function (storyName) {
+        const stories = section && section[storyName];
+        const storyCount = requiredCollectionCount(stories);
+        for (let storyIndex = 1; storyIndex <= storyCount; storyIndex += 1) {
+          const story = collectionItem(stories, storyIndex);
+          if (story && (story.Exists === false || story.Exists === 0)) continue;
+          const fields = story && story.Range && story.Range.Fields;
+          const fieldCount = requiredCollectionCount(fields);
+          for (let fieldIndex = 1; fieldIndex <= fieldCount; fieldIndex += 1) {
+            const native = collectionItem(fields, fieldIndex);
+            const code = safeString(native && native.Code && native.Code.Text)
+              .trim().toUpperCase().split(/\s+/, 1)[0];
+            if (code === "PAGE" || code === "NUMPAGES") {
+              entries.push({
+                ownerNodeId: "section:" + sectionIndex + "/" + storyName.toLowerCase() + ":" + storyIndex,
+                fieldKind: code,
+                native: native,
+                category: "page"
+              });
+            }
+          }
+        }
+      });
+    }
+    return entries;
+  }
+
+  function repaginateAndUpdatePageFields(document) {
+    if (typeof document.Repaginate !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    document.Repaginate();
+    updateTrackedFields(document, {PAGE: true, NUMPAGES: true});
+    const tracked = new Set(nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "PAGE" || entry.fieldKind === "NUMPAGES";
+    }).map(function (entry) { return entry.native; }));
+    sectionPageFields(document).forEach(function (entry) {
+      if (!tracked.has(entry.native)) entry.native.Update();
+    });
+  }
+
+  const SHA256_CONSTANTS = Object.freeze([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ]);
+
+  function utf8Bytes(text) {
+    const bytes = [];
+    for (let index = 0; index < text.length; index += 1) {
+      let codePoint = text.charCodeAt(index);
+      if (codePoint >= 0xd800 && codePoint <= 0xdbff) {
+        const next = text.charCodeAt(index + 1);
+        if (next >= 0xdc00 && next <= 0xdfff) {
+          codePoint = 0x10000 + ((codePoint - 0xd800) << 10) + (next - 0xdc00);
+          index += 1;
+        } else {
+          codePoint = 0xfffd;
+        }
+      } else if (codePoint >= 0xdc00 && codePoint <= 0xdfff) {
+        codePoint = 0xfffd;
+      }
+      if (codePoint <= 0x7f) bytes.push(codePoint);
+      else if (codePoint <= 0x7ff) {
+        bytes.push(0xc0 | (codePoint >>> 6), 0x80 | (codePoint & 0x3f));
+      } else if (codePoint <= 0xffff) {
+        bytes.push(0xe0 | (codePoint >>> 12), 0x80 | ((codePoint >>> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+      } else {
+        bytes.push(0xf0 | (codePoint >>> 18), 0x80 | ((codePoint >>> 12) & 0x3f),
+          0x80 | ((codePoint >>> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+      }
+    }
+    return bytes;
+  }
+
+  function rotateRight(value, bits) {
+    return (value >>> bits) | (value << (32 - bits));
+  }
+
+  function hashVisible(value) {
+    const text = safeString(value).replace(/\r\n?/g, "\n").normalize("NFC");
+    const bytes = utf8Bytes(text);
+    const bitLength = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    const high = Math.floor(bitLength / 0x100000000);
+    const low = bitLength >>> 0;
+    for (let shift = 24; shift >= 0; shift -= 8) bytes.push((high >>> shift) & 0xff);
+    for (let shift = 24; shift >= 0; shift -= 8) bytes.push((low >>> shift) & 0xff);
+
+    const state = [
+      0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+      0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    ];
+    const words = new Array(64);
+    for (let offset = 0; offset < bytes.length; offset += 64) {
+      for (let index = 0; index < 16; index += 1) {
+        const base = offset + index * 4;
+        words[index] = ((bytes[base] << 24) | (bytes[base + 1] << 16) |
+          (bytes[base + 2] << 8) | bytes[base + 3]) >>> 0;
+      }
+      for (let index = 16; index < 64; index += 1) {
+        const left = words[index - 15];
+        const right = words[index - 2];
+        const sigma0 = rotateRight(left, 7) ^ rotateRight(left, 18) ^ (left >>> 3);
+        const sigma1 = rotateRight(right, 17) ^ rotateRight(right, 19) ^ (right >>> 10);
+        words[index] = (words[index - 16] + sigma0 + words[index - 7] + sigma1) >>> 0;
+      }
+      let a = state[0]; let b = state[1]; let c = state[2]; let d = state[3];
+      let e = state[4]; let f = state[5]; let g = state[6]; let h = state[7];
+      for (let index = 0; index < 64; index += 1) {
+        const bigSigma1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
+        const choice = (e & f) ^ (~e & g);
+        const temp1 = (h + bigSigma1 + choice + SHA256_CONSTANTS[index] + words[index]) >>> 0;
+        const bigSigma0 = rotateRight(a, 2) ^ rotateRight(a, 13) ^ rotateRight(a, 22);
+        const majority = (a & b) ^ (a & c) ^ (b & c);
+        const temp2 = (bigSigma0 + majority) >>> 0;
+        h = g; g = f; f = e; e = (d + temp1) >>> 0;
+        d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+      }
+      state[0] = (state[0] + a) >>> 0; state[1] = (state[1] + b) >>> 0;
+      state[2] = (state[2] + c) >>> 0; state[3] = (state[3] + d) >>> 0;
+      state[4] = (state[4] + e) >>> 0; state[5] = (state[5] + f) >>> 0;
+      state[6] = (state[6] + g) >>> 0; state[7] = (state[7] + h) >>> 0;
+    }
+    return state.map(function (word) { return word.toString(16).padStart(8, "0"); }).join("");
+  }
+
+  function nativeVisibleResult(native) {
+    if (native && native.Result && native.Result.Text !== undefined) return native.Result.Text;
+    if (native && native.Range && native.Range.Text !== undefined) return native.Range.Text;
+    return "";
+  }
+
+  function nativeRangePageSpan(native) {
+    const range = native && native.Range;
+    const start = Number(range && range.Start);
+    const end = Number(range && range.End);
+    if (!Number.isInteger(start) || !Number.isInteger(end) || end < start) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    if (end === start) return 1;
+    const first = typeof range.Duplicate === "function" ? range.Duplicate() : range.Duplicate;
+    const last = typeof range.Duplicate === "function" ? range.Duplicate() : range.Duplicate;
+    if (!first || !last || typeof first.SetRange !== "function" ||
+        typeof last.SetRange !== "function" || typeof first.Information !== "function" ||
+        typeof last.Information !== "function") {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    first.SetRange(start, start);
+    last.SetRange(end - 1, end - 1);
+    const firstPage = Number(first.Information(3));
+    const lastPage = Number(last.Information(3));
+    if (!Number.isInteger(firstPage) || !Number.isInteger(lastPage)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return Math.max(1, lastPage - firstPage + 1);
+  }
+
+  function snapshotFields(document) {
+    if (typeof document.ComputeStatistics !== "function") throw nativeError("FIELD_REFRESH_FAILED");
+    const totalPages = Number(document.ComputeStatistics(2));
+    if (!Number.isFinite(totalPages) || totalPages < 0) throw nativeError("FIELD_REFRESH_FAILED");
+    requiredCollectionCount(document.TablesOfContents);
+    requiredCollectionCount(document.TablesOfFigures);
+    const tocPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOC";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const figureIndexPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOF_FIG";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const tableIndexPageCount = nativeFields(document).filter(function (entry) {
+      return entry.fieldKind === "TOF_TAB";
+    }).reduce(function (total, entry) { return total + nativeRangePageSpan(entry.native); }, 0);
+    const ordinals = {};
+    const snapshotEntries = nativeFields(document).concat(sectionPageFields(document));
+    const snapshots = snapshotEntries.map(function (entry) {
+      const identity = entry.ownerNodeId + "\u0000" + entry.fieldKind;
+      const ordinal = ordinals[identity] || 0;
+      ordinals[identity] = ordinal + 1;
+      return {
+        stableKey: [entry.ownerNodeId, entry.fieldKind, ordinal],
+        fieldCategory: entry.category,
+        resultHash: hashVisible(nativeVisibleResult(entry.native)),
+        tocPageCount: tocPageCount,
+        figureIndexPageCount: figureIndexPageCount,
+        tableIndexPageCount: tableIndexPageCount,
+        totalPages: totalPages
+      };
+    });
+    if (snapshots.length === 0) snapshots.push({
+      stableKey: ["doc:finalize", "PAGE", 0],
+      fieldCategory: "page",
+      resultHash: hashVisible(String(totalPages) + "-" + String(tocPageCount)),
+      tocPageCount: tocPageCount,
+      figureIndexPageCount: figureIndexPageCount,
+      tableIndexPageCount: tableIndexPageCount,
+      totalPages: totalPages
+    });
+    snapshots.sort(function (left, right) {
+      return JSON.stringify(left.stableKey).localeCompare(JSON.stringify(right.stableKey));
+    });
+    return snapshots;
+  }
+
+  function fieldSnapshotSignature(snapshot) {
+    return JSON.stringify(snapshot);
+  }
+
+  function appendIssueOnce(issues, issue) {
+    const duplicateIndex = issues.findIndex(function (existing) {
+      return existing.code === issue.code &&
+        (existing.placement || "document") === (issue.placement || "document") &&
+        (existing.nodeId || null) === (issue.nodeId || null);
+    });
+    if (duplicateIndex < 0) issues.push(issue);
+    else if (issue.recoverable === true && issues[duplicateIndex].recoverable !== true) {
+      issues[duplicateIndex] = issue;
+    }
+  }
+
+  function unstableFieldIssue(snapshot, rounds) {
+    const representative = snapshot.length ? snapshot[snapshot.length - 1] : {
+      tocPageCount: 0, figureIndexPageCount: 0, tableIndexPageCount: 0, totalPages: 0
+    };
+    return {
+      code: "FIELD_REFRESH_UNSTABLE",
+      message: "Field refresh did not converge after " + rounds + " rounds; " +
+        "fields=" + snapshot.length + ", toc_pages=" + representative.tocPageCount +
+        ", figure_index_pages=" + representative.figureIndexPageCount +
+        ", table_index_pages=" + representative.tableIndexPageCount +
+        ", total_pages=" + representative.totalPages,
+      placement: "document",
+      stage: "field-refresh",
+      fallback: "document-quality-notice",
+      recoverable: true
+    };
+  }
+
+  function nativeFieldAdapter(document) {
+    return {
+      repaginateAndUpdateNumbering: function () { repaginateAndUpdateNumbering(document); },
+      refreshBookmarksAndReferences: function () { refreshBookmarksAndReferences(document); },
+      refreshIndexes: function () { refreshIndexes(document); },
+      repaginateAndUpdatePageFields: function () { repaginateAndUpdatePageFields(document); },
+      snapshotFields: function () { return snapshotFields(document); },
+      upsertDocumentQualityNotice: function (issue) {
+        if (!document._wpscQualityAnchor) {
+          reserveDocumentQualityAnchor(document, {title: "生成质量提示", notices: []});
+        }
+        upsertDocumentQualityNotice(document, issue);
+      }
+    };
+  }
+
+  function runNativeFieldConvergence(adapter, rawMaxRounds, issues) {
+    if (!Number.isInteger(rawMaxRounds) || rawMaxRounds < 1 || rawMaxRounds > 3) {
+      const boundError = nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      throw boundError;
+    }
+    const required = [
+      "repaginateAndUpdateNumbering",
+      "refreshBookmarksAndReferences",
+      "refreshIndexes",
+      "repaginateAndUpdatePageFields",
+      "snapshotFields",
+      "upsertDocumentQualityNotice"
+    ];
+    if (!adapter || required.some(function (name) {
+      return typeof adapter[name] !== "function";
+    })) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const fieldSnapshots = [];
+    let previousSignature = null;
+    try {
+      for (let round = 0; round < rawMaxRounds; round += 1) {
+        adapter.repaginateAndUpdateNumbering();
+        adapter.refreshBookmarksAndReferences();
+        adapter.refreshIndexes();
+        adapter.repaginateAndUpdatePageFields();
+        const snapshot = adapter.snapshotFields();
+        fieldSnapshots.push(snapshot);
+        const signature = fieldSnapshotSignature(snapshot);
+        if (previousSignature !== null && signature === previousSignature) return fieldSnapshots;
+        previousSignature = signature;
+      }
+      const issue = unstableFieldIssue(
+        fieldSnapshots[fieldSnapshots.length - 1], rawMaxRounds
+      );
+      appendIssueOnce(issues, issue);
+      adapter.upsertDocumentQualityNotice(issue);
+      adapter.repaginateAndUpdateNumbering();
+      adapter.refreshBookmarksAndReferences();
+      adapter.refreshIndexes();
+      adapter.repaginateAndUpdatePageFields();
+      const frozen = adapter.snapshotFields();
+      fieldSnapshots.push(frozen);
+      return fieldSnapshots;
+    } catch (error) {
+      if (error && error.code === "FIELD_REFRESH_CONTRACT_INVALID") throw error;
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+  }
+
+  function runFieldConvergence(document, operations, issues) {
+    const finalizers = operations.filter(function (operation) {
+      return operation.op === "writer.finalize_fields";
+    });
+    if (finalizers.length === 0) return [];
+    if (finalizers.length !== 1) throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    const operation = finalizers[0];
+    const maxRounds = operation.args && operation.args.maxRounds !== undefined
+      ? operation.args.maxRounds : 3;
+    return runNativeFieldConvergence(nativeFieldAdapter(document), maxRounds, issues);
+  }
+
+  function addInlineDegradation(document, args) {
+    const code = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(args.code))
+      ? safeString(args.code) : "DEGRADATION";
+    const text = degradationDisplay(code, args.fallbackText, true);
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      const insertionTarget = endRange(document);
+      const insertionStyle = captureDegradationInsertionStyle(
+        document, insertionTarget
+      );
+      const directStart = currentPosition(document);
+      insertInlineText(document, text);
+      const directWritten = exactDocumentRange(
+        document, directStart, directStart + text.length
+      );
+      if (directWritten.Font) {
+        directWritten.Font.Italic = -1;
+        directWritten.Font.Color = colorFromHex("#9C0006");
+      }
+      if (directWritten.Shading) {
+        directWritten.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      restoreDegradationInsertionStyle(
+        document, insertionStyle, currentPosition(document)
+      );
+      return directWritten;
+    }
+    const start = currentPosition(document);
+    insertInlineText(document, text);
+    queueDegradationStyle(document, start, start + text.length);
+    return exactDocumentRange(document, start, start + text.length);
+  }
+
+  function degradationStyleScalar(document, owner, name) {
+    const value = owner && owner[name];
+    if ((typeof value === "number" && Number.isFinite(value)) ||
+        typeof value === "boolean") return value;
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    return undefined;
+  }
+
+  function captureDegradationInsertionStyle(document, targetRange) {
+    const targetStart = Number(targetRange && targetRange.Start);
+    if (!Number.isInteger(targetStart) || targetStart < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const cursor = exactDocumentRange(document, targetStart, targetStart);
+    const font = cursor && cursor.Font;
+    const shading = cursor && cursor.Shading;
+    return {
+      italic: degradationStyleScalar(document, font, "Italic"),
+      color: degradationStyleScalar(document, font, "Color"),
+      background: degradationStyleScalar(
+        document, shading, "BackgroundPatternColor"
+      )
+    };
+  }
+
+  function restoreDegradationInsertionStyle(document, style, rawPosition) {
+    const position = Number(rawPosition);
+    if (!Number.isInteger(position) || position < 0) {
+      throw nativeError("CAPABILITY_MISMATCH");
+    }
+    const cursor = exactDocumentRange(document, position, position);
+    const targets = [cursor];
+    if (document && document._wpscRunOwnsAppendCursor === true) {
+      if (!cursor || typeof cursor.Select !== "function" || !document.ActiveWindow) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      cursor.Select();
+      targets.push(documentOwnedSelection(document, position, position));
+    }
+    targets.forEach(function (target) {
+      if (target && target.Font) {
+        if (style.italic !== undefined) target.Font.Italic = style.italic;
+        if (style.color !== undefined) target.Font.Color = style.color;
+      }
+      if (target && target.Shading) {
+        if (style.background !== undefined) {
+          target.Shading.BackgroundPatternColor = style.background;
+        }
+      }
+    });
+  }
+
+  function addLiteralInlineDegradation(document, fallbackText) {
+    const text = safePublicText(fallbackText);
+    if (!document || document._wpscRunOwnsAppendCursor !== true) {
+      const insertionTarget = endRange(document);
+      const insertionStyle = captureDegradationInsertionStyle(
+        document, insertionTarget
+      );
+      const directStart = currentPosition(document);
+      insertInlineText(document, text);
+      const directWritten = exactDocumentRange(
+        document, directStart, directStart + text.length
+      );
+      if (directWritten.Font) {
+        directWritten.Font.Italic = -1;
+        directWritten.Font.Color = colorFromHex("#9C0006");
+      }
+      if (directWritten.Shading) {
+        directWritten.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      }
+      restoreDegradationInsertionStyle(
+        document, insertionStyle, currentPosition(document)
+      );
+      return directWritten;
+    }
+    const start = currentPosition(document);
+    insertInlineText(document, text);
+    queueDegradationStyle(document, start, start + text.length);
+    return exactDocumentRange(document, start, start + text.length);
+  }
+
+  function addCitationDegradationRun(document, run, context) {
+    addLiteralInlineDegradation(document, run.fallbackText);
+    appendIssueOnce(context.issues, {
+      code: run.code,
+      message: "Citation used its planned fallback",
+      placement: "inline",
+      nodeId: run.nodeId,
+      stage: "preflight",
+      fallback: "inline",
+      recoverable: true
+    });
+    context.childResults.push({
+      nodeId: run.nodeId, status: "degraded", issueCode: run.code
+    });
+  }
+
+  function insertDegradationBox(document, code, fallbackText, targetRange, rawDisplay) {
+    if (!document.Tables || typeof document.Tables.Add !== "function") {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const safeCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(code))
+      ? safeString(code) : "DEGRADATION";
+    const target = targetRange || endRange(document);
+    const previousEnd = appendTargetEnd(document, target);
+    let table;
+    try {
+      table = document.Tables.Add(target, 1, 1);
+      if (previousEnd !== null) {
+        advanceNativeObjectCursor(
+          document, target, [table && table.Range], previousEnd
+        );
+      } else if (document && document._wpscRunOwnsAppendCursor === true) {
+        throw nativeError("CAPABILITY_MISMATCH");
+      }
+      const cell = table.Cell(1, 1);
+      cell.Range.Text = rawDisplay === undefined
+        ? degradationDisplay(safeCode, fallbackText, false)
+        : safePublicText(rawDisplay);
+      cell.Range.Font.Italic = -1;
+      cell.Range.Font.Color = colorFromHex("#9C0006");
+      cell.Range.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+      applyParagraphFormat(cell.Range.ParagraphFormat, {
+        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+      });
+      if (table.Rows) table.Rows.AllowBreakAcrossPages = false;
+      return table;
+    } catch (error) {
+      rollbackNativeInsertion(document, previousEnd, target, [table && table.Range]);
+      if (error && error.code === "CAPABILITY_MISMATCH") throw error;
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+  }
+
+  function degradationDisplay(code, fallbackText, inline) {
+    const safeCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(safeString(code))
+      ? safeString(code) : "DEGRADATION";
+    const safeFallback = safePublicText(fallbackText);
+    const codePrefix = "[" + safeCode;
+    const suffix = safeFallback.charAt(codePrefix.length);
+    const fallbackNamesCode = safeFallback.indexOf(codePrefix) === 0 &&
+      (suffix === "]" || suffix === " " || suffix === ":");
+    if (fallbackNamesCode) return safeFallback;
+    if (!safeFallback || safeFallback === safeCode) return "[" + safeCode + "]";
+    return inline
+      ? "[" + safeCode + ": " + safeFallback + "]"
+      : "[" + safeCode + "] " + safeFallback;
+  }
+
+  function insertStyledDegradationAtRange(document, target, text) {
+    if (!target || typeof document.Range !== "function") {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const start = safeNumber(target.Start, -1);
+    if (start < 0) throw nativeError("DEGRADATION_INSERT_FAILED");
+    const cursor = appendCursorRange(document);
+    const appendOwned = Boolean(
+      document && document._wpscRunOwnsAppendCursor === true && cursor &&
+      Number(target.Start) === Number(cursor.Start) &&
+      Number(target.End) === Number(cursor.End)
+    );
+    try {
+      insertInlineText(document, text, target);
+      const written = exactDocumentRange(document, start, start + text.length);
+      if (!written) throw nativeError("DEGRADATION_INSERT_FAILED");
+      if (appendOwned) {
+        queueDegradationStyle(document, start, start + text.length);
+      } else if (!document || document._wpscRunOwnsAppendCursor !== true) {
+        applyParagraphFormat(written.ParagraphFormat, {
+          spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+        });
+        if (written.Font) {
+          written.Font.Italic = -1;
+          written.Font.Color = colorFromHex("#9C0006");
+        }
+        if (written.Shading) {
+          written.Shading.BackgroundPatternColor = colorFromHex("#FCE8E6");
+        }
+      } else {
+        applyParagraphFormat(written.ParagraphFormat, {
+          spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+        });
+        styleExactDegradationSpan(document, {start: start, end: start + text.length});
+        if (document && document._wpscRunOwnsAppendCursor === true) {
+          const restorePosition = currentPosition(document);
+          const restoreCursor = exactDocumentRange(
+            document, restorePosition, restorePosition
+          );
+          if (typeof restoreCursor.Select !== "function") {
+            throw nativeError("CAPABILITY_MISMATCH");
+          }
+          restoreCursor.Select();
+          documentOwnedSelection(document, restorePosition, restorePosition);
+        }
+      }
+      return {Range: written};
+    } catch (error) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+  }
+
+  function addDegradationNotice(document, args) {
+    const placement = args.placement || "block";
+    if (placement === "inline") {
+      return addInlineDegradation(document, args);
+    }
+    if (placement === "document") {
+      upsertDocumentQualityNotice(document, args);
+      return document._wpscQualityAnchor;
+    }
+    if (placement !== "block") throw nativeError("DEGRADATION_INSERT_FAILED");
+    const target = endRange(document);
+    let notice;
+    let minimalTextNotice = false;
+    try {
+      notice = insertDegradationBox(document, args.code, args.fallbackText, target);
+    } catch (error) {
+      // A table failure may remove the one-cell styling API itself. Preserve
+      // the minimal visible notice at the same block anchor before declaring
+      // insertion fatal.
+      try {
+        notice = insertStyledDegradationAtRange(
+          document, target,
+          "[" + safeString(args.code || "DEGRADATION") + "] " +
+            safePublicText(args.fallbackText)
+        );
+        minimalTextNotice = true;
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+    insertInlineText(
+      document, "\r", null,
+      Boolean(document && document._wpscRunOwnsAppendCursor === true)
+    );
+    if (minimalTextNotice && notice && notice.Range) {
+      applyParagraphFormat(notice.Range.ParagraphFormat, {
+        spaceBefore: 0, spaceAfter: 3, keepTogether: true, outlineLevel: 10
+      });
+    }
+    return notice;
+  }
+
+  function reserveDocumentQualityAnchor(document, args) {
+    args = args || {};
+    if (!document._wpscQualityAnchor) {
+      const title = safeString(args.title || "生成质量提示");
+      const position = currentPosition(document);
+      try {
+        if (!document.Bookmarks || typeof document.Bookmarks.Add !== "function" ||
+            typeof document.Range !== "function") {
+          throw nativeError("DEGRADATION_INSERT_FAILED");
+        }
+        document.Bookmarks.Add(
+          "wpsc_document_quality_anchor", document.Range(position, position)
+        );
+      } catch (error) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+      document._wpscQualityAnchor = {title: title, position: position, empty: true};
+      document._wpscQualityNoticeSeen = Object.create(null);
+    }
+    (args.notices || []).forEach(function (notice) {
+      upsertDocumentQualityNotice(document, notice);
+    });
+  }
+
+  function upsertDocumentQualityNotice(document, issue) {
+    if (!document._wpscQualityAnchor || !document._wpscQualityNoticeSeen) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const code = safeString(issue && issue.code) || "QUALITY_NOTICE";
+    const placement = safeString(issue && issue.placement) || "document";
+    const nodeId = safeString(issue && (issue.nodeId || issue.node_id));
+    const identity = code + "\u0000" + placement + "\u0000" + nodeId;
+    if (document._wpscQualityNoticeSeen[identity]) return;
+    const position = document._wpscQualityAnchor.position;
+    const fallbackText = safePublicText(issue && (issue.fallbackText || issue.message));
+    const noticeDisplay = degradationDisplay(code, fallbackText, false);
+    const visibleText = document._wpscQualityAnchor.empty
+      ? document._wpscQualityAnchor.title + "\r" + noticeDisplay
+      : noticeDisplay;
+    let table = null;
+    let target = null;
+    try {
+      target = document.Range(position, position);
+      table = insertDegradationBox(
+        document,
+        code,
+        fallbackText,
+        target,
+        document._wpscQualityAnchor.empty ? visibleText : undefined
+      );
+      document._wpscQualityAnchor.position = safeNumber(
+        table && table.Range && table.Range.End, position + 1
+      );
+    } catch (error) {
+      const minimal = visibleText;
+      try {
+        const inserted = insertStyledDegradationAtRange(document, target, minimal);
+        document._wpscQualityAnchor.position = safeNumber(
+          inserted && inserted.Range && inserted.Range.End,
+          position + minimal.length
+        );
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+    document._wpscQualityAnchor.empty = false;
+    document._wpscQualityNoticeSeen[identity] = true;
+  }
+
+  function addDocumentQualityNotice(document, args) {
+    const notices = args.notices || [];
+    if (!document._wpscQualityAnchor) {
+      reserveDocumentQualityAnchor(document, {notices: notices});
+      return;
+    }
+    notices.forEach(function (notice) { upsertDocumentQualityNotice(document, notice); });
+  }
+
+  function compactTerminalParagraph(document) {
+    const paragraphs = document && document.Paragraphs;
+    const last = paragraphs ? collectionItem(paragraphs, paragraphs.Count) : null;
+    const range = last && last.Range;
+    if (!range) throw nativeError("EXECUTION_ABORTED");
+    const visible = safeString(range.Text).replace(/[\r\n\u0007]/g, "").trim();
+    if (visible) return;
+    try {
+      if (range.Font) range.Font.Size = 1;
+      if (range.ParagraphFormat) {
+        range.ParagraphFormat.SpaceBefore = 0;
+        range.ParagraphFormat.SpaceAfter = 0;
+        range.ParagraphFormat.LineSpacingRule = 4;
+        range.ParagraphFormat.LineSpacing = 1;
+        range.ParagraphFormat.KeepTogether = 0;
+        range.ParagraphFormat.KeepWithNext = 0;
+      }
+    } catch (error) {
+      throw nativeError("EXECUTION_ABORTED");
+    }
+  }
+
+  const OPERATIONS = {
+    "writer.reset": resetDocument,
+    "writer.configure_page": configurePage,
+    "writer.ensure_styles": ensureStyles,
+    "writer.add_paragraph": addParagraph,
+    "writer.add_heading": addHeadingNative,
+    "writer.add_heading_native": addHeadingNative,
+    "writer.add_list": addList,
+    "writer.add_page_break": function (document) { insertDocumentBreak(document, 7); },
+    "writer.configure_section": configureSection,
+    "writer.configure_front_matter": function (document, args) {
+      document._wpscFrontMatter = args;
+      setDocumentMetadata(document, args);
+      if (args.role) setPageRole(document, args.role);
+    },
+    "writer.configure_toc_styles": function (document, args) { document._wpscTocDensity = args; },
+    "writer.set_page_role": function (document, args) { setPageRole(document, args.role); },
+    "writer.set_page_numbering": function (document, args) { setPageNumbering(document, args); },
+    "writer.set_header_footer": function (document, args) { setHeaderFooter(document, args); },
+    "writer.insert_toc": insertTocWithStyles,
+    "writer.insert_toc_with_styles": insertTocWithStyles,
+    "writer.insert_figure_index": insertFigureIndex,
+    "writer.insert_table_index": insertTableIndex,
+    "writer.add_captioned_figure": addCaptionedFigureNative,
+    "writer.add_semantic_table": addSemanticTableNative,
+    "writer.add_equation": function (document, args, resources, context) {
+      if (args.renderMode === "native-m4") {
+        return addEquationNativeM4(document, args, resources, context);
+      }
+      return addEquationNumberNative(document, args, resources, context);
+    },
+    "writer.add_cross_reference": function (document, args, resources, context) {
+      if ((args.runs || []).some(function (run) {
+        return run.type === "citation" || run.type === "degradation";
+      })) return addCitationParagraph(document, args, resources, context);
+      return addCrossReferenceParagraph(document, args, resources, context);
+    },
+    "writer.add_bibliography": addBibliographyNative,
+    // runFieldConvergence remains the sole field-refresh owner. The optional
+    // M5 pass may only compact the final empty paragraph before convergence.
+    "writer.finalize_fields": function (document, args) {
+      if (args.compactTerminalParagraph === true) compactTerminalParagraph(document);
+    },
+    "writer.add_inline_degradation": addInlineDegradation,
+    "writer.add_degradation_notice": addDegradationNotice,
+    "writer.add_document_quality_notice": addDocumentQualityNotice,
+    "writer.reserve_document_quality_anchor": reserveDocumentQualityAnchor
+  };
+
+  function fallbackPlacement(fallbackKind) {
+    if (fallbackKind === "inline" || fallbackKind === "inline-fallback") return "inline";
+    if (fallbackKind === "document-quality-notice") return "document";
+    return "block";
+  }
+
+  function operationFallbackText(operation) {
+    const args = operation.args || {};
+    if (args.fallbackText || args.source || args.text || args.caption) {
+      return safePublicText(args.fallbackText || args.source || args.text || args.caption);
+    }
+    if (Array.isArray(args.runs)) {
+      return args.runs.map(function (run) {
+        return run.type === "text" ? safePublicText(run.text) : safePublicText(run.fallbackText);
+      }).join("");
+    }
+    if (Array.isArray(args.headers)) {
+      return [args.headers].concat(args.rows || []).map(function (row) {
+        return row.map(safePublicText).join(" | ");
+      }).join("\n");
+    }
+    if (args.schemaVersion === 1 && Array.isArray(args.entries)) {
+      return args.entries.map(function (entry) {
+        return "[" + entry.number + "] " + safePublicText(entry.text);
+      }).join("\n");
+    }
+    if (Array.isArray(args.entries)) {
+      return args.entries.map(safePublicText).join("\n");
+    }
+    return "";
+  }
+
+  function applyOperationFallback(document, operation, code, fallbackKind, resources, context) {
+    const text = operationFallbackText(operation);
+    if (fallbackKind === "figure-child-stack-then-notice" &&
+        operation.op === "writer.add_captioned_figure") {
+      addCaptionedFigureFallback(document, operation.args || {}, resources, context, code);
+      return;
+    }
+    if (fallbackKind === "grid-then-text" &&
+        operation.op === "writer.add_semantic_table") {
+      addSemanticTableFallback(document, operation.args || {}, resources, context, code);
+      return;
+    }
+    if (fallbackKind === "inline-fallback" &&
+        operation.op === "writer.add_cross_reference") {
+      addCrossReferenceFallback(document, operation.args || {}, context);
+      return;
+    }
+    if (fallbackKind === "explicit-image-then-source-notice" &&
+        operation.op === "writer.add_equation" &&
+        operation.args && operation.args.renderMode === "native-m4") {
+      addFormulaNativeFallback(
+        document, operation.args || {}, resources || {}, context, code
+      );
+      return;
+    }
+    if (fallbackKind === "inline" || fallbackKind === "inline-fallback") {
+      addInlineDegradation(document, {code: code, fallbackText: text});
+      return;
+    }
+    if (fallbackKind === "notice" ||
+        fallbackKind === "explicit-image-then-source-notice") {
+      addDegradationNotice(document, {
+        code: code, fallbackText: text, placement: "block"
+      });
+      return;
+    }
+    throw nativeError("DEGRADATION_FALLBACK_FAILED");
+  }
+
+  function recoverOperation(
+    document, operation, resources, issues, context, checkpoint, code, fallbackKind
+  ) {
+    const placement = fallbackPlacement(fallbackKind);
+    const controller = document._wpscRecoveryController || createLocalRecoveryController();
+    document._wpscRecoveryController = controller;
+    recoverLocalFailure(controller, {
+      nodeId: operation.nodeId || operation.op,
+      descriptor: {
+        code: code, placement: placement, fallbackKind: fallbackKind,
+        fallbackText: operationFallbackText(operation)
+      },
+      rollback: function (token) { rollbackMutation(document, token); },
+      fallbackAttempt: function () {
+        applyOperationFallback(
+          document, operation, code, fallbackKind, resources || {}, context
+        );
+      },
+      // The local inline fallback or restrained block is itself the visible
+      // same-node notice. Reaching this callback proves insertion completed.
+      insertNotice: function () {}
+    }, checkpoint, code);
+    appendIssueOnce(issues, {
+      code: code,
+      message: operation.op + " used its declared fallback",
+      placement: placement,
+      nodeId: operation.nodeId,
+      stage: "native",
+      fallback: fallbackKind,
+      recoverable: true
+    });
+  }
+
+  function runOwnedOperation(document, operation, resources, issues, childResults) {
+    const opName = operation.op;
+    const issueCheckpoint = issues.length;
+    const childCheckpoint = childResults.length;
+    const context = {
+      ownerNodeId: operation.nodeId || null,
+      issues: issues,
+      childResults: childResults,
+      controllerOwned: true
+    };
+    const deferred = LONGFORM_DEFERRED[opName];
+    const handler = OPERATIONS[opName];
+    if (!deferred && !handler) {
+      throw nativeError("UNKNOWN_OPERATION");
+    }
+    const policy = operation.failurePolicy || {};
+    let recoverable = false;
+    if (deferred) {
+      recoveryDecision(deferred[0], deferred[1], fallbackPlacement(deferred[1]));
+      recoverable = true;
+    } else if (policy.mode === "degrade" &&
+               Array.isArray(policy.recoverableCodes) &&
+               policy.recoverableCodes.length > 0) {
+      policy.recoverableCodes.forEach(function (code) {
+        recoveryDecision(code, policy.fallback, fallbackPlacement(policy.fallback));
+      });
+      recoverable = true;
+    }
+    const equationArgs = operation.args || {};
+    const plannedEquation = Boolean(
+      equationArgs.content && equationArgs.content.plannedDegradation
+    );
+    const rollbackOwnsParagraph = opName === "writer.add_equation" ||
+      opName === "writer.add_cross_reference";
+    const checkpoint = recoverable ? checkpointRecoverableMutation(
+      document,
+      rollbackOwnsParagraph,
+      opName === "writer.add_equation"
+        ? (plannedEquation
+          ? ["inlineShapes", "fields", "bookmarks"]
+          : ["omaths", "inlineShapes", "fields", "bookmarks"])
+        : (opName === "writer.add_cross_reference" ? ["fields"] : [])
+    ) : null;
+    if (deferred) {
+      recoverOperation(
+        document, operation, resources, issues, context,
+        checkpoint, deferred[0], deferred[1]
+      );
+      return;
+    }
+    try {
+      handler(document, operation.args || {}, resources || {}, context);
+    } catch (error) {
+      const professionalMathUnavailable = Boolean(
+        error && error._wpscProfessionalMathUnavailable === true
+      );
+      if (error && error.code === "LOCAL_MUTATION_ROLLBACK_FAILED") {
+        throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+      }
+      if (policy.mode === "fail") {
+        throw nativeError("EXECUTION_ABORTED");
+      }
+      if (policy.mode === "degrade") {
+        const code = error && error.code;
+        const allowed = Array.isArray(policy.recoverableCodes) &&
+          policy.recoverableCodes.indexOf(code) !== -1;
+        if (allowed) {
+          issues.length = issueCheckpoint;
+          childResults.length = childCheckpoint;
+          recoverOperation(
+            document, operation, resources, issues, context,
+            checkpoint, code, policy.fallback
+          );
+          if (professionalMathUnavailable) {
+            document._wpscProfessionalMathUnavailable = true;
+          }
+          return;
+        }
+        if (checkpoint) {
+          try { rollbackMutation(document, checkpoint); }
+          catch (rollbackError) {
+            throw nativeError("LOCAL_MUTATION_ROLLBACK_FAILED");
+          }
+        }
+      }
+      throw nativeError(error && error.code ? error.code : "EXECUTION_ABORTED");
+    }
+  }
+
+  function runOperation(document, operation, resources, issues, childResults) {
+    const alreadyOwned = Boolean(
+      document && document._wpscRunOwnsAppendCursor === true
+    );
+    if (document) document._wpscRunOwnsAppendCursor = true;
+    try {
+      if (document && typeof document.Range === "function" &&
+          !document._wpscAppendCursorRange) {
+        try {
+          const initialEnd = authoritativeDocumentEnd(document);
+          setAppendCursor(document, initialEnd.position);
+        } catch (error) {
+          const policy = operation && operation.failurePolicy || {};
+          const recoverable = Boolean(
+            operation && LONGFORM_DEFERRED[operation.op]
+          ) || (policy.mode === "degrade" &&
+                 Array.isArray(policy.recoverableCodes) &&
+                 policy.recoverableCodes.length > 0);
+          throw nativeError(
+            recoverable ? "LOCAL_MUTATION_CHECKPOINT_FAILED" :
+              (error && error.code ? error.code : "CAPABILITY_MISMATCH")
+          );
+        }
+      }
+      return runOwnedOperation(
+        document, operation, resources, issues, childResults
+      );
+    } finally {
+      if (document && !alreadyOwned) {
+        document._wpscRunOwnsAppendCursor = false;
+      }
+    }
+  }
+
+  function paginationPoint(document, rawPosition, fallbackPage) {
+    const maxPosition = Math.max(0, safeNumber(document.Content && document.Content.End, 1) - 1);
+    const position = Math.max(0, Math.min(maxPosition, Math.floor(rawPosition)));
+    const range = document.Range(position, position);
+    if (!range || typeof range.Information !== "function") {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    const page = safeNumber(range.Information(3), fallbackPage);
+    const x = safeNumber(range.Information(5), NaN);
+    const y = safeNumber(range.Information(6), NaN);
+    if (!Number.isInteger(page) || page < 1) {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    return {page: page, x: x, y: y};
+  }
+
+  function paginationVisualOperation(opName) {
+    return opName === "writer.add_heading" ||
+      opName === "writer.add_captioned_figure" ||
+      opName === "writer.add_semantic_table" ||
+      opName === "writer.add_equation" ||
+      opName === "writer.add_degradation_notice" ||
+      opName === "writer.add_document_quality_notice";
+  }
+
+  function paginationFragments(document, start, end, visual) {
+    const first = paginationPoint(document, start, 1);
+    const finalPosition = end > start ? end - 1 : end;
+    const last = paginationPoint(document, finalPosition, first.page);
+    if (last.page < first.page) throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    const setup = document.PageSetup || {};
+    const pageWidth = safeNumber(setup.PageWidth, 595.28);
+    const pageHeight = safeNumber(setup.PageHeight, 841.89);
+    const leftMargin = Math.max(0, safeNumber(setup.LeftMargin, 72));
+    const rightMargin = Math.max(0, safeNumber(setup.RightMargin, 72));
+    const topMargin = Math.max(0, safeNumber(setup.TopMargin, 72));
+    const bottomMargin = Math.max(0, safeNumber(setup.BottomMargin, 72));
+    const usablePage = pageWidth >= 100 && pageWidth <= 2000 &&
+      pageHeight >= 100 && pageHeight <= 2000 &&
+      leftMargin + rightMargin < pageWidth && topMargin + bottomMargin < pageHeight;
+    const usablePoints = usablePage &&
+      Number.isFinite(first.x) && Number.isFinite(first.y) &&
+      Number.isFinite(last.x) && Number.isFinite(last.y) &&
+      first.x >= 0 && first.x <= pageWidth && first.y >= 0 && first.y <= pageHeight &&
+      last.x >= 0 && last.x <= pageWidth && last.y >= 0 && last.y <= pageHeight;
+    const fragments = [];
+    for (let page = first.page; page <= last.page; page += 1) {
+      const fragment = {page: page};
+      if (visual && usablePoints) {
+        const x0 = page === first.page && Number.isFinite(first.x)
+          ? Math.max(0, first.x) : leftMargin;
+        const y0 = page === first.page && Number.isFinite(first.y)
+          ? Math.max(0, first.y) : topMargin;
+        const x1 = Math.max(x0 + 1, pageWidth - rightMargin);
+        const y1 = page === last.page && Number.isFinite(last.y)
+          ? Math.max(y0 + 1, Math.min(pageHeight, last.y + 12))
+          : Math.max(y0 + 1, pageHeight - bottomMargin);
+        if (![x0, y0, x1, y1].every(Number.isFinite)) {
+          throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+        }
+        fragment.bounds = [x0, y0, x1, y1];
+      }
+      fragments.push(fragment);
+    }
+    return fragments;
+  }
+
+  function buildPaginationMap(document, trackedNodes) {
+    if (!document || !Array.isArray(trackedNodes)) {
+      throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+    }
+    const nodes = [];
+    const seen = Object.create(null);
+    trackedNodes.forEach(function (tracked) {
+      if (!tracked.nodeId || seen[tracked.nodeId] || !tracked.range) return;
+      const start = safeNumber(tracked.range.Start, NaN);
+      const end = safeNumber(tracked.range.End, NaN);
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start) {
+        throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+      }
+      const fragments = paginationFragments(
+        document, start, end, paginationVisualOperation(tracked.op)
+      );
+      seen[tracked.nodeId] = true;
+      nodes.push({
+        nodeId: tracked.nodeId,
+        story: "main",
+        sections: [tracked.role || "body"],
+        pageStart: fragments[0].page,
+        pageEnd: fragments[fragments.length - 1].page,
+        range: start + ":" + end,
+        fragments: fragments
+      });
+    });
+    return { version: "M5-v1", nodes: nodes };
+  }
+
+  function buildLegacyPaginationMap(operations) {
+    const nodes = [];
+    const seen = Object.create(null);
+    (operations || []).forEach(function (operation) {
+      if (operation.nodeId && !seen[operation.nodeId]) {
+        seen[operation.nodeId] = true;
+        nodes.push({nodeId: operation.nodeId, fragments: [{page: 1}]});
+      }
+    });
+    return {version: "M2-stub", nodes: nodes};
+  }
+
+  function validatePrivateResourceMap(plan, resources) {
+    if (!resources || typeof resources !== "object" || Array.isArray(resources)) {
+      throw nativeError("RESOURCE_HASH_MISMATCH");
+    }
+    const expected = {};
+    (plan.operations || []).forEach(function (operation) {
+      const args = operation.args || {};
+      if (operation.op === "writer.add_captioned_figure") {
+        (args.children || []).forEach(function (child) {
+          if (child.resourceId) expected[child.resourceId] = true;
+        });
+      }
+      if (operation.op === "writer.add_equation" && args.renderMode === "native-m4") {
+        const fallback = args.fallbackResource || {};
+        if (fallback.fallbackResourceId) expected[fallback.fallbackResourceId] = true;
+      }
+    });
+    Object.keys(expected).forEach(function (resourceId) {
+      if (typeof resources[resourceId] !== "string" || resources[resourceId].length === 0) {
+        throw nativeError("RESOURCE_HASH_MISMATCH");
+      }
+    });
+    Object.keys(resources).forEach(function (resourceId) {
+      if (!expected[resourceId]) throw nativeError("RESOURCE_HASH_MISMATCH");
+    });
+  }
+
+  function validateLongformRequest(params) {
+    if (!params || typeof params !== "object" || Array.isArray(params) ||
+        !params.plan || typeof params.plan !== "object" ||
+        params.plan.component !== "writer" ||
+        typeof params.outputPath !== "string" || !params.outputPath) {
+      throw nativeError("PROTOCOL_MISMATCH");
+    }
+    const operations = Array.isArray(params.plan.operations) ? params.plan.operations : [];
+    const isM4 = operations.some(function (operation) {
+      const args = operation && operation.args || {};
+      return args.renderMode === "native-m4" || args.schemaVersion === 1 ||
+        hasOwn(args, "cellCitations") || hasOwn(args, "cellDegradations") ||
+        (args.runs || []).some(function (run) {
+          return run.type === "citation" || run.type === "degradation";
+        });
+    });
+    const keys = Object.keys(params).sort().join(",");
+    if ((isM4 && keys !== "outputPath,plan,resources") ||
+        (!isM4 && keys !== "outputPath,plan" && keys !== "outputPath,plan,resources") ||
+        (params.plan.protocolVersion !== undefined && params.plan.protocolVersion !== 2) ||
+        (isM4 && params.plan.protocolVersion !== 2)) {
+      throw nativeError("PROTOCOL_MISMATCH");
+    }
+    if (params.resources === undefined) params.resources = {};
+    if (!params.resources || typeof params.resources !== "object" ||
+        Array.isArray(params.resources)) throw nativeError("PROTOCOL_MISMATCH");
+    Object.keys(params.resources).forEach(function (resourceId) {
+      if (!resourceId || typeof params.resources[resourceId] !== "string" ||
+          !params.resources[resourceId]) throw nativeError("PROTOCOL_MISMATCH");
+    });
+    return params;
+  }
+
+  function requiredBookmark(document, name) {
+    if (typeof name !== "string" || !/^wpsc_(fig|tab|eq)_[a-z0-9]{24}$/.test(name)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" || !document.Bookmarks.Exists(name)) {
+      throw nativeError("FIELD_REFRESH_FAILED");
+    }
+    return collectionItem(document.Bookmarks, name).Range;
+  }
+
+  function paragraphRangeFor(range) {
+    const paragraphs = range && range.Paragraphs;
+    const paragraph = paragraphs ? collectionItem(paragraphs, 1) : null;
+    if (!paragraph || !paragraph.Range) throw nativeError("EXECUTION_ABORTED");
+    return paragraph.Range;
+  }
+
+  function nativeObjectRange(document, mutation) {
+    const anchor = requiredBookmark(document, mutation.bookmarkName);
+    const caption = paragraphRangeFor(anchor);
+    let start = safeNumber(caption.Start, 0);
+    let finish = safeNumber(caption.End, start);
+    if (mutation.kind === "figure") {
+      let located = false;
+      const shapes = document.InlineShapes;
+      for (let index = 1; index <= requiredCollectionCount(shapes); index += 1) {
+        const shape = collectionItem(shapes, index);
+        if (shape && shape.AlternativeText === mutation.ownerNodeId && shape.Range) {
+          start = Math.min(start, safeNumber(shape.Range.Start, start));
+          located = true;
+        }
+      }
+      if (!located && start > 0) {
+        const previous = document.Range(Math.max(0, start - 2), start);
+        start = safeNumber(paragraphRangeFor(previous).Start, start);
+      }
+      const tables = document.Tables;
+      for (let tableIndex = 1; tableIndex <= requiredCollectionCount(tables); tableIndex += 1) {
+        const table = collectionItem(tables, tableIndex);
+        if (table && table.Range && safeNumber(table.Range.End, 0) <= safeNumber(caption.Start, 0)) {
+          const distance = safeNumber(caption.Start, 0) - safeNumber(table.Range.End, 0);
+          if (distance <= 3) start = Math.min(start, safeNumber(table.Range.Start, start));
+        }
+      }
+    } else if (mutation.kind === "table") {
+      const tables = document.Tables;
+      let nearest = null;
+      for (let index = 1; index <= requiredCollectionCount(tables); index += 1) {
+        const table = collectionItem(tables, index);
+        if (!table || !table.Range) continue;
+        const tableStart = safeNumber(table.Range.Start, -1);
+        if (tableStart >= finish && (nearest === null || tableStart < safeNumber(nearest.Range.Start, tableStart + 1))) {
+          nearest = table;
+        }
+      }
+      if (!nearest) throw nativeError("EXECUTION_ABORTED");
+      finish = safeNumber(nearest.Range.End, finish);
+    } else if (mutation.kind !== "equation") {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    return document.Range(start, finish);
+  }
+
+  function validateMutation(mutation) {
+    if (!mutation || typeof mutation !== "object" || Array.isArray(mutation)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const allowed = {
+      move: ["type", "kind", "bookmarkName", "ownerNodeId", "beforeBookmarkName", "beforeKind", "beforeOwnerNodeId"],
+      insert: ["type", "operations"],
+      delete: ["type", "kind", "bookmarkName", "ownerNodeId"]
+    };
+    if (!allowed[mutation.type] || Object.keys(mutation).some(function (key) { return allowed[mutation.type].indexOf(key) === -1; })) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    if (mutation.type === "insert" && (!Array.isArray(mutation.operations) || mutation.operations.length === 0)) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+  }
+
+  function applyLongformMutation(document, mutation, resources, issues, childResults) {
+    validateMutation(mutation);
+    if (mutation.type === "move") {
+      const source = nativeObjectRange(document, mutation);
+      const destination = nativeObjectRange(document, {
+        kind: mutation.beforeKind,
+        bookmarkName: mutation.beforeBookmarkName,
+        ownerNodeId: mutation.beforeOwnerNodeId
+      }).Duplicate;
+      source.Cut();
+      // Pasting at a table's Start on WPS nests the moved table in its first
+      // cell. For a table destination, the preceding paragraph mark is the
+      // external insertion anchor. Non-table destinations can safely create
+      // a fresh paragraph before their range.
+      let destinationIsTable = false;
+      for (let index = 1; index <= requiredCollectionCount(document.Tables); index += 1) {
+        const table = collectionItem(document.Tables, index);
+        if (table && table.Range && safeNumber(table.Range.Start, -1) === safeNumber(destination.Start, -2)) {
+          destinationIsTable = true;
+          break;
+        }
+      }
+      let pasteRange;
+      if (destinationIsTable) {
+        const anchor = Math.max(0, safeNumber(destination.Start, 0) - 1);
+        pasteRange = document.Range(anchor, anchor);
+      } else {
+        if (typeof destination.InsertParagraphBefore !== "function") {
+          throw nativeError("EXECUTION_ABORTED");
+        }
+        destination.InsertParagraphBefore();
+        pasteRange = document.Range(destination.Start, destination.Start);
+      }
+      pasteRange.Paste();
+      return;
+    }
+    if (mutation.type === "delete") {
+      nativeObjectRange(document, mutation).Delete();
+      return;
+    }
+    mutation.operations.forEach(function (operation) {
+      if (!operation || typeof operation.op !== "string" || operation.op === "writer.finalize_fields") {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      runOperation(document, operation, resources, issues, childResults);
+    });
+  }
+
+  function mutate(params) {
+    const sourcePath = params.sourcePath;
+    const outputPath = params.outputPath;
+    const mutations = params.mutations;
+    const resources = params.resources || {};
+    if (typeof sourcePath !== "string" || !sourcePath || typeof outputPath !== "string" || !outputPath || !Array.isArray(mutations) || mutations.length === 0) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const previousAlerts = Application.DisplayAlerts;
+    const previousScreenUpdating = Application.ScreenUpdating;
+    let document = null;
+    const issues = [];
+    const childResults = [];
+    const refreshRounds = [];
+    try {
+      Application.DisplayAlerts = 0;
+      Application.ScreenUpdating = false;
+      document = Application.Documents.Open(sourcePath, false, false);
+      document._wpscProfessionalMathUnavailable = false;
+      mutations.forEach(function (mutation) {
+        applyLongformMutation(document, mutation, resources, issues, childResults);
+        refreshRounds.push(runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues).length);
+      });
+      flushPendingDegradationStyles(document, currentPosition(document));
+      if (pendingDegradationStyles(document).length !== 0) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+      document.SaveAs2(outputPath, 12);
+      document.Close(0);
+      document = Application.Documents.Open(outputPath, false, false);
+      refreshRounds.push(runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues).length);
+      document.Save();
+      document.Close(0);
+      document = null;
+      return {
+        outputPath: outputPath,
+        mutationCount: mutations.length,
+        mutationKinds: mutations.map(function (mutation) { return mutation.type; }).filter(function (kind, index, values) {
+          return values.indexOf(kind) === index;
+        }),
+        refreshRounds: refreshRounds,
+        issueCodes: issues.map(function (issue) { return issue.code; })
+      };
+    } catch (error) {
+      if (document !== null) {
+        try { document.Close(0); } catch (closeError) { /* ignore */ }
+      }
+      if (!error.code) error.code = "GENERATION_COMMAND_FAILED";
+      throw error;
+    } finally {
+      try { Application.ScreenUpdating = previousScreenUpdating; }
+      finally { Application.DisplayAlerts = previousAlerts; }
+    }
+  }
+
+  function validateNoticePatchRequest(params) {
+    const keys = params && typeof params === "object"
+      ? Object.keys(params).sort().join(",") : "";
+    if (keys !== "bookmarks,notices,outputPath,sourcePath" ||
+        typeof params.sourcePath !== "string" || !params.sourcePath ||
+        typeof params.outputPath !== "string" || !params.outputPath ||
+        !Array.isArray(params.bookmarks) ||
+        !Array.isArray(params.notices) || params.notices.length === 0) {
+      throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+    }
+    const bookmarkNodes = Object.create(null);
+    params.bookmarks.forEach(function (bookmark) {
+      const bookmarkKeys = bookmark && typeof bookmark === "object"
+        ? Object.keys(bookmark).sort().join(",") : "";
+      if (bookmarkKeys !== "bookmarkName,nodeId" ||
+          typeof bookmark.nodeId !== "string" || !bookmark.nodeId ||
+          safePublicText(bookmark.nodeId) !== bookmark.nodeId ||
+          !/^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$/.test(
+            safeString(bookmark.bookmarkName)
+          ) || bookmarkNodes[bookmark.nodeId]) {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      bookmarkNodes[bookmark.nodeId] = true;
+    });
+    const seen = Object.create(null);
+    params.notices.forEach(function (notice) {
+      const noticeKeys = notice && typeof notice === "object"
+        ? Object.keys(notice).sort().join(",") : "";
+      const bookmarkValid = notice.bookmarkName === null ||
+        /^wpsc_(fig|tab|eq|ref|head|para)_[0-9a-f]{24}$/.test(notice.bookmarkName);
+      const identity = safeString(notice.code) + "\u0000" +
+        safeString(notice.placement) + "\u0000" + safeString(notice.nodeId);
+      if (noticeKeys !== "bookmarkName,code,fallback,message,nodeId,page,placement" ||
+          !/^[A-Z][A-Z0-9_]{2,63}$/.test(safeString(notice.code)) ||
+          safePublicText(notice.message) !== notice.message ||
+          !/^[a-z][a-z0-9-]{0,63}$/.test(safeString(notice.fallback)) ||
+          (notice.placement !== "block" && notice.placement !== "document") ||
+          typeof notice.nodeId !== "string" ||
+          safePublicText(notice.nodeId) !== notice.nodeId ||
+          !Number.isInteger(notice.page) || notice.page < 1 ||
+          !bookmarkValid || (notice.placement === "block" && notice.bookmarkName === null) ||
+          seen[identity]) {
+        throw nativeError("FIELD_REFRESH_CONTRACT_INVALID");
+      }
+      seen[identity] = true;
+    });
+    return params;
+  }
+
+  function noticeBookmarkRange(document, notice) {
+    if (notice.bookmarkName === null) {
+      const qualityName = "wpsc_document_quality_anchor";
+      if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+          !document.Bookmarks.Exists(qualityName)) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+      return collectionItem(document.Bookmarks, qualityName).Range;
+    }
+    if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+        !document.Bookmarks.Exists(notice.bookmarkName)) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    return collectionItem(document.Bookmarks, notice.bookmarkName).Range;
+  }
+
+  function insertMappedQualityNotice(document, notice) {
+    const anchor = noticeBookmarkRange(document, notice);
+    const paragraph = paragraphRangeFor(anchor);
+    const position = notice.placement === "document"
+      ? safeNumber(anchor.Start, -1) : safeNumber(paragraph.End, -1);
+    if (!Number.isInteger(position) || position < 0) {
+      throw nativeError("DEGRADATION_INSERT_FAILED");
+    }
+    const target = document.Range(position, position);
+    const fallbackText = safePublicText(notice.message) +
+      " (page " + notice.page + "; " + safeString(notice.fallback) + ")";
+    try {
+      return insertDegradationBox(
+        document, notice.code, fallbackText, target
+      );
+    } catch (error) {
+      try {
+        return insertStyledDegradationAtRange(
+          document,
+          target,
+          "[" + notice.code + "] " + fallbackText + "\r"
+        );
+      } catch (minimalError) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+    }
+  }
+
+  function paginationNodeForRange(document, nodeId, range, fallbackPage) {
+      const paragraph = paragraphRangeFor(range);
+      const start = safeNumber(paragraph.Start, 0);
+      const end = Math.max(start, safeNumber(paragraph.End, start));
+      const page = safeNumber(paragraph.Information(3), fallbackPage || 1);
+      const x = safeNumber(paragraph.Information(5), NaN);
+      const y = safeNumber(paragraph.Information(6), NaN);
+      const fragment = {page: Math.max(1, Math.floor(page))};
+      const setup = document.PageSetup || {};
+      const pageWidth = safeNumber(setup.PageWidth, 595.28);
+      const pageHeight = safeNumber(setup.PageHeight, 841.89);
+      if (pageWidth >= 100 && pageWidth <= 2000 &&
+          pageHeight >= 100 && pageHeight <= 2000 &&
+          Number.isFinite(x) && Number.isFinite(y) &&
+          x >= 0 && x <= pageWidth && y >= 0 && y <= pageHeight) {
+        fragment.bounds = [
+          Math.max(0, x), Math.max(0, y),
+          Math.max(1, x + 1), Math.max(1, y + 12)
+        ];
+      }
+      return {
+        nodeId: nodeId,
+        story: "main",
+        sections: ["body"],
+        pageStart: fragment.page,
+        pageEnd: fragment.page,
+        range: start + ":" + end,
+        fragments: [fragment]
+      };
+  }
+
+  function noticePaginationMap(document, bookmarks, notices) {
+    const seen = Object.create(null);
+    const nodes = bookmarks.map(function (bookmark) {
+      if (!document.Bookmarks || typeof document.Bookmarks.Exists !== "function" ||
+          !document.Bookmarks.Exists(bookmark.bookmarkName)) {
+        throw nativeError("FIELD_REFRESH_FAILED");
+      }
+      seen[bookmark.nodeId] = true;
+      return paginationNodeForRange(
+        document,
+        bookmark.nodeId,
+        collectionItem(document.Bookmarks, bookmark.bookmarkName).Range,
+        1
+      );
+    });
+    notices.forEach(function (notice) {
+      if (!seen[notice.nodeId]) {
+        nodes.push(paginationNodeForRange(
+          document, notice.nodeId, noticeBookmarkRange(document, notice), notice.page
+        ));
+        seen[notice.nodeId] = true;
+      }
+    });
+    return {version: "M5-v1", nodes: nodes};
+  }
+
+  function patchNotices(params) {
+    params = validateNoticePatchRequest(params);
+    const previousAlerts = Application.DisplayAlerts;
+    const previousScreenUpdating = Application.ScreenUpdating;
+    let document = null;
+    let history = [];
+    const issues = [];
+    try {
+      Application.DisplayAlerts = 0;
+      Application.ScreenUpdating = false;
+      document = Application.Documents.Open(params.sourcePath, false, false);
+      params.notices.forEach(function (notice) {
+        insertMappedQualityNotice(document, notice);
+      });
+      history = runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues);
+      document.SaveAs2(params.outputPath, 12);
+      document.Close(0);
+      document = Application.Documents.Open(params.outputPath, false, false);
+      history = runNativeFieldConvergence(nativeFieldAdapter(document), 3, issues);
+      const paginationMap = noticePaginationMap(
+        document, params.bookmarks, params.notices
+      );
+      document.Save();
+      document.Close(0);
+      document = null;
+      return {
+        outputPath: params.outputPath,
+        appliedNotices: params.notices.length,
+        issueCodes: issues,
+        fieldSnapshots: history,
+        paginationMap: paginationMap
+      };
+    } catch (error) {
+      if (document !== null) {
+        try { document.Close(0); } catch (closeError) { /* ignore */ }
+      }
+      throw error && error.code ? error : nativeError("EXECUTION_ABORTED");
+    } finally {
+      try { Application.ScreenUpdating = previousScreenUpdating; }
+      finally { Application.DisplayAlerts = previousAlerts; }
+    }
+  }
+
+  function run(params) {
+    params = validateLongformRequest(params);
+    const plan = params.plan;
+    const outputPath = params.outputPath;
+    const resources = params.resources || {};
+    const previousAlerts = Application.DisplayAlerts;
+    const previousScreenUpdating = Application.ScreenUpdating;
+    let document = null;
+    let appliedCount = 0;
+    const issues = [];
+    const childResults = [];
+    const trackedNodes = [];
+    let activePageRole = "body";
+    const requireM5Pagination = plan.protocolVersion === 2;
+
+    try {
+      validatePrivateResourceMap(plan, resources);
+      Application.DisplayAlerts = 0;
+      Application.ScreenUpdating = false;
+      document = Application.Documents.Add();
+      document._wpscFirstSectionConfigured = false;
+      document._wpscRunOwnsAppendCursor = true;
+      document._wpscProfessionalMathUnavailable = false;
+      if (typeof document.Range === "function") {
+        const initialEnd = authoritativeDocumentEnd(document);
+        setAppendCursor(document, initialEnd.position);
+      }
+
+      const operations = plan.operations || [];
+      operations.forEach(function (operation) {
+        const before = requireM5Pagination ? currentPosition(document) : 0;
+        runOwnedOperation(document, operation, resources, issues, childResults);
+        const after = requireM5Pagination ? currentPosition(document) : 0;
+        if (operation.op === "writer.configure_section" && operation.args && operation.args.role) {
+          activePageRole = operation.args.role;
+        }
+        if (requireM5Pagination && operation.nodeId) {
+          trackedNodes.push({
+            nodeId: operation.nodeId,
+            op: operation.op,
+            role: activePageRole,
+            range: document.Range(Math.min(before, after), Math.max(before, after))
+          });
+        }
+        appliedCount += 1;
+      });
+
+      flushPendingDegradationStyles(document, currentPosition(document));
+      if (pendingDegradationStyles(document).length !== 0) {
+        throw nativeError("DEGRADATION_INSERT_FAILED");
+      }
+
+      const fieldSnapshots = runFieldConvergence(document, operations, issues);
+      let paginationMap;
+      if (requireM5Pagination) {
+        if (typeof document.Repaginate !== "function") {
+          throw nativeError("PAGINATION_SNAPSHOT_FAILED");
+        }
+        document.Repaginate();
+        paginationMap = buildPaginationMap(document, trackedNodes);
+      } else {
+        paginationMap = buildLegacyPaginationMap(operations);
+      }
+
+      try {
+        document.SaveAs2(outputPath, 12);
+      } catch (error) {
+        throw nativeError("SAVE_FAILED");
+      }
+      document.Close(0);
+      document = null;
+      return {
+        outputPath: outputPath,
+        appliedOperations: appliedCount,
+        issueCodes: issues,
+        paginationMap: paginationMap,
+        fieldSnapshots: fieldSnapshots,
+        childResults: childResults
+      };
+    } catch (error) {
+      if (document !== null) {
+        try {
+          document.Close(0);
+        } catch (closeError) {
+          // ignore
+        }
+        document = null;
+      }
+      if (!error.code) {
+        error.code = "GENERATION_COMMAND_FAILED";
+      }
+      throw error;
+    } finally {
+      try {
+        Application.ScreenUpdating = previousScreenUpdating;
+      } finally {
+        Application.DisplayAlerts = previousAlerts;
+      }
+    }
+  }
+
+  window.WPSComposerLongformV2 = Object.freeze({
+    run: run,
+    mutate: mutate,
+    patchNotices: patchNotices,
+    OPERATIONS: Object.keys(OPERATIONS),
+    __test: Object.freeze({
+      addNativeNumberShell: addNativeNumberShell,
+      createFigureColumns: createFigureColumns,
+      addCaptionedFigureNative: addCaptionedFigureNative,
+      addSemanticTableNative: addSemanticTableNative,
+      addEquationNumberNative: addEquationNumberNative,
+      addEquationNativeM4: addEquationNativeM4,
+      addFormulaNativeFallback: addFormulaNativeFallback,
+      addCitationParagraph: addCitationParagraph,
+      addBibliographyNative: addBibliographyNative,
+      applyTableCellMetadata: applyTableCellMetadata,
+      validateLongformRequest: validateLongformRequest,
+      addCrossReferenceParagraph: addCrossReferenceParagraph,
+      insertCaptionIndexNative: insertCaptionIndexNative,
+      createNativeTable: createNativeTable,
+      nativeFieldAdapter: nativeFieldAdapter,
+      runNativeFieldConvergence: runNativeFieldConvergence,
+      buildPaginationMap: buildPaginationMap,
+      currentSectionPageSetup: currentSectionPageSetup,
+      currentSectionIsLandscape: currentSectionIsLandscape,
+      contentColumnWidths: contentColumnWidths,
+      linkHeadingStyles: linkHeadingStyles,
+      compactTerminalParagraph: compactTerminalParagraph,
+      hashVisible: hashVisible,
+      rollbackMutation: rollbackMutation,
+      insertDocumentBreak: insertDocumentBreak,
+      recoveryDecision: recoveryDecision,
+      createLocalRecoveryController: createLocalRecoveryController,
+      runLocalRecovery: runLocalRecovery,
+      appendIssueOnce: appendIssueOnce,
+      safePublicText: safePublicText,
+      addInlineDegradation: addInlineDegradation,
+      insertStyledDegradationAtRange: insertStyledDegradationAtRange,
+      addDegradationNotice: addDegradationNotice,
+      reserveDocumentQualityAnchor: reserveDocumentQualityAnchor,
+      upsertDocumentQualityNotice: upsertDocumentQualityNotice,
+      applyLongformMutation: applyLongformMutation,
+      validateNoticePatchRequest: validateNoticePatchRequest,
+      insertMappedQualityNotice: insertMappedQualityNotice,
+      noticePaginationMap: noticePaginationMap,
+      runOperation: runOperation
+    })
+  });
+}());

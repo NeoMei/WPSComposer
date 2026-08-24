@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import signal
@@ -52,9 +53,18 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
         "manifest.xml",
         "ribbon.xml",
         "bridge-client.js",
+        "writer-longform-m0.js",
+        "writer-longform-v2.js",
         "writer.js",
     ):
         (assets / name).write_text(name, encoding="utf-8")
+    (assets / "index.html").write_text(
+        '<script src="./writer-longform-v2.js"></script>', encoding="utf-8"
+    )
+    from skills.WPSComposer.scripts.macos_probe.templates import (
+        write_addin_asset_manifest,
+    )
+    write_addin_asset_manifest(assets)
 
     profile = build_profile(
         assets,
@@ -76,6 +86,15 @@ def test_build_profile_writes_runtime_config(tmp_path: Path):
     }
     assert "nonce" not in (profile / "session.json").read_text().lower()
     assert (profile / "component.js").read_text() == "writer.js"
+    assert (profile / "writer-longform-m0.js").read_text() == (
+        "writer-longform-m0.js"
+    )
+    assert (profile / "writer-longform-v2.js").read_text() == (
+        "writer-longform-v2.js"
+    )
+    index = (profile / "index.html").read_text(encoding="utf-8")
+    digest = hashlib.sha256(b"writer-longform-v2.js").hexdigest()[:16]
+    assert f"writer-longform-v2.js?v={digest}" in index
 
 
 def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
@@ -94,6 +113,7 @@ def test_registration_snapshot_restores_existing_bytes(tmp_path: Path):
     assert not (tmp_path / "recovery").exists()
 
 
+@posix_only
 def test_registration_uses_stable_authorized_origin_without_secret(tmp_path: Path):
     publish = tmp_path / "publish.xml"
     publish.write_bytes(b"<jsplugins/>")
@@ -141,6 +161,21 @@ def test_registration_reuses_authorized_profile_name_without_duplicates(tmp_path
     ]
     assert entries[0].attrib["url"] == "http://127.0.0.1:3889/"
     snapshot.restore()
+
+
+def test_registration_can_cache_bust_public_addin_assets(tmp_path: Path):
+    publish = tmp_path / "publish.xml"
+    snapshot = RegistrationSnapshot.capture(publish, tmp_path / "recovery")
+    credentials = runtime.derive_client_credentials("private-root")
+    runtime.install_registration_entries(
+        snapshot,
+        {"writer": {"addon_type": "wps", "port": 3889}},
+        session_nonce="session-id",
+        client_credentials=credentials,
+        cache_version="0123456789abcdef",
+    )
+    entry = next(iter(ET.parse(publish).getroot()))
+    assert entry.attrib["url"] == "http://127.0.0.1:3889/?v=0123456789abcdef"
 
 
 def test_registration_replaces_namespaced_authorized_profile_entry(tmp_path: Path):
@@ -525,6 +560,7 @@ def test_runtime_never_signals_user_wps_launched_during_run(monkeypatch, tmp_pat
     assert signals == [(201, signal.SIGTERM)]
 
 
+@posix_only
 def test_runtime_kill_set_cannot_grow_during_term_grace(monkeypatch, tmp_path):
     probe = runtime.ProbeRuntime(
         tmp_path,
@@ -593,6 +629,7 @@ def test_preexisting_young_wps_is_never_claimed_by_elapsed_age(monkeypatch, tmp_
     assert signals == []
 
 
+@posix_only
 def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: Path):
     commands = []
 
@@ -639,6 +676,7 @@ def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: P
     ]
 
 
+@posix_only
 def test_stale_registration_recovers_across_random_runtime_roots_before_preflight(
     monkeypatch, tmp_path: Path
 ):

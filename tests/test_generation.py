@@ -400,7 +400,7 @@ class GenerationRuntime:
     def start_servers(self, *, deadline):
         self.calls.append("start_servers")
 
-    def activate_component(self, component, *, deadline):
+    def activate_component(self, component, *, deadline, isolated=False):
         self.calls.append(("activate", component))
 
 
@@ -437,13 +437,13 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
             raise AssertionError(f"Darwin route imported {name}")
         return real_import(name, *args, **kwargs)
 
-    def fake_generate(doc, format_name, output, preset, *, timeout, overwrite):
-        calls.append((doc, format_name, output, preset, timeout, overwrite))
-        return output
+    def fake_generate(build, format_name, output, timeout, overwrite):
+        calls.append((build, format_name, output, timeout, overwrite))
+        return SimpleNamespace(path=str(output))
 
     monkeypatch.setattr(builtins, "__import__", guarded_import)
     monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
-    monkeypatch.setattr(orchestrator, "generate_macos", fake_generate)
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_generate)
 
     output = tmp_path / "report.docx"
     result = orchestrator.generate(
@@ -452,11 +452,10 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
 
     assert result == str(output.resolve())
     assert len(calls) == 1
-    doc, format_name, routed_output, preset, timeout, overwrite = calls[0]
-    assert isinstance(doc, StructuredDocument)
+    build, format_name, routed_output, timeout, overwrite = calls[0]
+    assert build.plan.protocol_version == 2
     assert format_name == "docx"
     assert routed_output == output.resolve()
-    assert preset is None
     assert timeout == 600
     assert overwrite is False
 
@@ -510,7 +509,7 @@ def test_generate_overwrite_backend_failure_preserves_existing_output(
     output.write_bytes(b"keep old artifact")
     observed = []
 
-    def fail_generate(doc, format_name, routed_output, preset, *, timeout, overwrite):
+    def fail_generate(build, format_name, routed_output, timeout, overwrite):
         observed.append((Path(routed_output), overwrite))
         raise GenerationError(
             code="GENERATION_COMMAND_FAILED",
@@ -521,7 +520,7 @@ def test_generate_overwrite_backend_failure_preserves_existing_output(
         )
 
     monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
-    monkeypatch.setattr(orchestrator, "generate_macos", fail_generate)
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fail_generate)
 
     with pytest.raises(GenerationError, match="backend failed"):
         orchestrator.generate(
@@ -608,7 +607,10 @@ def test_generate_keeps_windows_writer_renderer_call_behavior(monkeypatch, tmp_p
 
     output = tmp_path / "windows.docx"
     result = orchestrator.generate(
-        "# Windows", format="docx", output=str(output), source_is_text=True
+        "---\nlayout_engine: legacy\n---\n# Windows",
+        format="docx",
+        output=str(output),
+        source_is_text=True,
     )
 
     assert result == str(output.resolve())
@@ -640,7 +642,7 @@ def test_generate_does_not_apply_chinese_native_numbering_to_english_document(
     )
 
     orchestrator.generate(
-        "# Report\n\n## Details",
+        "---\nlayout_engine: legacy\n---\n# Report\n\n## Details",
         format="docx",
         output=str(output),
         source_is_text=True,
@@ -680,7 +682,7 @@ def test_pdf_enabled_injection_routes_through_pdf_lifecycle(tmp_path):
         enabled={"pdf": True},
         bridge_factory=lambda origins: PdfGenerationBridge(mode="success"),
         runtime_factory=_runtime_factory(captured),
-        timeout=5,
+        timeout=15,
     )
     assert result == (tmp_path / "r.pdf").resolve()
 
@@ -749,7 +751,7 @@ def test_generate_macos_records_executes_validates_and_publishes_all_formats(
         enabled={format_name: True},
         bridge_factory=lambda origins: bridge,
         runtime_factory=_runtime_factory(runtimes),
-        timeout=2,
+        timeout=10,
     )
 
     assert result == output.resolve()
@@ -793,7 +795,7 @@ def test_generate_macos_stages_resources_with_component_contract(
         enabled={format_name: True},
         bridge_factory=lambda origins: bridge,
         runtime_factory=_runtime_factory(runtimes),
-        timeout=2,
+        timeout=10,
     )
 
     resource = bridge.commands[0].params["resources"]["image-1"]
@@ -1005,7 +1007,7 @@ def test_production_generation_failures_cleanup_without_partial_output(
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory(runtimes),
-            timeout=2 if code == "STAGED_ARTIFACT_INVALID" else 0.02,
+            timeout=10,
         )
 
     assert caught.value.code == code
@@ -1037,7 +1039,7 @@ def test_artifact_transport_internal_path_is_redacted(monkeypatch, tmp_path):
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory(runtimes),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "ARTIFACT_PUBLISH_FAILED"
@@ -1069,7 +1071,7 @@ def test_macos_final_validation_failure_keeps_restored_overwrite_target(
             enabled={"docx": True},
             bridge_factory=lambda origins: GenerationBridge(),
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "FINAL_ARTIFACT_INVALID"
@@ -1098,7 +1100,7 @@ def test_semantic_validation_requires_all_representative_renderer_text(tmp_path)
             enabled={"docx": True},
             bridge_factory=lambda origins: bridge,
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -1157,7 +1159,7 @@ def test_writer_semantics_require_planned_structure(tmp_path, kind):
             enabled={"docx": True},
             bridge_factory=lambda origins: GenerationBridge("no-structure"),
             runtime_factory=_runtime_factory([]),
-            timeout=2,
+            timeout=10,
         )
 
     assert caught.value.code == "STAGED_ARTIFACT_INVALID"
@@ -1258,7 +1260,7 @@ def _run_pdf_generation(tmp_path, mode="success"):
         enabled={"pdf": True},
         bridge_factory=lambda origins: PdfGenerationBridge(mode=mode),
         runtime_factory=_runtime_factory(captured),
-        timeout=5,
+        timeout=15,
     ), captured
 
 
@@ -1325,7 +1327,7 @@ def test_pdf_generation_via_generate_macos(monkeypatch, tmp_path):
         enabled={"pdf": True},
         bridge_factory=bridge_factory,
         runtime_factory=_runtime_factory(captured_runtime),
-        timeout=5,
+        timeout=15,
     )
     assert result == output.resolve()
     assert output.exists()

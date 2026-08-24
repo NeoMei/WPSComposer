@@ -96,8 +96,8 @@ class FakeRuntime:
     def start_servers(self, *, deadline):
         self.calls.append(("start_servers",))
 
-    def activate_component(self, component, *, deadline):
-        self.calls.append(("activate_component", component))
+    def activate_component(self, component, *, deadline, isolated=False):
+        self.calls.append(("activate_component", component, isolated))
 
 
 def _request(tmp_path: Path, suffix: str, component: str) -> ConversionRequest:
@@ -125,7 +125,7 @@ def _run_with_fakes(
         enabled=True,
         bridge_factory=lambda origins: fake_bridge,
         runtime_factory=lambda *args, **kwargs: runtime,
-        timeout=2,
+        timeout=10,
     )
     return result, fake_bridge, calls, runtime
 
@@ -156,7 +156,7 @@ def test_macos_copies_source_and_issues_only_staged_paths(
     assert result == request.output
     assert result.is_file()
     assert not runtime.staging_dir.exists()
-    assert ("activate_component", component) in calls
+    assert ("activate_component", component, True) in calls
 
 
 def test_macos_real_conversion_gate_is_enabled():

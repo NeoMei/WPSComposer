@@ -36,6 +36,7 @@ from .formatting import (
 class SheetComposer(BaseComposer):
     _attached_save_copy_supported = True
     _progids = ("Ket.Application", "Excel.Application")
+    _pool_app = True
     _doc_type = "calc"
     _native_fmt = FMT_XLSX
     _pdf_fmt = FMT_PDF_FROM_XLS

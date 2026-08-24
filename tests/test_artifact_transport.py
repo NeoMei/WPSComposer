@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import pickle
+import subprocess
+import sys
 from types import MappingProxyType
 import threading
 import time
@@ -605,6 +607,10 @@ def test_read_only_validator_is_bounded_by_absolute_deadline(tmp_path):
     assert time.monotonic() - started < 0.15
 
 
+# /dev/fd enumeration is POSIX-only
+@pytest.mark.skipif(
+    os.name != "posix", reason="/dev/fd fd-growth check is POSIX-only"
+)
 def test_repeated_validator_timeouts_leave_no_worker_or_fd_growth(tmp_path):
     before_threads = {
         thread.ident for thread in threading.enumerate() if thread.is_alive()
@@ -660,6 +666,47 @@ def test_deadline_validator_accepts_spawn_safe_explicit_spec(tmp_path):
     )
 
 
+def test_deadline_validator_works_from_python_dash_c(tmp_path):
+    pdf = _write_pdf(tmp_path / "interactive.pdf")
+    script = (
+        "import time; "
+        "from pathlib import Path; "
+        "from skills.WPSComposer.scripts.artifact_transport import "
+        "ValidatorSpec, validate_before_deadline, validate_pdf; "
+        f"validate_before_deadline(ValidatorSpec.from_callable(validate_pdf), "
+        f"Path({str(pdf)!r}), time.monotonic() + 10)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_deadline_validator_works_from_python_stdin(tmp_path):
+    pdf = _write_pdf(tmp_path / "stdin.pdf")
+    script = (
+        "import time\n"
+        "from pathlib import Path\n"
+        "from skills.WPSComposer.scripts.artifact_transport import "
+        "ValidatorSpec, validate_before_deadline, validate_pdf\n"
+        f"validate_before_deadline(ValidatorSpec.from_callable(validate_pdf), "
+        f"Path({str(pdf)!r}), time.monotonic() + 10)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-"],
+        input=script,
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_validator_spec_rejects_non_plain_arguments():
     with pytest.raises(TypeError, match="plain serializable"):
         ValidatorSpec.from_callable(
@@ -689,6 +736,9 @@ def test_deadline_validator_rejects_unpicklable_callable_without_child_leak(
     assert after == before
 
 
+@pytest.mark.skipif(
+    os.name != "posix", reason="/dev/fd fd-growth check is POSIX-only"
+)
 def test_deadline_validator_normalizes_lambda_pickling_error_without_leaks(
     tmp_path, monkeypatch
 ):

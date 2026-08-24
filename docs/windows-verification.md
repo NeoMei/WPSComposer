@@ -1,7 +1,267 @@
 # Windows COM verification handoff
 
 > **Start here on Windows.** Read `AGENTS.md` first, then this file.
-> Verification **completed on Windows** — see "Windows run results" below.
+> The conversational-edit A-G gate below was completed in July. The M5
+> long-form final gate was completed on Windows (2026-08-24, see
+> "M5 Windows run results" below).
+
+## Post-acceptance Windows rerun (COMPLETED 2026-08-24)
+
+The original Windows M5 gate remained accepted at `5148b1a`. The subsequent
+macOS acceptance found shared-plan and Windows-executor defects (fenced code
+blocks now render as compact monospace paragraphs; the Windows executor
+forwards the closed paragraph-formatting arguments; a reused executor clears
+front matter between documents; failed pooled COM construction balances
+`CoInitialize`; ordinary suites skip the env-gated macOS M4 tests). This
+section records the final clean-checkout Windows rerun of the latest pushed
+branch (starting commit `46a1221`, plus the installer fix committed on top —
+see below), performed before 0.8.0.
+
+- Platform-independent suite (after the installer fix): **2517 passed,
+  38 skipped** (`.venv-win\Scripts\python -m pytest -q`, Poppler
+  `pdftoppm` 24.08.0 on PATH).
+- Real M5 gate `WPSCOMPOSER_RUN_WINDOWS_M5=1`
+  `tests/longform_m5/test_windows_real_wps_m5.py`, three consecutive fresh
+  evidence directories: **3/3 green** (115.7 s / 113.5 s / 116.9 s) at
+  `build/longform-m5/windows-post-acceptance-1/test_real_windows_m5_six_fixtu0/evidence`,
+  `build/longform-m5/windows-post-acceptance-2/test_real_windows_m5_six_fixtu0/evidence`,
+  and `build/longform-m5/windows-post-acceptance-3/test_real_windows_m5_six_fixtu0/evidence`.
+  No earlier `windows-real-*` result was reused.
+- Every report: `"system": "Windows"`, `wpsVersion: "12.0"` (WPS Office
+  12.1.0.28043 zh-CN — the host was updated since the July gate's
+  12.1.0.26899; COM `Version` still reports "12.0"), `protocolVersion: 2`,
+  `semanticVersion: "longform-1"`, no private absolute paths, 22 screenshots
+  per run.
+- `unicode.pdf` (all three rounds, identical metrics): the code lines
+  `def quality_gate(document):` and `return "visible result"` are both
+  present on page 2 in a monospace face (`CourierNewPSMT`, 9 pt, uniform
+  5.4 pt advance); the `return` line carries the source's 4-space indent
+  (the .docx XML retains the literal spaces; WPS's PDF export renders them
+  as an 18 pt visual offset). 2 pages, one generation / one export / one
+  analysis, zero patch, no issue codes.
+- Performance PDF: 63 pages (within 50-100), total stage times
+  48.2 / 47.2 / 51.5 s (far below 600 s), one generation, zero patches, no
+  notices.
+
+### Installer flake fixed during this rerun
+
+The first full-suite run failed once in
+`tests/test_installer.py::test_installer_copies_plugin_and_merges_personal_marketplace`
+(a transient copy error; 10/10 green in isolation). Root cause: the local
+Windows venv is named `.venv-win`, which `install.py::IGNORED_NAMES` did not
+exclude (only `.venv`), so the installer copied the **active** virtualenv —
+thousands of mutable files — into the staged plugin, occasionally tripping
+Windows file locks and costing ~25 s per installer test. Fixed by widening
+the ignore set to the glob patterns `.venv*` and `*.egg-info`
+(`pip install -e` build metadata was also leaking in), with a regression
+test (`test_installer_skips_virtualenvs_and_build_metadata`); installer
+tests now finish in ~6 s. The three M5 gate rounds above were run on the
+fixed tree.
+
+## M5 final Windows gate (COMPLETED 2026-08-24)
+
+Branch `codex/longform-m3`, starting commit `83def4a Record M5 local
+verification closure` (plus the Windows fixes committed on top — see
+"Windows M5 run bugs fixed" below). Evidence directories:
+`build/longform-m5/windows-real-{1,2,3}` plus a final-code rerun.
+
+- Platform-independent suite: **2512 passed, 38 skipped** (POSIX-only +
+  pypdf + env-gated real-WPS skips). One-time setup: `npm ci` in
+  `macos/wps-jsapi-probe`, Poppler `pdftoppm` on PATH (portable build
+  works; set `core.autocrlf=false` before checkout — byte-stable
+  snapshot tests fail on a CRLF smudge).
+- Real M5 gate `WPSCOMPOSER_RUN_WINDOWS_M5=1`
+  `tests/longform_m5/test_windows_real_wps_m5.py`: **3/3 green**
+  (286.7 s / 260.9 s / 267.5 s before the caption/heading fixes;
+  135.5 / 139.0 / 136.2 s + a 142.5 s final-code rerun after them).
+- Each run produced `evidence/evidence.json`, six fixture PDFs, one
+  performance PDF (63 pages), and 20 screenshots. Report fields:
+  `"system": "Windows"`, `wpsVersion: "12.0"` (COM `Version`),
+  `protocolVersion: 2`, `semanticVersion: "longform-1"`, no private
+  absolute paths, caps within bounds (generation ≤2, export ≤3,
+  patch ≤1), performance total ≈105-115 s (well under 600 s).
+- Visual/semantic inspection 1-7: all pass — academic heading sequence
+  exactly `1, 1.1, 1.2, 2, 2.1, 2.2, 3, 3.1` with citations and
+  centered page numbers; toc_dense compact with no trailing blank;
+  wide_objects landscape table page (page 4) with all six columns
+  fitting and portrait return (captions `图 1-1`, `表 2-1`);
+  degradation codes each shown once with later body preserved;
+  unicode/emoji survive with HEADING_ORPHAN placed at the mapped
+  heading; plain_short stays one concise page; performance PDF clean
+  (1 generation, 0 patches, no notices).
+- Public route: DOCX / PDF / PPTX / XLSX all generated through public
+  `generate()`; PPTX/XLSX converted to development evidence PDFs and
+  inspected (`build/public-route/`). `tests/longform_m5/test_public_routing.py`,
+  `tests/test_generation.py`, `tests/test_conversion.py`,
+  `tests/test_recording_composers.py`: 78 passed (legacy
+  `layout_engine: legacy` routes only on explicit frontmatter; fatal
+  codes do not fall back or publish partial artifacts).
+
+### Windows M5 run bugs fixed (found live)
+
+All on `codex/longform-m3` blind-written Windows paths:
+
+1. **Resource ids hashed the absolute source path**
+   (`longform/resources.py`). `wpsc-rsrc:` ids differed per checkout
+   machine, breaking every plan snapshot test off the author's machine.
+   Ids now hash the base-dir-relative posix path (the docstring always
+   claimed this). m3 snapshots regenerated.
+2. **Evidence validators used platform-dependent `Path.is_absolute()`**
+   (`longform_m3/m4/m5_evidence.py`). POSIX-absolute artifact names
+   slipped past on Windows; all three validators now use the
+   platform-neutral `_is_absolute_path` from `longform.pipeline`.
+3. **Screenshot names emitted `screenshots\...` on Windows**
+   (`longform_m5_evidence.py`); now posix, matching the validator.
+4. **`writer.add_paragraph` dispatched with a `style` kwarg the composer
+   never had** (`longform/windows_executor.py`) — every styled body
+   paragraph aborted. Dispatch now uses `add_styled_paragraph`.
+5. **Cover page never rendered** — `configure_front_matter` stashed
+   nothing and `configure_section(role="cover")` did not insert the
+   title/author/date (macOS add-in does). The executor now renders the
+   cover from stashed front matter, matching the add-in.
+6. **`STYLEREF 1 \s` caption chapter fields destroyed the document on
+   update** (`writer.py`). WPS treats numeric STYLEREF args as literal
+   style names and resolves built-ins by localized UI name; updates of
+   the unresolvable field deleted following text (captions, headings,
+   the whole landscape section). The code is now built at COM time from
+   `Styles(-2).NameLocal` → `STYLEREF "标题 1" \s`, mirroring the add-in.
+7. **Text typed at a field's `Result.End` is absorbed into the field
+   result** — any later `Update()` deleted it (WPS COM quirk).
+   `_native_insert_field` now steps the selection right past the field
+   boundary after insertion; caption/equation/reference shells survive
+   refresh with zero issues (FIELD_REFRESH_UNSTABLE gone).
+8. **Heading numbering restarted at 1 for every heading**
+   (`writer.py`). Per-range `ApplyListTemplateWithLevel` starts a fresh
+   list on WPS; the fix links built-in heading styles
+   (`Styles(-1..-4).LinkToListTemplate`) once per scheme and applies the
+   built-in style + `ListLevelNumber`, mirroring the macOS add-in.
+   Sequence now advances 1, 1.1, 1.2, 2 ….
+9. **Bullet `writer.add_list` omitted the required `ordered` arg**
+   (`longform/plan.py`) — plain markdown with a bullet list failed plan
+   validation on the public route.
+ 10. **Dedicated-host dispatch hardened** (`longform/windows_executor.py`,
+     `_dispatch.py`): readiness probe + bounded construction retry
+     (July's flaky-`AttributeError` class), one fresh-host retry of a
+     generation whose failure is a raw COM/RPC error, and `_safe_quit`
+     now waits (≤3 s) for the host to actually exit.
+11. **Same-process multi-generation RPC death — root-caused and FIXED**
+     (`_dispatch.py`, `_base.py`, `slide.py`, `sheet.py`,
+     `longform/windows_executor.py`). Root cause: on this WPS build
+     (suite/personal), the Writer, Presentation, and Spreadsheet
+     automation servers all run inside ONE `wps.exe` host process, so
+     quitting any suite app after its generation tore down the shared
+     host and killed every other live instance ("object not connected
+     to server" / `-2147023130` / `-2147023179` at the next dispatch).
+     Fix: a process-lifetime **suite-app pool** (`_dispatch.pooled_suite_app`,
+     per ProgID-chain + thread, liveness-probed, quit once at interpreter
+     exit). `SlideComposer`/`SheetComposer` opt in via `_pool_app = True`
+     and the long-form executor uses the same pool; pooled composers
+     close only their documents, never the application.
+     `attach_active` and non-pooled composers keep their existing
+     ownership semantics. Verified: 15/15 sequential operations in one
+     Python process (12 generations across all four formats + 2 PDF
+     conversions + a final generation), plus the full M5 gate 3/3 rerun
+     on the pooled code (99–122 s per gate, faster than the per-instance
+     baseline; perf stage 34–38 s, caps within bounds, 22 screenshots
+     per run). A non-pooled composer quitting (e.g. the legacy Writer
+     route or conversational `open_document`) can still take down pooled
+     apps on suite builds; the pool detects this via its liveness probe
+     and recreates on the next call (self-healing).
+
+### Known issues (Windows, this run)
+
+- ~~Second long-form generation in the same Python process dies with
+  mid-run RPC errors~~ — **fixed via the suite-app pool** (bug 11 above).
+- `app.Quit()` on a modified unsaved document hangs headlessly (modal
+  save prompt); always `Close(False)`/set `DisplayAlerts=0` first —
+  the composers already do.
+- Windows symlink/chmod-dependent tests are `skipif(os.name == "nt")`
+  (privilege / POSIX chmod semantics); the M4 macOS real gate is now
+  env-gated (`WPSCOMPOSER_RUN_REAL_WPS=1`) like the M3/M5 gates so the
+  platform-independent suite stays green on Windows.
+
+### macOS follow-up completed before the final Windows rerun
+
+The fixes above touched shared Python (`resources.py`, `plan.py`,
+`writer.py`, `_dispatch.py`, `_base.py`, `slide.py`, `sheet.py`,
+`windows_executor.py`, m3/m4/m5 evidence validators) and regenerated
+`tests/longform_m3/snapshots/*.json`. macOS subsequently completed the full
+suite and three consecutive M5 gates under
+`build/longform-m5/final-postfix-{1,2,3}`. The final Windows rerun recorded at
+the top of this document then closed the remaining cross-platform gate. The
+suite-app pool remains Windows-only COM code and does not affect the macOS
+JSAPI bridge; the macOS conversational attach path is untouched.
+
+### M5 gate re-run recipe (as executed on 2026-08-24)
+
+Prerequisites:
+
+- Windows WPS Office or Microsoft Word with `pywin32` support;
+- Python 3.9+;
+- Poppler `pdftoppm` on `PATH` for required screenshot evidence;
+- no unrelated WPSComposer process changing global add-in registration;
+- a separate user WPS document may remain open for ownership-safety checks.
+
+PowerShell setup and platform-independent gate:
+
+```powershell
+git status --short
+git log -1 --oneline
+py -m venv .venv-win
+.\.venv-win\Scripts\python -m pip install -e ".[dev,windows]"
+where.exe pdftoppm
+.\.venv-win\Scripts\python -m pytest -q
+```
+
+Run the real M5 gate three consecutive times, each with a fresh evidence
+directory:
+
+```powershell
+$env:WPSCOMPOSER_RUN_WINDOWS_M5 = "1"
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-1
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-2
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-real-3
+```
+
+Each run must produce `evidence/evidence.json`, six fixture PDFs, one 50-100
+page performance PDF, and representative screenshots. The report must say
+`"system": "Windows"`, protocol `2`, semantic version `longform-1`, no private
+absolute paths, no operation-cap overflow, and performance below 600 seconds.
+
+Required visual/semantic inspection:
+
+1. `academic`: heading sequence is `1`, `1.1`, `1.2`, `2`, `2.1`, `2.2`, `3`,
+   `3.1`; bibliography/citations and centered page numbers remain visible.
+2. `toc_dense`: compact TOC spacing, no oversized gaps, no trailing blank page.
+3. `wide_objects`: the table page is landscape, all columns fit, following
+   content returns to portrait.
+4. `degradation`: `FORMULA_MALFORMED` and
+   `FORMULA_FALLBACK_IMAGE_UNAVAILABLE` are visible locally, with each code
+   displayed once and later body content preserved.
+5. `unicode`: Unicode/code content survives and any `HEADING_ORPHAN` notice is
+   placed at its mapped heading rather than on the cover.
+6. `plain_short`: remains one concise normal document without forced expansion.
+7. Performance: 50-100 pages, no unexpected terminal blank page, no clipping,
+   and no unnecessary relayout/notice patch when the report is clean.
+
+Also run public-route and conversion regressions:
+
+```powershell
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_public_routing.py tests/test_generation.py tests/test_conversion.py tests/test_recording_composers.py
+```
+
+Generate one real DOCX, PDF, PPTX, and XLSX through public `generate()`. Convert
+the PPTX and XLSX to development evidence PDFs and inspect them. Confirm
+`layout_engine: legacy` uses the old Writer route only when explicitly present;
+`ENGINE_LOST`, protocol/capability mismatch, save/export/validation failure, and
+timeout must not fall back or publish a partial artifact.
+
+If future Windows work changes shared Python, schema, or plan code, rerun
+affected macOS tests and at least one complete macOS M5 evidence gate. If it changes native
+heading numbering, page sections, degradation display, or lifecycle bounds,
+rerun all three macOS gates. Commit fixes, push them, then repeat the Windows
+gate from a clean checkout. The current cross-platform acceptance gate is
+complete; 0.8.0 released on 2026-08-24 after the separate release gate.
 
 ## Status
 
@@ -387,14 +647,16 @@ COM smoke (Windows only, ad hoc):
 
 | Item | Value |
 |---|---|
-| Test date | 2026-07-27 |
+| Test date (A-G) | 2026-07-27 |
+| Test date (M5 gate) | 2026-08-24 |
 | Windows build | 10.0.26200 |
-| WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN) |
+| WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN; COM `Version` reports "12.0") |
 | `pywin32` version | 312 |
 | Python | 3.14.3 |
-| `tests/test_document_api.py` | pass (77) |
-| Full suite | 600 passed, 11 skipped (10 POSIX-only + pypdf) |
-| Items A–G above | all pass |
+| Full suite (M5 branch) | 2512 passed, 38 skipped (re-verified after the suite-app pool) |
+| Real M5 Windows gate | 3/3 green; rerun 3/3 green after the suite-app pool (99–122 s) |
+| Sequential multi-generate (one process) | 15/15 OK (12 gens ×4 formats + 2 conversions) |
+| Items 1-7 visual inspection | all pass |
 
 ## Windows run results
 

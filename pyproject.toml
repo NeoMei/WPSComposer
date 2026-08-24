@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wps-composer"
-version = "0.7.2"
+version = "0.8.0"
 description = "WPS-backed rich document composition for AI agents (Windows COM + macOS JSAPI)"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -13,7 +13,6 @@ keywords = ["wps", "office", "document", "pdf", "docx", "markdown", "excalidraw"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -22,12 +21,13 @@ classifiers = [
     "Topic :: Office/Business :: Office Suites",
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
+dependencies = ["Pillow>=10", "pypdf>=4", "pdfplumber>=0.11"]
 
 [project.optional-dependencies]
 windows = ["pywin32>=306; platform_system == 'Windows'"]
-pdf = ["pypdf>=4", "pdfplumber>=0.11", "reportlab>=4"]
+pdf = ["reportlab>=4"]
 math = ["matplotlib>=3.5"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "reportlab>=4"]
 
 [tool.setuptools.packages.find]
 include = ["skills*"]

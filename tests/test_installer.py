@@ -50,6 +50,13 @@ def test_installer_copies_plugin_and_merges_personal_marketplace(tmp_path):
     assert result.destination == codex_home / "plugins" / "wps-composer"
     assert (result.destination / ".codex-plugin" / "plugin.json").is_file()
     assert (result.destination / "skills" / "WPSComposer" / "SKILL.md").is_file()
+    for name in (
+        "windows-verification.md",
+        "longform-markdown.md",
+        "macos-longform-m5-verification.md",
+    ):
+        assert (result.destination / "docs" / name).is_file()
+    assert not (result.destination / "docs" / "superpowers").exists()
     assert not (result.destination / ".git").exists()
     assert not (result.destination / "tests").exists()
     assert not (result.destination / "macos/wps-jsapi-probe/node_modules").exists()
@@ -64,6 +71,32 @@ def test_installer_copies_plugin_and_merges_personal_marketplace(tmp_path):
         "path": "./.codex/plugins/wps-composer",
     }
     assert result.source_path == "./.codex/plugins/wps-composer"
+
+
+def test_installer_skips_virtualenvs_and_build_metadata(tmp_path):
+    source = tmp_path / "source"
+    (source / ".codex-plugin").mkdir(parents=True)
+    (source / ".codex-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+    (source / "skills" / "WPSComposer").mkdir(parents=True)
+    (source / "skills" / "WPSComposer" / "SKILL.md").write_text("skill", encoding="utf-8")
+    (source / "docs").mkdir()
+    for name in install.OPERATOR_DOCS:
+        (source / "docs" / name).write_text("doc", encoding="utf-8")
+    for extra in (
+        (".venv", "pyvenv.cfg"),
+        (".venv-win", "pyvenv.cfg"),
+        ("wps_composer.egg-info", "PKG-INFO"),
+    ):
+        path = source.joinpath(*extra)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("machine-local", encoding="utf-8")
+
+    result = install.install_plugin(source, tmp_path / "home", tmp_path)
+
+    assert not (result.destination / ".venv").exists()
+    assert not (result.destination / ".venv-win").exists()
+    assert not (result.destination / "wps_composer.egg-info").exists()
+    assert (result.destination / ".codex-plugin" / "plugin.json").is_file()
 
 
 def test_installer_refuses_existing_destination_without_force(tmp_path):

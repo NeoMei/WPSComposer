@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from .generation_plan import (
@@ -38,6 +39,28 @@ def _without_none(**values):
     return {key: value for key, value in values.items() if value is not None}
 
 
+def _m3_bookmark(kind, node_id):
+    digest = hashlib.sha256(f"{kind}\0{node_id}".encode("utf-8")).hexdigest()[:24]
+    return f"wpsc_{kind}_{digest}"
+
+
+def _m3_numbering(kind, mode="global"):
+    sequence, prefix, suffix = {
+        "fig": ("WPSC_FIG", "图 ", ""),
+        "tab": ("WPSC_TAB", "表 ", ""),
+        "eq": ("WPSC_EQ", "(", ")"),
+    }[kind]
+    chapter = mode == "chapter"
+    return {
+        "mode": mode,
+        "sequenceId": sequence,
+        "chapterStyleLevel": 1 if chapter else None,
+        "resetLevel": 1 if chapter else None,
+        "prefix": prefix,
+        "suffix": suffix,
+    }
+
+
 def _normalize_style(key, props, *, outline_level=None):
     normalized = {"name": props.get("name", str(key))}
     for name, value in props.items():
@@ -56,6 +79,8 @@ class RecordingWriterComposer:
         self._operations = []
         self._resources = []
         self._resource_ids = {}
+        self._protocol_version = 1
+        self._resource_manifest_digest = "sha256:" + "0" * 64
 
     def __enter__(self):
         self._record("writer.reset")
@@ -66,6 +91,34 @@ class RecordingWriterComposer:
 
     def _record(self, op, **args):
         self._operations.append(GenerationOperation(op, args))
+
+    def _record_v2(self, op, *, node_id=None, failure_policy=None, **args):
+        if op in {
+            "writer.configure_front_matter",
+            "writer.configure_section",
+            "writer.configure_toc_styles",
+            "writer.add_captioned_figure",
+            "writer.add_semantic_table",
+            "writer.add_equation",
+            "writer.add_cross_reference",
+            "writer.insert_figure_index",
+            "writer.insert_table_index",
+            "writer.add_bibliography",
+            "writer.add_inline_degradation",
+            "writer.add_degradation_notice",
+            "writer.add_document_quality_notice",
+            "writer.reserve_document_quality_anchor",
+            "writer.finalize_fields",
+        }:
+            self._protocol_version = 2
+        self._operations.append(
+            GenerationOperation(
+                op,
+                {key: value for key, value in args.items() if value is not None},
+                node_id=node_id,
+                failure_policy=failure_policy,
+            )
+        )
 
     def set_margins(self, top, bottom, left, right):
         self._record(
@@ -331,8 +384,309 @@ class RecordingWriterComposer:
     def update_fields(self):
         self._record("writer.update_fields")
 
+    def configure_front_matter(self, *, title=None, short_title=None, author=None, date=None, header=None, title_page=None):
+        self._record_v2(
+            "writer.configure_front_matter",
+            title=title,
+            shortTitle=short_title,
+            author=author,
+            date=date,
+            header=header,
+            titlePage=title_page,
+        )
+
+    def configure_section(
+        self,
+        *,
+        role=None,
+        landscape=None,
+        page_size=None,
+        margins=None,
+        restart_page_numbering=None,
+        page_number_format=None,
+        start_page_number=None,
+        header_text=None,
+        footer_text=None,
+        link_to_previous_header=None,
+        link_to_previous_footer=None,
+    ):
+        self._record_v2(
+            "writer.configure_section",
+            role=role,
+            landscape=landscape,
+            pageSize=page_size,
+            margins=margins,
+            restartPageNumbering=restart_page_numbering,
+            pageNumberFormat=page_number_format,
+            startPageNumber=start_page_number,
+            headerText=header_text,
+            footerText=footer_text,
+            linkToPreviousHeader=link_to_previous_header,
+            linkToPreviousFooter=link_to_previous_footer,
+        )
+
+    def configure_toc_styles(self, *, tocTitle=None, levels=None, includeFigureIndex=None, includeTableIndex=None, figureIndexTitle=None, tableIndexTitle=None, min_font_size_pt=None, min_space_before_pt=None, min_space_after_pt=None):
+        self._record_v2(
+            "writer.configure_toc_styles",
+            tocTitle=tocTitle,
+            levels=levels,
+            includeFigureIndex=includeFigureIndex,
+            includeTableIndex=includeTableIndex,
+            figureIndexTitle=figureIndexTitle,
+            tableIndexTitle=tableIndexTitle,
+            minFontSizePt=min_font_size_pt,
+            minSpaceBeforePt=min_space_before_pt,
+            minSpaceAfterPt=min_space_after_pt,
+        )
+
+    def set_page_role(self, *, role):
+        self._record_v2("writer.set_page_role", role=role)
+
+    def set_page_numbering(self, *, format, start=None, restart=None):
+        self._record_v2(
+            "writer.set_page_numbering",
+            format=format,
+            start=start,
+            restart=restart,
+        )
+
+    def set_header_footer(self, *, header_text="", footer_text="", link_to_previous_header=None, link_to_previous_footer=None):
+        self._record_v2(
+            "writer.set_header_footer",
+            headerText=header_text,
+            footerText=footer_text,
+            linkToPreviousHeader=link_to_previous_header,
+            linkToPreviousFooter=link_to_previous_footer,
+        )
+
+    def add_captioned_figure(
+        self, *, node_id, caption, children, layout="stack", columns=None,
+        numbering=None, bookmarkName=None, widthMode="auto", orientation="portrait",
+        kind="auto", keepWithCaption=True, failure_policy=None,
+    ):
+        normalized_children = []
+        for child in children:
+            item = dict(child)
+            if "resourceId" in item:
+                item.setdefault("displayWidthPt", 1.0)
+                item.setdefault("displayHeightPt", 1.0)
+                item.setdefault("effectiveDpi", 96.0)
+                item.setdefault("mediaType", "image/png")
+                item.setdefault("normalizerId", "none-v1")
+            normalized_children.append(item)
+        normalized_layout = "columns" if layout in {"columns", "side-by-side"} else "stack"
+        self._record_v2(
+            "writer.add_captioned_figure",
+            node_id=node_id,
+            caption=caption,
+            numbering=numbering or _m3_numbering("fig"),
+            bookmarkName=(bookmarkName or _m3_bookmark("fig", node_id)) if caption else None,
+            indexable=bool(caption),
+            referenceable=bool(caption),
+            widthMode=widthMode,
+            orientation=orientation,
+            kind=kind,
+            children=normalized_children,
+            layout=normalized_layout,
+            columns=2 if normalized_layout == "columns" else None,
+            keepWithCaption=keepWithCaption,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": ["IMAGE_INSERT_FAILED"],
+                "fallback": "figure-child-stack-then-notice",
+            },
+        )
+
+    def add_semantic_table(
+        self, *, node_id, caption, headers, rows, alignments=None,
+        numbering=None, bookmarkName=None, style="grid", orientation="portrait",
+        borderSpec=None, merges=None, repeatHeader=True, allowRowSplit=False,
+        cellIndentPt=0.0, plannedDegradation=None, cellDegradations=None,
+        cellCitations=None,
+        keepCaptionWithFirstRow=True, failure_policy=None,
+    ):
+        column_count = len(headers)
+        normalized_borders = borderSpec or {
+            "top": 0.75, "bottom": 0.75, "headerBottom": 0.75,
+            "left": 0.75, "right": 0.75,
+            "insideHorizontal": 0.75, "insideVertical": 0.75,
+        }
+        self._record_v2(
+            "writer.add_semantic_table",
+            node_id=node_id,
+            caption=caption,
+            numbering=numbering or _m3_numbering("tab"),
+            bookmarkName=(bookmarkName or _m3_bookmark("tab", node_id)) if caption else None,
+            indexable=bool(caption),
+            referenceable=bool(caption),
+            headers=headers,
+            rows=rows,
+            alignments=alignments or ["left"] * column_count,
+            style=style,
+            orientation=orientation,
+            borderSpec=normalized_borders,
+            merges=merges or [],
+            repeatHeader=repeatHeader,
+            allowRowSplit=allowRowSplit,
+            cellIndentPt=cellIndentPt,
+            plannedDegradation=plannedDegradation or [],
+            cellDegradations=cellDegradations,
+            cellCitations=cellCitations,
+            keepCaptionWithFirstRow=keepCaptionWithFirstRow,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": [
+                    "TABLE_STYLE_APPLY_FAILED",
+                    "TABLE_MERGE_APPLY_FAILED",
+                    "TABLE_ROW_FORCED_SPLIT",
+                    "TABLE_INSERT_FAILED",
+                ],
+                "fallback": "grid-then-text",
+            },
+        )
+
+    def add_equation(
+        self, *, node_id, source=None, number=None, numbering=None,
+        bookmarkName=None, fallback_text=None, render_mode=None, content=None,
+        fallback_resource=None, failure_policy=None,
+    ):
+        if render_mode == "native-m4":
+            if fallback_text is None and isinstance(content, dict):
+                descriptor = content.get("nativeMath") or content.get("plannedDegradation")
+                if isinstance(descriptor, dict):
+                    fallback_text = descriptor.get("linearText") or descriptor.get("fallbackText")
+            self._record_v2(
+                "writer.add_equation",
+                node_id=node_id,
+                renderMode="native-m4",
+                content=content,
+                fallbackResource=fallback_resource,
+                numbering=numbering or _m3_numbering("eq"),
+                bookmarkName=bookmarkName or _m3_bookmark("eq", node_id),
+                fallbackText=fallback_text,
+                failure_policy=failure_policy or {
+                    "mode": "degrade",
+                    "recoverableCodes": ["EQUATION_INSERT_FAILED"],
+                    "fallback": "explicit-image-then-source-notice",
+                },
+            )
+            return
+        self._record_v2(
+            "writer.add_equation",
+            node_id=node_id,
+            source=source,
+            numbering=numbering or _m3_numbering("eq"),
+            bookmarkName=bookmarkName or _m3_bookmark("eq", node_id),
+            fallbackText=fallback_text if fallback_text is not None else source,
+            failure_policy={"mode": "fail"},
+        )
+
+    def add_cross_reference(self, *, node_id, target_id=None, kind=None, fallback_text="", runs=None, list_formatting=None, failure_policy=None):
+        if runs is None:
+            short_kind = {"figure": "fig", "table": "tab", "equation": "eq"}[kind]
+            _, prefix, suffix = {
+                "figure": ("WPSC_FIG", "图 ", ""),
+                "table": ("WPSC_TAB", "表 ", ""),
+                "equation": ("WPSC_EQ", "(", ")"),
+            }[kind]
+            runs = [{
+                "type": "reference",
+                "targetNodeId": target_id,
+                "targetKind": kind,
+                "bookmarkName": _m3_bookmark(short_kind, target_id),
+                "prefix": prefix,
+                "suffix": suffix,
+                "fallbackText": fallback_text,
+            }]
+        self._record_v2(
+            "writer.add_cross_reference",
+            node_id=node_id,
+            runs=runs,
+            listFormatting=list_formatting,
+            failure_policy={
+                "mode": "degrade",
+                "recoverableCodes": ["CROSS_REFERENCE_FAILED"],
+                "fallback": "inline-fallback",
+            },
+        )
+
+    def insert_figure_index(self, *, title=None, sequenceId="WPSC_FIG", titleStyleId="WPSC_INDEX_TITLE"):
+        self._record_v2("writer.insert_figure_index", title=title, sequenceId=sequenceId, titleStyleId=titleStyleId)
+
+    def insert_table_index(self, *, title=None, sequenceId="WPSC_TAB", titleStyleId="WPSC_INDEX_TITLE"):
+        self._record_v2("writer.insert_table_index", title=title, sequenceId=sequenceId, titleStyleId=titleStyleId)
+
+    def add_bibliography(
+        self, *, node_id, entries, style="numbered", schema_version=None,
+        hanging_indent_pt=None, left_indent_pt=None, space_after_pt=None,
+        failure_policy=None,
+    ):
+        self._record_v2(
+            "writer.add_bibliography",
+            node_id=node_id,
+            schemaVersion=schema_version,
+            entries=entries,
+            style=style,
+            hangingIndentPt=hanging_indent_pt,
+            leftIndentPt=left_indent_pt,
+            spaceAfterPt=space_after_pt,
+            failure_policy=failure_policy,
+        )
+
+    def add_inline_degradation(self, *, node_id, code, message, fallback_text, failure_policy=None):
+        self._record_v2(
+            "writer.add_inline_degradation",
+            node_id=node_id,
+            code=code,
+            message=message,
+            fallbackText=fallback_text,
+            failure_policy=failure_policy,
+        )
+
+    def add_degradation_notice(self, *, node_id, code, message, fallback_text, placement="block", failure_policy=None):
+        self._record_v2(
+            "writer.add_degradation_notice",
+            node_id=node_id,
+            code=code,
+            message=message,
+            fallbackText=fallback_text,
+            placement=placement,
+            failure_policy=failure_policy,
+        )
+
+    def add_document_quality_notice(self, *, notices):
+        self._record_v2(
+            "writer.add_document_quality_notice",
+            notices=notices,
+        )
+
+    def reserve_document_quality_anchor(self, *, notices=()):
+        self._record_v2(
+            "writer.reserve_document_quality_anchor",
+            node_id="doc:quality",
+            title="生成质量提示",
+            notices=list(notices),
+            failure_policy={"mode": "fail"},
+        )
+
+    def finalize_fields(self, *, max_rounds=3):
+        self._record_v2(
+            "writer.finalize_fields",
+            maxRounds=max_rounds,
+        )
+
     def save_docx(self, path):
-        plan = GenerationPlan("writer", tuple(self._operations))
+        if self._protocol_version == 2:
+            plan = GenerationPlan(
+                "writer",
+                tuple(self._operations),
+                protocol_version=2,
+                semantic_version="longform-1",
+                resource_manifest_version=1,
+                resource_manifest_digest=self._resource_manifest_digest,
+            )
+        else:
+            plan = GenerationPlan("writer", tuple(self._operations))
         validated = validate_generation_plan(plan.to_dict(), "writer")
         return RecordedGeneration(validated, tuple(self._resources))
 

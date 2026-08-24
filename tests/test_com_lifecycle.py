@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -109,6 +110,23 @@ def test_dispatch_failure_uninitializes_com_apartment(monkeypatch):
 
     with pytest.raises(_dispatch.WPSUnavailable):
         _Composer().__enter__()
+
+    assert calls == ["init", "uninit"]
+
+
+def test_pooled_dispatch_failure_uninitializes_com_apartment(monkeypatch):
+    def unavailable(progid):
+        raise RuntimeError(progid)
+
+    calls = _install_fake_com(
+        monkeypatch,
+        dispatch_ex=unavailable,
+        dispatch=lambda progid: pytest.fail("pooled dispatch must not fall back"),
+    )
+    _dispatch._POOLED_SUITE_APPS.clear()
+
+    with pytest.raises(_dispatch.WPSUnavailable):
+        _dispatch.pooled_suite_app(("Wps.Application",))
 
     assert calls == ["init", "uninit"]
 
@@ -231,7 +249,7 @@ def test_attached_save_copy_reports_recovery_path_if_host_rebinds_then_fails(
     composer._owns_doc = False
     recovery = tmp_path / "copy.docx"
 
-    with pytest.raises(RuntimeError, match=str(recovery.resolve())):
+    with pytest.raises(RuntimeError, match=re.escape(str(recovery.resolve()))):
         composer.save_copy(recovery)
 
     assert composer.is_bound_to(recovery)

@@ -28,6 +28,10 @@ def test_methods_are_routed_to_one_component():
         "edit_presentation": "presentation",
         "inspect_document": "writer",
         "inspect_workbook": "spreadsheet",
+        "probe_longform_m0": "writer",
+        "generate_longform_document": "writer",
+        "mutate_longform_document": "writer",
+        "patch_longform_quality_notices": "writer",
     }
 
 

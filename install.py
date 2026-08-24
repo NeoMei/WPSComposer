@@ -17,11 +17,17 @@ from typing import Optional
 
 
 PLUGIN_NAME = "wps-composer"
+OPERATOR_DOCS = (
+    "windows-verification.md",
+    "longform-markdown.md",
+    "macos-longform-m5-verification.md",
+)
 IGNORED_NAMES = {
     ".git",
     ".pytest_cache",
-    ".venv",
+    ".venv*",
     "__pycache__",
+    "*.egg-info",
     "build",
     "dist",
     "docs",
@@ -142,6 +148,13 @@ def _copy_plugin(source_root: Path, destination: Path, force: bool) -> None:
         destination,
         ignore=shutil.ignore_patterns(*sorted(IGNORED_NAMES), "*.pyc", "*.pyo"),
     )
+    installed_docs = destination / "docs"
+    installed_docs.mkdir()
+    for name in OPERATOR_DOCS:
+        source = source_root / "docs" / name
+        if not source.is_file():
+            raise InstallerError(f"required operator document is missing: docs/{name}")
+        shutil.copy2(source, installed_docs / name)
 
 
 def _install_macos_runtime(destination: Path) -> None:

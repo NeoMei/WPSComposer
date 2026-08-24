@@ -250,6 +250,132 @@ Generate and deliver only the requested artifact format. During development,
 create PDF evidence separately when a native WPS layout change needs visual
 verification; do not make that PDF an automatic public companion output.
 
+## Long-form generation and PDF quality lifecycle (M5)
+
+Public `generate()` now routes DOCX/PDF through the M5 long-form engine by
+default. PPTX/XLSX retain their existing route. An explicit deprecated
+frontmatter escape hatch, `layout_engine: legacy`, selects the old Writer route;
+engine loss, protocol mismatch, save/export failure, or validation failure must
+never fall back to it automatically. The lifecycle uses the public 600-second
+timeout as one absolute deadline and publishes only the requested artifact.
+
+The lower-level API remains available to WPSComposer/SuperWriter agents,
+plugin maintainers, and applications that need to inspect a deterministic
+offline plan before choosing a native executor:
+
+```python
+from skills.WPSComposer.scripts.longform import (
+    build_longform_generation,
+    execute_longform_plan,
+)
+
+build = build_longform_generation(markdown, base_dir="assets")
+# Supply a dedicated Windows COM or macOS JSAPI executor only when native
+# generation is explicitly required.
+outcome = execute_longform_plan(build, executor, deadline=deadline)
+```
+
+Long-form Markdown preserves the M3 figure, table, numbering, reference, and
+resource contracts and adds these closed M4 forms:
+
+- Figures: `#id`, `caption`, `width="auto|column|full|Npt"`,
+  `orientation="portrait|landscape"`, `kind`, `layout="stack|columns"`, and
+  `columns=2`. Figure captions are native fields below the image container.
+- Tables: `#id`, `caption`, `style="three-line|grid"`, explicit
+  `orientation`, `merges="A2:A3;B2:C2"`, and `repeat_header`. Table captions
+  are native fields above the first row.
+- Formula blocks use `:::equation {#eq:id}` (legacy `:::formula` is accepted).
+  Optional `fallback_image="relative/path.png"` names one local, validated
+  fallback image. Formula text is a bounded restricted-LaTeX subset: Unicode
+  variables, scripts, fractions, roots, sums/products/integrals, scalable
+  delimiters, common Greek/operators/relations, matrices, cases, and bounded
+  nesting. Custom/unknown commands, packages, file/URL/shell access, malformed
+  groups/environments, and external renderers are rejected before execution.
+- `{{cite:id}}` emits numeric citations. Numbers follow first visible semantic
+  occurrence across paragraphs, lists, block quotes, page-break paragraphs,
+  and table cells; repeats reuse the number. `:::bibliography` (legacy
+  `:::references`) declares one `[id] text` entry per line. Cited entries come
+  first, followed by uncited declarations unless front matter sets
+  `bibliography_include_uncited: false`.
+- `{{ref:target-id}}` remains the native hyperlinking object reference. Formula
+  references reuse the M3 equation number/bookmark shell. References and
+  citations in abstracts and lists retain their paragraph and list geometry.
+- Front matter controls `caption_numbering: auto|global|chapter` plus
+  `figure_index` and `table_index`. `auto` is resolved per object: content
+  before the first numbered H1 is global, later content is chapter-numbered,
+  and an unnumbered H1 does not reset a sequence.
+
+Controlled native sequences are `WPSC_FIG`, `WPSC_TAB`, and `WPSC_EQ`.
+Bookmarks wrap only the visible number, and references use `REF ... \\h`.
+Figure/table indexes are populated native fields in the front matter. Field
+finalization is bounded: numbering, references, indexes, and page fields must
+produce two adjacent equal snapshots within three rounds; otherwise one frozen
+fourth snapshot records `FIELD_REFRESH_UNSTABLE`.
+
+Accepted media are decoded PNG, JPEG, TIFF, BMP, GIF, and restricted static
+SVG. WebP and network media are rejected. EXIF-oriented images, the first GIF
+frame, and the first TIFF page are normalized privately to lossless PNG.
+Limits are 50 MiB per resource, 80,000,000 pixels, and 32,768 pixels on either
+side. The normalized bytes and source paths never enter the plan or diagnostic
+JSON. Executor staging cleanup is attempted on every exit path; a cleanup
+failure is fatal and never silently publishes a result.
+
+The academic preset defaults to a native three-line table: 1.5 pt top/bottom,
+0.75 pt below the header, no vertical/interior body borders, zero cell indent,
+direct cell alignment, repeated headers, and row splitting disabled. Merge
+declarations are validated all-or-nothing. An invalid declaration preserves
+the complete unmerged grid and records one notice after the caption; an
+over-page vertical group degrades to an unmerged splittable grid.
+
+M4 formula execution first attempts editable Office Math/WPS math content while
+keeping the number shell separate. `EQUATION_INSERT_FAILED` follows exactly one
+closed ladder: the declared validated image when available, otherwise readable
+source, plus a visible notice at the formula node. A missing or invalid fallback
+image produces `FORMULA_FALLBACK_IMAGE_UNAVAILABLE` but never suppresses a valid
+native attempt. On the verified macOS WPS 12.1.26055 build, professional
+`BuildUp` is a structural no-op for the supported families; the executor detects
+that postcondition and honestly uses the marked image/source fallback. It does
+not report a linear Type-20 object as native success. Windows uses the same
+descriptor and recovery contract; real Windows M4 execution remains the
+M5/final cross-platform gate.
+
+Marked recovery is visible and local. Missing citation/reference runs stay
+inline in their paragraph; formula/object failures use a nearby block notice;
+document issues deduplicate at the reserved `生成质量提示` anchor. Notices contain
+only a stable code, controlled label, readable reason, and actual fallback—never
+paths, payloads, hashes, bookmark maps, field values, or exception
+representations. A document with no optional formula, citation, bibliography,
+image, or degradation has an empty reserved anchor but no visible notice or
+extra spacing.
+
+Only allowlisted object-local failures such as `EQUATION_INSERT_FAILED`,
+`CROSS_REFERENCE_FAILED`, and `BIBLIOGRAPHY_INSERT_FAILED` can recover. Engine
+loss (`ENGINE_LOST`), protocol/capability mismatch, unknown native exceptions,
+rollback failure, required field/index/repagination failure, staging/hash or
+cleanup failure, save/export/validation/publication failure, and failure of the
+terminal source/notice fallback are fatal. A recoverable image-rung failure may
+still roll back into the declared source notice; an unavailable engine stops
+immediately.
+
+M5 exports the staged DOCX to PDF for geometry analysis before publication.
+The normalized top-left point-coordinate page model checks blank pages,
+boundaries, headings, captions, images, tables, TOC density, fields, and final
+page utilization. Only high-confidence findings in the closed repair matrix may
+trigger one full relayout; remaining material findings receive at most one
+notice-only patch. The hard caps are two generations, one notice patch, and
+three PDF exports. `Pillow>=10`, `pypdf>=4`, and `pdfplumber>=0.11` are core
+dependencies and are checked before WPS starts.
+
+Recoverable object failures remain visible where the object belongs. Fatal
+conditions including `ENGINE_LOST`, protocol/capability mismatch, cleanup,
+save/export, validation, and publication failure abort without a public partial
+artifact. On macOS WPS 12.1.26055, native formula BuildUp is still honestly
+reported through the marked image/source ladder. cross-platform acceptance: COMPLETED
+after three consecutive real M5 gates on both macOS and Windows, including the
+post-acceptance Windows rerun. 0.8.0 released on 2026-08-24 with the M5
+long-form route enabled by default for DOCX/PDF. See `docs/longform-markdown.md` and
+`docs/macos-longform-m5-verification.md`.
+
 ## Native heading numbering (docx)
 
 Generated DOCX files carry **native Word/WPS multi-level heading numbering**
