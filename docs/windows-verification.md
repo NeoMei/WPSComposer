@@ -5,6 +5,43 @@
 > long-form final gate was completed on Windows (2026-08-24, see
 > "M5 Windows run results" below).
 
+## Post-acceptance Windows rerun (PENDING on the latest pushed commit)
+
+The original Windows M5 gate remains accepted at `5148b1a`. The subsequent
+macOS acceptance found shared-plan and Windows-executor defects, so the latest
+`origin/codex/longform-m3` requires one final clean-checkout Windows rerun before
+0.8.0:
+
+- fenced code blocks were silently omitted from long-form plans and now render
+  as compact monospace paragraphs;
+- the Windows executor now forwards the closed paragraph-formatting arguments;
+- a reused Windows executor now clears front matter between documents;
+- failed pooled COM construction now balances `CoInitialize`;
+- ordinary suites skip the env-gated macOS M4 tests instead of erroring.
+
+Run from a clean checkout after confirming `git status --short` is empty:
+
+```powershell
+git fetch origin
+git switch codex/longform-m3
+git pull --ff-only
+git log -1 --oneline
+
+.\.venv-win\Scripts\python -m pytest -q
+$env:WPSCOMPOSER_RUN_WINDOWS_M5 = "1"
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-1
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-2
+.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-3
+```
+
+In every new `unicode.pdf`, visually confirm the two code lines
+`def quality_gate(document):` and `return "visible result"` are present in a
+monospace face. The entry must remain 2 pages with one generation/export/
+analysis, zero patch, and no issue code. Performance remains 50-100 pages,
+below 600 seconds, with no unnecessary patch or issue code. Record the new
+commit, suite totals, three evidence paths, WPS version, and visual result in
+this section; do not reuse `windows-real-*` as evidence for the new commit.
+
 ## M5 final Windows gate (COMPLETED 2026-08-24)
 
 Branch `codex/longform-m3`, starting commit `83def4a Record M5 local

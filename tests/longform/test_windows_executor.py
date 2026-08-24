@@ -173,8 +173,8 @@ class FakeWriterComposer:
     def ensure_styles(self, styles_dict) -> None:
         self._record("ensure_styles", styles_dict)
 
-    def add_paragraph(self, **kwargs) -> None:
-        self._record("add_paragraph", **kwargs)
+    def add_paragraph(self, *args, **kwargs) -> None:
+        self._record("add_paragraph", *args, **kwargs)
 
     def add_styled_paragraph(self, text, style_name) -> None:
         self._record("add_styled_paragraph", text, style_name)
@@ -491,6 +491,89 @@ def test_front_matter_sets_closed_document_metadata(executor, fake_composer, sim
         if call.name == "set_document_metadata"
     ]
     assert metadata[0].kwargs == {"title": "Report", "author": "Author"}
+
+
+def test_plain_paragraph_forwards_closed_formatting_args(executor, fake_composer, simple_plan):
+    paragraph = GenerationOperation(
+        "writer.add_paragraph",
+        {
+            "text": "code",
+            "size": 9,
+            "fontName": "Courier New",
+            "fontNameAscii": "Courier New",
+            "align": 0,
+            "indentFirst": 0,
+            "lineSpacing": 12,
+            "lineSpacingRule": "single",
+            "spaceBefore": 0,
+            "spaceAfter": 6,
+        },
+        node_id="code:1",
+    )
+    plan = replace(
+        simple_plan,
+        operations=(simple_plan.operations[0], paragraph) + simple_plan.operations[1:],
+    )
+
+    executor.execute(plan, ())
+
+    call = next(call for call in fake_composer.primitives if call.name == "add_paragraph")
+    assert call.kwargs == {
+        "text": "code",
+        "size": 9,
+        "align": 0,
+        "indent_first": 0,
+        "line_spacing": 12,
+        "line_spacing_rule": "single",
+        "space_before": 0,
+        "space_after": 6,
+        "font_name": "Courier New",
+        "font_name_ascii": "Courier New",
+    }
+
+
+def test_reused_executor_does_not_leak_front_matter_into_next_document(simple_plan):
+    first_composer = FakeWriterComposer()
+    second_composer = FakeWriterComposer()
+    composers = iter((first_composer, second_composer))
+    executor = WindowsLongformExecutor(composer_factory=lambda: next(composers))
+
+    cover = GenerationOperation(
+        "writer.configure_section",
+        {"role": "cover"},
+        node_id="doc:cover",
+    )
+    private_front_matter = GenerationOperation(
+        "writer.configure_front_matter",
+        {"title": "Private previous title", "author": "Previous author", "titlePage": True},
+        node_id="doc:front-matter",
+    )
+    first_plan = replace(
+        simple_plan,
+        operations=(
+            simple_plan.operations[0],
+            private_front_matter,
+            cover,
+        ) + simple_plan.operations[1:],
+    )
+    second_plan = replace(
+        simple_plan,
+        operations=(simple_plan.operations[0], cover) + simple_plan.operations[1:],
+    )
+
+    executor.execute(first_plan, ())
+    executor.execute(second_plan, ())
+
+    leaked = [
+        call
+        for call in second_composer.primitives
+        if call.name == "add_paragraph"
+        and (
+            call.kwargs.get("text") == "Private previous title"
+            or (call.args and call.args[0] == "Private previous title")
+        )
+    ]
+    assert leaked == []
 
 
 def test_configure_section_carries_roman_and_arabic_args(

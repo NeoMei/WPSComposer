@@ -206,6 +206,7 @@ def pooled_suite_app(progids):
             app = None
             last = exc
     if app is None:
+        pythoncom.CoUninitialize()
         raise WPSUnavailable(f"No dedicated COM host for {progids}: {last}")
     try:
         app.Visible = 0

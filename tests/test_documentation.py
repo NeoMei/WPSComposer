@@ -93,7 +93,7 @@ def test_m5_public_docs_describe_default_route_and_closed_failure_boundary():
     assert "M4 does not reroute" not in API
 
 
-def test_m5_macos_evidence_is_explicit_and_windows_release_gate_remains_open():
+def test_m5_macos_evidence_records_windows_completion_and_postfix_gate():
     assert MACOS_M5_PATH.is_file()
     evidence = MACOS_M5_PATH.read_text(encoding="utf-8")
     for token in (
@@ -102,9 +102,13 @@ def test_m5_macos_evidence_is_explicit_and_windows_release_gate_remains_open():
         "63",
         "139",
         "three consecutive",
-        "HEADING_ORPHAN",
+        "final-postfix-1",
+        "2542",
+        "def quality_gate(document):",
         "FORMULA_MALFORMED",
-        "Windows evidence is pending",
+        "Windows gate status: COMPLETED",
+        "macOS re-verification status: COMPLETED",
+        "Windows must perform one final clean-checkout post-acceptance rerun",
     ):
         assert token in evidence
     for token in ("M5 Task 8", "0d61345", "three consecutive"):
@@ -123,5 +127,8 @@ def test_m5_windows_handoff_has_one_runnable_three_round_gate():
         "layout_engine: legacy",
         "ENGINE_LOST",
         "Do not bump or publish 0.8.0 yet",
+        "Post-acceptance Windows rerun (PENDING",
+        "windows-post-acceptance-1",
+        "def quality_gate(document):",
     ):
         assert token in WINDOWS_VERIFICATION

@@ -15,6 +15,7 @@ from ..document_model import (
     BibliographyEntry,
     BlockQuote,
     CaptionBinding,
+    CodeBlock,
     DegradationBlock,
     DocumentIssue,
     FigureBlock,
@@ -486,6 +487,25 @@ def _render_element(
                 "writer.add_list",
                 {"items": _list_items(node.items), "ordered": False, "glyph": "•"},
                 node_id=node_id,
+            )
+    elif isinstance(node, CodeBlock):
+        lines = node.code.split("\n")
+        for index, line in enumerate(lines, start=1):
+            state.add(
+                "writer.add_paragraph",
+                {
+                    "text": line or " ",
+                    "size": 9,
+                    "fontName": "Courier New",
+                    "fontNameAscii": "Courier New",
+                    "align": 0,
+                    "indentFirst": 0,
+                    "lineSpacing": 12,
+                    "lineSpacingRule": "single",
+                    "spaceBefore": 0,
+                    "spaceAfter": 6 if index == len(lines) else 0,
+                },
+                node_id=f"{node_id or 'code-block'}/line:{index}",
             )
     elif isinstance(node, FigureBlock):
         _render_figure(state, node, node_id, preflight)

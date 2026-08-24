@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from skills.WPSComposer.scripts.document_model import (
+    CodeBlock,
     DegradationBlock,
     DocumentIssue,
     FigureBlock,
@@ -194,6 +195,34 @@ def test_build_longform_plan_operation_order():
     assert ops.index("writer.insert_toc") < ops.index("writer.finalize_fields")
     assert ops.index("writer.insert_figure_index") < ops.index("writer.finalize_fields")
     assert ops.index("writer.insert_table_index") < ops.index("writer.finalize_fields")
+
+
+def test_code_block_is_preserved_as_compact_monospace_paragraphs():
+    semantic = make_semantic(
+        title="Code",
+        sections=[
+            Section(
+                level=1,
+                heading="Example",
+                elements=[CodeBlock(code='def f():\n    return "visible"', language="python")],
+            ),
+        ],
+    )
+    plan = build_longform_plan(semantic, preflight_resources([], "."))
+
+    code_ops = [
+        op for op in plan.to_dict()["operations"]
+        if op["op"] == "writer.add_paragraph"
+        and op["args"].get("fontName") == "Courier New"
+    ]
+
+    assert [op["args"]["text"] for op in code_ops] == [
+        "def f():",
+        '    return "visible"',
+    ]
+    assert all(op["args"]["indentFirst"] == 0 for op in code_ops)
+    assert all(op["args"]["lineSpacingRule"] == "single" for op in code_ops)
+    assert code_ops[-1]["args"]["spaceAfter"] == 6
 
 
 def test_resource_manifest_digest_binding(tmp_path):

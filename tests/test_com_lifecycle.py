@@ -114,6 +114,23 @@ def test_dispatch_failure_uninitializes_com_apartment(monkeypatch):
     assert calls == ["init", "uninit"]
 
 
+def test_pooled_dispatch_failure_uninitializes_com_apartment(monkeypatch):
+    def unavailable(progid):
+        raise RuntimeError(progid)
+
+    calls = _install_fake_com(
+        monkeypatch,
+        dispatch_ex=unavailable,
+        dispatch=lambda progid: pytest.fail("pooled dispatch must not fall back"),
+    )
+    _dispatch._POOLED_SUITE_APPS.clear()
+
+    with pytest.raises(_dispatch.WPSUnavailable):
+        _dispatch.pooled_suite_app(("Wps.Application",))
+
+    assert calls == ["init", "uninit"]
+
+
 @pytest.mark.parametrize("owned", [True, False])
 def test_document_open_failure_releases_partial_application_and_apartment(
     monkeypatch, owned

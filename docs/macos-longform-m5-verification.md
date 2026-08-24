@@ -5,7 +5,7 @@ quality lifecycle. It does not substitute for the separate Windows gate.
 
 ## Environment
 
-- Date: 2026-08-23
+- Date: 2026-08-24
 - Host: Darwin arm64
 - WPS: WPS 12.1.26055
 - Protocol: 2
@@ -28,10 +28,18 @@ fixture PDFs, one performance PDF, `evidence.json`, SHA-256 values, and
 representative screenshots. Evidence JSON contains only relative artifact and
 screenshot names.
 
-After the evidence runner was generalized for the pending Windows gate, one
+After the evidence runner was generalized for the Windows gate, one
 additional full Darwin regression passed in `pytest-real-8`: 63 performance
 pages, one generation/export/analysis, zero patch, zero performance issue codes,
 and 139.7457 seconds total.
+
+The required post-Windows re-verification then ran on the Windows-fix HEAD plus
+the macOS acceptance fixes. The final three consecutive runs are
+`final-postfix-1`, `final-postfix-2`, and `final-postfix-3`. Each contains six
+fixture PDFs, one 63-page performance PDF, 22 screenshots, and a privacy-safe
+`evidence.json`; all recorded SHA-256 values were independently recomputed.
+The fresh platform-independent suite passed **2542 tests with 12 explicit
+platform gates skipped**.
 
 ## Stable results
 
@@ -41,18 +49,25 @@ and 139.7457 seconds total.
 | toc_dense | 4 | none | one bounded relayout compacts the terminal paragraph/TOC result |
 | wide_objects | 5 | none | full-width SVG and landscape table return to portrait |
 | degradation | 3 | `FORMULA_MALFORMED`, `FORMULA_FALLBACK_IMAGE_UNAVAILABLE` | readable source and one local marked notice |
-| unicode | 2 | `HEADING_ORPHAN` | one relayout followed by one mapped notice patch |
+| unicode | 2 | none | Unicode text plus the two-line code block survive; one generation, no patch |
 | plain_short | 1 | none | no unnecessary expansion or visible quality anchor |
 
-The synthetic performance document produced 63 pages. In all three consecutive
-runs it used one generation, one PDF export, one analysis, zero patches, and
-zero issue codes. Total lifecycle time was approximately 139-140 seconds,
-comfortably below the 600-second acceptance budget.
+The synthetic performance document produced 63 pages. In the final three
+post-Windows runs it used one generation, one PDF export, one analysis, zero
+patches, and zero issue codes. Total lifecycle times were 158.5137, 144.5114,
+and 170.3104 seconds, comfortably below the 600-second acceptance budget.
 
 Representative cover, TOC, body, landscape-table, degradation, Unicode,
 performance-first, performance-middle, and performance-last screenshots were
 visually inspected. No unexpected blank page, clipping, duplicated degradation
 code, caption/body overlap, or uncentered page number remained.
+
+The review found that fenced code blocks had been counted semantically but
+silently omitted by the long-form plan builder. The plan now emits compact
+monospace paragraphs and the Windows executor forwards the closed paragraph
+formatting arguments. The Unicode evidence now visibly contains
+`def quality_gate(document):` and `return "visible result"`; restoring those
+lines also removed the former false `HEADING_ORPHAN` outcome.
 
 ## Known verified degradation truth
 
@@ -61,6 +76,12 @@ native professional structure for the supported formula families. The executor
 checks the postcondition and uses the declared image/source ladder. It does not
 claim a linear Type-20 object as native success. The visible issue codes above
 are therefore expected fixture results rather than hidden failures.
+
+WPS 12.1.26055 on macOS preserves `U+2705` (`✅`) in the PDF text layer but
+does not paint its glyph. Probes with Arial Unicode MS, Apple Symbols, Zapf
+Dingbats, CJK Symbols Fallback, and Apple Color Emoji produced the same result.
+The source character is retained rather than silently substituted with another
+code point; this is a documented WPS PDF-rendering limitation.
 
 ## Windows gate status: COMPLETED (2026-08-24)
 
@@ -73,11 +94,23 @@ multi-generation RPC death root-caused and fixed via a suite-app pool.
 Full details, evidence numbers, and the bug list live in
 `docs/windows-verification.md`.
 
-## macOS re-verification handoff (PENDING — required before 0.8.0)
+## macOS re-verification status: COMPLETED (2026-08-24)
 
-The Windows run changed **shared Python**, so macOS must re-verify on the
-new HEAD before 0.8.0 ships. Do NOT reuse the `pytest-real-*` evidence
-above as post-fix evidence — it predates the Windows fixes.
+The Windows run changed **shared Python**, so the older `pytest-real-*` evidence
+was not reused as post-fix evidence. The full suite, focused regressions, PDF
+text/visual checks, and three fresh M5 native runs described above completed on
+the new code.
+
+Acceptance found and fixed five additional defects: the M4 environment gate
+failed instead of skipping in ordinary suites; the documentation test required
+the obsolete Windows-pending wording; a reused Windows executor leaked prior
+front matter; failed pooled COM construction left the apartment initialized;
+and fenced code blocks were omitted from long-form plans.
+
+Because the last two document-generation fixes touch Windows execution and the
+shared plan, Windows must perform one final clean-checkout post-acceptance rerun
+on the new pushed commit before 0.8.0 is released. This is a new-code gate, not
+a reopening of the already accepted `5148b1a` Windows evidence.
 
 ### What Windows changed and why macOS should be unaffected
 

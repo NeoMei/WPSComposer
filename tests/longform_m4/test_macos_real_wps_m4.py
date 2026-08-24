@@ -27,7 +27,7 @@ def real_m4_evidence() -> tuple[Path, dict]:
     if platform.system() != "Darwin":
         pytest.skip("M4 acceptance requires a real macOS WPS run")
     if os.environ.get("WPSCOMPOSER_RUN_REAL_WPS") != "1":
-        pytest.fail("set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance")
+        pytest.skip("set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance")
     configured = os.environ.get("WPSCOMPOSER_M4_EVIDENCE_DIR")
     output = Path(configured) if configured else ROOT / "build" / "longform-m4" / (
         "macos-native-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f")

@@ -196,6 +196,7 @@ class WindowsLongformExecutor(LongformExecutor):
         self._issues = []
         self._recovery_controller = LocalRecoveryController()
         self._pagination_ranges = []
+        self._front_matter = {}
         validate_generation_plan(plan.to_dict(), component="writer")
         paths = self._resolve_paths()
         staged_resources: Tuple[str, ...] = ()
@@ -924,7 +925,29 @@ class WindowsLongformExecutor(LongformExecutor):
                     args.get("text", ""), str(args["style"])
                 )
             else:
-                composer.add_paragraph(text=args.get("text", ""))
+                key_map = {
+                    "size": "size",
+                    "bold": "bold",
+                    "italic": "italic",
+                    "color": "color",
+                    "align": "align",
+                    "indentFirst": "indent_first",
+                    "lineSpacing": "line_spacing",
+                    "lineSpacingRule": "line_spacing_rule",
+                    "spaceBefore": "space_before",
+                    "spaceAfter": "space_after",
+                    "fontName": "font_name",
+                    "fontNameAscii": "font_name_ascii",
+                }
+                paragraph_args = {"text": args.get("text", "")}
+                paragraph_args.update(
+                    {
+                        target: args[source]
+                        for source, target in key_map.items()
+                        if source in args
+                    }
+                )
+                composer.add_paragraph(**paragraph_args)
             return
 
         if name == "writer.add_captioned_figure" and "numbering" in args:
