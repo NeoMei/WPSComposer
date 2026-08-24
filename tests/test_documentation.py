@@ -127,8 +127,9 @@ def test_m5_windows_handoff_has_one_runnable_three_round_gate():
         "layout_engine: legacy",
         "ENGINE_LOST",
         "Do not bump or publish 0.8.0 yet",
-        "Post-acceptance Windows rerun (PENDING",
+        "Post-acceptance Windows rerun (COMPLETED",
         "windows-post-acceptance-1",
+        "2517 passed",
         "def quality_gate(document):",
     ):
         assert token in WINDOWS_VERIFICATION

@@ -25,8 +25,9 @@ OPERATOR_DOCS = (
 IGNORED_NAMES = {
     ".git",
     ".pytest_cache",
-    ".venv",
+    ".venv*",
     "__pycache__",
+    "*.egg-info",
     "build",
     "dist",
     "docs",

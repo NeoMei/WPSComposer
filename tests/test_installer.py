@@ -73,6 +73,32 @@ def test_installer_copies_plugin_and_merges_personal_marketplace(tmp_path):
     assert result.source_path == "./.codex/plugins/wps-composer"
 
 
+def test_installer_skips_virtualenvs_and_build_metadata(tmp_path):
+    source = tmp_path / "source"
+    (source / ".codex-plugin").mkdir(parents=True)
+    (source / ".codex-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+    (source / "skills" / "WPSComposer").mkdir(parents=True)
+    (source / "skills" / "WPSComposer" / "SKILL.md").write_text("skill", encoding="utf-8")
+    (source / "docs").mkdir()
+    for name in install.OPERATOR_DOCS:
+        (source / "docs" / name).write_text("doc", encoding="utf-8")
+    for extra in (
+        (".venv", "pyvenv.cfg"),
+        (".venv-win", "pyvenv.cfg"),
+        ("wps_composer.egg-info", "PKG-INFO"),
+    ):
+        path = source.joinpath(*extra)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("machine-local", encoding="utf-8")
+
+    result = install.install_plugin(source, tmp_path / "home", tmp_path)
+
+    assert not (result.destination / ".venv").exists()
+    assert not (result.destination / ".venv-win").exists()
+    assert not (result.destination / "wps_composer.egg-info").exists()
+    assert (result.destination / ".codex-plugin" / "plugin.json").is_file()
+
+
 def test_installer_refuses_existing_destination_without_force(tmp_path):
     codex_home = tmp_path / ".codex"
     destination = codex_home / "plugins" / "wps-composer"

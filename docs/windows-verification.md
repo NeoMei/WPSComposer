@@ -5,42 +5,57 @@
 > long-form final gate was completed on Windows (2026-08-24, see
 > "M5 Windows run results" below).
 
-## Post-acceptance Windows rerun (PENDING on the latest pushed commit)
+## Post-acceptance Windows rerun (COMPLETED 2026-08-24)
 
-The original Windows M5 gate remains accepted at `5148b1a`. The subsequent
-macOS acceptance found shared-plan and Windows-executor defects, so the latest
-`origin/codex/longform-m3` requires one final clean-checkout Windows rerun before
-0.8.0:
+The original Windows M5 gate remained accepted at `5148b1a`. The subsequent
+macOS acceptance found shared-plan and Windows-executor defects (fenced code
+blocks now render as compact monospace paragraphs; the Windows executor
+forwards the closed paragraph-formatting arguments; a reused executor clears
+front matter between documents; failed pooled COM construction balances
+`CoInitialize`; ordinary suites skip the env-gated macOS M4 tests). This
+section records the final clean-checkout Windows rerun of the latest pushed
+branch (starting commit `46a1221`, plus the installer fix committed on top —
+see below), performed before 0.8.0.
 
-- fenced code blocks were silently omitted from long-form plans and now render
-  as compact monospace paragraphs;
-- the Windows executor now forwards the closed paragraph-formatting arguments;
-- a reused Windows executor now clears front matter between documents;
-- failed pooled COM construction now balances `CoInitialize`;
-- ordinary suites skip the env-gated macOS M4 tests instead of erroring.
+- Platform-independent suite (after the installer fix): **2517 passed,
+  38 skipped** (`.venv-win\Scripts\python -m pytest -q`, Poppler
+  `pdftoppm` 24.08.0 on PATH).
+- Real M5 gate `WPSCOMPOSER_RUN_WINDOWS_M5=1`
+  `tests/longform_m5/test_windows_real_wps_m5.py`, three consecutive fresh
+  evidence directories: **3/3 green** (115.7 s / 113.5 s / 116.9 s) at
+  `build/longform-m5/windows-post-acceptance-1/test_real_windows_m5_six_fixtu0/evidence`,
+  `build/longform-m5/windows-post-acceptance-2/test_real_windows_m5_six_fixtu0/evidence`,
+  and `build/longform-m5/windows-post-acceptance-3/test_real_windows_m5_six_fixtu0/evidence`.
+  No earlier `windows-real-*` result was reused.
+- Every report: `"system": "Windows"`, `wpsVersion: "12.0"` (WPS Office
+  12.1.0.26899 zh-CN; COM `Version`), `protocolVersion: 2`,
+  `semanticVersion: "longform-1"`, no private absolute paths, 22 screenshots
+  per run.
+- `unicode.pdf` (all three rounds, identical metrics): the code lines
+  `def quality_gate(document):` and `return "visible result"` are both
+  present on page 2 in a monospace face (`CourierNewPSMT`, 9 pt, uniform
+  5.4 pt advance); the `return` line carries the source's 4-space indent
+  (the .docx XML retains the literal spaces; WPS's PDF export renders them
+  as an 18 pt visual offset). 2 pages, one generation / one export / one
+  analysis, zero patch, no issue codes.
+- Performance PDF: 63 pages (within 50-100), total stage times
+  48.2 / 47.2 / 51.5 s (far below 600 s), one generation, zero patches, no
+  notices.
 
-Run from a clean checkout after confirming `git status --short` is empty:
+### Installer flake fixed during this rerun
 
-```powershell
-git fetch origin
-git switch codex/longform-m3
-git pull --ff-only
-git log -1 --oneline
-
-.\.venv-win\Scripts\python -m pytest -q
-$env:WPSCOMPOSER_RUN_WINDOWS_M5 = "1"
-.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-1
-.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-2
-.\.venv-win\Scripts\python -m pytest -q tests/longform_m5/test_windows_real_wps_m5.py --basetemp=build/longform-m5/windows-post-acceptance-3
-```
-
-In every new `unicode.pdf`, visually confirm the two code lines
-`def quality_gate(document):` and `return "visible result"` are present in a
-monospace face. The entry must remain 2 pages with one generation/export/
-analysis, zero patch, and no issue code. Performance remains 50-100 pages,
-below 600 seconds, with no unnecessary patch or issue code. Record the new
-commit, suite totals, three evidence paths, WPS version, and visual result in
-this section; do not reuse `windows-real-*` as evidence for the new commit.
+The first full-suite run failed once in
+`tests/test_installer.py::test_installer_copies_plugin_and_merges_personal_marketplace`
+(a transient copy error; 10/10 green in isolation). Root cause: the local
+Windows venv is named `.venv-win`, which `install.py::IGNORED_NAMES` did not
+exclude (only `.venv`), so the installer copied the **active** virtualenv —
+thousands of mutable files — into the staged plugin, occasionally tripping
+Windows file locks and costing ~25 s per installer test. Fixed by widening
+the ignore set to the glob patterns `.venv*` and `*.egg-info`
+(`pip install -e` build metadata was also leaking in), with a regression
+test (`test_installer_skips_virtualenvs_and_build_metadata`); installer
+tests now finish in ~6 s. The three M5 gate rounds above were run on the
+fixed tree.
 
 ## M5 final Windows gate (COMPLETED 2026-08-24)
 
