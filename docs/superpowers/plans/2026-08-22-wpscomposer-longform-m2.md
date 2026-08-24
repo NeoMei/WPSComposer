@@ -191,4 +191,3 @@ Interfaces: `.superpowers/sdd/progress.md` records each M2 task, commit, review,
 2. Does WPS macOS JSAPI expose a reliable `LinkToPreviousHeaderFooter` equivalent, or must we copy header/footer ranges between sections? This needs one probe document in Task 7 before finalizing the JS-side implementation.
 3. The spec requires the cover page to use no page number and not count toward roman numbering. On Windows COM this is typically done with a cover section whose footer has no page field and whose next section starts roman at 1. Is the same two-section structure the cleanest on macOS JSAPI? Prototype in Task 7.
 4. Should `writer.configure_section` carry an explicit `pageRole` enum, or should roles be inferred from operation sequence? Explicit `pageRole` (`cover`, `front_matter`, `body`, `landscape`) makes executor behavior deterministic and simplifies pagination-map stubs. Recommend adding it in Task 3.
-

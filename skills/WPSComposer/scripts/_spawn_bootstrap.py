@@ -6,4 +6,3 @@ artifact validation temporarily points preparation at this import-safe module.
 """
 
 from __future__ import annotations
-

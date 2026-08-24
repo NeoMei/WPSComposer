@@ -85,7 +85,7 @@ git commit -m "Release WPSComposer 0.8.0"
 - Consumes: Task 1 release commit.
 - Produces: a fully verified, pushable release candidate.
 
-- [ ] **Step 1: Run the complete platform-independent suite**
+- [x] **Step 1: Run the complete platform-independent suite**
 
 ```bash
 uv run --extra dev python -m pytest -q
@@ -93,7 +93,7 @@ uv run --extra dev python -m pytest -q
 
 Expected: zero failures; real native gates remain explicitly skipped because their accepted evidence is already recorded.
 
-- [ ] **Step 2: Verify metadata, package build, and plugin bundle**
+- [x] **Step 2: Verify metadata, package build, and plugin bundle**
 
 ```bash
 uv run --with build python -m build
@@ -103,7 +103,7 @@ git diff --check origin/master...HEAD
 
 Expected: wheel and sdist build, tests pass, and no whitespace errors.
 
-- [ ] **Step 3: Verify release scope**
+- [x] **Step 3: Verify release scope**
 
 Confirm that `git status --short` contains only the pre-existing untracked `.DS_Store`, and that the release commit contains no `build/`, `uv.lock`, or customer document.
 
