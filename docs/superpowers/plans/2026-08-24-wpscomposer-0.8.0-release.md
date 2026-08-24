@@ -117,13 +117,13 @@ Confirm that `git status --short` contains only the pre-existing untracked `.DS_
 - Consumes: verified release candidate on `codex/longform-m3`.
 - Produces: GitHub `master` containing version `0.8.0`.
 
-- [ ] **Step 1: Push the release candidate branch**
+- [x] **Step 1: Push the release candidate branch**
 
 ```bash
 git push origin codex/longform-m3
 ```
 
-- [ ] **Step 2: Integrate through a GitHub PR when authenticated**
+- [x] **Step 2: Integrate through a GitHub PR when authenticated**
 
 Create a PR from `codex/longform-m3` to `master`, verify its head/base and mergeability, then merge it. If GitHub PR credentials are unavailable, use a non-force fast-forward push only after proving `origin/master` is an ancestor of the release candidate:
 
@@ -132,7 +132,7 @@ git merge-base --is-ancestor origin/master HEAD
 git push origin HEAD:master
 ```
 
-- [ ] **Step 3: Verify remote master**
+- [x] **Step 3: Verify remote master**
 
 ```bash
 git fetch origin
@@ -153,11 +153,19 @@ Expected: both version sources report `0.8.0` at the remote release commit.
 - Consumes: remote `master` release commit.
 - Produces: fresh post-merge test evidence from the exact published tree.
 
-- [ ] **Step 1: Create an isolated detached worktree at origin/master**
+- [x] **Step 1: Create an isolated detached worktree at origin/master**
 
-Use `mktemp -d`, add a detached Git worktree under that directory, and verify its HEAD equals `origin/master`.
+Use `mktemp -d`, add a detached Git worktree under that directory, verify its
+HEAD equals `origin/master`, then install the pinned WPS JSAPI template runtime:
 
-- [ ] **Step 2: Run the full suite and release assertions there**
+```bash
+(cd macos/wps-jsapi-probe && npm ci)
+```
+
+The template-backed generation tests require this clean-checkout setup; without
+it they fail at template staging rather than exercising the intended behavior.
+
+- [x] **Step 2: Run the full suite and release assertions there**
 
 ```bash
 uv run --extra dev python -m pytest -q
@@ -165,7 +173,7 @@ uv run --extra dev python -m pytest -q
 
 Expected: zero failures, with version assertions at `0.8.0`.
 
-- [ ] **Step 3: Remove only the temporary worktree**
+- [x] **Step 3: Remove only the temporary worktree**
 
 Remove it through `git worktree remove` from outside that worktree and prune stale registrations. Do not modify or clean the user's main checkout.
 
