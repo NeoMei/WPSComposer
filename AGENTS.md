@@ -34,6 +34,7 @@ WPSComposer/
 │       └── macos_probe/             # macOS WPS JSAPI bridge (generation/conversion only)
 ├── tests/                          # Platform-independent pytest suite
 ├── docs/windows-verification.md   # READ FIRST on Windows — COM verification handoff
+├── docs/macos-longform-m5-verification.md # READ FIRST on macOS — post-fix re-verification handoff
 ├── install.py                     # Cross-platform marketplace installer
 ├── install.ps1                   # PowerShell wrapper
 └── install.sh                    # macOS/Linux wrapper
