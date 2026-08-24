@@ -28,7 +28,8 @@ see below), performed before 0.8.0.
   and `build/longform-m5/windows-post-acceptance-3/test_real_windows_m5_six_fixtu0/evidence`.
   No earlier `windows-real-*` result was reused.
 - Every report: `"system": "Windows"`, `wpsVersion: "12.0"` (WPS Office
-  12.1.0.26899 zh-CN; COM `Version`), `protocolVersion: 2`,
+  12.1.0.28043 zh-CN — the host was updated since the July gate's
+  12.1.0.26899; COM `Version` still reports "12.0"), `protocolVersion: 2`,
   `semanticVersion: "longform-1"`, no private absolute paths, 22 screenshots
   per run.
 - `unicode.pdf` (all three rounds, identical metrics): the code lines
