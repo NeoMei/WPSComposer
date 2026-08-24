@@ -5,8 +5,10 @@ Shared infrastructure for all WPS / Office COM composers.
 
 from __future__ import annotations
 
+import atexit
 import os
 import platform
+import threading
 import time
 from dataclasses import dataclass
 
@@ -144,6 +146,87 @@ def _safe_quit(app):
         except BaseException:
             return
         time.sleep(0.2)
+
+
+# ---------------------------------------------------------------------------
+# Pooled suite applications
+#
+# On suite builds (e.g. WPS Office personal zh-CN) the Writer, Presentation,
+# and Spreadsheet automation servers all live inside ONE wps.exe host
+# process.  Quitting any suite app mid-process tears down the shared host
+# and kills every other pooled instance with "object not connected to
+# server" / mid-run RPC errors.  Pooled suite apps are therefore NEVER quit
+# during the process lifetime; they are quit once at interpreter exit.
+# ---------------------------------------------------------------------------
+
+_POOLED_SUITE_APPS: dict[tuple, object] = {}
+
+
+def _pool_probe(app) -> None:
+    """Liveness/readiness probe: touch the primary collection of the app."""
+    for collection in ("Documents", "Presentations", "Workbooks"):
+        try:
+            int(getattr(app, collection).Count)
+            return
+        except Exception:
+            continue
+    raise WPSUnavailable("pooled suite app is not responsive")
+
+
+def pooled_suite_app(progids):
+    """Return the pooled dedicated app for this ProgID chain and thread.
+
+    The pool never falls back to a shared ``Dispatch``: pooled callers are
+    headless generation paths that must own their instance.
+    """
+    import pythoncom  # pywin32
+    import win32com.client as win32
+
+    key = (tuple(progids), threading.get_ident())
+    app = _POOLED_SUITE_APPS.get(key)
+    if app is not None:
+        try:
+            _pool_probe(app)
+            return app
+        except Exception:
+            del _POOLED_SUITE_APPS[key]
+
+    # ponytail: this CoInitialize is intentionally unbalanced — the pooled
+    # app is apartment-affine and must outlive every composer on this
+    # thread; pythoncom cleans up at thread/process teardown anyway.
+    pythoncom.CoInitialize()
+    app = None
+    last: Exception | None = None
+    for pid in progids:
+        try:
+            app = win32.DispatchEx(pid)
+            _pool_probe(app)
+            break
+        except Exception as exc:
+            app = None
+            last = exc
+    if app is None:
+        raise WPSUnavailable(f"No dedicated COM host for {progids}: {last}")
+    try:
+        app.Visible = 0
+    except Exception:
+        pass
+    try:
+        app.DisplayAlerts = 0
+    except Exception:
+        pass
+    _POOLED_SUITE_APPS[key] = app
+    return app
+
+
+@atexit.register
+def _quit_pooled_suite_apps() -> None:  # pragma: no cover - teardown
+    while _POOLED_SUITE_APPS:
+        _key, app = _POOLED_SUITE_APPS.popitem()
+        try:
+            _safe_quit(app)
+        except Exception:
+            pass
 
 
 def _abs(path):

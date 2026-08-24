@@ -38,6 +38,7 @@ from .formatting import (
 
 class SlideComposer(BaseComposer):
     _progids = ("KWpp.Application", "Wpp.Application", "PowerPoint.Application")
+    _pool_app = True
     _doc_type = "impress"
     _native_fmt = FMT_PPTX
     _pdf_fmt = FMT_PDF_FROM_PPT

@@ -100,80 +100,54 @@ def _is_host_com_error(exc: BaseException) -> bool:
     return False
 
 
-def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterComposer:
-    """Create a dedicated WriterComposer via DispatchEx only.
+def _pooled_dedicated_app(client: Any) -> Any:
+    """Return the pooled dedicated WPS application for this thread.
 
-    This function lazily imports pywin32 so the module can be imported on macOS
-    and Linux.  It never falls back to a shared Dispatch instance.
+    Delegates to the shared suite-app pool in ``_dispatch`` so Writer,
+    Presentation, and Spreadsheet automation share one coordinated
+    lifecycle (suite builds host all three in one process).
     """
-    import pythoncom  # pywin32
+    from .._dispatch import pooled_suite_app
+
+    try:
+        return pooled_suite_app(WriterComposer._progids)
+    except Exception as exc:
+        raise WindowsDedicatedHostUnavailableError(
+            f"Could not create dedicated WPS host: {exc}"
+        ) from exc
+
+
+def _create_dedicated_composer(staging_dir: Optional[str] = None) -> WriterComposer:
+    """Create a dedicated WriterComposer on the pooled DispatchEx application.
+
+    This function lazily imports pywin32 so the module can be importable on
+    macOS and Linux.  It never falls back to a shared Dispatch instance, and
+    closing the returned composer closes only its document — the pooled
+    application stays alive for the next generation in this process.
+    """
     # Tests inject win32com.client via sys.modules; prefer the injected module.
     client = sys.modules.get("win32com.client")
     if client is None:
         import win32com.client as client
 
-    pythoncom.CoInitialize()
-    app: Any = None
-    composer: Optional[WriterComposer] = None
+    app = _pooled_dedicated_app(client)
+    composer = WriterComposer.__new__(WriterComposer)
+    composer._app = app
+    composer._doc = None
+    composer._path = None
+    composer._read_only = False
+    composer._visible = False
+    composer._owns_app = False
+    composer._owns_doc = False
+    composer._com_initialized = False
+    composer._first_section_configured = False
 
-    # WPS's single-process model can hand DispatchEx a proxy into a previous
-    # instance that is still quitting, or an app object whose properties are
-    # not ready yet (AttributeError / mid-run RPC death). Retry the whole
-    # dedicated-host construction with backoff, mirroring _base.__enter__.
-    last_error: Optional[Exception] = None
-    for attempt in range(3):
-        try:
-            for progid in WriterComposer._progids:
-                try:
-                    app = client.DispatchEx(progid)
-                    break
-                except Exception:  # pragma: no cover - exercised via mocks
-                    continue
-            if app is None:
-                raise WindowsDedicatedHostUnavailableError(
-                    "Could not create dedicated WPS application"
-                )
-            # Readiness probe: touch hot properties the executor will use.
-            int(app.Documents.Count)
-            app.Selection
-            composer = WriterComposer.__new__(WriterComposer)
-            composer._app = app
-            composer._doc = None
-            composer._path = None
-            composer._read_only = False
-            composer._visible = False
-            composer._owns_app = True
-            composer._owns_doc = False
-            composer._com_initialized = True
-            composer._first_section_configured = False
-            try:
-                app.Visible = 0
-                app.DisplayAlerts = 0
-            except Exception:
-                pass
-
-            composer._doc = composer._create_doc(app)
-            break
-        except WindowsDedicatedHostUnavailableError:
-            raise
-        except Exception as exc:  # pragma: no cover - WPS reuse race
-            last_error = exc
-            app = None
-            if composer is not None:
-                try:
-                    composer.close(save_changes=False)
-                except Exception:
-                    pass
-                composer = None
-            if attempt == 2:
-                pythoncom.CoUninitialize()
-                raise WindowsDedicatedHostUnavailableError(
-                    f"Could not create dedicated WPS host: {exc}"
-                ) from exc
-            time.sleep(0.6)
-
-    assert composer is not None and composer._doc is not None
-    app = composer._app
+    try:
+        composer._doc = composer._create_doc(app)
+    except Exception as exc:
+        raise WindowsDedicatedHostUnavailableError(
+            f"Could not create dedicated WPS document: {exc}"
+        ) from exc
 
     composer._owns_doc = True
     if staging_dir:

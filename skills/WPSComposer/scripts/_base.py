@@ -9,7 +9,7 @@ import os
 import time
 from pathlib import Path
 
-from ._dispatch import _require, _dispatch, _safe_quit, _abs
+from ._dispatch import _require, _dispatch, _safe_quit, _abs, pooled_suite_app
 
 
 class BaseComposer:
@@ -26,6 +26,10 @@ class BaseComposer:
 
     _progids = ()
     _doc_type = ""
+    # Headless generation composers set this to keep their suite application
+    # alive for the whole process (see _dispatch.pooled_suite_app).  Closing
+    # such a composer closes only its document.
+    _pool_app = False
     _native_fmt = 0
     _pdf_fmt = 0
     _formats_by_extension = {}
@@ -66,6 +70,13 @@ class BaseComposer:
 
     def _open(self):
         _require()
+        if self._pool_app:
+            self._app = pooled_suite_app(self._progids)
+            # The pool owns the application lifetime and keeps the thread's
+            # COM apartment alive; closing this composer closes only its doc.
+            self._owns_app = False
+            self._com_initialized = False
+            return self._app
         dispatched = _dispatch(self._progids)
         self._app = dispatched.app
         self._owns_app = dispatched.owns_app

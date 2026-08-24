@@ -86,24 +86,39 @@ All on `codex/longform-m3` blind-written Windows paths:
 9. **Bullet `writer.add_list` omitted the required `ordered` arg**
    (`longform/plan.py`) — plain markdown with a bullet list failed plan
    validation on the public route.
-10. **Dedicated-host dispatch hardened** (`longform/windows_executor.py`,
-    `_dispatch.py`): readiness probe + bounded construction retry
-    (July's flaky-`AttributeError` class), one fresh-host retry of a
-    generation whose failure is a raw COM/RPC error, and `_safe_quit`
-    now waits (≤3 s) for the host to actually exit.
+ 10. **Dedicated-host dispatch hardened** (`longform/windows_executor.py`,
+     `_dispatch.py`): readiness probe + bounded construction retry
+     (July's flaky-`AttributeError` class), one fresh-host retry of a
+     generation whose failure is a raw COM/RPC error, and `_safe_quit`
+     now waits (≤3 s) for the host to actually exit.
+11. **Same-process multi-generation RPC death — root-caused and FIXED**
+     (`_dispatch.py`, `_base.py`, `slide.py`, `sheet.py`,
+     `longform/windows_executor.py`). Root cause: on this WPS build
+     (suite/personal), the Writer, Presentation, and Spreadsheet
+     automation servers all run inside ONE `wps.exe` host process, so
+     quitting any suite app after its generation tore down the shared
+     host and killed every other live instance ("object not connected
+     to server" / `-2147023130` / `-2147023179` at the next dispatch).
+     Fix: a process-lifetime **suite-app pool** (`_dispatch.pooled_suite_app`,
+     per ProgID-chain + thread, liveness-probed, quit once at interpreter
+     exit). `SlideComposer`/`SheetComposer` opt in via `_pool_app = True`
+     and the long-form executor uses the same pool; pooled composers
+     close only their documents, never the application.
+     `attach_active` and non-pooled composers keep their existing
+     ownership semantics. Verified: 15/15 sequential operations in one
+     Python process (12 generations across all four formats + 2 PDF
+     conversions + a final generation), plus the full M5 gate 3/3 rerun
+     on the pooled code (99–122 s per gate, faster than the per-instance
+     baseline; perf stage 34–38 s, caps within bounds, 22 screenshots
+     per run). A non-pooled composer quitting (e.g. the legacy Writer
+     route or conversational `open_document`) can still take down pooled
+     apps on suite builds; the pool detects this via its liveness probe
+     and recreates on the next call (self-healing).
 
 ### Known issues (Windows, this run)
 
-- **Second long-form generation in the same Python process dies with
-  mid-run RPC errors** (`-2147023130` / `-2147023179`, typically at
-  `writer.configure_section`). Reproducible with any two sequential
-  `generate()` calls in one process after WPS instances accumulate;
-  single-generation-per-process (how the gates, the evidence runner,
-  and per-request plugin invocations run) is stable, and WPP/ET routes
-  are unaffected. The one-retry mitigation in the executor does not
-  clear it once zombie `wps.exe` processes pile up — kill stray `wps`
-  processes between long sessions. Needs a WPS-side or
-  process-isolation fix before multi-generate sessions are supported.
+- ~~Second long-form generation in the same Python process dies with
+  mid-run RPC errors~~ — **fixed via the suite-app pool** (bug 11 above).
 - `app.Quit()` on a modified unsaved document hangs headlessly (modal
   save prompt); always `Close(False)`/set `DisplayAlerts=0` first —
   the composers already do.
@@ -115,12 +130,15 @@ All on `codex/longform-m3` blind-written Windows paths:
 ### macOS follow-up required before 0.8.0
 
 The fixes above touch shared Python (`resources.py`, `plan.py`,
-`writer.py`, `windows_executor.py`, m3/m4/m5 evidence validators) and
-regenerated `tests/longform_m3/snapshots/*.json`. Per this document's
-policy: rerun the affected macOS tests and at least one complete macOS
-M5 evidence gate on a clean checkout of the pushed branch; if native
+`writer.py`, `_dispatch.py`, `_base.py`, `slide.py`, `sheet.py`,
+`windows_executor.py`, m3/m4/m5 evidence validators) and regenerated
+`tests/longform_m3/snapshots/*.json`. Per this document's policy: rerun
+the affected macOS tests and at least one complete macOS M5 evidence
+gate on a clean checkout of the pushed branch; if native
 caption/heading/cover behavior differs on macOS (it should not — all
 three mirror the add-in's own logic), rerun all three macOS gates.
+(The suite-app pool is Windows-only COM code and does not affect the
+macOS JSAPI bridge; the macOS conversational attach path is untouched.)
 
 ### M5 gate re-run recipe (as executed on 2026-08-24)
 
@@ -582,8 +600,9 @@ COM smoke (Windows only, ad hoc):
 | WPS Office / MS Office version | WPS Office 12.1.0.26899 (zh-CN; COM `Version` reports "12.0") |
 | `pywin32` version | 312 |
 | Python | 3.14.3 |
-| Full suite (M5 branch) | 2512 passed, 38 skipped |
-| Real M5 Windows gate | 3/3 green (plus final-code rerun) |
+| Full suite (M5 branch) | 2512 passed, 38 skipped (re-verified after the suite-app pool) |
+| Real M5 Windows gate | 3/3 green; rerun 3/3 green after the suite-app pool (99–122 s) |
+| Sequential multi-generate (one process) | 15/15 OK (12 gens ×4 formats + 2 conversions) |
 | Items 1-7 visual inspection | all pass |
 
 ## Windows run results
