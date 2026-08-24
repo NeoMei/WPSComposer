@@ -176,5 +176,5 @@ cross-platform acceptance: COMPLETED on 2026-08-24. Windows WPS Office
 12.1.0.28043 passed the final clean-checkout post-acceptance M5 COM/UI,
 Unicode-code-block, and performance gate three consecutive times; the shared
 fixes were already rechecked through three consecutive macOS M5 runs. 0.8.0
-remains unreleased; version bump, merge, and publication are separate release
-operations.
+released on 2026-08-24 with this long-form route enabled by default for
+DOCX/PDF.

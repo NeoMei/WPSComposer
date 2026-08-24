@@ -54,10 +54,15 @@ def test_public_status_docs_record_completed_cross_platform_gate():
     macos_evidence = MACOS_M5_PATH.read_text(encoding="utf-8")
     for document in (README, SKILL, longform):
         assert "cross-platform acceptance: COMPLETED" in document
-        assert "0.8.0 remains unreleased" in " ".join(document.split())
+        assert "0.8.0 released" in " ".join(document.split())
+    assert "### v0.8.0 (2026-08-24)" in README
+    assert "Public version: 0.8.0" in macos_evidence
     assert "Windows native gate is completed" in LONGFORM_M0
     assert "overall decision is go" in LONGFORM_M0
+    assert "0.8.0 released" in LONGFORM_M0
     assert "Windows post-acceptance rerun status: COMPLETED" in macos_evidence
+    assert "0.8.0 released" in macos_evidence
+    assert "0.8.0 released" in WINDOWS_VERIFICATION
     assert "M5 CROSS-PLATFORM ACCEPTANCE COMPLETE" in PROGRESS
 
 
@@ -145,7 +150,7 @@ def test_m5_windows_handoff_has_one_runnable_three_round_gate():
         '"system": "Windows"',
         "layout_engine: legacy",
         "ENGINE_LOST",
-        "version bump, merge, and publication remain separate",
+        "0.8.0 released on 2026-08-24",
         "Post-acceptance Windows rerun (COMPLETED",
         "windows-post-acceptance-1",
         "2517 passed",

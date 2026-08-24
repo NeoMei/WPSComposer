@@ -372,8 +372,8 @@ save/export, validation, and publication failure abort without a public partial
 artifact. On macOS WPS 12.1.26055, native formula BuildUp is still honestly
 reported through the marked image/source ladder. cross-platform acceptance: COMPLETED
 after three consecutive real M5 gates on both macOS and Windows, including the
-post-acceptance Windows rerun. 0.8.0 remains unreleased; version bump, merge,
-and publication are separate release operations. See `docs/longform-markdown.md` and
+post-acceptance Windows rerun. 0.8.0 released on 2026-08-24 with the M5
+long-form route enabled by default for DOCX/PDF. See `docs/longform-markdown.md` and
 `docs/macos-longform-m5-verification.md`.
 
 ## Native heading numbering (docx)

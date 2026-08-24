@@ -1,6 +1,6 @@
 # Long-form M0 原生能力闸门
 
-本闸门只验证 WPSComposer 0.8.0 长文档引擎所依赖的原生能力，不修改公共 `generate()` 路由，也不生成 M1 产品代码。该文档保留 M0 阶段的闸门定义；后续 M3–M5 的真实 WPS 验收以更强的生成、重开、字段刷新、UI 截图和性能证据覆盖了该闸门。**Windows native gate is completed**，当前 **overall decision is go**；0.8.0 尚未发布。
+本闸门只验证 WPSComposer 0.8.0 长文档引擎所依赖的原生能力，不修改公共 `generate()` 路由，也不生成 M1 产品代码。该文档保留 M0 阶段的闸门定义；后续 M3–M5 的真实 WPS 验收以更强的生成、重开、字段刷新、UI 截图和性能证据覆盖了该闸门。**Windows native gate is completed**，当前 **overall decision is go**；0.8.0 released on 2026-08-24。
 
 ## 判定规则
 

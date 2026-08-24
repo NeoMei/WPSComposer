@@ -10,7 +10,7 @@ quality lifecycle. It does not substitute for the separate Windows gate.
 - WPS: WPS 12.1.26055
 - Protocol: 2
 - Semantic plan: `longform-1`
-- Public version: 0.7.2; 0.8.0 is not released
+- Public version: 0.8.0; released 2026-08-24 after cross-platform acceptance
 
 ## Command and evidence
 
@@ -116,7 +116,7 @@ consecutive real M5 gates; `7ffbd5b` corrects the WPS host build to
 12.1.0.28043. The Unicode code block remained visible and monospace, and all
 three 63-page performance runs stayed below 600 seconds without patches or
 issues. No shared generation/runtime code changed after the accepted macOS
-evidence. 0.8.0 remains unreleased pending separate release authorization.
+evidence. 0.8.0 released on 2026-08-24 after the final release gate.
 
 ### What Windows changed and why macOS should be unaffected
 

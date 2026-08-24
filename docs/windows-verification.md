@@ -261,8 +261,7 @@ affected macOS tests and at least one complete macOS M5 evidence gate. If it cha
 heading numbering, page sections, degradation display, or lifecycle bounds,
 rerun all three macOS gates. Commit fixes, push them, then repeat the Windows
 gate from a clean checkout. The current cross-platform acceptance gate is
-complete; version bump, merge, and publication remain separate authorized
-release operations.
+complete; 0.8.0 released on 2026-08-24 after the separate release gate.
 
 ## Status
 

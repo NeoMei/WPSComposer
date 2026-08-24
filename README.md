@@ -4,7 +4,7 @@
 
 WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS Office 生成高质量排版的 DOCX、PDF、XLSX、PPTX 文档。
 
-> cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 remains unreleased；版本号更新、合并和发布属于后续独立操作。
+> cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 released（2026-08-24）。
 
 ## ✨ 核心特性
 
@@ -372,6 +372,13 @@ python3 -m venv .venv
 完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。macOS JSAPI 固定模板测试还需要运行 `python3 install.py` 安装锁定的运行时资源。
 
 ## 📝 更新日志
+
+### v0.8.0 (2026-08-24)
+- DOCX/PDF 默认进入 M5 长文档引擎；仅显式声明 `layout_engine: legacy` 时使用旧路由。
+- 完整支持原生多级编号、紧凑目录、题注/交叉引用、横竖分节、跨页表格、Unicode 与等宽代码块。
+- 新增封闭质量生命周期：PDF 几何分析、有界重排、最多一次质量标注补丁及原子发布。
+- 可恢复对象错误在原位显示稳定降级标注；`ENGINE_LOST` 等致命错误立即终止且不发布半成品。
+- macOS WPS 12.1.26055 与 Windows WPS Office 12.1.0.28043 均完成三轮原生样例和 63 页性能验收，并修复跨平台安装与 COM 生命周期问题。
 
 ### 2026-08-18 审计加固
 - 🔒 macOS bridge 改为一次性 capability 与按组件/客户端绑定的 bearer session
