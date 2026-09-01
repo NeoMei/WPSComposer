@@ -51,6 +51,15 @@ _RESOURCE_MANIFEST_VERSION = 1
 
 _MM_TO_PT = 2.834645669
 
+# Heading typography restored to the formal Chinese document convention
+# (reference_styles.HEADING_STYLE_MAP): per-level sizes instead of a single
+# sliding base, H1 centred, all levels bold with breathing room and
+# keep-with-next so headings never strand at a page bottom.
+_HEADING_LEVEL_SIZE_PT = {1: 16, 2: 15, 3: 15, 4: 14, 5: 14, 6: 12}
+_HEADING_SPACE_BEFORE_PT = {1: 16, 2: 14, 3: 12, 4: 10, 5: 8, 6: 6}
+_HEADING_SPACE_AFTER_PT = {1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5}
+_TITLE_SIZE_PT = 22
+
 def _mm_to_pt(mm: float) -> float:
     return round(mm * _MM_TO_PT, 2)
 
@@ -176,13 +185,16 @@ def _build_begin(state: _BuilderState, document: StructuredDocument, policy: Lon
                     "fontSize": policy.body_size_pt,
                     "lineSpacing": policy.line_spacing,
                     "align": 3,
+                    # Two-character first-line indent, the formal Chinese
+                    # document convention the legacy renderer always applied.
+                    "indentFirst": 2 * policy.body_size_pt,
                 },
                 {
                     "name": "Title",
                     "type": "paragraph",
                     "fontName": policy.heading_font["cjk"],
                     "fontNameAscii": policy.latin_font,
-                    "fontSize": max(policy.heading_size_pt + 4, 16),
+                    "fontSize": _TITLE_SIZE_PT,
                     "align": 1,
                     "bold": True,
                 },
@@ -192,8 +204,13 @@ def _build_begin(state: _BuilderState, document: StructuredDocument, policy: Lon
                         "type": "paragraph",
                         "fontName": policy.heading_font["cjk"],
                         "fontNameAscii": policy.latin_font,
-                        "fontSize": max(policy.heading_size_pt - (level - 1), 12),
+                        "fontSize": _HEADING_LEVEL_SIZE_PT[level],
                         "outlineLevel": level,
+                        "bold": True,
+                        "align": 1 if level == 1 else 0,
+                        "spaceBefore": _HEADING_SPACE_BEFORE_PT[level],
+                        "spaceAfter": _HEADING_SPACE_AFTER_PT[level],
+                        "keepWithNext": True,
                     }
                     for level in range(1, 7)
                 ],

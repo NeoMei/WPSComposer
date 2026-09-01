@@ -104,7 +104,49 @@ def test_build_policy_returns_stable_defaults():
     assert isinstance(policy, LongformPolicy)
     assert policy.page_size == "A4"
     assert policy.page_margins["left_mm"] == 30.0
-    assert policy.body_font["cjk"] == "宋体"
+    assert policy.body_font["cjk"] == "仿宋"
+
+
+def test_heading_styles_restore_formal_document_typography():
+    """Regression: M5 must keep the per-level heading typography of the
+    legacy reference styles (H1 16pt centred, H2-3 15pt, H4 14pt, bold,
+    keep-with-next) instead of a single sliding font size."""
+    semantic = make_semantic(
+        title="排版回归测试",
+        sections=[
+            Section(
+                level=1,
+                heading="章节",
+                elements=[Paragraph(spans=[Span(text="段落。")])],
+            ),
+        ],
+    )
+    preflight = preflight_resources([], ".")
+    plan = build_longform_plan(semantic, preflight)
+    styles = {}
+    for op in plan.to_dict()["operations"]:
+        if op["op"] == "writer.ensure_styles":
+            for definition in op["args"]["styles"]:
+                styles[definition["name"]] = definition
+
+    assert styles["Title"]["fontSize"] == 22
+    expected_sizes = {
+        "Heading 1": 16,
+        "Heading 2": 15,
+        "Heading 3": 15,
+        "Heading 4": 14,
+        "Heading 5": 14,
+        "Heading 6": 12,
+    }
+    for name, size in expected_sizes.items():
+        assert styles[name]["fontSize"] == size
+        assert styles[name]["bold"] is True
+        assert styles[name]["keepWithNext"] is True
+        assert styles[name]["spaceAfter"] == 5
+    assert styles["Heading 1"]["align"] == 1
+    assert styles["Heading 2"]["align"] == 0
+    assert styles["Body Text"]["fontName"] == "仿宋"
+    assert styles["Body Text"]["align"] == 3
 
 
 def test_build_longform_plan_returns_protocol_v2_envelope():

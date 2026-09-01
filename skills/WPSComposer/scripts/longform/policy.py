@@ -146,7 +146,7 @@ def build_policy(config: LongformConfig) -> LongformPolicy:
             "left_mm": 30.0,
             "right_mm": 25.0,
         },
-        body_font={"cjk": "宋体", "latin": "Times New Roman"},
+        body_font={"cjk": "仿宋", "latin": "Times New Roman"},
         heading_font={"cjk": "黑体", "latin": "Times New Roman"},
         latin_font="Times New Roman",
         mono_font="Consolas",

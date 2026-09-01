@@ -327,11 +327,15 @@ def _detect_heading_scheme(sections: list[Section]) -> str:
     if hybrid_h4:
         return "hybrid-bid"
 
-    non_zero = {k for k, v in scores.items() if v > 0}
-    if len(non_zero) == 1:
-        (winner,) = non_zero
-        if scores[winner] >= 2:
-            return winner
+    # Prefix evidence wins over the language heuristic: when any scheme
+    # explains at least two headings, take the top scorer. Discarding the
+    # evidence here used to route "01 / 2.1" documents to chinese-formal,
+    # whose 第X章 patterns cannot strip those prefixes.
+    top = max(scores.values())
+    if top >= 2:
+        for scheme in ("chinese-formal", "decimal", "hybrid-bid"):
+            if scores[scheme] == top:
+                return scheme
 
     han_count = sum(1 for h in headings if contains_han(h))
     if han_count * 2 > len(headings):
@@ -381,7 +385,18 @@ def _apply_heading_numbering(
         else _detect_heading_scheme(sections)
     )
 
+    # Title-anchored documents ("# Title" consumed by the cover, body
+    # chapters starting at "##") carry level-1 numbering prefixes such as
+    # "01 " one markdown level down. Shift every body heading up one level
+    # so prefix patterns match their intended scheme level and the preface
+    # gate does not swallow the whole document.
     has_document_title = bool(title.strip())
+    body_levels = [section.level for section in sections if section.level >= 1]
+    if has_document_title and body_levels and min(body_levels) >= 2:
+        for section in sections:
+            if section.level >= 2:
+                section.level -= 1
+
     has_numbered_h1 = False
     # states: "absent" | "numbered" | "none_prefix" | "none_gap"
     state: dict[int, str] = {1: "absent", 2: "absent", 3: "absent", 4: "absent"}

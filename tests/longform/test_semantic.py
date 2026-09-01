@@ -209,6 +209,44 @@ def test_auto_detects_decimal_when_majority_non_han() -> None:
     assert result.config.heading_numbering == "decimal"
 
 
+def test_title_anchored_level2_headings_get_native_numbering() -> None:
+    """Regression: "# Title / ## 01 Chapter / ### 1.1 Section" documents must
+    keep native numbering. Without the one-level shift, level-strict prefix
+    patterns miss ("01" is a level-1 pattern at markdown level 2) and the
+    preface gate swallows every chapter into unnumbered front matter."""
+    md = """---
+title: 报告
+author: 作者
+title_page: true
+---
+# 报告
+
+## 01 概述
+
+正文。
+
+## 02 方法
+
+### 2.1 数据
+
+正文。
+
+### 2.2 分析
+
+正文。
+"""
+    result = normalize_longform_document(_doc_from_markdown(md))
+    sections = [s for s in result.document.sections if s.has_heading]
+    assert [s.level for s in sections] == [1, 1, 2, 2]
+    assert sections[0].heading == "概述"
+    assert sections[1].heading == "方法"
+    assert sections[2].heading == "数据"
+    assert sections[3].heading == "分析"
+    assert all(s.numbering == "decimal" for s in sections)
+    assert all(s.numbering_scheme == "decimal" for s in sections)
+    assert not any(s.preface for s in sections)
+
+
 def test_explicit_scheme_removes_matching_prefixes() -> None:
     md = """---
 title: Report

@@ -115,16 +115,16 @@
       "text": "绪论",
       "level": 1,
       "numbering": true,
-      "numberingScheme": "chinese-formal"
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "1.1 研究背景",
+      "text": "研究背景",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -137,10 +137,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "1.2 研究意义",
+      "text": "研究意义",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -156,16 +156,16 @@
       "text": "相关工作",
       "level": 1,
       "numbering": true,
-      "numberingScheme": "chinese-formal"
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "2.1 知识图谱",
+      "text": "知识图谱",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -178,10 +178,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "2.2 决策支持系统",
+      "text": "决策支持系统",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -197,16 +197,16 @@
       "text": "方法",
       "level": 1,
       "numbering": true,
-      "numberingScheme": "chinese-formal"
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "3.1 总体架构",
+      "text": "总体架构",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -219,10 +219,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "3.1.1 数据采集层",
+      "text": "数据采集层",
       "level": 3,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -235,10 +235,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "3.1.2 图谱构建层",
+      "text": "图谱构建层",
       "level": 3,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -251,10 +251,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "3.2 决策模型",
+      "text": "决策模型",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {

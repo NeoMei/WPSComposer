@@ -328,8 +328,32 @@ class WriterComposer(BaseComposer):
                 points = float(value) * 12.0
             safe_set(paragraph_format, "LineSpacing", points)
 
+    # Long-form plan ops emit camelCase style keys (matching the macOS JSAPI
+    # addin); WriterComposer's own renderers emit snake_case. Accept both so
+    # Windows M5 generation does not silently drop every style property.
+    _STYLE_CAMEL_KEYS = {
+        "fontName": "font_name",
+        "fontNameAscii": "font_name_ascii",
+        "fontSize": "font_size",
+        "spaceBefore": "space_before",
+        "spaceAfter": "space_after",
+        "keepWithNext": "keep_with_next",
+        "keepTogether": "keep_together",
+        "indentFirst": "indent_first",
+        "leftIndent": "left_indent",
+        "rightIndent": "right_indent",
+        "lineSpacing": "line_spacing",
+        "lineSpacingRule": "line_spacing_rule",
+    }
+
     def _configure_style(self, style, props, is_char=False):
         """Apply a style definition, including base style and CJK font slots."""
+        if any(camel in props for camel in self._STYLE_CAMEL_KEYS):
+            merged = {
+                self._STYLE_CAMEL_KEYS.get(key, key): value
+                for key, value in props.items()
+            }
+            props = merged
         if props.get("based_on"):
             try:
                 style.BaseStyle = self._doc.Styles(props["based_on"])

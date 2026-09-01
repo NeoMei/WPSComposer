@@ -96,6 +96,50 @@ def test_writer_composer_exposes_renderer_facing_methods():
     assert hasattr(WriterComposer, "add_code_lines")
 
 
+def test_configure_style_accepts_camelcase_longform_keys():
+    """Regression: long-form plan ops emit camelCase style keys; the Windows
+    COM path must translate them instead of silently dropping properties."""
+    applied = {}
+
+    class Font:
+        Name = NameFarEast = NameAscii = NameOther = NameBi = None
+        Size = Bold = None
+
+    class ParagraphFormat:
+        Alignment = SpaceBefore = SpaceAfter = KeepWithNext = None
+
+    class Style:
+        def __init__(self):
+            self.Font = Font()
+            self.ParagraphFormat = ParagraphFormat()
+
+    composer = object.__new__(WriterComposer)
+    composer._doc = None
+
+    style = Style()
+    composer._configure_style(
+        style,
+        {
+            "name": "Heading 1",
+            "fontName": "黑体",
+            "fontSize": 16,
+            "bold": True,
+            "align": 1,
+            "spaceBefore": 16,
+            "spaceAfter": 5,
+            "keepWithNext": True,
+        },
+    )
+
+    assert style.Font.Name == "黑体"
+    assert style.Font.Size == 16
+    assert style.Font.Bold is True
+    assert style.ParagraphFormat.Alignment == 1
+    assert style.ParagraphFormat.SpaceBefore == 16
+    assert style.ParagraphFormat.SpaceAfter == 5
+    assert style.ParagraphFormat.KeepWithNext is True
+
+
 def test_writer_styled_paragraph_keeps_existing_windows_call_semantics():
     events = []
 

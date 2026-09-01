@@ -115,7 +115,7 @@
       "text": "正文",
       "level": 1,
       "numbering": true,
-      "numberingScheme": "chinese-formal"
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
@@ -139,10 +139,10 @@
   {
     "op": "writer.add_heading",
     "args": {
-      "text": "1.1 后续内容",
+      "text": "后续内容",
       "level": 2,
-      "numbering": null,
-      "numberingScheme": null
+      "numbering": true,
+      "numberingScheme": "hybrid-bid"
     }
   },
   {
