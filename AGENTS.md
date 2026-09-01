@@ -44,6 +44,13 @@ WPSComposer/
 - Keep `wps_engine.py` as the backward-compatible public facade; implementation
   belongs in focused composer and infrastructure modules.
 - `_dispatch.py`, `_colors.py`, and `_base.py` are internal modules.
+- **Before touching M5 long-form typography, numbering, or style emission,
+  read [`docs/regression-guardrails.md`](docs/regression-guardrails.md)** —
+  it lists document behaviors that are locked in after the 2026-09-01
+  regression fix (per-level heading sizes, FangSong body with two-character
+  first-line indent, native heading numbering for title-anchored `##`
+  documents, camelCase style keys on the Windows COM path) plus the
+  regression tests and update checklist that guard them.
 
 ## Build, Test, and Development Commands
 
