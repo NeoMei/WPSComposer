@@ -6,6 +6,8 @@ WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS
 
 > cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 released（2026-08-24）。
 
+> **0.8.1（2026-09-07）**：macOS Word 改用原生空白任务文档启动，首次生成直接复用；只启动所需组件服务，完整回收连接和独立 WPS 宿主。`open_result=True` 可在成功清理后打开最终文件。详见 [0.8.1 验证记录](docs/releases/0.8.1.md)。
+
 ## ✨ 核心特性
 
 ### 🎨 专业排版
@@ -393,6 +395,13 @@ python3 -m venv .venv
 完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。macOS JSAPI 固定模板测试还需要运行 `python3 install.py` 安装锁定的运行时资源。
 
 ## 📝 更新日志
+
+### v0.8.1 (2026-09-07)
+- Word 激活不再打开 `wpsDemo.docx`；所有 Writer 路径采用原生空白种子，首次 M5 渲染直接复用任务文档。
+- 替换 `wpsjs debug` 启动器，只运行所需组件的回环服务；生成和转换使用独立且归属明确的 WPS 宿主。
+- 修复插件注册地址兼容、旧组件注册残留、JSAPI 文档代理身份、失败时文档清理与 HTTP 长连接回收。
+- `generate()` 和 `convert_to_pdf()` 新增关键字参数 `open_result=False`；显式开启时只在成功发布及清理之后展示结果。
+- 2624 项测试通过，12 项环境条件跳过；完成 macOS 原生生成、转换、二次排版、旧路径隔离及未保存文档保护验证。Windows 新选项经平台替身测试，本次未重跑 Windows 原生验收。
 
 ### v0.8.0 (2026-08-24)
 - DOCX/PDF 默认进入 M5 长文档引擎；仅显式声明 `layout_engine: legacy` 时使用旧路由。
