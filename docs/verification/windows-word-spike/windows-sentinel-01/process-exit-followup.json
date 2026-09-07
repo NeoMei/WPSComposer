@@ -1,0 +1,9 @@
+{
+  "observation": "Read-only Win32_Process query after wrapper completion returned PID 9252 only for filter ProcessId=15164 OR ProcessId=9252",
+  "verified_task_pid": 15164,
+  "task_pid_absent": true,
+  "registered_pid_still_present": 9252,
+  "termination_attempted": false,
+  "basis": "Get-CimInstance Win32_Process -Filter \"ProcessId = 15164 OR ProcessId = 9252\"",
+  "interpretation": "Immediate post-Quit check was premature; original sentinel-result.json retained unchanged"
+}

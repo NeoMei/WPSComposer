@@ -8,12 +8,15 @@ independent `codex/windows-word-spike-evidence` branch.
 ## Result and scope
 
 **Native capabilities and persisted artifact checks passed in two final fresh
-runs (05 and 06). Production admission remains NO_GO.** Both runs saved/reopened
+runs (05 and 06), followed by a successful registered unsaved-sentinel gate
+(run 08). Production admission remains NO_GO.** Both original final runs saved/reopened
 a real DOCX and exported a real 9-page PDF through Microsoft Word. Each completed
 all 14 probe operations with exit 0 and no native errors; each separately passed
 11 saved-artifact checks. The 9 rendered page images are byte-identical between
 these runs. This is a Windows feasibility result, not a public engine release,
-full product regression pass, or proof of preservation of unsaved user documents.
+full product regression pass, or proof of arbitrary user-document preservation.
+The additional synthetic unsaved-document preservation evidence and its initial
+asynchronous-exit observation are detailed in [sentinel-report.md](sentinel-report.md).
 
 No registry, macro-security, Normal-template, installation, release, merge, or
 global process termination action was taken. No preexisting document was edited.
@@ -58,8 +61,10 @@ python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike
 | 04 | 1 | New document's HWND/PID check succeeded; experimental author-property setter failed with `com_error(-2147352573, '找不到成员。', None, None)`. Owned document and isolated instance cleaned up. |
 | 05 | 0 | Final runner, document-level RemovePersonalInformation, complete native and artifact checks passed. |
 | 06 | 0 | Same final runner, fresh directory, complete native and artifact checks passed. |
+| 07 | 0 | Nonempty unsaved sentinel preserved; native/artifact checks passed. Wrapper exited 1 because its immediate post-Quit PID check was premature; raw result retained. |
+| 08 | 0 | Same native runner; unsaved sentinel preserved, task PID exit observed after 2.422 seconds, sentinel closed without saving. Wrapper exited 0. |
 
-All six original `result.json` files are retained in the corresponding evidence
+All eight original `result.json` files are retained in the corresponding evidence
 subdirectories, including full tracebacks for failures. No failure was overwritten.
 Final native binaries are copied byte for byte from ignored build outputs.
 Run 02/03 binaries remain local because they predate the document privacy setting.
@@ -112,16 +117,20 @@ with substantial white space. These limits were not silently edited away.
 Final runs compared empty registered-instance document snapshots before/after;
 each owned instance started empty. Only the task document was closed without
 saving, followed by Quit on that verified isolated instance after zero documents
-remained. No unsaved sentinel was created, and protection of an actual preexisting
-unsaved document or unregistered Word instances was not demonstrated.
+remained. Additional runs 07/08 used one uniquely marked task-owned unsaved
+sentinel in the registered instance: nonempty before/after snapshots matched,
+and the sentinel was explicitly closed without saving. Run 08 also observed the
+owned process exit. This covers synthetic text/name/path/saved state, not arbitrary
+rich user-document state or unregistered Word instances.
 
 The failed first attempt left Word PID 9252 (created at 01:18:13 local). It was
-still present at the final process check. A subsequent read-only COM check found
-a registered Microsoft Word application with zero documents, but PID/COM ownership
-of the failed attempt was not established; this process was not quit or killed.
+still present after the sentinel gate. The sentinel's owned document window now
+maps the registered application to PID 9252, but ownership of that application's
+initial launch remains unverified. This process was not quit or killed.
 Therefore whole-session cleanup is **not fully verified**, even though successful
-owned-instance cleanup passed. No user document names, paths, text or hashes are
-present in the published snapshots (all are empty).
+owned-instance cleanup passed. Published snapshots are either empty (01-06) or
+contain only the task-created synthetic sentinel (07/08). No user document names,
+paths, text or hashes are included.
 
 Five portable identity-guard tests passed (unittest). They test fail-closed
 decisions and do not substitute for native evidence. `git diff --check` passed.
@@ -139,12 +148,13 @@ python fixtures/msoffice_spike/validate_windows_artifacts.py build/msoffice-spik
 
 Always use an absent output directory and a 64-bit Python with pywin32. Do not
 edit other Word documents during the probe. Review the images separately; exit 0
-alone is not acceptance. `manifest.json` records all six run command exit codes,
+alone is not acceptance. `manifest.json` records all eight run command exit codes,
 baseline/source hashes, artifact SHA256, and the final visual comparison.
 `SHA256SUMS.txt` covers the published evidence files. The local originals remain
-under `build/msoffice-spike/windows-run-01` through `windows-run-06`.
+under `build/msoffice-spike/windows-run-01` through `windows-run-08`; wrapper evidence
+is under `windows-sentinel-01` and `windows-sentinel-02` in the same build directory.
 
 These results support continuing a native Windows adapter feasibility track for
 Word/PDF fidelity. They do not compare Office.js experimentally or authorize
-production integration until layout, unsaved-document preservation, cleanup failure
-handling and full regression gates are completed.
+production integration until layout, broader rich-document preservation, cleanup
+failure handling and full regression gates are completed.

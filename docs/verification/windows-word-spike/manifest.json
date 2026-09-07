@@ -85,6 +85,32 @@
         "result.json": "2fca75bd3753b57db0c2bf420bdcc68bba3809bdbc60e58990f7a8451b8dbbbe"
       },
       "final_runner": true
+    },
+    {
+      "name": "windows-run-07",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-07",
+      "exit_code": 0,
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "fad3b494db21268cc3b13cd37bc3e6e3fca926360aa6269829e41b3a21451740",
+        "probe.pdf": "8c8c84ca839d83a5351d22b115d8a1623c0d88802ac88a64dc386bcc548bcc33",
+        "result.json": "36ffca52f8f68b67ed34adbe092363eecd662e8196df33a89fefa0b74756ff1a"
+      },
+      "final_runner": true,
+      "sentinel_gate": "windows-sentinel-01"
+    },
+    {
+      "name": "windows-run-08",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-08",
+      "exit_code": 0,
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "7dff6ec93166cbb40ab740016907825c086ac304bf32d2aeac3819a9adc64908",
+        "probe.pdf": "2f62727a0694f0f01b126788a003d49a9abd1ee97e33a4d6c25be5101273de94",
+        "result.json": "48f738f5ed19fd6450e47c3cad224aa79f317a176dd48d761528c77496a15f6d"
+      },
+      "final_runner": true,
+      "sentinel_gate": "windows-sentinel-02"
     }
   ],
   "final_runs": [
@@ -105,6 +131,32 @@
     "windows_word.py": "46fb262161af8f4a24f6cd1127a5542f0ba228cbe2ca86423c5722327d30505d",
     "validate_windows_artifacts.py": "a7cec1e31b62fdd259aeccf18eb9cd8372d440a02d04d43fa4efe525e1534c76",
     "test_windows_identity.py": "457459dd1976e7f2c2d11ac2052d475ea6ecb451626a81d7e54d0d0b3c0fb375",
-    "mac_word.py": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb"
-  }
+    "mac_word.py": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb",
+    "windows_unsaved_sentinel.py": "17265c0a8116242a09e0615611e3213cf56e1ddec9fde8c5476f9d2c35e682d4"
+  },
+  "sentinel_gates": [
+    {
+      "name": "windows-sentinel-01",
+      "wrapper_exit_code": 1,
+      "native_run": "windows-run-07",
+      "overall": "failed",
+      "sentinel_state_unchanged": true,
+      "sentinel_closed_without_saving": true,
+      "registered_app_quit": false,
+      "command": "python fixtures/msoffice_spike/windows_unsaved_sentinel.py --evidence-dir build/msoffice-spike/windows-sentinel-01 --output-dir build/msoffice-spike/windows-run-07",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe"
+    },
+    {
+      "name": "windows-sentinel-02",
+      "wrapper_exit_code": 0,
+      "native_run": "windows-run-08",
+      "overall": "passed",
+      "sentinel_state_unchanged": true,
+      "sentinel_closed_without_saving": true,
+      "registered_app_quit": false,
+      "command": "python fixtures/msoffice_spike/windows_unsaved_sentinel.py --evidence-dir build/msoffice-spike/windows-sentinel-02 --output-dir build/msoffice-spike/windows-run-08",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe"
+    }
+  ],
+  "nonempty_unsaved_preservation_gate": "passed in windows-sentinel-02/windows-run-08"
 }

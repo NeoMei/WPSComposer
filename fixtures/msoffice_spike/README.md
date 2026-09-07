@@ -78,6 +78,24 @@ checks saved DOCX XML, native PDF text/fonts/page bounds and hashes, and renders
 pages for separate visual review. It requires existing PyMuPDF and Pillow;
 passing its structural checks does not imply polished layout or production admission.
 
+For a separate nonempty registered-instance preservation gate, use:
+
+```powershell
+python fixtures/msoffice_spike/windows_unsaved_sentinel.py --evidence-dir build/msoffice-spike/windows-sentinel-new --output-dir build/msoffice-spike/windows-native-new
+```
+
+This requires an already registered, empty native Word application and refuses to
+proceed otherwise. It creates exactly one uniquely marked task-owned unsaved
+sentinel, confirms that `GetActiveObject` sees it, runs the unchanged native probe
+in a subprocess, and compares the sentinel's name/path/content hash/unsaved state
+with both native snapshots. It verifies distinct process IDs and owned-process
+cleanup, allowing up to 10 seconds for asynchronous process exit after Quit and
+retaining timestamped observations. Finally it closes only the retained sentinel object with `SaveChanges=0`
+after checking its marker and original name/path. It never quits the registered
+application or adjusts application settings. A failure to establish ownership
+is recorded rather than bypassed. Its sentinel metadata is synthetic; do not
+publish native snapshots containing unrelated user documents.
+
 Do not edit other Word documents during a probe: any observed state change is
 reported as a preservation failure. A Mac timeout retains partial error output and
 marks cleanup unverified. Inspect and close only the task-owned document if such
