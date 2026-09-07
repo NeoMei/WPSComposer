@@ -287,6 +287,7 @@ class FakeRuntime:
         self.staging_dir = staging_dir.resolve()
         self.calls = calls
         self.registration_restored = True
+        self.factory_kwargs = None
 
     def __enter__(self):
         self.staging_dir.mkdir(parents=True)
@@ -330,7 +331,9 @@ def _run_with_fakes(
         RecordedGeneration(plan, ()),
         enabled={format_name: True},
         bridge_factory=lambda origins: fake_bridge,
-        runtime_factory=lambda *args, **kwargs: runtime,
+        runtime_factory=lambda *args, **kwargs: (
+            setattr(runtime, "factory_kwargs", kwargs) or runtime
+        ),
         timeout=timeout,
     )
     return result, request, fake_bridge, runtime, calls
@@ -378,6 +381,7 @@ def test_generation_uses_only_staged_path_and_publishes_valid_package(
     assert result.is_file()
     assert not runtime.staging_dir.exists()
     assert ("activate_component", component) in calls
+    assert runtime.factory_kwargs["components"] == {component}
 
 
 def test_generation_production_gates_now_enabled(tmp_path: Path):

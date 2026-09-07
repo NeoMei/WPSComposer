@@ -80,6 +80,7 @@ class FakeRuntime:
         self.staging_dir = staging_dir.resolve()
         self.calls = calls
         self.registration_restored = True
+        self.factory_kwargs = None
 
     def __enter__(self):
         self.staging_dir.mkdir(parents=True)
@@ -124,7 +125,9 @@ def _run_with_fakes(
         request,
         enabled=True,
         bridge_factory=lambda origins: fake_bridge,
-        runtime_factory=lambda *args, **kwargs: runtime,
+        runtime_factory=lambda *args, **kwargs: (
+            setattr(runtime, "factory_kwargs", kwargs) or runtime
+        ),
         timeout=10,
     )
     return result, fake_bridge, calls, runtime
@@ -157,6 +160,7 @@ def test_macos_copies_source_and_issues_only_staged_paths(
     assert result.is_file()
     assert not runtime.staging_dir.exists()
     assert ("activate_component", component, True) in calls
+    assert runtime.factory_kwargs["components"] == {component}
 
 
 def test_macos_real_conversion_gate_is_enabled():
@@ -231,9 +235,12 @@ def test_registration_restore_failure_retains_durable_recovery(
     )
 
     class RecoveryRuntime(FakeRuntime):
-        def __init__(self, probe_root, runtime_dir, bridge_url, token, *, deadline):
+        def __init__(
+            self, probe_root, runtime_dir, bridge_url, token, *, deadline, components
+        ):
             super().__init__(tmp_path / "container" / "session", [])
             self.runtime_dir = Path(runtime_dir)
+            assert components == {"presentation"}
 
         def __enter__(self):
             super().__enter__()

@@ -23,6 +23,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 from .bridge import derive_client_credentials
+from .profile_server import ProfileServer
 
 WPS_APP = Path("/Applications/wpsoffice.app")
 WPS_STAGING_ROOT = (
@@ -757,7 +758,7 @@ def create_staging_session(root: Path = WPS_STAGING_ROOT) -> Path:
 
 
 class ProbeRuntime:
-    """Owns temporary add-in profiles and the child wpsjs servers."""
+    """Owns selected temporary add-in profiles and loopback services."""
 
     def __init__(
         self,
@@ -770,7 +771,19 @@ class ProbeRuntime:
         wps_app: Path = WPS_APP,
         staging_root: Path = WPS_STAGING_ROOT,
         deadline: Optional[float] = None,
+        components: Optional[set[str]] = None,
     ):
+        if components is not None and not isinstance(components, (set, frozenset)):
+            raise TypeError("components must be a set of component names")
+        selected = set(COMPONENT_CONFIG) if components is None else set(components)
+        if not selected:
+            raise ValueError("ProbeRuntime requires at least one component")
+        if any(not isinstance(component, str) for component in selected):
+            raise ValueError("Component names must be strings")
+        unknown = selected.difference(COMPONENT_CONFIG)
+        if unknown:
+            raise ValueError(f"Unknown component: {sorted(unknown)[0]}")
+        self.components = frozenset(selected)
         self.probe_root = probe_root.resolve()
         self.runtime_dir = runtime_dir.resolve()
         self.bridge_url = bridge_url
@@ -789,6 +802,7 @@ class ProbeRuntime:
         self.logs: dict[str, Path] = {}
         self._processes: list[subprocess.Popen] = []
         self._log_streams: list[BinaryIO] = []
+        self._profile_servers: list[ProfileServer] = []
         self._snapshot: Optional[RegistrationSnapshot] = None
         self._wps_processes_before: Optional[dict[int, ProcessIdentity]] = None
         self._owned_wps_processes: dict[int, ProcessIdentity] = {}
@@ -852,13 +866,16 @@ class ProbeRuntime:
             raise RuntimeError("The WPS JSAPI probe requires macOS")
         if not self.wps_app.is_dir():
             raise RuntimeError(f"WPS Office is unavailable: {self.wps_app}")
-        for config in COMPONENT_CONFIG.values():
-            _require_free_port(int(config["port"]))
+        for component, config in COMPONENT_CONFIG.items():
+            if component in self.components:
+                _require_free_port(int(config["port"]))
 
     def prepare_profiles(self) -> dict[str, Path]:
         assets = self.probe_root / "addin"
         profiles_root = self.runtime_dir / "profiles"
         for component in COMPONENT_CONFIG:
+            if component not in self.components:
+                continue
             self.profiles[component] = build_profile(
                 assets,
                 profiles_root,
@@ -870,14 +887,12 @@ class ProbeRuntime:
         return dict(self.profiles)
 
     def start_servers(self, *, deadline: Optional[float] = None) -> None:
-        if set(self.profiles) != set(COMPONENT_CONFIG):
+        if set(self.profiles) != set(self.components):
             raise RuntimeError("prepare_profiles() must run before start_servers()")
         if deadline is None:
             deadline = self.deadline
         if deadline is None:
-            deadline = time.monotonic() + len(COMPONENT_CONFIG) * SERVER_STARTUP_TIMEOUT
-        node = find_node(self.node_override or read_configured_node(self.probe_root))
-        cli = find_wpsjs_cli(self.probe_root)
+            deadline = time.monotonic() + len(self.components) * SERVER_STARTUP_TIMEOUT
         self._ensure_runtime_state_dir()
         require_remaining(deadline)
         recovery = self.recovery_dir
@@ -891,50 +906,24 @@ class ProbeRuntime:
             flush=True,
         )
         try:
-            cache_digest = hashlib.sha256()
-            for component in sorted(self.profiles):
-                for name in (
-                    "index.html", "bridge-client.js", "writer-longform-m0.js",
-                    "writer-longform-v2.js", "component.js",
-                ):
-                    asset = self.profiles[component] / name
-                    if asset.is_file():
-                        cache_digest.update(asset.read_bytes())
+            selected_config = {
+                component: config
+                for component, config in COMPONENT_CONFIG.items()
+                if component in self.components
+            }
             install_registration_entries(
                 self._snapshot,
-                COMPONENT_CONFIG,
+                selected_config,
                 session_nonce=self.session_nonce,
                 client_credentials=self.client_credentials,
-                cache_version=cache_digest.hexdigest()[:16],
             )
-            for component, config in COMPONENT_CONFIG.items():
+            for component, config in selected_config.items():
                 require_remaining(deadline)
-                log_path = self.runtime_dir / f"wpsjs-{component}.log"
-                self.logs[component] = log_path
-                log_stream = log_path.open("ab")
-                self._log_streams.append(log_stream)
-                environment = os.environ.copy()
-                environment["PATH"] = (
-                    str(node.parent)
-                    + os.pathsep
-                    + environment.get("PATH", "")
+                server = ProfileServer(
+                    self.profiles[component], int(config["port"])
                 )
-                process = subprocess.Popen(
-                    [
-                        str(node),
-                        str(cli),
-                        "debug",
-                        "--server",
-                        "--port",
-                        str(config["port"]),
-                    ],
-                    cwd=self.profiles[component],
-                    env=environment,
-                    stdin=subprocess.DEVNULL,
-                    stdout=log_stream,
-                    stderr=subprocess.STDOUT,
-                )
-                self._processes.append(process)
+                server.start()
+                self._profile_servers.append(server)
                 require_remaining(deadline)
                 self._wait_for_server(
                     component, int(config["port"]), deadline
@@ -952,11 +941,6 @@ class ProbeRuntime:
     ) -> None:
         url = f"http://127.0.0.1:{port}/index.html"
         while remaining(deadline) > 0:
-            process = self._processes[-1]
-            if process.poll() is not None:
-                raise RuntimeError(
-                    f"wpsjs {component} exited early; see {self.logs[component]}"
-                )
             try:
                 with urlopen(
                     url, timeout=min(1.0, require_remaining(deadline))
@@ -968,12 +952,13 @@ class ProbeRuntime:
                 if budget > 0:
                     time.sleep(min(0.1, budget))
         raise TimeoutError(
-            f"Timed out waiting for {component} add-in server before deadline; "
-            f"see {self.logs[component]}"
+            f"Timed out waiting for {component} add-in server before deadline"
         )
 
     def activate_components(self) -> dict[str, Path]:
         for component in FIXTURE_NAMES:
+            if component not in self.components:
+                continue
             self.activate_component(component)
         return dict(self.fixtures)
 
@@ -983,6 +968,8 @@ class ProbeRuntime:
     ) -> Path:
         if component not in FIXTURE_NAMES:
             raise ValueError(f"Unknown component: {component}")
+        if component not in self.components:
+            raise ValueError(f"Component was not selected: {component}")
         if self.staging_dir is None:
             raise RuntimeError("ProbeRuntime must be entered before activation")
         if component in self._activation_attempted:
@@ -1106,6 +1093,13 @@ class ProbeRuntime:
     def close(self) -> None:
         cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
         errors: list[BaseException] = []
+        servers = tuple(reversed(self._profile_servers))
+        self._profile_servers.clear()
+        for server in servers:
+            try:
+                server.close()
+            except BaseException as exc:
+                errors.append(exc)
         processes = tuple(reversed(self._processes))
         self._processes.clear()
         for process in processes:

@@ -373,12 +373,13 @@ class GenerationBridge:
 
 
 class GenerationRuntime:
-    def __init__(self, runtime_dir, calls):
+    def __init__(self, runtime_dir, calls, components):
         self.runtime_dir = Path(runtime_dir).resolve()
         self.staging_dir = self.runtime_dir.parent / "session"
         self.profiles = {}
         self.calls = calls
         self.registration_restored = True
+        self.components = set(components)
 
     def __enter__(self):
         self.staging_dir.mkdir(parents=True)
@@ -390,7 +391,7 @@ class GenerationRuntime:
         shutil.rmtree(self.staging_dir, ignore_errors=True)
 
     def prepare_profiles(self):
-        for component in ("writer", "spreadsheet", "presentation"):
+        for component in self.components:
             profile = self.runtime_dir / "profiles" / component
             profile.mkdir(parents=True, exist_ok=True)
             self.profiles[component] = profile
@@ -405,8 +406,10 @@ class GenerationRuntime:
 
 
 def _runtime_factory(captured):
-    def factory(probe_root, runtime_dir, bridge_url, token, *, deadline):
-        runtime = GenerationRuntime(runtime_dir, [])
+    def factory(
+        probe_root, runtime_dir, bridge_url, token, *, deadline, components
+    ):
+        runtime = GenerationRuntime(runtime_dir, [], components)
         captured.append(runtime)
         return runtime
 

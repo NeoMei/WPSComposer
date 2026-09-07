@@ -630,20 +630,32 @@ def test_preexisting_young_wps_is_never_claimed_by_elapsed_age(monkeypatch, tmp_
 
 
 @posix_only
-def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: Path):
-    commands = []
+def test_start_servers_hosts_only_selected_profile_without_wpsjs_debug(
+    monkeypatch, tmp_path: Path
+):
+    hosted = []
 
-    class Process:
-        def poll(self):
-            return 0
+    class Server:
+        def __init__(self, profile_root, port):
+            hosted.append((Path(profile_root), port, "created"))
 
-    def popen(command, **kwargs):
-        commands.append((command, kwargs))
-        return Process()
+        def start(self):
+            hosted.append((hosted[-1][0], hosted[-1][1], "started"))
 
-    monkeypatch.setattr(runtime.subprocess, "Popen", popen)
-    monkeypatch.setattr(runtime, "find_node", lambda override=None: Path("/node"))
-    monkeypatch.setattr(runtime, "find_wpsjs_cli", lambda root: Path("/wpsjs"))
+        def close(self):
+            hosted.append((hosted[0][0], hosted[0][1], "closed"))
+
+    monkeypatch.setattr(runtime, "ProfileServer", Server)
+    monkeypatch.setattr(
+        runtime,
+        "find_node",
+        lambda *args, **kwargs: pytest.fail("profile hosting must not resolve Node"),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "find_wpsjs_cli",
+        lambda *args, **kwargs: pytest.fail("profile hosting must not invoke wpsjs"),
+    )
     publish = tmp_path / "publish.xml"
     publish.write_text("<jsplugins/>", encoding="utf-8")
     probe = runtime.ProbeRuntime(
@@ -653,27 +665,104 @@ def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: P
         "token",
         publish_xml=publish,
         staging_root=tmp_path / "stable" / "WPSComposer",
+        components={"writer"},
     )
     probe.runtime_dir.mkdir()
-    for component in COMPONENT_CONFIG:
-        profile = tmp_path / "profiles" / component
-        profile.mkdir(parents=True)
-        probe.profiles[component] = profile
+    profile = tmp_path / "profiles" / "writer"
+    profile.mkdir(parents=True)
+    (profile / "index.html").write_text("ready", encoding="utf-8")
+    probe.profiles["writer"] = profile
     monkeypatch.setattr(probe, "_wait_for_server", lambda *args: None)
 
     try:
         probe.start_servers()
+        entries = list(ET.parse(publish).getroot())
+        assert [entry.attrib["name"] for entry in entries] == [
+            "wpscomposer-phase0-writer"
+        ]
+        assert entries[0].attrib["url"] == "http://127.0.0.1:3889/"
     finally:
         probe.close()
 
-    assert [command for command, _ in commands] == [
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3889"],
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3890"],
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3891"],
+    assert hosted == [
+        (profile, 3889, "created"),
+        (profile, 3889, "started"),
+        (profile, 3889, "closed"),
     ]
-    assert [kwargs["cwd"] for _, kwargs in commands] == [
-        probe.profiles[component] for component in COMPONENT_CONFIG
-    ]
+
+
+def test_runtime_rejects_invalid_component_subset_before_side_effects(tmp_path: Path):
+    runtime_dir = tmp_path / "runtime"
+    staging_root = tmp_path / "stable" / "WPSComposer"
+
+    with pytest.raises(ValueError, match="Unknown component"):
+        runtime.ProbeRuntime(
+            tmp_path,
+            runtime_dir,
+            "http://127.0.0.1:45678",
+            "token",
+            staging_root=staging_root,
+            components={"writer", "rogue"},
+        )
+
+    assert not runtime_dir.exists()
+    assert not staging_root.exists()
+
+
+def test_runtime_requires_nonempty_component_subset(tmp_path: Path):
+    with pytest.raises(ValueError, match="at least one component"):
+        runtime.ProbeRuntime(
+            tmp_path,
+            tmp_path / "runtime",
+            "http://127.0.0.1:45678",
+            "token",
+            components=set(),
+        )
+
+
+def test_runtime_preflight_checks_only_selected_component_port(monkeypatch, tmp_path):
+    app = tmp_path / "wpsoffice.app"
+    app.mkdir()
+    checked = []
+    monkeypatch.setattr(runtime.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(runtime, "_require_free_port", checked.append)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=app,
+        components={"presentation"},
+    )
+
+    probe._preflight()
+
+    assert checked == [3890]
+
+
+def test_prepare_profiles_builds_only_selected_components(monkeypatch, tmp_path):
+    built = []
+
+    def build(assets, profiles_root, component, *args):
+        built.append(component)
+        profile = profiles_root / component
+        profile.mkdir(parents=True)
+        return profile
+
+    monkeypatch.setattr(runtime, "build_profile", build)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        components={"spreadsheet"},
+    )
+    probe.runtime_dir.mkdir()
+
+    profiles = probe.prepare_profiles()
+
+    assert built == ["spreadsheet"]
+    assert set(profiles) == {"spreadsheet"}
 
 
 @posix_only

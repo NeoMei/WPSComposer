@@ -268,6 +268,7 @@ class MacLongformAdapter(_BaseAdapter):
             self.bridge.url,
             self.bridge.token,
             deadline=deadline,
+            components={"writer"},
         )
         self.runtime.__enter__()
         self.runtime.prepare_profiles()

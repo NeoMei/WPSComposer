@@ -66,13 +66,15 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
     clock = FakeClock()
     calls: list[tuple[str, float]] = []
 
-    class Process:
-        def poll(self):
-            return 0
+    class Server:
+        def __init__(self, profile_root, port):
+            self.port = port
 
-    def popen(*args, **kwargs):
-        clock.advance(0.34)
-        return Process()
+        def start(self):
+            clock.advance(0.34)
+
+        def close(self):
+            pass
 
     probe = runtime.ProbeRuntime(
         tmp_path,
@@ -88,9 +90,7 @@ def test_three_server_readiness_checks_share_one_deadline(monkeypatch, tmp_path:
         profile.mkdir()
         probe.profiles[component] = profile
 
-    monkeypatch.setattr(runtime.subprocess, "Popen", popen)
-    monkeypatch.setattr(runtime, "find_node", lambda override=None: Path("/node"))
-    monkeypatch.setattr(runtime, "find_wpsjs_cli", lambda root: Path("/wpsjs"))
+    monkeypatch.setattr(runtime, "ProfileServer", Server)
     monkeypatch.setattr(
         runtime.RegistrationSnapshot,
         "capture",
@@ -197,8 +197,9 @@ def test_public_conversion_deadline_precedes_bridge_and_reaches_runtime(
     class Runtime:
         registration_restored = True
 
-        def __init__(self, *_args, deadline):
+        def __init__(self, *_args, deadline, components):
             seen["runtime_deadline"] = deadline
+            assert components == {"writer"}
 
         def __enter__(self):
             clock.advance(0.2)
@@ -252,8 +253,9 @@ def test_public_generation_deadline_precedes_bridge_and_reaches_runtime(
     class Runtime:
         registration_restored = True
 
-        def __init__(self, *_args, deadline):
+        def __init__(self, *_args, deadline, components):
             seen["runtime_deadline"] = deadline
+            assert components == {"writer"}
 
         def __enter__(self):
             return self
@@ -517,9 +519,10 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
     class Runtime:
         registration_restored = True
 
-        def __init__(self, *_args, deadline):
+        def __init__(self, *_args, deadline, components):
             self.deadline = deadline
             self.staging_dir = tmp_path / "staging"
+            assert components == {"writer"}
 
         def __enter__(self):
             self.staging_dir.mkdir()
@@ -533,8 +536,7 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
             spend("profiles", 0.03, self.deadline)
 
         def start_servers(self, *, deadline):
-            for component in ("writer", "presentation", "spreadsheet"):
-                spend(f"server:{component}", 0.04, deadline)
+            spend("server:writer", 0.04, deadline)
 
         def activate_component(self, component, *, deadline, isolated=False):
             spend("activation", 0.05, deadline)
@@ -600,13 +602,11 @@ def test_conversion_end_to_end_consumes_one_cumulative_budget(
 
     assert result == request.output
     assert clock.now < 101.0
-    assert stages[:10] == [
+    assert stages[:8] == [
         "bridge",
         "lock",
         "profiles",
         "server:writer",
-        "server:presentation",
-        "server:spreadsheet",
         "activation",
         "registration:retry",
         "activation",

@@ -1485,6 +1485,7 @@ def _execute_generation_plan(
                 bridge.url,
                 bridge.token,
                 deadline=deadline,
+                components={request.component},
             )
             try:
                 with runtime:

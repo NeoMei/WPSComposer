@@ -141,6 +141,68 @@ def test_macos_pdf_export_waits_for_async_artifact_readiness(monkeypatch, tmp_pa
     assert waited == [(result, deadline)]
 
 
+def test_macos_longform_starts_writer_only_runtime(monkeypatch, tmp_path):
+    calls = []
+
+    class Bridge:
+        url = "http://127.0.0.1:45678"
+        token = "token"
+
+        def __init__(self, origins):
+            calls.append(("bridge", origins))
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            calls.append(("bridge-close",))
+
+    class Runtime:
+        registration_restored = True
+
+        def __init__(self, *args, **kwargs):
+            calls.append(("runtime", kwargs))
+            self.staging_dir = tmp_path / "staging"
+            self.staging_dir.mkdir()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            calls.append(("runtime-close",))
+
+        def prepare_profiles(self):
+            calls.append(("profiles",))
+
+        def start_servers(self, *, deadline):
+            calls.append(("servers", deadline))
+
+        def activate_component(self, component, *, isolated, deadline):
+            calls.append(("activate", component, isolated, deadline))
+
+    monkeypatch.setattr(platform_runtime, "LoopbackBridge", Bridge)
+    monkeypatch.setattr(platform_runtime, "ProbeRuntime", Runtime)
+    monkeypatch.setattr(
+        platform_runtime, "_wait_for_writer_registration", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        platform_runtime,
+        "MacOSLongformExecutor",
+        lambda **kwargs: SimpleNamespace(),
+    )
+    adapter = platform_runtime.MacLongformAdapter(
+        build_longform_generation("# Report\n\nBody")
+    )
+    deadline = time.monotonic() + 10
+    try:
+        adapter._ensure_started(deadline)
+    finally:
+        adapter.close()
+
+    runtime_call = next(call for call in calls if call[0] == "runtime")
+    assert runtime_call[1]["components"] == {"writer"}
+
+
 def test_generate_longform_always_closes_platform_adapter(monkeypatch, tmp_path):
     events = []
 
