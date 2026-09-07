@@ -53,6 +53,29 @@ def test_clone_writer_activation_document_rejects_changed_seed(tmp_path: Path):
         clone_activation_document(tmp_path / "probe", staging, "writer")
 
 
+def test_activation_clone_removes_partial_publication_when_link_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    probe_root = tmp_path / "probe"
+    source = probe_root / "resources/writer-blank.docx"
+    source.parent.mkdir(parents=True)
+    shutil.copy2(NATIVE_WRITER_BLANK, source)
+    staging = tmp_path / "session"
+    staging.mkdir()
+    real_link = templates.os.link
+
+    def link_then_fail(source_path: Path, target_path: Path) -> None:
+        real_link(source_path, target_path)
+        raise OSError("publication interrupted")
+
+    monkeypatch.setattr(templates.os, "link", link_then_fail)
+
+    with pytest.raises(TemplateError, match="digest mismatch"):
+        clone_activation_document(probe_root, staging, "writer")
+
+    assert list(staging.iterdir()) == []
+
+
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX file-mode assertions")
 def test_clone_template_verifies_digest_and_creates_private_copy(tmp_path: Path):

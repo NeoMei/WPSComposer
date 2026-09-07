@@ -122,6 +122,76 @@ eval(fs.readFileSync({writer_path}, "utf8"));
     _run_node_script(script)
 
 
+def test_writer_real_longform_run_reuses_claim_then_creates_fresh_owned_relayout():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    longform_path = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const events = [];
+function ownedDocument(path, kind) {{
+  return {{
+    FullName: path,
+    Content: {{End: 0}},
+    SaveAs2(outputPath, format) {{events.push([kind, "save", outputPath, format]);}},
+    Close(value) {{events.push([kind, "close", value]);}}
+  }};
+}}
+const activationPath = "/private/wpscomposer-writer-blank.docx";
+const retained = ownedDocument(activationPath, "retained");
+const user = {{
+  FullName: "/Users/person/unsaved.docx",
+  Close() {{throw new Error("user document closed");}}
+}};
+let addCalls = 0;
+const documents = [retained, user];
+global.Application = {{
+  DisplayAlerts: 7,
+  ScreenUpdating: true,
+  ActiveDocument: user,
+  Documents: {{
+    get Count() {{return documents.length;}},
+    Item(index) {{return documents[index - 1];}},
+    Add() {{
+      addCalls += 1;
+      const created = ownedDocument("/private/relayout-" + addCalls + ".docx", "relayout");
+      documents.push(created);
+      return created;
+    }}
+  }}
+}};
+eval(fs.readFileSync({longform_path}, "utf8"));
+eval(fs.readFileSync({writer_path}, "utf8"));
+const plan = {{component: "writer", operations: []}};
+(async function () {{
+  const sameHost = Application;
+  const sameBridge = window.WPSComposerProbe;
+  window.WPSComposerProbe.claimActivationDocument(activationPath);
+  await sameBridge.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan, outputPath: "/private/first.docx", resources: {{}}, activationDocument: activationPath}}
+  }});
+  assert.equal(addCalls, 0, "first generation must render into the retained document");
+  await sameBridge.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan, outputPath: "/private/relayout.docx", resources: {{}}}}
+  }});
+  assert.equal(addCalls, 1, "same-runtime relayout must create one fresh owned document");
+  assert.strictEqual(Application, sameHost);
+  assert.strictEqual(window.WPSComposerProbe, sameBridge);
+  assert.deepEqual(events, [
+    ["retained", "save", "/private/first.docx", 12],
+    ["retained", "close", 0],
+    ["relayout", "save", "/private/relayout.docx", 12],
+    ["relayout", "close", 0]
+  ]);
+  assert.strictEqual(Application.ActiveDocument, user);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
 def test_writer_claim_accepts_new_jsapi_wrapper_for_same_native_full_path():
     writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
     script = f"""
@@ -228,6 +298,54 @@ window.OnAddinLoad();
 setTimeout(function () {{
   assert.deepEqual(requests, ["./session.json", "http://bridge/v1/session"]);
   assert.ok(errors.some(function (value) {{return value.includes("missing owned document");}}));
+}}, 25);
+"""
+    _run_node_script(script)
+
+
+def test_bridge_registration_rejection_still_closes_exact_disposable_document():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    bridge_path = json.dumps(str((ROOT / "bridge-client.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const closes = [];
+const activationPath = "/private/wpscomposer-writer-blank.docx";
+const owned = {{FullName: activationPath, Close(value) {{closes.push(["owned", value]);}}}};
+const user = {{FullName: "/Users/person/unsaved.docx", Close(value) {{closes.push(["user", value]);}}}};
+global.Application = {{
+  ActiveDocument: user,
+  Documents: {{Count: 2, Item(index) {{return index === 1 ? user : owned;}}}}
+}};
+const requests = [];
+global.fetch = async function (url) {{
+  const value = String(url);
+  requests.push(value);
+  if (value === "./session.json") return {{ok: true, json: async function () {{return {{
+    bridgeUrl: "http://bridge", component: "writer", clientId: "client",
+    capability: "capability", activationDocument: activationPath,
+    retainActivationDocument: false
+  }};}}}};
+  if (value.endsWith("/v1/session")) return {{
+    ok: true, status: 200,
+    text: async function () {{return JSON.stringify({{token: "token"}});}}
+  }};
+  if (value.endsWith("/v1/register")) return {{
+    ok: false, status: 503, text: async function () {{return "registration rejected";}}
+  }};
+  throw new Error("polling must not start after registration rejection");
+}};
+global.console = {{error() {{}}}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+eval(fs.readFileSync({bridge_path}, "utf8"));
+window.OnAddinLoad();
+setTimeout(function () {{
+  assert.deepEqual(requests, [
+    "./session.json", "http://bridge/v1/session", "http://bridge/v1/register"
+  ]);
+  assert.deepEqual(closes, [["owned", 0]]);
+  assert.strictEqual(Application.ActiveDocument, user);
 }}, 25);
 """
     _run_node_script(script)

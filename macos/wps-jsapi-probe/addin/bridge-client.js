@@ -93,16 +93,19 @@
         window.WPSComposerProbe.claimActivationDocument(activationDocument);
       }
     }
-    await request(session, "/v1/register", {
-      method: "POST",
-      body: JSON.stringify({
-        component: session.component,
-        clientId: session.clientId
-      })
-    });
-    if (activationDocument && bootstrap.retainActivationDocument !== true &&
-        typeof window.WPSComposerProbe.closeActivationFixture === "function") {
-      window.WPSComposerProbe.closeActivationFixture(activationDocument);
+    try {
+      await request(session, "/v1/register", {
+        method: "POST",
+        body: JSON.stringify({
+          component: session.component,
+          clientId: session.clientId
+        })
+      });
+    } finally {
+      if (activationDocument && bootstrap.retainActivationDocument !== true &&
+          typeof window.WPSComposerProbe.closeActivationFixture === "function") {
+        window.WPSComposerProbe.closeActivationFixture(activationDocument);
+      }
     }
 
     let failures = 0;
