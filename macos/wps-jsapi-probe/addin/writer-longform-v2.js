@@ -4006,8 +4006,15 @@
         });
     });
     const keys = Object.keys(params).sort().join(",");
-    if ((isM4 && keys !== "outputPath,plan,resources") ||
-        (!isM4 && keys !== "outputPath,plan" && keys !== "outputPath,plan,resources") ||
+    const baseKeys = isM4
+      ? ["outputPath,plan,resources"]
+      : ["outputPath,plan", "outputPath,plan,resources"];
+    const allowedKeys = baseKeys.concat(baseKeys.map(function (value) {
+      return "activationDocument," + value;
+    }));
+    if (allowedKeys.indexOf(keys) === -1 ||
+        (hasOwn(params, "activationDocument") &&
+          (typeof params.activationDocument !== "string" || !params.activationDocument)) ||
         (params.plan.protocolVersion !== undefined && params.plan.protocolVersion !== 2) ||
         (isM4 && params.plan.protocolVersion !== 2)) {
       throw nativeError("PROTOCOL_MISMATCH");
@@ -4398,7 +4405,7 @@
     }
   }
 
-  function run(params) {
+  function run(params, activationDocument) {
     params = validateLongformRequest(params);
     const plan = params.plan;
     const outputPath = params.outputPath;
@@ -4417,7 +4424,7 @@
       validatePrivateResourceMap(plan, resources);
       Application.DisplayAlerts = 0;
       Application.ScreenUpdating = false;
-      document = Application.Documents.Add();
+      document = activationDocument || Application.Documents.Add();
       document._wpscFirstSectionConfigured = false;
       document._wpscRunOwnsAppendCursor = true;
       document._wpscProfessionalMathUnavailable = false;

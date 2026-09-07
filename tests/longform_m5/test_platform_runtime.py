@@ -177,8 +177,11 @@ def test_macos_longform_starts_writer_only_runtime(monkeypatch, tmp_path):
         def start_servers(self, *, deadline):
             calls.append(("servers", deadline))
 
-        def activate_component(self, component, *, isolated, deadline):
-            calls.append(("activate", component, isolated, deadline))
+        def activate_component(self, component, *, isolated, retain, deadline):
+            calls.append(("activate", component, isolated, retain, deadline))
+            activation = self.staging_dir / "wpscomposer-writer-blank.docx"
+            activation.write_bytes(b"owned")
+            return activation
 
     monkeypatch.setattr(platform_runtime, "LoopbackBridge", Bridge)
     monkeypatch.setattr(platform_runtime, "ProbeRuntime", Runtime)
@@ -188,7 +191,7 @@ def test_macos_longform_starts_writer_only_runtime(monkeypatch, tmp_path):
     monkeypatch.setattr(
         platform_runtime,
         "MacOSLongformExecutor",
-        lambda **kwargs: SimpleNamespace(),
+        lambda **kwargs: calls.append(("executor", kwargs)) or SimpleNamespace(),
     )
     adapter = platform_runtime.MacLongformAdapter(
         build_longform_generation("# Report\n\nBody")
@@ -201,6 +204,12 @@ def test_macos_longform_starts_writer_only_runtime(monkeypatch, tmp_path):
 
     runtime_call = next(call for call in calls if call[0] == "runtime")
     assert runtime_call[1]["components"] == {"writer"}
+    activation_call = next(call for call in calls if call[0] == "activate")
+    assert activation_call[1:4] == ("writer", True, True)
+    executor_call = next(call for call in calls if call[0] == "executor")
+    assert executor_call[1]["activation_document"].endswith(
+        "wpscomposer-writer-blank.docx"
+    )
 
 
 def test_generate_longform_always_closes_platform_adapter(monkeypatch, tmp_path):

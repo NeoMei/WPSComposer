@@ -3,6 +3,7 @@
 
   const WRITER_IMAGE_URL = "http://127.0.0.1:3889/fixture.png";
   const capabilities = {};
+  let claimedActivationDocument = null;
 
   function record(name, classification, detail) {
     capabilities[name] = {classification, detail: detail || ""};
@@ -93,6 +94,64 @@
       return collection(index);
     }
     return null;
+  }
+
+  function findDocumentByExactPath(expectedPath) {
+    const documents = Application.Documents;
+    const count = Number(documents && documents.Count);
+    if (!Number.isInteger(count) || count < 0) {
+      return null;
+    }
+    for (let index = 1; index <= count; index += 1) {
+      const document = writerCollectionItem(documents, index);
+      if (exactDocumentPath(document) === expectedPath) {
+        return document;
+      }
+    }
+    return null;
+  }
+
+  function exactDocumentPath(document) {
+    try {
+      const path = document && document.FullName;
+      return typeof path === "string" && path ? path : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function claimActivationDocument(expectedPath) {
+    if (typeof expectedPath !== "string" || !expectedPath) {
+      throw generationError(
+        new Error("Activation document path is invalid")
+      );
+    }
+    const document = findDocumentByExactPath(expectedPath);
+    if (!document) {
+      throw generationError(
+        new Error("Activation document is not open")
+      );
+    }
+    claimedActivationDocument = {path: expectedPath, document: document};
+    return document;
+  }
+
+  function consumeActivationDocument(expectedPath) {
+    if (!claimedActivationDocument ||
+        claimedActivationDocument.path !== expectedPath ||
+        exactDocumentPath(claimedActivationDocument.document) !== expectedPath) {
+      throw generationError(
+        new Error("Activation document ownership does not match")
+      );
+    }
+    const document = findDocumentByExactPath(expectedPath);
+    if (!document) {
+      throw generationError(
+        new Error("Activation document ownership does not match")
+      );
+    }
+    claimedActivationDocument = null;
+    return document;
   }
 
   function writerEndRange(document) {
@@ -1344,7 +1403,10 @@
     if (!params.outputPath || typeof params.outputPath !== "string") {
       throw generationError(new Error("outputPath is required"), "OPERATION_PLAN_INVALID");
     }
-    return window.WPSComposerLongformV2.run(params);
+    const activationDocument = Object.prototype.hasOwnProperty.call(
+      params, "activationDocument"
+    ) ? consumeActivationDocument(params.activationDocument) : null;
+    return window.WPSComposerLongformV2.run(params, activationDocument);
   }
 
   async function mutateLongformDocument(params) {
@@ -1555,9 +1617,10 @@
   }
 
   window.WPSComposerProbe = {
+    claimActivationDocument: claimActivationDocument,
     closeActivationFixture: function (expectedPath) {
-      const document = Application.ActiveDocument;
-      if (document && String(document.FullName) === String(expectedPath)) {
+      const document = findDocumentByExactPath(expectedPath);
+      if (document) {
         document.Close(0);
       }
     },

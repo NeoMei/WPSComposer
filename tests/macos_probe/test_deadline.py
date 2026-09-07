@@ -121,6 +121,11 @@ def test_launchservices_receives_only_deadline_remaining(
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    activation = probe_root / "resources/writer-blank.docx"
+    activation.parent.mkdir(parents=True)
+    activation.write_bytes(
+        Path("macos/wps-jsapi-probe/resources/writer-blank.docx").read_bytes()
+    )
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",

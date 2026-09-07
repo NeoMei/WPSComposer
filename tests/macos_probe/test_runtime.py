@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import signal
+import shutil
 import stat
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -23,6 +24,16 @@ from skills.WPSComposer.scripts.macos_probe.runtime import (
 posix_only = pytest.mark.skipif(
     os.name != "posix", reason="macOS probe uses POSIX-only runtime facilities"
 )
+NATIVE_WRITER_BLANK = (
+    Path(__file__).parents[2]
+    / "macos/wps-jsapi-probe/resources/writer-blank.docx"
+)
+
+
+def _install_writer_activation_seed(probe_root: Path) -> None:
+    target = probe_root / "resources/writer-blank.docx"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(NATIVE_WRITER_BLANK, target)
 
 
 def test_component_config_uses_distinct_ports_and_wps_types():
@@ -978,6 +989,7 @@ def test_activate_component_does_not_relaunch_one_component(
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -999,8 +1011,81 @@ def test_activate_component_does_not_relaunch_one_component(
 
     assert first == second
     assert first.parent == probe.staging_dir / "fixtures"
-    assert first.read_bytes() == b"fixture"
+    assert first.read_bytes() == NATIVE_WRITER_BLANK.read_bytes()
     assert commands == [["open", "-a", str(probe.wps_app), str(first)]]
+
+
+def test_writer_activation_uses_native_blank_and_registers_retained_claim(
+    monkeypatch, tmp_path: Path
+):
+    probe_root = tmp_path / "probe"
+    source = probe_root / "resources/writer-blank.docx"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"native blank")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        components={"writer"},
+    )
+    probe.staging_dir = tmp_path / "container/session-1"
+    probe.staging_dir.mkdir(parents=True)
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    (profile / "session.json").write_text("{}", encoding="utf-8")
+    probe.profiles["writer"] = profile
+    commands = []
+    monkeypatch.setattr(
+        runtime, "clone_activation_document",
+        lambda root, directory, component: (
+            directory / "wpscomposer-writer-blank.docx"
+        ),
+    )
+    target = probe.staging_dir / "fixtures/wpscomposer-writer-blank.docx"
+    target.parent.mkdir()
+    target.write_bytes(b"native blank")
+    monkeypatch.setattr(runtime.subprocess, "run", lambda command, **kwargs: commands.append(command))
+
+    activated = probe.activate_component("writer", retain=True)
+
+    assert activated == target.resolve()
+    session = json.loads((profile / "session.json").read_text(encoding="utf-8"))
+    assert session["activationDocument"] == str(target.resolve())
+    assert session["retainActivationDocument"] is True
+    assert commands == [["open", "-a", str(probe.wps_app), str(target.resolve())]]
+
+
+@pytest.mark.parametrize("case", ["external", "symlink", "wrong-extension"])
+def test_writer_activation_rejects_unowned_document_before_launch(
+    monkeypatch, tmp_path: Path, case: str
+):
+    probe = runtime.ProbeRuntime(
+        tmp_path / "probe", tmp_path / "runtime", "http://bridge", "token",
+        wps_app=tmp_path / "wpsoffice.app", components={"writer"},
+    )
+    probe.staging_dir = tmp_path / "session"
+    probe.staging_dir.mkdir()
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    (profile / "session.json").write_text("{}", encoding="utf-8")
+    probe.profiles["writer"] = profile
+    if case == "external":
+        candidate = tmp_path / "outside.docx"
+        candidate.write_bytes(b"x")
+    elif case == "symlink":
+        external = tmp_path / "outside.docx"
+        external.write_bytes(b"x")
+        candidate = probe.staging_dir / "owned.docx"
+        candidate.symlink_to(external)
+    else:
+        candidate = probe.staging_dir / "owned.pptx"
+        candidate.write_bytes(b"x")
+    monkeypatch.setattr(runtime.subprocess, "run", lambda *a, **k: pytest.fail("must not launch"))
+
+    with pytest.raises(ValueError, match="activation document"):
+        probe.activate_component("writer", activation_document=candidate)
 
 
 def test_activate_component_uses_launchservices(monkeypatch, tmp_path: Path):
@@ -1008,6 +1093,7 @@ def test_activate_component_uses_launchservices(monkeypatch, tmp_path: Path):
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -1035,6 +1121,7 @@ def _probe_with_writer_fixture(tmp_path: Path) -> runtime.ProbeRuntime:
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -1068,5 +1155,5 @@ def test_activate_component_propagates_launchservices_failure(
         "open",
         "-a",
         str(probe.wps_app),
-        str(probe.staging_dir / "fixtures/wpsDemo.docx"),
+        str(probe.staging_dir / "fixtures/wpscomposer-writer-blank.docx"),
     ]]

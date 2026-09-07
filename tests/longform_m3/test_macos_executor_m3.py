@@ -202,6 +202,61 @@ def test_executor_validates_manifest_stages_private_payload_and_cleans_success(t
     assert resource.payload_sha256 not in serialized
 
 
+def test_executor_carries_activation_claim_only_on_first_generation(tmp_path: Path) -> None:
+    from skills.WPSComposer.scripts.longform.macos_executor import MacOSLongformExecutor
+
+    activation = tmp_path / "wpscomposer-writer-blank.docx"
+    activation.write_bytes(b"owned")
+    bridge = _Bridge()
+    executor = MacOSLongformExecutor(
+        bridge=bridge,
+        staging_dir=str(tmp_path),
+        activation_document=str(activation),
+    )
+
+    executor.execute(_plan(), ())
+    first = dict(bridge.params or {})
+    executor.execute(_plan(), ())
+    second = dict(bridge.params or {})
+
+    assert first["activationDocument"] == str(activation.resolve())
+    assert "activationDocument" not in second
+
+
+@pytest.mark.parametrize("case", ["missing", "outside", "symlink", "wrong-extension"])
+def test_executor_rejects_unowned_activation_claim_before_bridge(
+    tmp_path: Path, case: str
+) -> None:
+    from skills.WPSComposer.scripts.longform.macos_executor import (
+        MacOSLongformExecutor,
+        MacOSLongformExecutorError,
+    )
+
+    outside = tmp_path.parent / "external-activation.docx"
+    if case == "missing":
+        activation = tmp_path / "missing.docx"
+    elif case == "outside":
+        outside.write_bytes(b"external")
+        activation = outside
+    elif case == "symlink":
+        outside.write_bytes(b"external")
+        activation = tmp_path / "owned.docx"
+        activation.symlink_to(outside)
+    else:
+        activation = tmp_path / "owned.pptx"
+        activation.write_bytes(b"wrong")
+    bridge = _Bridge()
+
+    with pytest.raises(MacOSLongformExecutorError, match="activation document"):
+        MacOSLongformExecutor(
+            bridge=bridge,
+            staging_dir=str(tmp_path),
+            activation_document=str(activation),
+        ).execute(_plan(), ())
+
+    assert bridge.params is None
+
+
 def test_executor_rejects_payload_hash_before_bridge_and_leaves_no_resource(tmp_path: Path) -> None:
     from skills.WPSComposer.scripts.longform.macos_executor import (
         MacOSLongformExecutor,

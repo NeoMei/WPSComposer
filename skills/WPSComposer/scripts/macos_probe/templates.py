@@ -24,6 +24,9 @@ class AddinAssetError(RuntimeError):
 
 ADDIN_ASSET_MANIFEST = "asset-manifest.json"
 GENERATED_ADDIN_ASSETS = ("writer-longform-v2.js",)
+WRITER_ACTIVATION_SHA256 = (
+    "d5b2775d21547144c5e7e23f7efe36bcb5c161ff99962a1fda03a027a45ae994"
+)
 
 
 @dataclass(frozen=True)
@@ -157,6 +160,53 @@ def clone_template(probe_root: Path, staging_dir: Path, component: str) -> Path:
         temporary = None
         published = True
         return target
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+        if target_created and not published:
+            target.unlink(missing_ok=True)
+
+
+def clone_activation_document(
+    probe_root: Path, staging_dir: Path, component: str
+) -> Path:
+    """Publish the pinned native Writer blank into one private session."""
+
+    if component != "writer":
+        raise TemplateError(f"Unsupported activation document: {component}")
+    source = Path(probe_root) / "resources" / "writer-blank.docx"
+    target = Path(staging_dir) / "wpscomposer-writer-blank.docx"
+    try:
+        if _sha256(source) != WRITER_ACTIVATION_SHA256:
+            raise TemplateError("Pinned writer activation document digest mismatch")
+    except OSError as exc:
+        raise TemplateError("Pinned writer activation document digest mismatch") from exc
+
+    temporary: Path | None = None
+    target_created = False
+    published = False
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            dir=staging_dir,
+            prefix=".wpscomposer-activation-",
+            suffix=".tmp",
+        )
+        temporary = Path(temporary_name)
+        os.close(descriptor)
+        os.chmod(temporary, 0o600)
+        shutil.copyfile(source, temporary)
+        if _sha256(temporary) != WRITER_ACTIVATION_SHA256:
+            raise TemplateError("Pinned writer activation document digest mismatch")
+        validate_office_package(temporary, "docx")
+        os.chmod(temporary, 0o600)
+        os.link(temporary, target)
+        target_created = True
+        temporary.unlink()
+        temporary = None
+        published = True
+        return target
+    except OSError as exc:
+        raise TemplateError("Pinned writer activation document digest mismatch") from exc
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)

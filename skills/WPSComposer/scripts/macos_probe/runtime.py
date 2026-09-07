@@ -24,6 +24,7 @@ from urllib.request import urlopen
 
 from .bridge import derive_client_credentials
 from .profile_server import ProfileServer
+from .templates import clone_activation_document
 
 WPS_APP = Path("/Applications/wpsoffice.app")
 WPS_STAGING_ROOT = (
@@ -970,7 +971,8 @@ class ProbeRuntime:
 
     def activate_component(
         self, component: str, *, deadline: Optional[float] = None,
-        isolated: bool = False,
+        isolated: bool = False, activation_document: Optional[Path] = None,
+        retain: bool = False,
     ) -> Path:
         if component not in FIXTURE_NAMES:
             raise ValueError(f"Unknown component: {component}")
@@ -984,21 +986,32 @@ class ProbeRuntime:
                 raise RuntimeError(f"WPS activation already failed: {component}")
             return existing
         self._activation_attempted.add(component)
-        resource_dir = self.probe_root / "node_modules/wpsjs/src/lib/res"
         fixture_dir = self.staging_dir / "fixtures"
         fixture_dir.mkdir(parents=True, exist_ok=True)
-        name = FIXTURE_NAMES[component]
-        source = resource_dir / name
-        if not source.is_file():
-            raise RuntimeError(f"Official wpsjs fixture is missing: {source}")
-        target = fixture_dir / name
-        if not target.is_file():
-            shutil.copy2(source, target)
+        if activation_document is not None:
+            target = self._validate_activation_document(
+                component, Path(activation_document)
+            )
+        elif component == "writer":
+            target = clone_activation_document(
+                self.probe_root, fixture_dir, component
+            ).resolve()
+        else:
+            resource_dir = self.probe_root / "node_modules/wpsjs/src/lib/res"
+            name = FIXTURE_NAMES[component]
+            source = resource_dir / name
+            if not source.is_file():
+                raise RuntimeError(f"Official wpsjs fixture is missing: {source}")
+            target = fixture_dir / name
+            if not target.is_file():
+                shutil.copy2(source, target)
+            target = target.resolve()
         profile = self.profiles.get(component)
         if profile is not None:
             session_path = profile / "session.json"
             session = json.loads(session_path.read_text(encoding="utf-8"))
-            session["activationFixture"] = str(target)
+            session["activationDocument"] = str(target)
+            session["retainActivationDocument"] = bool(retain)
             _write_json(session_path, session)
         if deadline is None:
             deadline = self.deadline
@@ -1039,6 +1052,28 @@ class ProbeRuntime:
             require_remaining(deadline, "Timed out during WPS activation")
         self.fixtures[component] = target
         return target
+
+    def _validate_activation_document(self, component: str, candidate: Path) -> Path:
+        """Require an exact regular component document in this session."""
+
+        if self.staging_dir is None:
+            raise RuntimeError("ProbeRuntime must be entered before activation")
+        expected_suffix = {
+            "writer": ".docx",
+            "presentation": ".pptx",
+            "spreadsheet": ".xlsx",
+        }[component]
+        try:
+            if candidate.is_symlink() or not candidate.is_file():
+                raise ValueError("activation document must be a regular file")
+            resolved = candidate.resolve(strict=True)
+            if not resolved.is_relative_to(self.staging_dir.resolve()):
+                raise ValueError("activation document is outside private staging")
+            if resolved.suffix.lower() != expected_suffix:
+                raise ValueError("activation document belongs to another component")
+        except OSError as exc:
+            raise ValueError("activation document is unavailable") from exc
+        return resolved
 
     def restore_registration(self) -> None:
         if self._snapshot is not None:

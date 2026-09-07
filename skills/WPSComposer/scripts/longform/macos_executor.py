@@ -92,9 +92,39 @@ class MacOSLongformExecutor(LongformExecutor):
         *,
         bridge: Optional[LoopbackBridge] = None,
         staging_dir: Optional[str] = None,
+        activation_document: Optional[str] = None,
     ) -> None:
         self._bridge = bridge
-        self._staging_dir = staging_dir or tempfile.gettempdir()
+        self._staging_dir = str(
+            Path(staging_dir or tempfile.gettempdir()).expanduser().resolve()
+        )
+        self._activation_document = self._validate_activation_document(
+            activation_document
+        )
+
+    def _validate_activation_document(self, candidate: Optional[str]) -> Optional[str]:
+        if candidate is None:
+            return None
+        path = Path(candidate).expanduser()
+        staging = Path(self._staging_dir)
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise MacOSLongformExecutorError(
+                    "Private activation document is invalid"
+                )
+            resolved = path.resolve(strict=True)
+            if (
+                not resolved.is_relative_to(staging)
+                or resolved.suffix.lower() != ".docx"
+            ):
+                raise MacOSLongformExecutorError(
+                    "Private activation document is invalid"
+                )
+        except OSError:
+            raise MacOSLongformExecutorError(
+                "Private activation document is invalid"
+            ) from None
+        return str(resolved)
 
     # ----------------------------------------------------------------------
     # Public interface
@@ -121,11 +151,15 @@ class MacOSLongformExecutor(LongformExecutor):
         try:
             staged_resources = self._stage_resources(resources, paths.staged_docx)
             self._verify_staged_resources(staged_resources, resources)
-            params = validate_longform_generation_request({
+            request = {
                 "plan": plan.to_dict(),
                 "outputPath": paths.staged_docx,
                 "resources": self._build_resource_map(staged_resources),
-            })
+            }
+            if self._activation_document is not None:
+                request["activationDocument"] = self._activation_document
+            params = validate_longform_generation_request(request)
+            self._activation_document = None
             command = self._bridge.issue(
                 "writer", "generate_longform_document", params
             )
