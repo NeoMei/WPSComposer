@@ -127,9 +127,7 @@ def main() -> int:
         result["isolated_existing_before"] = snapshot(app)
         if result["isolated_existing_before"]:
             raise RuntimeError("DispatchEx application already contains documents; refusing mutation or Quit")
-        exclusive_instance = True
         record("snapshot_before", "succeeded", "Registered preexisting instance and isolated instance captured")
-        app.Visible = True  # This setting belongs only to the isolated instance.
         record("create", "attempted")
         doc = app.Documents.Add()
         record("create", "succeeded", doc.Name)
@@ -138,8 +136,12 @@ def main() -> int:
         _, owned_pid = win32process.GetWindowThreadProcessId(owned_hwnd)
         result["owned_document_process"] = {"hwnd": owned_hwnd, "pid": owned_pid}
         if owned_pid != result["application_identity"]["pid"]:
-            exclusive_instance = False
             raise RuntimeError("Owned document window does not match the new WINWORD.EXE process; refusing content mutation or Quit")
+        # Process-count/path checks alone do not associate this COM object with
+        # that process. Until the owned window confirms it, never change app
+        # settings or grant cleanup permission to Quit the application.
+        exclusive_instance = True
+        app.Visible = True
         result["owned_document_initial_name"] = doc.Name
         # Synthetic evidence must not inherit the user's author profile.
         doc.RemovePersonalInformation = True
