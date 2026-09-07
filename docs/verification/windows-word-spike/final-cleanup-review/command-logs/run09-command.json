@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "fixtures/msoffice_spike/windows_word.py",
+    "--output-dir",
+    "build/msoffice-spike/windows-run-09"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-09-07T18:04:10.787587+00:00",
+  "completed_utc": "2026-09-07T18:05:08.603758+00:00",
+  "duration_seconds": 57.812
+}

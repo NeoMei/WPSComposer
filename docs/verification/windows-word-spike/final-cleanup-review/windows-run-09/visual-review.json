@@ -1,0 +1,12 @@
+{
+  "reviewed": true,
+  "method": "run09 contact sheet visually reviewed; all 9 page raster bytes equal reviewed run06; run10 equals run09",
+  "all_pages_equal_prior_review": true,
+  "production_layout_approved": false,
+  "limitations": [
+    "TOC title below entries",
+    "borderless table",
+    "configured row splitting",
+    "sparse last page"
+  ]
+}

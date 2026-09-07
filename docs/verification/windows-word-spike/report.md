@@ -1,5 +1,12 @@
 # Windows native Microsoft Word/PDF evidence
 
+**Final cleanup patch verification:** the exact reviewed candidate
+`f0dc91f279d3b6d8d61f43a02046964dbc30a1d7` passed fresh native runs 09/10,
+including the nonempty unsaved-sentinel gate. See
+[final-cleanup-review/report.md](final-cleanup-review/report.md) and its independent
+manifest/source snapshot. The 01-08 records and source hashes below are historical
+evidence for the earlier runner, not evidence for the final cleanup patch.
+
 Date: 2026-09-08 (Asia/Shanghai). Candidate baseline:
 `88a0ecc4b5bc41f12ccc44e1410fa50ce1ece630`, from
 `codex/msoffice-native-spike`. Evidence and minimal probe fixes are on the

@@ -202,5 +202,11 @@
         "git_object_format": "sha1"
       }
     }
+  },
+  "superseding_final_cleanup_review": {
+    "candidate_commit": "f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+    "manifest": "final-cleanup-review/manifest.json",
+    "report": "final-cleanup-review/report.md",
+    "historical_01_to_08_source_sha256_unchanged": true
   }
 }
