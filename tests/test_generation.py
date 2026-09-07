@@ -463,6 +463,154 @@ def test_generate_routes_darwin_without_importing_pywin32(monkeypatch, tmp_path)
     assert overwrite is False
 
 
+@pytest.mark.parametrize("format_name", ["docx", "pdf", "pptx", "xlsx"])
+def test_generate_open_result_presents_each_final_artifact_once_after_backend_returns(
+    monkeypatch, tmp_path, format_name
+):
+    events = []
+    output = tmp_path / f"final.{format_name}"
+
+    def fake_longform(build, routed_format, routed_output, timeout, overwrite):
+        Path(routed_output).write_bytes(b"published")
+        events.append("backend_returned_after_cleanup")
+        return SimpleNamespace(path=str(routed_output))
+
+    def fake_legacy(doc, routed_format, routed_output, preset, **kwargs):
+        Path(routed_output).write_bytes(b"published")
+        events.append("backend_returned_after_cleanup")
+        return routed_output
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_longform)
+    monkeypatch.setattr(orchestrator, "generate_macos", fake_legacy)
+    monkeypatch.setattr(
+        orchestrator,
+        "present_artifact",
+        lambda path: events.append(("present", Path(path))),
+        raising=False,
+    )
+
+    result = orchestrator.generate(
+        "# Report",
+        format=format_name,
+        output=str(output),
+        source_is_text=True,
+        open_result=True,
+    )
+
+    assert result == str(output.resolve())
+    assert events == [
+        "backend_returned_after_cleanup",
+        ("present", output.resolve()),
+    ]
+
+
+def test_generate_default_does_not_present_final_artifact(monkeypatch, tmp_path):
+    output = tmp_path / "report.docx"
+
+    def fake_longform(build, format_name, routed_output, timeout, overwrite):
+        Path(routed_output).write_bytes(b"published")
+        return SimpleNamespace(path=str(routed_output))
+
+    presented = []
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_longform)
+    monkeypatch.setattr(
+        orchestrator,
+        "present_artifact",
+        lambda path: presented.append(Path(path)),
+        raising=False,
+    )
+
+    assert orchestrator.generate(
+        "# Report", source_is_text=True, output=str(output)
+    ) == str(output.resolve())
+    assert presented == []
+
+
+def test_generate_failure_never_presents_output(monkeypatch, tmp_path):
+    output = tmp_path / "report.docx"
+    presented = []
+
+    def fail_generate(build, format_name, routed_output, timeout, overwrite):
+        raise GenerationError(
+            code="GENERATION_COMMAND_FAILED",
+            output=str(routed_output),
+            component="writer",
+            backend="test",
+            message="backend failed",
+        )
+
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fail_generate)
+    monkeypatch.setattr(
+        orchestrator,
+        "present_artifact",
+        lambda path: presented.append(Path(path)),
+        raising=False,
+    )
+
+    with pytest.raises(GenerationError, match="backend failed"):
+        orchestrator.generate(
+            "# Report",
+            source_is_text=True,
+            output=str(output),
+            open_result=True,
+        )
+
+    assert presented == []
+
+
+def test_generate_opener_failure_warns_and_returns_published_artifact(
+    monkeypatch, tmp_path
+):
+    output = tmp_path / "report.docx"
+
+    def fake_longform(build, format_name, routed_output, timeout, overwrite):
+        Path(routed_output).write_bytes(b"published")
+        return SimpleNamespace(path=str(routed_output))
+
+    def fail_to_present(path):
+        raise OSError("desktop launch failed")
+
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_longform)
+    monkeypatch.setattr(orchestrator, "present_artifact", fail_to_present, raising=False)
+
+    with pytest.warns(RuntimeWarning, match="published but could not be opened"):
+        result = orchestrator.generate(
+            "# Report",
+            source_is_text=True,
+            output=str(output),
+            open_result=True,
+        )
+
+    assert result == str(output.resolve())
+
+
+def test_generate_validates_open_result_before_parsing_or_backend_effects(
+    monkeypatch, tmp_path
+):
+    effects = []
+    monkeypatch.setattr(
+        orchestrator,
+        "parse",
+        lambda *args, **kwargs: effects.append("parse") or StructuredDocument(),
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_generate_longform_outcome",
+        lambda *args, **kwargs: effects.append("backend"),
+    )
+
+    with pytest.raises(TypeError, match="open_result must be a bool"):
+        orchestrator.generate(
+            "# Report",
+            source_is_text=True,
+            output=str(tmp_path / "report.docx"),
+            open_result=1,
+        )
+
+    assert effects == []
+
+
 def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     calls = []
     monkeypatch.chdir(tmp_path)

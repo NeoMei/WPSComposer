@@ -2,9 +2,10 @@
 
 ## Public DOCX/PDF M5 route
 
-`generate()` keeps its existing signature and absolute-path return. DOCX/PDF
-default to the M5 long-form lifecycle; PPTX/XLSX are unchanged. To compare with
-the deprecated Writer path, set this frontmatter explicitly:
+`generate()` keeps its absolute-path return and adds the keyword-only
+`open_result=False` option. DOCX/PDF default to the M5 long-form lifecycle;
+PPTX/XLSX are unchanged. To compare with the deprecated Writer path, set this
+frontmatter explicitly:
 
 ```yaml
 ---
@@ -17,7 +18,26 @@ capability mismatch, save/export/validation/publication failure, and missing
 quality dependencies are fatal. The default 600-second timeout is one absolute
 deadline across generation, PDF export, analysis, optional relayout, optional
 notice patch, validation, and atomic publication. Public generation returns
-only the requested DOCX/PDF artifact.
+only the requested artifact format.
+
+```python
+from skills.WPSComposer import generate
+
+
+def main() -> None:
+    generate("report.md", format="docx", open_result=True)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Use `open_result=True` for an interactive delivery where the final artifact
+should be shown after native cleanup. Unattended and library callers keep the
+default `False`. Presentation is an asynchronous, best-effort request to the
+platform default application: launch failure emits a warning while the
+published path is still returned, and the call never creates or returns an
+unrequested companion format.
 
 ## Long-form offline plan and optional native execution
 
@@ -180,6 +200,7 @@ def convert_to_pdf(
     output: Optional[str] = None,
     *,
     overwrite: bool = False,
+    open_result: bool = False,
 ) -> str:
     ...
 ```
@@ -206,6 +227,11 @@ codes include `CONVERSION_COMMAND_FAILED`, `INTERACTIVE_INPUT_REQUIRED`,
 `ARTIFACT_PUBLISH_FAILED`, `FINAL_ARTIFACT_INVALID`, and
 `REGISTRATION_RESTORE_FAILED`. Private staging paths are redacted from public
 messages.
+
+Set `open_result=True` only for interactive delivery. The PDF is opened after
+backend cleanup and final validation; the default `False` remains suitable for
+unattended conversion. A desktop launcher failure warns and still returns the
+successfully published PDF path.
 
 ## Color format
 

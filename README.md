@@ -69,6 +69,24 @@ generate("slides.md", format="pptx", preset="business", output="slides.pptx")
 generate("data.md", format="xlsx", output="data.xlsx")
 ```
 
+需要在交互式脚本中展示最终文件时，显式传入 `open_result=True`：
+
+```python
+from skills.WPSComposer import generate
+
+
+def main() -> None:
+    generate("report.md", format="docx", open_result=True)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+`open_result` 默认为 `False`，适合库调用和无人值守任务。打开动作只在原生清理和
+最终发布完成后异步请求系统默认应用；启动器失败会警告，但不会把已发布文件
+改判为生成失败。每次调用仍只返回请求的一种格式，不会自动附带第二种格式。
+
 DOCX/PDF 默认使用长文档引擎。需要临时对比旧 Writer 路径时，可在
 frontmatter 中显式设置（该逃生口已弃用，不能作为协议或引擎错误的自动降级）：
 
@@ -225,6 +243,8 @@ def generate(
     plugins: Optional[List[str]] = None,
     timeout: float = 600,
     overwrite: bool = False,
+    *,
+    open_result: bool = False,
 ) -> str:
 ```
 
@@ -240,6 +260,7 @@ def generate(
 | `plugins` | `Optional[List[str]]` | `None` | 插件列表 |
 | `timeout` | `float` | `600` | WPS 生成超时（秒） |
 | `overwrite` | `bool` | `False` | 是否覆盖已存在的输出文件 |
+| `open_result` | `bool` | `False` | 成功发布并完成清理后，是否请求系统默认应用打开结果 |
 
 **返回值：** 生成的文件绝对路径
 

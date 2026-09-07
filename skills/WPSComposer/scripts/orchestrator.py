@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import sys
 from typing import List, Optional
+import warnings
 
 from .md_parser import parse_file, parse
 from .document_model import StructuredDocument
@@ -32,6 +33,7 @@ from .artifact_transport import (
     validate_pdf,
 )
 from .heading_numbering import detect_numbering_scheme
+from .presentation import present_artifact, validate_open_result
 
 
 def _generate_longform_outcome(build, format_name, output, timeout, overwrite):
@@ -47,6 +49,20 @@ def _generate_longform_outcome(build, format_name, output, timeout, overwrite):
     )
 
 
+def _return_artifact(path: Path, *, open_result: bool) -> str:
+    artifact = Path(path).expanduser().resolve()
+    if open_result:
+        try:
+            present_artifact(artifact)
+        except Exception as exc:
+            warnings.warn(
+                f"Final artifact was published but could not be opened: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    return str(artifact)
+
+
 def generate(
     source: str,
     format: str = "docx",
@@ -56,6 +72,8 @@ def generate(
     plugins: Optional[List[str]] = None,
     timeout: float = 600,
     overwrite: bool = False,
+    *,
+    open_result: bool = False,
 ) -> str:
     """Generate a beautifully formatted document from Markdown.
 
@@ -77,6 +95,8 @@ def generate(
                  Available: ``"excalidraw"`` (renders .excalidraw.md to PNG).
         timeout: Timeout in seconds for WPS generation (default: 600).
         overwrite: If True, overwrite existing output file.
+        open_result: If True, ask the desktop default application to open the
+                     finalized artifact after generation cleanup completes.
 
     Returns:
         Absolute path to the generated file.
@@ -86,6 +106,8 @@ def generate(
         FileNotFoundError: Source file not found.
         FileExistsError: Output file already exists (unless overwrite=True).
     """
+    validate_open_result(open_result)
+
     # Validate format
     format = format.lower().strip()
     if format not in ("docx", "pptx", "xlsx", "pdf"):
@@ -168,7 +190,7 @@ def generate(
                 timeout,
                 overwrite,
             )
-            return str(Path(outcome.path).expanduser().resolve())
+            return _return_artifact(Path(outcome.path), open_result=open_result)
 
     # Route to renderer
     if sys.platform == "darwin":
@@ -256,7 +278,7 @@ def generate(
             warnings.warn(
                 f"Native heading numbering could not be applied: {exc}"
             )
-    return str(output_path)
+    return _return_artifact(output_path, open_result=open_result)
 
 
 def list_formats() -> list:
