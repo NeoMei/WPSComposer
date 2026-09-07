@@ -36,4 +36,4 @@ python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike
 
 Prototype scripts are investigation tools, not production features. Native output checks are the acceptance tests; no tests that merely mirror the script text. Do not commit until the repository-required full suite has passed, or leave the bounded probe uncommitted with its validation status stated.
 
-Status: bounded probe implementation and Mac evidence complete; Windows native execution remains pending the user-provided connection. Task review and whole-branch review approved with no Critical/Important findings.
+Status: bounded probe implementation and Mac/Windows native evidence complete. Windows final candidate f0dc91f passed two fresh native runs (09/10), persisted-artifact and registered unsaved-sentinel checks; evidence f317b16 was independently verified on the controller. The independent review cleanup finding was fixed and re-reviewed; 2630 platform-independent tests passed, 12 skipped. First failed-run process ownership remains unverified and that process was not forcibly closed. Production integration/release remains outside this probe scope.
