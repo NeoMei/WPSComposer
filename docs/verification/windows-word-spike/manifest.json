@@ -158,5 +158,49 @@
       "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe"
     }
   ],
-  "nonempty_unsaved_preservation_gate": "passed in windows-sentinel-02/windows-run-08"
+  "nonempty_unsaved_preservation_gate": "passed in windows-sentinel-02/windows-run-08",
+  "source_provenance": {
+    "verified_against_commit": "a5c0813b27dacb051c8b5398b041c01af1d6e575",
+    "normalization": "Replace CRLF byte pairs with LF; no other byte changes",
+    "runner_modified_for_this_provenance_step": false,
+    "native_execution_repeated": false,
+    "files": {
+      "windows_word.py": {
+        "source_path": "fixtures/msoffice_spike/windows_word.py",
+        "raw_bytes": 14187,
+        "raw_sha256": "46fb262161af8f4a24f6cd1127a5542f0ba228cbe2ca86423c5722327d30505d",
+        "raw_matches_preexisting_manifest": true,
+        "line_endings": {
+          "crlf": 209,
+          "lf_without_cr": 62,
+          "cr_without_lf": 0
+        },
+        "normalized_lf_sha256": "5dbc9e3befbc39f69ee1b770d6f1ea37999e290376255e56f0cb046704ada738",
+        "normalized_lf_equals_git_blob_bytes": true,
+        "git_blob_oid": "79603fa0583357bc823cabe2d28795f759e8b125",
+        "git_object_format": "sha1",
+        "raw_snapshot": "executed-windows-word.py.txt",
+        "raw_snapshot_sha256": "46fb262161af8f4a24f6cd1127a5542f0ba228cbe2ca86423c5722327d30505d",
+        "sentinel_runner_sha256_matches": {
+          "windows-sentinel-01": true,
+          "windows-sentinel-02": true
+        }
+      },
+      "mac_word.py": {
+        "source_path": "fixtures/msoffice_spike/mac_word.py",
+        "raw_bytes": 15629,
+        "raw_sha256": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb",
+        "raw_matches_preexisting_manifest": true,
+        "line_endings": {
+          "crlf": 272,
+          "lf_without_cr": 0,
+          "cr_without_lf": 0
+        },
+        "normalized_lf_sha256": "20295b6ebc7012be7094d13bbf6aebfc55a02bbd4b546ae986545267ea2c7034",
+        "normalized_lf_equals_git_blob_bytes": true,
+        "git_blob_oid": "ce48867252d400a811d4964abbded7e7b9cdeca5",
+        "git_object_format": "sha1"
+      }
+    }
+  }
 }
