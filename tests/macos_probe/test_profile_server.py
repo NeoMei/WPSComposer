@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import http.client
 from pathlib import Path
+import socket
+import threading
+import time
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -132,3 +135,70 @@ def test_profile_server_close_is_idempotent(profile):
 
     server.close()
     server.close()
+
+
+def test_profile_server_close_terminates_existing_keep_alive_connection(
+    tmp_path: Path,
+):
+    root = tmp_path / "profile"
+    root.mkdir()
+    (root / "index.html").write_text("ready", encoding="utf-8")
+    server = ProfileServer(root, 0).start()
+    connection = http.client.HTTPConnection("127.0.0.1", server.port, timeout=2)
+    try:
+        connection.request("GET", "/index.html")
+        response = connection.getresponse()
+        assert response.status == 200
+        assert response.read() == b"ready"
+
+        server.close()
+
+        with pytest.raises((OSError, http.client.HTTPException)):
+            connection.request("GET", "/index.html")
+            connection.getresponse()
+    finally:
+        connection.close()
+        server.close()
+
+
+@pytest.mark.parametrize(
+    "request_prefix",
+    [b"", b"GET /index.html HTTP/1.1\r\nHost: 127.0.0.1"],
+    ids=["idle", "partial-request"],
+)
+def test_profile_server_close_releases_request_handler(
+    tmp_path: Path, request_prefix: bytes
+):
+    root = tmp_path / "profile"
+    root.mkdir()
+    (root / "index.html").write_text("ready", encoding="utf-8")
+    server = ProfileServer(root, 0).start()
+    existing_threads = set(threading.enumerate())
+    connection = socket.create_connection(server.address, timeout=2)
+    try:
+        if request_prefix:
+            connection.sendall(request_prefix)
+        deadline = time.monotonic() + 2
+        handler = None
+        while time.monotonic() < deadline:
+            candidates = [
+                thread
+                for thread in threading.enumerate()
+                if thread not in existing_threads
+                and thread.is_alive()
+            ]
+            if candidates:
+                handler = candidates[0]
+                break
+            time.sleep(0.01)
+        assert handler is not None
+        assert handler.is_alive()
+
+        server.close()
+
+        handler.join(timeout=0.1)
+        assert not handler.is_alive()
+        assert connection.recv(1) == b""
+    finally:
+        connection.close()
+        server.close()

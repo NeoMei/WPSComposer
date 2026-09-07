@@ -305,7 +305,7 @@ class FakeRuntime:
         self.calls.append(("start_servers",))
 
     def activate_component(self, component, *, deadline, isolated=False):
-        self.calls.append(("activate_component", component))
+        self.calls.append(("activate_component", component, isolated))
 
 
 def _run_with_fakes(
@@ -380,8 +380,31 @@ def test_generation_uses_only_staged_path_and_publishes_valid_package(
     assert result == request.output.resolve()
     assert result.is_file()
     assert not runtime.staging_dir.exists()
-    assert ("activate_component", component) in calls
+    assert ("activate_component", component, True) in calls
     assert runtime.factory_kwargs["components"] == {component}
+
+
+def test_generation_registration_retry_preserves_isolated_activation():
+    deadline = mac_generation.time.monotonic() + 30
+    activations = []
+
+    class Bridge:
+        attempts = 0
+
+        def wait_registered(self, expected, timeout):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise TimeoutError
+
+    class Runtime:
+        def activate_component(self, component, *, deadline, isolated=False):
+            activations.append((component, isolated, deadline))
+
+    mac_generation._wait_for_registration(
+        Bridge(), Runtime(), "presentation", deadline
+    )
+
+    assert activations == [("presentation", True, deadline)]
 
 
 def test_generation_production_gates_now_enabled(tmp_path: Path):

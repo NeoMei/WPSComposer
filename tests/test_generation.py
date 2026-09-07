@@ -402,7 +402,7 @@ class GenerationRuntime:
         self.calls.append("start_servers")
 
     def activate_component(self, component, *, deadline, isolated=False):
-        self.calls.append(("activate", component))
+        self.calls.append(("activate", component, isolated))
 
 
 def _runtime_factory(captured):
@@ -915,6 +915,7 @@ def test_generate_macos_records_executes_validates_and_publishes_all_formats(
     assert command.params["plan"]["operations"][0]["op"].endswith(".reset")
     assert command.params["resources"] == {}
     assert str(output.resolve()) not in json.dumps(command.params)
+    assert ("activate", component, True) in runtimes[0].calls
     assert runtimes[0].calls[-1] == "close"
     assert not runtimes[0].staging_dir.exists()
 

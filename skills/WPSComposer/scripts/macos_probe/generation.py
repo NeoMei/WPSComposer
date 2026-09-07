@@ -411,7 +411,9 @@ def _wait_for_registration(
             if attempt == 3 or remaining(deadline) <= 0:
                 bridge.wait_registered({component}, 0)
                 raise
-            runtime.activate_component(component, deadline=deadline)
+            runtime.activate_component(
+                component, deadline=deadline, isolated=True
+            )
 
 
 def _validate_marker_package(path: Path, format_name: str) -> None:
@@ -1261,7 +1263,9 @@ def _run_generation(
     )
     require_remaining(deadline)
     runtime.start_servers(deadline=deadline)
-    runtime.activate_component(request.component, deadline=deadline)
+    runtime.activate_component(
+        request.component, deadline=deadline, isolated=True
+    )
     try:
         _wait_for_registration(bridge, runtime, request.component, deadline)
     except TimeoutError as exc:

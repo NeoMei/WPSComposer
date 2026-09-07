@@ -4,6 +4,7 @@ from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import mimetypes
 from pathlib import Path
+import socket
 import threading
 from typing import Optional
 from urllib.parse import unquote, urlsplit
@@ -18,7 +19,43 @@ _CONTENT_TYPES = {
 
 class _LoopbackHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = True
-    daemon_threads = True
+    daemon_threads = False
+
+    def __init__(self, *args, **kwargs) -> None:
+        self._connection_lock = threading.Lock()
+        self._connections: set[socket.socket] = set()
+        super().__init__(*args, **kwargs)
+
+    def process_request(self, request: socket.socket, client_address) -> None:
+        with self._connection_lock:
+            self._connections.add(request)
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            with self._connection_lock:
+                self._connections.discard(request)
+            raise
+
+    def shutdown_request(self, request: socket.socket) -> None:
+        try:
+            super().shutdown_request(request)
+        finally:
+            with self._connection_lock:
+                self._connections.discard(request)
+
+    def close_connections(self) -> None:
+        with self._connection_lock:
+            connections = tuple(self._connections)
+        for connection in connections:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+
+    def handle_error(self, request, client_address) -> None:
+        # Closing an active handler can interrupt a read or write.  Keep the
+        # profile service's no-request-logging contract during cleanup too.
+        return None
 
 
 class _ProfileRequestHandler(BaseHTTPRequestHandler):
@@ -155,9 +192,12 @@ class ProfileServer:
         try:
             server.shutdown()
         finally:
-            server.server_close()
-            if thread is not None:
-                thread.join()
+            try:
+                server.close_connections()
+            finally:
+                server.server_close()
+                if thread is not None:
+                    thread.join()
 
 
 __all__ = ["ProfileServer"]
