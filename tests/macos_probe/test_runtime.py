@@ -691,6 +691,69 @@ def test_start_servers_hosts_only_selected_profile_without_wpsjs_debug(
     ]
 
 
+@posix_only
+def test_selected_runtime_removes_all_stale_managed_entries_and_restores_bytes(
+    monkeypatch, tmp_path: Path
+):
+    original = (
+        b'<jsplugins><jspluginonline name="user-plugin" url="http://user/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-writer" url="http://old-writer/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-presentation" '
+        b'url="http://old-presentation/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-spreadsheet" '
+        b'url="http://old-spreadsheet/"/></jsplugins>'
+    )
+    publish = tmp_path / "publish.xml"
+    publish.write_bytes(original)
+
+    class Server:
+        def __init__(self, profile_root, port):
+            pass
+
+        def start(self):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(runtime, "ProfileServer", Server)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        publish_xml=publish,
+        staging_root=tmp_path / "stable" / "WPSComposer",
+        components={"writer"},
+    )
+    probe.runtime_dir.mkdir()
+    writer_profile = tmp_path / "profiles" / "writer"
+    writer_profile.mkdir(parents=True)
+    probe.profiles["writer"] = writer_profile
+    monkeypatch.setattr(probe, "_wait_for_server", lambda *args: None)
+
+    probe.start_servers()
+    during = list(ET.parse(publish).getroot())
+    assert [entry.attrib["name"] for entry in during] == [
+        "user-plugin",
+        "wpscomposer-phase0-writer",
+    ]
+    assert during[0].attrib["url"] == "http://user/"
+    assert during[1].attrib["url"] == "http://127.0.0.1:3889/"
+    recovery = json.loads(
+        (probe.recovery_dir / "registration.json").read_text(encoding="utf-8")
+    )
+    assert set(recovery["managedNames"]) == {
+        "wpscomposer-phase0-writer",
+        "wpscomposer-phase0-presentation",
+        "wpscomposer-phase0-spreadsheet",
+    }
+
+    probe.close()
+
+    assert publish.read_bytes() == original
+
+
 def test_runtime_rejects_invalid_component_subset_before_side_effects(tmp_path: Path):
     runtime_dir = tmp_path / "runtime"
     staging_root = tmp_path / "stable" / "WPSComposer"

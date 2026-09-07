@@ -499,9 +499,13 @@ def install_registration_entries(
     # not in the registration name or URL.
     if cache_version is not None and not re.fullmatch(r"[0-9a-f]{16}", cache_version):
         raise ValueError("cache_version must be a 16-character hexadecimal digest")
-    names = tuple(
+    installed_names = tuple(
         f"wpscomposer-phase0-{component}"
         for component in component_config
+    )
+    managed_names = tuple(
+        f"wpscomposer-phase0-{component}"
+        for component in COMPONENT_CONFIG
     )
     for _ in range(5):
         existed = snapshot.path.is_file()
@@ -511,19 +515,21 @@ def install_registration_entries(
             root = ET.fromstring(source)
         except ET.ParseError as exc:
             raise RuntimeError(f"Invalid WPS registration XML: {snapshot.path}") from exc
-        # Replace stale entries with the same authorized profile name. The
-        # runtime lock serializes sessions, while the profile capability remains
-        # unique to this bridge session.
+        # Remove every WPSComposer registration so a scoped session cannot
+        # leave unhosted component origins active. The runtime lock serializes
+        # sessions, while the selected profiles remain capability-scoped.
         for element in tuple(root):
             if (
                 element.tag.rsplit("}", 1)[-1] == "jspluginonline"
-                and element.attrib.get("name") in names
+                and element.attrib.get("name") in managed_names
             ):
                 root.remove(element)
         # Persist ownership before the global file is changed so crash recovery
         # can identify our entries even if the process dies during publication.
-        snapshot.record_prewrite(names, source, existed=existed)
-        for name, (component, config) in zip(names, component_config.items()):
+        snapshot.record_prewrite(managed_names, source, existed=existed)
+        for name, (component, config) in zip(
+            installed_names, component_config.items()
+        ):
             ET.SubElement(
                 root,
                 "jspluginonline",
@@ -540,14 +546,14 @@ def install_registration_entries(
                 },
             )
         content = ET.tostring(root, encoding="utf-8", xml_declaration=True)
-        snapshot.record_installing(names, source, content)
+        snapshot.record_installing(managed_names, source, content)
         if _atomic_write(
             snapshot.path,
             content,
             0o600,
             expected=current,
         ):
-            snapshot.record_installed(names, source, content)
+            snapshot.record_installed(managed_names, source, content)
             return
     raise RuntimeError(
         f"WPS registration changed repeatedly: {snapshot.path}"
