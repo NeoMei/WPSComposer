@@ -20,11 +20,11 @@ Only task-created documents; no global template/security mutation, no broad quit
 
 **Interfaces:** Each runner takes --output-dir PATH (new directory) and writes result.json plus probe.docx/probe.pdf on success. Results distinguish attempted/succeeded/failed/unrun operations, actual engine/version, existing-document snapshots, owned document identity, save/reopen/page count, failures and cleanup. Windows explicitly uses DispatchEx("Word.Application"); macOS uses the installed Word.sdef dictionary and exact task document references.
 
-- [ ] Inspect Word dictionaries/current COM implementation and compile an initial Mac script before native changes.
-- [ ] Implement a minimal native document/save/reopen/PDF probe, then expand it one capability at a time to headings/native numbering, TOC refresh and multipage tables. Unsupported operations are failures or gaps, never silently skipped successes.
-- [ ] Execute Mac probe in a fresh output directory; retain errors from every attempt. Verify Word-generated DOCX semantics and PDF text/pages/layout, and compare pre-existing documents before/after.
-- [ ] Prepare and syntax-check the Windows equivalent. Run natively only when an authorized Windows environment is available; otherwise record the exact handoff command and unrun state.
-- [ ] Review scripts for document ownership and stale-artifact hazards; run appropriate platform-independent checks and write the capability matrix/recommendation.
+- [x] Inspect Word dictionaries/current COM implementation and compile an initial Mac script before native changes.
+- [x] Implement a minimal native document/save/reopen/PDF probe, then expand it one capability at a time to headings/native numbering, TOC refresh and multipage tables. Unsupported operations are failures or gaps, never silently skipped successes.
+- [x] Execute Mac probe in a fresh output directory; retain errors from every attempt. Verify Word-generated DOCX semantics and PDF text/pages/layout, and compare pre-existing documents before/after.
+- [x] Prepare and syntax-check the Windows equivalent. Run natively only when an authorized Windows environment is available; otherwise record the exact handoff command and unrun state.
+- [x] Review scripts for document ownership and stale-artifact hazards; run appropriate platform-independent checks and write the capability matrix/recommendation.
 
 Verification commands:
 ```sh
@@ -35,3 +35,5 @@ python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike
 ```
 
 Prototype scripts are investigation tools, not production features. Native output checks are the acceptance tests; no tests that merely mirror the script text. Do not commit until the repository-required full suite has passed, or leave the bounded probe uncommitted with its validation status stated.
+
+Status: bounded probe implementation and Mac evidence complete; Windows native execution remains pending the user-provided connection. Task review and whole-branch review approved with no Critical/Important findings.
