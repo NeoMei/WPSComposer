@@ -1,0 +1,110 @@
+{
+  "candidate_sha": "88a0ecc4b5bc41f12ccc44e1410fa50ce1ece630",
+  "date": "2026-09-08",
+  "python": "3.11.9 x64",
+  "pywin32": "312",
+  "word_version": "16.0.17932.20910",
+  "platform": "Windows-10-10.0.26100-SP0",
+  "runs": [
+    {
+      "name": "windows-run-01",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-01",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 1,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-01\\result.json",
+      "overall": "failed",
+      "local_raw_sha256": {
+        "result.json": "a0af7570fe220fefa93adacc25d6af7ed55f47a56dc94eb1c4c9b9e824b104ee"
+      },
+      "final_runner": false
+    },
+    {
+      "name": "windows-run-02",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-02",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 0,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-02\\result.json",
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "d7aaed2f4c6733e4e96fab79bb3912007e5eb224176134dfdf1f886341eb2f96",
+        "probe.pdf": "4fdec593fbf6d301814d11f4938fca5c885d6d1eb009895deb643facf2eec5d2",
+        "result.json": "78eee30b7f140439eb99a78ba270bd9398358e3fd6f96cb05eb4d63d6f3c7bb9"
+      },
+      "final_runner": false
+    },
+    {
+      "name": "windows-run-03",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-03",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 0,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-03\\result.json",
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "0dd955ec3369a8f094b9bc0d17f3e8a720be2a341c33d4b469e66b856df4a91d",
+        "probe.pdf": "e7a66d504bcc5cdad5ab9b3abaed809f25bb8fbc025e92e499ff9869007af763",
+        "result.json": "57c2e888dc8f02518e43de8ebcde27a89e1d61949fc7d680d4ae00be4eaedbcd"
+      },
+      "final_runner": false
+    },
+    {
+      "name": "windows-run-04",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-04",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 1,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-04\\result.json",
+      "overall": "failed",
+      "local_raw_sha256": {
+        "result.json": "6798ed573ba06b35fb321503ade81fc732595da42d451f53c65f9c7a6e380857"
+      },
+      "final_runner": false
+    },
+    {
+      "name": "windows-run-05",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-05",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 0,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-05\\result.json",
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "b567b313221bf94bcf237528651190aa32ccf683707e766dd4a7c124d931ca14",
+        "probe.pdf": "a982f9c3c2b8f2514f4662b1acc5a39787bf3858de15d96015c264b89149da68",
+        "result.json": "d79f29185b666035e0bcba5ef8bbc3e3ae0ce5e82c2571b235bbc1fd8c5f7f50"
+      },
+      "final_runner": true
+    },
+    {
+      "name": "windows-run-06",
+      "command": "python fixtures/msoffice_spike/windows_word.py --output-dir build/msoffice-spike/windows-run-06",
+      "interpreter": "C:/Users/1/AppData/Local/Programs/Python/Python311/python.exe",
+      "exit_code": 0,
+      "stdout": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\result.json",
+      "overall": "native_operations_succeeded_artifact_validation_pending",
+      "local_raw_sha256": {
+        "probe.docx": "98444995277ea8c083917a98fa7fe57b876c9b3e65cceb64bc5b4ca4f018b591",
+        "probe.pdf": "49cece72392ec89b71539abb1962745e4782044331621b63659612b667eb5f53",
+        "result.json": "2fca75bd3753b57db0c2bf420bdcc68bba3809bdbc60e58990f7a8451b8dbbbe"
+      },
+      "final_runner": true
+    }
+  ],
+  "final_runs": [
+    "windows-run-05",
+    "windows-run-06"
+  ],
+  "final_rendered_pages_byte_identical": true,
+  "native_artifact_checks": "11/11 each final run",
+  "identity_guard_tests": {
+    "passed": 5,
+    "exit_code": 0
+  },
+  "full_pytest": {
+    "exit_code": 1,
+    "error": "No module named pytest"
+  },
+  "source_sha256": {
+    "windows_word.py": "46fb262161af8f4a24f6cd1127a5542f0ba228cbe2ca86423c5722327d30505d",
+    "validate_windows_artifacts.py": "a7cec1e31b62fdd259aeccf18eb9cd8372d440a02d04d43fa4efe525e1534c76",
+    "test_windows_identity.py": "457459dd1976e7f2c2d11ac2052d475ea6ecb451626a81d7e54d0d0b3c0fb375",
+    "mac_word.py": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb"
+  }
+}

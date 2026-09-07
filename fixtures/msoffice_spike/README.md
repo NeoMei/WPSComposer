@@ -61,6 +61,23 @@ snapshot scope. Neither runner changes global security or templates. These check
 cover text and saved state, not all application UI/selection or rich document
 state.
 
+The Windows runner verifies one new `WINWORD.EXE` process whose image directory
+matches the COM application's path and checks `Microsoft Word` plus its version.
+It compares COM `IUnknown` identities before creating a document and rejects an
+instance with existing documents. Word exposes `Hwnd` on `Window`, not
+`Application`: after creating its own document, the runner maps that document's
+window to the verified process before writing content. Ambiguous process identity
+fails closed; a concurrently launched Word can cause a conservative refusal.
+Document-level `RemovePersonalInformation` prevents author-profile metadata in
+published synthetic evidence. No global privacy or security setting is changed.
+
+Run portable identity-guard tests with
+`python fixtures/msoffice_spike/test_windows_identity.py -v`. After native runs,
+`python fixtures/msoffice_spike/validate_windows_artifacts.py <output-directory>`
+checks saved DOCX XML, native PDF text/fonts/page bounds and hashes, and renders
+pages for separate visual review. It requires existing PyMuPDF and Pillow;
+passing its structural checks does not imply polished layout or production admission.
+
 Do not edit other Word documents during a probe: any observed state change is
 reported as a preservation failure. A Mac timeout retains partial error output and
 marks cleanup unverified. Inspect and close only the task-owned document if such

@@ -13,6 +13,46 @@ from pathlib import Path
 from mac_word import CAPABILITIES, content
 
 
+def word_processes():
+    """Read process image paths without reading windows or document content."""
+    import ctypes
+    from ctypes import wintypes
+    import win32process
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)]
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    processes = {}
+    for pid in win32process.EnumProcesses():
+        handle = kernel.OpenProcess(0x1000, False, pid)
+        if not handle:
+            continue
+        try:
+            buffer = ctypes.create_unicode_buffer(32768)
+            size = wintypes.DWORD(len(buffer))
+            if kernel.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
+                if Path(buffer.value).name.casefold() == "winword.exe":
+                    processes[pid] = buffer.value
+        finally:
+            kernel.CloseHandle(handle)
+    return processes
+
+
+def application_identity(app, before_processes):
+    """Fail closed unless DispatchEx creates one matching native Word process."""
+    candidates = {pid: path for pid, path in word_processes().items() if pid not in before_processes}
+    if len(candidates) != 1:
+        raise RuntimeError("Cannot identify exactly one new WINWORD.EXE process: " + repr(candidates))
+    pid, executable = next(iter(candidates.items()))
+    identity = {"pid": pid, "executable": executable,
+                "name": str(app.Name), "version": str(app.Version), "build": str(app.Build)}
+    if Path(executable).parent != Path(app.Path) or identity["name"] != "Microsoft Word":
+        raise RuntimeError("COM application is not native Microsoft Word: " + repr(identity))
+    return identity
+
+
 def snapshot(app):
     """Only inspect user documents; hashes avoid persisting their text."""
     rows = []
@@ -74,15 +114,15 @@ def main() -> int:
         if previous_app is not None:
             before_previous = snapshot(previous_app)
             result["existing_before"] = before_previous
-            result["existing_application_hwnd"] = int(previous_app.Hwnd)
         else:
             result["existing_before"] = []
+        before_processes = word_processes()
         app = win32com.client.DispatchEx("Word.Application")
+        result["application_identity"] = application_identity(app, before_processes)
         result["native_run"] = True
         result["version"] = str(app.Version)
         result["build"] = str(app.Build)
-        result["owned_application_hwnd"] = int(app.Hwnd)
-        if previous_app is not None and int(app.Hwnd) == int(previous_app.Hwnd):
+        if previous_app is not None and app._oleobj_.QueryInterface(pythoncom.IID_IUnknown) == previous_app._oleobj_.QueryInterface(pythoncom.IID_IUnknown):
             raise RuntimeError("DispatchEx returned the preexisting application; refusing mutation or Quit")
         result["isolated_existing_before"] = snapshot(app)
         if result["isolated_existing_before"]:
@@ -93,7 +133,16 @@ def main() -> int:
         record("create", "attempted")
         doc = app.Documents.Add()
         record("create", "succeeded", doc.Name)
+        import win32process
+        owned_hwnd = int(doc.Windows.Item(1).Hwnd)
+        _, owned_pid = win32process.GetWindowThreadProcessId(owned_hwnd)
+        result["owned_document_process"] = {"hwnd": owned_hwnd, "pid": owned_pid}
+        if owned_pid != result["application_identity"]["pid"]:
+            exclusive_instance = False
+            raise RuntimeError("Owned document window does not match the new WINWORD.EXE process; refusing content mutation or Quit")
         result["owned_document_initial_name"] = doc.Name
+        # Synthetic evidence must not inherit the user's author profile.
+        doc.RemovePersonalInformation = True
         doc.Content.Text = content()
 
         def body():

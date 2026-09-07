@@ -1,0 +1,2 @@
+# Preserve native evidence and its SHA256 values across Windows/macOS checkouts.
+/docs/verification/windows-word-spike/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

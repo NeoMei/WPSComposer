@@ -1,0 +1,128 @@
+{
+  "engine": "Microsoft Word",
+  "transport": "DispatchEx Word.Application COM",
+  "platform": "Windows-10-10.0.26100-SP0",
+  "native_run": true,
+  "capabilities": {
+    "snapshot_before": {
+      "status": "succeeded",
+      "detail": "Registered preexisting instance and isolated instance captured"
+    },
+    "create": {
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    "chinese_body": {
+      "status": "unrun"
+    },
+    "headings": {
+      "status": "unrun"
+    },
+    "native_numbering": {
+      "status": "unrun"
+    },
+    "long_table": {
+      "status": "unrun"
+    },
+    "toc": {
+      "status": "unrun"
+    },
+    "field_refresh": {
+      "status": "unrun"
+    },
+    "repaginate": {
+      "status": "unrun"
+    },
+    "save_docx": {
+      "status": "unrun"
+    },
+    "reopen": {
+      "status": "unrun"
+    },
+    "export_pdf": {
+      "status": "unrun"
+    },
+    "cleanup": {
+      "status": "succeeded",
+      "detail": null
+    },
+    "preservation": {
+      "status": "succeeded",
+      "detail": "Preexisting registered instance snapshots equal"
+    }
+  },
+  "events": [
+    {
+      "capability": "snapshot_before",
+      "status": "succeeded",
+      "detail": "Registered preexisting instance and isolated instance captured"
+    },
+    {
+      "capability": "create",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "create",
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    {
+      "capability": "core",
+      "status": "failed",
+      "detail": "com_error(-2147352573, '找不到成员。', None, None)"
+    },
+    {
+      "capability": "cleanup",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "cleanup",
+      "status": "succeeded",
+      "detail": null
+    },
+    {
+      "capability": "preservation",
+      "status": "succeeded",
+      "detail": "Preexisting registered instance snapshots equal"
+    }
+  ],
+  "errors": [
+    {
+      "capability": "core",
+      "raw_error": "com_error(-2147352573, '找不到成员。', None, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 145, in main\n    doc.BuiltInDocumentProperties.Item(\"Author\").Value = \"WPSComposer native probe\"\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<COMObject <unknown>>\", line 2, in Item\npywintypes.com_error: (-2147352573, '找不到成员。', None, None)\n"
+    }
+  ],
+  "existing_document_scope": "GetActiveObject registered Word instance plus isolated DispatchEx instance; other unregistered Word instances are not enumerated",
+  "existing_before": [],
+  "application_identity": {
+    "pid": 24316,
+    "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "name": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.17932"
+  },
+  "version": "16.0",
+  "build": "16.0.17932",
+  "isolated_existing_before": [],
+  "owned_document_process": {
+    "hwnd": 2951678,
+    "pid": 24316
+  },
+  "owned_document_initial_name": "文档1",
+  "owned_application_cleanup": "Quit isolated DispatchEx instance after confirming zero documents",
+  "existing_after": [],
+  "docx": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-04\\probe.docx",
+    "exists": false,
+    "bytes": 0
+  },
+  "pdf": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-04\\probe.pdf",
+    "exists": false,
+    "bytes": 0
+  },
+  "overall": "failed"
+}
