@@ -82,3 +82,5 @@
 - [ ] Run fresh complete suite after final integration if later changes justify it; verify git diff --check.
 - [ ] Run native fixtures sequentially and preserve screenshot/OOXML/PDF evidence. Check no demo files are opened; selected-component startup count; repeat generation; standalone conversion; explicit final output; unrelated disposable unsaved document preserved.
 - [ ] Whole-branch review, fix evidence-backed findings, record precise local/remote/install status. Keep branch/worktree available; no implicit merge or push.
+
+Writer activation uses the new native blank seed in every route, including standalone conversion; only M5 generation retains it. Other components keep their existing seeds in this Word-focused stage.
