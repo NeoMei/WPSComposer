@@ -14,9 +14,9 @@ def test_plugin_manifest_matches_bundle_layout():
     )
 
     assert manifest["name"] == "wps-composer"
-    assert manifest["version"] == "0.8.0"
+    assert manifest["version"] == "0.8.1"
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert re.search(r'^version = "0\.8\.0"$', pyproject, re.MULTILINE)
+    assert re.search(r'^version = "0\.8\.1"$', pyproject, re.MULTILINE)
     assert manifest["skills"] == "./skills/"
     assert (ROOT / manifest["skills"]).is_dir()
     assert (ROOT / "skills" / "WPSComposer" / "SKILL.md").is_file()

@@ -268,11 +268,14 @@ class MacLongformAdapter(_BaseAdapter):
             self.bridge.url,
             self.bridge.token,
             deadline=deadline,
+            components={"writer"},
         )
         self.runtime.__enter__()
         self.runtime.prepare_profiles()
         self.runtime.start_servers(deadline=deadline)
-        self.runtime.activate_component("writer", isolated=True, deadline=deadline)
+        activation_document = self.runtime.activate_component(
+            "writer", isolated=True, retain=True, deadline=deadline
+        )
         remaining = max(0.0, deadline - time.monotonic())
         _wait_for_writer_registration(
             self.bridge, self.runtime, timeout=min(60.0, remaining)
@@ -280,7 +283,9 @@ class MacLongformAdapter(_BaseAdapter):
         if self.runtime.staging_dir is None:
             raise RuntimeError("macOS WPS staging is unavailable")
         self.executor = MacOSLongformExecutor(
-            bridge=self.bridge, staging_dir=str(self.runtime.staging_dir)
+            bridge=self.bridge,
+            staging_dir=str(self.runtime.staging_dir),
+            activation_document=str(activation_document),
         )
 
     def execute(self, build, directives, deadline):

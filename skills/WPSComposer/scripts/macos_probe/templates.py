@@ -24,6 +24,9 @@ class AddinAssetError(RuntimeError):
 
 ADDIN_ASSET_MANIFEST = "asset-manifest.json"
 GENERATED_ADDIN_ASSETS = ("writer-longform-v2.js",)
+WRITER_ACTIVATION_SHA256 = (
+    "d5b2775d21547144c5e7e23f7efe36bcb5c161ff99962a1fda03a027a45ae994"
+)
 
 
 @dataclass(frozen=True)
@@ -124,44 +127,85 @@ def clone_template(probe_root: Path, staging_dir: Path, component: str) -> Path:
     spec = template_for_component(component)
     source = Path(probe_root) / "node_modules/wpsjs/src/lib/res" / spec.filename
     target = Path(staging_dir) / spec.output_name
-    try:
-        if _sha256(source) != spec.sha256:
-            raise TemplateError(f"Pinned {component} template digest mismatch")
-    except OSError as exc:
-        raise TemplateError(f"Pinned {component} template digest mismatch") from exc
+    return _clone_verified_file(
+        source,
+        target,
+        expected_sha256=spec.sha256,
+        format_name=spec.format_name,
+        temporary_prefix=".wpscomposer-template-",
+        error_message=f"Pinned {component} template digest mismatch",
+    )
+
+
+def _clone_verified_file(
+    source: Path,
+    target: Path,
+    *,
+    expected_sha256: str,
+    format_name: str,
+    temporary_prefix: str,
+    error_message: str,
+) -> Path:
+    """Atomically publish one validated private copy with mode 0600."""
+
     temporary: Path | None = None
-    target_created = False
     published = False
+    target_preexisted = target.exists() or target.is_symlink()
     try:
+        if _sha256(source) != expected_sha256:
+            raise TemplateError(error_message)
         descriptor, temporary_name = tempfile.mkstemp(
-            dir=staging_dir,
-            prefix=".wpscomposer-template-",
+            dir=target.parent,
+            prefix=temporary_prefix,
             suffix=".tmp",
         )
         temporary = Path(temporary_name)
         os.close(descriptor)
         os.chmod(temporary, 0o600)
-        try:
-            shutil.copyfile(source, temporary)
-        except OSError as exc:
-            raise TemplateError(
-                f"Pinned {component} template digest mismatch"
-            ) from exc
-        if _sha256(temporary) != spec.sha256:
-            raise TemplateError(f"Pinned {component} template digest mismatch")
-        validate_office_package(temporary, spec.format_name)
+        shutil.copyfile(source, temporary)
+        if _sha256(temporary) != expected_sha256:
+            raise TemplateError(error_message)
+        validate_office_package(temporary, format_name)
         os.chmod(temporary, 0o600)
         os.link(temporary, target)
-        target_created = True
         temporary.unlink()
         temporary = None
         published = True
         return target
+    except OSError as exc:
+        raise TemplateError(error_message) from exc
     finally:
+        remove_partial_target = False
+        if not published and not target_preexisted and temporary is not None:
+            try:
+                remove_partial_target = target.exists() and os.path.samefile(
+                    temporary, target
+                )
+            except OSError:
+                remove_partial_target = False
+        if remove_partial_target:
+            target.unlink(missing_ok=True)
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-        if target_created and not published:
-            target.unlink(missing_ok=True)
+
+
+def clone_activation_document(
+    probe_root: Path, staging_dir: Path, component: str
+) -> Path:
+    """Publish the pinned native Writer blank into one private session."""
+
+    if component != "writer":
+        raise TemplateError(f"Unsupported activation document: {component}")
+    source = Path(probe_root) / "resources" / "writer-blank.docx"
+    target = Path(staging_dir) / "wpscomposer-writer-blank.docx"
+    return _clone_verified_file(
+        source,
+        target,
+        expected_sha256=WRITER_ACTIVATION_SHA256,
+        format_name="docx",
+        temporary_prefix=".wpscomposer-activation-",
+        error_message="Pinned writer activation document digest mismatch",
+    )
 
 
 def _main() -> int:

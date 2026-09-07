@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import signal
+import shutil
 import stat
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -23,6 +24,16 @@ from skills.WPSComposer.scripts.macos_probe.runtime import (
 posix_only = pytest.mark.skipif(
     os.name != "posix", reason="macOS probe uses POSIX-only runtime facilities"
 )
+NATIVE_WRITER_BLANK = (
+    Path(__file__).parents[2]
+    / "macos/wps-jsapi-probe/resources/writer-blank.docx"
+)
+
+
+def _install_writer_activation_seed(probe_root: Path) -> None:
+    target = probe_root / "resources/writer-blank.docx"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(NATIVE_WRITER_BLANK, target)
 
 
 def test_component_config_uses_distinct_ports_and_wps_types():
@@ -630,20 +641,32 @@ def test_preexisting_young_wps_is_never_claimed_by_elapsed_age(monkeypatch, tmp_
 
 
 @posix_only
-def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: Path):
-    commands = []
+def test_start_servers_hosts_only_selected_profile_without_wpsjs_debug(
+    monkeypatch, tmp_path: Path
+):
+    hosted = []
 
-    class Process:
-        def poll(self):
-            return 0
+    class Server:
+        def __init__(self, profile_root, port):
+            hosted.append((Path(profile_root), port, "created"))
 
-    def popen(command, **kwargs):
-        commands.append((command, kwargs))
-        return Process()
+        def start(self):
+            hosted.append((hosted[-1][0], hosted[-1][1], "started"))
 
-    monkeypatch.setattr(runtime.subprocess, "Popen", popen)
-    monkeypatch.setattr(runtime, "find_node", lambda override=None: Path("/node"))
-    monkeypatch.setattr(runtime, "find_wpsjs_cli", lambda root: Path("/wpsjs"))
+        def close(self):
+            hosted.append((hosted[0][0], hosted[0][1], "closed"))
+
+    monkeypatch.setattr(runtime, "ProfileServer", Server)
+    monkeypatch.setattr(
+        runtime,
+        "find_node",
+        lambda *args, **kwargs: pytest.fail("profile hosting must not resolve Node"),
+    )
+    monkeypatch.setattr(
+        runtime,
+        "find_wpsjs_cli",
+        lambda *args, **kwargs: pytest.fail("profile hosting must not invoke wpsjs"),
+    )
     publish = tmp_path / "publish.xml"
     publish.write_text("<jsplugins/>", encoding="utf-8")
     probe = runtime.ProbeRuntime(
@@ -653,27 +676,167 @@ def test_start_servers_launches_managed_wpsjs_processes(monkeypatch, tmp_path: P
         "token",
         publish_xml=publish,
         staging_root=tmp_path / "stable" / "WPSComposer",
+        components={"writer"},
     )
     probe.runtime_dir.mkdir()
-    for component in COMPONENT_CONFIG:
-        profile = tmp_path / "profiles" / component
-        profile.mkdir(parents=True)
-        probe.profiles[component] = profile
+    profile = tmp_path / "profiles" / "writer"
+    profile.mkdir(parents=True)
+    (profile / "index.html").write_text("ready", encoding="utf-8")
+    probe.profiles["writer"] = profile
     monkeypatch.setattr(probe, "_wait_for_server", lambda *args: None)
 
     try:
         probe.start_servers()
+        entries = list(ET.parse(publish).getroot())
+        assert [entry.attrib["name"] for entry in entries] == [
+            "wpscomposer-phase0-writer"
+        ]
+        assert entries[0].attrib["url"] == "http://127.0.0.1:3889/"
     finally:
         probe.close()
 
-    assert [command for command, _ in commands] == [
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3889"],
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3890"],
-        ["/node", "/wpsjs", "debug", "--server", "--port", "3891"],
+    assert hosted == [
+        (profile, 3889, "created"),
+        (profile, 3889, "started"),
+        (profile, 3889, "closed"),
     ]
-    assert [kwargs["cwd"] for _, kwargs in commands] == [
-        probe.profiles[component] for component in COMPONENT_CONFIG
+
+
+@posix_only
+def test_selected_runtime_removes_all_stale_managed_entries_and_restores_bytes(
+    monkeypatch, tmp_path: Path
+):
+    original = (
+        b'<jsplugins><jspluginonline name="user-plugin" url="http://user/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-writer" url="http://old-writer/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-presentation" '
+        b'url="http://old-presentation/"/>'
+        b'<jspluginonline name="wpscomposer-phase0-spreadsheet" '
+        b'url="http://old-spreadsheet/"/></jsplugins>'
+    )
+    publish = tmp_path / "publish.xml"
+    publish.write_bytes(original)
+
+    class Server:
+        def __init__(self, profile_root, port):
+            pass
+
+        def start(self):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(runtime, "ProfileServer", Server)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        publish_xml=publish,
+        staging_root=tmp_path / "stable" / "WPSComposer",
+        components={"writer"},
+    )
+    probe.runtime_dir.mkdir()
+    writer_profile = tmp_path / "profiles" / "writer"
+    writer_profile.mkdir(parents=True)
+    probe.profiles["writer"] = writer_profile
+    monkeypatch.setattr(probe, "_wait_for_server", lambda *args: None)
+
+    probe.start_servers()
+    during = list(ET.parse(publish).getroot())
+    assert [entry.attrib["name"] for entry in during] == [
+        "user-plugin",
+        "wpscomposer-phase0-writer",
     ]
+    assert during[0].attrib["url"] == "http://user/"
+    assert during[1].attrib["url"] == "http://127.0.0.1:3889/"
+    recovery = json.loads(
+        (probe.recovery_dir / "registration.json").read_text(encoding="utf-8")
+    )
+    assert set(recovery["managedNames"]) == {
+        "wpscomposer-phase0-writer",
+        "wpscomposer-phase0-presentation",
+        "wpscomposer-phase0-spreadsheet",
+    }
+
+    probe.close()
+
+    assert publish.read_bytes() == original
+
+
+def test_runtime_rejects_invalid_component_subset_before_side_effects(tmp_path: Path):
+    runtime_dir = tmp_path / "runtime"
+    staging_root = tmp_path / "stable" / "WPSComposer"
+
+    with pytest.raises(ValueError, match="Unknown component"):
+        runtime.ProbeRuntime(
+            tmp_path,
+            runtime_dir,
+            "http://127.0.0.1:45678",
+            "token",
+            staging_root=staging_root,
+            components={"writer", "rogue"},
+        )
+
+    assert not runtime_dir.exists()
+    assert not staging_root.exists()
+
+
+def test_runtime_requires_nonempty_component_subset(tmp_path: Path):
+    with pytest.raises(ValueError, match="at least one component"):
+        runtime.ProbeRuntime(
+            tmp_path,
+            tmp_path / "runtime",
+            "http://127.0.0.1:45678",
+            "token",
+            components=set(),
+        )
+
+
+def test_runtime_preflight_checks_only_selected_component_port(monkeypatch, tmp_path):
+    app = tmp_path / "wpsoffice.app"
+    app.mkdir()
+    checked = []
+    monkeypatch.setattr(runtime.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(runtime, "_require_free_port", checked.append)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=app,
+        components={"presentation"},
+    )
+
+    probe._preflight()
+
+    assert checked == [3890]
+
+
+def test_prepare_profiles_builds_only_selected_components(monkeypatch, tmp_path):
+    built = []
+
+    def build(assets, profiles_root, component, *args):
+        built.append(component)
+        profile = profiles_root / component
+        profile.mkdir(parents=True)
+        return profile
+
+    monkeypatch.setattr(runtime, "build_profile", build)
+    probe = runtime.ProbeRuntime(
+        tmp_path,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        components={"spreadsheet"},
+    )
+    probe.runtime_dir.mkdir()
+
+    profiles = probe.prepare_profiles()
+
+    assert built == ["spreadsheet"]
+    assert set(profiles) == {"spreadsheet"}
 
 
 @posix_only
@@ -826,6 +989,7 @@ def test_activate_component_does_not_relaunch_one_component(
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -847,8 +1011,81 @@ def test_activate_component_does_not_relaunch_one_component(
 
     assert first == second
     assert first.parent == probe.staging_dir / "fixtures"
-    assert first.read_bytes() == b"fixture"
+    assert first.read_bytes() == NATIVE_WRITER_BLANK.read_bytes()
     assert commands == [["open", "-a", str(probe.wps_app), str(first)]]
+
+
+def test_writer_activation_uses_native_blank_and_registers_retained_claim(
+    monkeypatch, tmp_path: Path
+):
+    probe_root = tmp_path / "probe"
+    source = probe_root / "resources/writer-blank.docx"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"native blank")
+    probe = runtime.ProbeRuntime(
+        probe_root,
+        tmp_path / "runtime",
+        "http://127.0.0.1:45678",
+        "token",
+        wps_app=tmp_path / "wpsoffice.app",
+        components={"writer"},
+    )
+    probe.staging_dir = tmp_path / "container/session-1"
+    probe.staging_dir.mkdir(parents=True)
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    (profile / "session.json").write_text("{}", encoding="utf-8")
+    probe.profiles["writer"] = profile
+    commands = []
+    monkeypatch.setattr(
+        runtime, "clone_activation_document",
+        lambda root, directory, component: (
+            directory / "wpscomposer-writer-blank.docx"
+        ),
+    )
+    target = probe.staging_dir / "fixtures/wpscomposer-writer-blank.docx"
+    target.parent.mkdir()
+    target.write_bytes(b"native blank")
+    monkeypatch.setattr(runtime.subprocess, "run", lambda command, **kwargs: commands.append(command))
+
+    activated = probe.activate_component("writer", retain=True)
+
+    assert activated == target.resolve()
+    session = json.loads((profile / "session.json").read_text(encoding="utf-8"))
+    assert session["activationDocument"] == str(target.resolve())
+    assert session["retainActivationDocument"] is True
+    assert commands == [["open", "-a", str(probe.wps_app), str(target.resolve())]]
+
+
+@pytest.mark.parametrize("case", ["external", "symlink", "wrong-extension"])
+def test_writer_activation_rejects_unowned_document_before_launch(
+    monkeypatch, tmp_path: Path, case: str
+):
+    probe = runtime.ProbeRuntime(
+        tmp_path / "probe", tmp_path / "runtime", "http://bridge", "token",
+        wps_app=tmp_path / "wpsoffice.app", components={"writer"},
+    )
+    probe.staging_dir = tmp_path / "session"
+    probe.staging_dir.mkdir()
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    (profile / "session.json").write_text("{}", encoding="utf-8")
+    probe.profiles["writer"] = profile
+    if case == "external":
+        candidate = tmp_path / "outside.docx"
+        candidate.write_bytes(b"x")
+    elif case == "symlink":
+        external = tmp_path / "outside.docx"
+        external.write_bytes(b"x")
+        candidate = probe.staging_dir / "owned.docx"
+        candidate.symlink_to(external)
+    else:
+        candidate = probe.staging_dir / "owned.pptx"
+        candidate.write_bytes(b"x")
+    monkeypatch.setattr(runtime.subprocess, "run", lambda *a, **k: pytest.fail("must not launch"))
+
+    with pytest.raises(ValueError, match="activation document"):
+        probe.activate_component("writer", activation_document=candidate)
 
 
 def test_activate_component_uses_launchservices(monkeypatch, tmp_path: Path):
@@ -856,6 +1093,7 @@ def test_activate_component_uses_launchservices(monkeypatch, tmp_path: Path):
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -883,6 +1121,7 @@ def _probe_with_writer_fixture(tmp_path: Path) -> runtime.ProbeRuntime:
     resource_dir = probe_root / "node_modules/wpsjs/src/lib/res"
     resource_dir.mkdir(parents=True)
     (resource_dir / "wpsDemo.docx").write_bytes(b"fixture")
+    _install_writer_activation_seed(probe_root)
     probe = runtime.ProbeRuntime(
         probe_root,
         tmp_path / "runtime",
@@ -916,5 +1155,5 @@ def test_activate_component_propagates_launchservices_failure(
         "open",
         "-a",
         str(probe.wps_app),
-        str(probe.staging_dir / "fixtures/wpsDemo.docx"),
+        str(probe.staging_dir / "fixtures/wpscomposer-writer-blank.docx"),
     ]]

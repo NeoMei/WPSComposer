@@ -83,18 +83,29 @@
     });
     const token = claimed.body.token;
     const session = Object.assign({}, bootstrap, {token});
-    await request(session, "/v1/register", {
-      method: "POST",
-      body: JSON.stringify({
-        component: session.component,
-        clientId: session.clientId
-      })
-    });
-    if (bootstrap.activationFixture &&
-        typeof window.WPSComposerProbe.closeActivationFixture === "function") {
-      window.WPSComposerProbe.closeActivationFixture(
-        bootstrap.activationFixture
-      );
+    const activationDocument = bootstrap.activationDocument ||
+      bootstrap.activationFixture || "";
+    if (activationDocument) {
+      if (bootstrap.retainActivationDocument === true) {
+        if (typeof window.WPSComposerProbe.claimActivationDocument !== "function") {
+          throw new Error("Activation document ownership is unavailable");
+        }
+        window.WPSComposerProbe.claimActivationDocument(activationDocument);
+      }
+    }
+    try {
+      await request(session, "/v1/register", {
+        method: "POST",
+        body: JSON.stringify({
+          component: session.component,
+          clientId: session.clientId
+        })
+      });
+    } finally {
+      if (activationDocument && bootstrap.retainActivationDocument !== true &&
+          typeof window.WPSComposerProbe.closeActivationFixture === "function") {
+        window.WPSComposerProbe.closeActivationFixture(activationDocument);
+      }
     }
 
     let failures = 0;

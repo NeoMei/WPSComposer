@@ -78,6 +78,324 @@ def test_writer_waits_for_wps_file_completion_event_before_close():
     assert "retainedDocuments" not in source
 
 
+def test_writer_claims_exact_document_despite_focus_change_and_consumes_once():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const owned = {{FullName: "/private/wpscomposer-writer-blank.docx", Close() {{}}}};
+const user = {{FullName: "/Users/person/unsaved.docx", Close() {{throw new Error("user closed");}}}};
+let addCalls = 0;
+global.Application = {{
+  ActiveDocument: user,
+  Documents: {{Count: 2, Item(index) {{return index === 1 ? owned : user;}}, Add() {{addCalls += 1; return {{}};}}}}
+}};
+window.WPSComposerLongformV2 = {{
+  run(params, activationDocument) {{return {{path: params.outputPath, activationDocument}};}}
+}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+(async function () {{
+  window.WPSComposerProbe.claimActivationDocument(owned.FullName);
+  const first = await window.WPSComposerProbe.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan: {{}}, outputPath: "/private/out.docx", activationDocument: owned.FullName}}
+  }});
+  assert.strictEqual(first.activationDocument, owned);
+  const second = await window.WPSComposerProbe.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan: {{}}, outputPath: "/private/out-2.docx"}}
+  }});
+  assert.strictEqual(second.activationDocument, null);
+  assert.equal(addCalls, 0);
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_longform_document",
+      params: {{plan: {{}}, outputPath: "/private/out-3.docx", activationDocument: owned.FullName}}
+    }});
+    process.exit(2);
+  }} catch (error) {{
+    assert.equal(error.code, "GENERATION_COMMAND_FAILED");
+  }}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_writer_real_longform_run_reuses_claim_then_creates_fresh_owned_relayout():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    longform_path = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const events = [];
+function ownedDocument(path, kind) {{
+  return {{
+    FullName: path,
+    Content: {{End: 0}},
+    SaveAs2(outputPath, format) {{events.push([kind, "save", outputPath, format]);}},
+    Close(value) {{events.push([kind, "close", value]);}}
+  }};
+}}
+const activationPath = "/private/wpscomposer-writer-blank.docx";
+const retained = ownedDocument(activationPath, "retained");
+const user = {{
+  FullName: "/Users/person/unsaved.docx",
+  Close() {{throw new Error("user document closed");}}
+}};
+let addCalls = 0;
+const documents = [retained, user];
+global.Application = {{
+  DisplayAlerts: 7,
+  ScreenUpdating: true,
+  ActiveDocument: user,
+  Documents: {{
+    get Count() {{return documents.length;}},
+    Item(index) {{return documents[index - 1];}},
+    Add() {{
+      addCalls += 1;
+      const created = ownedDocument("/private/relayout-" + addCalls + ".docx", "relayout");
+      documents.push(created);
+      return created;
+    }}
+  }}
+}};
+eval(fs.readFileSync({longform_path}, "utf8"));
+eval(fs.readFileSync({writer_path}, "utf8"));
+const plan = {{component: "writer", operations: []}};
+(async function () {{
+  const sameHost = Application;
+  const sameBridge = window.WPSComposerProbe;
+  window.WPSComposerProbe.claimActivationDocument(activationPath);
+  await sameBridge.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan, outputPath: "/private/first.docx", resources: {{}}, activationDocument: activationPath}}
+  }});
+  assert.equal(addCalls, 0, "first generation must render into the retained document");
+  await sameBridge.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan, outputPath: "/private/relayout.docx", resources: {{}}}}
+  }});
+  assert.equal(addCalls, 1, "same-runtime relayout must create one fresh owned document");
+  assert.strictEqual(Application, sameHost);
+  assert.strictEqual(window.WPSComposerProbe, sameBridge);
+  assert.deepEqual(events, [
+    ["retained", "save", "/private/first.docx", 12],
+    ["retained", "close", 0],
+    ["relayout", "save", "/private/relayout.docx", 12],
+    ["relayout", "close", 0]
+  ]);
+  assert.strictEqual(Application.ActiveDocument, user);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_writer_claim_accepts_new_jsapi_wrapper_for_same_native_full_path():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const path = "/private/wpscomposer-writer-blank.docx";
+let wrappers = 0;
+global.Application = {{Documents: {{Count: 1, Item() {{
+  wrappers += 1;
+  return {{FullName: path, wrapper: wrappers, Close() {{}}}};
+}}}}}};
+window.WPSComposerLongformV2 = {{run(params, document) {{return document;}}}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+(async function () {{
+  const claimed = window.WPSComposerProbe.claimActivationDocument(path);
+  const consumed = await window.WPSComposerProbe.handleCommand({{
+    method: "generate_longform_document",
+    params: {{plan: {{}}, outputPath: "/private/out.docx", activationDocument: path}}
+  }});
+  assert.equal(claimed.wrapper, 1);
+  assert.equal(consumed.wrapper, 2);
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_writer_claim_rejects_when_original_handle_loses_exact_full_path():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const path = "/private/wpscomposer-writer-blank.docx";
+let valid = true;
+const original = {{get FullName() {{if (!valid) throw new Error("closed proxy"); return path;}}, Close() {{}}}};
+global.Application = {{Documents: {{Count: 1, Item() {{return valid ? original : {{FullName: path}};}}}}}};
+window.WPSComposerLongformV2 = {{run() {{throw new Error("must not render");}}}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+window.WPSComposerProbe.claimActivationDocument(path);
+valid = false;
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_longform_document",
+      params: {{plan: {{}}, outputPath: "/private/out.docx", activationDocument: path}}
+    }});
+    process.exit(2);
+  }} catch (error) {{assert.equal(error.code, "GENERATION_COMMAND_FAILED");}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_writer_rejects_different_or_missing_activation_claim():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const owned = {{FullName: "/private/wpscomposer-writer-blank.docx", Close() {{}}}};
+global.Application = {{Documents: {{Count: 1, Item() {{return owned;}}}}}};
+window.WPSComposerLongformV2 = {{run() {{throw new Error("must not render");}}}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+try {{window.WPSComposerProbe.claimActivationDocument("/private/missing.docx"); process.exit(2);}}
+catch (error) {{assert.equal(error.code, "GENERATION_COMMAND_FAILED");}}
+window.WPSComposerProbe.claimActivationDocument(owned.FullName);
+(async function () {{
+  try {{
+    await window.WPSComposerProbe.handleCommand({{
+      method: "generate_longform_document",
+      params: {{plan: {{}}, outputPath: "/private/out.docx", activationDocument: "/private/different.docx"}}
+    }});
+    process.exit(3);
+  }} catch (error) {{assert.equal(error.code, "GENERATION_COMMAND_FAILED");}}
+}})().catch(function (error) {{console.error(error); process.exit(1);}});
+"""
+    _run_node_script(script)
+
+
+def test_bridge_claim_failure_prevents_registration_and_command_polling():
+    bridge_path = json.dumps(str((ROOT / "bridge-client.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{
+  WPSComposerProbe: {{claimActivationDocument() {{throw new Error("missing owned document");}}}}
+}};
+const requests = [];
+global.fetch = async function (url, options) {{
+  requests.push(String(url));
+  if (String(url) === "./session.json") return {{ok: true, json: async function () {{return {{
+    bridgeUrl: "http://bridge", component: "writer", clientId: "client",
+    capability: "capability", activationDocument: "/private/blank.docx",
+    retainActivationDocument: true
+  }};}}}};
+  if (String(url).endsWith("/v1/session")) return {{ok: true, status: 200, text: async function () {{return JSON.stringify({{token: "token"}});}}}};
+  throw new Error("unexpected request " + url);
+}};
+const errors = [];
+global.console = {{error() {{errors.push(Array.from(arguments).join(" "));}}}};
+eval(fs.readFileSync({bridge_path}, "utf8"));
+window.OnAddinLoad();
+setTimeout(function () {{
+  assert.deepEqual(requests, ["./session.json", "http://bridge/v1/session"]);
+  assert.ok(errors.some(function (value) {{return value.includes("missing owned document");}}));
+}}, 25);
+"""
+    _run_node_script(script)
+
+
+def test_bridge_registration_rejection_still_closes_exact_disposable_document():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    bridge_path = json.dumps(str((ROOT / "bridge-client.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const closes = [];
+const activationPath = "/private/wpscomposer-writer-blank.docx";
+const owned = {{FullName: activationPath, Close(value) {{closes.push(["owned", value]);}}}};
+const user = {{FullName: "/Users/person/unsaved.docx", Close(value) {{closes.push(["user", value]);}}}};
+global.Application = {{
+  ActiveDocument: user,
+  Documents: {{Count: 2, Item(index) {{return index === 1 ? user : owned;}}}}
+}};
+const requests = [];
+global.fetch = async function (url) {{
+  const value = String(url);
+  requests.push(value);
+  if (value === "./session.json") return {{ok: true, json: async function () {{return {{
+    bridgeUrl: "http://bridge", component: "writer", clientId: "client",
+    capability: "capability", activationDocument: activationPath,
+    retainActivationDocument: false
+  }};}}}};
+  if (value.endsWith("/v1/session")) return {{
+    ok: true, status: 200,
+    text: async function () {{return JSON.stringify({{token: "token"}});}}
+  }};
+  if (value.endsWith("/v1/register")) return {{
+    ok: false, status: 503, text: async function () {{return "registration rejected";}}
+  }};
+  throw new Error("polling must not start after registration rejection");
+}};
+global.console = {{error() {{}}}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+eval(fs.readFileSync({bridge_path}, "utf8"));
+window.OnAddinLoad();
+setTimeout(function () {{
+  assert.deepEqual(requests, [
+    "./session.json", "http://bridge/v1/session", "http://bridge/v1/register"
+  ]);
+  assert.deepEqual(closes, [["owned", 0]]);
+  assert.strictEqual(Application.ActiveDocument, user);
+}}, 25);
+"""
+    _run_node_script(script)
+
+
+def test_writer_fixture_cleanup_enumerates_exact_path_and_ignores_active_user_document():
+    writer_path = json.dumps(str((ROOT / "writer.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+const calls = [];
+const owned = {{FullName: "/private/wpscomposer-writer-blank.docx", Close(value) {{calls.push(["owned", value]);}}}};
+const user = {{FullName: "/Users/person/report.docx", Close(value) {{calls.push(["user", value]);}}}};
+global.Application = {{
+  ActiveDocument: user,
+  Documents: {{Count: 2, Item(index) {{return index === 1 ? user : owned;}}}}
+}};
+eval(fs.readFileSync({writer_path}, "utf8"));
+window.WPSComposerProbe.closeActivationFixture(owned.FullName);
+assert.deepEqual(calls, [["owned", 0]]);
+window.WPSComposerProbe.closeActivationFixture("/private/missing.docx");
+assert.deepEqual(calls, [["owned", 0]]);
+"""
+    _run_node_script(script)
+
+
+def test_longform_request_schema_allows_only_optional_activation_document():
+    path = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
+    script = f"""
+const assert = require("assert");
+const fs = require("fs");
+global.window = {{}};
+global.Application = {{}};
+eval(fs.readFileSync({path}, "utf8"));
+const validate = window.WPSComposerLongformV2.__test.validateLongformRequest;
+const base = {{plan: {{component: "writer", protocolVersion: 2, operations: []}}, outputPath: "/private/out.docx", resources: {{}}}};
+assert.deepEqual(validate(Object.assign({{}}, base)), base);
+const claimed = Object.assign({{}}, base, {{activationDocument: "/private/blank.docx"}});
+assert.equal(validate(claimed).activationDocument, "/private/blank.docx");
+for (const value of ["", false, 1]) {{
+  try {{validate(Object.assign({{}}, base, {{activationDocument: value}})); process.exit(2);}}
+  catch (error) {{assert.equal(error.code, "PROTOCOL_MISMATCH");}}
+}}
+try {{validate(Object.assign({{}}, base, {{extra: true}})); process.exit(3);}}
+catch (error) {{assert.equal(error.code, "PROTOCOL_MISMATCH");}}
+"""
+    _run_node_script(script)
+
+
 def test_writer_recovers_inserted_image_when_jsapi_returns_null():
     source = (ROOT / "writer.js").read_text()
     assert "document.InlineShapes.Count" in source

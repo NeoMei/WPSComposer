@@ -50,6 +50,7 @@ _LONGFORM_RESULT_KEYS = frozenset(
 )
 
 _LONGFORM_REQUEST_KEYS = frozenset({"plan", "outputPath", "resources"})
+_LONGFORM_OPTIONAL_REQUEST_KEYS = frozenset({"activationDocument"})
 _NOTICE_PATCH_REQUEST_KEYS = frozenset({
     "sourcePath", "outputPath", "bookmarks", "notices",
 })
@@ -62,7 +63,11 @@ _BOOKMARK_RE = re.compile(r"^wpsc_(?:fig|tab|eq|ref|head|para)_[0-9a-f]{24}$")
 def validate_longform_generation_request(raw: Mapping[str, Any]) -> dict[str, Any]:
     """Validate the closed private Writer long-form request envelope."""
 
-    if not isinstance(raw, Mapping) or set(raw) != _LONGFORM_REQUEST_KEYS:
+    if (
+        not isinstance(raw, Mapping)
+        or not _LONGFORM_REQUEST_KEYS.issubset(raw)
+        or set(raw) - _LONGFORM_REQUEST_KEYS - _LONGFORM_OPTIONAL_REQUEST_KEYS
+    ):
         raise ProtocolError("Long-form generation request is invalid")
     plan = raw.get("plan")
     output = raw.get("outputPath")
@@ -74,6 +79,13 @@ def validate_longform_generation_request(raw: Mapping[str, Any]) -> dict[str, An
         or not isinstance(output, str)
         or not output
         or not isinstance(resources, Mapping)
+        or (
+            "activationDocument" in raw
+            and (
+                not isinstance(raw.get("activationDocument"), str)
+                or not raw["activationDocument"]
+            )
+        )
     ):
         raise ProtocolError("Long-form generation request is invalid")
     if any(
@@ -84,11 +96,14 @@ def validate_longform_generation_request(raw: Mapping[str, Any]) -> dict[str, An
         for resource_id, locator in resources.items()
     ):
         raise ProtocolError("Long-form generation request is invalid")
-    return {
+    validated = {
         "plan": dict(plan),
         "outputPath": output,
         "resources": dict(resources),
     }
+    if "activationDocument" in raw:
+        validated["activationDocument"] = raw["activationDocument"]
+    return validated
 
 
 def validate_longform_generation_value(raw: Mapping[str, Any]) -> dict[str, Any]:

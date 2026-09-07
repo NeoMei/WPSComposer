@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 import sys
 from typing import Callable, Optional, Tuple
+import warnings
 
 from .artifact_transport import (
     ArtifactTransportError,
     ArtifactValidationError,
     validate_pdf,
 )
+from .presentation import present_artifact, validate_open_result
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -160,8 +162,10 @@ def convert_to_pdf(
     output: Optional[str] = None,
     *,
     overwrite: bool = False,
+    open_result: bool = False,
 ) -> str:
     """Convert one Word, Excel, or PowerPoint file to an absolute PDF path."""
+    validate_open_result(open_result)
     request = _build_request(source, output, overwrite=overwrite)
     backend_name, backend = _select_backend(request)
     try:
@@ -205,4 +209,13 @@ def convert_to_pdf(
             backend=backend_name,
             message=str(exc),
         ) from exc
+    if open_result:
+        try:
+            present_artifact(result)
+        except Exception as exc:
+            warnings.warn(
+                f"Final artifact was published but could not be opened: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
     return str(result)

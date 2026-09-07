@@ -8,6 +8,7 @@ from skills.WPSComposer.scripts.macos_probe.models import (
     ProbeCommand,
     ProbeResult,
     ProtocolError,
+    validate_longform_generation_request,
 )
 
 
@@ -48,6 +49,31 @@ def test_command_rejects_wrong_component():
 def test_generation_command_is_component_typed():
     with pytest.raises(ProtocolError, match="requires writer"):
         ProbeCommand.create("spreadsheet", "generate_writer_document", {})
+
+
+def test_longform_request_accepts_optional_activation_document_and_old_shape():
+    base = {
+        "plan": {"protocolVersion": 2, "component": "writer"},
+        "outputPath": "/private/out.docx",
+        "resources": {},
+    }
+
+    assert validate_longform_generation_request(base) == base
+    claimed = dict(base, activationDocument="/private/wpscomposer-writer-blank.docx")
+    assert validate_longform_generation_request(claimed) == claimed
+
+
+@pytest.mark.parametrize("value", [None, "", False, 1])
+def test_longform_request_rejects_invalid_activation_document(value):
+    request = {
+        "plan": {"protocolVersion": 2, "component": "writer"},
+        "outputPath": "/private/out.docx",
+        "resources": {},
+        "activationDocument": value,
+    }
+
+    with pytest.raises(ProtocolError, match="request is invalid"):
+        validate_longform_generation_request(request)
 
 
 @pytest.mark.parametrize(

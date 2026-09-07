@@ -6,6 +6,7 @@ import pytest
 
 from skills.WPSComposer.scripts.artifact_transport import ArtifactTransportError
 from skills.WPSComposer.scripts import conversion
+from skills.WPSComposer.scripts import presentation
 from skills.WPSComposer.scripts.conversion import (
     ConversionError,
     convert_to_pdf,
@@ -76,6 +77,128 @@ def test_convert_accepts_explicit_pdf_and_overwrite(
         output.resolve()
     )
     assert observed[0].overwrite is True
+
+
+def test_convert_open_result_presents_once_after_backend_cleanup_and_validation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+    events = []
+
+    def backend(request):
+        _write_pdf(request.output)
+        events.append("backend_returned_after_cleanup")
+        return request.output
+
+    monkeypatch.setattr(
+        conversion, "_select_backend", lambda request: ("test-backend", backend)
+    )
+    monkeypatch.setattr(
+        conversion,
+        "present_artifact",
+        lambda path: events.append(("present", Path(path))),
+        raising=False,
+    )
+
+    result = convert_to_pdf(str(source), open_result=True)
+
+    output = (tmp_path / "input.pdf").resolve()
+    assert result == str(output)
+    assert events == ["backend_returned_after_cleanup", ("present", output)]
+
+
+def test_convert_default_does_not_present_final_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+    presented = []
+
+    def backend(request):
+        return _write_pdf(request.output)
+
+    monkeypatch.setattr(
+        conversion, "_select_backend", lambda request: ("test-backend", backend)
+    )
+    monkeypatch.setattr(
+        conversion,
+        "present_artifact",
+        lambda path: presented.append(Path(path)),
+        raising=False,
+    )
+
+    convert_to_pdf(str(source))
+
+    assert presented == []
+
+
+def test_conversion_failure_never_presents_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+    presented = []
+
+    def failed_backend(request):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: ("test-backend", failed_backend),
+    )
+    monkeypatch.setattr(
+        conversion,
+        "present_artifact",
+        lambda path: presented.append(Path(path)),
+        raising=False,
+    )
+
+    with pytest.raises(ConversionError) as caught:
+        convert_to_pdf(str(source), open_result=True)
+
+    assert caught.value.code == "CONVERSION_FAILED"
+    assert presented == []
+
+
+def test_conversion_opener_failure_warns_and_returns_published_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = tmp_path / "input.docx"
+    source.write_bytes(b"source")
+
+    def backend(request):
+        return _write_pdf(request.output)
+
+    def fail_to_present(argv, **kwargs):
+        raise presentation.subprocess.CalledProcessError(4, argv)
+
+    monkeypatch.setattr(
+        conversion, "_select_backend", lambda request: ("test-backend", backend)
+    )
+    monkeypatch.setattr(presentation.sys, "platform", "darwin")
+    monkeypatch.setattr(presentation.subprocess, "run", fail_to_present)
+    with pytest.warns(RuntimeWarning, match="published but could not be opened"):
+        result = convert_to_pdf(str(source), open_result=True)
+
+    assert result == str((tmp_path / "input.pdf").resolve())
+
+
+def test_convert_validates_open_result_before_path_or_backend_effects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    effects = []
+    monkeypatch.setattr(
+        conversion,
+        "_select_backend",
+        lambda request: effects.append("backend"),
+    )
+
+    with pytest.raises(TypeError, match="open_result must be a bool"):
+        convert_to_pdf(str(tmp_path / "missing.docx"), open_result="yes")
+
+    assert effects == []
 
 
 def test_convert_rejects_missing_source_before_backend(tmp_path: Path):
