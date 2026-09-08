@@ -1,6 +1,6 @@
 # Native Word release candidate
 
-Status: 0.9.0 candidate, unreleased. Windows and macOS native gates pass; final package checks pass and the candidate is ready for release review. This document is a release preparation record, not a release announcement.
+Status: accepted 0.9.0 candidate. This is the preserved release-preparation record; see [0.9.0 release notes](0.9.0.md) for the release scope and installation.
 
 ## User-visible changes
 

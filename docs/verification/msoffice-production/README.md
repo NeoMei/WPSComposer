@@ -1,6 +1,6 @@
 # Native Word production acceptance — 2026-09-08
 
-Native acceptance: **PASS on Windows and macOS**. **0.9.0 is ready for release review**: final full-suite, isolated installation, installed native generation/conversion and package builds pass. No merge, release tag or package publication has been made. The table below supersedes the historical checkpoints later in this file.
+Native acceptance: **PASS on Windows and macOS**. Final full-suite, isolated installation, installed native generation/conversion and package builds pass. This pre-release acceptance record supports [0.9.0](../../releases/0.9.0.md); publication is recorded by its GitHub tag and release. The table below supersedes the historical checkpoints later in this file.
 
 | Gate | Evidence | Result |
 |---|---|---|
