@@ -547,13 +547,26 @@
     if (activeHeadingTemplates[scheme]) return activeHeadingTemplates[scheme];
     const safeScheme = String(scheme || "decimal").replace(/[^a-z0-9_-]/gi, "_");
     const template = document.ListTemplates.Add(true, "wpsc_m3_" + safeScheme);
-    const formats = scheme === "chinese-formal"
-      ? ["第%1章", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"]
-      : ["%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"];
+    const schemes = {
+      "decimal": {
+        formats: ["%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"],
+        numberStyles: [0, 0, 0, 0]
+      },
+      "chinese-formal": {
+        formats: ["第%1章", "第%2节", "%3、", "（%4）"],
+        numberStyles: [37, 37, 37, 37]
+      },
+      "hybrid-bid": {
+        formats: ["第%1章", "%1.%2", "%1.%2.%3", "关键工法%4："],
+        // Legal numbering renders included Chinese ancestors as Arabic digits.
+        numberStyles: [37, 253, 253, 22]
+      }
+    };
+    const definition = hasOwn(schemes, scheme) ? schemes[scheme] : schemes.decimal;
     for (let level = 1; level <= 4; level += 1) {
       const listLevel = collectionItem(template.ListLevels, level);
-      listLevel.NumberFormat = formats[level - 1];
-      listLevel.NumberStyle = scheme === "chinese-formal" && level === 1 ? 37 : 0;
+      listLevel.NumberFormat = definition.formats[level - 1];
+      listLevel.NumberStyle = definition.numberStyles[level - 1];
       listLevel.NumberPosition = (level - 1) * 18;
       listLevel.TextPosition = level * 18;
       listLevel.ResetOnHigher = level === 1 ? 0 : level - 1;

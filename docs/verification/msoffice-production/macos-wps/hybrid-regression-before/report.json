@@ -1,0 +1,6 @@
+{
+  "status": "FAIL_REPRODUCED",
+  "text": "1ChapterOne..........................................................................................................................1\n1.1ChildOne....................................................................................................................1\n1.1.1GrandOne.........................................................................................................1\n2ChapterTwo.........................................................................................................................1\n2.1ChildTwo....................................................................................................................1\n2.1.1GrandTwo........................................................................................................1\ni\nNativeoutlineschemes\nNative outline schemes\n1 ChapterOne\n1.1 ChildOne\n1.1.1 GrandOne\n1.1.1.1 DeepOne\n2 ChapterTwo\n2.1 ChildTwo\n2.1.1 GrandTwo\n2.1.1.1 DeepTwo\n[HEADING_ORPHAN] A heading is left at the page end without two following lines (page 2;\nkeep-heading)\n1",
+  "addin_sha256": "9e5d0c7ec5da13658c70e4d7ae275564c5bb27ee06ec8c94e37e5fa129511800",
+  "symptom": "hybrid-bid silently falls through to decimal; Chinese chapter prefix and level-four custom prefix absent."
+}
