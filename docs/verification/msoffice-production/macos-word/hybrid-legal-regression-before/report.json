@@ -1,0 +1,9 @@
+{
+  "status": "FAIL_REPRODUCED",
+  "symptom": "Hybrid chapter is Chinese while dotted descendants incorrectly inherit Chinese ancestor digits (\u4e00.1 and \u4e8c.1); native legal number style restores Arabic ancestors.",
+  "files": {
+    "hybrid-bid.md": "a06bba2602bcab9f9166eda3fd3304291858ceb58ff8fa0c21754c173e131032",
+    "hybrid-bid.pdf": "09b9a6d578ca0c22b7d38717032eb843a74483cad90b0e033fc17a9fa2509840",
+    "hybrid-bid.docx": "0e25815a5777e7d917e57aad6a3be746984643e61a59e2bff55417a35326a7ea"
+  }
+}

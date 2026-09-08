@@ -214,3 +214,19 @@ def test_heading_levels_bind_localized_styles_to_one_owned_outline(tmp_path, sch
     assert 'link to list template (' not in source
     assert 'apply list format template' not in source
     assert 'set lvl to list level 5 of ownList' not in source
+
+
+@pytest.mark.parametrize('scheme, expected', [
+    ('decimal', ['arabic', 'arabic', 'arabic', 'arabic']),
+    ('chinese-formal', ['simp chin num1'] * 4),
+    ('hybrid-bid', ['simp chin num1', 'legal', 'legal', 'arabic lz']),
+])
+def test_number_styles_preserve_arabic_ancestors_in_hybrid_subheadings(tmp_path, scheme, expected):
+    from skills.WPSComposer.scripts.msoffice.macos_script import compile_plan
+    build = build_longform_generation(
+        f'---\nheading_numbering: {scheme}\n---\n# Report\n\n'
+        '## First\n\n### Second\n\n#### Third\n\n##### Fourth\n\nBody')
+    source = compile_plan(build.plan, {}, tmp_path/'owned.docx', timeout=20).source
+    for level, style in enumerate(expected, 1):
+        assert (f'set lvl to list level {level} of ownList\n'
+                f'set number style of lvl to list number style {style}\n') in source

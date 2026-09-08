@@ -34,6 +34,6 @@ for phase in expected:
    checks[phase+'_'+label+'_visible_descendant']=number+label in normalize(doc[page+1].get_text())
    if depth<=3:
     checks[phase+'_'+label+'_visible_toc']=bool(re.search(re.escape(number+label)+r'[.·…]*'+str(page),normalize(doc[1].get_text())))
-report=json.loads((root/'report.json').read_text());report.update(status='PASS' if all(checks.values()) else 'FAIL',checks=checks,files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file() and p.name!='report.json'},production_refresh_sha256=hashlib.sha256(Path('skills/WPSComposer/scripts/msoffice/macos_script.py').read_bytes()).hexdigest())
+report=json.loads((root/'report.json').read_text());report.update(status='PASS' if all(checks.values()) else 'FAIL',checks=checks,files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file() and p.name not in ('report.json','validation.log')},production_refresh_sha256=hashlib.sha256(Path('skills/WPSComposer/scripts/msoffice/macos_script.py').read_bytes()).hexdigest())
 (root/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps(report,ensure_ascii=False,indent=2));assert all(checks.values())
