@@ -11,6 +11,7 @@ import ntpath
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Optional
+from uuid import uuid4
 
 from ..writer import WriterComposer
 
@@ -52,6 +53,19 @@ def _load_dependencies():
     import pythoncom
     import win32com.client
     import win32process
+    import win32gui
+
+    def caption_windows(pid, caption):
+        matches = []
+
+        def observe(hwnd, _):
+            if (win32process.GetWindowThreadProcessId(hwnd)[1] == pid
+                    and win32gui.GetClassName(hwnd) == 'OpusApp'
+                    and win32gui.GetWindowText(hwnd) == caption):
+                matches.append(hwnd)
+
+        win32gui.EnumWindows(observe, None)
+        return matches
 
     def active():
         try:
@@ -70,6 +84,7 @@ def _load_dependencies():
         process_image=lambda pid: _word_processes(pid).get(pid),
         identity=lambda obj: obj._oleobj_.QueryInterface(pythoncom.IID_IUnknown),
         window_pid=lambda hwnd: win32process.GetWindowThreadProcessId(hwnd)[1],
+        caption_windows=caption_windows,
     )
 
 
@@ -81,6 +96,37 @@ def _windows_path(value: Any) -> str:
 class WordIdentity:
     pid: int
     executable: str
+
+
+def _empty_application_hwnd(app, pid, deps):
+    """Bind empty Word before Add, including versions without Application.Hwnd.
+
+    The caller has already checked new-process isolation, executable, IUnknown,
+    and zero documents. A temporary per-instance Caption challenge binds that
+    exact COM object to an OpusApp window in the candidate PID. It changes no
+    document, security setting, template or running-object registration.
+    """
+    try:
+        return int(app.Hwnd), 'Application.Hwnd'
+    except AttributeError:
+        pass
+    original = str(app.Caption)
+    marker = 'WPSComposer-identity-' + uuid4().hex
+    try:
+        app.Caption = marker
+        matches = deps.caption_windows(pid, marker)
+        if len(matches) != 1:
+            raise WordIdentityError('Empty Word caption did not identify exactly one new-process window')
+        hwnd = int(matches[0])
+    finally:
+        # Never overwrite a concurrent caption change, and never continue to Add
+        # if restoring this task's challenge cannot be verified.
+        if str(app.Caption) != marker:
+            raise WordIdentityError('Empty Word caption changed during identity verification')
+        app.Caption = original
+        if str(app.Caption) != original:
+            raise WordIdentityError('Empty Word caption restoration could not be verified')
+    return hwnd, 'restored per-instance Caption challenge'
 
 
 class NativeWordComposer(WriterComposer):
@@ -222,15 +268,16 @@ def create_dedicated_composer(staging_dir: Optional[str] = None) -> NativeWordCo
             raise WordIdentityError('DispatchEx application already contains documents')
         # Bind the empty application itself before Documents.Add can mutate it.
         # The document HWND remains a second gate once the owned doc exists.
-        try:
-            application_hwnd = int(app.Hwnd)
-        except Exception:
-            raise WordIdentityError('Native Word application HWND is unavailable') from None
+        application_hwnd, binding_method = _empty_application_hwnd(app, pid, deps)
         if not application_hwnd or deps.window_pid(application_hwnd) != pid:
             raise WordIdentityError('Application HWND does not belong to the new WINWORD.EXE process')
+        if deps.identity(app) != token or int(app.Documents.Count) != 0:
+            raise WordIdentityError('Empty Word application changed before Documents.Add')
         composer = NativeWordComposer.__new__(NativeWordComposer)
         composer._deps = deps
         composer.identity = WordIdentity(pid=int(pid), executable=executable)
+        composer.application_binding = {'hwnd': application_hwnd, 'pid': int(pid),
+                                        'method': binding_method, 'documents_before_add': 0}
         composer._application_token = token
         composer._app = app
         composer._doc = None

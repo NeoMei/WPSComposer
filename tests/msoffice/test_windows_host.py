@@ -240,3 +240,82 @@ def test_selection_rejects_window_bound_to_unrelated_document(monkeypatch):
     with pytest.raises(host.WordIdentityError, match='selection'):
         _ = composer.selection
     composer.close()
+
+
+class EmptyNativeApp(App):
+    Caption = 'Word'
+
+    @property
+    def Hwnd(self):
+        raise AttributeError('Word.Application.Hwnd')
+
+
+def test_empty_word_without_application_hwnd_is_bound_before_document_add(monkeypatch):
+    app = setup_host(monkeypatch, new=EmptyNativeApp())
+    observations = []
+
+    def matching_windows(pid, caption):
+        observations.append((pid, app.Documents.Count, app.Caption))
+        assert app.Caption == caption and caption != 'Word'
+        return [43]
+
+    host._load_dependencies().caption_windows = matching_windows
+    composer = host.create_dedicated_composer()
+    assert len(observations) == 1 and observations[0][:2] == (22, 0)
+    assert app.Caption == 'Word'
+    assert app.Documents.added == 1
+    composer.close()
+
+
+@pytest.mark.parametrize('matches', [[], [43, 45]])
+def test_caption_proof_failure_restores_caption_without_document_or_quit(monkeypatch, matches):
+    app = setup_host(monkeypatch, new=EmptyNativeApp())
+    observed = []
+    host._load_dependencies().caption_windows = lambda pid, marker: observed.append(marker) or matches
+    with pytest.raises(host.WordIdentityError, match='caption'):
+        host.create_dedicated_composer()
+    assert len(observed) == 1
+    assert app.Caption == 'Word'
+    assert app.Documents.added == 0 and not app.quit
+
+
+def test_caption_proof_rechecks_empty_application_before_add(monkeypatch):
+    app = setup_host(monkeypatch, new=EmptyNativeApp())
+
+    def matching_windows(pid, marker):
+        app.Documents.items.append(Document(app, path='Concurrent user document'))
+        return [43]
+
+    host._load_dependencies().caption_windows = matching_windows
+    with pytest.raises(host.WordIdentityError):
+        host.create_dedicated_composer()
+    assert app.Caption == 'Word'
+    assert app.Documents.added == 0 and not app.quit
+
+
+def test_caption_enumeration_failure_restores_original_caption(monkeypatch):
+    app = setup_host(monkeypatch, new=EmptyNativeApp())
+    app.Caption = 'Original instance caption'
+
+    def unavailable(pid, marker):
+        raise OSError('Native window enumeration failed')
+
+    host._load_dependencies().caption_windows = unavailable
+    with pytest.raises(OSError, match='enumeration'):
+        host.create_dedicated_composer()
+    assert app.Caption == 'Original instance caption'
+    assert app.Documents.added == 0 and not app.quit
+
+
+def test_concurrent_caption_change_is_not_overwritten_or_used_for_creation(monkeypatch):
+    app = setup_host(monkeypatch, new=EmptyNativeApp())
+
+    def changed(pid, marker):
+        app.Caption = 'Concurrent caption'
+        return [43]
+
+    host._load_dependencies().caption_windows = changed
+    with pytest.raises(host.WordIdentityError, match='caption changed'):
+        host.create_dedicated_composer()
+    assert app.Caption == 'Concurrent caption'
+    assert app.Documents.added == 0 and not app.quit
