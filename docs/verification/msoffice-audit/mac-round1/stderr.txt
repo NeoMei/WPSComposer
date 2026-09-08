@@ -1,0 +1,32 @@
+EVENT	engine	observed	16.112.3
+EVENT	snapshot_before	attempted	
+EVENT	snapshot_before	succeeded	0
+EVENT	create	attempted	
+EVENT	owned_identity	observed	文档1
+EVENT	create	succeeded	文档1
+EVENT	chinese_body	attempted	
+EVENT	chinese_body	succeeded	
+EVENT	headings	attempted	
+EVENT	headings	succeeded	
+EVENT	native_numbering	attempted	
+EVENT	native_numbering	succeeded	
+EVENT	long_table	attempted	
+EVENT	table_rows	observed	82
+EVENT	long_table	succeeded	
+EVENT	toc	attempted	
+EVENT	toc	succeeded	
+EVENT	field_refresh	attempted	
+EVENT	field_refresh	succeeded	
+EVENT	repaginate	attempted	
+EVENT	page_count	observed	9
+EVENT	repaginate	succeeded	
+EVENT	save_docx	attempted	
+EVENT	save_docx	succeeded	/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx
+EVENT	reopen	attempted	
+EVENT	reopen	succeeded	/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx
+EVENT	export_pdf	attempted	
+EVENT	export_pdf	succeeded	
+EVENT	cleanup	attempted	
+EVENT	cleanup	succeeded	Only task-owned document; Word left running
+EVENT	preservation	attempted	
+EVENT	preservation	succeeded	Names, exact paths, saved flags and full in-memory text equal

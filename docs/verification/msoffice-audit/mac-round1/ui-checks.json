@@ -1,0 +1,18 @@
+{
+  "checks": {
+    "all_original_text_preserved": true,
+    "ui_marker_absent": true,
+    "native_operations": true
+  },
+  "interaction": "Actual CUA Word UI: type UI-AUDIT-MAC-20260908 at document end; Cmd+Z; Cmd+S; Cmd+W; reopen via local Open dialog; visually verify numbered headings/TOC and marker absent; Cmd+W. Initial native Word document count 0. UI file-access grant was only for synthetic copy; native generator run required no manual completion.",
+  "sha256": {
+    "compile.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.txt": "271870aea90ee76694f25049d534b25cebf40d5b27d5a8afc8dfd0c0f72324a8",
+    "result.json": "7d4bb7cc8be2c06d4910918883c4268f5aee50e5bf9d9d99b7b06899a9463410",
+    "ui-edit-undone-saved.docx": "573ffc13e1356fbf09ce151868e7abe6ecbd086d6230c2067cd04514d3dd51ac",
+    "probe.pdf": "e826f937e638832d0bbed1904b5365de1585cc28e2fd3c29aed5ae9d893172f5",
+    "stderr.txt": "4fa74ef62094ae62c5a4c33153a0895f425d769aad02e182792d324026290203",
+    "probe.applescript": "57103a12a4ca4449dc265b372a291dfd753fae046bb0f409b6fc47f198f68ab7",
+    "probe.docx": "573ffc13e1356fbf09ce151868e7abe6ecbd086d6230c2067cd04514d3dd51ac"
+  }
+}

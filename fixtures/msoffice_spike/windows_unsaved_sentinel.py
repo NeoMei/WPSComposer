@@ -2,13 +2,15 @@
 
 Requires an already registered, empty Microsoft Word application. Never quits
 that application. Only closes the synthetic sentinel by its retained COM object
-after checking its unique content marker and original name/path.
+after checking its unchanged initial snapshot or unique marker and original path.
+The subprocess deadline does not bound this process's own native COM calls.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import subprocess
 import sys
 import time
@@ -19,31 +21,54 @@ from pathlib import Path
 from windows_word import word_processes
 
 
+def positive_timeout(value):
+    try:
+        seconds = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Timeout must be a positive finite number") from exc
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise argparse.ArgumentTypeError("Timeout must be a positive finite number")
+    return seconds
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--timeout-seconds", type=positive_timeout, default=660,
+                        help="Native helper deadline (default: 660); does not bound sentinel COM calls")
     args = parser.parse_args()
     evidence = args.evidence_dir.resolve()
     output = args.output_dir.resolve()
+    if output == evidence or output in evidence.parents or evidence in output.parents:
+        parser.error("Evidence and native output directories must not overlap")
     if output.exists():
         raise FileExistsError("Native output directory must not exist")
     evidence.mkdir(parents=True, exist_ok=False)
     report = {"gate": "nonempty_registered_unsaved_document_preservation", "errors": [],
               "application_quit_attempted": False, "sentinel_saved_to_disk": False,
-              "sentinel_close_without_saving": False, "overall": "in_progress"}
+              "sentinel_close_without_saving": False, "overall": "in_progress",
+              "runner_timeout_seconds": args.timeout_seconds,
+              "timeout_scope": "Only the native Python helper; sentinel COM calls may still block"}
     app = sentinel = None
     original = None
+    initial = None
     marker = "WPSCOMPOSER-UNSAVED-SENTINEL-" + uuid.uuid4().hex
     expected_text = None
 
     def persist():
         (evidence / "sentinel-result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    def ownership_state(doc):
+        # Full text stays in memory; persisted evidence uses only its hash.
+        return {"name": doc.Name, "full_name": doc.FullName,
+                "saved": bool(doc.Saved), "text": doc.Content.Text}
+
     def state(doc):
-        text = doc.Content.Text
-        return {"name": doc.Name, "full_name": doc.FullName, "saved": bool(doc.Saved),
-                "characters": len(text), "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}
+        current = ownership_state(doc)
+        text = current.pop("text")
+        return {**current, "characters": len(text),
+                "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}
 
     try:
         import pythoncom
@@ -57,15 +82,16 @@ def main():
         report["word_version"] = str(app.Version)
         report["word_build"] = str(app.Build)
         sentinel = app.Documents.Add()
-        original = {"name": sentinel.Name, "full_name": sentinel.FullName}
+        initial = ownership_state(sentinel)
+        original = {"name": initial["name"], "full_name": initial["full_name"]}
         hwnd = int(sentinel.Windows.Item(1).Hwnd)
         _, pid = win32process.GetWindowThreadProcessId(hwnd)
         executable = word_processes().get(pid)
         if executable is None or Path(executable).parent != Path(app.Path):
             raise RuntimeError("Sentinel document window is not mapped to the registered native Word path")
         report["sentinel_application"] = {"pid": pid, "hwnd": hwnd, "executable": executable}
-        sentinel.Content.Text = marker
         expected_text = marker + "\r"
+        sentinel.Content.Text = marker
         if sentinel.Content.Text != expected_text or sentinel.Saved:
             raise RuntimeError("Sentinel is not exactly the uniquely marked unsaved document")
         registered = win32com.client.GetActiveObject("Word.Application")
@@ -79,7 +105,8 @@ def main():
         report["runner_command"] = command
         report["runner_source_sha256"] = hashlib.sha256(Path(__file__).with_name("windows_word.py").read_bytes()).hexdigest()
         persist()
-        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   timeout=args.timeout_seconds)
         (evidence / "runner.stdout.log").write_bytes(completed.stdout)
         (evidence / "runner.stderr.log").write_bytes(completed.stderr)
         report["runner_exit_code"] = completed.returncode
@@ -112,11 +139,34 @@ def main():
         report["preservation_passed"] = all(report[key] for key in keys)
     except Exception as exc:
         report["errors"].append({"raw_error": repr(exc), "traceback": traceback.format_exc()})
+        if isinstance(exc, subprocess.TimeoutExpired):
+            for stream in ("stdout", "stderr"):
+                value = getattr(exc, stream, None) or b""
+                if isinstance(value, str):
+                    value = value.encode("utf-8")
+                (evidence / ("runner." + stream + ".log")).write_bytes(value)
+            report["runner_timed_out"] = True
+            report["runner_cleanup_warning"] = (
+                "Native Word cleanup is unverified after the Python helper timeout; "
+                "partial output is retained. Timeout handling terminates only the helper "
+                "Python process; it does not quit or kill Word."
+            )
+        # Persist the failure before cleanup: even its ownership reads are COM
+        # calls and could block if the registered application is unresponsive.
+        report["overall"] = "failed"
+        persist()
     finally:
         if sentinel is not None:
             try:
-                current = state(sentinel)
-                if expected_text is None or sentinel.Content.Text != expected_text or current["saved"] or current["name"] != original["name"] or current["full_name"] != original["full_name"]:
+                current = ownership_state(sentinel)
+                unchanged_initial = initial is not None and current == initial
+                unchanged_marker = (
+                    expected_text is not None and original is not None
+                    and current["text"] == expected_text and not current["saved"]
+                    and current["name"] == original["name"]
+                    and current["full_name"] == original["full_name"]
+                )
+                if not (unchanged_initial or unchanged_marker):
                     raise RuntimeError("Sentinel ownership/content no longer matches; refusing to close")
                 sentinel.Close(SaveChanges=0)
                 sentinel = None

@@ -1,0 +1,1 @@
+Native probe ended; inspect capability gaps and artifacts separately
