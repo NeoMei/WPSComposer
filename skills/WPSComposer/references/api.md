@@ -666,7 +666,13 @@ All composers expose these constants for direct `SaveAs` / `ExportAsFixedFormat`
 
 ---
 
-## ProgID fallback order
+## Legacy direct Composer ProgID fallback order
+
+These chains apply to the existing direct Composer interfaces. Public
+`generate()` and `convert_to_pdf()` use the selected engine: explicit/default
+`wps` excludes Microsoft Office, while `auto` chooses an installed compatible
+engine before starting and never retries with another engine after mutation.
+
 - Writer: `KWps.Application` → `Wps.Application` → `Word.Application`
 - Sheet: `Ket.Application` → `Excel.Application`
 - Slide: `KWpp.Application` → `Wpp.Application` → `PowerPoint.Application`

@@ -1,0 +1,8 @@
+WPSC_HEADING	inserted	新增原生编号章节	1	1	1
+WPSC_HEADING	inserted	一级章节验收	2	2	2
+WPSC_CHILD	inserted	二级章节验收	2.1	2
+WPSC_CHILD	inserted	三级章节验收	2.1.1	2
+WPSC_CHILD	inserted	四级章节验收	2.1.1.1	2
+WPSC_CLEAN
+
+WPSC_OK	0

@@ -151,10 +151,21 @@ def pagination_source(nodes):
 
 
 def refresh_source(rounds=3):
+    # Word's generic field update can succeed with a stale TOC entry cache.
+    # Rebuild native index objects each round before observing field results.
     return f'''set priorFields to missing value
 set fieldsStable to false
 repeat with refreshRound from 1 to {max(2, rounds)}
  repaginate ownedDoc
+ repeat with tocIndex from 1 to (count of tables of contents of ownedDoc)
+  update (table of contents tocIndex of ownedDoc)
+ end repeat
+ repeat with figuresIndex from 1 to (count of tables of figures of ownedDoc)
+  update (table of figures figuresIndex of ownedDoc)
+ end repeat
+ repeat with nativeIndex from 1 to (count of indexes of ownedDoc)
+  update (index nativeIndex of ownedDoc)
+ end repeat
  repeat with fieldIndex from 1 to (count of fields of ownedDoc)
   if (update field (field fieldIndex of ownedDoc)) is false then error "Native Word field update failed"
  end repeat
@@ -308,7 +319,10 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             else:
                 pattern = '.'.join('%' + str(i) for i in range(1, level+1))
                 number_style = 'arabic'
-            lines += [f'set lvl to list level {level} of ownList', f'set number style of lvl to list number style {number_style}', 'set start at of lvl to 1', f'set reset on higher of lvl to {level-1}', f'set number format of lvl to {apple_string(pattern)}', f'link to list template (Word style (style heading{level}) of ownedDoc) list template ownList list level number {level}']
+            # Linking from each style makes Word clone the outline per level.
+            # Bind the localized style from the shared level instead, so new
+            # chapters update every descendant without changing paragraph layout.
+            lines += [f'set lvl to list level {level} of ownList', f'set number style of lvl to list number style {number_style}', 'set start at of lvl to 1', f'set reset on higher of lvl to {level-1}', f'set number format of lvl to {apple_string(pattern)}', f'set headingName to (name local of (Word style (style heading{level}) of ownedDoc)) as text', 'set linked style of lvl to headingName']
     style_defaults = {style['name']: style for o in plan.operations if o.op == 'writer.ensure_styles' for style in o.args['styles']}
     toc_levels = 3
     for operation in plan.operations:
