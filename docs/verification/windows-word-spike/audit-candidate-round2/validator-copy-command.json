@@ -1,0 +1,10 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "fixtures/msoffice_spike/validate_windows_artifacts.py",
+    "build\\msoffice-spike\\audit-candidate-round2\\validator-only-copy"
+  ],
+  "exit_code": 0,
+  "source_native_run": "historical final-cleanup-review/windows-run-10",
+  "scope": "validator-only"
+}

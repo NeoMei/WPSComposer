@@ -1,0 +1,12 @@
+{
+  "reviewed": true,
+  "method": "all-page contact sheet plus full first/second/last pages; final run page rasters identical",
+  "observations": [
+    "TOC title follows TOC entries",
+    "rows 004/025/046/067 split across pages as configured",
+    "repeated headers and wrapping legible",
+    "last-page marker complete",
+    "no observed clipping or column overlap"
+  ],
+  "production_layout_approved": false
+}

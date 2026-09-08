@@ -1,0 +1,21 @@
+{
+  "candidate": "deb67ba",
+  "status": "PASS",
+  "install_root": "/tmp/wpscomposer-deb67ba/codex/plugins/wps-composer",
+  "source_matches": {
+    "skills/WPSComposer/scripts/msoffice/windows_runtime.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": true,
+    "skills/WPSComposer/scripts/msoffice/__init__.py": true,
+    "skills/WPSComposer/scripts/msoffice/windows_host.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": true,
+    "skills/WPSComposer/scripts/msoffice/errors.py": true,
+    "skills/WPSComposer/scripts/writer.py": true,
+    "skills/WPSComposer/scripts/macos_probe/runtime.py": true,
+    "macos/wps-jsapi-probe/addin/bridge-client.js": true,
+    "skills/WPSComposer/references/native-word.md": true
+  },
+  "public_signatures": {
+    "generate": "(source: 'str', format: 'str' = 'docx', preset: 'Optional[str]' = None, output: 'Optional[str]' = None, source_is_text: 'bool' = False, plugins: 'Optional[List[str]]' = None, timeout: 'float' = 600, overwrite: 'bool' = False, *, open_result: 'bool' = False, engine: 'str' = 'wps') -> 'str'",
+    "convert_to_pdf": "(source: 'str', output: 'Optional[str]' = None, *, overwrite: 'bool' = False, open_result: 'bool' = False, engine: 'str' = 'wps', timeout: 'float' = 600) -> 'str'"
+  }
+}

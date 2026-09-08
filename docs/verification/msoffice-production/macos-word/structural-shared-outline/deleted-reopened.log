@@ -1,0 +1,7 @@
+WPSC_HEADING	deleted-reopened	一级章节验收	1	1	1
+WPSC_CHILD	deleted-reopened	二级章节验收	1.1	1
+WPSC_CHILD	deleted-reopened	三级章节验收	1.1.1	1
+WPSC_CHILD	deleted-reopened	四级章节验收	1.1.1.1	1
+WPSC_CLEAN
+
+WPSC_OK	0

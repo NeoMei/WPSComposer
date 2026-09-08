@@ -1,0 +1,15 @@
+{
+  "baseline_commit": "760704fc4b976dcc49f88d0e34835b1f5b7abbea",
+  "native_ui_workflow": "passed",
+  "com_setup_and_verification": true,
+  "native_mouse_keyboard_edit_undo_save_close_reopen": true,
+  "copied_docx_byte_identical_after_reopen": true,
+  "portable_rejection_cases_passed": 5,
+  "original_evidence_unchanged": true,
+  "runner_unchanged": true,
+  "global_quit_or_kill": false,
+  "published_screenshots": "document-only crops",
+  "task_pid": 19732,
+  "legacy_pid_untouched": 9252,
+  "production_admission": "NO_GO"
+}

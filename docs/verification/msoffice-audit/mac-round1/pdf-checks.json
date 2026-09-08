@@ -1,0 +1,10 @@
+{
+  "checks": {
+    "nine_pages": true,
+    "all_80_records": true,
+    "header_every_page": true,
+    "end_marker": true,
+    "numbered_headings_and_toc_pages": true
+  },
+  "extraction_normalization": "NFKC plus visually verified CJK radical forms ⻓ -> 长 and ⻚ -> 页; unnormalized extraction mismatch retained in task log, not treated as native document defect."
+}

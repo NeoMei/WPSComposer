@@ -1,0 +1,9 @@
+{
+  "KWps.Application": {
+    "clsid": "{000209FF-0000-4b30-A977-D214852036FF}",
+    "error": "FileNotFoundError(2, '系统找不到指定的文件。', None, 2, None)"
+  },
+  "Wps.Application": {
+    "error": "FileNotFoundError(2, '系统找不到指定的文件。', None, 2, None)"
+  }
+}

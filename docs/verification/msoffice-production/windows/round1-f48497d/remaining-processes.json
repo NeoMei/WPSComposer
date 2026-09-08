@@ -1,0 +1,18 @@
+{
+  "processes": {
+    "9252": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "19732": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "14432": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "20960": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "15152": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "26492": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "14848": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "6332": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+  },
+  "known_empty_probe_pids_absent": {
+    "15152": false,
+    "26492": false,
+    "6332": false
+  },
+  "quit_or_kill_attempted": false
+}

@@ -1,0 +1,10 @@
+{
+  "candidate": "ead655a",
+  "command": "PYTHONPATH=.:/tmp/wps-spike-validator-audit-deps python -m pytest -v",
+  "exit_code": 0,
+  "passed": 2846,
+  "skipped": 12,
+  "seconds": 221.96,
+  "log_sha256": "ad8a71b90a492a541e57b97cfcc4254b7254e45233b66f2d9ddfe9d98b8b9559",
+  "native_gate_scope": "Skipped platform gates are not certified by pytest; native reports are separate."
+}

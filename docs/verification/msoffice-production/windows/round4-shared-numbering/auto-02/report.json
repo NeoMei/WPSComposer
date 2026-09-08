@@ -1,0 +1,80 @@
+{
+  "checks": {
+    "read_only_detection_starts_no_office_process": true,
+    "auto_selects_real_wps": true,
+    "wps_artifact_provenance": true,
+    "conversion_preserves_docx": true
+  },
+  "registration": [
+    {
+      "view": "default",
+      "clsid": "{000209FF-0000-4b30-A977-D214852036FF}",
+      "error": "[WinError 2] 系统找不到指定的文件。"
+    },
+    {
+      "view": "32",
+      "clsid": "{000209FF-0000-4b30-A977-D214852036FF}",
+      "local_server": "\"C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6\\wps.exe\" /prometheus /wps /Automation"
+    },
+    {
+      "view": "64",
+      "clsid": "{000209FF-0000-4b30-A977-D214852036FF}",
+      "error": "[WinError 2] 系统找不到指定的文件。"
+    }
+  ],
+  "status": "PASS",
+  "detected": {
+    "wps": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6\\wps.exe",
+    "msoffice": "C:\\Program Files\\Microsoft Office\\Root\\Office16\\WINWORD.EXE"
+  },
+  "resolved": "wps",
+  "docx": {
+    "checks": {
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "shared_heading_numbering_sequence": true,
+      "native_toc_field": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "sections": [
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      }
+    ],
+    "headings": [
+      {
+        "label": "原生烟雾验收",
+        "style_id": "2",
+        "effective_half_point_sizes": [
+          "32"
+        ],
+        "expected_half_point_size": 32
+      }
+    ],
+    "bytes": 12786,
+    "sha256": "105a46ac2fab62fb4d1d93ba4984a9724e7d19fd5b8d59144b7e70150607684a"
+  },
+  "pdf": {
+    "checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true
+    },
+    "footer_text": null,
+    "pages": 1,
+    "page_sizes": [
+      {
+        "width_points": 595.3,
+        "height_points": 841.9
+      }
+    ],
+    "bytes": 120070,
+    "sha256": "48f25312d089af3cdaf4cf00cb2546128e03da14f4d928fb2768489d6a874f38"
+  },
+  "application_xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Template>Normal.dotm</Template><Pages>1</Pages><Words>0</Words><Characters>0</Characters><Lines>0</Lines><Paragraphs>0</Paragraphs><TotalTime>0</TotalTime><ScaleCrop>false</ScaleCrop><LinksUpToDate>false</LinksUpToDate><CharactersWithSpaces>0</CharactersWithSpaces><Application>WPS Office_12.1.0.28505_F1E327BC-269C-435d-A152-05C5408002CA</Application><DocSecurity>0</DocSecurity></Properties>"
+}

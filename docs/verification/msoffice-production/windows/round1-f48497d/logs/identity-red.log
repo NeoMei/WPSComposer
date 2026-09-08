@@ -1,0 +1,97 @@
+................FFF.                                                     [100%]
+================================== FAILURES ===================================
+____ test_empty_word_without_application_hwnd_is_bound_before_document_add ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002151C3950D0>
+
+    def test_empty_word_without_application_hwnd_is_bound_before_document_add(monkeypatch):
+        app = setup_host(monkeypatch, new=EmptyNativeApp())
+        observations = []
+    
+        def matching_windows(pid, caption):
+            observations.append((pid, app.Documents.Count, app.Caption))
+            assert app.Caption == caption and caption != 'Word'
+            return [43]
+    
+        host._load_dependencies().caption_windows = matching_windows
+>       composer = host.create_dedicated_composer()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\msoffice\test_windows_host.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+staging_dir = None
+
+    def create_dedicated_composer(staging_dir: Optional[str] = None) -> NativeWordComposer:
+        """Verify new WINWORD process, IUnknown isolation, empty host and owned HWND.
+    
+        Failure before the document HWND gate never grants mutation/cleanup rights.
+        Such uncertain instances are intentionally retained for manual inspection.
+        """
+        deps = _load_dependencies()
+        deps.initialize()
+        try:
+            previous = deps.active()
+            before = deps.processes()
+            app = deps.dispatch()
+            candidates = {pid: path for pid, path in deps.processes().items() if pid not in before}
+            if len(candidates) != 1:
+                raise WordIdentityError('Cannot identify exactly one new WINWORD.EXE process')
+            pid, executable = next(iter(candidates.items()))
+            if (
+                ntpath.basename(executable).casefold() != 'winword.exe'
+                or str(app.Name) != 'Microsoft Word'
+                or _windows_path(app.Path) != _windows_path(ntpath.dirname(executable))
+            ):
+                raise WordIdentityError('COM application is not the new native Microsoft Word process')
+            token = deps.identity(app)
+            if previous is not None and token == deps.identity(previous):
+                raise WordIdentityError('DispatchEx returned the preexisting Word application')
+            if int(app.Documents.Count) != 0:
+                raise WordIdentityError('DispatchEx application already contains documents')
+            # Bind the empty application itself before Documents.Add can mutate it.
+            # The document HWND remains a second gate once the owned doc exists.
+            try:
+                application_hwnd = int(app.Hwnd)
+            except Exception:
+>               raise WordIdentityError('Native Word application HWND is unavailable') from None
+E               skills.WPSComposer.scripts.msoffice.windows_host.WordIdentityError: Native Word application HWND is unavailable
+
+skills\WPSComposer\scripts\msoffice\windows_host.py:228: WordIdentityError
+_ test_caption_proof_failure_restores_caption_without_document_or_quit[matches0] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002151C328150>
+matches = []
+
+    @pytest.mark.parametrize('matches', [[], [43, 45]])
+    def test_caption_proof_failure_restores_caption_without_document_or_quit(monkeypatch, matches):
+        app = setup_host(monkeypatch, new=EmptyNativeApp())
+        observed = []
+        host._load_dependencies().caption_windows = lambda pid, marker: observed.append(marker) or matches
+>       with pytest.raises(host.WordIdentityError, match='caption'):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'caption'
+E         Actual message: 'Native Word application HWND is unavailable'
+
+tests\msoffice\test_windows_host.py:275: AssertionError
+_ test_caption_proof_failure_restores_caption_without_document_or_quit[matches1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002151C421D90>
+matches = [43, 45]
+
+    @pytest.mark.parametrize('matches', [[], [43, 45]])
+    def test_caption_proof_failure_restores_caption_without_document_or_quit(monkeypatch, matches):
+        app = setup_host(monkeypatch, new=EmptyNativeApp())
+        observed = []
+        host._load_dependencies().caption_windows = lambda pid, marker: observed.append(marker) or matches
+>       with pytest.raises(host.WordIdentityError, match='caption'):
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'caption'
+E         Actual message: 'Native Word application HWND is unavailable'
+
+tests\msoffice\test_windows_host.py:275: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/msoffice/test_windows_host.py::test_empty_word_without_application_hwnd_is_bound_before_document_add
+FAILED tests/msoffice/test_windows_host.py::test_caption_proof_failure_restores_caption_without_document_or_quit[matches0]
+FAILED tests/msoffice/test_windows_host.py::test_caption_proof_failure_restores_caption_without_document_or_quit[matches1]
+3 failed, 17 passed in 0.72s

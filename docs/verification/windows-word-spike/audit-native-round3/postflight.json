@@ -1,0 +1,10 @@
+{
+  "registered_name": "Microsoft Word",
+  "registered_documents_count": 0,
+  "sentinel_pid": 9252,
+  "sentinel_pid_still_present": true,
+  "runner_pid": 3936,
+  "runner_pid_absent": true,
+  "no_quit_or_kill_in_postflight": true,
+  "observed_utc": "2026-09-08T00:57:38.567041+00:00"
+}

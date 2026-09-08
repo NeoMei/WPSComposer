@@ -1,0 +1,11 @@
+{
+  "candidate_commit": "f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+  "raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+  "normalized_lf_sha256": "5dc4f102fb1f0243181b4eaea2362b75b1b6b5eebb634f0692fd7ca2671cb65a",
+  "git_blob_oid": "8c2fc817a5ee54a1ef5f9fcc4f132642456823ed",
+  "raw_bytes": 14386,
+  "crlf_count": 273,
+  "bare_lf_count": 0,
+  "normalized_equals_git_blob": true,
+  "snapshot": "executed-windows-word.py.txt"
+}

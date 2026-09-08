@@ -1,0 +1,60 @@
+FF.F.                                                                    [100%]
+================================== FAILURES ===================================
+___________ test_auto_discovers_wps_in_alternate_registry_view[512] ___________
+
+registry = ({(512, 'KWps.Application\\CLSID'): '{KWps.Application}', (512, 'CLSID\\{KWps.Application}\\LocalServer32'): '"C:\\Use...st_auto_discovers_wps_in_alt0\\wps.exe" /Automation'}, [(0, 'KWps.Application\\CLSID'), (0, 'Wps.Application\\CLSID')])
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_auto_discovers_wps_in_alt0')
+view = 512
+
+    @pytest.mark.parametrize('view', [512, 256])
+    def test_auto_discovers_wps_in_alternate_registry_view(registry, tmp_path, view):
+        values, reads = registry
+        executable = tmp_path / 'wps.exe'; executable.touch()
+        register(values, view, 'KWps.Application', executable)
+>       assert engines.engine_executable('wps') == str(executable)
+E       AssertionError: assert None == 'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_auto_discovers_wps_in_alt0\\wps.exe'
+E        +  where None = <function engine_executable at 0x000001B20187DBC0>('wps')
+E        +    where <function engine_executable at 0x000001B20187DBC0> = engines.engine_executable
+E        +  and   'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_auto_discovers_wps_in_alt0\\wps.exe' = str(WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_auto_discovers_wps_in_alt0/wps.exe'))
+
+tests\msoffice\test_windows_registry_detection.py:42: AssertionError
+___________ test_auto_discovers_wps_in_alternate_registry_view[256] ___________
+
+registry = ({(256, 'KWps.Application\\CLSID'): '{KWps.Application}', (256, 'CLSID\\{KWps.Application}\\LocalServer32'): '"C:\\Use...st_auto_discovers_wps_in_alt1\\wps.exe" /Automation'}, [(0, 'KWps.Application\\CLSID'), (0, 'Wps.Application\\CLSID')])
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_auto_discovers_wps_in_alt1')
+view = 256
+
+    @pytest.mark.parametrize('view', [512, 256])
+    def test_auto_discovers_wps_in_alternate_registry_view(registry, tmp_path, view):
+        values, reads = registry
+        executable = tmp_path / 'wps.exe'; executable.touch()
+        register(values, view, 'KWps.Application', executable)
+>       assert engines.engine_executable('wps') == str(executable)
+E       AssertionError: assert None == 'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_auto_discovers_wps_in_alt1\\wps.exe'
+E        +  where None = <function engine_executable at 0x000001B20187DBC0>('wps')
+E        +    where <function engine_executable at 0x000001B20187DBC0> = engines.engine_executable
+E        +  and   'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_auto_discovers_wps_in_alt1\\wps.exe' = str(WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_auto_discovers_wps_in_alt1/wps.exe'))
+
+tests\msoffice\test_windows_registry_detection.py:42: AssertionError
+_______ test_missing_registered_file_does_not_hide_valid_alternate_view _______
+
+registry = ({(0, 'KWps.Application\\CLSID'): '{KWps.Application}', (0, 'CLSID\\{KWps.Application}\\LocalServer32'): '"C:\\Users\\...on'}, [(0, 'KWps.Application\\CLSID'), (0, 'CLSID\\{KWps.Application}\\LocalServer32'), (0, 'Wps.Application\\CLSID')])
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_missing_registered_file_d0')
+
+    def test_missing_registered_file_does_not_hide_valid_alternate_view(registry, tmp_path):
+        values, _ = registry
+        register(values, 0, 'KWps.Application', tmp_path / 'missing' / 'wps.exe')
+        path = tmp_path / 'wps.exe'; path.touch()
+        register(values, 512, 'KWps.Application', path)
+>       assert engines.engine_executable('wps') == str(path)
+E       AssertionError: assert None == 'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_missing_registered_file_d0\\wps.exe'
+E        +  where None = <function engine_executable at 0x000001B20187DBC0>('wps')
+E        +    where <function engine_executable at 0x000001B20187DBC0> = engines.engine_executable
+E        +  and   'C:\\Users\\1\\AppData\\Local\\Temp\\pytest-of-NeoMei\\pytest-173\\test_missing_registered_file_d0\\wps.exe' = str(WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-173/test_missing_registered_file_d0/wps.exe'))
+
+tests\msoffice\test_windows_registry_detection.py:62: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/msoffice/test_windows_registry_detection.py::test_auto_discovers_wps_in_alternate_registry_view[512]
+FAILED tests/msoffice/test_windows_registry_detection.py::test_auto_discovers_wps_in_alternate_registry_view[256]
+FAILED tests/msoffice/test_windows_registry_detection.py::test_missing_registered_file_does_not_hide_valid_alternate_view
+3 failed, 2 passed in 1.09s

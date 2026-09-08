@@ -1,0 +1,10 @@
+{
+  "candidate": "deb67ba",
+  "command": "PYTHONPATH=.:/tmp/wps-spike-validator-audit-deps python -m pytest -v",
+  "exit_code": 0,
+  "passed": 2836,
+  "skipped": 12,
+  "seconds": 189.62,
+  "log_sha256": "19de760ee404b932d13278d75bcffb8706690cbf30fb03c57a742738ebfb74df",
+  "native_gate_scope": "Skipped platform gates are not certified by pytest; native reports are separate."
+}

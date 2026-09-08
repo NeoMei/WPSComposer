@@ -1,0 +1,8 @@
+{
+  "detected_executable": "None",
+  "registered_application": null,
+  "active_object_error": {
+    "error": "com_error(-2147221021, '操作无法使用', None, None)",
+    "hresult": -2147221021
+  }
+}

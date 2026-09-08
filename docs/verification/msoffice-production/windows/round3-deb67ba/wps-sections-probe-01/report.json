@@ -1,0 +1,34 @@
+{
+  "events": [],
+  "errors": [
+    {
+      "function": "set_header_footer",
+      "line": 1325,
+      "error": "RuntimeError('header link was not applied')"
+    },
+    {
+      "function": "set_header_footer",
+      "line": 1344,
+      "error": "NativeWriterObjectError('section header/footer apply failed')"
+    },
+    {
+      "function": "configure_section",
+      "line": 1389,
+      "error": "NativeWriterObjectError('section header/footer apply failed')"
+    },
+    {
+      "error": "NativeWriterObjectError('section header/footer apply failed')",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\wps_sections_probe.py\", line 26, in <module>\n    c.configure_section(role=role,page_number_format=fmt,restart_page_numbering=True,start_page_number=1,header_text='',footer_text='',link_to_previous_header=False,link_to_previous_footer=False)\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\skills\\WPSComposer\\scripts\\writer.py\", line 1389, in configure_section\n    self.set_header_footer(\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\skills\\WPSComposer\\scripts\\writer.py\", line 1344, in set_header_footer\n    raise NativeWriterObjectError(\nskills.WPSComposer.scripts.writer.NativeWriterObjectError: section header/footer apply failed\n"
+    }
+  ],
+  "quit_attempted": false,
+  "application": {
+    "name": "Microsoft Word",
+    "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+    "version": "12.0",
+    "documents_before": 0
+  },
+  "status": "FAIL",
+  "owned_document_closed": true,
+  "documents_after": 0
+}

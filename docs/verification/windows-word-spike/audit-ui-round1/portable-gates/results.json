@@ -1,0 +1,70 @@
+{
+  "passed": 5,
+  "cases": [
+    {
+      "case": "existing_empty",
+      "command": [
+        "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "fixtures/msoffice_spike/windows_word.py",
+        "--output-dir",
+        "build\\msoffice-spike\\audit-ui-round1\\portable-gates\\existing-empty"
+      ],
+      "exit_code": 1,
+      "files_unchanged": true,
+      "error": "Traceback (most recent call last):\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 273, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 71, in main\r\n    out.mkdir(parents=True, exist_ok=False)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileExistsError: [WinError 183] 当文件已存在时，无法创建该文件。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-empty'\r\n",
+      "rejected_before_com": true
+    },
+    {
+      "case": "existing_nonempty",
+      "command": [
+        "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "fixtures/msoffice_spike/windows_word.py",
+        "--output-dir",
+        "build\\msoffice-spike\\audit-ui-round1\\portable-gates\\existing-evidence"
+      ],
+      "exit_code": 1,
+      "files_unchanged": true,
+      "error": "Traceback (most recent call last):\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 273, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 71, in main\r\n    out.mkdir(parents=True, exist_ok=False)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileExistsError: [WinError 183] 当文件已存在时，无法创建该文件。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-evidence'\r\n",
+      "rejected_before_com": true
+    },
+    {
+      "case": "same_output_again",
+      "command": [
+        "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "fixtures/msoffice_spike/windows_word.py",
+        "--output-dir",
+        "build\\msoffice-spike\\audit-ui-round1\\portable-gates\\existing-evidence"
+      ],
+      "exit_code": 1,
+      "files_unchanged": true,
+      "error": "Traceback (most recent call last):\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 273, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 71, in main\r\n    out.mkdir(parents=True, exist_ok=False)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileExistsError: [WinError 183] 当文件已存在时，无法创建该文件。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-evidence'\r\n",
+      "rejected_before_com": true
+    },
+    {
+      "case": "output_is_file",
+      "command": [
+        "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "fixtures/msoffice_spike/windows_word.py",
+        "--output-dir",
+        "build\\msoffice-spike\\audit-ui-round1\\portable-gates\\existing-output-file"
+      ],
+      "exit_code": 1,
+      "files_unchanged": true,
+      "error": "Traceback (most recent call last):\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 273, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 71, in main\r\n    out.mkdir(parents=True, exist_ok=False)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileExistsError: [WinError 183] 当文件已存在时，无法创建该文件。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-output-file'\r\n",
+      "rejected_before_com": true
+    },
+    {
+      "case": "parent_is_file",
+      "command": [
+        "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "fixtures/msoffice_spike/windows_word.py",
+        "--output-dir",
+        "build\\msoffice-spike\\audit-ui-round1\\portable-gates\\existing-output-file\\child"
+      ],
+      "exit_code": 1,
+      "files_unchanged": true,
+      "error": "Traceback (most recent call last):\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-output-file\\\\child'\r\n\r\nDuring handling of the above exception, another exception occurred:\r\n\r\nTraceback (most recent call last):\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 273, in <module>\r\n    raise SystemExit(main())\r\n                     ^^^^^^\r\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 71, in main\r\n    out.mkdir(parents=True, exist_ok=False)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1120, in mkdir\r\n    self.parent.mkdir(parents=True, exist_ok=True)\r\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\pathlib.py\", line 1116, in mkdir\r\n    os.mkdir(self, mode)\r\nFileExistsError: [WinError 183] 当文件已存在时，无法创建该文件。: 'D:\\\\MyDocuments\\\\codexprojects\\\\WpsComposer\\\\build\\\\msoffice-spike\\\\audit-ui-round1\\\\portable-gates\\\\existing-output-file'\r\n",
+      "rejected_before_com": true
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "registered_quit_attempted": false,
+  "sentinel_saved": false,
+  "errors": [],
+  "registered_documents_before": 0,
+  "registered_pid": 9252,
+  "sentinel_hwnd": 72616348,
+  "before": {
+    "name": "文档5",
+    "path": "文档5",
+    "saved": false,
+    "characters": 65,
+    "text_sha256": "3642637d7fa656c56ad2f444e51b181997d28dfe2cf52035d4503640088bc037"
+  },
+  "runs": [
+    {
+      "name": "representative-01",
+      "exit_code": 0,
+      "after": {
+        "name": "文档5",
+        "path": "文档5",
+        "saved": false,
+        "characters": 65,
+        "text_sha256": "3642637d7fa656c56ad2f444e51b181997d28dfe2cf52035d4503640088bc037"
+      },
+      "unchanged": true
+    },
+    {
+      "name": "public-pdf-01",
+      "exit_code": 0,
+      "after": {
+        "name": "文档5",
+        "path": "文档5",
+        "saved": false,
+        "characters": 65,
+        "text_sha256": "3642637d7fa656c56ad2f444e51b181997d28dfe2cf52035d4503640088bc037"
+      },
+      "unchanged": true
+    }
+  ],
+  "sentinel_closed_without_saving": true,
+  "registered_documents_after": 0,
+  "registered_responsive": true,
+  "registered_pid_retained": true
+}

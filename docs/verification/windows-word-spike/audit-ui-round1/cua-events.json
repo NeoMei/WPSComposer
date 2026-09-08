@@ -1,0 +1,70 @@
+[
+  {
+    "label": "01-opened-document",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "audit-ui-probe - Word"
+    },
+    "focus": "8 编辑框 搜索文档",
+    "document_text": "078\u0007原生排版验证第78条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007079\u0007原生排版验证第79条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007080\u0007原生排版验证第80条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007MSOFFICE-SPIKE-END\u0007结束标记\u0007完成\u0007\u0007"
+  },
+  {
+    "label": "02-end-before-edit",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "audit-ui-probe - Word"
+    },
+    "focus": "8 编辑框 搜索文档",
+    "document_text": "078\u0007原生排版验证第78条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007079\u0007原生排版验证第79条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007080\u0007原生排版验证第80条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007MSOFFICE-SPIKE-END\u0007结束标记\u0007完成\u0007\u0007"
+  },
+  {
+    "label": "03-marker-inserted",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "audit-ui-probe - Word"
+    },
+    "focus": "8 编辑框 搜索文档",
+    "document_text": "078\u0007原生排版验证第78条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007079\u0007原生排版验证第79条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007080\u0007原生排版验证第80条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007MSOFFICE-SPIKE-END\u0007结束标记\u0007完成\u0007\u0007WPS-AUDIT-UI-760704F-ROUND1"
+  },
+  {
+    "label": "04-after-undo",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "audit-ui-probe - Word"
+    },
+    "focus": "8 编辑框 搜索文档",
+    "document_text": "078\u0007原生排版验证第78条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007079\u0007原生排版验证第79条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007080\u0007原生排版验证第80条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007MSOFFICE-SPIKE-END\u0007结束标记\u0007完成\u0007\u0007"
+  },
+  {
+    "label": "05-explicit-save",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "audit-ui-probe - Word"
+    },
+    "focus": "8 编辑框 搜索文档",
+    "document_text": "078\u0007原生排版验证第78条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007079\u0007原生排版验证第79条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007080\u0007原生排版验证第80条：中文内容自动换行，检查表格跨页和行高。\u0007待核验\u0007\u0007MSOFFICE-SPIKE-END\u0007结束标记\u0007完成\u0007\u0007"
+  },
+  {
+    "label": "06-document-closed",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "Word"
+    },
+    "focus": "8 编辑框 (disabled) 搜索文档",
+    "document_text": "搜索"
+  },
+  {
+    "label": "07-reopened-document",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 1968272,
+      "title": "Word"
+    }
+  }
+]

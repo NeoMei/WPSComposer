@@ -1,0 +1,28 @@
+{
+  "checks": {
+    "docx_native_contract": true,
+    "header_on_off_value_enabled": true,
+    "toc_field_uses_three_outline_levels": true,
+    "toc_has_three_native_page_references": true,
+    "pdf_body_fangsong_12pt_and_24pt_indent": true,
+    "six_pdf_heading_sizes_with_word_export_rounding": true,
+    "four_numbered_headings_on_body_page": true,
+    "toc_page_numbers_match_actual_body_page": true,
+    "all_36_table_records_once": true,
+    "table_header_on_all_table_pages": true,
+    "text_inside_page_bounds": true
+  },
+  "all_passed": true,
+  "body_indent_pt": 24.0260009765625,
+  "pdf_heading_sizes_pt": [
+    16.079999923706055,
+    15.119999885559082,
+    15.119999885559082,
+    13.920000076293945,
+    13.920000076293945,
+    12.0
+  ],
+  "pdf_heading_size_tolerance_pt": 0.15,
+  "rendered_pages": 5,
+  "visual_review": "All 5 pages inspected in contact sheet. No clipping or overlapping columns. Intentional cover/TOC pages and sparse final table page retained."
+}

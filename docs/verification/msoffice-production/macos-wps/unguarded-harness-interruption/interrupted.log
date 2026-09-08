@@ -1,0 +1,33 @@
+WPS registration recovery: /Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/.wpscomposer-runtime/registration-recovery
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production/wps-schemes-final/run.py", line 12, in <module>
+    d=generate(str(md),format='docx',output=str(root/(scheme+'.docx')),engine='wps',timeout=600)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/orchestrator.py", line 202, in generate
+    outcome = _generate_longform_outcome(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/orchestrator.py", line 44, in _generate_longform_outcome
+    return generate_longform(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/platform_runtime.py", line 407, in generate_longform
+    return run_longform_lifecycle(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/lifecycle.py", line 245, in run_longform_lifecycle
+    current_pdf = export(current_docx)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/lifecycle.py", line 218, in export
+    _call_stage(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/lifecycle.py", line 86, in _call_stage
+    return operation()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/lifecycle.py", line 221, in <lambda>
+    lambda: adapter.export_pdf(docx, deadline),
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/longform/platform_runtime.py", line 324, in export_pdf
+    _wait_for_pdf_artifact(target, deadline=deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/macos_probe/conversion.py", line 95, in _wait_for_pdf_artifact
+    validate_before_deadline(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/skills/WPSComposer/scripts/artifact_transport.py", line 226, in validate_before_deadline
+    if budget <= 0 or not receiver.poll(budget):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/connection.py", line 262, in poll
+    return self._poll(timeout)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/connection.py", line 429, in _poll
+    r = wait([self], timeout)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/connection.py", line 936, in wait
+    ready = selector.select(timeout)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt

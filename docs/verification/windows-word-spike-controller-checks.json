@@ -1,0 +1,29 @@
+{
+  "candidate": "f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+  "evidence_commit": "f317b161f5bc3e5244a2849fd1de73ef2cd75b2e",
+  "checksums_verified": {
+    "docs/verification/windows-word-spike": 65,
+    "docs/verification/windows-word-spike/final-cleanup-review": 25
+  },
+  "source_bytes_verified": true,
+  "sentinel_preserved_and_discarded": true,
+  "task_process_exited": true,
+  "runs": [
+    {
+      "run": "windows-run-09",
+      "rows": 82,
+      "columns": 3,
+      "pages": 9,
+      "matches_visually_reviewed_run08": true,
+      "all_native_operations_succeeded": true
+    },
+    {
+      "run": "windows-run-10",
+      "rows": 82,
+      "columns": 3,
+      "pages": 9,
+      "matches_visually_reviewed_run08": true,
+      "all_native_operations_succeeded": true
+    }
+  ]
+}

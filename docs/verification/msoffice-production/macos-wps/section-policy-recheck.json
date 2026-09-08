@@ -1,0 +1,121 @@
+{
+  "docx": {
+    "checks": {
+      "section_page_number_policy": true,
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "sections": [
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      }
+    ],
+    "headings": [
+      {
+        "label": "一级章节验收",
+        "style_id": "2",
+        "effective_half_point_sizes": [
+          "32"
+        ],
+        "expected_half_point_size": 32
+      },
+      {
+        "label": "二级章节验收",
+        "style_id": "3",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "三级章节验收",
+        "style_id": "4",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "四级章节验收",
+        "style_id": "5",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "五级章节验收",
+        "style_id": "18",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "六级章节验收",
+        "style_id": "19",
+        "effective_half_point_sizes": [
+          "24"
+        ],
+        "expected_half_point_size": 24
+      }
+    ],
+    "bytes": 20896,
+    "sha256": "70f6e0346e6cd222574e79ed5e48ee9e2c195b92ac8e9b73d7d58bd21620ebfd"
+  },
+  "pdf": {
+    "checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true,
+      "pdf_section_page_numbers": true
+    },
+    "footer_text": [
+      "",
+      "i",
+      "1",
+      "2"
+    ],
+    "pages": 4,
+    "page_sizes": [
+      {
+        "width_points": 595.3,
+        "height_points": 841.9
+      },
+      {
+        "width_points": 595.3,
+        "height_points": 841.9
+      },
+      {
+        "width_points": 595.3,
+        "height_points": 841.9
+      },
+      {
+        "width_points": 595.3,
+        "height_points": 841.9
+      }
+    ],
+    "bytes": 253046,
+    "sha256": "923a08fd2f87b88093481942e2614c18134c95936b2920c2f8f8e1ffaf44e8a5"
+  }
+}

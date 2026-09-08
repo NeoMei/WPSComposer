@@ -211,6 +211,21 @@ VALID_OPERATION_ARGS = {
 }
 
 
+def test_heading_schema_accepts_generated_sequence_transparency():
+    operation = GenerationOperation('writer.add_heading', {'text': 'Appendix', 'level': 1,
+                                                         'numbering': False, 'sequenceTransparent': True})
+    plan = GenerationPlan(component='writer', operations=(operation,))
+    assert validate_generation_plan(plan.to_dict(), 'writer').operations[0].args['sequenceTransparent'] is True
+
+
+@pytest.mark.parametrize('value', [1, 'true', None])
+def test_heading_sequence_transparency_requires_boolean(value):
+    plan = GenerationPlan(component='writer', operations=(GenerationOperation(
+        'writer.add_heading', {'text': 'Appendix', 'level': 1, 'sequenceTransparent': value}),))
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(plan.to_dict(), 'writer')
+
+
 def test_generation_plan_round_trips_valid_writer_operations():
     plan = GenerationPlan(
         "writer",

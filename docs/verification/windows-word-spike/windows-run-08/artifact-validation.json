@@ -1,0 +1,76 @@
+{
+  "checks": {
+    "table_82_rows_3_columns_exact_content": true,
+    "repeat_header_xml": true,
+    "body_font_size_indent_xml": true,
+    "heading_styles_sizes_native_numbering_links": true,
+    "toc_field_with_four_pagerefs": true,
+    "pdf_80_records_exactly_once": true,
+    "pdf_headers_every_page": true,
+    "pdf_end_marker_last_page": true,
+    "pdf_pages_match_native": true,
+    "pdf_body_fangsong_12pt": true,
+    "pdf_all_text_inside_pages": true
+  },
+  "all_checks_passed": true,
+  "page_count": 9,
+  "headings": [
+    {
+      "heading": "原生办公文档验证",
+      "style_id": "1",
+      "num_id": "2",
+      "level": 0,
+      "passed": true
+    },
+    {
+      "heading": "层级标题验证",
+      "style_id": "2",
+      "num_id": "3",
+      "level": 1,
+      "passed": true
+    },
+    {
+      "heading": "三级标题验证",
+      "style_id": "3",
+      "num_id": "4",
+      "level": 2,
+      "passed": true
+    },
+    {
+      "heading": "长表格验证",
+      "style_id": "1",
+      "num_id": "2",
+      "level": 0,
+      "passed": true
+    }
+  ],
+  "docx_authors": [
+    null,
+    null
+  ],
+  "pdf_metadata": {
+    "format": "PDF 1.7",
+    "title": "",
+    "author": "",
+    "subject": "",
+    "keywords": "",
+    "creator": "Microsoft® Word LTSC",
+    "producer": "Microsoft® Word LTSC",
+    "creationDate": "D:20260908014402+08'00'",
+    "modDate": "D:20260908014402+08'00'",
+    "trapped": "",
+    "encryption": null
+  },
+  "body_pdf_fonts": [
+    {
+      "font": "FangSong",
+      "size": 12.0
+    }
+  ],
+  "visual_review": "pending",
+  "sha256": {
+    "probe.docx": "7dff6ec93166cbb40ab740016907825c086ac304bf32d2aeac3819a9adc64908",
+    "probe.pdf": "2f62727a0694f0f01b126788a003d49a9abd1ee97e33a4d6c25be5101273de94",
+    "result.json": "48f738f5ed19fd6450e47c3cad224aa79f317a176dd48d761528c77496a15f6d"
+  }
+}

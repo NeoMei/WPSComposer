@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "version": "0.9.0",
+  "passed": 2874,
+  "skipped": 12,
+  "exit_code": 0,
+  "seconds": 331.87,
+  "command": "PYTHONPATH=.:/tmp/wps-spike-validator-audit-deps python -m pytest -v",
+  "scope": "Complete suite after version promotion; native Windows acceptance recorded separately"
+}

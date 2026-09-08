@@ -1,0 +1,29 @@
+{
+  "candidate": "f48497d9e8d2c453a5075824229e287fab849b7e",
+  "fix_commit": "a745d2ac352f5f9d5c2037c9dd826ce54f797c91",
+  "native_windows_gates": "PASS after pre-Add identity fix",
+  "smoke_03_seconds": 168.3,
+  "representative_01_seconds": 188.8,
+  "public_pdf_seconds": 136.3,
+  "pdf_pages": 5,
+  "msoffice_tests": {
+    "passed": 70,
+    "failed": 0
+  },
+  "full_suite_initial": {
+    "passed": 2681,
+    "failed": 45,
+    "skipped": 39,
+    "seconds": 481.93
+  },
+  "missing_dependency_rerun": {
+    "passed": 44,
+    "failed": 1,
+    "seconds": 175.53
+  },
+  "remaining_test": "tests/macos_probe/test_templates.py::test_clone_writer_activation_document_uses_pinned_native_blank: Windows mode 0666 versus POSIX assertion 0600",
+  "ui_gate": "PASS with documented CUA accessibility limitations",
+  "successful_native_and_ui_task_pids_absent": true,
+  "early_diagnostic_empty_processes_retained": true,
+  "production_admission": "NO_GO; newer candidate 89b39e8 revalidation pending"
+}

@@ -480,8 +480,16 @@ assert.equal(document.Styles.Item("TOC 3").Font.Size, 9.5);
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
 
 
-def test_addin_routes_add_heading_to_native_numbering(project_root: Path):
-    """writer.add_heading applies native numbering via the v2 add-in."""
+@pytest.mark.parametrize(
+    ('scheme', 'formats', 'number_styles'),
+    [
+        ('decimal', ['%1', '%1.%2', '%1.%2.%3', '%1.%2.%3.%4'], [0, 0, 0, 0]),
+        ('chinese-formal', ['第%1章', '第%2节', '%3、', '（%4）'], [37, 37, 37, 37]),
+        ('hybrid-bid', ['第%1章', '%1.%2', '%1.%2.%3', '关键工法%4：'], [37, 253, 253, 22]),
+    ],
+)
+def test_addin_routes_add_heading_to_native_numbering(project_root: Path, scheme, formats, number_styles):
+    """Bridge operations configure one native outline with the shared scheme contract."""
     addin_dir = project_root / "macos" / "wps-jsapi-probe" / "addin"
     v2_path = json.dumps(str(addin_dir / "writer-longform-v2.js"))
     js = f"""
@@ -489,11 +497,13 @@ const fs = require("fs");
 const assert = require("assert");
 global.window = {{}};
 let templateName = null;
+let templateCount = 0;
 const linkedLevels = [];
-function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}},
-  LinkToListTemplate: function(template, level) {{ linkedLevels.push([template, level]); }}
+const listLevels = Array.from({{length: 4}}, function() {{ return {{}}; }});
+function makeStyle(name) {{ return {{ Name: name, Font: {{}}, ParagraphFormat: {{}},
+  LinkToListTemplate: function(template, level) {{ linkedLevels.push([template, level, name]); }}
 }}; }}
-function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return {{ NumberFormat: null }}; }} }}; }}
+function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return listLevels[level - 1]; }} }}; }}
 const writtenRange = {{
   Font: {{}}, ParagraphFormat: {{}}, Style: null,
   ListFormat: {{ListString: "1", ListLevelNumber: null}}
@@ -503,8 +513,8 @@ const document = {{
   Content: {{ End: 0, Text: "" }},
   Range: function() {{ return Object.assign({{Start: 0, End: 0, InsertAfter: function() {{}}}}, writtenRange); }},
   PageSetup: {{}},
-  Styles: {{ Item: function(name) {{ return makeStyle(); }}, Add: function(name) {{ return makeStyle(); }} }},
-  ListTemplates: {{ Add: function(outline, name) {{ assert.equal(outline, true); templateName = name; return makeListTemplate(); }} }},
+  Styles: {{ Item: function(name) {{ return makeStyle(name); }}, Add: function(name) {{ return makeStyle(name); }} }},
+  ListTemplates: {{ Add: function(outline, name) {{ assert.equal(outline, true); templateCount += 1; templateName = name; return makeListTemplate(); }} }},
   TablesOfContents: {{ Add: function() {{}} }},
   SaveAs2: function() {{}},
   Close: function() {{}}
@@ -520,14 +530,23 @@ window.WPSComposerLongformV2.run({{
   outputPath: "/staged/output.docx",
   plan: {{
     component: "writer",
-    operations: [
-      {{op: "writer.add_heading", args: {{text: "Intro", level: 1, numbering: true, numberingScheme: "decimal"}}, nodeId: "sec:1"}}
-    ]
+    operations: [1, 2, 3, 4].map(function(level) {{ return {{
+      op: "writer.add_heading", args: {{text: "Heading " + level, level: level, numbering: true, numberingScheme: {json.dumps(scheme)}}}, nodeId: "sec:" + level
+    }}; }})
   }}
 }});
-assert.equal(templateName, "wpsc_m3_decimal");
+assert.equal(templateName, "wpsc_m3_" + {json.dumps(scheme)});
+assert.equal(templateCount, 1);
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberFormat; }}), {json.dumps(formats)});
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberStyle; }}), {json.dumps(number_styles)});
+assert.deepEqual(listLevels.map(function(item) {{ return item.ResetOnHigher; }}), [0, 1, 2, 3]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.StartAt; }}), [1, 1, 1, 1]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberPosition; }}), [0, 18, 36, 54]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.TextPosition; }}), [18, 36, 54, 72]);
 assert.deepEqual(linkedLevels.map(function(item) {{ return item[1]; }}), [1, 2, 3, 4]);
-assert.equal(writtenRange.ListFormat.ListLevelNumber, 1);
+assert.deepEqual(linkedLevels.map(function(item) {{ return item[2]; }}), [-2, -3, -4, -5]);
+assert(linkedLevels.every(function(item) {{ return item[0] === linkedLevels[0][0]; }}));
+assert.equal(writtenRange.ListFormat.ListLevelNumber, 4);
 """
     path = Path(tempfile.mkdtemp()) / "heading_native_test.js"
     path.write_text(js, encoding="utf-8")
@@ -834,3 +853,92 @@ assert.equal(updateCount, 1);
     path = Path(tempfile.mkdtemp()) / "field_contract_failure_test.js"
     path.write_text(js, encoding="utf-8")
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
+
+
+def test_addin_styles_native_heading_objects_before_numbering_assignment(project_root, tmp_path):
+    """WPS exact-name lookup must not configure a duplicate of built-in headings."""
+    from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
+    build = build_longform_generation('---\ntitle: Font gate\nauthor: Acceptance\ntitle_page: true\nheading_numbering: decimal\n---\n# Chapter\n\nBody.')
+    styles_operation = next(op.to_dict() for op in build.plan.operations if op.op == 'writer.ensure_styles')
+    script = r'''
+const fs = require('fs'), assert = require('assert');
+global.window = {};
+eval(fs.readFileSync(ADDIN, 'utf8'));
+const builtin = {}, custom = {}, names = {};
+function style(name) {return {NameLocal: name, Font: {Size: 99}, ParagraphFormat: {}, LinkToListTemplate(template, level) {this.linkedLevel = level;}};}
+for (let level=1; level<=6; level++) {builtin[-1-level] = style('heading '+level); names['heading '+level] = builtin[-1-level];}
+builtin[-63] = style('标题'); builtin[-67] = style('正文文本');
+custom['Client Accent'] = style('Client Accent');
+const created = [];
+const styles = {Item(key) {if (builtin[key]) return builtin[key]; if (names[key]) return names[key]; if (custom[key]) return custom[key]; throw Error('unknown style '+key);},
+ Add(name) {created.push(name); return custom[name] = style(name);}};
+const document = {Styles: styles};
+const api = window.WPSComposerLongformV2.__test;
+api.runOperation(document, STYLES, {}, [], []);
+const wantedSizes = [16,15,15,14,14,12];
+for (let level=1;level<=6;level++) {
+  const target=builtin[-1-level];
+  assert.equal(target.Font.Size,wantedSizes[level-1], 'wrong native heading size level '+level);
+  assert.equal(target.Font.NameFarEast,'黑体');
+  assert.equal(target.Font.Bold,-1);
+  assert.equal(target.ParagraphFormat.KeepWithNext,true);
+  assert.equal(target.ParagraphFormat.Alignment,level===1 ? 1 : 0);
+  assert.equal(target.ParagraphFormat.OutlineLevel,level);
+}
+assert.equal(builtin[-63].Font.Size,22);
+assert.equal(builtin[-63].ParagraphFormat.OutlineLevel,10);
+assert.equal(builtin[-67].Font.Size,12);
+assert.equal(builtin[-67].Font.NameFarEast,'仿宋');
+assert.equal(builtin[-67].ParagraphFormat.FirstLineIndent,24);
+assert.deepEqual(created,[]);
+api.linkHeadingStyles(document,{});
+assert.equal(builtin[-2].linkedLevel,1);
+assert.equal(builtin[-2].Font.Size,16);
+api.runOperation(document,{op:'writer.ensure_styles',args:{styles:[{name:'Client Accent',fontSize:17},{name:'New Client Style',fontSize:18}]}},{},[],[]);
+assert.equal(custom['Client Accent'].Font.Size,17);
+assert.equal(custom['New Client Style'].Font.Size,18);
+assert.deepEqual(created,['New Client Style']);
+'''
+    js = script.replace('ADDIN', json.dumps(str(project_root / 'macos/wps-jsapi-probe/addin/writer-longform-v2.js'))).replace('STYLES', json.dumps(styles_operation, ensure_ascii=False))
+    path = tmp_path / 'native_style_identity.js'
+    path.write_text(js, encoding='utf-8')
+    result = subprocess.run(['node', str(path)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize('mode', ['numeric-unavailable', 'optional-base-missing'])
+def test_addin_style_lookup_preserves_named_fallbacks(project_root, tmp_path, mode):
+    """Unavailable host lookups must not create duplicates or abort optional bases."""
+    script = r'''
+const fs = require('fs'), assert = require('assert');
+global.window = {};
+eval(fs.readFileSync(ADDIN, 'utf8'));
+const heading = {Font: {Size: 99}, ParagraphFormat: {}}, custom = {Font: {Size: 99}, ParagraphFormat: {}};
+const created = [];
+const document = {Styles: {
+  Item(key) {
+    if (key === 'Heading 1') return heading;
+    if (key === 'Client Accent') return custom;
+    throw Error('unsupported style lookup '+key);
+  },
+  Add(name) {created.push(name); return {Font: {}, ParagraphFormat: {}};}
+}};
+const definition = MODE === 'numeric-unavailable'
+  ? {name:'Heading 1',fontSize:16,bold:true,keepWithNext:true,align:1}
+  : {name:'Client Accent',basedOn:'Optional Client Base',fontSize:17};
+window.WPSComposerLongformV2.__test.runOperation(document,{op:'writer.ensure_styles',args:{styles:[definition]}},{},[],[]);
+if (MODE === 'numeric-unavailable') {
+  assert.equal(heading.Font.Size,16);
+  assert.equal(heading.ParagraphFormat.KeepWithNext,true);
+  assert.equal(heading.ParagraphFormat.Alignment,1);
+} else {
+  assert.equal(custom.Font.Size,17);
+  assert.equal(custom.BaseStyle,'Optional Client Base');
+}
+assert.deepEqual(created,[]);
+'''
+    js = script.replace('ADDIN', json.dumps(str(project_root / 'macos/wps-jsapi-probe/addin/writer-longform-v2.js'))).replace('MODE', json.dumps(mode))
+    path = tmp_path / 'style_fallbacks.js'
+    path.write_text(js, encoding='utf-8')
+    result = subprocess.run(['node', str(path)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

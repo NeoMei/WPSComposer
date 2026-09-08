@@ -2,6 +2,31 @@
 
 ## Public DOCX/PDF M5 route
 
+### Native engine selection
+
+`generate(..., engine="wps")` and `convert_to_pdf(..., engine="wps")` accept
+keyword-only `engine="wps" | "msoffice" | "auto"`. The default is WPS.
+`msoffice` uses installed desktop Microsoft Word for DOCX/PDF generation and
+DOC/DOCX-to-PDF conversion on Windows and macOS. Excel, PowerPoint and
+conversational document editing retain their existing WPS interfaces.
+The deprecated `layout_engine: legacy` route is not available with MS Office.
+
+`auto` detects installed applications without starting them, prefers WPS,
+then selects Word for writer documents. It pins that choice for the entire
+task. An execution or content error never triggers a switch to another engine.
+Unsupported native operations fail explicitly; no alternate OOXML renderer is used.
+Windows requires `pywin32`; macOS requires desktop Word and macOS Automation
+permission for the launching terminal/application to control Microsoft Word.
+DOCX results with `open_result=True` open in the selected WPS/Word application.
+On macOS, install WPS at `/Applications/wpsoffice.app` or Word at
+`/Applications/Microsoft Word.app`; automatic detection matches these runtime
+locations.
+
+```python
+generate("report.md", output="report.docx", engine="msoffice")
+convert_to_pdf("report.docx", engine="msoffice", timeout=600)
+```
+
 `generate()` keeps its absolute-path return and adds the keyword-only
 `open_result=False` option. DOCX/PDF default to the M5 long-form lifecycle;
 PPTX/XLSX are unchanged. To compare with the deprecated Writer path, set this
@@ -201,6 +226,8 @@ def convert_to_pdf(
     *,
     overwrite: bool = False,
     open_result: bool = False,
+    engine: str = "wps",
+    timeout: float = 600,
 ) -> str:
     ...
 ```
@@ -209,6 +236,9 @@ Accepted source suffixes are `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
 `.pptx`, matched case-insensitively. The default destination is the source
 sibling with a `.pdf` suffix. Success returns its absolute path. Excel export
 is workbook-level and includes every visible worksheet.
+With `engine="msoffice"`, only `.doc` and `.docx` sources are accepted.
+`timeout` must be positive and finite; for native Word it bounds the entire
+conversion, including source staging, native export and atomic publication.
 
 | Condition | Exception |
 |---|---|
@@ -636,7 +666,13 @@ All composers expose these constants for direct `SaveAs` / `ExportAsFixedFormat`
 
 ---
 
-## ProgID fallback order
+## Legacy direct Composer ProgID fallback order
+
+These chains apply to the existing direct Composer interfaces. Public
+`generate()` and `convert_to_pdf()` use the selected engine: explicit/default
+`wps` excludes Microsoft Office, while `auto` chooses an installed compatible
+engine before starting and never retries with another engine after mutation.
+
 - Writer: `KWps.Application` → `Wps.Application` → `Word.Application`
 - Sheet: `Ket.Application` → `Excel.Application`
 - Slide: `KWpp.Application` → `Wpp.Application` → `PowerPoint.Application`
@@ -646,3 +682,7 @@ All composers expose these constants for direct `SaveAs` / `ExportAsFixedFormat`
 - PPTX→PDF uses `SaveAs(path,32)` not `ExportAsFixedFormat`.
 - `Quit()` may raise on some WPP builds; engine swallows it.
 - Non-Windows / no COM host → raises `WPSUnavailable`.
+
+### Native Word error recovery
+
+`engine="msoffice"` preserves the existing `LongformLifecycleError` (generation) and `ConversionError` (conversion) types. Native codes are `NATIVE_WORD_UNSUPPORTED`, `NATIVE_WORD_TIMEOUT`, `NATIVE_WORD_QUARANTINED`, `NATIVE_WORD_EXECUTION_FAILED`, and `NATIVE_WORD_UNAVAILABLE`. Optional `staging_path`, `diagnostic_path`, and `quarantine_path` attributes locate retained task evidence; `ConversionError.to_dict()` includes available recovery fields. See [native-word.md](native-word.md) for capabilities and explicit macOS recovery.

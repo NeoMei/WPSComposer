@@ -1,0 +1,253 @@
+{
+  "engine": "Microsoft Word",
+  "transport": "DispatchEx Word.Application COM",
+  "platform": "Windows-10-10.0.26100-SP0",
+  "native_run": true,
+  "capabilities": {
+    "snapshot_before": {
+      "status": "succeeded",
+      "detail": "Registered preexisting instance and isolated instance captured"
+    },
+    "create": {
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    "chinese_body": {
+      "status": "succeeded",
+      "detail": {
+        "font": "仿宋",
+        "size": 12.0,
+        "first_line_points": 24.0,
+        "first_line_characters": 2.0
+      }
+    },
+    "headings": {
+      "status": "succeeded",
+      "detail": "Built-in Heading 1/2/3 assigned; sizes 16/15/15 points"
+    },
+    "native_numbering": {
+      "status": "succeeded",
+      "detail": "Document-owned outline list template linked to Heading 1/2/3"
+    },
+    "long_table": {
+      "status": "succeeded",
+      "detail": {
+        "rows": 82,
+        "columns": 3
+      }
+    },
+    "toc": {
+      "status": "succeeded",
+      "detail": {
+        "toc_count": 1
+      }
+    },
+    "field_refresh": {
+      "status": "succeeded",
+      "detail": {
+        "field_count": 5
+      }
+    },
+    "repaginate": {
+      "status": "succeeded",
+      "detail": 9
+    },
+    "save_docx": {
+      "status": "succeeded",
+      "detail": null
+    },
+    "reopen": {
+      "status": "succeeded",
+      "detail": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\probe.docx"
+    },
+    "export_pdf": {
+      "status": "succeeded",
+      "detail": null
+    },
+    "cleanup": {
+      "status": "succeeded",
+      "detail": null
+    },
+    "preservation": {
+      "status": "succeeded",
+      "detail": "Preexisting registered instance snapshots equal"
+    }
+  },
+  "events": [
+    {
+      "capability": "snapshot_before",
+      "status": "succeeded",
+      "detail": "Registered preexisting instance and isolated instance captured"
+    },
+    {
+      "capability": "create",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "create",
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    {
+      "capability": "chinese_body",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "chinese_body",
+      "status": "succeeded",
+      "detail": {
+        "font": "仿宋",
+        "size": 12.0,
+        "first_line_points": 24.0,
+        "first_line_characters": 2.0
+      }
+    },
+    {
+      "capability": "headings",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "headings",
+      "status": "succeeded",
+      "detail": "Built-in Heading 1/2/3 assigned; sizes 16/15/15 points"
+    },
+    {
+      "capability": "native_numbering",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "native_numbering",
+      "status": "succeeded",
+      "detail": "Document-owned outline list template linked to Heading 1/2/3"
+    },
+    {
+      "capability": "long_table",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "long_table",
+      "status": "succeeded",
+      "detail": {
+        "rows": 82,
+        "columns": 3
+      }
+    },
+    {
+      "capability": "toc",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "toc",
+      "status": "succeeded",
+      "detail": {
+        "toc_count": 1
+      }
+    },
+    {
+      "capability": "field_refresh",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "field_refresh",
+      "status": "succeeded",
+      "detail": {
+        "field_count": 5
+      }
+    },
+    {
+      "capability": "repaginate",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "repaginate",
+      "status": "succeeded",
+      "detail": 9
+    },
+    {
+      "capability": "save_docx",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "save_docx",
+      "status": "succeeded",
+      "detail": null
+    },
+    {
+      "capability": "reopen",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "reopen",
+      "status": "succeeded",
+      "detail": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\probe.docx"
+    },
+    {
+      "capability": "export_pdf",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "export_pdf",
+      "status": "succeeded",
+      "detail": null
+    },
+    {
+      "capability": "cleanup",
+      "status": "attempted",
+      "detail": null
+    },
+    {
+      "capability": "cleanup",
+      "status": "succeeded",
+      "detail": null
+    },
+    {
+      "capability": "preservation",
+      "status": "succeeded",
+      "detail": "Preexisting registered instance snapshots equal"
+    }
+  ],
+  "errors": [],
+  "existing_document_scope": "GetActiveObject registered Word instance plus isolated DispatchEx instance; other unregistered Word instances are not enumerated",
+  "existing_before": [],
+  "application_identity": {
+    "pid": 25840,
+    "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "name": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.17932"
+  },
+  "version": "16.0",
+  "build": "16.0.17932",
+  "isolated_existing_before": [],
+  "owned_document_process": {
+    "hwnd": 5965298,
+    "pid": 25840
+  },
+  "owned_document_initial_name": "文档1",
+  "page_count": 9,
+  "owned_document_path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\probe.docx",
+  "owned_application_cleanup": "Quit isolated DispatchEx instance after confirming zero documents",
+  "existing_after": [],
+  "docx": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\probe.docx",
+    "exists": true,
+    "bytes": 20208
+  },
+  "pdf": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-06\\probe.pdf",
+    "exists": true,
+    "bytes": 150257
+  },
+  "overall": "native_operations_succeeded_artifact_validation_pending"
+}

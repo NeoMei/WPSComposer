@@ -1,0 +1,93 @@
+{
+  "status": "PASS",
+  "application": "Microsoft Word",
+  "method": "CUA real keyboard edit -> Undo -> Cmd+S -> close -> reopen -> visible marker absence -> close",
+  "typed_marker": "WPSC-UI-EDIT-0908",
+  "marker_absent_after_reopen": true,
+  "document_xml_text_identical": true,
+  "original_sha256": "f740d269d593ea147248b7d1326c6cffdf7bce02eb5b50652176d1853a00c4ba",
+  "saved_copy_sha256": "f740d269d593ea147248b7d1326c6cffdf7bce02eb5b50652176d1853a00c4ba",
+  "artifact_check": {
+    "checks": {
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "sections": [
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      }
+    ],
+    "headings": [
+      {
+        "label": "一级章节验收",
+        "style_id": "1",
+        "effective_half_point_sizes": [
+          "32"
+        ],
+        "expected_half_point_size": 32
+      },
+      {
+        "label": "二级章节验收",
+        "style_id": "2",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "三级章节验收",
+        "style_id": "3",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "四级章节验收",
+        "style_id": "4",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "五级章节验收",
+        "style_id": "5",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "六级章节验收",
+        "style_id": "6",
+        "effective_half_point_sizes": [
+          "24"
+        ],
+        "expected_half_point_size": 24
+      }
+    ],
+    "bytes": 26616,
+    "sha256": "f740d269d593ea147248b7d1326c6cffdf7bce02eb5b50652176d1853a00c4ba"
+  },
+  "final_window": "Word home; test document closed"
+}

@@ -1,0 +1,120 @@
+{
+  "macos-wps": {
+    "docx_checks": {
+      "section_page_number_policy": true,
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "shared_heading_numbering_sequence": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "pdf_checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true,
+      "pdf_section_page_numbers": true
+    },
+    "pdf_footer": [
+      "",
+      "i",
+      "1",
+      "2"
+    ],
+    "docx_sha256": "70f6e0346e6cd222574e79ed5e48ee9e2c195b92ac8e9b73d7d58bd21620ebfd"
+  },
+  "windows-wps": {
+    "docx_checks": {
+      "section_page_number_policy": true,
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "shared_heading_numbering_sequence": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "pdf_checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true,
+      "pdf_section_page_numbers": true
+    },
+    "pdf_footer": [
+      "",
+      "i",
+      "1",
+      "2"
+    ],
+    "docx_sha256": "87f8c2a1ae74c01b6208011a95526b554e1964e56bfc7945a4e019073c9f4a73"
+  },
+  "windows-word-before-fix": {
+    "docx_checks": {
+      "section_page_number_policy": true,
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "shared_heading_numbering_sequence": false,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "pdf_checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true,
+      "pdf_section_page_numbers": true
+    },
+    "pdf_footer": [
+      "",
+      "i",
+      "1",
+      "2",
+      "3"
+    ],
+    "docx_sha256": "9cb01d489d2eb9d5cb251379934b151017368768ce18dead4af14c02e56108d7"
+  },
+  "macos-word-fixed": {
+    "docx_checks": {
+      "section_page_number_policy": true,
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "shared_heading_numbering_sequence": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "pdf_checks": {
+      "all_pdf_pages_a4_portrait": true,
+      "nonempty_native_pdf_pages": true,
+      "pdf_required_content": true,
+      "pdf_end_marker_once": true,
+      "pdf_section_page_numbers": true
+    },
+    "pdf_footer": [
+      "",
+      "i",
+      "1",
+      "2",
+      "3"
+    ],
+    "docx_sha256": "e795ac2ba6e6bfd7bc4af9de42bb36e8502ee73b05ec8fdf56cf5b5212aa21ac"
+  }
+}

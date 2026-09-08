@@ -1,0 +1,14 @@
+{
+  "evidence_manifest_counts": {
+    "SHA256SUMS.txt": 146,
+    "audit-native-round3/SHA256SUMS.txt": 33,
+    "audit-candidate-round2/SHA256SUMS.txt": 17,
+    "final-cleanup-review/SHA256SUMS.txt": 25,
+    "audit-ui-round1/SHA256SUMS.txt": 28
+  },
+  "current_executed_sources_match": true,
+  "native_operations": 14,
+  "artifact_checks_passed": 12,
+  "sentinel_passed": true,
+  "controller_revalidation_path": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wps-final-controller-hel0fc43/run11"
+}

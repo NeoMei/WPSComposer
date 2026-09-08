@@ -1,0 +1,167 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "final_source_word_section_footers": true,
+    "insertion_automatically_renumbers_h1_and_h2": false,
+    "toc_includes_inserted_heading_and_updated_number": true,
+    "deletion_restores_original_numbering": true,
+    "toc_removes_deleted_heading": true
+  },
+  "snapshots": [
+    {
+      "label": "before",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t1\r1.1\t二级章节验收\t1\r1.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    },
+    {
+      "label": "inserted_heading",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "2",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "临时新增编号章节",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t临时新增编号章节\t1\r2\t一级章节验收\t1\r1.1\t二级章节验收\t1\r1.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    },
+    {
+      "label": "deleted_heading",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t1\r1.1\t二级章节验收\t1\r1.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    }
+  ],
+  "ui_snapshots": [],
+  "source_sha256": "9cb01d489d2eb9d5cb251379934b151017368768ce18dead4af14c02e56108d7",
+  "pid": 18120,
+  "binding": {
+    "hwnd": 463036,
+    "pid": 18120,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "section_probe_footers": [
+    "",
+    "i",
+    "1"
+  ],
+  "error": "com_error(-2147352567, '发生意外。', (0, 'Microsoft Word', '集合所要求的成员不存在。', 'wdmain11.chm', 25421, -2146822347), None)",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\native_edit_gate.py\", line 69, in <module>\n    spacer_range.Style=c.doc.Styles('Body Text');spacer_range.ListFormat.RemoveNumbers(1)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 214, in __call__\n    self._oleobj_.Invoke(*allArgs), self._olerepr_.defaultDispatchName, None\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npywintypes.com_error: (-2147352567, '发生意外。', (0, 'Microsoft Word', '集合所要求的成员不存在。', 'wdmain11.chm', 25421, -2146822347), None)\n",
+  "owned_application_closed": true
+}

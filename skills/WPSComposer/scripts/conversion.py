@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import sys
 from typing import Callable, Optional, Tuple
@@ -14,6 +14,8 @@ from .artifact_transport import (
     validate_pdf,
 )
 from .presentation import present_artifact, validate_open_result
+from .office_engines import com_engine, resolve_engine, validate_engine, validate_timeout
+from .msoffice.errors import NativeWordError, NATIVE_WORD_ERROR_CODES, RECOVERY_FIELDS
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -25,7 +27,7 @@ _COMPONENT_BY_SUFFIX = {
     ".pptx": "presentation",
 }
 
-STABLE_CONVERSION_ERROR_CODES = frozenset(
+STABLE_CONVERSION_ERROR_CODES = NATIVE_WORD_ERROR_CODES | frozenset(
     {
         "ARTIFACT_PUBLISH_FAILED",
         "BACKEND_UNAVAILABLE",
@@ -70,6 +72,8 @@ class ConversionRequest:
     output: Path
     component: str
     overwrite: bool
+    engine: str = "wps"
+    timeout: float = 600
 
 
 class ConversionError(RuntimeError):
@@ -92,13 +96,18 @@ class ConversionError(RuntimeError):
         self.message = message
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "code": self.code,
             "source": self.source,
             "component": self.component,
             "backend": self.backend,
             "message": self.message,
         }
+        for name in RECOVERY_FIELDS:
+            value = getattr(self, name, None)
+            if value is not None:
+                result[name] = value
+        return result
 
 
 Backend = Callable[[ConversionRequest], Path]
@@ -140,6 +149,13 @@ def _build_request(
 
 
 def _select_backend(request: ConversionRequest) -> Tuple[str, Backend]:
+    if request.engine == "msoffice":
+        if sys.platform == "win32":
+            from .msoffice.windows_runtime import convert
+            return "windows-word-com", lambda req: convert(req, timeout=req.timeout)
+        if sys.platform == "darwin":
+            from .msoffice.macos_runtime import convert
+            return "mac-word-applescript", lambda req: convert(req, timeout=req.timeout)
     if sys.platform == "win32":
         from .windows_conversion import convert_windows
 
@@ -163,13 +179,31 @@ def convert_to_pdf(
     *,
     overwrite: bool = False,
     open_result: bool = False,
+    engine: str = "wps",
+    timeout: float = 600,
 ) -> str:
-    """Convert one Word, Excel, or PowerPoint file to an absolute PDF path."""
+    """Convert to PDF using WPS or native Word (DOC/DOCX only).
+
+    ``auto`` prefers installed WPS, then Word, with no execution-time fallback.
+    Native Word applies ``timeout`` to staging, export and atomic publication.
+    """
     validate_open_result(open_result)
+    validate_engine(engine)
+    validate_timeout(timeout)
     request = _build_request(source, output, overwrite=overwrite)
+    request = replace(request, engine=resolve_engine(engine, request.component), timeout=timeout)
     backend_name, backend = _select_backend(request)
     try:
-        result = Path(backend(request)).expanduser().resolve()
+        with com_engine(request.engine):
+            result = Path(backend(request)).expanduser().resolve()
+    except NativeWordError as exc:
+        error = ConversionError(
+            code=exc.code, source=str(request.source), component=request.component,
+            backend=backend_name, message=exc.safe_message,
+        )
+        for name in RECOVERY_FIELDS:
+            setattr(error, name, getattr(exc, name))
+        raise error from None
     except (FileNotFoundError, FileExistsError, ValueError):
         raise
     except ConversionError as exc:

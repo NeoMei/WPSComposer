@@ -238,6 +238,7 @@ class WindowsLongformExecutor(LongformExecutor):
                     # classified as usual.
                     if (
                         host_attempts == 0
+                        and getattr(self._composer_factory, "allow_host_retry", True)
                         and not isinstance(exc, WindowsLongformExecutorError)
                         and _is_host_com_error(exc)
                     ):
@@ -259,10 +260,11 @@ class WindowsLongformExecutor(LongformExecutor):
             # WPS may retain an image handle until the document closes.  Try
             # once while the host is alive, then retry only locked paths after
             # close in the finally block.
-            pending_cleanup = self._cleanup_resources(
-                staged_resources, strict=False
-            )
-            cleanup_attempted = True
+            if not getattr(self._composer_factory, "strict_cleanup", False):
+                pending_cleanup = self._cleanup_resources(
+                    staged_resources, strict=False
+                )
+                cleanup_attempted = True
         except _ExecutionAbort as exc:
             primary_error = WindowsLongformExecutorError(
                 f"Execution aborted at {exc.op_name}"
@@ -282,14 +284,16 @@ class WindowsLongformExecutor(LongformExecutor):
                     try:
                         composer.close(save_changes=False)
                     except Exception:
-                        pass
+                        if getattr(self._composer_factory, "strict_cleanup", False):
+                            cleanup_failed = True
             finally:
                 try:
                     final_targets = (
                         pending_cleanup if cleanup_attempted else staged_resources
                     )
                     try:
-                        self._cleanup_resources(final_targets, strict=True)
+                        if not (getattr(self._composer_factory, "strict_cleanup", False) and cleanup_failed):
+                            self._cleanup_resources(final_targets, strict=True)
                     except Exception:
                         cleanup_failed = True
                 finally:
@@ -390,7 +394,10 @@ class WindowsLongformExecutor(LongformExecutor):
                 try:
                     composer.close(save_changes=False)
                 except Exception:
-                    pass
+                    if getattr(self._composer_factory, "strict_cleanup", False):
+                        error = WindowsLongformExecutorError("Native document cleanup failed")
+                        error.cleanup_failed = True
+                        raise error from None
 
     def _validate_resource_manifest(
         self,
@@ -914,6 +921,8 @@ class WindowsLongformExecutor(LongformExecutor):
             # The new argument is only required by the one bounded M5 relayout.
             if args.get("keepWithNext") is True:
                 heading_args["keep_with_next"] = True
+            if args.get("sequenceTransparent") is True:
+                heading_args["sequence_transparent"] = True
             if args.get("bookmarkName"):
                 heading_args["bookmark_name"] = args["bookmarkName"]
             composer.add_heading_level_native(**heading_args)

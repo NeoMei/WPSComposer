@@ -1,0 +1,9 @@
+{
+  "base": "09f5b35",
+  "passed": 2874,
+  "skipped": 12,
+  "exit_code": 0,
+  "seconds": 200.56,
+  "addin_sha256": "633730570e0311cade8cbf1eafe7e83317058d7f3636901d7fb97e2118b4f378",
+  "log_sha256": "89d6d144d158075cc81ceece3928e0f8bccc3a632b35f09e9b5fed9481f9c8dd"
+}

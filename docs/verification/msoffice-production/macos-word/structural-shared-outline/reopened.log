@@ -1,0 +1,8 @@
+WPSC_HEADING	reopened	新增原生编号章节	1	1	1
+WPSC_HEADING	reopened	一级章节验收	2	2	2
+WPSC_CHILD	reopened	二级章节验收	2.1	2
+WPSC_CHILD	reopened	三级章节验收	2.1.1	2
+WPSC_CHILD	reopened	四级章节验收	2.1.1.1	2
+WPSC_CLEAN
+
+WPSC_OK	0

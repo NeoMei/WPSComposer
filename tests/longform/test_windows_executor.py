@@ -50,6 +50,53 @@ EMPTY_RESOURCE_MANIFEST_DIGEST = (
 )
 
 
+def test_native_factory_can_disable_ambiguous_host_retry(monkeypatch, tmp_path, fake_composer, simple_plan):
+    from skills.WPSComposer.scripts.longform import windows_executor as module
+    calls = []
+    def factory():
+        calls.append(1)
+        return fake_composer
+    factory.allow_host_retry = False
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    monkeypatch.setattr(module, '_is_host_com_error', lambda exc: True)
+    monkeypatch.setattr(module.time, 'sleep', lambda seconds: None)
+    def fail(*args):
+        raise RuntimeError('host disconnected')
+    monkeypatch.setattr(executor, '_dispatch_all', fail)
+    with pytest.raises(WindowsLongformExecutorError):
+        executor.execute(simple_plan, ())
+    assert len(calls) == 1
+
+
+def test_native_cleanup_failure_blocks_success(tmp_path, fake_composer, simple_plan, monkeypatch):
+    def factory():
+        return fake_composer
+    factory.strict_cleanup = True
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    def fail(*args, **kwargs):
+        raise RuntimeError('ownership uncertain')
+    monkeypatch.setattr(fake_composer, 'close', fail)
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(simple_plan, ())
+    assert caught.value.cleanup_failed is True
+
+
+def test_native_cleanup_failure_retains_staged_resources(tmp_path, fake_composer, simple_plan, monkeypatch):
+    def factory():
+        return fake_composer
+    factory.strict_cleanup = True
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    resource = tmp_path / 'owned-image.png'
+    resource.write_bytes(b'owned image')
+    monkeypatch.setattr(executor, '_stage_resources', lambda resources: ({}, (str(resource),)))
+    def fail(*args, **kwargs):
+        raise RuntimeError('ownership uncertain')
+    monkeypatch.setattr(fake_composer, 'close', fail)
+    with pytest.raises(WindowsLongformExecutorError):
+        executor.execute(simple_plan, ())
+    assert resource.read_bytes() == b'owned image'
+
+
 def _finalize_operation() -> GenerationOperation:
     return GenerationOperation(
         op="writer.finalize_fields",
@@ -1275,3 +1322,21 @@ def test_set_header_footer_uses_schema_keys(executor, fake_composer):
     assert call.kwargs["footer"] == "Footer from plan"
     assert call.kwargs["link_to_previous_header"] is False
     assert call.kwargs["link_to_previous_footer"] is True
+
+
+@pytest.mark.parametrize('transparent', [True, False, None])
+def test_sequence_transparent_heading_forwarded_only_when_requested(transparent):
+    seen = []
+
+    class Composer:
+        def add_heading_level_native(self, **kwargs):
+            seen.append(kwargs)
+
+    args = {'text': 'Unnumbered boundary', 'level': 1, 'numbering': False}
+    if transparent is not None:
+        args['sequenceTransparent'] = transparent
+    executor = WindowsLongformExecutor(composer_factory=lambda: Composer())
+    executor._run_op(Composer(), GenerationOperation(op='writer.add_heading', args=args))
+    assert seen[0].get('sequence_transparent') is (True if transparent is True else None)
+    if transparent is not True:
+        assert 'sequence_transparent' not in seen[0]

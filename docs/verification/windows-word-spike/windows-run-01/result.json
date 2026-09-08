@@ -1,0 +1,79 @@
+{
+  "engine": "Microsoft Word",
+  "transport": "DispatchEx Word.Application COM",
+  "platform": "Windows-10-10.0.26100-SP0",
+  "native_run": false,
+  "capabilities": {
+    "snapshot_before": {
+      "status": "unrun"
+    },
+    "create": {
+      "status": "unrun"
+    },
+    "chinese_body": {
+      "status": "unrun"
+    },
+    "headings": {
+      "status": "unrun"
+    },
+    "native_numbering": {
+      "status": "unrun"
+    },
+    "long_table": {
+      "status": "unrun"
+    },
+    "toc": {
+      "status": "unrun"
+    },
+    "field_refresh": {
+      "status": "unrun"
+    },
+    "repaginate": {
+      "status": "unrun"
+    },
+    "save_docx": {
+      "status": "unrun"
+    },
+    "reopen": {
+      "status": "unrun"
+    },
+    "export_pdf": {
+      "status": "unrun"
+    },
+    "cleanup": {
+      "status": "unrun"
+    },
+    "preservation": {
+      "status": "unrun"
+    }
+  },
+  "events": [
+    {
+      "capability": "core",
+      "status": "failed",
+      "detail": "AttributeError('Word.Application.Hwnd')"
+    }
+  ],
+  "errors": [
+    {
+      "capability": "core",
+      "raw_error": "AttributeError('Word.Application.Hwnd')",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 112, in main\n    result[\"application_identity\"] = application_identity(app)\n                                     ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py\", line 22, in application_identity\n    hwnd = int(app.Hwnd)\n               ^^^^^^^^\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: Word.Application.Hwnd\n"
+    }
+  ],
+  "existing_document_scope": "GetActiveObject registered Word instance plus isolated DispatchEx instance; other unregistered Word instances are not enumerated",
+  "existing_registered_instance": "none returned by GetActiveObject",
+  "get_active_object_observation": "com_error(-2147221021, '操作无法使用', None, None)",
+  "existing_before": [],
+  "docx": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-01\\probe.docx",
+    "exists": false,
+    "bytes": 0
+  },
+  "pdf": {
+    "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-01\\probe.pdf",
+    "exists": false,
+    "bytes": 0
+  },
+  "overall": "failed"
+}

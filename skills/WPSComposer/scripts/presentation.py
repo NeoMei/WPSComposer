@@ -17,16 +17,34 @@ def validate_open_result(open_result: bool) -> None:
         raise TypeError("open_result must be a bool")
 
 
-def present_artifact(path: ArtifactPath) -> None:
+def present_artifact(path: ArtifactPath, *, engine: str | None = None) -> None:
     """Ask the platform default application to open one finalized file."""
     artifact = Path(path).expanduser().resolve()
     if not artifact.is_file():
         raise FileNotFoundError(f"Final artifact is not a file: {artifact}")
 
     if sys.platform == "darwin":
-        argv = ["open", str(artifact)]
+        if engine in {"wps", "msoffice"} and artifact.suffix.lower() == ".docx":
+            application = "Microsoft Word" if engine == "msoffice" else "/Applications/wpsoffice.app"
+            argv = ["open", "-a", application, str(artifact)]
+        else:
+            argv = ["open", str(artifact)]
     elif sys.platform == "win32":
-        argv = ["explorer.exe", str(artifact)]
+        if engine in {"wps", "msoffice"} and artifact.suffix.lower() == ".docx":
+            from .office_engines import engine_executable
+            executable = engine_executable(engine, "writer")
+            if not executable:
+                raise OSError(f"{engine} executable is unavailable")
+            argv = [executable, str(artifact)]
+            # Office itself can remain alive for the whole editing session.
+            # subprocess.run(timeout=...) would kill it after the handoff.
+            subprocess.Popen(
+                argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL, shell=False,
+            )
+            return
+        else:
+            argv = ["explorer.exe", str(artifact)]
     elif sys.platform.startswith("linux"):
         argv = ["xdg-open", str(artifact)]
     else:

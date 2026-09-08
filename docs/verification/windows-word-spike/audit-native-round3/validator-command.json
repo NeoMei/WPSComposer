@@ -1,0 +1,11 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "fixtures/msoffice_spike/validate_windows_artifacts.py",
+    "build/msoffice-spike/windows-run-11"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-09-08T00:57:36.926852+00:00",
+  "completed_utc": "2026-09-08T00:57:38.484723+00:00",
+  "duration_seconds": 1.562
+}

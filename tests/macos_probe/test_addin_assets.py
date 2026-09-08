@@ -373,6 +373,39 @@ assert.deepEqual(calls, [["owned", 0]]);
     _run_node_script(script)
 
 
+@pytest.mark.parametrize('retain', [True, False])
+@pytest.mark.parametrize('failure', ['session-rejected', 'bootstrap-unreadable'])
+def test_bridge_early_failure_closes_only_known_fixture(retain, failure):
+    writer_path = json.dumps(str((ROOT / 'writer.js').resolve()))
+    bridge_path = json.dumps(str((ROOT / 'bridge-client.js').resolve()))
+    script = f'''
+const assert = require('assert'), fs = require('fs');
+global.window = {{}};
+const closed = [], errors = [];
+const path = '/private/owned/session-1/fixtures/wpscomposer-writer-blank.docx';
+const owned = {{FullName:path,Close() {{closed.push('owned');}}}};
+const user = {{FullName:'/Users/person/user.docx',Close() {{closed.push('user');}}}};
+global.Application = {{ActiveDocument:user,Documents:{{Count:2,Item(i) {{return i===1 ? user : owned;}}}}}};
+global.fetch = async function(url) {{
+  if (url === './session.json') {{
+    if ({json.dumps(failure)} === 'bootstrap-unreadable') throw Error('bootstrap unreadable');
+    return {{ok:true,json:async()=>({{bridgeUrl:'http://bridge',component:'writer',clientId:'id',capability:'cap',activationDocument:path,retainActivationDocument:{json.dumps(retain)}}})}};
+  }}
+  return {{ok:false,status:401}};
+}};
+global.console = {{error(...args) {{errors.push(args.join(' '));}}}};
+eval(fs.readFileSync({writer_path},'utf8'));
+eval(fs.readFileSync({bridge_path},'utf8'));
+window.OnAddinLoad();
+setTimeout(()=>{{
+  assert.deepEqual(closed,{json.dumps(['owned'] if failure == 'session-rejected' else [])});
+  assert.strictEqual(Application.ActiveDocument,user);
+  assert.ok(errors.length>0);
+}},25);
+'''
+    _run_node_script(script)
+
+
 def test_longform_request_schema_allows_only_optional_activation_document():
     path = json.dumps(str((ROOT / "writer-longform-v2.js").resolve()))
     script = f"""

@@ -1,6 +1,6 @@
 ---
 name: WPSComposer
-description: 'Generate and edit rich-layout DOCX, PPTX, XLSX, and PDF documents by driving the real WPS Office layout engine — via COM on Windows (full generation + conversational editing) or the WPS JSAPI bridge on macOS (generation and Office-to-PDF conversion). Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx).'
+description: 'Generate and edit rich-layout DOCX, PPTX, XLSX, and PDF documents by driving the real WPS Office layout engine — via COM on Windows (full generation + conversational editing) or the WPS JSAPI bridge on macOS (generation and Office-to-PDF conversion). Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx). Also supports explicit Microsoft Word DOCX/PDF generation and DOC/DOCX-to-PDF conversion on Windows and macOS; use for requests mentioning Microsoft Word or MS Office document layout. Microsoft Excel, PowerPoint and active-document editing are outside this backend.'
 ---
 
 # WPS Composer
@@ -14,6 +14,18 @@ Windows uses COM directly; macOS uses the JSAPI loopback bridge to read and
 edit PPT/DOCX/XLSX through the real WPS engine (no PDF extraction fallback).
 
 ## Quick start -- Markdown to document
+
+For native Microsoft Word on Windows/macOS, use public `generate(...,
+engine="msoffice")` for DOCX/PDF and `convert_to_pdf(..., engine="msoffice")`
+for DOC/DOCX conversion. The default `engine="wps"` keeps WPS selected;
+`engine="auto"` selects an installed engine once, preferring WPS, and never
+switches after a native task begins. MS Excel/PowerPoint and MS conversational
+editing are not supported by this interface. Word requires `pywin32` on Windows
+or macOS Automation permission to control desktop Microsoft Word.
+See [API reference](references/api.md#native-engine-selection) for scope and
+failure behavior, and [native Word setup and recovery](references/native-word.md).
+Do not bypass an unsupported-operation error with a custom
+OOXML generator.
 
 The ``generate()`` function is the single entry point for all document
 generation. For an interactive script, explicitly request presentation of the
@@ -38,9 +50,9 @@ if __name__ == "__main__":
 
 Library and unattended calls leave `open_result` at its default `False`, so
 they publish without opening a desktop application. Each call returns only the
-one requested format. Opening is an asynchronous, best-effort request to the
-platform default application; a launcher warning does not invalidate an
-artifact that was already published.
+one requested format. Opening is asynchronous and best effort: DOCX uses the
+selected engine, while PDF uses the platform default reader. A launcher warning
+does not invalidate an artifact that was already published.
 
 Under the hood:
 1. ``md_parser.py`` parses Markdown into a ``StructuredDocument``
@@ -125,8 +137,11 @@ verification — tracked in `docs/windows-verification.md`.
 
 ## Requirements
 
-- Windows + WPS Office installed (Writer/Spreadsheets/Presentation), **or** MS
-  Office (Word/Excel/PowerPoint). ProgIDs fall back automatically.
+- Windows direct Composer interfaces require WPS Office or Microsoft Office.
+  Their legacy ProgID chains may fall back to Word/Excel/PowerPoint. Public
+  `generate()` and `convert_to_pdf()` instead obey the explicit `engine` contract
+  above: the default `wps` never selects Microsoft Office, and `auto` chooses
+  before the job starts.
 - `pywin32` available in the runtime.
 
 ## Core engine

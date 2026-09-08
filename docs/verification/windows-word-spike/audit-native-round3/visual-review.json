@@ -1,0 +1,11 @@
+{
+  "reviewed": "windows-run-11/contact-sheet.png, all 9 rendered pages",
+  "outcome": "Consistent with prior native layout; no visible page-edge clipping or overlapping columns",
+  "observations": [
+    "Numbered heading hierarchy and four TOC entries are visible.",
+    "Table header repeats on all nine pages; ending marker appears on page 9.",
+    "Known prototype layout limitations persist: TOC title appears below entries, borderless table, rows 004/025/046/067 split across pages, sparse last page."
+  ],
+  "raw_validator_visual_review_pending_preserved": true,
+  "production_admission": "NO_GO"
+}

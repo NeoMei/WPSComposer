@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "checks": {
+    "chinese-formal_第一章ChapterOne": true,
+    "chinese-formal_第二章ChapterTwo": true,
+    "chinese-formal_第一节ChildOne": true,
+    "chinese-formal_第一节ChildTwo": true,
+    "chinese-formal_一、GrandOne": true,
+    "chinese-formal_一、GrandTwo": true,
+    "chinese-formal_(一)DeepOne": true,
+    "chinese-formal_(一)DeepTwo": true,
+    "chinese-formal_single_four_level_instance": true,
+    "hybrid-bid_第一章ChapterOne": true,
+    "hybrid-bid_第二章ChapterTwo": true,
+    "hybrid-bid_1.1ChildOne": true,
+    "hybrid-bid_1.1.1GrandOne": true,
+    "hybrid-bid_2.1ChildTwo": true,
+    "hybrid-bid_2.1.1GrandTwo": true,
+    "hybrid-bid_关键工法01:DeepOne": true,
+    "hybrid-bid_关键工法01:DeepTwo": true,
+    "hybrid-bid_single_four_level_instance": true
+  },
+  "results": {
+    "chinese-formal": {
+      "docx": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/shared-outline-schemes-legal/chinese-formal.docx",
+      "pdf": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/shared-outline-schemes-legal/chinese-formal.pdf",
+      "visible_text": "⽬录\n第⼀章 ChapterOne ............................................................................................................................................ 1\n第⼀节 ChildOne .................................................................................................................................................... 1\n⼀、 GrandOne ............................................................................................................................................. 1\n第⼆章 ChapterTwo ............................................................................................................................................ 1\n第⼀节 ChildTwo .................................................................................................................................................... 1\n⼀、 GrandTwo ............................................................................................................................................. 1\ni\nNative outline schemes\nNative outline schemes\n第一章 ChapterOne\n第一节 ChildOne\n一、 GrandOne\n（一） DeepOne\n第二章 ChapterTwo\n第一节 ChildTwo\n一、 GrandTwo\n（一） DeepTwo\n1"
+    },
+    "hybrid-bid": {
+      "docx": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/shared-outline-schemes-legal/hybrid-bid.docx",
+      "pdf": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/shared-outline-schemes-legal/hybrid-bid.pdf",
+      "visible_text": "⽬录\n第⼀章 ChapterOne ............................................................................................................................................ 1\n1.1 ChildOne ......................................................................................................................................................... 1\n1.1.1 GrandOne ............................................................................................................................................. 1\n第⼆章 ChapterTwo ............................................................................................................................................ 1\n2.1 ChildTwo ......................................................................................................................................................... 1\n2.1.1 GrandTwo ............................................................................................................................................. 1\ni\nNative outline schemes\nNative outline schemes\n第一章 ChapterOne\n1.1 ChildOne\n1.1.1 GrandOne\n关键工法01： DeepOne\n第二章 ChapterTwo\n2.1 ChildTwo\n2.1.1 GrandTwo\n关键工法01： DeepTwo\n1"
+    }
+  },
+  "macos_script_sha256": "4de149c507b1b027ea2e1d5836a3033044ac4cbcd4c7d4440897d520da158da9"
+}

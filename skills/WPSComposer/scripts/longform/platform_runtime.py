@@ -384,25 +384,35 @@ def generate_longform(
     output: Path,
     timeout: float,
     overwrite: bool,
+    engine: str = "wps",
 ) -> GenerationOutcome:
     """Run the public default DOCX/PDF route on the current native platform."""
 
-    if sys.platform == "darwin":
-        adapter: Any = MacLongformAdapter(build)
+    from ..office_engines import resolve_engine, com_engine
+    selected = resolve_engine(engine, "writer")
+    if selected == "msoffice" and sys.platform == "darwin":
+        from ..msoffice.macos_runtime import MacWordAdapter
+        adapter: Any = MacWordAdapter(build)
+    elif selected == "msoffice" and sys.platform == "win32":
+        from ..msoffice.windows_runtime import WindowsWordAdapter
+        adapter = WindowsWordAdapter(build)
+    elif sys.platform == "darwin":
+        adapter = MacLongformAdapter(build)
     elif sys.platform == "win32":
         adapter = WindowsLongformAdapter(build)
     else:
         raise RuntimeError("WPS long-form generation requires macOS or Windows")
     try:
-        return run_longform_lifecycle(
-            build,
-            adapter,
-            Path(output),
-            format_name=format_name,
-            timeout=timeout,
-            overwrite=overwrite,
-            quality_analyzer=adapter.analyze,
-        )
+        with com_engine(selected):
+            return run_longform_lifecycle(
+                build,
+                adapter,
+                Path(output),
+                format_name=format_name,
+                timeout=timeout,
+                overwrite=overwrite,
+                quality_analyzer=adapter.analyze,
+            )
     finally:
         adapter.close()
 

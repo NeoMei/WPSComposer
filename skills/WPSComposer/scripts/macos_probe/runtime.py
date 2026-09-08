@@ -723,6 +723,7 @@ def read_wps_process_identity(
     pid: int,
     app_path: Path,
     timeout: float = CLEANUP_GRACE_SECONDS,
+    *, strict: bool = False,
 ) -> Optional[ProcessIdentity]:
     """Re-read one PID and return it only if it is still the selected WPS."""
     executable = str((app_path / "Contents/MacOS/wpsoffice").resolve())
@@ -734,12 +735,23 @@ def read_wps_process_identity(
             text=True,
             timeout=max(0.001, timeout),
         )
-    except (OSError, subprocess.SubprocessError):
+    except subprocess.CalledProcessError as exc:
+        # ps exits 1 with no output when the selected PID no longer exists.
+        if exc.returncode == 1 and not (exc.stdout or '').strip() and not (exc.stderr or '').strip():
+            return None
+        if strict:
+            raise RuntimeError('WPS process identity could not be verified') from exc
+        return None
+    except (OSError, subprocess.SubprocessError) as exc:
+        if strict:
+            raise RuntimeError('WPS process identity could not be verified') from exc
         return None
     for raw_line in result.stdout.splitlines():
         identity = _parse_process_line(raw_line, executable)
         if identity is not None and identity.pid == pid:
             return identity
+    if strict and result.stdout.strip():
+        raise RuntimeError('WPS process identity could not be verified')
     return None
 
 
@@ -814,8 +826,12 @@ class ProbeRuntime:
         self._wps_processes_before: Optional[dict[int, ProcessIdentity]] = None
         self._owned_wps_processes: dict[int, ProcessIdentity] = {}
         self._activation_attempted: set[str] = set()
+        self._shared_activation_attempted: set[str] = set()
+        self._unverified_isolated_activations: set[str] = set()
         self._runtime_lock = None
         self.registration_restored = True
+        self._quarantine_reason: Optional[str] = None
+        self._host_exit_verified = False
         self.deadline = deadline
 
     def __enter__(self) -> "ProbeRuntime":
@@ -859,6 +875,8 @@ class ProbeRuntime:
         os.chmod(self.state_dir, 0o700)
 
     def __exit__(self, exc_type, exc, traceback) -> None:
+        if exc is not None and self._activation_attempted:
+            self._quarantine_reason = f'Native operation failed: {type(exc).__name__}'
         try:
             self.close()
         except BaseException:
@@ -986,6 +1004,10 @@ class ProbeRuntime:
                 raise RuntimeError(f"WPS activation already failed: {component}")
             return existing
         self._activation_attempted.add(component)
+        if isolated:
+            self._unverified_isolated_activations.add(component)
+        else:
+            self._shared_activation_attempted.add(component)
         fixture_dir = self.staging_dir / "fixtures"
         fixture_dir.mkdir(parents=True, exist_ok=True)
         if activation_document is not None:
@@ -1044,6 +1066,7 @@ class ProbeRuntime:
                 }
                 if started:
                     self._owned_wps_processes.update(started)
+                    self._unverified_isolated_activations.discard(component)
                     break
                 time.sleep(min(0.1, remaining(ownership_deadline)))
             else:
@@ -1086,50 +1109,34 @@ class ProbeRuntime:
             return
         if deadline is None:
             deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
-        owned = tuple(self._owned_wps_processes.values())
-        self._owned_wps_processes.clear()
-        term_signaled: list[ProcessIdentity] = []
-        for identity in sorted(owned, key=lambda item: item.pid):
-            budget = remaining(deadline)
-            if budget <= 0:
-                break
-            if read_wps_process_identity(
-                identity.pid, self.wps_app, timeout=budget
-            ) != identity:
-                continue
-            try:
-                os.kill(identity.pid, signal.SIGTERM)
-                term_signaled.append(identity)
-            except ProcessLookupError:
-                pass
-        if not term_signaled:
-            return
-        remaining_processes = term_signaled
-        while time.monotonic() < deadline:
-            still_running = []
-            for identity in term_signaled:
-                budget = remaining(deadline)
-                if budget <= 0:
-                    break
-                if read_wps_process_identity(
-                    identity.pid, self.wps_app, timeout=budget
-                ) == identity:
-                    still_running.append(identity)
-            remaining_processes = still_running
-            if not remaining_processes:
-                return
-            budget = remaining(deadline)
-            if budget <= 0.1:
-                # These identities were revalidated in this iteration. Signal
-                # before the cleanup deadline instead of starting another
-                # potentially blocking identity lookup after it.
-                for identity in remaining_processes:
+        # Never discard ownership until exit (or PID reuse) is verified. A
+        # signal being delivered is not proof that open documents have gone.
+        term_signaled: set[int] = set()
+        kill_signaled: set[int] = set()
+        while self._owned_wps_processes:
+            for identity in tuple(self._owned_wps_processes.values()):
+                budget = require_remaining(deadline, 'Owned WPS exit was not verified')
+                observed = read_wps_process_identity(
+                    identity.pid, self.wps_app, timeout=budget, strict=True
+                )
+                if observed != identity:
+                    del self._owned_wps_processes[identity.pid]
+                    continue
+                budget = require_remaining(deadline, 'Owned WPS exit was not verified')
+                action = None
+                if identity.pid not in term_signaled:
+                    action = signal.SIGTERM
+                    term_signaled.add(identity.pid)
+                elif budget <= 0.1 and identity.pid not in kill_signaled:
+                    action = signal.SIGKILL
+                    kill_signaled.add(identity.pid)
+                if action is not None:
                     try:
-                        os.kill(identity.pid, signal.SIGKILL)
+                        os.kill(identity.pid, action)
                     except ProcessLookupError:
-                        pass
-                return
-            time.sleep(min(0.1, budget))
+                        del self._owned_wps_processes[identity.pid]
+            if self._owned_wps_processes:
+                time.sleep(min(0.05, require_remaining(deadline, 'Owned WPS exit was not verified')))
 
     def close(self) -> None:
         cleanup_deadline = time.monotonic() + CLEANUP_GRACE_SECONDS
@@ -1169,22 +1176,46 @@ class ProbeRuntime:
                 stream.close()
             except BaseException as exc:
                 errors.append(exc)
+        had_owned_host = bool(self._owned_wps_processes)
         try:
             self._terminate_owned_wps(cleanup_deadline)
+            if had_owned_host:
+                self._host_exit_verified = True
         except BaseException as exc:
             errors.append(exc)
+            self._quarantine_reason = 'Owned WPS exit was not verified'
+        if self._shared_activation_attempted or (
+            self._activation_attempted and not had_owned_host and not self._host_exit_verified
+        ):
+            # Shared-host callers (inspect/edit) have no process ownership or
+            # close ACK. Retain uncertain files without failing successful work.
+            self._quarantine_reason = self._quarantine_reason or 'Activation document closure was not verified'
+        if self._unverified_isolated_activations:
+            reason = 'Isolated activation ownership was not verified'
+            self._quarantine_reason = self._quarantine_reason or reason
+            errors.append(RuntimeError(reason))
         try:
             self.restore_registration()
         except BaseException as exc:
             errors.append(exc)
         if self.staging_dir is not None:
             staging_dir = self.staging_dir
-            self.staging_dir = None
             try:
-                shutil.rmtree(staging_dir)
+                if self._quarantine_reason:
+                    _write_json(staging_dir / 'cleanup-quarantine.json', {
+                        'reason': self._quarantine_reason,
+                        'fixtures': {name: str(path) for name, path in self.fixtures.items()},
+                        'owned_processes': [
+                            {'pid': value.pid, 'start_time': value.start_time, 'executable': value.executable}
+                            for value in self._owned_wps_processes.values()
+                        ],
+                    })
+                else:
+                    shutil.rmtree(staging_dir)
+                    self.staging_dir = None
             except BaseException as exc:
                 errors.append(
-                    RuntimeError("Failed to remove WPS staging session")
+                    RuntimeError("Failed to retain WPS cleanup evidence" if self._quarantine_reason else "Failed to remove WPS staging session")
                 )
                 errors[-1].__cause__ = exc
         if self._runtime_lock is not None:

@@ -1,0 +1,113 @@
+{
+  "candidate_commit": "f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+  "source": {
+    "candidate_commit": "f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+    "raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+    "normalized_lf_sha256": "5dc4f102fb1f0243181b4eaea2362b75b1b6b5eebb634f0692fd7ca2671cb65a",
+    "git_blob_oid": "8c2fc817a5ee54a1ef5f9fcc4f132642456823ed",
+    "raw_bytes": 14386,
+    "crlf_count": 273,
+    "bare_lf_count": 0,
+    "normalized_equals_git_blob": true,
+    "snapshot": "executed-windows-word.py.txt"
+  },
+  "native_verdict": "passed",
+  "production_admission": "NO_GO",
+  "source_unchanged_after_both_runs": true,
+  "runs": [
+    {
+      "name": "windows-run-09",
+      "runner_raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+      "native_exit_code": 0,
+      "all_native_operations_passed": true,
+      "artifact_checks_passed": 11,
+      "pdf_pages": 9,
+      "application_identity": {
+        "pid": 3192,
+        "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+        "name": "Microsoft Word",
+        "version": "16.0",
+        "build": "16.0.17932"
+      },
+      "document_window": {
+        "hwnd": 33490176,
+        "pid": 3192
+      },
+      "existing_before_count": 0,
+      "owned_application_cleanup": "Quit isolated DispatchEx instance after confirming zero documents",
+      "files_sha256": {
+        "probe.docx": "bc151e450b7a123b6be76a99c3b26d625332ac4d6f67962af76c9590ab25f24d",
+        "probe.pdf": "2887d38c4abcf8f7e1d94e3c6e682386334dcd0d5aeddb8974ec7136e2200d61",
+        "result.json": "9142d95dcbce14bad9cd8b3bdac3ada2db516a19b07578240bebb227e80f0424"
+      }
+    },
+    {
+      "name": "windows-run-10",
+      "runner_raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+      "native_exit_code": 0,
+      "all_native_operations_passed": true,
+      "artifact_checks_passed": 11,
+      "pdf_pages": 9,
+      "application_identity": {
+        "pid": 15836,
+        "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+        "name": "Microsoft Word",
+        "version": "16.0",
+        "build": "16.0.17932"
+      },
+      "document_window": {
+        "hwnd": 1444194,
+        "pid": 15836
+      },
+      "existing_before_count": 1,
+      "owned_application_cleanup": "Quit isolated DispatchEx instance after confirming zero documents",
+      "files_sha256": {
+        "probe.docx": "90776e2747736b37834c7858cd1383c0cfa52567824324f115f7d31087f6028c",
+        "probe.pdf": "eb97c597274f228e4846de11e5da0e92b9c2407248d5b96ef84f8e58f9b37afb",
+        "result.json": "f7c9b19cf01c3b0dc8a7bd174799d24673102b2ab86b75f36c947ff22b76971e"
+      }
+    }
+  ],
+  "windows_identity_tests": {
+    "passed": 5,
+    "failed": 0
+  },
+  "controller_tests": {
+    "source": "docs/verification/windows-word-spike-controller-review.md at f0dc91f279d3b6d8d61f43a02046964dbc30a1d7",
+    "main_flow_regressions_passed": 6,
+    "full_suite_passed": 2630,
+    "full_suite_skipped": 12,
+    "duration_seconds": 175.21,
+    "executed_on_this_windows_host": false
+  },
+  "sentinel": {
+    "result": "windows-sentinel-03/sentinel-result.json",
+    "overall": "passed",
+    "registered_application_pid": 9252,
+    "task_pid": 15836,
+    "before_equals_after": true,
+    "saved": false,
+    "closed_without_saving": true,
+    "application_quit_attempted": false,
+    "task_exit_observed_seconds": 2.453
+  },
+  "final_process_observation": {
+    "source": "Read-only Get-CimInstance Win32_Process filter Name=WINWORD.EXE after run10",
+    "only_word_pid_present": 9252,
+    "run09_pid_absent": 3192,
+    "run10_pid_absent": 15836,
+    "termination_attempted": false
+  },
+  "supporting_sources": {
+    "mac_word.py": {
+      "raw_sha256": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb",
+      "normalized_lf_sha256": "20295b6ebc7012be7094d13bbf6aebfc55a02bbd4b546ae986545267ea2c7034",
+      "git_blob_oid": "ce48867252d400a811d4964abbded7e7b9cdeca5"
+    },
+    "windows_unsaved_sentinel.py": {
+      "raw_sha256": "17265c0a8116242a09e0615611e3213cf56e1ddec9fde8c5476f9d2c35e682d4",
+      "normalized_lf_sha256": "17265c0a8116242a09e0615611e3213cf56e1ddec9fde8c5476f9d2c35e682d4",
+      "git_blob_oid": "7aa9a1ed6894bf3962a1eae87a14f499572194d2"
+    }
+  }
+}

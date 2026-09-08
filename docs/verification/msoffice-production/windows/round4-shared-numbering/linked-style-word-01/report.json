@@ -1,0 +1,78 @@
+{
+  "engine": "word",
+  "states": {
+    "before": [
+      {
+        "text": "Original H1",
+        "number": "1"
+      },
+      {
+        "text": "Original H2",
+        "number": "1.1"
+      },
+      {
+        "text": "Original H3",
+        "number": "1.1.1"
+      },
+      {
+        "text": "Original H4",
+        "number": "1.1.1.1"
+      }
+    ],
+    "inserted": [
+      {
+        "text": "Inserted H1",
+        "number": "1"
+      },
+      {
+        "text": "Original H1",
+        "number": "2"
+      },
+      {
+        "text": "Original H2",
+        "number": "2.1"
+      },
+      {
+        "text": "Original H3",
+        "number": "2.1.1"
+      },
+      {
+        "text": "Original H4",
+        "number": "2.1.1.1"
+      }
+    ],
+    "deleted": [
+      {
+        "text": "Original H1",
+        "number": "1"
+      },
+      {
+        "text": "Original H2",
+        "number": "1.1"
+      },
+      {
+        "text": "Original H3",
+        "number": "1.1.1"
+      },
+      {
+        "text": "Original H4",
+        "number": "1.1.1.1"
+      }
+    ]
+  },
+  "errors": [],
+  "pid": 8188,
+  "binding": {
+    "hwnd": 332270,
+    "pid": 8188,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "checks": {
+    "before": true,
+    "inserted": true,
+    "deleted": true
+  },
+  "status": "PASS",
+  "closed": true
+}

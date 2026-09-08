@@ -1,0 +1,251 @@
+{
+  "engine": "Microsoft Word",
+  "transport": "native AppleScript",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "native_run": true,
+  "capabilities": {
+    "snapshot_before": {
+      "status": "succeeded",
+      "detail": "0"
+    },
+    "create": {
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    "chinese_body": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "headings": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "native_numbering": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "long_table": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "toc": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "field_refresh": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "repaginate": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "save_docx": {
+      "status": "succeeded",
+      "detail": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx"
+    },
+    "reopen": {
+      "status": "succeeded",
+      "detail": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx"
+    },
+    "export_pdf": {
+      "status": "succeeded",
+      "detail": ""
+    },
+    "cleanup": {
+      "status": "succeeded",
+      "detail": "Only task-owned document; Word left running"
+    },
+    "preservation": {
+      "status": "succeeded",
+      "detail": "Names, exact paths, saved flags and full in-memory text equal"
+    }
+  },
+  "events": [
+    {
+      "capability": "engine",
+      "status": "observed",
+      "detail": "16.112.3"
+    },
+    {
+      "capability": "snapshot_before",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "snapshot_before",
+      "status": "succeeded",
+      "detail": "0"
+    },
+    {
+      "capability": "create",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "owned_identity",
+      "status": "observed",
+      "detail": "文档1"
+    },
+    {
+      "capability": "create",
+      "status": "succeeded",
+      "detail": "文档1"
+    },
+    {
+      "capability": "chinese_body",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "chinese_body",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "headings",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "headings",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "native_numbering",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "native_numbering",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "long_table",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "table_rows",
+      "status": "observed",
+      "detail": "82"
+    },
+    {
+      "capability": "long_table",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "toc",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "toc",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "field_refresh",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "field_refresh",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "repaginate",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "page_count",
+      "status": "observed",
+      "detail": "9"
+    },
+    {
+      "capability": "repaginate",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "save_docx",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "save_docx",
+      "status": "succeeded",
+      "detail": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx"
+    },
+    {
+      "capability": "reopen",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "reopen",
+      "status": "succeeded",
+      "detail": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx"
+    },
+    {
+      "capability": "export_pdf",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "export_pdf",
+      "status": "succeeded",
+      "detail": ""
+    },
+    {
+      "capability": "cleanup",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "cleanup",
+      "status": "succeeded",
+      "detail": "Only task-owned document; Word left running"
+    },
+    {
+      "capability": "preservation",
+      "status": "attempted",
+      "detail": ""
+    },
+    {
+      "capability": "preservation",
+      "status": "succeeded",
+      "detail": "Names, exact paths, saved flags and full in-memory text equal"
+    }
+  ],
+  "errors": [],
+  "compiled": true,
+  "native_staging_directory": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0",
+  "native_save_strategy": "Fresh task-owned Word-container staging, then byte-identical Python copy to requested output directory",
+  "version": "16.112.3",
+  "native_docx": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.docx",
+    "sha256": "573ffc13e1356fbf09ce151868e7abe6ecbd086d6230c2067cd04514d3dd51ac"
+  },
+  "docx": {
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/audit-round1/mac-native-01/probe.docx",
+    "exists": true,
+    "bytes": 22029
+  },
+  "native_pdf": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/msoffice-spike-0ba5t0m0/probe.pdf",
+    "sha256": "e826f937e638832d0bbed1904b5365de1585cc28e2fd3c29aed5ae9d893172f5"
+  },
+  "pdf": {
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/audit-round1/mac-native-01/probe.pdf",
+    "exists": true,
+    "bytes": 65835
+  },
+  "overall": "native_operations_succeeded_artifact_validation_pending",
+  "process_returncode": 0
+}

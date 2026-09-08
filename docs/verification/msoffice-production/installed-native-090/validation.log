@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "version": "0.9.0",
+  "module": "/private/tmp/wpscomposer-090-final/codex/plugins/wps-composer/skills/WPSComposer/__init__.py",
+  "docx": "/private/tmp/wpscomposer-090-final-native-02/installed-smoke.docx",
+  "pdf": "/private/tmp/wpscomposer-090-final-native-02/installed-smoke.pdf",
+  "source_preserved": true,
+  "pdf_end_marker": true,
+  "sha256": {
+    "installed-smoke.docx": "ec6db396868527da99bbcbf4b66a9c13d166092bfcf18418e4edbcf64dc1443a",
+    "installed-smoke.pdf": "192496e2af3aa1eb624a8db5327037074407425f3de704d65816bbccd7dc9695"
+  }
+}

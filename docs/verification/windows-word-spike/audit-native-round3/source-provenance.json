@@ -1,0 +1,21 @@
+{
+  "candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
+  "execution_head": "af20be53e05a6b4a0f0a18374665b6ff091bd747",
+  "files": {
+    "windows_word.py": {
+      "raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+      "lf_sha256": "5dc4f102fb1f0243181b4eaea2362b75b1b6b5eebb634f0692fd7ca2671cb65a",
+      "matches_candidate": true
+    },
+    "windows_unsaved_sentinel.py": {
+      "raw_sha256": "3a85457595d4fd2cfc063a8d8323f3c037c260b2c16f01f06c444eacb98fafd7",
+      "lf_sha256": "454e4b7650721d21821c6b76984f29cf1dcc7b5a48eb9feff78ed1eb404760b6",
+      "matches_candidate": true
+    },
+    "validate_windows_artifacts.py": {
+      "raw_sha256": "c09068b599c5ddc2130052859748e817c4403caae38afd4cb33c4d31a033ae21",
+      "lf_sha256": "861329f1d24b516e5d5f8ac3de8d996e041e4ffc72f5db20d80c61eae83db26b",
+      "matches_candidate": true
+    }
+  }
+}

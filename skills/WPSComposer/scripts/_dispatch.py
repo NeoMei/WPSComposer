@@ -109,6 +109,8 @@ def _dispatch(progids):
     process.  Some WPS builds do not expose a local-server factory, so a normal
     ``Dispatch`` remains the compatibility fallback.
     """
+    from .office_engines import com_progids
+    progids = com_progids(progids)
     import win32com.client as win32
     import pythoncom
     pythoncom.CoInitialize()
@@ -182,6 +184,8 @@ def pooled_suite_app(progids):
     import pythoncom  # pywin32
     import win32com.client as win32
 
+    from .office_engines import com_progids
+    progids = com_progids(progids)
     key = (tuple(progids), threading.get_ident())
     app = _POOLED_SUITE_APPS.get(key)
     if app is not None:

@@ -1,0 +1,2 @@
+{"event": "composer_created", "word_pid": 23856, "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE", "binding": {"hwnd": 725830, "pid": 23856, "method": "restored per-instance Caption challenge", "documents_before_add": 0}, "word_version": "16.0", "word_build": "16.0.17932", "python_pid": 29252, "monotonic": 87430.421}
+{"event": "composer_close_return", "word_pid": 23856, "closed": false, "cleanup_error": "com_error(-2147417848, '被调用的对象已与其客户端断开连接。', None, None)", "python_pid": 29252, "monotonic": 87732.14}
