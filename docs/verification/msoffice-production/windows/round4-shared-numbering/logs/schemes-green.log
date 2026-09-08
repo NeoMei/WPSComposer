@@ -1,0 +1,57 @@
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 23%]
+........................................................................ [ 31%]
+....ss..s............................................................... [ 39%]
+........................................................................ [ 47%]
+.............................................ssssss..................... [ 55%]
+........................................................................ [ 63%]
+........................................................................ [ 71%]
+............................................................s........... [ 78%]
+........................................................................ [ 86%]
+........................................................................ [ 94%]
+................................................                         [100%]
+============================== warnings summary ===============================
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:52: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    actual_pixels = list(actual.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:53: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected_pixels = list(expected.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16L-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16B->]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I-None]
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:430: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == samples
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:448: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected = list(ImageOps.exif_transpose(decoded_source).getdata())
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:452: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == expected
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\longform\test_resources.py:209: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:229: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:284: chmod 0o000 does not revoke owner read access on Windows
+SKIPPED [6] tests\longform_m2\test_acceptance_m2.py:679: real-WPS acceptance requires macOS
+SKIPPED [1] tests\longform_m3\test_macos_real_wps_m3.py:18: set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance
+902 passed, 10 skipped, 20 warnings in 27.08s

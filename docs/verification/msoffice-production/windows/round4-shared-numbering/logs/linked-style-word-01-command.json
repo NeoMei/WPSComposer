@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "build/msoffice-production/linked_style_probe.py",
+    "word"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 0,
+  "started_unix": 1788864623.713561,
+  "ended_unix": 1788864637.1092196,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}

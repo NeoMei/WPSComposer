@@ -1,0 +1,18 @@
+{
+  "engine": "wps",
+  "states": {},
+  "errors": [
+    {
+      "error": "NativeWriterObjectError('heading numbering did not apply')",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\linked_style_probe.py\", line 30, in <module>\n    for i in range(1,5):c.add_heading_level_native('Original H'+str(i),i,numbering=True,scheme='decimal')\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\skills\\WPSComposer\\scripts\\writer.py\", line 1530, in add_heading_level_native\n    raise NativeWriterObjectError(\nskills.WPSComposer.scripts.writer.NativeWriterObjectError: heading numbering did not apply\n"
+    }
+  ],
+  "application": {
+    "name": "Microsoft Word",
+    "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+    "version": "12.0"
+  },
+  "status": "FAIL",
+  "owned_document_closed": true,
+  "quit_attempted": false
+}
