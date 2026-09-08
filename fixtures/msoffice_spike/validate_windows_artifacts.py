@@ -5,95 +5,197 @@ import argparse
 import hashlib
 import json
 import re
+import traceback
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
-
-import fitz
-from PIL import Image, ImageDraw
 
 from mac_word import content
 
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 W = "{" + NS["w"] + "}"
+HEADINGS = [("原生办公文档验证", 0, "32", "1"),
+            ("层级标题验证", 1, "30", "1.1"),
+            ("三级标题验证", 2, "30", "1.1.1"),
+            ("长表格验证", 0, "32", "2")]
+
+
+def text(node):
+    return "".join(t.text or "" for t in node.findall(".//w:t", NS))
+
+
+def value(node, path, default=None):
+    found = node.find(path, NS)
+    return found.get(W + "val", default) if found is not None else default
+
+
+def required(node, path):
+    found = node.find(path, NS)
+    if found is None:
+        raise ValueError("Missing required DOCX element: " + path)
+    return found
+
+
+def paragraph_named(paragraphs, label, prefix=False):
+    matches = [p for p in paragraphs if (text(p).startswith(label) if prefix else text(p) == label)]
+    if len(matches) != 1:
+        raise ValueError("Expected one DOCX paragraph for " + label + "; found " + str(len(matches)))
+    return matches[0]
+
+
+def effective_numbering(paragraph, style_id, styles):
+    """Merge basedOn, style and direct paragraph numPr properties, in that order."""
+    chain, seen = [], set()
+    while style_id is not None:
+        if style_id in seen or style_id not in styles:
+            raise ValueError("Missing or cyclic paragraph style: " + str(style_id))
+        seen.add(style_id)
+        style = styles[style_id]
+        chain.append(style)
+        style_id = value(style, "w:basedOn")
+    properties = {}
+    for node in list(reversed(chain)) + [paragraph]:
+        num_pr = node.find("w:pPr/w:numPr", NS)
+        if num_pr is not None:
+            for name in ("numId", "ilvl"):
+                prop = value(num_pr, "w:" + name)
+                if prop is not None:
+                    properties[name] = prop
+    return properties.get("numId"), properties.get("ilvl", "0")
+
+
+def heading_numbering(paragraph, level, size, styles, numbering):
+    style_id = value(paragraph, "w:pPr/w:pStyle")
+    num_id, effective_level = effective_numbering(paragraph, style_id, styles)
+    detail = {"heading": text(paragraph), "style_id": style_id, "num_id": num_id, "level": level, "passed": False}
+    # numId=0 explicitly removes numbering, even if the paragraph style has it.
+    if num_id in (None, "0") or effective_level != str(level):
+        return detail
+    number = next((n for n in numbering.findall("w:num", NS) if n.get(W + "numId") == num_id), None)
+    if number is None:
+        return detail
+    abstract_id = value(number, "w:abstractNumId")
+    abstract = next((a for a in numbering.findall("w:abstractNum", NS) if a.get(W + "abstractNumId") == abstract_id), None)
+    if abstract is None:
+        return detail
+    # Each placeholder in %1.%2.%3 uses its own effective level. An instance
+    # can replace that level, or independently override its starting number.
+    # Validate all referenced levels, not only the current heading's level.
+    for referenced_level in range(level + 1):
+        linked_level = next((l for l in abstract.findall("w:lvl", NS) if l.get(W + "ilvl") == str(referenced_level)), None)
+        override = next((l for l in number.findall("w:lvlOverride", NS) if l.get(W + "ilvl") == str(referenced_level)), None)
+        if override is not None and override.find("w:lvl", NS) is not None:
+            linked_level = override.find("w:lvl", NS)
+        if linked_level is None:
+            return detail
+        start = value(linked_level, "w:start", "0")
+        if override is not None:
+            start = value(override, "w:startOverride", start)
+        if value(linked_level, "w:numFmt", "decimal") != "decimal" or start != "1":
+            return detail
+    detail["passed"] = (value(styles[style_id], "w:name") == "heading " + str(level + 1)
+                        and value(linked_level, "w:pStyle") == style_id
+                        and value(linked_level, "w:lvlText") == ".".join("%" + str(i) for i in range(1, level + 2))
+                        and value(paragraph, "w:r/w:rPr/w:sz") == size)
+    return detail
+
+
+def pdf_headings_and_toc(pdf):
+    # Sorted extraction joins the separately positioned TOC number, label and page.
+    lines = [(page_number, re.sub(r"\s+", "", line))
+             for page_number, page in enumerate(pdf, 1)
+             for line in page.get_text(sort=True).splitlines() if line.strip()]
+    for label, _, _, number in HEADINGS:
+        heading = number + label
+        body_pages = [page for page, line in lines if line == heading]
+        toc_pages = [int(match.group(1)) for _, line in lines
+                     for match in [re.fullmatch(re.escape(heading) + r"[.．…·]+([0-9]+)", line)] if match]
+        if len(body_pages) != 1 or toc_pages != body_pages:
+            return False
+    return True
+
+
+def inspect(directory):
+    # Import inside the guarded run so a missing optional dependency also replaces
+    # any previous successful report with an explicit diagnostic.
+    import fitz
+    from PIL import Image, ImageDraw
+
+    with zipfile.ZipFile(directory / "probe.docx") as archive:
+        document = ET.fromstring(archive.read("word/document.xml"))
+        styles_xml = ET.fromstring(archive.read("word/styles.xml"))
+        numbering = ET.fromstring(archive.read("word/numbering.xml"))
+        core = ET.fromstring(archive.read("docProps/core.xml"))
+    table = required(document, ".//w:tbl")
+    rows = [[text(cell) for cell in row.findall("w:tc", NS)] for row in table.findall("w:tr", NS)]
+    expected = [line.split("\t") for line in content().splitlines()[10:92]]
+    header = table.find("w:tr/w:trPr/w:tblHeader", NS)
+    checks = {"table_82_rows_3_columns_exact_content": rows == expected and len(rows) == 82,
+              "repeat_header_xml": header is not None and header.get(W + "val", "true") in ("1", "true", "on")}
+    paragraphs = document.findall("w:body/w:p", NS)
+    body = paragraph_named(paragraphs, "这是中文正文", prefix=True)
+    indent = required(body, "w:pPr/w:ind")
+    checks["body_font_size_indent_xml"] = (
+        required(body, "w:r/w:rPr/w:rFonts").get(W + "eastAsia") == "仿宋"
+        and value(body, "w:r/w:rPr/w:sz") == "24"
+        and indent.get(W + "firstLineChars") == "200" and indent.get(W + "firstLine") == "480")
+    styles = {s.get(W + "styleId"): s for s in styles_xml.findall("w:style", NS)}
+    heading_details = [heading_numbering(paragraph_named(paragraphs, label), level, size, styles, numbering)
+                       for label, level, size, _ in HEADINGS]
+    checks["heading_styles_sizes_native_numbering_links"] = all(x["passed"] for x in heading_details)
+    fields = [t.text or "" for t in document.findall(".//w:instrText", NS)]
+    checks["toc_field_with_four_pagerefs"] = any('TOC \\o "1-3"' in f for f in fields) and sum("PAGEREF" in f for f in fields) == 4
+    result = json.loads((directory / "result.json").read_text("utf-8"))
+    with fitz.open(directory / "probe.pdf") as pdf:
+        if len(pdf) == 0:
+            raise ValueError("PDF contains no pages")
+        pages = [p.get_text() for p in pdf]
+        compact = re.sub(r"\s+", "", "".join(pages))
+        checks["pdf_80_records_exactly_once"] = all(compact.count(f"原生排版验证第{i}条") == 1 for i in range(1, 81))
+        checks["pdf_headers_every_page"] = all(all(h in p for h in ["编号", "检查内容", "结论"]) for p in pages)
+        checks["pdf_end_marker_last_page"] = "MSOFFICE-SPIKE-END" in pages[-1]
+        checks["pdf_pages_match_native"] = len(pdf) == result["page_count"]
+        checks["pdf_numbered_headings_and_toc_pages"] = pdf_headings_and_toc(pdf)
+        spans_by_page = [[s for b in p.get_text("dict")["blocks"] if "lines" in b for line in b["lines"] for s in line["spans"]] for p in pdf]
+        body_spans = [s for spans in spans_by_page for s in spans if "这是中文正文" in s["text"]]
+        checks["pdf_body_fangsong_12pt"] = bool(body_spans) and all("FangSong" in s["font"] and abs(s["size"] - 12) < .05 for s in body_spans)
+        checks["pdf_all_text_inside_pages"] = all(s["bbox"][0] >= -1 and s["bbox"][1] >= -1 and s["bbox"][2] <= p.rect.width + 1 and s["bbox"][3] <= p.rect.height + 1 for p, spans in zip(pdf, spans_by_page) for s in spans)
+        images = []
+        for index, page in enumerate(pdf):
+            pix = page.get_pixmap(matrix=fitz.Matrix(1.25, 1.25), alpha=False)
+            pix.save(directory / f"page-{index+1:02}.png")
+            image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            image.thumbnail((420, 600))
+            images.append(image)
+        sheet = Image.new("RGB", (1260, ((len(images)+2)//3)*625), "#dddddd")
+        draw = ImageDraw.Draw(sheet)
+        for i, image in enumerate(images):
+            x, y = (i % 3) * 420, (i // 3) * 625
+            sheet.paste(image, (x, y + 25))
+            draw.text((x + 10, y + 5), str(i + 1), fill="black")
+        sheet.save(directory / "contact-sheet.png")
+        authors = [node.text for node in core if node.tag.rsplit("}", 1)[-1] in ("creator", "lastModifiedBy")]
+        return {"checks": checks, "all_checks_passed": all(checks.values()), "errors": [],
+                "page_count": len(pdf), "headings": heading_details,
+                "docx_authors": authors, "pdf_metadata": pdf.metadata,
+                "body_pdf_fonts": [{k: s[k] for k in ("font", "size")} for s in body_spans],
+                "visual_review": "pending", "sha256": {name: hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in ("probe.docx", "probe.pdf", "result.json")}}
 
 
 def validate(directory):
     directory = Path(directory)
-    with zipfile.ZipFile(directory / "probe.docx") as archive:
-        document = ET.fromstring(archive.read("word/document.xml"))
-        styles = ET.fromstring(archive.read("word/styles.xml"))
-        numbering = ET.fromstring(archive.read("word/numbering.xml"))
-        core = ET.fromstring(archive.read("docProps/core.xml"))
-    def text(node):
-        return "".join(t.text or "" for t in node.findall(".//w:t", NS))
-    def value(node, path, default=None):
-        found = node.find(path, NS)
-        return found.get(W + "val", default) if found is not None else default
-    table = document.find(".//w:tbl", NS)
-    rows = [[text(cell) for cell in row.findall("w:tc", NS)] for row in table.findall("w:tr", NS)]
-    expected = [line.split("\t") for line in content().splitlines()[10:92]]
-    checks = {"table_82_rows_3_columns_exact_content": rows == expected and len(rows) == 82,
-              "repeat_header_xml": table.find("w:tr/w:trPr/w:tblHeader", NS) is not None}
-    paragraphs = document.findall("w:body/w:p", NS)
-    body = next(p for p in paragraphs if text(p).startswith("这是中文正文"))
-    indent = body.find("w:pPr/w:ind", NS)
-    checks["body_font_size_indent_xml"] = (
-        body.find("w:r/w:rPr/w:rFonts", NS).get(W + "eastAsia") == "仿宋"
-        and value(body, "w:r/w:rPr/w:sz") == "24"
-        and indent.get(W + "firstLineChars") == "200" and indent.get(W + "firstLine") == "480")
-    heading_details = []
-    for label, level, size in [("原生办公文档验证", 0, "32"), ("层级标题验证", 1, "30"), ("三级标题验证", 2, "30"), ("长表格验证", 0, "32")]:
-        paragraph = next(p for p in paragraphs if text(p) == label)
-        style_id = value(paragraph, "w:pPr/w:pStyle")
-        style = next(s for s in styles if s.get(W + "styleId") == style_id)
-        num_id = value(style, "w:pPr/w:numPr/w:numId")
-        number = next(n for n in numbering.findall("w:num", NS) if n.get(W + "numId") == num_id)
-        abstract_id = value(number, "w:abstractNumId")
-        abstract = next(a for a in numbering.findall("w:abstractNum", NS) if a.get(W + "abstractNumId") == abstract_id)
-        linked_level = next(l for l in abstract.findall("w:lvl", NS) if l.get(W + "ilvl") == str(level))
-        ok = (value(style, "w:name") == "heading " + str(level + 1)
-              and value(style, "w:pPr/w:numPr/w:ilvl", "0") == str(level)
-              and value(linked_level, "w:pStyle") == style_id
-              and value(linked_level, "w:lvlText") == ".".join("%" + str(i) for i in range(1, level + 2))
-              and value(paragraph, "w:r/w:rPr/w:sz") == size)
-        heading_details.append({"heading": label, "style_id": style_id, "num_id": num_id, "level": level, "passed": ok})
-    checks["heading_styles_sizes_native_numbering_links"] = all(x["passed"] for x in heading_details)
-    fields = [t.text or "" for t in document.findall(".//w:instrText", NS)]
-    checks["toc_field_with_four_pagerefs"] = any('TOC \\o "1-3"' in f for f in fields) and sum("PAGEREF" in f for f in fields) == 4
-    pdf = fitz.open(directory / "probe.pdf")
-    pages = [p.get_text() for p in pdf]
-    compact = re.sub(r"\s+", "", "".join(pages))
-    checks["pdf_80_records_exactly_once"] = all(compact.count(f"原生排版验证第{i}条") == 1 for i in range(1, 81))
-    checks["pdf_headers_every_page"] = all(all(h in p for h in ["编号", "检查内容", "结论"]) for p in pages)
-    checks["pdf_end_marker_last_page"] = "MSOFFICE-SPIKE-END" in pages[-1]
-    result = json.loads((directory / "result.json").read_text("utf-8"))
-    checks["pdf_pages_match_native"] = len(pdf) == result["page_count"]
-    spans = [s for p in pdf for b in p.get_text("dict")["blocks"] if "lines" in b for line in b["lines"] for s in line["spans"]]
-    body_spans = [s for s in spans if "这是中文正文" in s["text"]]
-    checks["pdf_body_fangsong_12pt"] = bool(body_spans) and all("FangSong" in s["font"] and abs(s["size"] - 12) < .05 for s in body_spans)
-    checks["pdf_all_text_inside_pages"] = all(s["bbox"][0] >= -1 and s["bbox"][1] >= -1 and s["bbox"][2] <= p.rect.width + 1 and s["bbox"][3] <= p.rect.height + 1 for p in pdf for b in p.get_text("dict")["blocks"] if "lines" in b for l in b["lines"] for s in l["spans"])
-    images = []
-    for index, page in enumerate(pdf):
-        pix = page.get_pixmap(matrix=fitz.Matrix(1.25, 1.25), alpha=False)
-        pix.save(directory / f"page-{index+1:02}.png")
-        image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        image.thumbnail((420, 600))
-        images.append(image)
-    sheet = Image.new("RGB", (1260, ((len(images)+2)//3)*625), "#dddddd")
-    draw = ImageDraw.Draw(sheet)
-    for i, image in enumerate(images):
-        x, y = (i % 3) * 420, (i // 3) * 625
-        sheet.paste(image, (x, y + 25))
-        draw.text((x + 10, y + 5), str(i + 1), fill="black")
-    sheet.save(directory / "contact-sheet.png")
-    authors = [node.text for node in core if node.tag.rsplit("}", 1)[-1] in ("creator", "lastModifiedBy")]
-    report = {"checks": checks, "all_checks_passed": all(checks.values()), "page_count": len(pdf), "headings": heading_details,
-              "docx_authors": authors, "pdf_metadata": pdf.metadata,
-              "body_pdf_fonts": [{k:s[k] for k in ("font", "size")} for s in body_spans],
-              "visual_review": "pending", "sha256": {name: hashlib.sha256((directory/name).read_bytes()).hexdigest() for name in ("probe.docx", "probe.pdf", "result.json")}}
-    (directory / "artifact-validation.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({"directory": str(directory), "checks": checks, "pages": len(pdf), "docx_authors": authors, "pdf_author": pdf.metadata.get("author")}, ensure_ascii=False))
+    destination = directory / "artifact-validation.json"
+    report = {"checks": {}, "all_checks_passed": False, "visual_review": "pending",
+              "errors": [{"type": "ValidationIncomplete", "message": "Validation has not completed"}]}
+    # Invalidate stale success before parsing, loading dependencies or rendering.
+    destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        report = inspect(directory)
+    except Exception as error:
+        report["errors"] = [{"type": type(error).__name__, "message": str(error) or repr(error),
+                             "traceback": traceback.format_exc()}]
+    destination.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"directory": str(directory), **report}, ensure_ascii=False))
     return report["all_checks_passed"]
 
 

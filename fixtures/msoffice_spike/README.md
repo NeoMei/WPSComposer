@@ -91,7 +91,8 @@ in a subprocess, and compares the sentinel's name/path/content hash/unsaved stat
 with both native snapshots. It verifies distinct process IDs and owned-process
 cleanup, allowing up to 10 seconds for asynchronous process exit after Quit and
 retaining timestamped observations. Finally it closes only the retained sentinel object with `SaveChanges=0`
-after checking its marker and original name/path. It never quits the registered
+after checking its exact unchanged marker/name/path/unsaved state, or its unchanged
+initial snapshot if setup failed before inserting the marker. It never quits the registered
 application or adjusts application settings. A failure to establish ownership
 is recorded rather than bypassed. Its sentinel metadata is synthetic; do not
 publish native snapshots containing unrelated user documents.
@@ -101,3 +102,17 @@ reported as a preservation failure. A Mac timeout retains partial error output a
 marks cleanup unverified. Inspect and close only the task-owned document if such
 a timeout leaves it open; never broadly quit or kill Word. The probe does not
 automatically bypass automation permission dialogs or native Word errors.
+
+The sentinel helper has a positive finite `--timeout-seconds` deadline (default
+660 seconds) for the child Python runner. On timeout it preserves partial stdout
+and stderr, records failure before cleanup, and reports child Word cleanup as
+unverified. This deadline does not bound the sentinel wrapper's own COM calls;
+it never kills Word. Evidence and native-output directories must be disjoint.
+
+Artifact validation replaces old success with an incomplete/failure report before
+reading inputs, including when a document is malformed or a dependency is missing.
+It resolves paragraph/style numbering overrides, effective decimal format and
+starting values, XML on/off header flags, and displayed PDF heading/TOC pages.
+For its actual-artifact regression tests, install PyMuPDF and Pillow in the test
+environment and run `python -m pytest tests/test_msoffice_artifact_validation.py`;
+otherwise these optional-dependency tests are explicitly skipped.
