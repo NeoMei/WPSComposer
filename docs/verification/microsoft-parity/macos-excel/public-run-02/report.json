@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "checks": {
+    "source_unchanged": true,
+    "pages": 2,
+    "computed_total_30": true,
+    "cross_sheet_60": true
+  },
+  "elapsed": 2.229983209,
+  "source_sha256": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "pdf_sha256": "68cd404ce6f30c76ec537c442511eb8916b776cfda103be1073ff0d192529c19",
+  "source_hashes": {
+    "macos_office_runtime.py": "f2e297c0fd3f1145187d9e10faf5169acbee79f4ff6b021099cc4258383eea5a",
+    "macos_excel_script.py": "05c04b0e78522c9fd87bf4c5237133ce33663db8dba5ceda60db1393ca35c95b",
+    "input_validation.py": "5d2d604b397c48c320e4b51642b369b04604d23d413a7813d5f2e78da9d89e0f"
+  }
+}

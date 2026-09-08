@@ -1,0 +1,2 @@
+Exact copy of the native staged presentation reopened after explicit save_current and close(save_changes=True): docs/verification/microsoft-parity/macos-powerpoint-sessions/save-current-01/native-job-2/bound-dad783fcfb104482bf47915b1779b2db.pptx
+No package changes were made.

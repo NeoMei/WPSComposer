@@ -1,17 +1,33 @@
 ---
 name: WPSComposer
-description: 'Generate and edit rich-layout DOCX, PPTX, XLSX, and PDF documents by driving the real WPS Office layout engine — via COM on Windows (full generation + conversational editing) or the WPS JSAPI bridge on macOS (generation and Office-to-PDF conversion). Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx). Also supports explicit Microsoft Word DOCX/PDF generation and DOC/DOCX-to-PDF conversion on Windows and macOS; use for requests mentioning Microsoft Word or MS Office document layout. Microsoft Excel, PowerPoint and active-document editing are outside this backend.'
+description: 'Use when users need rich document layout, pagination, TOC, fields or PDF editing/conversion, including WPS, Microsoft Word, "WPS 排版", "Word 排版" and "Office 排版" requests. Use for WPS DOCX/PPTX/XLSX generation on Windows/macOS and platform-supported inspection/editing, standalone PDF editing, or Microsoft Word DOCX/PDF generation and DOC/DOCX-to-PDF conversion. The public Microsoft backend excludes Excel, PowerPoint, cloud Office and active-document editing.'
 ---
 
 # WPS Composer
 
-Generate DOCX / PPTX / XLSX with full layout control by driving the WPS Office
-layout engine — COM on Windows, the JSAPI loopback bridge on macOS. WPS computes
-the layout (columns, wrapping, field results, chart rendering), so output
-matches what you'd see in the WPS GUI — no hand-rolled OOXML, no guessing about
-wrapping or page breaks. Conversational inspect/edit works on both platforms:
-Windows uses COM directly; macOS uses the JSAPI loopback bridge to read and
-edit PPT/DOCX/XLSX through the real WPS engine (no PDF extraction fallback).
+Use real desktop WPS Office or Microsoft Word to compute document layout,
+pagination and field results on Windows and macOS. WPS supports DOCX, PPTX,
+XLSX and PDF workflows; Microsoft Word supports DOCX/PDF generation and
+DOC/DOCX-to-PDF conversion. Public APIs default to WPS.
+
+Windows uses COM for both engines. macOS uses the JSAPI loopback bridge for
+WPS and AppleScript for Word. Public file inspection uses WPS on both platforms.
+Public file editing on macOS currently supports PPTX formatting patches;
+structural editing and active-document attachment require Windows COM.
+The public Microsoft backend does not provide inspection/editing yet.
+Advanced layout capabilities vary by engine; check
+[the native Word capability limits](references/native-word.md) before choosing it.
+
+## Candidate document-session API
+
+This development branch adds keyword-only `engine="wps" | "msoffice" | "auto"`
+to `open_document`, `attach_active`, `inspect` and `edit`. It also adds
+`create_document(kind="writer", *, visible=False, engine="wps")` for an engine-bound
+new native document; use it as a context manager and save to an explicit destination. The default stays WPS.
+Microsoft sessions bind one native application/document and reject unsupported
+operations explicitly; active attachment requires `kind`. Full parity/native
+acceptance is in progress, so do not treat these candidate APIs as a completed
+cross-platform capability claim. See the [API reference](references/api.md).
 
 ## Quick start -- Markdown to document
 

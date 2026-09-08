@@ -1,0 +1,12 @@
+before_books=0
+sentinel_name=工作簿5
+owned_name=工作簿6
+stage=data
+formula_calculation=pass
+stage=chart
+chart=pass
+stage=structure
+row_insert_delete=pass
+sheet_create_rename_clone_delete=failed:-1728:The object you are trying to access does not exist
+selection=pass:$A$1:$B$4
+stage=save

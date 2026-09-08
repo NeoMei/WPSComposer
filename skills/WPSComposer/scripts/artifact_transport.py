@@ -494,6 +494,8 @@ def publish_artifact_group(
     artifacts: Iterable[
         tuple[Path, Path, bool, Callable[[Path], None]]
     ],
+    *,
+    deadline: float | None = None,
 ) -> list[Path]:
     """Publish a validated artifact set with best-effort whole-set rollback.
 
@@ -502,6 +504,7 @@ def publish_artifact_group(
     cannot be atomically replaced as a set; if a later publish or final
     validation fails, all earlier destinations are restored from local backups.
     """
+    _require_deadline(deadline)
     entries = [
         (Path(staged).expanduser().resolve(),
          Path(destination).expanduser().resolve(), bool(overwrite), validator)
@@ -517,7 +520,9 @@ def publish_artifact_group(
     try:
         for staged, target, overwrite, validator in entries:
             try:
+                _require_deadline(deadline)
                 validator(staged)
+                _require_deadline(deadline)
             except ArtifactValidationError as exc:
                 raise ArtifactTransportError(
                     "STAGED_ARTIFACT_INVALID", str(exc)
@@ -534,25 +539,31 @@ def publish_artifact_group(
                     delete=False,
                 ) as stream:
                     local = Path(stream.name)
+                    prepared.append(local)
                     with staged.open("rb") as incoming:
-                        copy_stream_before_deadline(incoming, stream, None)
+                        copy_stream_before_deadline(incoming, stream, deadline)
                     stream.flush()
+                    _require_deadline(deadline)
                     os.fsync(stream.fileno())
+                    _require_deadline(deadline)
                 validator(local)
+                _require_deadline(deadline)
             except ArtifactValidationError as exc:
                 local.unlink(missing_ok=True)
                 raise ArtifactTransportError(
                     "ARTIFACT_PUBLISH_FAILED", str(exc)
                 ) from exc
+            except TimeoutError:
+                raise
             except OSError as exc:
                 if "local" in locals():
                     local.unlink(missing_ok=True)
                 raise ArtifactTransportError(
                     "ARTIFACT_PUBLISH_FAILED", str(exc)
                 ) from exc
-            prepared.append(local)
 
         for _staged, target, overwrite, _validator in entries:
+            _require_deadline(deadline)
             if overwrite and target.exists():
                 try:
                     with tempfile.NamedTemporaryFile(
@@ -568,14 +579,19 @@ def publish_artifact_group(
                         # bytes in the destination directory.
                         backups[target] = backup
                         with target.open("rb") as existing:
-                            copy_stream_before_deadline(existing, stream, None)
+                            copy_stream_before_deadline(existing, stream, deadline)
                         stream.flush()
+                        _require_deadline(deadline)
                         os.fsync(stream.fileno())
+                        _require_deadline(deadline)
+                except TimeoutError:
+                    raise
                 except OSError as exc:
                     raise ArtifactTransportError(
                         "ARTIFACT_PUBLISH_FAILED", str(exc)
                     ) from exc
         for local, (_staged, target, overwrite, _validator) in zip(prepared, entries):
+            _require_deadline(deadline)
             try:
                 if overwrite:
                     os.replace(local, target)
@@ -587,6 +603,8 @@ def publish_artifact_group(
                     local.unlink()
             except FileExistsError:
                 raise
+            except TimeoutError:
+                raise
             except OSError as exc:
                 raise ArtifactTransportError(
                     "ARTIFACT_PUBLISH_FAILED", str(exc)
@@ -596,7 +614,9 @@ def publish_artifact_group(
 
         for _staged, target, _overwrite, validator in entries:
             try:
+                _require_deadline(deadline)
                 validator(target)
+                _require_deadline(deadline)
             except BaseException as exc:
                 raise ArtifactTransportError(
                     "FINAL_ARTIFACT_INVALID", str(exc)

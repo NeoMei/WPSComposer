@@ -16,6 +16,7 @@ from .artifact_transport import (
 from .presentation import present_artifact, validate_open_result
 from .office_engines import com_engine, resolve_engine, validate_engine, validate_timeout
 from .msoffice.errors import NativeWordError, NATIVE_WORD_ERROR_CODES, RECOVERY_FIELDS
+from .msoffice.office_errors import NativeOfficeError, NATIVE_OFFICE_ERROR_CODES
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -27,7 +28,7 @@ _COMPONENT_BY_SUFFIX = {
     ".pptx": "presentation",
 }
 
-STABLE_CONVERSION_ERROR_CODES = NATIVE_WORD_ERROR_CODES | frozenset(
+STABLE_CONVERSION_ERROR_CODES = NATIVE_WORD_ERROR_CODES | NATIVE_OFFICE_ERROR_CODES | frozenset(
     {
         "ARTIFACT_PUBLISH_FAILED",
         "BACKEND_UNAVAILABLE",
@@ -150,6 +151,13 @@ def _build_request(
 
 def _select_backend(request: ConversionRequest) -> Tuple[str, Backend]:
     if request.engine == "msoffice":
+        if request.component != "writer":
+            if sys.platform == "darwin":
+                from .msoffice.macos_office_runtime import convert
+                return "mac-" + request.component + "-applescript", lambda req: convert(req, timeout=req.timeout)
+            if sys.platform == "win32":
+                from .msoffice.windows_office_runtime import convert
+                return "windows-" + request.component + "-com", lambda req: convert(req, timeout=req.timeout)
         if sys.platform == "win32":
             from .msoffice.windows_runtime import convert
             return "windows-word-com", lambda req: convert(req, timeout=req.timeout)
@@ -196,7 +204,7 @@ def convert_to_pdf(
     try:
         with com_engine(request.engine):
             result = Path(backend(request)).expanduser().resolve()
-    except NativeWordError as exc:
+    except (NativeWordError, NativeOfficeError) as exc:
         error = ConversionError(
             code=exc.code, source=str(request.source), component=request.component,
             backend=backend_name, message=exc.safe_message,

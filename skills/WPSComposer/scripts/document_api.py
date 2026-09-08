@@ -33,6 +33,8 @@ import tempfile
 
 from .artifact_transport import (
     ArtifactValidationError,
+    ValidatorSpec,
+    validate_before_deadline,
     publish_artifact,
     publish_artifact_group,
     validate_office_package,
@@ -41,6 +43,7 @@ from .artifact_transport import (
 from .writer import WriterComposer
 from .sheet import SheetComposer
 from .slide import SlideComposer
+from .office_engines import validate_engine, resolve_engine, com_engine
 
 
 def _com_available():
@@ -102,10 +105,26 @@ def composer_for_kind(kind):
         raise ValueError("kind must be writer, sheet, or slide") from exc
 
 
-def open_document(path, *, kind=None, read_only=False, visible=False):
+def create_document(kind="writer", *, visible=False, engine="wps"):
+    """Create a native document with an engine-bound, context-managed session."""
+    cls = composer_for_kind(kind)
+    selected = _document_engine(None, kind, engine, action="create_document")
+    if selected == "msoffice":
+        from .document_sessions import new_session
+        return new_session(kind=_normalize_kind(kind), visible=visible)
+    with com_engine(selected):
+        return cls(visible=visible)
+
+
+def open_document(path, *, kind=None, read_only=False, visible=False, engine="wps"):
     """Open an existing file and return a context-manageable composer."""
+    selected = _document_engine(path, kind, engine)
+    if selected == "msoffice":
+        from .document_sessions import open_session
+        return open_session(path, kind=_document_family(path, kind), read_only=read_only, visible=visible)
     cls = composer_for_path(path, kind)
-    return cls.open_document(path, read_only=read_only, visible=visible)
+    with com_engine(selected):
+        return cls.open_document(path, read_only=read_only, visible=visible)
 
 
 # ---------------------------------------------------------------------------
@@ -559,7 +578,10 @@ def apply_ops(composer, ops, *, atomic=True):
         except PatchError:
             raise
         except ValueError as exc:
-            reports.append(_error_report(index, op.get("target") or op.get("type"), exc, kind))
+            report = _error_report(index, op.get("target") or op.get("type"), exc, kind)
+            if getattr(exc, "clipboard_changed", False):
+                report["clipboard_changed"] = True
+            reports.append(report)
             if atomic:
                 raise PatchError(reports) from exc
         except Exception as exc:
@@ -567,6 +589,7 @@ def apply_ops(composer, ops, *, atomic=True):
                 "index": index, "op": verb,
                 "target": op.get("target"), "ok": False,
                 "error": {"code": "apply_failed", "message": str(exc)},
+                **({"clipboard_changed": True} if getattr(exc, "clipboard_changed", False) else {}),
             })
             if atomic:
                 raise PatchError(reports) from exc
@@ -574,24 +597,65 @@ def apply_ops(composer, ops, *, atomic=True):
     return reports
 
 
-def attach_active(kind=None):
+def _document_engine(path, kind, engine, *, action="open_document", operations=(), export_pdf=None, selection=False):
+    validate_engine(engine)
+    family = _document_family(path, kind) if path is not None else _normalize_kind(kind)
+    if kind is not None and family is None:
+        raise ValueError("kind must be writer, sheet, or slide")
+    if family is None:
+        if engine == "auto":
+            raise ValueError("Specify kind for automatic active-document engine selection")
+        return engine
+    component = {"writer":"writer", "sheet":"spreadsheet", "slide":"presentation"}[family]
+    if engine != "auto":
+        return resolve_engine(engine, component)
+    from . import office_engines
+    for candidate in ("wps", "msoffice"):
+        if not office_engines.engine_executable(candidate, component):
+            continue
+        suffix = Path(path).suffix.lower() if path is not None else None
+        if office_engines.sys.platform == "darwin" and candidate == "wps":
+            # The macOS WPS bridge has file inspection and PPTX set patches,
+            # but no COM-style file session, active binding or structural verbs.
+            if path is None or action in {"open_document", "attach_active"}:
+                continue
+            if action == "inspect":
+                if selection or suffix not in {".doc", ".docx", ".docm", ".xls", ".xlsx", ".xlsm", ".ppt", ".pptx", ".pptm", ".pps", ".ppsx", ".ppsm"}:
+                    continue
+            if action == "edit":
+                from .macos_probe.presentation_preflight import supports_presentation_set_ops
+                if (suffix != ".pptx" or export_pdf is not None or
+                        not supports_presentation_set_ops(operations)):
+                    continue
+        if candidate == "msoffice" and path is not None:
+            if suffix != {"writer": ".docx", "sheet": ".xlsx", "slide": ".pptx"}[family]:
+                continue
+        return candidate
+    raise office_engines.EngineUnavailableError("No installed native engine supports this document action")
+
+
+def attach_active(kind=None, *, engine="wps"):
     """Attach to the current WPS/Office document.
 
     When *kind* is omitted, Writer, Sheet, and Slide are probed in that order.
     Pass a kind when multiple WPS applications are open and the choice matters.
     """
-    if kind:
-        return composer_for_kind(kind).attach_active()
-    errors = []
-    for cls in (WriterComposer, SheetComposer, SlideComposer):
-        try:
-            return cls.attach_active()
-        except Exception as exc:
-            errors.append(str(exc))
-    raise RuntimeError("No active WPS/Office document found: " + " | ".join(errors))
+    selected = _document_engine(None, kind, engine, action="attach_active")
+    if selected == "msoffice":
+        from .document_sessions import attach_session
+        return attach_session(kind=_normalize_kind(kind))
+    with com_engine(selected):
+        if kind:
+            return composer_for_kind(kind).attach_active()
+        errors = []
+        for cls in (WriterComposer, SheetComposer, SlideComposer):
+            try:
+                return cls.attach_active()
+            except Exception as exc:
+                errors.append(str(exc))
+        raise RuntimeError("No active WPS/Office document found: " + " | ".join(errors))
 
-
-def inspect(path=None, *, kind=None, selection=False, **options):
+def inspect(path=None, *, kind=None, selection=False, engine="wps", **options):
     """Inspect a file or the current active document and return plain data.
 
     On Windows the live COM path is used.  When COM is unavailable (macOS,
@@ -599,10 +663,18 @@ def inspect(path=None, *, kind=None, selection=False, **options):
     the WPS JSAPI bridge reads structured content through the real WPS
     engine instead of falling back to PDF extraction.
     """
+    selected = _document_engine(path, kind, engine, action="inspect", selection=selection)
+    routing = {"engine": selected} if selected != "wps" else {}
     if path is None:
-        composer = attach_active(kind)
-        return composer.inspect_selection() if selection else composer.inspect_document(**options)
-    if not _com_available():
+        composer = attach_active(kind, **routing)
+        try:
+            return composer.inspect_selection() if selection else composer.inspect_document(**options)
+        finally:
+            # Microsoft sessions hold an app lock even for read-only attachment.
+            # Closing releases that binding without closing the user's document.
+            if selected == "msoffice":
+                composer.close(save_changes=False)
+    if selected == "wps" and not _com_available():
         from .macos_probe.inspection import INSPECTABLE, inspect_macos, macos_inspection_available
         if macos_inspection_available():
             ext = os.path.splitext(os.fspath(path))[1].lower()
@@ -614,7 +686,7 @@ def inspect(path=None, *, kind=None, selection=False, **options):
                     include_text=bool(include_text),
                     max_shapes=max_shapes,
                 )
-    with open_document(path, kind=kind, read_only=True) as composer:
+    with open_document(path, kind=kind, read_only=True, **routing) as composer:
         return composer.inspect_selection() if selection else composer.inspect_document(**options)
 
 
@@ -720,6 +792,23 @@ def _validate_edited_artifact(path):
         ) from exc
 
 
+def _session_deadline(composer):
+    # Legacy composers do not have a job deadline; native session adapters do.
+    if getattr(composer, "engine", None) != "msoffice":
+        return None
+    return getattr(composer, "_deadline", None)
+
+
+def _session_validator(composer, validator):
+    deadline = _session_deadline(composer)
+    if deadline is None:
+        return validator
+    spec = ValidatorSpec.from_callable(validator)
+    def bounded(path):
+        validate_before_deadline(spec, path, deadline)
+    return bounded
+
+
 def _save_edited_artifact(composer, destination, *, attached, overwrite):
     """Save beside the destination, validate, then atomically publish."""
     target = Path(destination).expanduser().resolve()
@@ -741,7 +830,8 @@ def _save_edited_artifact(composer, destination, *, attached, overwrite):
             staged,
             target,
             overwrite=overwrite,
-            validator=_validate_edited_artifact,
+            validator=_session_validator(composer, _validate_edited_artifact),
+            **({"deadline": _session_deadline(composer)} if _session_deadline(composer) is not None else {}),
         )
         return str(published)
     finally:
@@ -774,10 +864,10 @@ def _stage_composer_artifact(composer, destination, *, export_pdf=False):
     try:
         if export_pdf:
             composer.export_pdf(str(staged))
-            validate_pdf(staged)
+            _session_validator(composer, validate_pdf)(staged)
         else:
             composer.save(str(staged))
-            _validate_edited_artifact(staged)
+            _session_validator(composer, _validate_edited_artifact)(staged)
     except BaseException:
         staged.unlink(missing_ok=True)
         raise
@@ -815,7 +905,7 @@ def _report_recovery_paths(error, stages):
 
 def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
          export_pdf=None, visible=False, atomic=True, stop_on_error=None,
-         inspect_after=False, raise_on_error=False, overwrite=False):
+         inspect_after=False, raise_on_error=False, overwrite=False, engine="wps"):
     """Inspect/edit/save a file or the active document in one agent call.
 
     Accepts two equivalent inputs:
@@ -850,6 +940,14 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
        of later siblings. Address subsequent ops by stable id
        (``@paraId`` / ``@id``) or re-inspect between batches.
     """
+    # Routing and execution must observe the same batch, including callers
+    # providing single-use iterators instead of lists.
+    patches = tuple(patches or ())
+    ops = tuple(ops or ())
+    selected = _document_engine(path, kind, engine, action="edit",
+                                operations=tuple({"op": "set", **p} for p in (patches or ())) + tuple(ops or ()),
+                                export_pdf=export_pdf)
+    routing = {"engine": selected} if selected != "wps" else {}
     if stop_on_error is not None:
         atomic = bool(stop_on_error)
 
@@ -860,6 +958,11 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         combined.extend(ops)
 
     attached = path is None
+    if selected == "msoffice" and output is not None:
+        family = _document_family(path, kind) if path is not None else _normalize_kind(kind)
+        expected = {"writer": ".docx", "sheet": ".xlsx", "slide": ".pptx"}.get(family)
+        if expected and Path(output).suffix.lower() != expected:
+            raise ValueError("Microsoft edit output must use the session native format " + expected)
     if export_pdf is not None:
         pdf_output = Path(export_pdf).expanduser().resolve()
         if pdf_output.suffix.lower() != ".pdf":
@@ -908,7 +1011,7 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     # macOS / non-COM host: route presentation edits through the JSAPI bridge.
     # Only the ``set`` verb (formatting patches) is supported on macOS;
     # structural ops still require Windows COM.
-    if path is not None and not _com_available():
+    if selected == "wps" and path is not None and not _com_available():
         if export_pdf is not None:
             raise RuntimeError(
                 "edit export_pdf is unsupported on macOS; edit and PDF "
@@ -1013,19 +1116,23 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
             }
 
     if attached:
-        composer = attach_active(kind)
+        composer = attach_active(kind, **routing)
     else:
-        composer = open_document(path, kind=kind, read_only=False, visible=visible)
+        composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
         try:
             composer.__enter__()
         except Exception:
             composer.close(save_changes=False)
             raise
+    publication_deadline = _session_deadline(composer)
+    publication_options = {"deadline": publication_deadline} if publication_deadline is not None else {}
     owned_stages = []
     pending_publication = None
     completed = False
     result = None
     try:
+        if attached and selected == "msoffice":
+            composer.preflight_save(output, overwrite=overwrite)
         if attached and output is not None:
             source_family = _normalize_kind(_kind_from_composer(composer))
             output_family = _document_family(output)
@@ -1086,9 +1193,9 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                             staged_document,
                             destination_path,
                             overwrite or destination_path == source_path,
-                            _validate_edited_artifact,
+                            _session_validator(composer, _validate_edited_artifact),
                         ),
-                        (staged_pdf, pdf_output, overwrite, validate_pdf),
+                        (staged_pdf, pdf_output, overwrite, _session_validator(composer, validate_pdf)),
                     ],
                 )
                 saved_path = str(destination_path)
@@ -1149,12 +1256,13 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                         stage,
                         target,
                         overwrite=replace,
-                        validator=_validate_edited_artifact,
+                        validator=_session_validator(composer, _validate_edited_artifact),
+                        **publication_options,
                     )
                     result["saved_path"] = str(published)
                 else:
                     _kind, entries = pending_publication
-                    published = publish_artifact_group(entries)
+                    published = publish_artifact_group(entries, **publication_options)
                     result["saved_path"] = str(published[0])
                     result["pdf_path"] = str(published[1])
                 committed = True
@@ -1197,7 +1305,7 @@ def supported_formats():
 
 
 __all__ = [
-    "open_document", "attach_active", "inspect", "edit", "apply_patches",
+    "create_document", "open_document", "attach_active", "inspect", "edit", "apply_patches",
     "apply_ops", "validate_op",
     "snapshot_json", "supported_formats", "composer_for_path",
     "composer_for_kind",

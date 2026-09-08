@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_sessions.py", line 34, in run
+    rows = setup._execute([
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 262, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-o1pb2c0h diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-o1pb2c0h/3946bb98b88e4aa1bcffa1db5758df84.log

@@ -1,0 +1,107 @@
+{
+  "kind": "sheet",
+  "name": "owned-3eaa96ba2ce8419282d946ebbc8ee052.xlsx",
+  "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/full-02/edited.xlsx",
+  "saved": true,
+  "sheet_count": 2,
+  "cells_truncated": false,
+  "sheets": [
+    {
+      "id": "sheet:1",
+      "index": 1,
+      "name": "Data",
+      "visible": "sheet visible",
+      "used_range": "$A$1:$D$20",
+      "used_rows": 20,
+      "used_columns": 4,
+      "page_setup": {
+        "top_margin": 54,
+        "bottom_margin": 54,
+        "left_margin": 50.4,
+        "right_margin": 50.4,
+        "orientation": "portrait",
+        "zoom": false,
+        "fit_to_pages_wide": 1,
+        "fit_to_pages_tall": 1,
+        "print_area": "$A$1:$F$28"
+      },
+      "freeze_panes": null,
+      "cells": [],
+      "shapes": [
+        {
+          "id": "sheet:1/shape:@name=StableRevenue",
+          "index": 1,
+          "shape_id": null,
+          "name": "StableRevenue",
+          "type": "shape type chart",
+          "geometry": {
+            "left": 35,
+            "top": 174,
+            "width": 420,
+            "height": 220,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "visible": true,
+            "type": "fill solid",
+            "color": "#F0F0F0",
+            "back_color": [
+              255,
+              255,
+              255
+            ],
+            "transparency": 0.10000002384185791
+          },
+          "line": {
+            "visible": true,
+            "color": "#123456",
+            "weight": 2,
+            "dash_style": "line dash style solid",
+            "transparency": 0
+          }
+        }
+      ],
+      "charts": [
+        {
+          "id": "sheet:1/chart:1",
+          "index": 1,
+          "name": "StableRevenue",
+          "chart_type": 51,
+          "has_title": true,
+          "title": "Updated native revenue",
+          "geometry": {
+            "left": 35,
+            "top": 174,
+            "width": 420,
+            "height": 220
+          }
+        }
+      ]
+    },
+    {
+      "id": "sheet:2",
+      "index": 2,
+      "name": "Results",
+      "visible": "sheet visible",
+      "used_range": "$A$1:$B$1",
+      "used_rows": 1,
+      "used_columns": 2,
+      "page_setup": {
+        "top_margin": 40,
+        "bottom_margin": 54,
+        "left_margin": 50.4,
+        "right_margin": 50.4,
+        "orientation": "landscape",
+        "zoom": 100,
+        "fit_to_pages_wide": 1,
+        "fit_to_pages_tall": 1,
+        "print_area": "$A$1:$D$4"
+      },
+      "freeze_panes": null,
+      "cells": [],
+      "shapes": [],
+      "charts": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+PROBE|baseline|20
+PROBE|version|16.112.3
+PROBE|sentinel_name|演示文稿27
+PROBE|owned_name|演示文稿28
+PROBE|shape|PASS
+PROBE|fill|PASS
+PROBE|picture|PASS
+PROBE|table_created|PASS
+PROBE|page_width|720.0
+PROBE|slide_clone_remove|FAIL|-50|“Microsoft PowerPoint”遇到一个错误：参数错误。
+PROBE|slide_move|PASS
+PROBE|shape_clone_remove|PASS
+PROBE|shape_geometry_edit|PASS
+PROBE|undo|BLOCKED_PRIOR_DESTRUCTIVE_UNDO
+PROBE|selection_type|selection type none
+PROBE|generation|PASS
+PROBE|saved_path|/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-nis_fo81/native-b8c2d78a6d464031abcd293bf4d3abd4.pptx
+PROBE|pdf_before_reopen|PASS
+PROBE|sentinel_unsaved_before_reopen|PASS
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-16/native.applescript:5476:5622: execution error: “Microsoft PowerPoint”遇到一个错误：发生“-9074”类型错误。 (-9074)

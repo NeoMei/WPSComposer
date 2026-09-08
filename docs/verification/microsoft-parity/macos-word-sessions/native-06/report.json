@@ -1,0 +1,177 @@
+{
+  "passed": false,
+  "checks": {
+    "format_readback": true,
+    "sentinel_preserved_and_closed": true
+  },
+  "limitations": [
+    "Attached non-rebinding save_copy and PDF export are unsupported.",
+    "Floating object move/clone is unsupported."
+  ],
+  "source_sha256": "a9bf684e571de5bd958b08bef9d89ff827724dc34c1c13e8b015ae910eb2d5e5",
+  "before": {
+    "kind": "writer",
+    "counts": {
+      "paragraphs": 4,
+      "tables": 0,
+      "shapes": 0,
+      "sections": 1,
+      "inline_shapes": 0,
+      "styles": 373
+    },
+    "paragraphs": [
+      {
+        "id": "paragraph:1",
+        "index": 1,
+        "start": 0,
+        "end": 6,
+        "text": "Alpha",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:2",
+        "index": 2,
+        "start": 6,
+        "end": 11,
+        "text": "Beta",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:3",
+        "index": 3,
+        "start": 11,
+        "end": 17,
+        "text": "Gamma",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:4",
+        "index": 4,
+        "start": 17,
+        "end": 18,
+        "text": "",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      }
+    ],
+    "tables": [],
+    "shapes": [],
+    "sections": [
+      {
+        "id": "section:1",
+        "index": 1,
+        "page_setup": {
+          "orientation": 0,
+          "page_width": 595.2999877929688,
+          "page_height": 841.9000244140625,
+          "top_margin": 72,
+          "bottom_margin": 72,
+          "left_margin": 90,
+          "right_margin": 90,
+          "header_distance": 42.54999923706055,
+          "footer_distance": 49.599998474121094,
+          "gutter": 0
+        },
+        "columns": 1
+      }
+    ],
+    "name": "document.docx",
+    "saved": true,
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xgjv080d/document.docx"
+  },
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xgjv080d diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xgjv080d/ac03105771d34c8ca65f44ab6653f5f8.log"
+  }
+}

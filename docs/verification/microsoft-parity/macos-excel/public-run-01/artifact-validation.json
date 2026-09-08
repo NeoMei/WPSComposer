@@ -1,0 +1,25 @@
+{
+  "verified": true,
+  "sheets": [
+    "Data",
+    "Summary"
+  ],
+  "cells": {
+    "data": {
+      "formula": "SUM(B2:B3)",
+      "cached_value": 30.0
+    },
+    "summary": {
+      "formula": "Data!B4*2",
+      "cached_value": 60.0
+    }
+  },
+  "header_bold": true,
+  "header_rgb": "4472C4",
+  "header_font_rgb": "FFFFFF",
+  "pdf_pages": 2,
+  "artifact_hashes": {
+    "public.xlsx": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+    "public.pdf": "4ee555b0a11fc46ed4208fb3abd0e2b2103bfaef2c3ed7a96629e30366ffbbfa"
+  }
+}

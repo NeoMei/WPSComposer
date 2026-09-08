@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": {
+    "unrelated_document_bindings_and_saved_state_unchanged": true,
+    "public_native_create_save_export": true,
+    "exact_owned_close": true,
+    "native_reopen_content": true,
+    "native_reopen_font": true,
+    "native_pdf_text": true
+  },
+  "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i6gj2yqr/document-677e95c226b5492aababee5da6dc0094.docx",
+  "pdf_pages": 1,
+  "hashes": {
+    "created.docx": "f8448983a84769d768bd56abab282b5718efde0e0bc2593febea7ac9142d2f5c",
+    "created.pdf": "d58d4fa867b59e244d6b8451e025b4ddec89f7d5bca11aae50d3bf924e0cd92f"
+  }
+}

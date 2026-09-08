@@ -1,0 +1,11 @@
+Metric
+Value
+Alpha
+10
+Total
+10
+
+Cross sheet total
+Value
+Double
+20

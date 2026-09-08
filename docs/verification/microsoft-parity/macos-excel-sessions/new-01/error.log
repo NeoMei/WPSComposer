@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 278, in run_new
+    with create_document('sheet',engine='msoffice') as session:
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py", line 114, in create_document
+    return new_session(kind=_normalize_kind(kind), visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_sessions.py", line 40, in new_session
+    return _session_class(kind).new_document(visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 173, in new_document
+    self._run('set ownedBook to make new workbook\nlog "WPSCOMPOSER_CREATED_WORKBOOK:" & (name of ownedBook)\nsave workbook as ownedBook filename '+_quote(str(self._native))+' file format Excel XML file format\nif full name of ownedBook is not '+_quote(str(self._native))+' then error "Owned new workbook identity mismatch"\nreturn "{}"',bind=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 254, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

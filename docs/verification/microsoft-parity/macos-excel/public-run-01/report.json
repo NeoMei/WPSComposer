@@ -1,0 +1,15 @@
+{
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_script.py": "05c04b0e78522c9fd87bf4c5237133ce33663db8dba5ceda60db1393ca35c95b",
+    "skills/WPSComposer/scripts/msoffice/macos_office_runtime.py": "fa18d99f7a5d4a15ee3e24bdc1d903c014c02c0275cd984a9b969450cb43867f",
+    "skills/WPSComposer/scripts/office_engines.py": "bf5424eba9bbe9cb08f75252f4212712a264fce81d70b54a45372cdad5337979",
+    "skills/WPSComposer/scripts/orchestrator.py": "4421e2e8bd46e36e23bc76ce21329cff63f0638a71a112fea7ce7bd2e3ca3cb8",
+    "skills/WPSComposer/scripts/conversion.py": "1f4d2291ec2eb5098e4c6d45ebf386b592c9d12b18bd2ef07bf1e57a5ffce856"
+  },
+  "status": "native_returned",
+  "native": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "pdf": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.pdf",
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "source_sha256_after": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "elapsed": 10.666664542
+}

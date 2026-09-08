@@ -10,6 +10,22 @@ WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支�
 
 > **0.9.0（2026-09-08）：Microsoft Word 原生支持**：新增 `engine="msoffice"` 的 DOCX/PDF 生成和 DOC/DOCX 转 PDF，默认仍为 WPS。Windows 和 macOS 原生验收均已通过。参见 [0.9.0 发布说明](docs/releases/0.9.0.md)、 [使用与恢复说明](skills/WPSComposer/references/native-word.md) 和 [验收记录](docs/verification/msoffice-production/README.md)。
 
+## 排版引擎与支持范围
+
+以下对照已发布 **0.9.0** 的公共能力。`codex/microsoft-parity` 开发分支正在增加 Microsoft Excel / PowerPoint 及三应用检查编辑支持；代表性 macOS 原生流程已通过，但完整能力清单、Windows 原生验收和最终 UI 回归尚未完成。开发状态及剩余限制见 [Microsoft 能力对齐验收状态](docs/verification/microsoft-parity/status.md)，不应把该候选分支视为全面对齐的已发布版本。
+
+| 能力 | WPS Office | Microsoft Word |
+|---|---|---|
+| Windows / macOS 原生排版 | 支持 | 支持 |
+| DOCX / PDF 生成 | 支持 | 支持 |
+| DOC / DOCX 转 PDF | 支持 | 支持 |
+| XLSX / PPTX 生成与转 PDF | 支持 | 不支持 Microsoft Excel / PowerPoint 后端 |
+| 已有文件检查 | Windows / macOS 支持三类文档 | 尚未接入公共 Microsoft 后端 |
+| 文件格式修改 | Windows 支持三类文档；macOS 公共入口目前支持 PPTX | 尚未接入公共 Microsoft 后端 |
+| 结构编辑、活动文档操作 | 当前要求 Windows COM | 尚未接入公共 Microsoft 后端 |
+
+`engine="wps"` 是默认值；`engine="msoffice"` 显式选择 Microsoft Word；`engine="auto"` 优先选择已安装的 WPS。自动选择在任务开始前完成，执行中不切换引擎。Microsoft 后端使用桌面 Word，不支持云端 Office；高级排版能力与 WPS 不完全相同，详见 [能力限制](skills/WPSComposer/references/native-word.md)。
+
 ## ✨ 核心特性
 
 ### 🎨 专业排版
@@ -30,7 +46,7 @@ WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支�
 - **可扩展**：支持自定义插件，在 Markdown 解析前预处理内容
 
 ### 🌍 跨平台
-- **Windows**：通过 COM 接口驱动 WPS Office / MS Office
+- **Windows**：通过 COM 接口驱动 WPS Office 或 Microsoft Word
 - **macOS**：通过 JSAPI 容器驱动 WPS Office；可显式通过 AppleScript 驱动 Microsoft Word
 - **统一 API**：相同的 Python 接口，跨平台一致体验
 
@@ -71,6 +87,23 @@ generate("slides.md", format="pptx", preset="business", output="slides.pptx")
 
 # 生成 XLSX 电子表格
 generate("data.md", format="xlsx", output="data.xlsx")
+```
+
+使用 Microsoft Word 排版并导出 PDF：
+
+```python
+from skills.WPSComposer import generate, convert_to_pdf
+
+
+def main() -> None:
+    docx = generate(
+        "report.md", format="docx", output="word-report.docx", engine="msoffice"
+    )
+    convert_to_pdf(docx, output="word-report.pdf", engine="msoffice")
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 需要在交互式脚本中展示最终文件时，显式传入 `open_result=True`：
@@ -362,8 +395,9 @@ Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
 ### 运行时要求
 
 - **Python**：3.9 或更高版本
-- **Windows**：WPS Office 或 MS Office，`pywin32`
-- **macOS**：WPS Office 12.1.26035 或更高版本，Node.js 20+（JSAPI 运行时）
+- **Windows 原生排版**：安装所选引擎对应的 WPS Office 或桌面 Microsoft Word，并安装 `pywin32`
+- **macOS WPS 排版**：WPS Office 12.1.26035 或更高版本，Node.js 20+（JSAPI 运行时）
+- **macOS Microsoft Word 排版**：桌面 Microsoft Word，并允许调用程序通过系统 Automation 权限控制 Word
 - **PDF 编辑**：`pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`
 - **DOCX/PDF 长文档质量门**：`Pillow>=10`、`pypdf>=4`、`pdfplumber>=0.11`
 

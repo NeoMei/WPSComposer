@@ -1,0 +1,86 @@
+{
+  "component": "spreadsheet",
+  "operations": [
+    {
+      "op": "sheet.reset",
+      "args": {}
+    },
+    {
+      "op": "sheet.rename",
+      "args": {
+        "index": 1,
+        "name": "Data"
+      }
+    },
+    {
+      "op": "sheet.write_table",
+      "args": {
+        "startRow": 2,
+        "startCol": 2,
+        "values": [
+          [
+            "Metric",
+            "Value"
+          ],
+          [
+            "Alpha",
+            10
+          ],
+          [
+            "Total",
+            "=SUM(C3:C3)"
+          ]
+        ],
+        "headerBold": true,
+        "headerShade": "#4472C4",
+        "headerFontColor": "#FFFFFF",
+        "fontSize": 12
+      }
+    },
+    {
+      "op": "sheet.set_column_width",
+      "args": {
+        "column": "B:C",
+        "width": 22
+      }
+    },
+    {
+      "op": "sheet.autofit",
+      "args": {}
+    },
+    {
+      "op": "sheet.add",
+      "args": {
+        "name": "Summary"
+      }
+    },
+    {
+      "op": "sheet.write_table",
+      "args": {
+        "startRow": 1,
+        "startCol": 1,
+        "values": [
+          [
+            "Cross sheet total",
+            "Value"
+          ],
+          [
+            "Double",
+            "=Data!C4*2"
+          ]
+        ],
+        "headerShade": false
+      }
+    },
+    {
+      "op": "sheet.autofit",
+      "args": {}
+    },
+    {
+      "op": "sheet.select",
+      "args": {
+        "index": 1
+      }
+    }
+  ]
+}

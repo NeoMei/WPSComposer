@@ -166,7 +166,7 @@ class MacWordAdapter(_BaseAdapter):
         raw = self._run(compiled.source, deadline)
         outcome = parse_result(raw, compiled.nodes, target, compiled.operations, compiled.issues)
         validate_office_package(target, 'docx')
-        self.nodes, self.operations, self.issues = compiled.nodes, compiled.operations, compiled.issues
+        self.nodes, self.operations, self.issues = compiled.nodes, compiled.operations, outcome.issues
         return outcome
 
     def _owned_path(self, path):
@@ -241,8 +241,11 @@ def recover_quarantine(*, timeout=30, lock_path=None):
         if not isinstance(data,dict) or data.get('schema') != 1:
             raise RuntimeError('Quarantine metadata is invalid; refusing automatic recovery')
         staging = Path(data['stagingRoot']).resolve()
-        if staging.parent != parent.resolve() or not staging.name.startswith('wpscomposer-native-'):
+        if staging.parent != parent.resolve() or not staging.name.startswith(('wpscomposer-native-', 'wpscomposer-session-')):
             raise ValueError('Quarantine staging identity is invalid')
+        bound = data.get('documentPath')
+        if bound is not None and Path(bound).resolve().parent != staging:
+            raise RuntimeError('Attached Word recovery requires manual verification')
         process = subprocess.run(['/bin/ps','-axo','command'],capture_output=True,text=True,check=True,timeout=remaining(deadline))
         if any('osascript' in line and str(staging) in line for line in process.stdout.splitlines()):
             raise RuntimeError('Previous native Word script is still running; recovery refused')

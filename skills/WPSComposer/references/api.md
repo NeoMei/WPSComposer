@@ -317,14 +317,23 @@ validate_target("paragraf:3", "writer")
 #       "valid_forms": [...], "closest": "paragraph:N"}}
 ```
 
+Candidate implementation note: this branch adds explicit `engine` selection to
+the document entry points below, including native `create_document`. A Microsoft session retains its selected
+application and document through inspection, editing and close. Microsoft active
+attachment requires an explicit kind; save prerequisites are checked before a
+live edit. Unsupported native operations fail explicitly. Cross-platform parity
+acceptance is still in progress; these signatures do not claim every WPS
+operation has passed Microsoft native validation.
+
 Common functions:
 
 | Function | Purpose |
 |---|---|
-| `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
-| `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
-| `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. Existing outputs require `overwrite=True`. With `export_pdf`, both artifacts are staged and validated before group publication with rollback; attached/macOS edit export is unsupported. |
+| `create_document(kind="writer", *, visible=False, engine="wps")` | Create a native document with an engine-bound context-managed session; save to an explicit destination |
+| `open_document(path, *, kind=None, read_only=False, visible=False, engine="wps")` | Open a supported existing file; returns a context-manageable composer |
+| `attach_active(kind=None, *, engine="wps")` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
+| `inspect(path=None, *, kind=None, selection=False, engine="wps", **options)` | Return a JSON-compatible document or selection snapshot |
+| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False, engine="wps")` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. Existing outputs require `overwrite=True`. With `export_pdf`, both artifacts are staged and validated before group publication with rollback; attached/macOS edit export is unsupported. |
 | `apply_ops(composer, ops, atomic=True)` | Unified op executor (`set`/`insert`/`remove`/`move`/`clone`); raises `PatchError` in atomic mode |
 | `apply_patches(composer, patches, atomic=True)` | Back-compat wrapper: `set`-only patches, normalised to `apply_ops` |
 | `validate_op(op, kind=None)` | Validate one op dict against the schema; returns `{valid, error:{code,...}}` |

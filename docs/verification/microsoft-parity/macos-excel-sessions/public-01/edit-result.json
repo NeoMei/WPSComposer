@@ -1,0 +1,1028 @@
+{
+  "ok": true,
+  "saved": true,
+  "saved_path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/public-01/public-edited.xlsx",
+  "pdf_path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/public-01/public-edited.pdf",
+  "ops": [
+    {
+      "index": 0,
+      "op": "set",
+      "target": "sheet:1/cell:B2",
+      "ok": true,
+      "accepted": [
+        "value",
+        "font.bold"
+      ],
+      "rejected": []
+    }
+  ],
+  "patches": [
+    {
+      "index": 0,
+      "op": "set",
+      "target": "sheet:1/cell:B2",
+      "ok": true,
+      "accepted": [
+        "value",
+        "font.bold"
+      ],
+      "rejected": []
+    }
+  ],
+  "errors": [],
+  "before": {
+    "kind": "sheet",
+    "name": "owned-b52d2a2901e7404d92c0272035922fd4.xlsx",
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/run-05/native.xlsx",
+    "saved": true,
+    "sheet_count": 2,
+    "cells_truncated": false,
+    "sheets": [
+      {
+        "id": "sheet:1",
+        "index": 1,
+        "name": "Data",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$D$20",
+        "used_rows": 20,
+        "used_columns": 4,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": false,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": "$A$1:$F$28"
+        },
+        "freeze_panes": null,
+        "cells": [
+          {
+            "id": "sheet:1/cell:$A$1",
+            "address": "$A$1",
+            "value": "Month",
+            "formula": "Month",
+            "display_text": "Month",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 28,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": true,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#DCEBFA"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$1",
+            "address": "$B$1",
+            "value": "Revenue",
+            "formula": "Revenue",
+            "display_text": "Revenue",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 28,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": true,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#DCEBFA"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$2",
+            "address": "$A$2",
+            "value": "Jan",
+            "formula": "Jan",
+            "display_text": "Jan",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$2",
+            "address": "$B$2",
+            "value": 10,
+            "formula": "10",
+            "display_text": "10.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$3",
+            "address": "$A$3",
+            "value": "Feb",
+            "formula": "Feb",
+            "display_text": "Feb",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$3",
+            "address": "$B$3",
+            "value": 20,
+            "formula": "20",
+            "display_text": "20.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$4",
+            "address": "$A$4",
+            "value": "Mar",
+            "formula": "Mar",
+            "display_text": "Mar",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$4",
+            "address": "$B$4",
+            "value": 30,
+            "formula": "30",
+            "display_text": "30.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$6",
+            "address": "$A$6",
+            "value": "Total",
+            "formula": "Total",
+            "display_text": "Total",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$6",
+            "address": "$B$6",
+            "value": 60,
+            "formula": "=SUM(B2:B4)",
+            "display_text": "60.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$8",
+            "address": "$A$8",
+            "value": "Microsoft native parity",
+            "formula": "Microsoft native parity",
+            "display_text": "Microsoft native parity",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": true,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": "$A$8:$D$8"
+          },
+          {
+            "id": "sheet:1/cell:$D$20",
+            "address": "$D$20",
+            "value": "owned-e9a7d3dce1ad",
+            "formula": "owned-e9a7d3dce1ad",
+            "display_text": "owned-e9a7d3dce1ad",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [
+          {
+            "id": "sheet:1/shape:@name=Chart 1",
+            "index": 1,
+            "shape_id": null,
+            "name": "Chart 1",
+            "type": "shape type chart",
+            "geometry": {
+              "left": 20,
+              "top": 160,
+              "width": 400,
+              "height": 220,
+              "rotation": 0,
+              "z_order": 1
+            },
+            "fill": {
+              "visible": true,
+              "type": "fill unset",
+              "color": "#FFFFFF",
+              "back_color": "#FFFFFF",
+              "transparency": -2147483648
+            },
+            "line": {
+              "visible": true,
+              "color": "#898989",
+              "weight": 0.5,
+              "dash_style": "line dash style solid",
+              "transparency": -2147483648
+            }
+          }
+        ],
+        "charts": [
+          {
+            "id": "sheet:1/chart:1",
+            "index": 1,
+            "name": "Chart 1",
+            "chart_type": 51,
+            "has_title": true,
+            "title": "Revenue by month",
+            "geometry": {
+              "left": 20,
+              "top": 160,
+              "width": 400,
+              "height": 220
+            }
+          }
+        ]
+      },
+      {
+        "id": "sheet:2",
+        "index": 2,
+        "name": "Summary",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$B$1",
+        "used_rows": 1,
+        "used_columns": 2,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": 100,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": "$A$1:$D$4"
+        },
+        "freeze_panes": null,
+        "cells": [
+          {
+            "id": "sheet:2/cell:$A$1",
+            "address": "$A$1",
+            "value": "Cross sheet total",
+            "formula": "Cross sheet total",
+            "display_text": "Cross sheet total",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 24,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:2/cell:$B$1",
+            "address": "$B$1",
+            "value": 120,
+            "formula": "=Data!B6*2",
+            "display_text": "120",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [],
+        "charts": []
+      }
+    ]
+  },
+  "after": {
+    "kind": "sheet",
+    "name": "owned-b52d2a2901e7404d92c0272035922fd4.xlsx",
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/run-05/native.xlsx",
+    "saved": true,
+    "sheet_count": 2,
+    "cells_truncated": false,
+    "sheets": [
+      {
+        "id": "sheet:1",
+        "index": 1,
+        "name": "Data",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$D$20",
+        "used_rows": 20,
+        "used_columns": 4,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": false,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": "$A$1:$F$28"
+        },
+        "freeze_panes": null,
+        "cells": [
+          {
+            "id": "sheet:1/cell:$A$1",
+            "address": "$A$1",
+            "value": "Month",
+            "formula": "Month",
+            "display_text": "Month",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 28,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": true,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#DCEBFA"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$1",
+            "address": "$B$1",
+            "value": "Revenue",
+            "formula": "Revenue",
+            "display_text": "Revenue",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 28,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": true,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#DCEBFA"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$2",
+            "address": "$A$2",
+            "value": "Jan",
+            "formula": "Jan",
+            "display_text": "Jan",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$2",
+            "address": "$B$2",
+            "value": 25,
+            "formula": "25",
+            "display_text": "25.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": true,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$3",
+            "address": "$A$3",
+            "value": "Feb",
+            "formula": "Feb",
+            "display_text": "Feb",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$3",
+            "address": "$B$3",
+            "value": 20,
+            "formula": "20",
+            "display_text": "20.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$4",
+            "address": "$A$4",
+            "value": "Mar",
+            "formula": "Mar",
+            "display_text": "Mar",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$4",
+            "address": "$B$4",
+            "value": 30,
+            "formula": "30",
+            "display_text": "30.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$6",
+            "address": "$A$6",
+            "value": "Total",
+            "formula": "Total",
+            "display_text": "Total",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$6",
+            "address": "$B$6",
+            "value": 75,
+            "formula": "=SUM(B2:B4)",
+            "display_text": "75.00",
+            "number_format": "0.00",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$8",
+            "address": "$A$8",
+            "value": "Microsoft native parity",
+            "formula": "Microsoft native parity",
+            "display_text": "Microsoft native parity",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": true,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": "$A$8:$D$8"
+          },
+          {
+            "id": "sheet:1/cell:$D$20",
+            "address": "$D$20",
+            "value": "owned-e9a7d3dce1ad",
+            "formula": "owned-e9a7d3dce1ad",
+            "display_text": "owned-e9a7d3dce1ad",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [
+          {
+            "id": "sheet:1/shape:@name=Chart 1",
+            "index": 1,
+            "shape_id": null,
+            "name": "Chart 1",
+            "type": "shape type chart",
+            "geometry": {
+              "left": 20,
+              "top": 160,
+              "width": 400,
+              "height": 220,
+              "rotation": 0,
+              "z_order": 1
+            },
+            "fill": {
+              "visible": true,
+              "type": "fill unset",
+              "color": "#FFFFFF",
+              "back_color": "#FFFFFF",
+              "transparency": -2147483648
+            },
+            "line": {
+              "visible": true,
+              "color": "#898989",
+              "weight": 0.5,
+              "dash_style": "line dash style solid",
+              "transparency": -2147483648
+            }
+          }
+        ],
+        "charts": [
+          {
+            "id": "sheet:1/chart:1",
+            "index": 1,
+            "name": "Chart 1",
+            "chart_type": 51,
+            "has_title": true,
+            "title": "Revenue by month",
+            "geometry": {
+              "left": 20,
+              "top": 160,
+              "width": 400,
+              "height": 220
+            }
+          }
+        ]
+      },
+      {
+        "id": "sheet:2",
+        "index": 2,
+        "name": "Summary",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$B$1",
+        "used_rows": 1,
+        "used_columns": 2,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": 100,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": "$A$1:$D$4"
+        },
+        "freeze_panes": null,
+        "cells": [
+          {
+            "id": "sheet:2/cell:$A$1",
+            "address": "$A$1",
+            "value": "Cross sheet total",
+            "formula": "Cross sheet total",
+            "display_text": "Cross sheet total",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 24,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:2/cell:$B$1",
+            "address": "$B$1",
+            "value": 150,
+            "formula": "=Data!B6*2",
+            "display_text": "150",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 18,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [],
+        "charts": []
+      }
+    ]
+  },
+  "warnings": []
+}

@@ -64,16 +64,15 @@ def engine_executable(engine: str, component: str = 'writer'):
     validate_engine(engine)
     if component not in _COMPONENTS or engine == 'auto':
         raise ValueError('Detection requires an explicit engine and valid component')
-    if engine == 'msoffice' and component != 'writer':
-        return None
     if sys.platform == 'darwin':
         # Match locations accepted by the native execution adapters.
-        name = 'wpsoffice.app' if engine == 'wps' else 'Microsoft Word.app'
+        name = 'wpsoffice.app' if engine == 'wps' else {'writer': 'Microsoft Word.app', 'spreadsheet': 'Microsoft Excel.app', 'presentation': 'Microsoft PowerPoint.app'}[component]
         candidate = Path('/Applications') / name
         return str(candidate) if candidate.is_dir() else None
     if sys.platform == 'win32':
         if engine == 'msoffice':
-            return _registered_executable(('Word.Application',), {'winword.exe'})
+            progid, executable = {'writer': ('Word.Application', 'winword.exe'), 'spreadsheet': ('Excel.Application', 'excel.exe'), 'presentation': ('PowerPoint.Application', 'powerpnt.exe')}[component]
+            return _registered_executable((progid,), {executable})
         progids = {'writer': ('KWps.Application', 'Wps.Application'),
                    'spreadsheet': ('Ket.Application',),
                    'presentation': ('KWpp.Application', 'Wpp.Application')}[component]
@@ -85,13 +84,9 @@ def resolve_engine(engine: str, component: str) -> str:
     validate_engine(engine)
     if component not in _COMPONENTS:
         raise ValueError('Unknown Office component: ' + str(component))
-    if engine == 'msoffice' and component != 'writer':
-        raise EngineUnavailableError('MS Office supports writer DOCX/PDF in this release; use engine="wps" for other components')
     if engine != 'auto':
         return engine
     for candidate in ('wps', 'msoffice'):
-        if candidate == 'msoffice' and component != 'writer':
-            continue
         if engine_executable(candidate, component):
             return candidate
     raise EngineUnavailableError('No installed native engine for ' + component)
@@ -113,4 +108,8 @@ def com_progids(progids):
         values = tuple(p for p in values if p not in _OFFICE_PROGIDS)
         if not values:
             raise EngineUnavailableError('No WPS ProgID for requested component')
+    elif _COM_ENGINE.get() == 'msoffice':
+        values = tuple(p for p in values if p in _OFFICE_PROGIDS)
+        if not values:
+            raise EngineUnavailableError('No Microsoft ProgID for requested component')
     return values

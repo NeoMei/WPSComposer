@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 178, in run_business
+    session.add_title_row('A6:C6','Native business title')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 618, in add_title_row
+    return self._run(prefix+'\nmerge range obj\nset value of obj to '+value+'\nset bold of font object of obj to true\nset font size of font object of obj to '+size+'\nset color of font object of obj to '+color+'\nset color of interior object of obj to '+shade+'\nset horizontal alignment of obj to horizontal align center\nreturn "{}"')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 236, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

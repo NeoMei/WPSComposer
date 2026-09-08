@@ -1,0 +1,8 @@
+{
+  "passed": false,
+  "checks": {
+    "invalid_patch_before_native": true,
+    "terminal_paragraph_clone_move": true
+  },
+  "error": "Artifact validator worker exited without a result"
+}

@@ -1,0 +1,22 @@
+{
+  "component": "spreadsheet",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "token": "95ef52181d1b",
+  "app_path": "/Applications/Microsoft Excel.app",
+  "source_sha256": "197250d50acbae28c9189845f0bedbc14bb13916c70e06a8dc545f9ea25305e2",
+  "status": "failed",
+  "verified": false,
+  "recovery_required": true,
+  "timeout": 60,
+  "app_version": "16.112.3",
+  "bundle_id": "com.microsoft.Excel",
+  "dictionary_sha256": "65791dab8b9f94a66e22dbd582ed49acc70f1d9f8e9efe3bcfee7434fe76c0f9",
+  "returncode": 1,
+  "elapsed_seconds": 9.51,
+  "checksums": {
+    "stderr.log": "83a1b4dc1cdef63370c9c43cc8f0e1a2dd6f3e89dd6780417b8dd7c433c451d3",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "probe.applescript": "eb4658a1acef51cb8f712ac04edde5662f04f53b35ceef2caa33a3d43e009932"
+  }
+}

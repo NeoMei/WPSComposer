@@ -1,0 +1,20 @@
+{
+  "clipboard_changed": true,
+  "results": {
+    "slide_clone": [
+      "PASS",
+      3
+    ],
+    "shape_clone": [
+      "PASS",
+      2
+    ],
+    "shape_move": [
+      "PASS",
+      2,
+      3
+    ]
+  },
+  "source_unchanged": true,
+  "preexisting_documents_unchanged": true
+}

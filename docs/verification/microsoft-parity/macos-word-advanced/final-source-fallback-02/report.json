@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "checks": {
+    "formula_middle_has_body_width": true,
+    "math_did_not_absorb_following_text": true,
+    "merged_grid_span": true,
+    "merge_outside_retained": true,
+    "landscape": true,
+    "portrait_restored": true,
+    "pictures_in_two_real_cells": true,
+    "embedded_images": true,
+    "colored_style": true,
+    "document_tail": true,
+    "footer_text_and_page": true,
+    "no_unexpected_issues": true,
+    "source_fallback_retained": true,
+    "pdf_tail_retained": true,
+    "unsaved_sentinel_preserved": true
+  },
+  "issues": [
+    {
+      "code": "REFERENCE_UNRESOLVED",
+      "message": "[REFERENCE_UNRESOLVED 引用目标未解析]",
+      "placement": "inline",
+      "nodeId": "__wpsc_tab:3:1"
+    },
+    {
+      "code": "EQUATION_INSERT_FAILED",
+      "message": "Native equation failed; readable source retained.",
+      "placement": "block",
+      "nodeId": "wpsc-eq:1",
+      "stage": "execute",
+      "fallback": "source",
+      "recoverable": true
+    }
+  ],
+  "runtime_staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-iz_8tkce",
+  "compiled_sha256": "4b283a2373dc97b07068b96b7a39298285edc78f4f95451a3ad912fbd73afab7",
+  "injected_math_failure": true,
+  "pagination_nodes": 13,
+  "pdf_pages": 3,
+  "source_sha256": "755345c0ad74333ebdbefc9ea62bb1166b0b1d65bcd339a3666193dff1221aeb",
+  "compiler_sha256": "f601d34dd0734d13eefde8e276b1fea8699b1a085e62966358640d93e1268164"
+}

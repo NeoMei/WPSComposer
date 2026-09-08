@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "scope": "Word UI editability only; paragraph insertion semantic issue tracked separately",
+  "checks": {
+    "cua_typing_marker_visible": true,
+    "undo_removed_marker": true,
+    "explicit_save_UI_confirmed": true,
+    "UI_close_and_reopen_confirmed": true,
+    "reopened_saved_state": true,
+    "persisted_marker_absent": true,
+    "exact_owned_document_closed": true
+  },
+  "sha256": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d",
+  "evidence": "Current task CUA tool history: typeText, Undo, Save, close, Open dialog, reopened screenshot, close."
+}

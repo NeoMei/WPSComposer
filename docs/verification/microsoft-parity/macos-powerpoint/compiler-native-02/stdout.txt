@@ -1,0 +1,1 @@
+WPSCOMPOSER_MS_OFFICE_OK:presentation

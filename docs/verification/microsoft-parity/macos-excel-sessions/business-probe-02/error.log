@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/wps-excel-business-probe-2.py", line 31, in <module>
+    session.save(out/'native.xlsx');session.export_pdf(out/'native.pdf');report['verified']=all(v.get('ok',True) for v in report['steps'].values())
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 654, in save
+    validate_before_deadline(ValidatorSpec.from_callable(validate_office_package,'xlsx'),self._native,self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 236, in validate_before_deadline
+    raise RuntimeError("Artifact validator worker exited without a result") from None
+RuntimeError: Artifact validator worker exited without a result

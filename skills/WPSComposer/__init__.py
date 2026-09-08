@@ -79,6 +79,7 @@ _WPS_ENGINE_NAMES: dict[str, str] = {
     "parse": "skills.WPSComposer.scripts.md_parser",
     "parse_file": "skills.WPSComposer.scripts.md_parser",
     # Document API
+    "create_document": "skills.WPSComposer.scripts.document_api",
     "open_document": "skills.WPSComposer.scripts.document_api",
     "attach_active": "skills.WPSComposer.scripts.document_api",
     "inspect": "skills.WPSComposer.scripts.document_api",

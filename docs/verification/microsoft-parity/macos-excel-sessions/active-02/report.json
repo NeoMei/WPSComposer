@@ -1,0 +1,9 @@
+{
+  "verified": false,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "native": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-active-fixture-2c8jri01/active-owned.xlsx",
+  "jobs": [],
+  "error": "Native Excel session failed; owned recovery files retained",
+  "session_source_sha256": "76a1a7db75c854c6193c658e24bee1224ab3d2d340636e97df398e62d6a735e2"
+}

@@ -553,7 +553,8 @@ def _body_codepoint_count(sections: list[Section]) -> int:
             elif isinstance(elem, DegradationBlock):
                 count += len(re.sub(r"\s", "", elem.fallback_text))
             elif isinstance(elem, (FormulaBlock, MathBlock)):
-                count += len(re.sub(r"\s", "", elem.source or elem.latex))
+                source = elem.source if isinstance(elem, FormulaBlock) else elem.latex
+                count += len(re.sub(r"\s", "", source or ""))
     return count
 
 

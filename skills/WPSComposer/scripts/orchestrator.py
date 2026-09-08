@@ -55,7 +55,7 @@ def _return_artifact(path: Path, *, open_result: bool, engine: str = "wps") -> s
     artifact = Path(path).expanduser().resolve()
     if open_result:
         try:
-            if artifact.suffix.lower() == ".docx":
+            if artifact.suffix.lower() in {".docx", ".xlsx", ".pptx"}:
                 present_artifact(artifact, engine=engine)
             else:
                 present_artifact(artifact)
@@ -203,6 +203,17 @@ def generate(
                 longform_build, format, output_path, timeout, overwrite, **options
             )
             return _return_artifact(Path(outcome.path), open_result=open_result, engine=selected_engine)
+
+    if selected_engine == "msoffice":
+        if sys.platform == "darwin":
+            from .msoffice.macos_office_runtime import generate as generate_office
+        elif sys.platform == "win32":
+            from .msoffice.windows_office_runtime import generate as generate_office
+        else:
+            raise EngineUnavailableError("Native Microsoft Office requires Windows or macOS")
+        result = generate_office(doc, format, output_path, design_preset,
+                                 timeout=timeout, overwrite=overwrite)
+        return _return_artifact(result, open_result=open_result, engine=selected_engine)
 
     # Route to renderer
     if sys.platform == "darwin":

@@ -1,0 +1,7 @@
+{
+  "returncode": 0,
+  "stdout": "WPSCOMPOSER_MS_OFFICE_OK:presentation\n",
+  "stderr": "",
+  "staging": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-compiler-tbg4pwqv",
+  "source_sha256": "f57213887aa11298b389ef10833a7b78ce74103fd24b30406985a6fd89e10af8"
+}

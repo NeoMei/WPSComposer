@@ -1,0 +1,589 @@
+{
+  "kind": "sheet",
+  "name": "owned-bd8b818e5d3542c3a6acb214d2ea1d49.xlsx",
+  "path": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "saved": false,
+  "sheet_count": 3,
+  "cells_truncated": false,
+  "sheets": [
+    {
+      "id": "sheet:1",
+      "index": 1,
+      "name": "Summary",
+      "visible": "sheet visible",
+      "used_range": "$A$1:$B$2",
+      "used_rows": 2,
+      "used_columns": 2,
+      "page_setup": {
+        "top_margin": 54,
+        "bottom_margin": 54,
+        "left_margin": 50.4,
+        "right_margin": 50.4,
+        "orientation": "portrait",
+        "zoom": 100,
+        "fit_to_pages_wide": 1,
+        "fit_to_pages_tall": 1,
+        "print_area": null
+      },
+      "freeze_panes": null,
+      "cells": [
+        {
+          "id": "sheet:1/cell:$A$1",
+          "address": "$A$1",
+          "value": "Item",
+          "formula": "Item",
+          "display_text": "Item",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:1/cell:$B$1",
+          "address": "$B$1",
+          "value": "Value",
+          "formula": "Value",
+          "display_text": "Value",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:1/cell:$A$2",
+          "address": "$A$2",
+          "value": "Double",
+          "formula": "Double",
+          "display_text": "Double",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:1/cell:$B$2",
+          "address": "$B$2",
+          "value": 40,
+          "formula": "=Data!B5*2",
+          "display_text": "40",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        }
+      ],
+      "shapes": [],
+      "charts": []
+    },
+    {
+      "id": "sheet:2",
+      "index": 2,
+      "name": "Data",
+      "visible": "sheet visible",
+      "used_range": "$A$1:$B$5",
+      "used_rows": 5,
+      "used_columns": 2,
+      "page_setup": {
+        "top_margin": 54,
+        "bottom_margin": 54,
+        "left_margin": 50.4,
+        "right_margin": 50.4,
+        "orientation": "portrait",
+        "zoom": 100,
+        "fit_to_pages_wide": 1,
+        "fit_to_pages_tall": 1,
+        "print_area": null
+      },
+      "freeze_panes": null,
+      "cells": [
+        {
+          "id": "sheet:2/cell:$A$1",
+          "address": "$A$1",
+          "value": "Metric",
+          "formula": "Metric",
+          "display_text": "Metric",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 6.5,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$B$1",
+          "address": "$B$1",
+          "value": "Value",
+          "formula": "Value",
+          "display_text": "Value",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 5.83,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$A$2",
+          "address": "$A$2",
+          "value": "Beta",
+          "formula": "Beta",
+          "display_text": "Beta",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 6.5,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$B$2",
+          "address": "$B$2",
+          "value": 20,
+          "formula": "20",
+          "display_text": "20",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 5.83,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$A$3",
+          "address": "$A$3",
+          "value": "Alpha",
+          "formula": "Alpha",
+          "display_text": "Alpha",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 6.5,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$B$3",
+          "address": "$B$3",
+          "value": 10,
+          "formula": "10",
+          "display_text": "10",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 5.83,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$A$4",
+          "address": "$A$4",
+          "value": "Alpha",
+          "formula": "Alpha",
+          "display_text": "Alpha",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 6.5,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$B$4",
+          "address": "$B$4",
+          "value": 10,
+          "formula": "10",
+          "display_text": "10",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 5.83,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$A$5",
+          "address": "$A$5",
+          "value": "Total",
+          "formula": "Total",
+          "display_text": "Total",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 6.5,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:2/cell:$B$5",
+          "address": "$B$5",
+          "value": 20,
+          "formula": "=SUM(B2:B2)",
+          "display_text": "20",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 5.83,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        }
+      ],
+      "shapes": [],
+      "charts": []
+    },
+    {
+      "id": "sheet:3",
+      "index": 3,
+      "name": "Summary (2)",
+      "visible": "sheet visible",
+      "used_range": "$A$1:$B$2",
+      "used_rows": 2,
+      "used_columns": 2,
+      "page_setup": {
+        "top_margin": 54,
+        "bottom_margin": 54,
+        "left_margin": 50.4,
+        "right_margin": 50.4,
+        "orientation": "portrait",
+        "zoom": 100,
+        "fit_to_pages_wide": 1,
+        "fit_to_pages_tall": 1,
+        "print_area": null
+      },
+      "freeze_panes": null,
+      "cells": [
+        {
+          "id": "sheet:3/cell:$A$1",
+          "address": "$A$1",
+          "value": "Item",
+          "formula": "Item",
+          "display_text": "Item",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:3/cell:$B$1",
+          "address": "$B$1",
+          "value": "Value",
+          "formula": "Value",
+          "display_text": "Value",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": true,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#FFFFFF"
+          },
+          "fill": {
+            "color": "#4472C4"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:3/cell:$A$2",
+          "address": "$A$2",
+          "value": "Double",
+          "formula": "Double",
+          "display_text": "Double",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        },
+        {
+          "id": "sheet:3/cell:$B$2",
+          "address": "$B$2",
+          "value": 40,
+          "formula": "=Data!B5*2",
+          "display_text": "40",
+          "number_format": "General",
+          "horizontal_alignment": 1,
+          "vertical_alignment": -4108,
+          "wrap_text": false,
+          "indent": 0,
+          "row_height": 16,
+          "column_width": 10,
+          "merged": false,
+          "font": {
+            "name": "\u7b49\u7ebf",
+            "size": 11,
+            "bold": false,
+            "italic": false,
+            "underline": -4142,
+            "strikethrough": false,
+            "color": "#000000"
+          },
+          "fill": {
+            "color": "#FFFFFF"
+          },
+          "merge_area": null
+        }
+      ],
+      "shapes": [],
+      "charts": []
+    }
+  ]
+}

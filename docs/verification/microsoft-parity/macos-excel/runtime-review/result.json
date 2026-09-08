@@ -1,0 +1,6 @@
+{
+  "scanner_result": "accepted",
+  "expected": "reject active relationship/content type regardless of part filename",
+  "native_execution": false,
+  "source_sha256": "fa18d99f7a5d4a15ee3e24bdc1d903c014c02c0275cd984a9b969450cb43867f"
+}

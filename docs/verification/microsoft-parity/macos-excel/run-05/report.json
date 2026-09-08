@@ -1,0 +1,62 @@
+{
+  "component": "spreadsheet",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "token": "e9a7d3dce1ad",
+  "native_directory": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/Documents/wpscomposer-parity-e9a7d3dce1ad-xlbmm8hw",
+  "app_path": "/Applications/Microsoft Excel.app",
+  "source_sha256": "73a2b501c03e12ebe42b3be89553a4c15447f9254f0eb6eb91b7e7020148481a",
+  "status": "passed",
+  "verified": true,
+  "recovery_required": false,
+  "timeout": 60,
+  "app_version": "16.112.3",
+  "bundle_id": "com.microsoft.Excel",
+  "dictionary_sha256": "65791dab8b9f94a66e22dbd582ed49acc70f1d9f8e9efe3bcfee7434fe76c0f9",
+  "returncode": 0,
+  "artifacts": {
+    "sheets": [
+      "Data",
+      "Summary"
+    ],
+    "formula": "SUM(B2:B4)",
+    "calculated_value": 60.0,
+    "cross_sheet_formula": "Data!B6*2",
+    "cross_sheet_value": 120.0,
+    "merged_ranges": [
+      "A8:D8"
+    ],
+    "native_charts": [
+      "xl/charts/chart1.xml"
+    ],
+    "chart_sources": [
+      "Data!$B$1",
+      "Data!$A$2:$A$4",
+      "Data!$B$2:$B$4"
+    ],
+    "pdf_pages": 2
+  },
+  "primitives": {
+    "formula_calculation": "pass",
+    "chart": "pass",
+    "row_insert_delete": "pass",
+    "sheet_create_rename_clone_delete": "pass",
+    "selection": "pass:$A$1:$B$4",
+    "reopen_semantics": "pass",
+    "pdf_export": "pass",
+    "unrelated_and_unsaved_sentinel": "pass",
+    "owned_closed": "pass"
+  },
+  "elapsed_seconds": 4.575,
+  "checksums": {
+    "stderr.log": "c4ff4159bae9964e69028d898c966922806c0d4f9b88e2047da0f9a3ee86e882",
+    "native.pdf": "b3f824f15c6ac2b38092c00988e0733d4b545db8b84e612fee806ff453458b4a",
+    "page-1.png": "cb27489fcda464c2aa9bd60acf31350774c91795795f8026653b2ef4ef559839",
+    "page-2.png": "6615382b6bfbb6ef051cb0b8d14761bbdbb8c3daf82f9f4a0cfb113a97a4223a",
+    "runner-source.py": "73a2b501c03e12ebe42b3be89553a4c15447f9254f0eb6eb91b7e7020148481a",
+    "stdout.log": "1ab669edd846b701d0928e8238b89a6b4c58600fe5364b238108f224f9293d23",
+    "native.xlsx": "9c8fa67e771d99dfafd783cc1a078226df999f6b8a118aea3c27ba0b8dc13fd5",
+    "pdf-text.txt": "a20f28626392781c359e5ed7a42cb791e1b596ba7bcaed2acf97358fc588d4db",
+    "probe.applescript": "2a3d903c858ab325fda2f19984c8538f3139f1dff791574af6cd11a11adb432f"
+  }
+}

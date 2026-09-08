@@ -23,16 +23,17 @@ def present_artifact(path: ArtifactPath, *, engine: str | None = None) -> None:
     if not artifact.is_file():
         raise FileNotFoundError(f"Final artifact is not a file: {artifact}")
 
+    component = {".docx": "writer", ".xlsx": "spreadsheet", ".pptx": "presentation"}.get(artifact.suffix.lower())
     if sys.platform == "darwin":
-        if engine in {"wps", "msoffice"} and artifact.suffix.lower() == ".docx":
-            application = "Microsoft Word" if engine == "msoffice" else "/Applications/wpsoffice.app"
+        if engine in {"wps", "msoffice"} and component is not None:
+            application = {"writer": "Microsoft Word", "spreadsheet": "Microsoft Excel", "presentation": "Microsoft PowerPoint"}[component] if engine == "msoffice" else "/Applications/wpsoffice.app"
             argv = ["open", "-a", application, str(artifact)]
         else:
             argv = ["open", str(artifact)]
     elif sys.platform == "win32":
-        if engine in {"wps", "msoffice"} and artifact.suffix.lower() == ".docx":
+        if engine in {"wps", "msoffice"} and component is not None:
             from .office_engines import engine_executable
-            executable = engine_executable(engine, "writer")
+            executable = engine_executable(engine, component)
             if not executable:
                 raise OSError(f"{engine} executable is unavailable")
             argv = [executable, str(artifact)]

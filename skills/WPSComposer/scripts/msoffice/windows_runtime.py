@@ -33,6 +33,8 @@ from ..longform.platform_runtime import _BaseAdapter, _apply_relayout
 from ..longform.quality import QualityFinding
 from ..longform.resources import ImageProfile, PreparedLongformResource
 from .errors import NativeWordError, NativeWordTimeoutError
+from .office_errors import NativeOfficeError
+from .windows_office_runtime import OfficeJobLock, _component_root
 
 
 _MODULE = 'skills.WPSComposer.scripts.msoffice.windows_runtime'
@@ -70,6 +72,7 @@ def _owned_path(root, value):
 def _worker_failure(operation):
     diagnostic = operation / 'diagnostics.json'
     code = 'NATIVE_WORD_EXECUTION_FAILED'
+    data = {}
     try:
         data = json.loads(diagnostic.read_text(encoding='utf-8'))
         if data.get('public_code') in {'NATIVE_WORD_QUARANTINED', 'NATIVE_WORD_TIMEOUT', 'NATIVE_WORD_UNAVAILABLE'}:
@@ -78,12 +81,41 @@ def _worker_failure(operation):
         pass
     locations = dict(staging_path=operation,
                      diagnostic_path=diagnostic if diagnostic.is_file() else operation / 'worker.log')
-    if code == 'NATIVE_WORD_TIMEOUT':
-        return NativeWordTimeoutError(**locations)
-    return NativeWordError(code, **locations)
+    error = NativeWordTimeoutError(**locations) if code == 'NATIVE_WORD_TIMEOUT' else NativeWordError(code, **locations)
+    error.cleanup_verified = data.get('cleanup_verified') is True
+    return error
 
 
 def _run_worker(root, payload, deadline):
+    """Serialize Word jobs with interactive sessions and honor their quarantine."""
+    _require_deadline(deadline)
+    shared_root = _component_root('writer')
+    if shared_root.is_symlink():
+        raise ValueError('Office staging root must not be a symlink')
+    shared_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    lock = OfficeJobLock(shared_root)
+    try:
+        try:
+            lock.acquire(deadline)
+        except NativeOfficeError as exc:
+            if exc.code == 'NATIVE_OFFICE_TIMEOUT':
+                raise NativeWordTimeoutError(staging_path=root) from None
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=root,
+                                  quarantine_path=lock.quarantine_path) from None
+        try:
+            return _run_worker_unlocked(root, payload, deadline)
+        except BaseException as exc:
+            if not getattr(exc, 'cleanup_verified', False):
+                lock.quarantine({'component': 'writer', 'staging_path': str(root),
+                                 'cleanup_verified': False,
+                                 'word_termination_attempted': False,
+                                 'code': getattr(exc, 'code', 'NATIVE_WORD_EXECUTION_FAILED')})
+            raise
+    finally:
+        lock.close()
+
+
+def _run_worker_unlocked(root, payload, deadline):
     """Run a single COM phase within the caller's remaining total budget."""
     _require_deadline(deadline)
     root = Path(root).resolve()
@@ -107,9 +139,10 @@ def _run_worker(root, payload, deadline):
         except BaseException as exc:
             _write_json(diagnostic, {
                 'status': 'failed', 'error_type': type(exc).__name__,
-                'message': str(exc), 'word_termination_attempted': False,
+                'message': str(exc), 'word_termination_attempted': False, 'cleanup_verified': True,
             })
             if not isinstance(exc, Exception):
+                exc.cleanup_verified = True
                 raise
             raise _worker_failure(operation) from None
         try:

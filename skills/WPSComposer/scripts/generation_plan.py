@@ -270,6 +270,9 @@ class _ObjectSchema:
     required: frozenset[str]
     fields: Mapping[str, ArgumentValidator]
 
+    def __call__(self, value: Any, path: str) -> None:
+        _validate_object(value, path, self)
+
 
 def _schema(
     required: tuple[str, ...] = (),

@@ -13,12 +13,20 @@ def test_invalid_engine_rejected(value):
         orchestrator.generate('# Title', source_is_text=True, engine=value)
 
 
-def test_explicit_office_rejects_spreadsheet_before_backend(monkeypatch, tmp_path):
-    monkeypatch.setattr(orchestrator, 'generate_macos', lambda *a, **k: pytest.fail('launched'))
-    with pytest.raises(engines.EngineUnavailableError, match='writer'):
-        orchestrator.generate('# Sheet', format='xlsx', source_is_text=True,
-                              engine='msoffice', output=str(tmp_path/'out.xlsx'))
-    assert not (tmp_path/'out.xlsx').exists()
+@pytest.mark.parametrize('fmt', ['xlsx', 'pptx'])
+def test_explicit_office_routes_to_native_component(monkeypatch, tmp_path, fmt):
+    from skills.WPSComposer.scripts.msoffice import macos_office_runtime
+    monkeypatch.setattr(orchestrator.sys, 'platform', 'darwin')
+    monkeypatch.setattr(orchestrator, 'generate_macos', lambda *a, **k: pytest.fail('WPS launched'))
+    calls = []
+    def run(doc, format_name, output, preset, **kwargs):
+        calls.append((format_name, kwargs['timeout']))
+        return output
+    monkeypatch.setattr(macos_office_runtime, 'generate', run)
+    out = tmp_path / ('out.' + fmt)
+    assert orchestrator.generate('# Sheet', format=fmt, source_is_text=True,
+                                engine='msoffice', output=str(out), timeout=27) == str(out)
+    assert calls == [(fmt, 27)]
 
 
 def test_auto_prefers_wps_and_resolves_only_once(monkeypatch):
@@ -31,8 +39,7 @@ def test_auto_prefers_wps_and_resolves_only_once(monkeypatch):
 def test_auto_word_fallback_only_when_wps_missing(monkeypatch):
     monkeypatch.setattr(engines, 'engine_executable', lambda engine, component: '/Word' if engine=='msoffice' else None)
     assert engines.resolve_engine('auto', 'writer') == 'msoffice'
-    with pytest.raises(engines.EngineUnavailableError):
-        engines.resolve_engine('auto','presentation')
+    assert engines.resolve_engine('auto', 'presentation') == 'msoffice'
 
 
 def test_generate_routes_office_through_shared_longform(monkeypatch,tmp_path):
@@ -90,12 +97,20 @@ def test_conversion_pins_engine_and_deadline(monkeypatch, tmp_path):
     assert calls == [('msoffice', 27)]
 
 
-def test_conversion_office_spreadsheet_rejected_before_launch(monkeypatch, tmp_path):
-    source = tmp_path / 'source.xlsx'
-    source.write_bytes(b'source')
-    monkeypatch.setattr(conversion, '_select_backend', lambda req: pytest.fail('backend launched'))
-    with pytest.raises(engines.EngineUnavailableError):
-        conversion.convert_to_pdf(str(source), engine='msoffice')
+@pytest.mark.parametrize('suffix,component', [('xlsx','spreadsheet'),('pptx','presentation')])
+def test_conversion_office_component_is_pinned(monkeypatch, tmp_path, suffix, component):
+    from skills.WPSComposer.scripts.msoffice import macos_office_runtime
+    source = tmp_path / ('source.' + suffix)
+    source.write_bytes(b'synthetic source')
+    monkeypatch.setattr(conversion.sys, 'platform', 'darwin')
+    calls = []
+    def convert(req, **kwargs):
+        calls.append((req.component, req.engine, kwargs['timeout']))
+        return req.output
+    monkeypatch.setattr(macos_office_runtime, 'convert', convert)
+    monkeypatch.setattr(conversion, 'validate_pdf', lambda path: None)
+    conversion.convert_to_pdf(str(source), engine='msoffice', timeout=42)
+    assert calls == [(component, 'msoffice', 42)]
 
 
 def test_wps_docx_presentation_pins_application(monkeypatch, tmp_path):
@@ -124,3 +139,24 @@ def test_windows_presentation_does_not_wait_or_terminate_interactive_office(monk
     monkeypatch.setattr(presentation.subprocess, 'run', lambda *a, **k: pytest.fail('must not wait and kill interactive Office'))
     presentation.present_artifact(target, engine='msoffice')
     assert calls == [['WINWORD.EXE', str(target)]]
+
+
+@pytest.mark.parametrize('component,progid', [('writer','Word.Application'), ('spreadsheet','Excel.Application'), ('presentation','PowerPoint.Application')])
+def test_pinned_microsoft_com_never_falls_back_to_wps(component, progid):
+    values = ('KWps.Application', 'Ket.Application', 'Wpp.Application', progid)
+    with engines.com_engine('msoffice'):
+        assert engines.com_progids(values) == (progid,)
+        with pytest.raises(engines.EngineUnavailableError):
+            engines.com_progids(('Ket.Application',))
+    assert engines.com_progids(values) == values
+
+
+@pytest.mark.parametrize('suffix,app', [('xlsx','Microsoft Excel'), ('pptx','Microsoft PowerPoint')])
+def test_office_open_result_uses_selected_app(monkeypatch, tmp_path, suffix, app):
+    target = tmp_path / ('result.' + suffix)
+    target.write_bytes(b'synthetic output')
+    monkeypatch.setattr(presentation.sys, 'platform', 'darwin')
+    calls = []
+    monkeypatch.setattr(presentation.subprocess, 'run', lambda argv, **kw: calls.append(argv))
+    orchestrator._return_artifact(target, open_result=True, engine='msoffice')
+    assert calls == [['open','-a',app,str(target)]]

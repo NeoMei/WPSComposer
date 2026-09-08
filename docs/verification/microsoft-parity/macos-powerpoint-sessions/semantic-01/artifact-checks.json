@@ -1,0 +1,46 @@
+{
+  "pdf_pages": 5,
+  "Semantic native title": true,
+  "Semantic section": true,
+  "Semantic text": true,
+  "Semantic bullets": true,
+  "Native textbox": true,
+  "Native layout text": true,
+  "Native box": true,
+  "native_lines": 1,
+  "native_tables": 1,
+  "native_images": 1,
+  "image_geometry": {
+    "left": 380,
+    "top": 115,
+    "width": 120,
+    "height": 120,
+    "rotation": 0,
+    "z_order": 4
+  },
+  "native_notes": "Semantic native notes",
+  "native_background": "#EEF4FA",
+  "native_table_header": {
+    "id": "slide:5/shape:@name=wpscomposer-42969050703e40b194f857321fe4e7d4/table/cell:1,1",
+    "row": 1,
+    "column": 1,
+    "text": "Native",
+    "font": {
+      "name": "等线",
+      "size": 15,
+      "bold": true,
+      "italic": false,
+      "underline": false,
+      "color": "#FFFFFF"
+    },
+    "paragraph": {
+      "alignment": 1,
+      "space_before": 0,
+      "space_after": 0,
+      "line_spacing": 1
+    },
+    "fill": {
+      "color": "#334455"
+    }
+  }
+}

@@ -43,6 +43,10 @@ class BaseComposer:
         :meth:`attach_active` when the agent should operate on the document
         currently open in the user's WPS/Office window.
         """
+        from .office_engines import com_progids
+        # Capture the engine while the public factory context is active;
+        # native dispatch happens later when entering this composer.
+        self._progids = com_progids(type(self)._progids)
         self._app = None
         self._doc = None
         self._path = _abs(path) if path else None
@@ -143,7 +147,8 @@ class BaseComposer:
         try:
             last = None
             app = None
-            for progid in cls._progids:
+            from .office_engines import com_progids
+            for progid in com_progids(cls._progids):
                 try:
                     app = win32.GetActiveObject(progid)
                     break

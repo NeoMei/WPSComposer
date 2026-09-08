@@ -1,0 +1,11 @@
+{
+  "source": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-po3pfvrf/minimal-aea22733cf3147b2904e9d55506bb498.pptx",
+  "target": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/relocated-open/probe.pptx",
+  "source_sha256": "f4dd391579e1898c8b0622e9bcead8d5db00f49de8f6ee4535b6bb9e65036bb9",
+  "target_sha256": "f4dd391579e1898c8b0622e9bcead8d5db00f49de8f6ee4535b6bb9e65036bb9",
+  "quarantine_preserved": false,
+  "copy_method": "ditto --rsrc --extattr",
+  "returncode": 0,
+  "stdout": "1\n",
+  "stderr": ""
+}

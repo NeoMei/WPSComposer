@@ -1,0 +1,10 @@
+{
+  "source_sha256_before": "9c8fa67e771d99dfafd783cc1a078226df999f6b8a118aea3c27ba0b8dc13fd5",
+  "verified": true,
+  "pdf_pages": 2,
+  "source_sha256_after": "9c8fa67e771d99dfafd783cc1a078226df999f6b8a118aea3c27ba0b8dc13fd5",
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "75aeee4ce06575938a77afb14f6e9f848a405133cc717d1224c556de13211479",
+    "skills/WPSComposer/scripts/document_api.py": "a57fdabc79012a9d16b137140f68d2993d43ccfe239feb97df7a3bec59af6866"
+  }
+}

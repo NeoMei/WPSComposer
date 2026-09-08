@@ -1,0 +1,36 @@
+{
+  "status": "FAIL",
+  "token": "64ea4cd440744faca8a234bb1a9518c9",
+  "source_sha256": "30cf9ce3eac5358a4e06c8b329502487830f8ce474c0e823a4602d59a0e22222",
+  "native_ui_acceptance": "NOT_RUN",
+  "recovery": {
+    "may_have_open_owned_documents": true
+  },
+  "application": "/Applications/Microsoft PowerPoint.app",
+  "timeout_seconds": 35.0,
+  "staging_dir": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-19696ku2",
+  "dictionary_sha256": "db0fa15f433e44667f075c2b7249a1687b8d0642961dd800ce65a4d78c60ee7b",
+  "application_version": "16.112.3",
+  "returncode": 1,
+  "artifacts": {
+    "checks": {
+      "two_native_slides": true,
+      "editable_text": true,
+      "native_picture": true,
+      "native_table": true,
+      "native_notes": true
+    },
+    "slide_text": [
+      "Native editable PowerPoint",
+      "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}|Native table|42"
+    ]
+  },
+  "elapsed_seconds": 3.49701425,
+  "checksums": {
+    "native.stderr.txt": "35130defeb93a0c0dc462c60c3dad2b5327e99c6f6ede7bec97633d1767f8fbf",
+    "native.pptx": "dfd301f5e29a6a0a941962252032b88b1944964b94ca7df8a766ec3f817d34db",
+    "native.applescript": "63ea9244d47cd4b7d39a6ccf951457c1ff8718cfbdb91a4ab22067b140a4ff72",
+    "native.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source.png": "192f47cdf863d62d0e68055101a3dc469d6e69f9fe7315390e8a352d3fb83b92"
+  }
+}

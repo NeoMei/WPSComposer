@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": {
+    "invalid_patch_before_native": true,
+    "terminal_paragraph_clone_move": true,
+    "unrelated_unchanged": true,
+    "save_current_and_close_save_reopened": true,
+    "conflict_keeps_lock_until_discard": true
+  }
+}

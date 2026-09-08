@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "checks": {
+    "native_math": true,
+    "native_superscript": true,
+    "native_fraction": true,
+    "math_did_not_absorb_following_text": true,
+    "merged_grid_span": true,
+    "merge_outside_retained": true,
+    "landscape": true,
+    "portrait_restored": true,
+    "embedded_images": true,
+    "colored_style": true,
+    "document_tail": true,
+    "footer_text_and_page": true,
+    "pdf_tail_retained": true,
+    "unsaved_sentinel_preserved": true
+  },
+  "issues": [
+    {
+      "code": "LONGFORM_NORMALIZATION_ERROR",
+      "message": "Semantic normalization failed: 'MathBlock' object has no attribute 'source'.",
+      "placement": "document",
+      "nodeId": "doc:quality"
+    },
+    {
+      "code": "REFERENCE_UNRESOLVED",
+      "message": "[REFERENCE_UNRESOLVED 引用目标未解析]",
+      "placement": "inline",
+      "nodeId": "wpsc-tab:1"
+    }
+  ],
+  "runtime_staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-x5kazrao",
+  "pagination_nodes": 5,
+  "pdf_pages": 3,
+  "source_sha256": "274d69326d96a6ff4f988fe7506d0d2d2a13972680eafd81e5edd0e689f6af38",
+  "compiler_sha256": "e457d8f2100bac2dfff1016d37541382caea3c3d0ecb4e7149c80f88e12b5366"
+}

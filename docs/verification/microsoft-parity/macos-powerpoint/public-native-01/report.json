@@ -1,0 +1,16 @@
+{
+  "source_sha256": "abc0b77f50b48d75524f1f40ab1a3250d01064528a7ae3df9f2fa5cd816bd5c1",
+  "calls": [
+    {
+      "generate": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/public-native-01/public.pptx"
+    }
+  ],
+  "pptx_sha256_before_conversion": "2b6191416549d154cf8aa53521f38cc139919f907e5f59a87ebc3e4661960991",
+  "status": "FAIL",
+  "error": {
+    "type": "TypeError",
+    "message": "convert_to_pdf() got an unexpected keyword argument 'output_path'",
+    "staging_path": null,
+    "diagnostic_path": null
+  }
+}

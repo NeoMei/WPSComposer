@@ -1,0 +1,11 @@
+{
+  "verified": true,
+  "no_owned_workbooks_open": true,
+  "no_quarantine": true,
+  "sentinels": "工作簿5|sentinel-58d9ceb7df8e|false\n工作簿7|sentinel-e9a7d3dce1ad|false\n\n",
+  "sources": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "3509e65ea6e9829d8aec4031a0e7147d54d923c738a0d6ab851cc16cb5ce13b6",
+    "tests/msoffice/test_macos_excel_session.py": "c3097480f7b197538739928c35fcad2fd34541bc9a6019155d5d52d24ab10db2",
+    "fixtures/microsoft_parity/macos_excel_sessions.py": "0632da6adb3ee4987c5ca2100b9d1c162865ddfbd0a96497d11ff1ce7fbc08b1"
+  }
+}

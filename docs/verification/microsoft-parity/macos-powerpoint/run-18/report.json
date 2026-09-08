@@ -1,0 +1,147 @@
+{
+  "status": "FAIL",
+  "token": "9fc0aaad1d814d1dbf7ad14b2756b6df",
+  "source_sha256": "4486f3a5054c126f307675f4b611af3dd49c0ef198b82b175d6ea19d1dfd19b3",
+  "native_ui_acceptance": "NOT_RUN",
+  "recovery": {
+    "may_have_open_owned_documents": true
+  },
+  "application": "/Applications/Microsoft PowerPoint.app",
+  "timeout_seconds": 35.0,
+  "staging_dir": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-parity-8a7p2hb2",
+  "dictionary_sha256": "db0fa15f433e44667f075c2b7249a1687b8d0642961dd800ce65a4d78c60ee7b",
+  "application_version": "16.112.3",
+  "returncode": 1,
+  "artifacts": {
+    "checks": {
+      "native_pptx_exists": true,
+      "native_pdf_exists": true,
+      "two_native_slides": true,
+      "editable_text": true,
+      "native_picture": true,
+      "native_table": true,
+      "native_notes": true,
+      "title_font_28pt_bold": true,
+      "shape_geometry_and_fill": true,
+      "page_size_720x540": true,
+      "pdf_two_pages": true,
+      "pdf_content": true
+    },
+    "slide_text": [
+      "Native editable PowerPoint",
+      "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}|Native table|42"
+    ],
+    "pdf_text": [
+      "Native editable PowerPoint\n",
+      "Native table\n42\n"
+    ]
+  },
+  "native_steps": [
+    [
+      "baseline",
+      "23"
+    ],
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "sentinel_name",
+      "演示文稿31"
+    ],
+    [
+      "owned_name",
+      "演示文稿32"
+    ],
+    [
+      "shape",
+      "PASS"
+    ],
+    [
+      "fill",
+      "PASS"
+    ],
+    [
+      "picture",
+      "PASS"
+    ],
+    [
+      "table_created",
+      "PASS"
+    ],
+    [
+      "page_width",
+      "720.0"
+    ],
+    [
+      "slide_clone_remove",
+      "FAIL",
+      "-50",
+      "“Microsoft PowerPoint”遇到一个错误：参数错误。"
+    ],
+    [
+      "slide_move",
+      "PASS"
+    ],
+    [
+      "shape_clone_remove",
+      "PASS"
+    ],
+    [
+      "shape_geometry_edit",
+      "PASS"
+    ],
+    [
+      "undo",
+      "BLOCKED_PRIOR_DESTRUCTIVE_UNDO"
+    ],
+    [
+      "selection_type",
+      "selection type none"
+    ],
+    [
+      "generation",
+      "PASS"
+    ],
+    [
+      "saved_path",
+      "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-parity-8a7p2hb2/native-9fc0aaad1d814d1dbf7ad14b2756b6df.pptx"
+    ],
+    [
+      "pdf_before_reopen",
+      "PASS"
+    ],
+    [
+      "sentinel_unsaved_before_reopen",
+      "PASS"
+    ],
+    [
+      "reopened_count",
+      "2"
+    ],
+    [
+      "reopened_text",
+      "Native editable PowerPoint"
+    ],
+    [
+      "pdf",
+      "PASS"
+    ]
+  ],
+  "parity_gaps": [
+    "Native slide clone command failed -50",
+    "Script text Undo is not a verified rollback",
+    "Native UI edit/undo acceptance not run"
+  ],
+  "elapsed_seconds": 5.723800667,
+  "checksums": {
+    "native.stderr.txt": "1be3e5070ff2b58e920e2237f38993b4873ff671b6078571b7ec7dc7837df22e",
+    "native.pdf": "0f2aadfe26673d2cf913301211003b161471ab0cdc2f30c65c765f554626032a",
+    "native.pptx": "b59f9f2df7a11930652f133d88b9da75fa2da2476b72ea2b0114029004756d6a",
+    "page-1.png": "f9a80f9bb6538642cc21f27b3c044161a1cd7218754ac1955a6dbe13a8d6a423",
+    "page-2.png": "b1cbfbfa0286062d307ff7eb6981db8ab8295539124ca5b21f27ca2ea085686e",
+    "native.applescript": "00af090c1ecaa4394f7f7f53ade0f7d4c91db1f35f71ea741e392d28e22a817b",
+    "native.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source.png": "192f47cdf863d62d0e68055101a3dc469d6e69f9fe7315390e8a352d3fb83b92"
+  }
+}

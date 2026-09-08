@@ -1,0 +1,13 @@
+Metric
+Value
+Alpha
+10
+Beta
+20
+Total
+30
+
+Item
+Value
+Double
+60

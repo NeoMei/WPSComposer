@@ -1,0 +1,131 @@
+{
+  "component": "presentation",
+  "operations": [
+    {
+      "op": "slide.reset",
+      "args": {}
+    },
+    {
+      "op": "slide.set_size",
+      "args": {
+        "width": 960,
+        "height": 540
+      }
+    },
+    {
+      "op": "slide.apply_preset",
+      "args": {
+        "preset": {
+          "name": "商务汇报",
+          "colors": {
+            "primary": "#005294",
+            "secondary": "#C82828",
+            "accent": "#2DA050",
+            "dark": "#2D2D30",
+            "light": "#F8F9FA",
+            "background": "#FFFFFF"
+          },
+          "fonts": {
+            "title": {
+              "family": "Arial",
+              "size": 36,
+              "color": "#005294"
+            },
+            "subtitle": {
+              "family": "Arial",
+              "size": 20,
+              "color": "#5A5A5A"
+            },
+            "body": {
+              "family": "Arial",
+              "size": 18,
+              "color": "#2D2D30"
+            },
+            "caption": {
+              "family": "Arial",
+              "size": 14,
+              "color": "#8C8C8C"
+            },
+            "chinese": {
+              "family": "微软雅黑",
+              "size": 18,
+              "color": "#2D2D30"
+            }
+          },
+          "spacing": {
+            "margin": 70,
+            "gap": 22,
+            "cardPadding": 18,
+            "lineHeight": 1.4
+          }
+        }
+      }
+    },
+    {
+      "op": "slide.add_title",
+      "args": {
+        "title": "Compiler native title",
+        "subtitle": "Chinese 中文 subtitle",
+        "titleSize": 40,
+        "subtitleSize": 20
+      }
+    },
+    {
+      "op": "slide.add_section",
+      "args": {
+        "title": "Section title"
+      }
+    },
+    {
+      "op": "slide.add_bullets",
+      "args": {
+        "title": "Native bullets",
+        "items": [
+          "Alpha",
+          "Beta 中文"
+        ],
+        "titleSize": 32,
+        "bodySize": 18
+      }
+    },
+    {
+      "op": "slide.add_blank",
+      "args": {}
+    },
+    {
+      "op": "slide.add_image",
+      "args": {
+        "slide": 4,
+        "imageId": "image-1",
+        "left": 40,
+        "top": 40,
+        "width": 100
+      }
+    },
+    {
+      "op": "slide.add_table",
+      "args": {
+        "slide": 4,
+        "rows": 2,
+        "cols": 2,
+        "left": 200,
+        "top": 80,
+        "width": 450,
+        "height": 180,
+        "data": [
+          [
+            "Name",
+            "Value"
+          ],
+          [
+            "Native",
+            "42"
+          ]
+        ],
+        "headerShade": "#4472C4",
+        "headerFont": "#FFFFFF",
+        "fontSize": 16
+      }
+    }
+  ]
+}

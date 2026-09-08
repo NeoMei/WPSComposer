@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 359, in inspect_document
+    return parse_snapshot(json.loads(self._run(_SNAPSHOT)),include_text=include_text,max_shapes=max_shapes)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 342, in _run
+    if result.returncode:raise RuntimeError(result.stderr.strip())
+RuntimeError: /Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-hf78xp7q/002.applescript:76:77: execution error: 变量“v”没有定义。 (-2753)

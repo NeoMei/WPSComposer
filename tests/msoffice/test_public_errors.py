@@ -21,11 +21,12 @@ def test_public_mac_unsupported_plan_names_capability_without_starting_word(monk
     monkeypatch.setattr(macos_runtime.MacWordAdapter, '_ensure_started',
                         lambda *args: pytest.fail('unsupported plan started Word'))
     with pytest.raises(LongformLifecycleError) as caught:
-        generate('# Title\n\n$$\nx^2\n$$', source_is_text=True,
+        generate('# Title\n\n$$\n\\unsupported{PRIVATE DOCUMENT CONTENT MUST NOT ESCAPE}\n$$', source_is_text=True,
                  output=str(tmp_path/'out.docx'), engine='msoffice')
     assert caught.value.code == 'NATIVE_WORD_UNSUPPORTED'
     assert 'equation' in str(caught.value).lower()
     assert 'WPS' not in str(caught.value)
+    assert PRIVATE_TEXT not in str(caught.value)
     assert not (tmp_path/'out.docx').exists()
 
 
@@ -58,7 +59,7 @@ def test_public_mac_failure_retains_safe_recovery_locations(monkeypatch, tmp_pat
     assert not (tmp_path/'out.docx').exists()
 
 
-def test_public_windows_worker_failure_retains_evidence_without_raw_traceback(monkeypatch, tmp_path):
+def test_public_windows_worker_failure_retains_evidence_without_raw_traceback(monkeypatch, tmp_path, word_lock):
     monkeypatch.setattr(platform_runtime.sys, 'platform', 'win32')
     stage = tmp_path/'windows-stage'
     stage.mkdir()
@@ -140,8 +141,8 @@ def test_deadline_crossed_after_native_completion_keeps_stage(monkeypatch, tmp_p
     assert Path(caught.value.diagnostic_path).is_file()
 
 
-def test_windows_completion_deadline_keeps_operation_evidence(monkeypatch, tmp_path):
-    checks = iter([True, True, False])
+def test_windows_completion_deadline_keeps_operation_evidence(monkeypatch, tmp_path, word_lock):
+    checks = iter([True, True, True, False])
     def deadline(value):
         if not next(checks):
             raise NativeWordTimeoutError()
@@ -158,3 +159,21 @@ def test_windows_completion_deadline_keeps_operation_evidence(monkeypatch, tmp_p
         windows_runtime._run_worker(tmp_path, {'action':'export'}, 99)
     assert Path(caught.value.staging_path).parent == tmp_path
     assert Path(caught.value.diagnostic_path).is_file()
+
+
+@pytest.fixture
+def word_lock(monkeypatch, tmp_path):
+    # These tests simulate Windows workers on all hosts. Keep the shared lock
+    # protocol without importing the host-specific msvcrt module or user roots.
+    class Lock:
+        def __init__(self, root):
+            self.quarantine_path = root / 'native-office.quarantine.json'
+        def acquire(self, deadline):
+            pass
+        def quarantine(self, detail):
+            import json
+            self.quarantine_path.write_text(json.dumps(detail))
+        def close(self):
+            pass
+    monkeypatch.setattr(windows_runtime, 'OfficeJobLock', Lock)
+    monkeypatch.setattr(windows_runtime, '_component_root', lambda component: tmp_path/'shared-word')

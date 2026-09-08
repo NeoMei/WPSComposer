@@ -1,0 +1,119 @@
+{
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-19/native.pptx",
+  "source_sha256_before": "15782a04b3d7a3f528f5d099b61f16d49f944684cb94744731ecc86687d466ae",
+  "operations": [
+    {
+      "index": 0,
+      "result": {
+        "accepted": [
+          "text",
+          "font.name",
+          "font.size",
+          "font.bold",
+          "font.italic",
+          "font.underline",
+          "font.color",
+          "paragraph.alignment",
+          "paragraph.space_before",
+          "paragraph.space_after",
+          "paragraph.line_spacing",
+          "geometry.left",
+          "geometry.top",
+          "geometry.width",
+          "geometry.height",
+          "fill.visible",
+          "fill.color",
+          "fill.transparency",
+          "line.color",
+          "line.weight",
+          "line.transparency",
+          "text_frame.margin_left",
+          "text_frame.margin_right",
+          "text_frame.margin_top",
+          "text_frame.margin_bottom",
+          "text_frame.word_wrap",
+          "text_frame.auto_size",
+          "text_frame.vertical_anchor"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "index": 1,
+      "result": {
+        "accepted": [
+          "text",
+          "font.bold",
+          "font.color"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "index": 2,
+      "result": {
+        "accepted": [
+          "background.color",
+          "background.visible",
+          "follow_master_background"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "index": 3,
+      "result": {
+        "accepted": [
+          "geometry.left",
+          "geometry.width"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "index": 4,
+      "result": {
+        "type": "slide",
+        "path": "slide:3"
+      }
+    },
+    {
+      "index": 5,
+      "result": {
+        "type": "textbox",
+        "path": "slide:3/shape:1"
+      }
+    },
+    {
+      "index": 6,
+      "result": {
+        "type": "shape",
+        "cloned": true,
+        "from": "slide:3/shape:1",
+        "to_slide": 3
+      }
+    },
+    {
+      "index": 7,
+      "result": {
+        "removed": "slide:3/shape:2"
+      }
+    },
+    {
+      "index": 8,
+      "result": {
+        "type": "slide",
+        "moved": true,
+        "from": "slide:3"
+      }
+    },
+    {
+      "index": 9,
+      "result": {
+        "type": "slide",
+        "moved": true,
+        "from": "slide:1"
+      }
+    }
+  ]
+}

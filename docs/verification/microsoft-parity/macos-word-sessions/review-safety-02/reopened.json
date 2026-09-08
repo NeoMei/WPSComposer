@@ -1,0 +1,165 @@
+{
+  "kind": "writer",
+  "counts": {
+    "paragraphs": 4,
+    "tables": 0,
+    "shapes": 0,
+    "sections": 1,
+    "inline_shapes": 0,
+    "styles": 373
+  },
+  "paragraphs": [
+    {
+      "id": "paragraph:@paraId=730660C3",
+      "index": 1,
+      "start": 0,
+      "end": 21,
+      "text": "Explicit close saved",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "730660C3"
+    },
+    {
+      "id": "paragraph:@paraId=7B8C1700",
+      "index": 2,
+      "start": 21,
+      "end": 27,
+      "text": "First",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "7B8C1700"
+    },
+    {
+      "id": "paragraph:@paraId=79CCAC1B",
+      "index": 3,
+      "start": 27,
+      "end": 36,
+      "text": "Terminal",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "79CCAC1B"
+    },
+    {
+      "id": "paragraph:@paraId=3064B256",
+      "index": 4,
+      "start": 36,
+      "end": 37,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "3064B256"
+    }
+  ],
+  "tables": [],
+  "shapes": [],
+  "sections": [
+    {
+      "id": "section:1",
+      "index": 1,
+      "page_setup": {
+        "orientation": 0,
+        "page_width": 595.2999877929688,
+        "page_height": 841.9000244140625,
+        "top_margin": 72,
+        "bottom_margin": 72,
+        "left_margin": 90,
+        "right_margin": 90,
+        "header_distance": 42.54999923706055,
+        "footer_distance": 49.599998474121094,
+        "gutter": 0
+      },
+      "columns": 1
+    }
+  ],
+  "name": "document-6421a5ecd6c6419683a0225a2b39320a.docx",
+  "saved": true,
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bjsecgjx/document-6421a5ecd6c6419683a0225a2b39320a.docx"
+}

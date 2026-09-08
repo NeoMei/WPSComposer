@@ -1,0 +1,28 @@
+Month
+Revenue
+Jan
+10.00
+Feb
+20.00
+Mar
+30.00
+Total
+60.00
+owned-e9a7d3dce1ad
+Microsoft native parity
+0.00
+5.00
+10.00
+15.00
+20.00
+25.00
+30.00
+35.00
+Jan
+Feb
+Mar
+Revenue by month
+Revenue
+
+Cross sheet total
+120

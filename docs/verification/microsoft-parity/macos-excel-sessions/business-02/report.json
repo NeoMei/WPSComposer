@@ -1,0 +1,19 @@
+{
+  "verified": false,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-us27yjva"
+  ],
+  "session_source_sha256": "778d454b9e5454aba47beb0b7edaa1bda448f2af8b415ae46a3201d60271ccc3",
+  "freeze": {
+    "freeze_panes": true,
+    "split_column": 1,
+    "split_row": 1
+  },
+  "chart": {
+    "path": "sheet:1/chart:1",
+    "name": "Chart 1"
+  },
+  "error": "Native Excel session failed; owned recovery files retained"
+}

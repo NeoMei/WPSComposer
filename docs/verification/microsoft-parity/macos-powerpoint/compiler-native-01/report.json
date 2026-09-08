@@ -1,0 +1,8 @@
+{
+  "status": "FAIL",
+  "returncode": 1,
+  "staging": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-compiler-32wf7tvf",
+  "source_sha256": "2723fac8932617d4e6f300843655bd58f19723d506691b5332a6c5182f186d50",
+  "stdout": "",
+  "stderr": "WPSCOMPOSER_MS_OFFICE_ERROR:presentation\t-2700\tUnrelated presentation state changed\n/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/compiler-native-01/native.applescript:8398:8407: execution error: Unrelated presentation state changed (-2700)\n"
+}

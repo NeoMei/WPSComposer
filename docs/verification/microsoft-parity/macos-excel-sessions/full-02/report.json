@@ -1,0 +1,124 @@
+{
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/run-05/native.xlsx",
+  "source_sha256_before": "9c8fa67e771d99dfafd783cc1a078226df999f6b8a118aea3c27ba0b8dc13fd5",
+  "verified": true,
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-prkz6bw3",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-g46on2qb",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-78_tjlkp"
+  ],
+  "source_sha256": "0b7f229257e437dfc8896c845130ab60d56b0abf0bf3bbd18c80fa6f54763c51",
+  "patches": [
+    {
+      "accepted": [
+        "value",
+        "font.bold",
+        "font.italic",
+        "font.size",
+        "font.color",
+        "fill.color",
+        "number_format",
+        "horizontal_alignment",
+        "vertical_alignment",
+        "wrap_text",
+        "indent",
+        "row_height",
+        "column_width",
+        "borders.7"
+      ],
+      "rejected": []
+    },
+    {
+      "accepted": [
+        "chart_title",
+        "chart_type",
+        "geometry.left",
+        "geometry.width"
+      ],
+      "rejected": []
+    },
+    {
+      "accepted": [
+        "name"
+      ],
+      "rejected": []
+    },
+    {
+      "accepted": [
+        "name",
+        "page_setup.orientation",
+        "page_setup.top_margin",
+        "page_setup.print_area"
+      ],
+      "rejected": []
+    }
+  ],
+  "structural": [
+    {
+      "type": "row",
+      "path": "sheet:1",
+      "row": 10
+    },
+    {
+      "removed": "sheet:1/cell:A10"
+    },
+    {
+      "type": "column",
+      "path": "sheet:1",
+      "column": 5
+    },
+    {
+      "removed": "sheet:1/cell:E1"
+    },
+    {
+      "type": "sheet",
+      "path": "sheet:3"
+    },
+    {
+      "removed": "sheet:3"
+    }
+  ],
+  "selection": {
+    "id": "selection",
+    "address": "$A$1",
+    "value": "Cross sheet total",
+    "formula": "Cross sheet total",
+    "display_text": "Cross sheet total",
+    "number_format": "General",
+    "horizontal_alignment": 1,
+    "vertical_alignment": -4108,
+    "wrap_text": false,
+    "indent": 0,
+    "row_height": 16,
+    "column_width": 24,
+    "merged": false,
+    "font": {
+      "name": "等线",
+      "size": 12,
+      "bold": false,
+      "italic": false,
+      "underline": -4142,
+      "strikethrough": false,
+      "color": "#000000"
+    },
+    "fill": {
+      "color": "#FFFFFF"
+    },
+    "merge_area": null
+  },
+  "pdf_pages": 2,
+  "atomic_abort_source_preserved": true,
+  "native_border_verified": true,
+  "source_sha256_after": "9c8fa67e771d99dfafd783cc1a078226df999f6b8a118aea3c27ba0b8dc13fd5",
+  "checksums": {
+    "before.json": "740cfdfe9a374233af9d131e6f1440d7bd59a5e7c2e0a55d3c444b0682e04e57",
+    "edited.pdf": "b989e7dae4ddce2eeb6d7c3cad7deb9aa38335d4001940b0a0237286f3f6c016",
+    "edited.xlsx": "31e968e0f2ec1d1504a098d9f9ab66da2996ab641ce3fbf97c4d70b523266284",
+    "page-1.png": "d3e05e9a34e011ab62f2d4a5578827fa2c11f4b407bfcb0cd3f113301bd1586e",
+    "page-2.png": "b3f0744e095dc436a1d4a07de397e5446f2e8227e938d8388364e4757e68962f",
+    "after.json": "8a5be0a6e5915de151c736524543f74a6d2e67455152ab7cc63a70c197164018",
+    "pdf-text.txt": "cd7d737b454755fe1583bccf4a0500d4e062a408e6e41f18efcfba01a068ece1",
+    "reopened.json": "95f32888c67afa0badb10dca8a802b49fccd41852100c8156a24e24d499901a3",
+    "session-source.py": "0b7f229257e437dfc8896c845130ab60d56b0abf0bf3bbd18c80fa6f54763c51"
+  }
+}

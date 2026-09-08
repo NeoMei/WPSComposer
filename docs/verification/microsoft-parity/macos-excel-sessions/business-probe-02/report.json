@@ -1,0 +1,47 @@
+{
+  "verified": false,
+  "steps": {
+    "freeze": {
+      "ok": true,
+      "result": "{\"freeze_panes\":true,\"split_column\":1,\"split_row\":1}"
+    },
+    "conditional": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    },
+    "chart": {
+      "ok": true,
+      "result": "{\"path\":\"sheet:1\\/chart:1\",\"name\":\"Chart 1\"}"
+    },
+    "table": {
+      "ok": true,
+      "result": "{}"
+    },
+    "header": {
+      "ok": true,
+      "result": "{}"
+    },
+    "condition-variant-0": {
+      "ok": true,
+      "count": 1
+    },
+    "condition-variant-1": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    },
+    "condition-variant-2": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    },
+    "condition-variant-3": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    }
+  },
+  "job": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-65np8_14",
+  "error": "Artifact validator worker exited without a result"
+}

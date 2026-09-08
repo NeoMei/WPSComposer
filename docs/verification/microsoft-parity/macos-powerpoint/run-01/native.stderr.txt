@@ -1,0 +1,3 @@
+PROBE|baseline|0
+PROBE|version|16.112.3
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-01/native.applescript:405:492: execution error: “Microsoft PowerPoint”遇到一个错误：不能生成类“slide”。 (-2710)

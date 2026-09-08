@@ -1,0 +1,11 @@
+PROBE|baseline|5
+PROBE|version|16.112.3
+PROBE|sentinel_name|演示文稿6
+PROBE|owned_name|演示文稿7
+PROBE|shape|PASS
+PROBE|fill|PASS
+PROBE|picture|BLOCKED_PRIOR_TIMEOUT
+PROBE|table_created|PASS
+PROBE|generation|PASS
+PROBE|saved_path|演示文稿7
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-05/native.applescript:2852:3002: execution error: “Microsoft PowerPoint”遇到一个错误：发生“-9074”类型错误。 (-9074)

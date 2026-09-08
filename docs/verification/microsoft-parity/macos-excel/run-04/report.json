@@ -1,0 +1,25 @@
+{
+  "component": "spreadsheet",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "token": "e1f6c3e85bfb",
+  "native_directory": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/Documents/wpscomposer-parity-e1f6c3e85bfb-9_4nnddw",
+  "app_path": "/Applications/Microsoft Excel.app",
+  "source_sha256": "5c22b08eeb8adccd2ce80e23c32bb65397928646d315ed87fef2d622222c6b5e",
+  "status": "failed",
+  "verified": false,
+  "recovery_required": true,
+  "timeout": 60,
+  "app_version": "16.112.3",
+  "bundle_id": "com.microsoft.Excel",
+  "dictionary_sha256": "65791dab8b9f94a66e22dbd582ed49acc70f1d9f8e9efe3bcfee7434fe76c0f9",
+  "returncode": 1,
+  "primitives": {},
+  "elapsed_seconds": 0.151,
+  "checksums": {
+    "stderr.log": "4b0f99086acac66b1a1107908c9fc8b1c973d2498fa95cd97d1f3935d4260f4c",
+    "runner-source.py": "5c22b08eeb8adccd2ce80e23c32bb65397928646d315ed87fef2d622222c6b5e",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "probe.applescript": "1a2207282e24b1b48114ea778c6ccb0972fd15da45642a31d4a50b2f3ae1d90f"
+  }
+}

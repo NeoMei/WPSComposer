@@ -1,0 +1,1152 @@
+{
+  "kind": "slide",
+  "engine": "msoffice",
+  "name": "bound-bf56e797110a4a719ae6d027e4e2ce8f.pptx",
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-npway0fj/bound-bf56e797110a4a719ae6d027e4e2ce8f.pptx",
+  "saved": false,
+  "slide_count": 5,
+  "page_setup": {
+    "slide_width": 960
+  },
+  "shapes_truncated": false,
+  "slides": [
+    {
+      "id": "slide:1",
+      "index": 1,
+      "native_slide_id": 256,
+      "name": null,
+      "layout": 1,
+      "native_layout": "slide layout title slide",
+      "notes": "",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:1/shape:@name=Title 3",
+          "index": 1,
+          "shape_id": null,
+          "name": "Title 3",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 120,
+            "top": 88.37503814697266,
+            "width": 720,
+            "height": 188,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#003366"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:1/shape:@name=Title 3/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:1/shape:@name=Title 3/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 36,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#003366",
+                    "strikethrough": false
+                  },
+                  "text": "Semantic native title"
+                }
+              ],
+              "text": "Semantic native title"
+            }
+          ],
+          "text": "Semantic native title",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        },
+        {
+          "id": "slide:1/shape:@name=Subtitle 4",
+          "index": 2,
+          "shape_id": null,
+          "name": "Subtitle 4",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 120,
+            "top": 283.6250305175781,
+            "width": 720,
+            "height": 130.3749542236328,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 20,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#505050"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:1/shape:@name=Subtitle 4/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:1/shape:@name=Subtitle 4/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 20,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#505050",
+                    "strikethrough": false
+                  },
+                  "text": "Native subtitle"
+                }
+              ],
+              "text": "Native subtitle"
+            }
+          ],
+          "text": "Native subtitle",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 7.5,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        }
+      ]
+    },
+    {
+      "id": "slide:2",
+      "index": 2,
+      "native_slide_id": 257,
+      "name": null,
+      "layout": 11,
+      "native_layout": "slide layout title only",
+      "notes": "",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 1,
+      "shapes": [
+        {
+          "id": "slide:2/shape:@name=Title 2",
+          "index": 1,
+          "shape_id": null,
+          "name": "Title 2",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#003366"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:2/shape:@name=Title 2/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:2/shape:@name=Title 2/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 36,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#003366",
+                    "strikethrough": false
+                  },
+                  "text": "Semantic section"
+                }
+              ],
+              "text": "Semantic section"
+            }
+          ],
+          "text": "Semantic section",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        }
+      ]
+    },
+    {
+      "id": "slide:3",
+      "index": 3,
+      "native_slide_id": 258,
+      "name": null,
+      "layout": 2,
+      "native_layout": "slide layout text slide",
+      "notes": "",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:3/shape:@name=Title 3",
+          "index": 1,
+          "shape_id": null,
+          "name": "Title 3",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#003366"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:3/shape:@name=Title 3/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:3/shape:@name=Title 3/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 36,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#003366",
+                    "strikethrough": false
+                  },
+                  "text": "Semantic text"
+                }
+              ],
+              "text": "Semantic text"
+            }
+          ],
+          "text": "Semantic text",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        },
+        {
+          "id": "slide:3/shape:@name=Text Placeholder 4",
+          "index": 2,
+          "shape_id": null,
+          "name": "Text Placeholder 4",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 66,
+            "top": 143.75,
+            "width": 828,
+            "height": 342.6250305175781,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#212121"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:3/shape:@name=Text Placeholder 4/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:3/shape:@name=Text Placeholder 4/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 18,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#212121",
+                    "strikethrough": false
+                  },
+                  "text": "Plain paragraph"
+                }
+              ],
+              "text": "Plain paragraph"
+            }
+          ],
+          "text": "Plain paragraph",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 7.5,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        }
+      ]
+    },
+    {
+      "id": "slide:4",
+      "index": 4,
+      "native_slide_id": 259,
+      "name": null,
+      "layout": 2,
+      "native_layout": "slide layout text slide",
+      "notes": "",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:4/shape:@name=Title 3",
+          "index": 1,
+          "shape_id": null,
+          "name": "Title 3",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#003366"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:4/shape:@name=Title 3/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:4/shape:@name=Title 3/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 36,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#003366",
+                    "strikethrough": false
+                  },
+                  "text": "Semantic bullets"
+                }
+              ],
+              "text": "Semantic bullets"
+            }
+          ],
+          "text": "Semantic bullets",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        },
+        {
+          "id": "slide:4/shape:@name=Text Placeholder 4",
+          "index": 2,
+          "shape_id": null,
+          "name": "Text Placeholder 4",
+          "type": 14,
+          "native_type": "shape type place holder",
+          "geometry": {
+            "left": 66,
+            "top": 143.75,
+            "width": 828,
+            "height": 342.6250305175781,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "Arial",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#212121"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:4/shape:@name=Text Placeholder 4/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:4/shape:@name=Text Placeholder 4/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 18,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#212121",
+                    "strikethrough": false
+                  },
+                  "text": "First native bullet\r"
+                }
+              ],
+              "text": "First native bullet\r"
+            },
+            {
+              "id": "slide:4/shape:@name=Text Placeholder 4/paragraph:2",
+              "index": 2,
+              "runs": [
+                {
+                  "id": "slide:4/shape:@name=Text Placeholder 4/paragraph:2/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "Arial",
+                    "size": 18,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#212121",
+                    "strikethrough": false
+                  },
+                  "text": "Second native bullet"
+                }
+              ],
+              "text": "Second native bullet"
+            }
+          ],
+          "text": "First native bullet\rSecond native bullet",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 7.5,
+            "space_after": 0,
+            "line_spacing": 0.8999999761581421
+          }
+        }
+      ]
+    },
+    {
+      "id": "slide:5",
+      "index": 5,
+      "native_slide_id": 260,
+      "name": null,
+      "layout": 12,
+      "native_layout": "slide layout blank",
+      "notes": "Semantic native notes",
+      "follow_master_background": false,
+      "background": {
+        "color": "#EEF4FA"
+      },
+      "shape_count": 8,
+      "shapes": [
+        {
+          "id": "slide:5/shape:@name=wpscomposer-d7b6cca42dd247209d299e2820f80004",
+          "index": 1,
+          "shape_id": null,
+          "name": "wpscomposer-d7b6cca42dd247209d299e2820f80004",
+          "type": 17,
+          "native_type": "shape type text box",
+          "geometry": {
+            "left": 40,
+            "top": 30,
+            "width": 300,
+            "height": 36.3515739440918,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "等线",
+            "size": 24,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": "#123456"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:5/shape:@name=wpscomposer-d7b6cca42dd247209d299e2820f80004/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:5/shape:@name=wpscomposer-d7b6cca42dd247209d299e2820f80004/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 24,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#123456",
+                    "strikethrough": false
+                  },
+                  "text": "Native textbox"
+                }
+              ],
+              "text": "Native textbox"
+            }
+          ],
+          "text": "Native textbox",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-be16ce9cb2be4f36a3d4fa2b072fae19",
+          "index": 2,
+          "shape_id": null,
+          "name": "wpscomposer-be16ce9cb2be4f36a3d4fa2b072fae19",
+          "type": 1,
+          "native_type": "shape type auto",
+          "geometry": {
+            "left": 40,
+            "top": 115,
+            "width": 180,
+            "height": 80,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#226699",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#FFFFFF"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:5/shape:@name=wpscomposer-be16ce9cb2be4f36a3d4fa2b072fae19/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:5/shape:@name=wpscomposer-be16ce9cb2be4f36a3d4fa2b072fae19/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 18,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#FFFFFF",
+                    "strikethrough": false
+                  },
+                  "text": "Rounded shape"
+                }
+              ],
+              "text": "Rounded shape"
+            }
+          ],
+          "text": "Rounded shape",
+          "line": {
+            "color": "#FFAA00",
+            "weight": 1,
+            "visible": null,
+            "transparency": 0
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-573f78e2774e49e88c40ceb86a123ddd",
+          "index": 3,
+          "shape_id": null,
+          "name": "wpscomposer-573f78e2774e49e88c40ceb86a123ddd",
+          "type": 1,
+          "native_type": "shape type auto",
+          "geometry": {
+            "left": 250,
+            "top": 115,
+            "width": 90,
+            "height": 80,
+            "rotation": 0,
+            "z_order": 3
+          },
+          "fill": {
+            "color": "#33AA88",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#FFFFFF"
+          },
+          "paragraphs": [],
+          "text": "",
+          "line": {
+            "color": "#172C51",
+            "weight": 1,
+            "visible": null,
+            "transparency": 1
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-7e834572033c41dcbc8d6f48ed63254c",
+          "index": 4,
+          "shape_id": null,
+          "name": "wpscomposer-7e834572033c41dcbc8d6f48ed63254c",
+          "type": 13,
+          "native_type": "shape type picture",
+          "geometry": {
+            "left": 380,
+            "top": 115,
+            "width": 120,
+            "height": 120,
+            "rotation": 0,
+            "z_order": 4
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": ""
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-0b618076b0d341b29362edc0898dacbc",
+          "index": 5,
+          "shape_id": null,
+          "name": "wpscomposer-0b618076b0d341b29362edc0898dacbc",
+          "type": 19,
+          "native_type": "shape type table",
+          "geometry": {
+            "left": 40,
+            "top": 260,
+            "width": 450,
+            "height": 130,
+            "rotation": 0,
+            "z_order": 5
+          },
+          "fill": {
+            "color": "#000000",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": "",
+          "table": {
+            "rows": 2,
+            "columns": 2,
+            "cells": [
+              {
+                "id": "slide:5/shape:@name=wpscomposer-0b618076b0d341b29362edc0898dacbc/table/cell:1,1",
+                "row": 1,
+                "column": 1,
+                "text": "Native",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": true,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                },
+                "fill": {
+                  "color": "#334455"
+                }
+              },
+              {
+                "id": "slide:5/shape:@name=wpscomposer-0b618076b0d341b29362edc0898dacbc/table/cell:1,2",
+                "row": 1,
+                "column": 2,
+                "text": "Table",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": true,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                },
+                "fill": {
+                  "color": "#334455"
+                }
+              },
+              {
+                "id": "slide:5/shape:@name=wpscomposer-0b618076b0d341b29362edc0898dacbc/table/cell:2,1",
+                "row": 2,
+                "column": 1,
+                "text": "Value",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                },
+                "fill": {
+                  "color": "#CFD5EA"
+                }
+              },
+              {
+                "id": "slide:5/shape:@name=wpscomposer-0b618076b0d341b29362edc0898dacbc/table/cell:2,2",
+                "row": 2,
+                "column": 2,
+                "text": "42",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                },
+                "fill": {
+                  "color": "#CFD5EA"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-b50822204e724bbcbc0ea5d0dbc457ab",
+          "index": 6,
+          "shape_id": null,
+          "name": "wpscomposer-b50822204e724bbcbc0ea5d0dbc457ab",
+          "type": 9,
+          "native_type": "shape type line",
+          "geometry": {
+            "left": 40,
+            "top": 412,
+            "width": 450,
+            "height": 0,
+            "rotation": 0,
+            "z_order": 6
+          },
+          "fill": {
+            "color": "#000000",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": ""
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-8929732e0d1a4f1ba0ae7e4dccc89979",
+          "index": 7,
+          "shape_id": null,
+          "name": "wpscomposer-8929732e0d1a4f1ba0ae7e4dccc89979",
+          "type": 1,
+          "native_type": "shape type auto",
+          "geometry": {
+            "left": 560,
+            "top": 80,
+            "width": 220,
+            "height": 120,
+            "rotation": 0,
+            "z_order": 7
+          },
+          "fill": {
+            "color": "#EECC88",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "等线",
+            "size": 12,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#FFFFFF"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:5/shape:@name=wpscomposer-8929732e0d1a4f1ba0ae7e4dccc89979/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:5/shape:@name=wpscomposer-8929732e0d1a4f1ba0ae7e4dccc89979/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 12,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#FFFFFF",
+                    "strikethrough": false
+                  },
+                  "text": "Native box"
+                }
+              ],
+              "text": "Native box"
+            }
+          ],
+          "text": "Native box",
+          "line": {
+            "color": "#172C51",
+            "weight": 1,
+            "visible": null,
+            "transparency": 1
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:5/shape:@name=wpscomposer-9e59e01ae8d9438f8c0cb9eb172275f5",
+          "index": 8,
+          "shape_id": null,
+          "name": "wpscomposer-9e59e01ae8d9438f8c0cb9eb172275f5",
+          "type": 17,
+          "native_type": "shape type text box",
+          "geometry": {
+            "left": 560,
+            "top": 240,
+            "width": 300,
+            "height": 33.9281120300293,
+            "rotation": 0,
+            "z_order": 8
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "等线",
+            "size": 22,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": "#123456"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:5/shape:@name=wpscomposer-9e59e01ae8d9438f8c0cb9eb172275f5/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:5/shape:@name=wpscomposer-9e59e01ae8d9438f8c0cb9eb172275f5/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 22,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#123456",
+                    "strikethrough": false
+                  },
+                  "text": "Native layout text"
+                }
+              ],
+              "text": "Native layout text"
+            }
+          ],
+          "text": "Native layout text",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Native numeric Shape.Id is not exposed by this adapter",
+    "Independent page height unavailable in native dictionary"
+  ]
+}
