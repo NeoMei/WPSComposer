@@ -1,0 +1,31 @@
+[
+  {
+    "pid": 23856,
+    "find": [
+      {
+        "result": "True",
+        "start": 67,
+        "end": 73,
+        "text": "一级章节验收",
+        "paragraph": "1\t一级章节验收\t1\r",
+        "outline": 10
+      },
+      {
+        "result": "True",
+        "start": 67,
+        "end": 73,
+        "text": "一级章节验收",
+        "paragraph": "1\t一级章节验收\t1\r",
+        "outline": 10
+      },
+      {
+        "result": "True",
+        "start": 67,
+        "end": 73,
+        "text": "一级章节验收",
+        "paragraph": "1\t一级章节验收\t1\r",
+        "outline": 10
+      }
+    ]
+  }
+]

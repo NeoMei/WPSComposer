@@ -1,0 +1,8 @@
+{
+  "reason": "Helper Find repeats a match inside the TOC field; cancel only its verified owned document and dedicated app",
+  "matched": true,
+  "pid": 23856,
+  "documents_before": 1,
+  "documents_after": 0,
+  "quit_requested": true
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "label": "before-close",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:26:26.815Z"
+  },
+  {
+    "label": "saved-before-close",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:27:32.514Z"
+  },
+  {
+    "label": "closed",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:28:02.893Z"
+  },
+  {
+    "label": "reopened",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:32:26.473Z"
+  },
+  {
+    "label": "reopened-chapter",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:33:27.774Z"
+  },
+  {
+    "label": "final-closed",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 856812,
+      "title": "edited-pagination - Word"
+    },
+    "time": "2026-09-08T11:33:53.529Z"
+  }
+]
