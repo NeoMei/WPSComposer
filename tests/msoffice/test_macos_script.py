@@ -161,3 +161,56 @@ def test_sequence_transparent_heading_uses_body_outline(tmp_path):
         ops.append(o)
     c=compile_plan(replace(b.plan,operations=tuple(ops)),{},tmp_path/'x.docx',timeout=20)
     assert 'set outline level of paragraph format of r to outline level body text' in c.source
+
+
+@pytest.mark.parametrize('collection, item', [
+    ('tables of contents', 'table of contents'),
+    ('tables of figures', 'table of figures'),
+    ('indexes', 'index'),
+])
+def test_refresh_rebuilds_every_native_index_inside_each_convergence_round(collection, item):
+    import re
+    from skills.WPSComposer.scripts.msoffice.macos_script import refresh_source
+    source = refresh_source()
+    round_start = source.index('repeat with refreshRound from 1 to 3')
+    ordinary_fields = source.index('repeat with fieldIndex')
+    loop = re.search(r'repeat with (\w+) from 1 to \(count of ' + re.escape(collection) +
+                     r' of ownedDoc\)\s+update \(' + re.escape(item) + r' \1 of ownedDoc\)\s+end repeat', source)
+    assert loop is not None, 'Generic update field can report success while the native index remains stale'
+    assert round_start < loop.start() < loop.end() < ordinary_fields
+    assert 'update page numbers' not in source
+    assert 'try' not in source, 'Dedicated update errors must propagate to owned-document cleanup'
+    assert source.index('set fieldState') < source.index('if fieldState is priorFields')
+    assert 'if fieldsStable is false then error' in source
+
+
+def test_compiler_saves_refreshed_indexes_and_real_pagination_before_owned_close(tmp_path):
+    from skills.WPSComposer.scripts.msoffice.macos_script import compile_plan, refresh_source, pagination_source
+    build = build_longform_generation('---\ntitle: Report\ntoc: true\n---\n# Chapter\n\nBody')
+    compiled = compile_plan(build.plan, {}, tmp_path/'owned.docx', timeout=20)
+    refresh = compiled.source.index(refresh_source())
+    assert 'update (table of contents' in refresh_source()
+    pagination = compiled.source.index(pagination_source(compiled.nodes), refresh)
+    saved = compiled.source.rindex('save as ownedDoc file name')
+    closed = compiled.source.index('close document closeName saving no')
+    assert refresh < pagination < saved < closed
+
+
+@pytest.mark.parametrize('scheme', ['decimal', 'chinese-formal', 'hybrid-bid'])
+def test_heading_levels_bind_localized_styles_to_one_owned_outline(tmp_path, scheme):
+    from skills.WPSComposer.scripts.msoffice.macos_script import compile_plan
+    build = build_longform_generation(
+        f'---\nheading_numbering: {scheme}\n---\n# Report\n\n'
+        '## First\n\n### Second\n\n#### Third\n\n##### Fourth\n\nBody')
+    source = compile_plan(build.plan, {}, tmp_path/'owned.docx', timeout=20).source
+    assert source.count('make new list template at ownedDoc') == 1
+    for level in range(1, 5):
+        start = source.index(f'set lvl to list level {level} of ownList')
+        localized_name = f'set headingName to (name local of (Word style (style heading{level}) of ownedDoc)) as text'
+        binding = source.index(localized_name, start)
+        assert source.index('set linked style of lvl to headingName', binding) > binding
+    # Word clones the outline for each style-directed link, splitting chapter
+    # counters. Range-level apply can mask this but destroys paragraph breaks.
+    assert 'link to list template (' not in source
+    assert 'apply list format template' not in source
+    assert 'set lvl to list level 5 of ownList' not in source

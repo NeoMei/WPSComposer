@@ -38,6 +38,7 @@ Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.
 - [x] Mac public native acceptance and UI save/reopen.
 - [ ] Windows public native acceptance and UI save/reopen.
 - [x] Existing WPS native representative regression.
+- [ ] Native heading insertion/deletion renumbering and updated TOC pagination after save/reopen on both operating systems.
 - [ ] Update exact API/capability/install/release docs.
 - [ ] Full pytest, repeated code/task audit and exact candidate clean install.
 - [ ] Commit/push reviewed candidate; report release readiness with concrete evidence and no automatic release publication.
@@ -55,3 +56,5 @@ Ruling: reuse current linked review worktree, create production branch from c476
 Windows native review correction: the initial report did not enforce section page-number policy. Parent/independent review found a cover PAGE field, missing section numbering restart values and physical page numbers 1–5 instead of none/i/1. Remote Windows owns the native section/footer correction and revalidation. Windows Title outlineLevel camel/snake aliases were separately fixed locally with two RED cases and 80 focused passing tests. This is a release blocker until the actual final PDF/TOC and section XML pass.
 
 2026-09-08 section correction integrated (ead655a): exact production/test source matches remote c0604a8. Native setter evidence proves VT_BOOL True works where integer -1 is silently ignored. Footer unlink precedes PAGE creation; strict readback prevents publishing an incorrect section policy. Independent review passes and complete portable suite is 2846 passed, 12 skipped. Exact candidate isolated installation passes. Final Windows representative, semantic edge cases, process postflight and available WPS COM regression remain required before version promotion.
+
+Additional final task review required native structural edits and exposed two real Mac defects: stale TOC entries despite successful generic field update, and independent heading list instances. Both corrected through native collection refresh and list-level LinkedStyle binding using the localized style name. Real four-level chapter insertion/deletion, changed-page TOC and save/reopen now pass. New shared-list runner gate rejects the previously accepted split-list samples. Latest local suite: 2855 passed, 12 skipped. Windows round3 WPS and Word strict pagination/media pass, but the same Word multilevel issue remains under remote correction.

@@ -231,3 +231,22 @@ def test_actual_pdf_page_numbers_follow_section_policy(tmp_path, footers, expect
     canvas.save()
     spec={'title':None,'body':'Body acceptance','headings':[],'markers':[],'table_rows':[],'section_page_number_policy':True}
     assert runner.inspect_pdf(pdf,spec)['checks']['pdf_section_page_numbers'] is expected
+
+
+@pytest.mark.parametrize('shared, expected', [(True, True), (False, False)])
+def test_numbered_heading_levels_must_share_one_live_list_instance(tmp_path, shared, expected):
+    docx = tmp_path / 'outline.docx'
+    document_package(docx)
+    with zipfile.ZipFile(docx) as package:
+        files = {name: package.read(name) for name in package.namelist()}
+    second_id = '1' if shared else '2'
+    files['word/document.xml'] = files['word/document.xml'].replace(b'</w:body>', '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>二级验收</w:t></w:r></w:p></w:body>'.encode())
+    files['word/styles.xml'] = files['word/styles.xml'].replace(b'</w:styles>', f'<w:style w:styleId="Heading2"><w:pPr><w:outlineLvl w:val="1"/><w:numPr><w:ilvl w:val="1"/><w:numId w:val="{second_id}"/></w:numPr></w:pPr><w:rPr><w:sz w:val="30"/></w:rPr></w:style></w:styles>'.encode())
+    files['word/numbering.xml'] = files['word/numbering.xml'].replace(b'</w:abstractNum>', b'<w:lvl w:ilvl="1"><w:start w:val="1"/><w:pStyle w:val="Heading2"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1.%2"/></w:lvl></w:abstractNum>').replace(b'</w:numbering>', b'<w:num w:numId="2"><w:abstractNumId w:val="0"/></w:num></w:numbering>')
+    with zipfile.ZipFile(docx, 'w') as package:
+        for name, payload in files.items():
+            package.writestr(name, payload)
+    spec = {'title': None, 'body': '正文验收文本。', 'headings': ['章节验收', '二级验收'], 'table_rows': [], 'toc': False, 'numbered': True, 'markers': []}
+    result = runner.inspect_docx(docx, spec)
+    assert result['checks']['native_heading_numbering']
+    assert result['checks']['shared_heading_numbering_sequence'] is expected

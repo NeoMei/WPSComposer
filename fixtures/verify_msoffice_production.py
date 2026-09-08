@@ -196,6 +196,11 @@ def inspect_docx(path, spec):
         headings.append(matches[0] if len(matches) == 1 else None)
     checks['heading_sizes_and_outline_levels'] = all(p is not None and bool(_run_property(p, styles, 'sz')) and all(v == str(sizes[i]) for v in _run_property(p, styles, 'sz')) for i, p in enumerate(headings))
     checks['native_heading_numbering'] = not spec['numbered'] or all(p is not None and _heading_numbered(p, styles, numbering, i) for i, p in enumerate(headings[:spec.get('numbered_levels', len(headings))]))
+    # A level can look correctly numbered in a one-chapter sample while its
+    # separate list instance cannot follow a renumbered parent chapter.
+    numbered_headings = headings[:spec.get('numbered_levels', len(headings))]
+    sequence_ids = [_effective(p, styles, 'w:pPr/w:numPr/w:numId') if p is not None else None for p in numbered_headings]
+    checks['shared_heading_numbering_sequence'] = not spec['numbered'] or (bool(sequence_ids) and None not in sequence_ids and '0' not in sequence_ids and len(set(sequence_ids)) == 1)
     if spec['title']:
         checks['single_cover_title'] = _text(document).count(spec['title']) == 1
     fields = [x.text or '' for x in document.findall('.//w:instrText', NS)]

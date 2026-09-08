@@ -1,0 +1,16 @@
+{
+  "status": "FAIL_REPRODUCED",
+  "candidate": "e4d9fb3",
+  "symptom": "After native Heading 1 insertion and page break, true list readback is new chapter 1/page 1 and original chapter 2/page 2, but generic update field leaves cached TOC as original chapter 1/page 1 and omits the new heading. Save and reopen preserve the mismatch.",
+  "source_sha256": "bf3d6fbd137045997cf40ca146bbf516d54e6462d61524a914b176c60e269950",
+  "files": {
+    "inserted.pdf": "210f33d0831b191b0f660257130d308ffa85871e3371fabc863618431b895449",
+    "before.pdf": "1d241aeefe38843d632196bd07582278a4ba19f1dbeda3f9d64ade596973a2e3",
+    "run.py": "693fb320a8a26b2c3dbc350b3b25167ee9718e7b94dc0638be6f85f3a0f178a6",
+    "inserted.docx": "fbed8dbaee6c157045a00f327408c45079dd84d6494e5a5140938c3943672c85",
+    "before.docx": "bf3d6fbd137045997cf40ca146bbf516d54e6462d61524a914b176c60e269950",
+    "reopened.log": "d288ac174b5f5a9e1bf2e483112ef2b52b2f56da0e9d443b7ccaf3c6e914eb52",
+    "before.log": "e5e9869c06877c9dc44dfc049d2528eed971aa6c4ae54828687bd9d9baadcf93",
+    "inserted.log": "66cf516e19dc2cafb4d1d2b9f246c73e1bf097074b1edb4476c3b3b2de541e8f"
+  }
+}

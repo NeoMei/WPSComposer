@@ -1,0 +1,12 @@
+{
+  "base": "e4d9fb3",
+  "source_sha256": {
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "9d3e41ed2010ddfe277ec7fadbc6956b274d060aac7c4af4b22b93039db1713e",
+    "fixtures/verify_msoffice_production.py": "c4afa165d33007451305e5c1d23c3efa1671a44bcafd2fe627e7980694215068"
+  },
+  "passed": 2855,
+  "skipped": 12,
+  "exit_code": 0,
+  "seconds": 186.39,
+  "log_sha256": "9f199567e6086c210effba14cffe49a548aa9b612c4d76d00dfa09226b6c0f27"
+}

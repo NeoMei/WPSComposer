@@ -137,8 +137,11 @@ verification — tracked in `docs/windows-verification.md`.
 
 ## Requirements
 
-- Windows + WPS Office installed (Writer/Spreadsheets/Presentation), **or** MS
-  Office (Word/Excel/PowerPoint). ProgIDs fall back automatically.
+- Windows direct Composer interfaces require WPS Office or Microsoft Office.
+  Their legacy ProgID chains may fall back to Word/Excel/PowerPoint. Public
+  `generate()` and `convert_to_pdf()` instead obey the explicit `engine` contract
+  above: the default `wps` never selects Microsoft Office, and `auto` chooses
+  before the job starts.
 - `pywin32` available in the runtime.
 
 ## Core engine
