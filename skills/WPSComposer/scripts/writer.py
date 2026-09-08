@@ -1511,14 +1511,7 @@ class WriterComposer(BaseComposer):
                     descriptor.TextPosition = index * 18
                     descriptor.ResetOnHigher = 0 if index == 1 else index - 1
                     descriptor.StartAt = 1
-                # Mirror the macOS add-in: link the built-in heading styles
-                # to the template so numbering CONTINUES across headings.
-                # Applying the template per range on WPS restarts the list
-                # at 1 for every heading.
-                for template_level in range(1, 5):
-                    self._doc.Styles(-1 - template_level).LinkToListTemplate(
-                        list_template, template_level
-                    )
+                self._link_heading_list_styles(list_template)
                 cache[normalized_scheme] = list_template
             level_idx = int(level)
             heading_range = self._doc.Range(
@@ -1536,6 +1529,12 @@ class WriterComposer(BaseComposer):
             raise NativeWriterObjectError(
                 "EXECUTION_ABORTED", "heading numbering failed"
             ) from None
+
+    def _link_heading_list_styles(self, list_template):
+        # WPS requires style-side binding; per-range application restarts lists,
+        # and ListLevel.LinkedStyle does not apply numbering on its COM path.
+        for level in range(1, 5):
+            self._doc.Styles(-1 - level).LinkToListTemplate(list_template, level)
 
     def compact_terminal_paragraph(self):
         """Shrink only a final empty paragraph during the bounded M5 relayout."""
