@@ -30,7 +30,8 @@
 - `# 标题 / ## 01 章 / ### 2.1 节` 惯用结构：标题被封面消费后，正文无 H1 且从 L2 开始 → **semantic 层整体升一级**（层级降级），使 "01" 对上 L1 前缀模式、"2.1" 对上 L2——`semantic.py` `_apply_heading_numbering`
 - **方案检测前缀证据优先**于汉字占比回退："01/2.1"→decimal，"第一章+1.1"→hybrid-bid——`_detect_heading_scheme`
 - preface 门控不得吞掉全部 L2+ 章节（降级后章节即 L1，门控自然通过）
-- 编号通过样式级 `LinkToListTemplate` 绑定（段落 XML 中无 numPr 属正常）
+- WPS 编号通过样式级 `LinkToListTemplate` 绑定；Microsoft Word 通过各级 `ListLevel.LinkedStyle` 绑定，避免按样式克隆列表。H1–H4 必须共享同一个 numId，插入章节时下级编号应同步更新（段落 XML 中无 numPr 属正常）。
+- 三方案原生格式须与 semantic 契约一致：decimal 为点分层级；chinese-formal 为“第一章 / 第一节 / 一、/（一）”；hybrid-bid 为“第一章 / 1.1 / 1.1.1 / 关键工法01：”。hybrid 的二、三级使用 legal 编号样式（COM 253），防止中文祖先编号渗入下级。
 
 ### 5. Windows COM 样式键兼容
 - plan 发射 **camelCase** 样式键（对齐 macOS addin），`writer.py` `_STYLE_CAMEL_KEYS` 提供 snake_case 别名
