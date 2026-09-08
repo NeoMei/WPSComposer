@@ -1,21 +1,21 @@
 # Native Word production acceptance — 2026-09-08
 
-Release status: **PENDING Windows shared-heading numbering, three-scheme alignment, WPS auto detection and final merged native acceptance**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
+Release status: **PENDING final Windows representative structural pagination/TOC, UI/postflight and full Windows suite**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
 
 | Gate | Evidence | Result |
 |---|---|---|
 | macOS Microsoft Word public DOCX / conversion / direct PDF | macos-word/public-representative-shared-outline/report.json and native artifacts | PASS, 5 pages |
-| macOS WPS existing public flow | macos-wps/report.json and original artifacts | PASS, 4 pages |
+| macOS WPS existing public flow | macos-wps/public-representative-all-schemes/report.json and native artifacts | PASS, 4 pages |
 | Real edit → Undo → explicit save → close → reopen | each platform ui-report.json | PASS |
 | Structural heading edits, automatic renumbering and refreshed TOC pagination | macos-word/structural-shared-outline/report.json and native DOCX/PDF files | Mac PASS: 64 checks, H1 insertion/deletion with all four levels and TOC; Windows pending |
 | Word unsaved document preservation | macos-word/preservation.json | PASS |
 | Word native images, captions, REF / SEQ | macos-word/media-report.json, transparent-report.json | PASS |
 | Word timeout, quarantine, refused unsafe recovery and successful explicit recovery | macos-word/timeout-recovery.json | PASS |
 | Legacy DOC conversion with source preservation | macos-word/legacy-doc-report.json | PASS |
-| Portable integrated suite | pytest-legal-outline.log | 2859 passed, 12 native-gated skips |
+| Portable integrated suite | pytest-all-host-schemes.log | 2874 passed, 12 native-gated skips |
 | Windows Word public API and section policy | windows/round3-deb67ba/representative-03/ | PASS for static sample; multilevel structural editing correction pending |
 | Windows WPS public flow and section policy | windows/round3-deb67ba/wps-representative-02/ | PASS, 4 pages; actual WPS executable and artifacts verified |
-| Final Windows native UI, postflight and automatic engine choice | remote final evidence required | PENDING |
+| Final Windows native UI, postflight and automatic engine choice | remote final evidence required; automatic WPS selection passes round4/auto-02 | UI/postflight PENDING |
 | Candidate isolated installation | install-848c72f.json | PASS, 104 installed source/document/manifest files match |
 | WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
@@ -34,3 +34,5 @@ Candidate ead655a integrates the native Windows section fix: unlink headers/foot
 Structural acceptance correction: generic Mac field updates left stale TOC entries, and style-side list linking created separate numbering instances for Heading 1–4. Dedicated native collection updates and level-side localized style binding correct both defects. Current public-representative-shared-outline passes all three routes and the new shared-list gate; structural-shared-outline verifies native descendant list strings, cached/visible TOC, actual PDF pages, insertion/deletion and save/close/reopen. The earlier structural-edit-final report is explicitly superseded because its Heading-1-only checks missed descendants. Mac portable snapshot: 2855 passed, 12 skips in 186.39 seconds. Windows round3 independently found the same structural defect and remains under correction.
 
 Current Mac hybrid-bid native rerun preserves Chinese chapter numbers and Arabic dotted descendants through Word legal numbering, with both chapters verified; chinese-formal and sequence-transparent figure/reference native regressions also pass. Integrated suite after WPS first-section compatibility and legal numbering: 2859 passed, 12 skipped, exit 0 in 199.34 seconds. The independent shared-outline-recheck.json accepts both existing WPS artifacts and corrected Mac Word, while rejecting the pre-correction Windows Word list instances. Windows final structural and auto-detection correction remains pending.
+
+Latest native stage: Windows round4 passes all three numbering schemes in both Word and WPS, including H1 insertion/deletion with four-level descendants, save/reopen and PDF numbering (30 checks). Read-only cross-view detection starts no Office process, and public auto generation/conversion proves WPS provenance. Parent verified all 83 round4 checksums. macOS WPS now also passes Chinese and hybrid schemes through real public generation/conversion (18 checks), plus complete representative rerun (71.711 seconds, cover/TOC/body footers blank/i/1/2). Final CUA inspection shows WPS home with zero open document tabs. Both versions of the WPS test harness and the interrupted unguarded run are retained with an explicit harness-only explanation. Final Windows full representative/UI/postflight/suite remains pending.

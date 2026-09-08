@@ -1,0 +1,6 @@
+{
+  "status": "HARNESS_INTERRUPTED",
+  "reason": "The test script invoked generate at module scope without the documented __main__ guard. Spawned PDF validator re-imported the script and the parent waited for the child. The exact known test Python process was interrupted; its child exited and owned WPS staging was closed/cleaned. No user Office process was killed.",
+  "correction": "Guarded main entry; new output root numbering-schemes reran real public WPS generation and conversion and passed.",
+  "public_outputs_from_interrupted_run": false
+}
