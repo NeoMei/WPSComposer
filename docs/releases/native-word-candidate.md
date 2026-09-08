@@ -1,6 +1,6 @@
 # Native Word release candidate
 
-Status: unreleased. Version metadata remains 0.8.1 until Windows section-numbering correction and final merged native acceptance pass. This document is a release preparation record, not a release announcement.
+Status: unreleased. Version metadata remains 0.8.1 until final merged Windows native acceptance passes. This document is a release preparation record, not a release announcement.
 
 ## User-visible changes
 
@@ -14,11 +14,11 @@ WPS native built-in styles now receive the planned six heading sizes. Cover Titl
 
 ## Verification available
 
-- Candidate deb67ba: 2836 passed, 12 native-gated skips; isolated plugin installation, public signatures and installed source hashes passed.
+- Candidate ead655a: 2846 passed, 12 native-gated skips; isolated plugin installation, public signatures and installed source hashes passed.
 - macOS Word and WPS: native public DOCX generation, conversion and direct PDF; cover, six heading levels, native numbering, repeated-header long table, source preservation, overwrite refusal, actual section page numbers and visible PDF review.
 - Both local clients: actual keyboard edit, Undo, explicit save, close and reopen on identified test copies.
 - macOS Word: native images, captions, REF/SEQ and indexes, unsaved-document preservation, legacy DOC conversion, timeout/quarantine/recovery, explicit rejection of unsupported equations.
-- Windows: initial real API, UI, unsaved sentinel and process identity runs passed their original gates. Stronger parent review found section-numbering defects; correction and final native acceptance are still required. Initial PASS does not certify release.
+- Windows: initial real API, UI, unsaved sentinel and process identity runs passed their original gates. Stronger parent review found section-numbering defects; the correction is integrated and independently reviewed, while final native acceptance is still required. Initial PASS does not certify release.
 
 Full evidence and raw failures: [production acceptance](../verification/msoffice-production/README.md).
 

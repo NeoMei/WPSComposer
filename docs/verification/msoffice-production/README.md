@@ -1,6 +1,6 @@
 # Native Word production acceptance — 2026-09-08
 
-Release status: **PENDING Windows section-numbering correction and final merged native acceptance**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
+Release status: **PENDING final Windows native acceptance after section-numbering correction**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
 
 | Gate | Evidence | Result |
 |---|---|---|
@@ -11,7 +11,7 @@ Release status: **PENDING Windows section-numbering correction and final merged 
 | Word native images, captions, REF / SEQ | macos-word/media-report.json, transparent-report.json | PASS |
 | Word timeout, quarantine, refused unsafe recovery and successful explicit recovery | macos-word/timeout-recovery.json | PASS |
 | Legacy DOC conversion with source preservation | macos-word/legacy-doc-report.json | PASS |
-| Portable integrated suite | pytest-deb67ba.log | 2836 passed, 12 native-gated skips |
+| Portable integrated suite | pytest-ead655a.log | 2846 passed, 12 native-gated skips |
 | Windows production public API, native UI and ownership | remote production evidence required | PENDING |
 | WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
@@ -24,3 +24,5 @@ Reproduce with `python fixtures/verify_msoffice_production.py --output-root NEW_
 Final local rerun: Mac Word public-representative-final-2 and WPS wps-regression-05 pass the strengthened title-occurrence gate. The WPS Title outline regression is fixed; its earlier PASS used an insufficient exact-paragraph-only title test. Current report/artifacts are the corrected native rerun. `ui-source.docx` binds the previously observed edit/undo/reopen report to its exact source; the UI report is not relabelled as an edit test of the new bytes. Native unsupported-equation rejection also passed through the public API with the explicit safe error code. Windows first production API/UI/sentinel round passed its initial checks with the separately committed identity fix. Parent visual and OOXML review subsequently found the cover PAGE field and missing front-matter/body numbering restarts; these are release blockers under native correction, so initial PASS does not admit release. Final merged-source admission remains pending.
 
 Candidate deb67ba portable verification: 2836 passed, 12 native-gated skips, exit 0 in 189.62 seconds. Isolated installation, public signatures, both native adapter imports and ten installed-source hash comparisons pass (install-deb67ba.json). Independent final review accepted the cleanup compatibility correction, cancellation handling, Title mapping and strengthened representative page-number gates. Windows section numbering and final native admission remain open.
+
+Candidate ead655a integrates the native Windows section fix: unlink headers/footers before PAGE insertion, use COM boolean restart values and verify section policy readback. Independent review and all ten new section tests pass. Complete portable rerun: 2846 passed, 12 native-gated skips, exit 0 in 221.96 seconds. Clean isolated installation and both adapter imports/source comparisons pass (install-ead655a.json). The complete final Windows representative and WPS COM regression remain pending.
