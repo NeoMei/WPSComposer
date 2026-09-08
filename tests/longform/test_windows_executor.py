@@ -50,6 +50,53 @@ EMPTY_RESOURCE_MANIFEST_DIGEST = (
 )
 
 
+def test_native_factory_can_disable_ambiguous_host_retry(monkeypatch, tmp_path, fake_composer, simple_plan):
+    from skills.WPSComposer.scripts.longform import windows_executor as module
+    calls = []
+    def factory():
+        calls.append(1)
+        return fake_composer
+    factory.allow_host_retry = False
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    monkeypatch.setattr(module, '_is_host_com_error', lambda exc: True)
+    monkeypatch.setattr(module.time, 'sleep', lambda seconds: None)
+    def fail(*args):
+        raise RuntimeError('host disconnected')
+    monkeypatch.setattr(executor, '_dispatch_all', fail)
+    with pytest.raises(WindowsLongformExecutorError):
+        executor.execute(simple_plan, ())
+    assert len(calls) == 1
+
+
+def test_native_cleanup_failure_blocks_success(tmp_path, fake_composer, simple_plan, monkeypatch):
+    def factory():
+        return fake_composer
+    factory.strict_cleanup = True
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    def fail(*args, **kwargs):
+        raise RuntimeError('ownership uncertain')
+    monkeypatch.setattr(fake_composer, 'close', fail)
+    with pytest.raises(WindowsLongformExecutorError) as caught:
+        executor.execute(simple_plan, ())
+    assert caught.value.cleanup_failed is True
+
+
+def test_native_cleanup_failure_retains_staged_resources(tmp_path, fake_composer, simple_plan, monkeypatch):
+    def factory():
+        return fake_composer
+    factory.strict_cleanup = True
+    executor = WindowsLongformExecutor(staging_dir=str(tmp_path), composer_factory=factory)
+    resource = tmp_path / 'owned-image.png'
+    resource.write_bytes(b'owned image')
+    monkeypatch.setattr(executor, '_stage_resources', lambda resources: ({}, (str(resource),)))
+    def fail(*args, **kwargs):
+        raise RuntimeError('ownership uncertain')
+    monkeypatch.setattr(fake_composer, 'close', fail)
+    with pytest.raises(WindowsLongformExecutorError):
+        executor.execute(simple_plan, ())
+    assert resource.read_bytes() == b'owned image'
+
+
 def _finalize_operation() -> GenerationOperation:
     return GenerationOperation(
         op="writer.finalize_fields",

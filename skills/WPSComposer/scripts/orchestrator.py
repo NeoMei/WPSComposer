@@ -34,9 +34,10 @@ from .artifact_transport import (
 )
 from .heading_numbering import detect_numbering_scheme
 from .presentation import present_artifact, validate_open_result
+from .office_engines import resolve_engine, validate_engine, validate_timeout, EngineUnavailableError, com_engine
 
 
-def _generate_longform_outcome(build, format_name, output, timeout, overwrite):
+def _generate_longform_outcome(build, format_name, output, timeout, overwrite, *, engine="wps"):
     """Private indirection keeps platform runtime imports lazy and testable."""
     from .longform.platform_runtime import generate_longform
 
@@ -46,14 +47,18 @@ def _generate_longform_outcome(build, format_name, output, timeout, overwrite):
         output=output,
         timeout=timeout,
         overwrite=overwrite,
+        engine=engine,
     )
 
 
-def _return_artifact(path: Path, *, open_result: bool) -> str:
+def _return_artifact(path: Path, *, open_result: bool, engine: str = "wps") -> str:
     artifact = Path(path).expanduser().resolve()
     if open_result:
         try:
-            present_artifact(artifact)
+            if engine == "msoffice" and artifact.suffix.lower() == ".docx":
+                present_artifact(artifact, engine=engine)
+            else:
+                present_artifact(artifact)
         except Exception as exc:
             warnings.warn(
                 f"Final artifact was published but could not be opened: {exc}",
@@ -74,6 +79,7 @@ def generate(
     overwrite: bool = False,
     *,
     open_result: bool = False,
+    engine: str = "wps",
 ) -> str:
     """Generate a beautifully formatted document from Markdown.
 
@@ -93,10 +99,13 @@ def generate(
                         file path.
         plugins: List of plugin names to run before parsing.
                  Available: ``"excalidraw"`` (renders .excalidraw.md to PNG).
-        timeout: Timeout in seconds for WPS generation (default: 600).
+        timeout: Positive finite generation timeout in seconds (default: 600).
         overwrite: If True, overwrite existing output file.
         open_result: If True, ask the desktop default application to open the
                      finalized artifact after generation cleanup completes.
+                     Native MS Word DOCX results open explicitly in Word.
+        engine: Native engine: "wps" (default), "msoffice" (Word DOCX/PDF),
+                or "auto" (installed WPS first, then Word; pinned per task).
 
     Returns:
         Absolute path to the generated file.
@@ -107,6 +116,8 @@ def generate(
         FileExistsError: Output file already exists (unless overwrite=True).
     """
     validate_open_result(open_result)
+    validate_engine(engine)
+    validate_timeout(timeout)
 
     # Validate format
     format = format.lower().strip()
@@ -146,6 +157,8 @@ def generate(
                 f"Unknown preset '{preset}'. Available: {available}"
             )
 
+    selected_engine = resolve_engine(engine, {"docx": "writer", "pdf": "writer", "xlsx": "spreadsheet", "pptx": "presentation"}[format])
+
     # Determine output path
     if output is None:
         output = f"{base_name}.{format}"
@@ -171,6 +184,8 @@ def generate(
             base_dir=base_dir,
             design_preset=preset,
         )
+        if selected_engine == "msoffice" and longform_build.semantic.config.layout_engine == "legacy":
+            raise EngineUnavailableError("MS Office does not support the legacy layout route")
         if longform_build.semantic.config.layout_engine != "legacy":
             if sys.platform not in {"darwin", "win32"}:
                 raise GenerationError(
@@ -183,14 +198,11 @@ def generate(
                         f"{sys.platform}"
                     ),
                 )
+            options = {"engine": selected_engine} if selected_engine != "wps" else {}
             outcome = _generate_longform_outcome(
-                longform_build,
-                format,
-                output_path,
-                timeout,
-                overwrite,
+                longform_build, format, output_path, timeout, overwrite, **options
             )
-            return _return_artifact(Path(outcome.path), open_result=open_result)
+            return _return_artifact(Path(outcome.path), open_result=open_result, engine=selected_engine)
 
     # Route to renderer
     if sys.platform == "darwin":
@@ -220,7 +232,7 @@ def generate(
         import tempfile
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(
+        with com_engine("wps"), tempfile.TemporaryDirectory(
             dir=output_path.parent, prefix=".wpscomposer-generate-"
         ) as tmpdir:
             staged = Path(tmpdir) / f"artifact.{format}"

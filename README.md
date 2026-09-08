@@ -247,6 +247,7 @@ def generate(
     overwrite: bool = False,
     *,
     open_result: bool = False,
+    engine: str = "wps",
 ) -> str:
 ```
 
@@ -263,6 +264,7 @@ def generate(
 | `timeout` | `float` | `600` | WPS 生成超时（秒） |
 | `overwrite` | `bool` | `False` | 是否覆盖已存在的输出文件 |
 | `open_result` | `bool` | `False` | 成功发布并完成清理后，是否请求系统默认应用打开结果 |
+| `engine` | `str` | `"wps"` | `wps`、`msoffice` 或 `auto`；MS Office 当前提供 Word 的 DOCX/PDF，自动选择优先 WPS，任务开始后不切换 |
 
 **返回值：** 生成的文件绝对路径
 

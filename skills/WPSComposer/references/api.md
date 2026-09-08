@@ -2,6 +2,28 @@
 
 ## Public DOCX/PDF M5 route
 
+### Native engine selection
+
+`generate(..., engine="wps")` and `convert_to_pdf(..., engine="wps")` accept
+keyword-only `engine="wps" | "msoffice" | "auto"`. The default is WPS.
+`msoffice` uses installed desktop Microsoft Word for DOCX/PDF generation and
+DOC/DOCX-to-PDF conversion on Windows and macOS. Excel, PowerPoint and
+conversational document editing retain their existing WPS interfaces.
+The deprecated `layout_engine: legacy` route is not available with MS Office.
+
+`auto` detects installed applications without starting them, prefers WPS,
+then selects Word for writer documents. It pins that choice for the entire
+task. An execution or content error never triggers a switch to another engine.
+Unsupported native operations fail explicitly; no alternate OOXML renderer is used.
+Windows requires `pywin32`; macOS requires desktop Word and macOS Automation
+permission for the launching terminal/application to control Microsoft Word.
+MS Word DOCX results with `open_result=True` open in Word explicitly.
+
+```python
+generate("report.md", output="report.docx", engine="msoffice")
+convert_to_pdf("report.docx", engine="msoffice", timeout=600)
+```
+
 `generate()` keeps its absolute-path return and adds the keyword-only
 `open_result=False` option. DOCX/PDF default to the M5 long-form lifecycle;
 PPTX/XLSX are unchanged. To compare with the deprecated Writer path, set this
@@ -201,6 +223,8 @@ def convert_to_pdf(
     *,
     overwrite: bool = False,
     open_result: bool = False,
+    engine: str = "wps",
+    timeout: float = 600,
 ) -> str:
     ...
 ```
@@ -209,6 +233,9 @@ Accepted source suffixes are `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, and
 `.pptx`, matched case-insensitively. The default destination is the source
 sibling with a `.pdf` suffix. Success returns its absolute path. Excel export
 is workbook-level and includes every visible worksheet.
+With `engine="msoffice"`, only `.doc` and `.docx` sources are accepted.
+`timeout` must be positive and finite; for native Word it bounds the entire
+conversion, including source staging, native export and atomic publication.
 
 | Condition | Exception |
 |---|---|

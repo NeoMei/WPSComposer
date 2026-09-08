@@ -15,6 +15,17 @@ edit PPT/DOCX/XLSX through the real WPS engine (no PDF extraction fallback).
 
 ## Quick start -- Markdown to document
 
+For native Microsoft Word on Windows/macOS, use public `generate(...,
+engine="msoffice")` for DOCX/PDF and `convert_to_pdf(..., engine="msoffice")`
+for DOC/DOCX conversion. The default `engine="wps"` keeps WPS selected;
+`engine="auto"` selects an installed engine once, preferring WPS, and never
+switches after a native task begins. MS Excel/PowerPoint and MS conversational
+editing are not supported by this interface. Word requires `pywin32` on Windows
+or macOS Automation permission to control desktop Microsoft Word.
+See [API reference](references/api.md#native-engine-selection) for scope and
+failure behavior. Do not bypass an unsupported-operation error with a custom
+OOXML generator.
+
 The ``generate()`` function is the single entry point for all document
 generation. For an interactive script, explicitly request presentation of the
 final artifact after WPS cleanup:

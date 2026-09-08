@@ -17,16 +17,23 @@ def validate_open_result(open_result: bool) -> None:
         raise TypeError("open_result must be a bool")
 
 
-def present_artifact(path: ArtifactPath) -> None:
+def present_artifact(path: ArtifactPath, *, engine: str | None = None) -> None:
     """Ask the platform default application to open one finalized file."""
     artifact = Path(path).expanduser().resolve()
     if not artifact.is_file():
         raise FileNotFoundError(f"Final artifact is not a file: {artifact}")
 
     if sys.platform == "darwin":
-        argv = ["open", str(artifact)]
+        argv = ["open", "-a", "Microsoft Word", str(artifact)] if engine == "msoffice" and artifact.suffix.lower() == ".docx" else ["open", str(artifact)]
     elif sys.platform == "win32":
-        argv = ["explorer.exe", str(artifact)]
+        if engine == "msoffice" and artifact.suffix.lower() == ".docx":
+            from .office_engines import engine_executable
+            executable = engine_executable("msoffice", "writer")
+            if not executable:
+                raise OSError("Microsoft Word executable is unavailable")
+            argv = [executable, str(artifact)]
+        else:
+            argv = ["explorer.exe", str(artifact)]
     elif sys.platform.startswith("linux"):
         argv = ["xdg-open", str(artifact)]
     else:
