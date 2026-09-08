@@ -1039,3 +1039,243 @@ class MacWordSession:
 
     def save_docx(self, path):
         return self.save(path, 12)
+
+    @classmethod
+    def _style_definition(cls, key, props):
+        from ..writer import WriterComposer
+        if not isinstance(key, str) or not isinstance(props, dict):
+            raise ValueError('Style definitions require named property mappings')
+        normalized = {}
+        for name, value in props.items():
+            canonical = WriterComposer._STYLE_CAMEL_KEYS.get(name, name)
+            if canonical in normalized and normalized[canonical] != value:
+                raise ValueError('Conflicting style property aliases')
+            normalized[canonical] = value
+        allowed = {'name', 'type', 'based_on', 'font_name', 'font_name_ascii', 'font_size',
+                   'bold', 'italic', 'underline', 'strikethrough', 'color', 'align',
+                   'indent_first', 'left_indent', 'right_indent', 'line_spacing',
+                   'line_spacing_rule', 'space_before', 'space_after', 'keep_together',
+                   'keep_with_next', 'outline_level', 'shading', 'left_border', 'border_color'}
+        if set(normalized) - allowed or normalized.get('type', 'paragraph') != 'paragraph':
+            raise NativeWordCapabilityError('Only the supported native paragraph style properties are available')
+        name = normalized.get('name', key)
+        cls._business_style(name)
+        base = normalized.get('based_on')
+        if base is not None:
+            cls._business_style(base)
+        formatting = dict(normalized)
+        if 'font_size' in formatting:
+            formatting['size'] = formatting.pop('font_size')
+        lines = cls._business_format('semanticStyle', formatting)
+        if normalized.get('outline_level') is not None:
+            level = normalized['outline_level']
+            if type(level) is not int or not 1 <= level <= 10:
+                raise ValueError('Outline level must be between one and ten')
+            enum = 'outline level body text' if level == 10 else f'outline level{level}'
+            lines.append(f'set outline level of paragraph format of semanticStyle to {enum}')
+        if normalized.get('shading') is not None:
+            lines.append('set background pattern color of shading of semanticStyle to ' + _value('color', normalized['shading']))
+        if normalized.get('left_border') is not None:
+            _value('visible', normalized['left_border'])
+        if normalized.get('border_color') is not None:
+            _value('color', normalized['border_color'])
+        if normalized.get('left_border'):
+            lines += ['set semanticBorder to get border (paragraph format of semanticStyle) which border border left',
+                      'set line style of semanticBorder to line style single',
+                      'set line width of semanticBorder to line width225 point',
+                      'set color of semanticBorder to ' + _value('color', normalized.get('border_color', '#CCCCCC'))]
+        return name, base, lines
+
+    @staticmethod
+    def _style_inheritance_order(definitions):
+        canonical_names = {name.casefold(): name for name in definitions}
+        if len(canonical_names) != len(definitions):
+            raise ValueError('Duplicate style name')
+        ordered = []; visiting = set(); visited = set()
+        def visit(name):
+            if name in visiting:
+                raise ValueError('Cyclic style inheritance')
+            if name in visited:
+                return
+            visiting.add(name)
+            base = definitions[name][0]
+            base_name = canonical_names.get(base.casefold()) if base else None
+            if base_name is not None:
+                visit(base_name)
+            visiting.remove(name); visited.add(name); ordered.append(name)
+        for name in definitions:
+            visit(name)
+        return ordered
+
+    @staticmethod
+    def _paragraph_style_guard(ref):
+        return (f'if (style type of {ref}) is not in '
+                '{style type paragraph, style type paragraph only, style type linked} '
+                'then error "WPSC_STYLE_TYPE_MISMATCH"')
+
+    @classmethod
+    def _style_batch(cls, styles_dict):
+        if not isinstance(styles_dict, dict):
+            raise ValueError('Styles must be a mapping')
+        definitions = {}
+        for key, props in styles_dict.items():
+            name, base, lines = cls._style_definition(key, props)
+            if name in definitions:
+                raise ValueError('Duplicate style name')
+            definitions[name] = (base, lines)
+        ordered = cls._style_inheritance_order(definitions)
+        declared_refs = {name.casefold(): f'requestedStyle{index}' for index, name in enumerate(ordered)}
+        preflight = []; mutations = []
+        for index, name in enumerate(ordered):
+            base, formatting = definitions[name]
+            ref = f'requestedStyle{index}'
+            preflight += [f'set {ref} to missing value', 'try',
+                          cls._business_style(name).replace('set semanticStyle to ', f'set {ref} to ', 1), 'end try',
+                          f'if {ref} is not missing value then',
+                          cls._paragraph_style_guard(ref), 'end if']
+            declared_base = declared_refs.get(base.casefold()) if base else None
+            if base and declared_base is None:
+                preflight += [cls._business_style(base).replace('set semanticStyle to ', f'set baseStyle{index} to ', 1),
+                              cls._paragraph_style_guard(f'baseStyle{index}')]
+            mutations += [f'set semanticStyle to {ref}', 'if semanticStyle is missing value then',
+                          f'set semanticStyle to make new Word style at boundDoc with properties {{name local:{apple_string(name)}}}', 'end if']
+            if base:
+                if declared_base is not None:
+                    base_ref = declared_base
+                else:
+                    base_ref = f'baseStyle{index}'
+                mutations.append(f'set base style of semanticStyle to {base_ref}')
+            mutations += formatting + [f'set {ref} to semanticStyle']
+        return preflight + mutations
+
+    def ensure_styles(self, styles_dict):
+        self._business_commit(self._style_batch(styles_dict))
+
+    def ensure_heading_styles(self, styles_by_level):
+        if not isinstance(styles_by_level, dict):
+            raise ValueError('Heading styles must be a mapping')
+        definitions = {}
+        for level, props in styles_by_level.items():
+            if isinstance(level, str) and re.fullmatch(r'[1-6]', level):
+                level = int(level)
+            if type(level) is not int or not 1 <= level <= 6:
+                raise ValueError('Heading level must be between one and six')
+            _name, base, formatting = self._style_definition(f'Heading {level}', props)
+            name = f'Heading {level}'
+            if name in definitions:
+                raise ValueError('Duplicate heading level')
+            definitions[name] = (base, formatting)
+        ordered = self._style_inheritance_order(definitions)
+        preflight = []; mutations = []
+        for name in ordered:
+            level = int(name[-1])
+            base, formatting = definitions[name]
+            preflight += [f'set requestedHeading{level} to Word style (style heading{level}) of boundDoc',
+                          self._paragraph_style_guard(f'requestedHeading{level}')]
+            if base:
+                preflight += [self._business_style(base).replace('set semanticStyle to ', f'set headingBase{level} to ', 1),
+                              self._paragraph_style_guard(f'headingBase{level}')]
+            mutations += [f'set semanticStyle to requestedHeading{level}']
+            if base:
+                mutations.append(f'set base style of semanticStyle to headingBase{level}')
+            mutations += formatting
+        self._business_commit(preflight + mutations)
+
+    def apply_heading_text_color(self, color):
+        rendered = _value('color', color)
+        preflight = [f'set requestedHeading{level} to Word style (style heading{level}) of boundDoc' for level in range(1, 7)]
+        self._business_commit(preflight + [f'set color of font object of requestedHeading{level} to {rendered}' for level in range(1, 7)])
+
+    def add_code_lines(self, lines):
+        values = list(lines)
+        if any(not isinstance(value, str) for value in values):
+            raise ValueError('Code lines must be text')
+        commands = []
+        for value in values:
+            commands += self._business_paragraph(value if value else ' ', 'Source Code')
+        commands += self._business_paragraph('', props={'size': 4})
+        self._business_commit(commands, structural=True)
+
+    def set_columns(self, count):
+        if type(count) is not int or not 1 <= count <= 45:
+            raise ValueError('Column count must be between one and 45')
+        self._business_commit([f'set number of text columns (page setup of boundDoc) number of columns {count}'])
+
+    def add_section(self, landscape=None, *, continuous=False):
+        if type(continuous) is not bool:
+            raise ValueError('continuous must be boolean')
+        orientation = None if landscape is None else _value('bold', landscape)
+        commands = self._position('end') + [
+            'set insertionRange to create range boundDoc start insertionPoint end insertionPoint',
+            'insert break at insertionRange break type section break ' + ('continuous' if continuous else 'next page')]
+        if orientation is not None:
+            commands += ['set semanticSection to section (count sections of boundDoc) of boundDoc',
+                         'set orientation of page setup of semanticSection to orient ' + ('landscape' if orientation == 'true' else 'portrait')]
+        self._business_commit(commands, structural=True)
+
+    def set_page_number_in_footer(self):
+        self._business_commit(['set pagePart to get footer (section 1 of boundDoc) index header footer primary',
+            'set content of text object of pagePart to "Page "',
+            'set footerRange to collapse range (character 5 of text object of pagePart) direction collapse end',
+            'create new field text range footerRange field type field page preserve formatting true'])
+
+    def compact_terminal_paragraph(self):
+        # Match Python str.strip used by the frozen implementation, plus the
+        # Word cell terminator. The character list is local script data.
+        whitespace_codes = [7, *range(9, 14), *range(28, 33), 133, 160, 5760,
+                            *range(8192, 8203), 8232, 8233, 8239, 8287, 12288]
+        whitespace = ', '.join(f'character id {code}' for code in whitespace_codes)
+        self._business_commit(['set terminalRange to text object of last paragraph of boundDoc',
+            'set compactable to true', 'repeat with terminalCharacter in characters of (content of terminalRange as text)',
+            f'if (terminalCharacter as text) is not in {{{whitespace}}} then set compactable to false',
+            'end repeat', 'if compactable then',
+            'set font size of font object of terminalRange to 1',
+            'set space before of paragraph format of terminalRange to 0',
+            'set space after of paragraph format of terminalRange to 0',
+            'set line spacing rule of paragraph format of terminalRange to line space exactly',
+            'set line spacing of paragraph format of terminalRange to 1',
+            'set keep together of paragraph format of terminalRange to false',
+            'set keep with next of paragraph format of terminalRange to false', 'end if'])
+
+    def reset(self):
+        """Frozen Writer reset is a no-op; retain the bound document."""
+        return None
+
+    @staticmethod
+    def _refresh_commands(*, figures=False, fields=False):
+        lines = ['repeat with tocIndex from 1 to (count of tables of contents of boundDoc)',
+                 'update (table of contents tocIndex of boundDoc)', 'end repeat']
+        if figures:
+            lines += ['repeat with figureIndex from 1 to (count of tables of figures of boundDoc)',
+                      'update (table of figures figureIndex of boundDoc)', 'end repeat']
+        if fields:
+            lines += ['repeat with fieldIndex from 1 to (count fields of boundDoc)',
+                      'if (update field (field fieldIndex of boundDoc)) is false then error "WPSC_FIELD_UPDATE_FAILED"', 'end repeat']
+        return lines
+
+    def refresh_indexes(self):
+        self._business_commit(self._refresh_commands(figures=True))
+
+    def update_fields(self):
+        self._business_commit(self._refresh_commands(fields=True))
+
+    def finalize_fields(self, *, max_rounds=3):
+        if type(max_rounds) is not int or not 1 <= max_rounds <= 100:
+            raise ValueError('max_rounds must be a bounded positive integer')
+        # The frozen direct method performs one update; convergence belongs to
+        # the generation executor and is not silently added to this alias.
+        self.update_fields()
+
+    def refresh_fields(self, round_index):
+        from ..longform.executor import FieldSnapshot
+        if type(round_index) is not int or round_index < 0:
+            raise ValueError('round_index must be nonnegative')
+        self._writable()
+        rows = self._execute(self._refresh_commands(fields=True) + [
+            'set nativeRows to {{"stats", compute statistics boundDoc statistic statistic pages, count tables of contents of boundDoc}}'])
+        if len(rows) != 1 or len(rows[0]) != 3 or rows[0][0] != 'stats' or any(type(value) is not int or value < 0 for value in rows[0][1:]):
+            raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root)
+        pages, toc_count = rows[0][1:]
+        return (FieldSnapshot(stable_key=('doc:finalize', 'PAGE', 0), field_category='page',
+                result_hash=f'{pages}-{toc_count}', toc_page_count=toc_count,
+                figure_index_page_count=0, table_index_page_count=0, total_pages=pages),)

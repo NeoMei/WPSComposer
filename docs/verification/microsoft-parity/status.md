@@ -16,6 +16,12 @@ Additional code checkpoint: 17 direct Mac Word business methods have matching si
 
 The final runner-only fault-injection fix explicitly passes its factory into the real worker protocol (avoiding a definition-time default-argument binding). The final focused supplement passed **292 tests**, including the two new protocol/factory regressions; see `unit-final-focused.txt`. Independent scoped re-reviews accepted the Word fixes, preflight fixes, evidence gate and Windows runner fixes. These reviews are not a final whole-parity approval. Raw native logs retain their original whitespace; source files pass the Git whitespace check separately.
 
+The follow-up adds 13 more direct Mac Word methods for paragraph styles, headings, code paragraphs, columns, sections, footer PAGE fields and field refresh. The 55 new tests include syntax-only compilation; four independent-review findings were fixed (style-name substitution, inheritance cycles/case aliases, incompatible style types, and a two-column fixture that reset itself before saving). These methods have not run in Word yet. Static inventory now finds 35 of the frozen 80 direct Word method names; the [remaining 45 methods](word-direct-remaining.md) are still implementation gaps. Name presence is not a support or native-coverage percentage.
+
+After those fixes and independent scoped re-review, full suite round 7 passed **3,650 tests with 12 skips** in 394.78 seconds; see `unit-round7.txt`. This supersedes earlier unit-suite checkpoints, not the outstanding native gates.
+
+`fixtures/microsoft_parity/macos_powerpoint_size_probe.py` is a guarded, unexecuted hypothesis test for width/orientation swaps. Its 18 portable tests and ten pure AppleScript compilations do not establish arbitrary-height support. It changes no production PowerPoint capability. Future runs must also review shape behavior and provenance before promoting any tested-size result into a capability claim. Unrelated document text is hashed in memory before logging, including timeout diagnostics.
+
 Representative evidence does not validate every argument combination, every baseline row, the exact final branch, or installed-plugin behavior. Older failed runs and corrected reruns are retained separately. Word `new-public-02` passed its original narrow assertions but visual review exposed concatenated paragraphs; `new-public-03-boundary-red` proves the defect, and `new-public-04-boundary`/`new-public-05-reviewed` verify the strengthened paragraph assertion.
 
 Outstanding work:
