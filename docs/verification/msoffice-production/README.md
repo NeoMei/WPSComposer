@@ -1,19 +1,22 @@
 # Native Word production acceptance — 2026-09-08
 
-Release status: **PENDING final Windows native acceptance after section-numbering correction**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
+Release status: **PENDING Windows shared-heading numbering, three-scheme alignment, WPS auto detection and final merged native acceptance**. No release tag or package publication has been made. Existing 0.8.1 metadata is unchanged.
 
 | Gate | Evidence | Result |
 |---|---|---|
-| macOS Microsoft Word public DOCX / conversion / direct PDF | macos-word/report.json and original artifacts | PASS, 5 pages |
+| macOS Microsoft Word public DOCX / conversion / direct PDF | macos-word/public-representative-shared-outline/report.json and native artifacts | PASS, 5 pages |
 | macOS WPS existing public flow | macos-wps/report.json and original artifacts | PASS, 4 pages |
 | Real edit → Undo → explicit save → close → reopen | each platform ui-report.json | PASS |
-| Structural heading edits, automatic renumbering and refreshed TOC pagination | additional task-copy native verification | Mac PASS for all four levels and TOC after insert/delete/save/reopen; Windows correction and final acceptance pending |
+| Structural heading edits, automatic renumbering and refreshed TOC pagination | macos-word/structural-shared-outline/report.json and native DOCX/PDF files | Mac PASS: 64 checks, H1 insertion/deletion with all four levels and TOC; Windows pending |
 | Word unsaved document preservation | macos-word/preservation.json | PASS |
 | Word native images, captions, REF / SEQ | macos-word/media-report.json, transparent-report.json | PASS |
 | Word timeout, quarantine, refused unsafe recovery and successful explicit recovery | macos-word/timeout-recovery.json | PASS |
 | Legacy DOC conversion with source preservation | macos-word/legacy-doc-report.json | PASS |
 | Portable integrated suite | pytest-legal-outline.log | 2859 passed, 12 native-gated skips |
-| Windows production public API, native UI and ownership | remote production evidence required | PENDING |
+| Windows Word public API and section policy | windows/round3-deb67ba/representative-03/ | PASS for static sample; multilevel structural editing correction pending |
+| Windows WPS public flow and section policy | windows/round3-deb67ba/wps-representative-02/ | PASS, 4 pages; actual WPS executable and artifacts verified |
+| Final Windows native UI, postflight and automatic engine choice | remote final evidence required | PENDING |
+| Candidate isolated installation | install-848c72f.json | PASS, 104 installed source/document/manifest files match |
 | WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
 The runner records the Git base and source SHA256 values for the actual dirty working tree used; these source digests, not only the base commit, bind each native report to its implementation. Artifacts are unmodified native outputs. macOS Word theme colors and pagination may differ from WPS; the shared typography, numbering, content and A4 guards all pass.
