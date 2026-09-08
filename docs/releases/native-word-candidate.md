@@ -1,6 +1,6 @@
 # Native Word release candidate
 
-Status: unreleased. Version metadata remains 0.8.1 until final merged Windows native acceptance passes. This document is a release preparation record, not a release announcement.
+Status: 0.9.0 candidate, unreleased. Windows and macOS native gates pass; final package checks pass and the candidate is ready for release review. This document is a release preparation record, not a release announcement.
 
 ## User-visible changes
 
@@ -14,12 +14,12 @@ WPS native built-in styles now receive the planned six heading sizes. Cover Titl
 
 ## Verification available
 
-- Integrated all-host scheme snapshot: 2874 passed, 12 native-gated skips. Candidate db7df29 isolated plugin installation passes, with 104 installed source/document/manifest files matching and both native adapters imported from the installed package; repeat installation on final promoted source.
+- Final 0.9.0 complete local suite: 2874 passed, 12 native-gated skips, exit 0. Final isolated plugin installation passes with 105 files matching, actual installed Word generation/conversion and preserved source bytes. Source archive and wheel builds pass.
 - macOS Word and WPS: native public DOCX generation, conversion and direct PDF; cover, six heading levels, native numbering, repeated-header long table, source preservation, overwrite refusal, actual section page numbers and visible PDF review.
 - Both local clients: actual keyboard edit, Undo, explicit save, close and reopen on identified test copies.
 - macOS Word: native images, captions, REF/SEQ and indexes, unsaved-document preservation, legacy DOC conversion, timeout/quarantine/recovery, explicit rejection of unsupported equations.
 - macOS Word: native chapter insertion/deletion updates all four numbering levels and TOC page references after save/close/reopen; dedicated TOC rebuilding and shared native list binding fix the observed regressions. Chinese and hybrid numbering have additional two-chapter native coverage.
-- Windows round4: both Word and WPS pass three numbering schemes, chapter insertion/deletion, save/reopen and visible PDF numbering (30 checks). Real read-only auto detection and public generation/conversion select WPS correctly. Round3 also passed section page numbering, media, references and sentinel preservation. Final representative structural pagination/TOC, native UI/postflight and full Windows suite remain pending.
+- Windows round4: both Word and WPS pass three numbering schemes, chapter insertion/deletion, save/reopen and visible PDF numbering (30 checks). Real read-only auto detection and public generation/conversion select WPS correctly. Round3 also passed section page numbering, media, references and sentinel preservation. Final representative structural pagination/TOC and native UI/postflight also pass. Windows complete coverage is 2838 passed plus 1 serial isolation test passed, with 45 platform/native-gated skips; 28 recorded owned Word PIDs are absent, while old/uncertain probes remain explicitly preserved.
 - macOS WPS: updated Chinese/hybrid scheme public generation and conversion pass, followed by a complete representative regression and home-window check with zero open document tabs.
 
 Full evidence and raw failures: [production acceptance](../verification/msoffice-production/README.md).

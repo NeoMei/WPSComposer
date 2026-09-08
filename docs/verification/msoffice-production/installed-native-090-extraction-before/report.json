@@ -1,0 +1,6 @@
+{
+  "status": "HARNESS_ASSERTION_FAILED",
+  "native_public_operations": "completed",
+  "source_preservation_assertion": "passed",
+  "cause": "pypdf inserted a kerning space in NATIVE; PyMuPDF and pdfplumber extract the exact end marker from the same native PDF. Raw log and artifacts retained. Corrected harness uses pdfplumber, already a project dependency."
+}

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "version": "0.9.0",
+  "native_modules_match": {
+    "skills/WPSComposer/scripts/msoffice/windows_host.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": true,
+    "skills/WPSComposer/scripts/office_engines.py": true
+  },
+  "artifacts": {
+    "wps_composer-0.9.0-py3-none-any.whl": {
+      "bytes": 445281,
+      "sha256": "f66ec50c76219ad37e7cebaf99de1bdeae455704442206a66b27843cb9f523e7"
+    },
+    "wps_composer-0.9.0.tar.gz": {
+      "bytes": 466501,
+      "sha256": "cfa78010105a4616d401123ded3e10f1d0973991b85d8c5862873d8bc859e4db"
+    }
+  },
+  "note": "Plugin installation is separately verified by install-090-final.json. No packages uploaded."
+}

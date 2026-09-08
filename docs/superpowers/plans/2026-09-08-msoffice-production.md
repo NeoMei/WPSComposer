@@ -36,11 +36,11 @@ Tests first: invalidengine fails without launches; explicit msoffice xlsx fails;
 Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.md, references/api.md, README.md, package manifests/install metadata as required. Public fixtures generate Chinese body/sixlevels/cover/numbered chapters/longtable/image/refs/formula and separatePDF; verify actualOOXML/PDF with no helper make-up. Test unsupportedcapabilities rather than silentlydegradeunconfigured content. Windows remote run exactsourceand reportdiagnostics/UI. Mac localsame. Compare WPS representative output to protectedguardrails. Test cleaninstallmodule availability inisolateddestination. Versioncandidate0.9.0 onlywhenfeaturegatespass; existing0.8.1 untoucheduntilthen.
 
 - [x] Mac public native acceptance and UI save/reopen.
-- [ ] Windows public native acceptance and UI save/reopen.
+- [x] Windows public native acceptance and UI save/reopen.
 - [x] Existing WPS native representative regression.
-- [ ] Native heading insertion/deletion renumbering and updated TOC pagination after save/reopen on both operating systems.
-- [ ] Update exact API/capability/install/release docs.
-- [ ] Full pytest, repeated code/task audit and exact candidate clean install.
+- [x] Native heading insertion/deletion renumbering and updated TOC pagination after save/reopen on both operating systems.
+- [x] Update exact API/capability/install/release docs.
+- [x] Full pytest, repeated code/task audit and exact candidate clean install.
 - [ ] Commit/push reviewed candidate; report release readiness with concrete evidence and no automatic release publication.
 
 ## Execution ledger
@@ -60,3 +60,7 @@ Windows native review correction: the initial report did not enforce section pag
 Additional final task review required native structural edits and exposed two real Mac defects: stale TOC entries despite successful generic field update, and independent heading list instances. Both corrected through native collection refresh and list-level LinkedStyle binding using the localized style name. Real four-level chapter insertion/deletion, changed-page TOC and save/reopen now pass. New shared-list runner gate rejects the previously accepted split-list samples. Latest local suite: 2855 passed, 12 skipped. Windows round3 WPS and Word strict pagination/media pass, but the same Word multilevel issue remains under remote correction.
 
 Latest superseding checkpoint (d12b458): Windows round4 three-scheme tests pass in both Word and WPS (30 native checks across insertion, deletion, save/reopen and PDF), and real auto selection correctly discovers and uses WPS across COM registry views. Mac WPS Chinese/hybrid numbering is now aligned and independently reviewed, with 18 native checks and final complete representative regression passing; CUA shows home and zero document tabs. Current complete portable suite: 2874 passed, 12 skipped. Prior ledger entries are historical checkpoints. Remaining Windows work is only final representative structural pagination/TOC, final UI/postflight and complete Windows suite. Version promotion, final installation and PR readiness follow those gates; draft PR #8 is open and mergeable.
+
+Final Windows checkpoint (1114df5): final native admission passes after importing 12debd1 and independently verifying 181 artifact checksums, production source identity, representative/structural PDFs, actual synchronous UI reopen, 28 task-owned PID exits and complete Windows test coverage (2838 + 1 serial passed, 45 skipped). Original helper failures and old/uncertain probes remain recorded. 0.9.0 metadata promotion passes its RED/GREEN check; final local full-suite and promoted-source installation are in progress.
+
+Final 0.9.0 verification: 2874 passed / 12 native-gated skipped, exit 0 in 331.87 s. Isolated installation matches 105 files; real installed Word generation and conversion preserve source bytes and produce the expected PDF content. Source archive and wheel build successfully. Final incremental metadata/docs review and independent Windows evidence review find no blocker. No further production code changed after native acceptance; final candidate push and PR review-state transition remain the last administrative step.
