@@ -132,6 +132,12 @@ def _empty_application_hwnd(app, pid, deps):
 class NativeWordComposer(WriterComposer):
     """Writer methods operating exclusively on a verified owned Word document."""
 
+    def _link_heading_list_styles(self, list_template):
+        # Word clones a template for each Style.LinkToListTemplate call. Bind
+        # styles through its levels so H1-H4 retain one counter hierarchy.
+        for level in range(1, 5):
+            list_template.ListLevels(level).LinkedStyle = self._doc.Styles(-1 - level).NameLocal
+
     def reset(self):
         # The shared M5 planner fixes A4. Do not inherit a user's Letter or
         # landscape Normal template; conversion does not call this operation.
