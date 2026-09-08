@@ -1,0 +1,129 @@
+{
+  "events": [
+    {
+      "section": 1,
+      "part": "Headers",
+      "initial_link": "True",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "True",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "initial_link": "False",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "False",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 1,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 1,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "initial_link": "True",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "False",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "initial_link": "True",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "False",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 2,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 2,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "initial_link": "True",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "False",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "initial_link": "True",
+      "initial_exists": "True",
+      "exists_after_set": "True",
+      "link_after_exists": "False",
+      "link_after_empty_text": "False",
+      "link_after_empty_then_unlink": "False"
+    },
+    {
+      "section": 3,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 3,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    }
+  ],
+  "errors": [],
+  "quit_attempted": false,
+  "application": {
+    "name": "Microsoft Word",
+    "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+    "version": "12.0",
+    "documents_before": 0
+  },
+  "status": "PROBE_COMPLETE",
+  "owned_document_closed": true,
+  "documents_after": 0
+}

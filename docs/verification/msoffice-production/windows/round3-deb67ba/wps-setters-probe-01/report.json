@@ -1,0 +1,249 @@
+{
+  "events": [
+    {
+      "section": 1,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Headers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Headers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Headers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 1,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 1,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 2,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 2,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Headers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "assigned": "0",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "assigned": "-1",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "part": "Footers",
+      "assigned": "False",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "property": "RestartNumberingAtSection",
+      "assigned": "True",
+      "readback": "True"
+    },
+    {
+      "section": 3,
+      "property": "StartingNumber",
+      "assigned": "1",
+      "readback": "1"
+    },
+    {
+      "section": 3,
+      "property": "NumberStyle",
+      "assigned": "2",
+      "readback": "2"
+    }
+  ],
+  "errors": [],
+  "quit_attempted": false,
+  "application": {
+    "name": "Microsoft Word",
+    "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+    "version": "12.0",
+    "documents_before": 0
+  },
+  "status": "PROBE_COMPLETE",
+  "owned_document_closed": true,
+  "documents_after": 0
+}

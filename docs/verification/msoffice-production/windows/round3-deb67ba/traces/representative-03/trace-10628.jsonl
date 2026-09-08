@@ -1,0 +1,2 @@
+{"event": "composer_created", "word_pid": 9524, "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE", "binding": {"hwnd": 31394446, "pid": 9524, "method": "restored per-instance Caption challenge", "documents_before_add": 0}, "word_version": "16.0", "word_build": "16.0.17932", "python_pid": 10628, "monotonic": 84137.015}
+{"event": "composer_close_return", "word_pid": 9524, "closed": true, "cleanup_error": "None", "python_pid": 10628, "monotonic": 84189.359}

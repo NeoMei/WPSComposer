@@ -1,0 +1,14 @@
+{
+  "KWps.Application": {
+    "active": {
+      "name": "Microsoft Word",
+      "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+      "version": "12.0",
+      "documents": 0
+    },
+    "clsid": "{000209FF-0000-4b30-A977-D214852036FF}"
+  },
+  "Wps.Application": {
+    "active_error": "com_error(-2147221005, '无效的类字符串', None, None)"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "events": [
+    {
+      "role": "cover",
+      "restart": false,
+      "start": 0,
+      "style": 0,
+      "footer_fields": 0
+    },
+    {
+      "role": "toc",
+      "restart": true,
+      "start": 1,
+      "style": 2,
+      "footer_fields": 1
+    },
+    {
+      "role": "body",
+      "restart": true,
+      "start": 1,
+      "style": 0,
+      "footer_fields": 1
+    }
+  ],
+  "errors": [],
+  "quit_attempted": false,
+  "application": {
+    "name": "Microsoft Word",
+    "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+    "version": "12.0",
+    "documents_before": 0
+  },
+  "status": "PASS",
+  "owned_document_closed": true,
+  "documents_after": 0
+}

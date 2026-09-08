@@ -1,3 +1,3 @@
 # Windows production acceptance status
 
-Production admission: NO_GO. Independent review found incorrect section pagination in both earlier representative outputs, despite the previous runner reporting PASS. Historical API/UI evidence remains in [round 1](round1-f48497d/report.md); the reproduced pagination defect, COM setter evidence and initial fix checks are in [round 2](round2-89b39e8/report.md). Final deb67ba acceptance with the section fix is pending.
+Production admission: NO_GO pending the newly added H1-H4 structural-edit gate. Final static Word and Windows WPS public native gates, strict page numbering, sentinel and media/REF checks pass; see [round 3](round3-deb67ba/report.md). Inserted Word H1 does not yet renumber its lower levels; diagnosis is active. Earlier failures and original outputs remain in [round 1](round1-f48497d/report.md) and [round 2](round2-89b39e8/report.md).

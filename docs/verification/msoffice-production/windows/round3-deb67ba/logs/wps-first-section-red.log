@@ -1,0 +1,70 @@
+..........F                                                              [100%]
+================================== FAILURES ===================================
+_______ test_first_section_does_not_require_a_previous_header_or_footer _______
+
+    def test_first_section_does_not_require_a_previous_header_or_footer():
+        writer, footer, header = _writer()
+        class FirstSectionPart:
+            def __init__(self, native_range):
+                self.Range = native_range
+            @property
+            def LinkToPrevious(self):
+                # WPS reports True until an empty first header/footer is realized.
+                return True
+            @LinkToPrevious.setter
+            def LinkToPrevious(self, value):
+                pass
+        section = SimpleNamespace(Headers=lambda index: FirstSectionPart(header.Range),
+                                  Footers=lambda index: FirstSectionPart(footer.Range))
+        writer._doc.Sections.return_value = section
+>       writer.set_header_footer(header='', footer='', link_to_previous_header=False,
+                                 link_to_previous_footer=False)
+
+tests\test_writer_sections.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <skills.WPSComposer.scripts.writer.WriterComposer object at 0x000001F8363E9E10>
+header = '', footer = '', link_to_previous_header = False
+link_to_previous_footer = False
+
+    def set_header_footer(
+        self,
+        header=None,
+        footer=None,
+        link_to_previous_header=None,
+        link_to_previous_footer=None,
+    ):
+        """Set header/footer text for the current section."""
+        try:
+            section = self._doc.Sections(self._doc.Sections.Count)
+            if link_to_previous_header is not None:
+                section.Headers(1).LinkToPrevious = bool(link_to_previous_header)
+                if bool(section.Headers(1).LinkToPrevious) != bool(link_to_previous_header):
+                    raise RuntimeError("header link was not applied")
+            if link_to_previous_footer is not None:
+                section.Footers(1).LinkToPrevious = bool(link_to_previous_footer)
+                if bool(section.Footers(1).LinkToPrevious) != bool(link_to_previous_footer):
+                    raise RuntimeError("footer link was not applied")
+            if header is not None:
+                hdr = section.Headers(1)
+                hdr.Range.Text = str(header)
+                # Centered body header with bottom border line.
+                try:
+                    hdr.Range.ParagraphFormat.Alignment = 1
+                    hdr.Range.ParagraphFormat.Borders(-3).LineStyle = 1
+                    hdr.Range.ParagraphFormat.Borders(-3).LineWidth = 6
+                    hdr.Range.ParagraphFormat.Borders(-3).Color = 0x000000
+                except Exception:
+                    pass
+            if footer is not None:
+                section.Footers(1).Range.Text = str(footer)
+        except Exception:
+>           raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "section header/footer apply failed"
+            ) from None
+E           skills.WPSComposer.scripts.writer.NativeWriterObjectError: section header/footer apply failed
+
+skills\WPSComposer\scripts\writer.py:1344: NativeWriterObjectError
+=========================== short test summary info ===========================
+FAILED tests/test_writer_sections.py::test_first_section_does_not_require_a_previous_header_or_footer
+1 failed, 10 passed in 0.96s

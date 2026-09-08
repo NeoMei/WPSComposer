@@ -1,0 +1,459 @@
+{
+  "component": "writer",
+  "operations": [
+    {
+      "op": "writer.reset",
+      "args": {}
+    },
+    {
+      "op": "writer.configure_page",
+      "args": {
+        "marginTop": 72.0,
+        "marginBottom": 72.0,
+        "marginLeft": 85.04,
+        "marginRight": 70.87
+      }
+    },
+    {
+      "op": "writer.ensure_styles",
+      "args": {
+        "styles": [
+          {
+            "name": "Body Text",
+            "type": "paragraph",
+            "fontName": "仿宋",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 12,
+            "lineSpacing": 1.5,
+            "align": 3,
+            "indentFirst": 24
+          },
+          {
+            "name": "Title",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 22,
+            "outlineLevel": 10,
+            "align": 1,
+            "bold": true
+          },
+          {
+            "name": "Heading 1",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 16,
+            "outlineLevel": 1,
+            "bold": true,
+            "align": 1,
+            "spaceBefore": 16,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          },
+          {
+            "name": "Heading 2",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 15,
+            "outlineLevel": 2,
+            "bold": true,
+            "align": 0,
+            "spaceBefore": 14,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          },
+          {
+            "name": "Heading 3",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 15,
+            "outlineLevel": 3,
+            "bold": true,
+            "align": 0,
+            "spaceBefore": 12,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          },
+          {
+            "name": "Heading 4",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 14,
+            "outlineLevel": 4,
+            "bold": true,
+            "align": 0,
+            "spaceBefore": 10,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          },
+          {
+            "name": "Heading 5",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 14,
+            "outlineLevel": 5,
+            "bold": true,
+            "align": 0,
+            "spaceBefore": 8,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          },
+          {
+            "name": "Heading 6",
+            "type": "paragraph",
+            "fontName": "黑体",
+            "fontNameAscii": "Times New Roman",
+            "fontSize": 12,
+            "outlineLevel": 6,
+            "bold": true,
+            "align": 0,
+            "spaceBefore": 6,
+            "spaceAfter": 5,
+            "keepWithNext": true
+          }
+        ]
+      }
+    },
+    {
+      "op": "writer.configure_front_matter",
+      "args": {
+        "title": "Native transparent heading",
+        "shortTitle": "",
+        "author": "",
+        "date": "",
+        "header": "Native transparent heading",
+        "titlePage": false
+      },
+      "nodeId": "doc:front-matter"
+    },
+    {
+      "op": "writer.configure_toc_styles",
+      "args": {
+        "tocTitle": "目录",
+        "levels": 3,
+        "includeFigureIndex": false,
+        "includeTableIndex": false,
+        "figureIndexTitle": "图目录",
+        "tableIndexTitle": "表目录",
+        "minFontSizePt": {
+          "toc1": 10.5,
+          "toc2": 10.0,
+          "toc3": 10.0
+        },
+        "minSpaceBeforePt": {
+          "toc1": 0.0,
+          "toc2": 0.0,
+          "toc3": 0.0
+        },
+        "minSpaceAfterPt": {
+          "toc1": 0.0,
+          "toc2": 0.0,
+          "toc3": 0.0
+        }
+      },
+      "nodeId": "doc:toc"
+    },
+    {
+      "op": "writer.reserve_document_quality_anchor",
+      "args": {
+        "title": "生成质量提示",
+        "notices": [
+          {
+            "code": "HEADING_PREFIX_AMBIGUOUS",
+            "message": "Heading prefix does not match the selected scheme 'decimal' at level 1.",
+            "fallbackText": "HEADING_PREFIX_AMBIGUOUS",
+            "placement": "document"
+          }
+        ]
+      },
+      "nodeId": "doc:quality",
+      "failurePolicy": {
+        "mode": "fail"
+      }
+    },
+    {
+      "op": "writer.configure_section",
+      "args": {
+        "role": "front_matter",
+        "pageNumberFormat": "roman",
+        "restartPageNumbering": true,
+        "headerText": "",
+        "footerText": "",
+        "linkToPreviousHeader": false,
+        "linkToPreviousFooter": false,
+        "startPageNumber": 1
+      },
+      "nodeId": "doc:section-0:front_matter"
+    },
+    {
+      "op": "writer.insert_toc",
+      "args": {
+        "title": "目录"
+      },
+      "nodeId": "doc:toc"
+    },
+    {
+      "op": "writer.configure_section",
+      "args": {
+        "role": "body",
+        "pageNumberFormat": "arabic",
+        "restartPageNumbering": true,
+        "headerText": "Native transparent heading",
+        "footerText": "",
+        "linkToPreviousHeader": false,
+        "linkToPreviousFooter": false,
+        "startPageNumber": 1
+      },
+      "nodeId": "doc:section-1:body"
+    },
+    {
+      "op": "writer.add_paragraph",
+      "args": {
+        "text": "Native transparent heading",
+        "style": "Title"
+      },
+      "nodeId": "doc:title-display"
+    },
+    {
+      "op": "writer.add_heading",
+      "args": {
+        "text": "Numbered chapter",
+        "level": 1,
+        "bookmarkName": "wpsc_head_1ead318c9153d2c4062e0fb8",
+        "numbering": true,
+        "numberingScheme": "decimal"
+      },
+      "nodeId": "__wpsc_sec:1"
+    },
+    {
+      "op": "writer.add_captioned_figure",
+      "args": {
+        "caption": "First numbered figure",
+        "numbering": {
+          "mode": "chapter",
+          "sequenceId": "WPSC_FIG",
+          "chapterStyleLevel": 1,
+          "resetLevel": 1,
+          "prefix": "图 ",
+          "suffix": ""
+        },
+        "indexable": true,
+        "referenceable": true,
+        "widthMode": "auto",
+        "orientation": "portrait",
+        "kind": "auto",
+        "children": [
+          {
+            "nodeId": "fig:first/image:1",
+            "resourceId": "wpsc-rsrc:Q7lX14VWaZfoVvxZ",
+            "displayWidthPt": 300.0,
+            "displayHeightPt": 120.0,
+            "effectiveDpi": 96.0,
+            "mediaType": "image/png",
+            "normalizerId": "none-v1"
+          }
+        ],
+        "layout": "stack",
+        "keepWithCaption": true,
+        "bookmarkName": "wpsc_fig_d8f032c19948c3538a672079"
+      },
+      "nodeId": "fig:first",
+      "failurePolicy": {
+        "mode": "degrade",
+        "recoverableCodes": [
+          "IMAGE_INSERT_FAILED"
+        ],
+        "fallback": "figure-child-stack-then-notice"
+      }
+    },
+    {
+      "op": "writer.add_heading",
+      "args": {
+        "text": "第二章 Unnumbered boundary",
+        "level": 1,
+        "bookmarkName": "wpsc_head_c2487b182cc4424a40da5018",
+        "numbering": false,
+        "sequenceTransparent": true
+      },
+      "nodeId": "__wpsc_sec:2"
+    },
+    {
+      "op": "writer.add_captioned_figure",
+      "args": {
+        "caption": "Second numbered figure",
+        "numbering": {
+          "mode": "chapter",
+          "sequenceId": "WPSC_FIG",
+          "chapterStyleLevel": 1,
+          "resetLevel": 1,
+          "prefix": "图 ",
+          "suffix": ""
+        },
+        "indexable": true,
+        "referenceable": true,
+        "widthMode": "auto",
+        "orientation": "portrait",
+        "kind": "auto",
+        "children": [
+          {
+            "nodeId": "fig:second/image:1",
+            "resourceId": "wpsc-rsrc:Q7lX14VWaZfoVvxZ",
+            "displayWidthPt": 300.0,
+            "displayHeightPt": 120.0,
+            "effectiveDpi": 96.0,
+            "mediaType": "image/png",
+            "normalizerId": "none-v1"
+          }
+        ],
+        "layout": "stack",
+        "keepWithCaption": true,
+        "bookmarkName": "wpsc_fig_881a4bd259bd941710651be5"
+      },
+      "nodeId": "fig:second",
+      "failurePolicy": {
+        "mode": "degrade",
+        "recoverableCodes": [
+          "IMAGE_INSERT_FAILED"
+        ],
+        "fallback": "figure-child-stack-then-notice"
+      }
+    },
+    {
+      "op": "writer.add_semantic_table",
+      "args": {
+        "caption": "Measured values",
+        "numbering": {
+          "mode": "chapter",
+          "sequenceId": "WPSC_TAB",
+          "chapterStyleLevel": 1,
+          "resetLevel": 1,
+          "prefix": "表 ",
+          "suffix": ""
+        },
+        "indexable": true,
+        "referenceable": true,
+        "headers": [
+          "Signal",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Alpha",
+            "10"
+          ],
+          [
+            "Beta",
+            "20"
+          ]
+        ],
+        "alignments": [
+          "left",
+          "left"
+        ],
+        "style": "three-line",
+        "orientation": "portrait",
+        "borderSpec": {
+          "top": 1.5,
+          "bottom": 1.5,
+          "headerBottom": 0.75,
+          "left": 0.0,
+          "right": 0.0,
+          "insideHorizontal": 0.0,
+          "insideVertical": 0.0
+        },
+        "merges": [],
+        "repeatHeader": true,
+        "allowRowSplit": false,
+        "cellIndentPt": 0.0,
+        "plannedDegradation": [],
+        "keepCaptionWithFirstRow": true,
+        "bookmarkName": "wpsc_tab_2ba490c726adf6c824b37b94"
+      },
+      "nodeId": "tab:values",
+      "failurePolicy": {
+        "mode": "degrade",
+        "recoverableCodes": [
+          "TABLE_STYLE_APPLY_FAILED",
+          "TABLE_MERGE_APPLY_FAILED",
+          "TABLE_ROW_FORCED_SPLIT",
+          "TABLE_INSERT_FAILED"
+        ],
+        "fallback": "grid-then-text"
+      }
+    },
+    {
+      "op": "writer.add_cross_reference",
+      "args": {
+        "runs": [
+          {
+            "type": "text",
+            "text": "Reference pair: "
+          },
+          {
+            "type": "reference",
+            "targetNodeId": "fig:first",
+            "targetKind": "figure",
+            "bookmarkName": "wpsc_fig_d8f032c19948c3538a672079",
+            "prefix": "图 ",
+            "suffix": "",
+            "fallbackText": "引用目标未解析"
+          },
+          {
+            "type": "text",
+            "text": " and "
+          },
+          {
+            "type": "reference",
+            "targetNodeId": "fig:second",
+            "targetKind": "figure",
+            "bookmarkName": "wpsc_fig_881a4bd259bd941710651be5",
+            "prefix": "图 ",
+            "suffix": "",
+            "fallbackText": "引用目标未解析"
+          },
+          {
+            "type": "text",
+            "text": ". Table reference: "
+          },
+          {
+            "type": "reference",
+            "targetNodeId": "tab:values",
+            "targetKind": "table",
+            "bookmarkName": "wpsc_tab_2ba490c726adf6c824b37b94",
+            "prefix": "表 ",
+            "suffix": "",
+            "fallbackText": "引用目标未解析"
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      },
+      "nodeId": "__wpsc_para:2:1",
+      "failurePolicy": {
+        "mode": "degrade",
+        "recoverableCodes": [
+          "CROSS_REFERENCE_FAILED"
+        ],
+        "fallback": "inline-fallback"
+      }
+    },
+    {
+      "op": "writer.finalize_fields",
+      "args": {
+        "maxRounds": 3
+      },
+      "nodeId": "doc:finalize"
+    }
+  ],
+  "protocolVersion": 2,
+  "semanticVersion": "longform-1",
+  "resourceManifestVersion": 1,
+  "resourceManifestDigest": "sha256:3f572614eb1c134650b33a928632b16e72bfb294468bebea8af0494f944588a9"
+}
