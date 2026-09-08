@@ -1266,13 +1266,26 @@ class WriterComposer(BaseComposer):
             ) from None
 
     def set_page_numbering(self, format, start=None, restart=None):
-        """Apply page-numbering format to the current section."""
+        """Apply and verify page numbering on the current section's footer."""
         try:
             section = self._doc.Sections(self._doc.Sections.Count)
             footer = section.Footers(1)
+            if format == "none":
+                footer.Range.Text = ""
+                return
+            # Retain footer text and existing PAGE fields. Collapse one retained
+            # range: obtaining footer.Range again would return an expanded range.
+            fields = footer.Range.Fields
+            if not any(int(fields(i).Type) == 33 for i in range(1, fields.Count + 1)):
+                target = footer.Range.Duplicate
+                target.Collapse(0)
+                target.Fields.Add(target, 33)
+            footer.Range.ParagraphFormat.Alignment = 1
             page_numbers = footer.PageNumbers
+            # Late-bound Word ignores VT_I4 -1 here without raising. Python bool
+            # marshals VT_BOOL; readback also catches a host ignoring a setter.
             if restart is not None:
-                page_numbers.RestartNumberingAtSection = -1 if restart else 0
+                page_numbers.RestartNumberingAtSection = bool(restart)
             if start is not None:
                 page_numbers.StartingNumber = int(start)
             # Word/WPS NumberStyle: 0=Arabic, 1=UppercaseRoman, 2=LowercaseRoman
@@ -1284,18 +1297,17 @@ class WriterComposer(BaseComposer):
             }
             if format in style_map:
                 page_numbers.NumberStyle = style_map[format]
-            if format == "none":
-                footer.Range.Text = ""
-            else:
-                # Ensure a PAGE field exists in the primary footer.
-                try:
-                    footer.Range.ParagraphFormat.Alignment = 1
-                    footer.Range.Collapse(0)
-                    footer.Range.Fields.Add(footer.Range, 33)
-                except Exception:
-                    pass
+            if restart is not None and bool(page_numbers.RestartNumberingAtSection) != bool(restart):
+                raise RuntimeError("page number restart was not applied")
+            # Continuing sections intentionally ignore StartingNumber in Word.
+            if start is not None and restart is not False and int(page_numbers.StartingNumber) != int(start):
+                raise RuntimeError("page number start was not applied")
+            if format in style_map and int(page_numbers.NumberStyle) != style_map[format]:
+                raise RuntimeError("page number format was not applied")
         except Exception:
-            pass
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "section page numbering apply failed"
+            ) from None
 
     def set_header_footer(
         self,
@@ -1308,15 +1320,13 @@ class WriterComposer(BaseComposer):
         try:
             section = self._doc.Sections(self._doc.Sections.Count)
             if link_to_previous_header is not None:
-                try:
-                    section.Headers(1).LinkToPrevious = -1 if link_to_previous_header else 0
-                except Exception:
-                    pass
+                section.Headers(1).LinkToPrevious = bool(link_to_previous_header)
+                if bool(section.Headers(1).LinkToPrevious) != bool(link_to_previous_header):
+                    raise RuntimeError("header link was not applied")
             if link_to_previous_footer is not None:
-                try:
-                    section.Footers(1).LinkToPrevious = -1 if link_to_previous_footer else 0
-                except Exception:
-                    pass
+                section.Footers(1).LinkToPrevious = bool(link_to_previous_footer)
+                if bool(section.Footers(1).LinkToPrevious) != bool(link_to_previous_footer):
+                    raise RuntimeError("footer link was not applied")
             if header is not None:
                 hdr = section.Headers(1)
                 hdr.Range.Text = str(header)
@@ -1329,11 +1339,11 @@ class WriterComposer(BaseComposer):
                 except Exception:
                     pass
             if footer is not None:
-                footer_text = str(footer)
-                if footer_text != "":
-                    section.Footers(1).Range.Text = footer_text
+                section.Footers(1).Range.Text = str(footer)
         except Exception:
-            pass
+            raise NativeWriterObjectError(
+                "EXECUTION_ABORTED", "section header/footer apply failed"
+            ) from None
 
     def configure_section(
         self,
@@ -1356,7 +1366,9 @@ class WriterComposer(BaseComposer):
             try:
                 self.selection.InsertBreak(2)  # wdSectionBreakNextPage
             except Exception:
-                pass
+                raise NativeWriterObjectError(
+                    "EXECUTION_ABORTED", "section break insertion failed"
+                ) from None
         self._first_section_configured = True
 
         setup = self._current_section_page_setup()
@@ -1372,16 +1384,18 @@ class WriterComposer(BaseComposer):
             setup.RightMargin = margins.get("right", 90)
 
         self.set_page_role(role or "body")
-        self.set_page_numbering(
-            format=page_number_format or "continue",
-            start=start_page_number,
-            restart=restart_page_numbering,
-        )
+        # New sections initially share the previous footer. Detach and apply
+        # explicit text before adding PAGE, or a TOC pollutes the cover footer.
         self.set_header_footer(
             header=header_text,
             footer=footer_text,
             link_to_previous_header=link_to_previous_header,
             link_to_previous_footer=link_to_previous_footer,
+        )
+        self.set_page_numbering(
+            format=page_number_format or "continue",
+            start=start_page_number,
+            restart=restart_page_numbering,
         )
 
     def insert_toc_with_styles(self, title, density):
