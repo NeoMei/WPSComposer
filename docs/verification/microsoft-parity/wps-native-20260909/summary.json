@@ -114,5 +114,6 @@
     "degradation-3",
     "plain_short-1"
   ],
-  "visual_note": "Reviewed native PDF renders: TOC leaders/fields, figure, declared degradation context, Unicode/code, and performance middle page. WPS missing emoji glyph remains a documented pre-existing limitation."
+  "visual_note": "Reviewed native PDF renders: TOC leaders/fields, figure, declared degradation context, Unicode/code, and performance middle page. WPS missing emoji glyph remains a documented pre-existing limitation.",
+  "portable_evidence_path": "docs/verification/microsoft-parity/wps-native-20260909/artifacts"
 }

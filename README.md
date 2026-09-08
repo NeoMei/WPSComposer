@@ -12,7 +12,7 @@ WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支�
 
 ## 排版引擎与支持范围
 
-以下对照已发布 **0.9.0** 的公共能力。`codex/microsoft-parity` 开发分支正在增加 Microsoft Excel / PowerPoint 及三应用检查编辑支持；代表性 macOS 原生流程已通过，但完整能力清单、Windows 原生验收和最终 UI 回归尚未完成。开发状态及剩余限制见 [Microsoft 能力对齐验收状态](docs/verification/microsoft-parity/status.md)，不应把该候选分支视为全面对齐的已发布版本。
+以下对照已发布 **0.9.0** 的公共能力。`codex/microsoft-parity` 开发分支正在增加 Microsoft Excel / PowerPoint 及三应用检查编辑支持；代表性 macOS 原生流程、三应用 UI 编辑/撤销/保存/重开、WPS M5 回归及隔离安装验证已通过；完整能力清单、Windows 原生验收和最终全分支验收尚未完成。开发状态及剩余限制见 [Microsoft 能力对齐验收状态](docs/verification/microsoft-parity/status.md)，不应把该候选分支视为全面对齐的已发布版本。
 
 | 能力 | WPS Office | Microsoft Word |
 |---|---|---|

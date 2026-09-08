@@ -26,9 +26,9 @@ Files: new scripts/capability_catalog.py, tests/msoffice/test_capability_catalog
 
 Interfaces: catalog exposes capability_records() -> list[dict] with component, operation, source, WPS per-platform support, Microsoft per-platform implementation and native-verification states. Pure data must not start apps. Probe runners require --output-dir NEW_PATH, reject existing directories and write report.json, native outputs, logs, source hashes and checksums.
 
-- [ ] Enumerate public Composer methods, public pipeline operations, patch targets/verbs and format lists from the frozen source. Distinguish raw COM object access from semantic operations.
-- [ ] Write tests that fail for missing catalog coverage, accidental Mac WPS structural-edit claims and premature MS Excel/PPT support; run to RED. Example assertion: `assert not by_key[("spreadsheet", "generate")]["msoffice"]["darwin"]["verified"]` on the initial baseline.
-- [ ] Implement data-only baseline and operation coverage checks, with explicit notes for legacy direct COM fallback and shared independent PDF editing.
+- [x] Enumerate public Composer methods, public pipeline operations, patch targets/verbs and format lists from the frozen source. Distinguish raw COM object access from semantic operations.
+- [x] Write tests that fail for missing catalog coverage, accidental Mac WPS structural-edit claims and premature MS Excel/PPT support; run to RED. Example assertion: `assert not by_key[("spreadsheet", "generate")]["msoffice"]["darwin"]["verified"]` on the initial baseline.
+- [x] Implement data-only baseline and operation coverage checks, with explicit notes for legacy direct COM fallback and shared independent PDF editing.
 - [ ] Native Excel probes create two sheets, formulas, styled/merged ranges, native chart, save/reopen and PDF; inspect formula and calculated value plus actual PDF. PowerPoint probes create native slide/textbox/shape/image/table/notes, save/reopen/PDF and structural edits. Use only owned documents and preserve a synthetic unsaved sentinel.
 - [ ] Windows remote probe obtains actual EXCEL.EXE/POWERPNT.EXE identity and verifies document/instance ownership before mutation; do not copy Word-specific HWND assumptions.
 - [ ] Review baseline completeness and raw failures. Dictionary presence/COM activation is not a successful native gate. Record verified primitives needed by later tasks.
@@ -63,8 +63,8 @@ Files: document_api.py, new msoffice/document_sessions.py, macos_document_api.py
 
 Interfaces: add keyword-only engine="wps" to open_document, attach_active, inspect and edit. Bound sessions implement inspect_document, inspect_selection, apply_format_patch, apply_structural_op, save, save_copy, export_pdf, close and is_bound_to with existing snapshot/patch/report schemas. apply_ops/apply_patches use the bound engine and never redispatch.
 
-- [ ] RED routing tests: `inspect(path, engine="msoffice")` uses a Microsoft session, `edit(..., engine="wps")` remains WPS, invalid engine fails before opening, and unsupported mixed format fails without mutation.
-- [ ] Implement explicit session factory dispatch without passing engine through **options to legacy inspect methods. Preserve existing caller/test injection contracts for default WPS.
+- [x] RED routing tests: `inspect(path, engine="msoffice")` uses a Microsoft session, `edit(..., engine="wps")` remains WPS, invalid engine fails before opening, and unsupported mixed format fails without mutation.
+- [x] Implement explicit session factory dispatch without passing engine through **options to legacy inspect methods. Preserve existing caller/test injection contracts for default WPS.
 - [ ] Implement native file snapshots for Word paragraphs/tables/sections/shapes, Excel cells/ranges/sheets/charts and PowerPoint slides/shapes/tables/notes, with stable identifiers and content/type/property assertions.
 - [ ] Implement existing PATCH_GRAMMAR dimensions by family using owned staging files. Validate final file and publish only after successful batch; failed atomic operations never save partial results.
 - [ ] Native acceptance checks formatting after reopen, outside-range preservation, unchanged source and PDF output where the baseline supports it. Validate boundary, Unicode, merged-cell and grouped-shape cases rather than only empty/basic files.
@@ -96,3 +96,5 @@ Interfaces: final acceptance runner compares capability records to native eviden
 ## Execution ledger
 
 2026-09-08: Design approved by user with “可以”. Ruling: execute in the existing isolated office-description worktree, renamed to codex/microsoft-parity, preserving documentation changes. Default to subagent-driven development per required skill and prior project preference; no additional execution-choice question is needed. Native probing and candidate evidence pushes are within the approved cross-platform task. Runtime code unchanged at start.
+
+2026-09-09 checkpoint: candidate `5bad10f` is pushed with scoped native fixes, 3,731 passing tests / 12 skips, Mac all-app UI evidence, WPS M5 native regression, and a fresh isolated three-app installed public smoke. Completed checkbox items above refer to code/inventory contracts only. No whole Task 1–6 completion is claimed: Windows candidate execution, required method/property/format rows, attached lifecycle gaps, per-row certification and final branch review remain open. See `docs/verification/microsoft-parity/status.md`.

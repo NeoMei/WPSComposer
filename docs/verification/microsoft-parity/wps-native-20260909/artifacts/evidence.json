@@ -1,0 +1,212 @@
+{
+  "environment": {
+    "machine": "arm64",
+    "protocolVersion": 2,
+    "semanticVersion": "longform-1",
+    "system": "Darwin",
+    "wpsVersion": "12.1.28492"
+  },
+  "fixtures": [
+    {
+      "artifact": {
+        "name": "academic.pdf",
+        "sha256": "b1ed5164fbfebde6cdf4ed3fa6b093de1deecf292d93b75b3dcd8302d323db4d"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [],
+      "name": "academic",
+      "operationCount": 27,
+      "pageCount": 4,
+      "screenshots": [
+        "screenshots/academic-1.png",
+        "screenshots/academic-2.png",
+        "screenshots/academic-3.png",
+        "screenshots/academic-4.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.0811,
+        "export": 0.6818,
+        "generation": 29.3895,
+        "patch": 0.0,
+        "total": 30.881
+      }
+    },
+    {
+      "artifact": {
+        "name": "toc_dense.pdf",
+        "sha256": "2c200ba49b89a29810202f20c718eef9853cda0e784ac588988f6e02e2a6a5d8"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [],
+      "name": "toc_dense",
+      "operationCount": 45,
+      "pageCount": 4,
+      "screenshots": [
+        "screenshots/toc_dense-1.png",
+        "screenshots/toc_dense-2.png",
+        "screenshots/toc_dense-3.png",
+        "screenshots/toc_dense-4.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.1323,
+        "export": 0.5521,
+        "generation": 39.3272,
+        "patch": 0.0,
+        "total": 40.7208
+      }
+    },
+    {
+      "artifact": {
+        "name": "wide_objects.pdf",
+        "sha256": "3766a3271e29b8eccd12c09c055f79f16c82e012ce90b9effa7ee2a2956a67e7"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [],
+      "name": "wide_objects",
+      "operationCount": 19,
+      "pageCount": 5,
+      "screenshots": [
+        "screenshots/wide_objects-1.png",
+        "screenshots/wide_objects-2.png",
+        "screenshots/wide_objects-3.png",
+        "screenshots/wide_objects-4.png",
+        "screenshots/wide_objects-5.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.0624,
+        "export": 0.6218,
+        "generation": 29.4109,
+        "patch": 0.0,
+        "total": 30.8747
+      }
+    },
+    {
+      "artifact": {
+        "name": "degradation.pdf",
+        "sha256": "a353f3e966e4d5011f29e90bf8e86fa8da06bdbfbd1d7ba975a660743a72525e"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [
+        "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "FORMULA_MALFORMED"
+      ],
+      "name": "degradation",
+      "operationCount": 16,
+      "pageCount": 3,
+      "screenshots": [
+        "screenshots/degradation-1.png",
+        "screenshots/degradation-2.png",
+        "screenshots/degradation-3.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.0608,
+        "export": 0.4973,
+        "generation": 21.7376,
+        "patch": 0.0,
+        "total": 23.0529
+      }
+    },
+    {
+      "artifact": {
+        "name": "unicode.pdf",
+        "sha256": "98f3dbb1d305de35552bcb3df100f52849f5b1ae32bc26dde7a72603c867830d"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [],
+      "name": "unicode",
+      "operationCount": 18,
+      "pageCount": 2,
+      "screenshots": [
+        "screenshots/unicode-1.png",
+        "screenshots/unicode-2.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.0575,
+        "export": 0.8675,
+        "generation": 17.6621,
+        "patch": 0.0,
+        "total": 19.341
+      }
+    },
+    {
+      "artifact": {
+        "name": "plain_short.pdf",
+        "sha256": "65b45bd2b20fc662da2d4e75863d69ad30fb7be4aa499b140dbccf849772b587"
+      },
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "issueCodes": [],
+      "name": "plain_short",
+      "operationCount": 13,
+      "pageCount": 1,
+      "screenshots": [
+        "screenshots/plain_short-1.png"
+      ],
+      "stageSeconds": {
+        "analysis": 0.0344,
+        "export": 0.5238,
+        "generation": 12.5635,
+        "patch": 0.0,
+        "total": 13.3916
+      }
+    }
+  ],
+  "performance": {
+    "artifact": {
+      "name": "performance-60.pdf",
+      "sha256": "1c479401e0ade4e1e573e23aa77f98f08c1709b2e18c73fa23dcee5350ac22e4"
+    },
+    "counts": {
+      "analysis": 1,
+      "export": 1,
+      "generation": 1,
+      "patch": 0
+    },
+    "issueCodes": [],
+    "name": "performance-60",
+    "operationCount": 190,
+    "pageCount": 63,
+    "screenshots": [
+      "screenshots/performance-60-1.png",
+      "screenshots/performance-60-32.png",
+      "screenshots/performance-60-63.png"
+    ],
+    "stageSeconds": {
+      "analysis": 0.518,
+      "export": 0.7548,
+      "generation": 137.3184,
+      "patch": 0.0,
+      "total": 139.3994
+    }
+  },
+  "version": "M5"
+}
