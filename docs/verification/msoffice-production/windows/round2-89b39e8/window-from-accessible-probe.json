@@ -1,0 +1,51 @@
+{
+  "new_processes": {
+    "22736": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+  },
+  "application_name": "Microsoft Word",
+  "documents_before": 0,
+  "visible": false,
+  "documents_added": false,
+  "caption_or_visibility_changed": false,
+  "quit_attempted": false,
+  "bars": [
+    {
+      "bar": 1,
+      "canonical_application_iunknown_matches": true,
+      "iaccessible_query_succeeded": true,
+      "error": "OSError(22, '未指定的错误', None, -2147467259, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\probe_window_from_accessible.py\", line 33, in <module>\n    result=library.WindowFromAccessibleObject(accessible,ctypes.byref(hwnd))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"_ctypes/callproc.c\", line 1000, in GetResult\nOSError: [WinError -2147467259] 未指定的错误\n"
+    },
+    {
+      "bar": 2,
+      "canonical_application_iunknown_matches": true,
+      "iaccessible_query_succeeded": true,
+      "error": "OSError(22, '未指定的错误', None, -2147467259, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\probe_window_from_accessible.py\", line 33, in <module>\n    result=library.WindowFromAccessibleObject(accessible,ctypes.byref(hwnd))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"_ctypes/callproc.c\", line 1000, in GetResult\nOSError: [WinError -2147467259] 未指定的错误\n"
+    },
+    {
+      "bar": "Ribbon",
+      "canonical_application_iunknown_matches": true,
+      "iaccessible_query_succeeded": true,
+      "error": "OSError(22, '未指定的错误', None, -2147467259, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\probe_window_from_accessible.py\", line 33, in <module>\n    result=library.WindowFromAccessibleObject(accessible,ctypes.byref(hwnd))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"_ctypes/callproc.c\", line 1000, in GetResult\nOSError: [WinError -2147467259] 未指定的错误\n"
+    },
+    {
+      "bar": "Menu Bar",
+      "canonical_application_iunknown_matches": true,
+      "iaccessible_query_succeeded": true,
+      "error": "OSError(22, '未指定的错误', None, -2147467259, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\probe_window_from_accessible.py\", line 33, in <module>\n    result=library.WindowFromAccessibleObject(accessible,ctypes.byref(hwnd))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"_ctypes/callproc.c\", line 1000, in GetResult\nOSError: [WinError -2147467259] 未指定的错误\n"
+    },
+    {
+      "bar": "Status Bar",
+      "canonical_application_iunknown_matches": true,
+      "iaccessible_query_succeeded": true,
+      "error": "OSError(22, '未指定的错误', None, -2147467259, None)",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\probe_window_from_accessible.py\", line 33, in <module>\n    result=library.WindowFromAccessibleObject(accessible,ctypes.byref(hwnd))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"_ctypes/callproc.c\", line 1000, in GetResult\nOSError: [WinError -2147467259] 未指定的错误\n"
+    }
+  ],
+  "note": "comtypes supplies typed IAccessible pointer for oleacc; same native COM interfaces, no user-home generated wrapper module required",
+  "documents_after": 0,
+  "usable_binding_found": false
+}

@@ -1,5 +1,5 @@
 # Windows production acceptance status
 
-First candidate `f48497d` plus Windows identity fix passed the native API, saved-artifact, sentinel and real UI gates. See [round 1 report](round1-f48497d/report.md).
+First-candidate native API and UI gates passed: [round 1](round1-f48497d/report.md).
 
-New candidate `89b39e8` has been requested; its fresh native acceptance and additional numbering scenarios are pending. The full portable run has one unresolved Windows/POSIX permission assertion in a Mac-template test after dependency remediation. Production admission: NO_GO.
+New candidate 89b39e8 plus identity fix is undergoing fresh acceptance: [round 2](round2-89b39e8/report.md). The 180-second smoke timed out during conversion after successful DOCX generation. Targeted tests found five new Mac test portability failures on Windows (155 passed). Representative 600-second, sentinel and UI work continues. Production admission: NO_GO.

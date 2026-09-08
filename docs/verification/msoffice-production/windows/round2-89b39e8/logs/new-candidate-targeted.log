@@ -1,0 +1,145 @@
+....................F..F...F.FF......................................... [ 45%]
+........................................................................ [ 90%]
+................                                                         [100%]
+================================== FAILURES ===================================
+________ test_mac_auto_ignores_wps_locations_not_supported_by_runtime _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023AD6311010>
+
+    def test_mac_auto_ignores_wps_locations_not_supported_by_runtime(monkeypatch):
+        monkeypatch.setattr(engines.sys, 'platform', 'darwin')
+        monkeypatch.setattr(Path, 'is_dir', lambda p: str(p) in {'/Applications/WPS Office.app', '/Applications/Microsoft Word.app'})
+>       assert engines.resolve_engine('auto', 'writer') == 'msoffice'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\msoffice\test_engine_routing.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+engine = 'auto', component = 'writer'
+
+    def resolve_engine(engine: str, component: str) -> str:
+        validate_engine(engine)
+        if component not in _COMPONENTS:
+            raise ValueError('Unknown Office component: ' + str(component))
+        if engine == 'msoffice' and component != 'writer':
+            raise EngineUnavailableError('MS Office supports writer DOCX/PDF in this release; use engine="wps" for other components')
+        if engine != 'auto':
+            return engine
+        for candidate in ('wps', 'msoffice'):
+            if candidate == 'msoffice' and component != 'writer':
+                continue
+            if engine_executable(candidate, component):
+                return candidate
+>       raise EngineUnavailableError('No installed native engine for ' + component)
+E       skills.WPSComposer.scripts.office_engines.EngineUnavailableError: No installed native engine for writer
+
+skills\WPSComposer\scripts\office_engines.py:94: EngineUnavailableError
+_______________ test_cross_process_lock_respects_total_deadline _______________
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-165/test_cross_process_lock_respec0')
+
+    def test_cross_process_lock_respects_total_deadline(tmp_path):
+        from skills.WPSComposer.scripts.msoffice.macos_runtime import WordJobLock
+        path = tmp_path/'word.lock'
+        one, two = WordJobLock(path), WordJobLock(path)
+>       one.acquire(time.monotonic()+1)
+
+tests\msoffice\test_macos_runtime.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_runtime.WordJobLock object at 0x0000023AD6496450>
+deadline = 81656.578, recovery = False
+
+    def acquire(self, deadline: float, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: No module named 'fcntl'
+
+skills\WPSComposer\scripts\msoffice\macos_runtime.py:49: ModuleNotFoundError
+_________________ test_persistent_quarantine_blocks_next_job __________________
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-165/test_persistent_quarantine_blo0')
+
+    def test_persistent_quarantine_blocks_next_job(tmp_path):
+        from skills.WPSComposer.scripts.msoffice.macos_runtime import WordJobLock
+        lock=WordJobLock(tmp_path/'native.lock')
+        lock.quarantine('uncertain AppleEvent; diagnostic.log')
+        with pytest.raises(RuntimeError,match='quarantin'):
+>           lock.acquire(time.monotonic()+1)
+
+tests\msoffice\test_macos_runtime.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_runtime.WordJobLock object at 0x0000023AD6481890>
+deadline = 81656.656, recovery = False
+
+    def acquire(self, deadline: float, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: No module named 'fcntl'
+
+skills\WPSComposer\scripts\msoffice\macos_runtime.py:49: ModuleNotFoundError
+_______ test_timeout_preserves_partial_diagnostics_and_blocks_next_job ________
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-165/test_timeout_preserves_partial0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023AD65A4890>
+
+    def test_timeout_preserves_partial_diagnostics_and_blocks_next_job(tmp_path, monkeypatch):
+        import subprocess
+        from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
+        from skills.WPSComposer.scripts.msoffice.macos_runtime import MacWordAdapter, WordJobLock
+        adapter=MacWordAdapter(build_longform_generation(''))
+        adapter.staging_root=tmp_path;adapter.lock=WordJobLock(tmp_path/'word.lock')
+        monkeypatch.setattr(adapter,'_ensure_started',lambda deadline: None)
+        def timeout(*args,**kwargs):
+            raise subprocess.TimeoutExpired(args[0],2,output=b'partial output',stderr=b'partial diagnostic')
+        monkeypatch.setattr(subprocess,'run',timeout)
+        with pytest.raises(subprocess.TimeoutExpired):
+            adapter._run('native source',time.monotonic()+30)
+        assert next(tmp_path.glob('*.log')).read_text() == 'partial diagnostic\npartial output'
+        assert adapter.lock.quarantine_path.is_file()
+        with pytest.raises(RuntimeError,match='quarantin'):
+>           WordJobLock(tmp_path/'word.lock').acquire(time.monotonic()+1)
+
+tests\msoffice\test_macos_runtime.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_runtime.WordJobLock object at 0x0000023AD65A6D50>
+deadline = 81656.718, recovery = False
+
+    def acquire(self, deadline: float, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: No module named 'fcntl'
+
+skills\WPSComposer\scripts\msoffice\macos_runtime.py:49: ModuleNotFoundError
+_____________ test_recovery_without_marker_returns_without_launch _____________
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-165/test_recovery_without_marker_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023AD63104D0>
+
+    def test_recovery_without_marker_returns_without_launch(tmp_path, monkeypatch):
+        import subprocess
+        from skills.WPSComposer.scripts.msoffice.macos_runtime import recover_quarantine
+        monkeypatch.setattr(subprocess,'run',lambda *a,**kw: pytest.fail('unnecessary native launch'))
+>       assert recover_quarantine(lock_path=tmp_path/'word.lock') is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\msoffice\test_macos_runtime.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+skills\WPSComposer\scripts\msoffice\macos_runtime.py:222: in recover_quarantine
+    lock.acquire(deadline, recovery=True)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_runtime.WordJobLock object at 0x0000023AD6312510>
+deadline = 81685.75, recovery = True
+
+    def acquire(self, deadline: float, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: No module named 'fcntl'
+
+skills\WPSComposer\scripts\msoffice\macos_runtime.py:49: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/msoffice/test_engine_routing.py::test_mac_auto_ignores_wps_locations_not_supported_by_runtime
+FAILED tests/msoffice/test_macos_runtime.py::test_cross_process_lock_respects_total_deadline
+FAILED tests/msoffice/test_macos_runtime.py::test_persistent_quarantine_blocks_next_job
+FAILED tests/msoffice/test_macos_runtime.py::test_timeout_preserves_partial_diagnostics_and_blocks_next_job
+FAILED tests/msoffice/test_macos_runtime.py::test_recovery_without_marker_returns_without_launch
+5 failed, 155 passed in 10.48s
