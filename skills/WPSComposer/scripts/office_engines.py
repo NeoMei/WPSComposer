@@ -37,22 +37,25 @@ def validate_timeout(timeout: float) -> float:
 
 
 def _registered_executable(progids, allowed_names):
-    # Query the current Python bitness, the same view COM dispatch will use.
+    # Local COM servers can run out of process across bitness. Prefer the
+    # default view, but also inspect alternate registrations without activation.
     import winreg
-    for progid in progids:
-        try:
-            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, progid + r'\CLSID') as key:
-                clsid = winreg.QueryValueEx(key, None)[0]
-            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, 'CLSID\\' + clsid + r'\LocalServer32') as key:
-                command = winreg.QueryValueEx(key, None)[0]
-            command = os.path.expandvars(command).strip()
-            match = re.match(r'^"([^"]+\.exe)"|^(.+?\.exe)(?:\s|$)', command, re.I)
-            if match:
-                path = Path(match.group(1) or match.group(2))
-                if path.name.lower() in allowed_names and path.is_file():
-                    return str(path)
-        except OSError:
-            continue
+    for view in (0, winreg.KEY_WOW64_32KEY, winreg.KEY_WOW64_64KEY):
+        for progid in progids:
+            try:
+                access = winreg.KEY_READ | view
+                with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, progid + r'\CLSID', 0, access) as key:
+                    clsid = winreg.QueryValueEx(key, None)[0]
+                with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, 'CLSID\\' + clsid + r'\LocalServer32', 0, access) as key:
+                    command = winreg.QueryValueEx(key, None)[0]
+                command = os.path.expandvars(command).strip()
+                match = re.match(r'^"([^"]+\.exe)"|^(.+?\.exe)(?:\s|$)', command, re.I)
+                if match:
+                    path = Path(match.group(1) or match.group(2))
+                    if path.name.lower() in allowed_names and path.is_file():
+                        return str(path)
+            except OSError:
+                continue
     return None
 
 
