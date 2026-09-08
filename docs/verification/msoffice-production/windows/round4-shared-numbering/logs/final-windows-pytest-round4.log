@@ -1,0 +1,118 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  7%]
+.............................................ss..s...................... [  9%]
+........................................................................ [ 12%]
+.......................................................................s [ 14%]
+s....................................................................... [ 17%]
+.............................................ssssss..................... [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+............................................................s........... [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 37%]
+..............................................................sss....... [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 54%]
+....................................s................................... [ 57%]
+................................................................s....... [ 59%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+..................................................s..................... [ 67%]
+...................................................................ss... [ 69%]
+............................................s......s..s.sssssssss....... [ 72%]
+.......s..ss....s...............s.........................s...s.ss...... [ 74%]
+.................................................ss..................... [ 77%]
+................................................................s......s [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+============================== warnings summary ===============================
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:52: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    actual_pixels = list(actual.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:53: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected_pixels = list(expected.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16L-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16B->]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I-None]
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:430: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == samples
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:448: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected = list(ImageOps.exif_transpose(decoded_source).getdata())
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:452: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == expected
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\longform\test_resources.py:209: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:229: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:284: chmod 0o000 does not revoke owner read access on Windows
+SKIPPED [1] tests\longform_m0\test_host_checks.py:80: POSIX file-mode assertions
+SKIPPED [1] tests\longform_m0\test_host_checks.py:91: POSIX file-mode assertions
+SKIPPED [6] tests\longform_m2\test_acceptance_m2.py:679: real-WPS acceptance requires macOS
+SKIPPED [1] tests\longform_m3\test_macos_real_wps_m3.py:18: set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance
+SKIPPED [1] tests\longform_m4\test_macos_real_wps_m4.py:41: M4 acceptance requires a real macOS WPS run
+SKIPPED [1] tests\longform_m4\test_macos_real_wps_m4.py:70: M4 acceptance requires a real macOS WPS run
+SKIPPED [1] tests\longform_m4\test_macos_real_wps_m4.py:82: M4 acceptance requires a real macOS WPS run
+SKIPPED [1] tests\longform_m5\test_macos_real_wps_m5.py:19: set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance
+SKIPPED [1] tests\longform_m5\test_windows_real_wps_m5.py:16: set WPSCOMPOSER_RUN_WINDOWS_M5=1 for native Windows WPS acceptance
+SKIPPED [1] tests\macos_probe\test_deadline.py:41: runtime lock uses POSIX-only fcntl
+SKIPPED [1] tests\macos_probe\test_longform_evidence.py:125: reads the installed macOS WPS app bundle for wpsVersion
+SKIPPED [1] tests\macos_probe\test_longform_evidence.py:170: reads the installed macOS WPS app bundle for wpsVersion
+SKIPPED [1] tests\macos_probe\test_runtime.py:127: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:272: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:301: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:321: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:329: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:341: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:365: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:391: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:422: macOS probe uses POSIX-only runtime facilities
+SKIPPED [2] tests\macos_probe\test_runtime.py:432: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:464: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:704: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:776: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:838: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_runtime.py:975: macOS probe uses POSIX-only runtime facilities
+SKIPPED [1] tests\macos_probe\test_templates.py:81: POSIX file-mode assertions
+SKIPPED [1] tests\msoffice\test_macos_runtime.py:14: Native macOS/POSIX job locking is unavailable on Windows
+SKIPPED [1] tests\msoffice\test_macos_runtime.py:66: Native macOS/POSIX job locking is unavailable on Windows
+SKIPPED [1] tests\msoffice\test_macos_runtime.py:91: Native macOS/POSIX job locking is unavailable on Windows
+SKIPPED [1] tests\msoffice\test_macos_runtime.py:111: Native macOS/POSIX job locking is unavailable on Windows
+SKIPPED [2] tests\msoffice\test_public_errors.py:32: This macOS recovery test acquires a real POSIX job lock
+SKIPPED [1] tests\test_artifact_transport.py:611: /dev/fd fd-growth check is POSIX-only
+SKIPPED [1] tests\test_artifact_transport.py:739: /dev/fd fd-growth check is POSIX-only
+2838 passed, 45 skipped, 1 deselected, 20 warnings in 702.99s (0:11:42)

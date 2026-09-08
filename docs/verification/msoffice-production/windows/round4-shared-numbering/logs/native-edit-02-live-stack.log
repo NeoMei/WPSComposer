@@ -1,0 +1,8 @@
+Process 29252: C:\Users\1\AppData\Local\Programs\Python\Python311\python.exe build/msoffice-production/native_edit_gate_v2.py
+Python v3.11.9 (C:\Users\1\AppData\Local\Programs\Python\Python311\python.exe)
+
+Thread 30284 (idle): "MainThread"
+    Execute (<COMObject <unknown>>:5)
+    heading (native_edit_gate_v2.py:17)
+    snapshot (native_edit_gate_v2.py:33)
+    <module> (native_edit_gate_v2.py:56)

@@ -1,0 +1,750 @@
+{
+  "head": "2788984ddb2f054e9fbd24b5b8bfc35222bfb85d",
+  "checks": {
+    "all_recorded_success_or_cancelled_owned_word_pids_absent": true,
+    "preexisting_registered_word_9252_still_present": true
+  },
+  "owned_pids": [
+    368,
+    2332,
+    2932,
+    3688,
+    7892,
+    8188,
+    8892,
+    9524,
+    11084,
+    12564,
+    15080,
+    15320,
+    15928,
+    15960,
+    18120,
+    19608,
+    20416,
+    20588,
+    21540,
+    22596,
+    23856,
+    24420,
+    25312,
+    26300,
+    29496,
+    29768,
+    29848,
+    30192
+  ],
+  "owned_still_running": [],
+  "preserved_process_observations": {
+    "9252": "present",
+    "19732": "present",
+    "14432": "present",
+    "20960": "present",
+    "15152": "present",
+    "26492": "present",
+    "14848": "present",
+    "6332": "present",
+    "22736": "present",
+    "23588": "present"
+  },
+  "notes": [
+    "No retained or user Word process was killed or Quit by this postflight.",
+    "native-edit-02 was cancelled through its exact ROT document, verified PID 23856, then zero-doc dedicated application Quit; raw interrupted helper error is retained.",
+    "Old empty probes and the earlier uncertain timeout host are reported separately, never classified as cleaned up.",
+    "User-document content isolation is the prior sentinel-03 native observation; this final process read does not re-read user document text."
+  ],
+  "status": "PASS",
+  "events": [
+    {
+      "label": "smoke-05",
+      "event": "composer_created",
+      "word_pid": 12564,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 6164092,
+        "pid": 12564,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 1832,
+      "monotonic": 83580.343
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_close_return",
+      "word_pid": 12564,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 1832,
+      "monotonic": 83630.609
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_created",
+      "word_pid": 15080,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 52628308,
+        "pid": 15080,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 24340,
+      "monotonic": 83704.75
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_close_return",
+      "word_pid": 15080,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 24340,
+      "monotonic": 83754.859
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_created",
+      "word_pid": 29496,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 6950558,
+        "pid": 29496,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29060,
+      "monotonic": 83456.859
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_close_return",
+      "word_pid": 29496,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 29060,
+      "monotonic": 83519.265
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_created",
+      "word_pid": 25312,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 27002908,
+        "pid": 25312,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 30652,
+      "monotonic": 83635.453
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_close_return",
+      "word_pid": 25312,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 30652,
+      "monotonic": 83698.921
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_created",
+      "word_pid": 22596,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 26217278,
+        "pid": 22596,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 4992,
+      "monotonic": 83525.25
+    },
+    {
+      "label": "smoke-05",
+      "event": "composer_close_return",
+      "word_pid": 22596,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 4992,
+      "monotonic": 83575.156
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_created",
+      "word_pid": 9524,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 31394446,
+        "pid": 9524,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 10628,
+      "monotonic": 84137.015
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_close_return",
+      "word_pid": 9524,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 10628,
+      "monotonic": 84189.359
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_created",
+      "word_pid": 20588,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 5967494,
+        "pid": 20588,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 12464,
+      "monotonic": 83981.281
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_close_return",
+      "word_pid": 20588,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 12464,
+      "monotonic": 84033.718
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_created",
+      "word_pid": 368,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 1445442,
+        "pid": 368,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 26112,
+      "monotonic": 83920.578
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_close_return",
+      "word_pid": 368,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 26112,
+      "monotonic": 83974.078
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_created",
+      "word_pid": 11084,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 17172794,
+        "pid": 11084,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 26248,
+      "monotonic": 83830.468
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_close_return",
+      "word_pid": 11084,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 26248,
+      "monotonic": 83915.296
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_created",
+      "word_pid": 29848,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 30477896,
+        "pid": 29848,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 30592,
+      "monotonic": 84041.375
+    },
+    {
+      "label": "representative-03",
+      "event": "composer_close_return",
+      "word_pid": 29848,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 30592,
+      "monotonic": 84130.859
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 24420,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 2362902,
+        "pid": 24420,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 11724,
+      "monotonic": 84356.203
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 24420,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 11724,
+      "monotonic": 84410.39
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 21540,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 135314,
+        "pid": 21540,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 19180,
+      "monotonic": 84559.093
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 21540,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 19180,
+      "monotonic": 84561.343
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 15928,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 266352,
+        "pid": 15928,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 23868,
+      "monotonic": 84618.906
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 15928,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 23868,
+      "monotonic": 84670.453
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 15960,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 200920,
+        "pid": 15960,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 24360,
+      "monotonic": 84565.578
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 15960,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 24360,
+      "monotonic": 84614.593
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 3688,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 1708222,
+        "pid": 3688,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29112,
+      "monotonic": 84499.093
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 3688,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 29112,
+      "monotonic": 84554.343
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_created",
+      "word_pid": 15320,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 4656844,
+        "pid": 15320,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 30404,
+      "monotonic": 84416.5
+    },
+    {
+      "label": "numbering-03",
+      "event": "composer_close_return",
+      "word_pid": 15320,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 30404,
+      "monotonic": 84490.859
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_created",
+      "word_pid": 2932,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 530186,
+        "pid": 2932,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 15900,
+      "monotonic": 87337.781
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_close_return",
+      "word_pid": 2932,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 15900,
+      "monotonic": 87389.812
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_created",
+      "word_pid": 19608,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 922382,
+        "pid": 19608,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 24740,
+      "monotonic": 87238.468
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_close_return",
+      "word_pid": 19608,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 24740,
+      "monotonic": 87332.453
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_created",
+      "word_pid": 7892,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 202644,
+        "pid": 7892,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29408,
+      "monotonic": 87117.953
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_close_return",
+      "word_pid": 7892,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 29408,
+      "monotonic": 87170.953
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_created",
+      "word_pid": 8892,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 463700,
+        "pid": 8892,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 5176,
+      "monotonic": 87019.015
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_close_return",
+      "word_pid": 8892,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 5176,
+      "monotonic": 87111.343
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_created",
+      "word_pid": 26300,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 529222,
+        "pid": 26300,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 8424,
+      "monotonic": 87178.765
+    },
+    {
+      "label": "representative-04",
+      "event": "composer_close_return",
+      "word_pid": 26300,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 8424,
+      "monotonic": 87230.265
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_created",
+      "word_pid": 20416,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 725704,
+        "pid": 20416,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 8264,
+      "monotonic": 86670.406
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_close_return",
+      "word_pid": 20416,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 8264,
+      "monotonic": 86734.796
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_created",
+      "word_pid": 2332,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 856788,
+        "pid": 2332,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 8264,
+      "monotonic": 86737.906
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_close_return",
+      "word_pid": 2332,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 8264,
+      "monotonic": 86799.812
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_created",
+      "word_pid": 29768,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 332510,
+        "pid": 29768,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 8264,
+      "monotonic": 86806.468
+    },
+    {
+      "label": "schemes-word-01",
+      "event": "composer_close_return",
+      "word_pid": 29768,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 8264,
+      "monotonic": 86867.734
+    },
+    {
+      "label": "native-edit-01",
+      "event": "composer_created",
+      "word_pid": 18120,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 463036,
+        "pid": 18120,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29836,
+      "monotonic": 85214.156
+    },
+    {
+      "label": "native-edit-01",
+      "event": "composer_close_return",
+      "word_pid": 18120,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 29836,
+      "monotonic": 85409.75
+    },
+    {
+      "label": "native-edit-02",
+      "event": "composer_created",
+      "word_pid": 23856,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 725830,
+        "pid": 23856,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29252,
+      "monotonic": 87430.421
+    },
+    {
+      "label": "native-edit-02",
+      "event": "composer_close_return",
+      "word_pid": 23856,
+      "closed": false,
+      "cleanup_error": "com_error(-2147417848, '被调用的对象已与其客户端断开连接。', None, None)",
+      "python_pid": 29252,
+      "monotonic": 87732.14
+    },
+    {
+      "label": "native-edit-03",
+      "event": "composer_created",
+      "word_pid": 30192,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 856812,
+        "pid": 30192,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 29756,
+      "monotonic": 87755.234
+    },
+    {
+      "label": "linked-style-word-01",
+      "event": "composer_created",
+      "word_pid": 8188,
+      "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      "binding": {
+        "hwnd": 332270,
+        "pid": 8188,
+        "method": "restored per-instance Caption challenge",
+        "documents_before_add": 0
+      },
+      "word_version": "16.0",
+      "word_build": "16.0.17932",
+      "python_pid": 12748,
+      "monotonic": 85804.625
+    },
+    {
+      "label": "linked-style-word-01",
+      "event": "composer_close_return",
+      "word_pid": 8188,
+      "closed": true,
+      "cleanup_error": "None",
+      "python_pid": 12748,
+      "monotonic": 85814.015
+    }
+  ]
+}

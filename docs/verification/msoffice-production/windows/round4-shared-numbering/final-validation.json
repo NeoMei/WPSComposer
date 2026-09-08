@@ -1,0 +1,84 @@
+{
+  "status": "PASS",
+  "scope": "Windows native production acceptance",
+  "checks": {
+    "public_three_routes": true,
+    "representative_structural_checks": true,
+    "actual_ui_reopen": true,
+    "owned_process_cleanup": true
+  },
+  "structural_checks": {
+    "final_source_word_section_footers": true,
+    "insertion_automatically_renumbers_h1_through_h4": true,
+    "toc_includes_inserted_heading_and_updated_number": true,
+    "deletion_restores_original_numbering": true,
+    "toc_removes_deleted_heading": true,
+    "chapter_moves_one_physical_and_logical_page": true,
+    "updated_toc_matches_native_adjusted_page": true,
+    "save_reopen_retains_numbering_and_toc": true,
+    "pdf_chapter_on_expected_physical_page": true,
+    "pdf_toc_matches_logical_chapter_page": true,
+    "pdf_footer_sequence_preserved": true,
+    "original_source_bytes_unchanged": true
+  },
+  "ui_checks": {
+    "ui_reopen_uses_original_owned_word_pid": true,
+    "ui_reopen_preserves_all_six_heading_numbers_and_pages": true,
+    "ui_reopen_preserves_updated_toc": true,
+    "ui_reopen_preserves_document_text": true,
+    "ui_reopen_preserves_saved_file_bytes": true
+  },
+  "raw_monolithic_helper_status": "FAIL",
+  "resolved_helper_failures": [
+    "native-edit-02 Find repeated a TOC-field match; cancelled only verified PID 23856 and reran body-scoped Find.",
+    "native-edit-03 asynchronous UI observer raced a modal/close after all 12 structural checks passed; synchronous ui_reopen_observer.py independently validated actual UI reopen and zero-document Quit. Raw FAIL is preserved."
+  ],
+  "full_windows_pytest": {
+    "passed": 2838,
+    "skipped": 45,
+    "deselected": 1,
+    "seconds": 702.99,
+    "warnings": 20,
+    "source_commit": "09d400f"
+  },
+  "serial_deselected_test": {
+    "passed": 1,
+    "seconds": 4.68
+  },
+  "post_mac_only_merge_tests": {
+    "macos_executor": 24,
+    "sealed_manifest": 1
+  },
+  "owned_word_pids_absent": [
+    368,
+    2332,
+    2932,
+    3688,
+    7892,
+    8188,
+    8892,
+    9524,
+    11084,
+    12564,
+    15080,
+    15320,
+    15928,
+    15960,
+    18120,
+    19608,
+    20416,
+    20588,
+    21540,
+    22596,
+    23856,
+    24420,
+    25312,
+    26300,
+    29496,
+    29768,
+    29848,
+    30192
+  ],
+  "source_head": "b3368baecf32aafbf247809bedd8a61b7680fb5c",
+  "visual_review": "Five-page representative and six-page structurally edited PDF contact sheets reviewed; actual UI shows the numbered chapter on physical page four."
+}

@@ -1,0 +1,58 @@
+{
+  "closed_window_pid": 30192,
+  "disk_sha256_before_ui_reopen": "c3afe6383dc03f3e96097a25b05061aaa6e0885d5c290b93b35f69dc7babfdaa",
+  "note": "UI close observed on empty Word canvas after explicit Ctrl+S. Earlier live snapshot helper raced with modal/close; original failure retained. Reopen checked by separate synchronous observer.",
+  "pid": 30192,
+  "documents_after_reopen": 1,
+  "headings_after_ui_reopen": [
+    {
+      "text": "一级章节验收",
+      "number": "1",
+      "logical_page": 2,
+      "physical_page": 4
+    },
+    {
+      "text": "二级章节验收",
+      "number": "1.1",
+      "logical_page": 2,
+      "physical_page": 4
+    },
+    {
+      "text": "三级章节验收",
+      "number": "1.1.1",
+      "logical_page": 2,
+      "physical_page": 4
+    },
+    {
+      "text": "四级章节验收",
+      "number": "1.1.1.1",
+      "logical_page": 2,
+      "physical_page": 4
+    },
+    {
+      "text": "五级章节验收",
+      "number": "",
+      "logical_page": 2,
+      "physical_page": 4
+    },
+    {
+      "text": "六级章节验收",
+      "number": "",
+      "logical_page": 2,
+      "physical_page": 4
+    }
+  ],
+  "toc_after_ui_reopen": "1\t一级章节验收\t2\r1.1\t二级章节验收\t2\r1.1.1\t三级章节验收\t2\r",
+  "text_sha256_after_ui_reopen": "31ace46732ec0f0f5acaad18d1595fdf8a668eabb9bfd02de87cf0bc6b3dbeb1",
+  "disk_sha256_after_ui_reopen": "c3afe6383dc03f3e96097a25b05061aaa6e0885d5c290b93b35f69dc7babfdaa",
+  "checks": {
+    "ui_reopen_uses_original_owned_word_pid": true,
+    "ui_reopen_preserves_all_six_heading_numbers_and_pages": true,
+    "ui_reopen_preserves_updated_toc": true,
+    "ui_reopen_preserves_document_text": true,
+    "ui_reopen_preserves_saved_file_bytes": true
+  },
+  "status": "PASS",
+  "documents_after_final_ui_close": 0,
+  "owned_application_quit_requested": true
+}

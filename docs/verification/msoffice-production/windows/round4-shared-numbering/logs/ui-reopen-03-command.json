@@ -1,0 +1,11 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "build/msoffice-production/ui_reopen_observer.py"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 0,
+  "started_unix": 1788867132.8619163,
+  "ended_unix": 1788867255.9440186,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}

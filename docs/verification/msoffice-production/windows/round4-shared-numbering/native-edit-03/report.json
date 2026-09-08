@@ -1,0 +1,279 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "final_source_word_section_footers": true,
+    "insertion_automatically_renumbers_h1_through_h4": true,
+    "toc_includes_inserted_heading_and_updated_number": true,
+    "deletion_restores_original_numbering": true,
+    "toc_removes_deleted_heading": true,
+    "chapter_moves_one_physical_and_logical_page": true,
+    "updated_toc_matches_native_adjusted_page": true,
+    "save_reopen_retains_numbering_and_toc": true,
+    "pdf_chapter_on_expected_physical_page": true,
+    "pdf_toc_matches_logical_chapter_page": true,
+    "pdf_footer_sequence_preserved": true,
+    "original_source_bytes_unchanged": true
+  },
+  "snapshots": [
+    {
+      "label": "before",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t1\r1.1\t二级章节验收\t1\r1.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    },
+    {
+      "label": "inserted_heading",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "2",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "2.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "2.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "2.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "临时新增编号章节",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t临时新增编号章节\t1\r2\t一级章节验收\t1\r2.1\t二级章节验收\t1\r2.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    },
+    {
+      "label": "deleted_heading",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 1,
+          "physical_page": 3
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t1\r1.1\t二级章节验收\t1\r1.1.1\t三级章节验收\t1\r",
+      "sections": 3,
+      "pages": 5
+    },
+    {
+      "label": "chapter_moved_to_next_page",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 2,
+          "physical_page": 4
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t2\r1.1\t二级章节验收\t2\r1.1.1\t三级章节验收\t2\r",
+      "sections": 3,
+      "pages": 6
+    },
+    {
+      "label": "saved_and_reopened",
+      "headings": [
+        {
+          "text": "一级章节验收",
+          "number": "1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "二级章节验收",
+          "number": "1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "三级章节验收",
+          "number": "1.1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "四级章节验收",
+          "number": "1.1.1.1",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "五级章节验收",
+          "number": "",
+          "logical_page": 2,
+          "physical_page": 4
+        },
+        {
+          "text": "六级章节验收",
+          "number": "",
+          "logical_page": 2,
+          "physical_page": 4
+        }
+      ],
+      "toc_text": "1\t一级章节验收\t2\r1.1\t二级章节验收\t2\r1.1.1\t三级章节验收\t2\r",
+      "sections": 3,
+      "pages": 6
+    }
+  ],
+  "ui_snapshots": [
+    {
+      "label": "before_ui_close",
+      "documents_count": 1,
+      "time_unix": 1788866719.166276,
+      "saved": false,
+      "text_sha256": "31ace46732ec0f0f5acaad18d1595fdf8a668eabb9bfd02de87cf0bc6b3dbeb1",
+      "toc_text": "1\t一级章节验收\t2\r1.1\t二级章节验收\t2\r1.1.1\t三级章节验收\t2\r",
+      "disk_sha256": "c9fde559191421d54d0ac7d460a88b26b605ac581ee7b94a0c63481a071034ab"
+    }
+  ],
+  "source_sha256": "64ef4acfa301ceb130e03b7f97c87c8eaa488d98333366d488f42e0b89539018",
+  "pid": 30192,
+  "binding": {
+    "hwnd": 856812,
+    "pid": 30192,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "section_probe_footers": [
+    "",
+    "i",
+    "1"
+  ],
+  "pdf_footer_texts": [
+    "",
+    "i",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "error": "AttributeError('Item.FullName')",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\native_edit_gate_v3.py\", line 108, in <module>\n    doc=c.app.Documents.Item(1);assert Path(doc.FullName).resolve()==final\n                                            ^^^^^^^^^^^^\n  File \"C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: Item.FullName\n"
+}

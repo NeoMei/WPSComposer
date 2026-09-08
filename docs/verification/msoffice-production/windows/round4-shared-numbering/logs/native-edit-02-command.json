@@ -1,0 +1,11 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "build/msoffice-production/native_edit_gate_v2.py"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 0,
+  "started_unix": 1788866249.0864437,
+  "ended_unix": 1788866555.3259008,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}
