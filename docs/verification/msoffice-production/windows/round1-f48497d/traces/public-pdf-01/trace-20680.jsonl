@@ -1,0 +1,2 @@
+{"event": "worker_return", "operation": "C:\\Users\\1\\AppData\\Local\\Temp\\wpscomposer-native-word-jeb88j25\\operation-e47dc192998842de8778c0f0ef6fe184", "action": "execute", "result_returned": true, "python_pid": 20680, "monotonic": 79693.75}
+{"event": "worker_return", "operation": "C:\\Users\\1\\AppData\\Local\\Temp\\wpscomposer-native-word-jeb88j25\\operation-771885a8fd69482a961de43e7fff78a9", "action": "export", "result_returned": true, "python_pid": 20680, "monotonic": 79747.718}

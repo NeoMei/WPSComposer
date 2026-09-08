@@ -1,0 +1,3 @@
+{"event": "worker_return", "operation": "C:\\Users\\1\\AppData\\Local\\Temp\\wpscomposer-native-word-hmqjceir\\operation-8bd718c7cc9648bb8417d0bae5fe1e0f", "action": "execute", "result_returned": true, "python_pid": 20912, "monotonic": 79291.25}
+{"event": "worker_return", "operation": "C:\\Users\\1\\AppData\\Local\\Temp\\wpscomposer-native-word-hmqjceir\\operation-50c1a7cfec07427990c36434fe53943f", "action": "export", "result_returned": true, "python_pid": 20912, "monotonic": 79343.281}
+{"event": "worker_return", "operation": "C:\\Users\\1\\AppData\\Local\\Temp\\wpscomposer-native-word-t3oeb_ga\\operation-780fd8bf37cc48a99a59be2e021e70c3", "action": "export", "result_returned": true, "python_pid": 20912, "monotonic": 79395.078}

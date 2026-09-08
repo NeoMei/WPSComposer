@@ -1,0 +1,106 @@
+{
+  "source_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5",
+  "copy_path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+  "snapshots": [
+    {
+      "label": "opened",
+      "documents_count": 1,
+      "time_unix": 1788858680.5816505,
+      "name": "production-ui-edit.docx",
+      "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+      "saved": true,
+      "text_sha256": "0a1243273aca5cb3458582b86ec28bed4287a8ccc99a3e12b34d564bed300da0",
+      "characters": 975,
+      "marker_present": false,
+      "table_count": 1,
+      "toc_count": 1,
+      "fields_count": 4,
+      "hwnd": 723604,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "inserted",
+      "documents_count": 1,
+      "time_unix": 1788858805.4151297,
+      "name": "production-ui-edit.docx",
+      "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+      "saved": false,
+      "text_sha256": "e3d658f4d69cd8e012fbb8e586cf5a63910cd78b9d8f36f8ced51d13fbb3bd63",
+      "characters": 999,
+      "marker_present": true,
+      "table_count": 1,
+      "toc_count": 1,
+      "fields_count": 4,
+      "hwnd": 723604,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "undone",
+      "documents_count": 1,
+      "time_unix": 1788858872.282341,
+      "name": "production-ui-edit.docx",
+      "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+      "saved": true,
+      "text_sha256": "0a1243273aca5cb3458582b86ec28bed4287a8ccc99a3e12b34d564bed300da0",
+      "characters": 975,
+      "marker_present": false,
+      "table_count": 1,
+      "toc_count": 1,
+      "fields_count": 4,
+      "hwnd": 723604,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "saved",
+      "documents_count": 1,
+      "time_unix": 1788858894.7560704,
+      "name": "production-ui-edit.docx",
+      "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+      "saved": true,
+      "text_sha256": "0a1243273aca5cb3458582b86ec28bed4287a8ccc99a3e12b34d564bed300da0",
+      "characters": 975,
+      "marker_present": false,
+      "table_count": 1,
+      "toc_count": 1,
+      "fields_count": 4,
+      "hwnd": 723604,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "closed",
+      "documents_count": 0,
+      "time_unix": 1788858916.976788,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "reopened",
+      "documents_count": 1,
+      "time_unix": 1788859121.3554823,
+      "name": "production-ui-edit.docx",
+      "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\ui-01\\production-ui-edit.docx",
+      "saved": true,
+      "text_sha256": "0a1243273aca5cb3458582b86ec28bed4287a8ccc99a3e12b34d564bed300da0",
+      "characters": 975,
+      "marker_present": false,
+      "table_count": 1,
+      "toc_count": 1,
+      "fields_count": 4,
+      "hwnd": 723604,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    },
+    {
+      "label": "final_closed",
+      "documents_count": 0,
+      "time_unix": 1788859166.6919305,
+      "disk_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5"
+    }
+  ],
+  "binding": {
+    "hwnd": 723604,
+    "pid": 21576,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "pid": 21576,
+  "owned_application_closed": true
+}

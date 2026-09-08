@@ -1,0 +1,4 @@
+................................s...............................         [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\msoffice\test_production_runner.py:110: could not import 'reportlab.pdfgen.canvas': No module named 'reportlab'
+63 passed, 1 skipped in 4.76s
