@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "status": "FAIL",
+  "engine": "msoffice",
+  "checks": {
+    "unsaved_sentinel_preserved_and_closed": true
+  },
+  "targets": {},
+  "method_to_checks": {
+    "add_table": [
+      "reopen_table",
+      "reopen_cell_utf16_format",
+      "ooxml_tables_merges"
+    ],
+    "add_merged_table": [
+      "ooxml_tables_merges"
+    ],
+    "add_image": [
+      "reopen_inline_width",
+      "reopen_inline_height",
+      "reopen_inline_bounded_aspect",
+      "reopen_inline_max",
+      "reopen_floating",
+      "ooxml_embedded_only"
+    ],
+    "add_image_block": [
+      "reopen_block_format",
+      "ooxml_following_paragraph"
+    ],
+    "add_floating_textbox": [
+      "reopen_textbox",
+      "pdf_visible_objects"
+    ]
+  },
+  "limitations": [
+    "Floating image alt text remains a preflight-rejected unsupported branch; see Probe A run-02."
+  ],
+  "source_hashes": {
+    "fixture": "dc4b43b5b8c158700b320518638c898e94cfcca2f0ae46c8389ac50dfad6b4d4",
+    "macos_word_session": "7a2336cef0847a731f12f594c9d8758043df31bae2ccaca3dec1c2fd178f7b80",
+    "image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "sentinel_before": [
+    "sentinel",
+    "文档108",
+    "文档108",
+    false,
+    "WPSC-OBJECT-SENTINEL-57fd406f52d74a88b6d970fdcaf56142\r",
+    null
+  ],
+  "sentinel_token_sha256": "26c682bc3a2c6b54190c700812eb96c4e5c8937e031f5bb4a57457e9b7384ab9",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ekpkjxi4 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ekpkjxi4/d99f1d10fc9e4a1e92802430ac99489c.log"
+  }
+}

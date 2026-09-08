@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_business_objects.py", line 138, in run
+    report["targets"]["table"] = session.add_table(3, 3, [["Header 中文😀", "H2", "H3"], ["Left", "Center", "Right"], ["Band", "Wrap " * 12, "Tail"]], col_widths=[90, 150, 105], alignments=["left", "center", "right"])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1113, in add_table
+    rows_out = self._execute_structural(self._table_commands(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1087, in _execute_structural
+    return self._execute(lines)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 331, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ekpkjxi4 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ekpkjxi4/d99f1d10fc9e4a1e92802430ac99489c.log

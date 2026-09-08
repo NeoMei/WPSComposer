@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "status": "FAIL",
+  "engine": "msoffice",
+  "checks": {},
+  "targets": {
+    "table": "table:1",
+    "merged": "table:2"
+  },
+  "method_to_checks": {
+    "add_table": [
+      "reopen_table",
+      "reopen_cell_utf16_format",
+      "ooxml_tables_merges"
+    ],
+    "add_merged_table": [
+      "ooxml_tables_merges"
+    ],
+    "add_image": [
+      "reopen_inline_width",
+      "reopen_inline_height",
+      "reopen_inline_bounded_aspect",
+      "reopen_inline_max",
+      "reopen_floating",
+      "ooxml_embedded_only"
+    ],
+    "add_image_block": [
+      "reopen_block_format",
+      "ooxml_following_paragraph"
+    ],
+    "add_floating_textbox": [
+      "reopen_textbox",
+      "pdf_visible_objects"
+    ]
+  },
+  "limitations": [
+    "Floating image alt text remains a preflight-rejected unsupported branch; see Probe A run-02."
+  ],
+  "source_hashes": {
+    "fixture": "0c7ba47aa27e97ca5fad911483bbe97ce3ad8ca0e714020e7f1ad39d3b3083ac",
+    "macos_word_session": "7ac582c1bf85b353e5f9144f938c1eab33a4eff147940e965e6d3153cc537c41",
+    "image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ndl87x8k"
+  }
+}

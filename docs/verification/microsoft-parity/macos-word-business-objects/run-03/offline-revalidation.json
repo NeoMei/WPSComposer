@@ -1,0 +1,85 @@
+{
+  "rows": [
+    [
+      "counts",
+      2,
+      5,
+      2
+    ],
+    [
+      "table",
+      3,
+      3,
+      true,
+      false
+    ],
+    [
+      "cell",
+      "Header 中文😀\r\u0007",
+      0,
+      0,
+      0,
+      true
+    ],
+    [
+      "inline1",
+      72,
+      40.5,
+      "Inline 中文😀 alt"
+    ],
+    [
+      "inline2",
+      88.8499984741211,
+      50
+    ],
+    [
+      "inline3",
+      90,
+      50.599998474121094
+    ],
+    [
+      "inline4",
+      70,
+      39.349998474121094
+    ],
+    [
+      "block",
+      true,
+      true,
+      0
+    ],
+    [
+      "floating",
+      true,
+      96,
+      54,
+      true
+    ],
+    [
+      "textbox",
+      true,
+      "Textbox 中文😀\r",
+      72,
+      360,
+      220,
+      54,
+      true,
+      13,
+      true
+    ]
+  ],
+  "checks": {
+    "reopen_counts": true,
+    "reopen_table": true,
+    "reopen_cell_utf16_format": true,
+    "reopen_inline_width": true,
+    "reopen_inline_height": true,
+    "reopen_inline_bounded_aspect": true,
+    "reopen_inline_max": true,
+    "reopen_block_format": true,
+    "reopen_floating": true,
+    "reopen_textbox": true
+  },
+  "source_hash_unchanged": true,
+  "sha256": "79a0a72fc12599fec31ffd598854e21cc6e8875839d04792cb74f5b67f216804"
+}

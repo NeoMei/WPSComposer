@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "status": "PARTIAL",
+  "engine": "msoffice",
+  "checks": {
+    "unrelated_documents_unchanged": true,
+    "nonvacuous_unsaved_sentinel": true,
+    "exact_owned_close": true,
+    "reopen_counts": true,
+    "reopen_table": true,
+    "reopen_cell_utf16_format": true,
+    "reopen_inline_width": true,
+    "reopen_inline_height": true,
+    "reopen_inline_bounded_aspect": true,
+    "reopen_inline_max": true,
+    "reopen_block_format": true,
+    "reopen_floating": true,
+    "reopen_textbox": false,
+    "reopen_preserves_docx_hash": true,
+    "ooxml_tables_merges": true,
+    "ooxml_inline_floating_textbox": true,
+    "ooxml_embedded_only": true,
+    "ooxml_following_paragraph": true,
+    "pdf_visible_objects": true,
+    "pdf_images": true,
+    "unsaved_sentinel_preserved_and_closed": true
+  },
+  "targets": {
+    "table": "table:1",
+    "merged": "table:2",
+    "inline_width": "inline_shape:1",
+    "inline_height": "inline_shape:2",
+    "inline_bounded": "inline_shape:3",
+    "inline_max": "inline_shape:4",
+    "floating": "shape:1",
+    "block": "inline_shape:5",
+    "textbox": "shape:2"
+  },
+  "method_to_checks": {
+    "add_table": [
+      "reopen_table",
+      "reopen_cell_utf16_format",
+      "ooxml_tables_merges"
+    ],
+    "add_merged_table": [
+      "ooxml_tables_merges"
+    ],
+    "add_image": [
+      "reopen_inline_width",
+      "reopen_inline_height",
+      "reopen_inline_bounded_aspect",
+      "reopen_inline_max",
+      "reopen_floating",
+      "ooxml_embedded_only"
+    ],
+    "add_image_block": [
+      "reopen_block_format",
+      "ooxml_following_paragraph"
+    ],
+    "add_floating_textbox": [
+      "reopen_textbox",
+      "pdf_visible_objects"
+    ]
+  },
+  "limitations": [
+    "Floating image alt text remains a preflight-rejected unsupported branch; see Probe A run-02."
+  ],
+  "source_hashes": {
+    "fixture": "0aa144fc6f7e1311fbfca316d9bc91ef947e4ac3b3934da81981f97d710290f7",
+    "macos_word_session": "11e35c4f3ed02b7776eade70f652b5148bb9834f5a113d58e568df015e356322",
+    "image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "sentinel_before": [
+    "sentinel",
+    "文档106",
+    "文档106",
+    false,
+    "WPSC-OBJECT-SENTINEL-b98a3d885fa24241bee2816a8e957797\r",
+    null
+  ],
+  "sentinel_token_sha256": "f1f0cbfb63df76c183fe2b872434356bc50233dfc4658a43065b1d460277af9b",
+  "native_reopen_rows": [
+    [
+      "counts",
+      2,
+      5,
+      2
+    ],
+    [
+      "table",
+      3,
+      3,
+      true,
+      false
+    ],
+    [
+      "cell",
+      "Header 中文😀\r\u0007",
+      0,
+      0,
+      0,
+      true
+    ],
+    [
+      "inline1",
+      72,
+      40.5,
+      "Inline 中文😀 alt"
+    ],
+    [
+      "inline2",
+      88.8499984741211,
+      50
+    ],
+    [
+      "inline3",
+      90,
+      50.599998474121094
+    ],
+    [
+      "inline4",
+      70,
+      39.349998474121094
+    ],
+    [
+      "block",
+      true,
+      true,
+      0
+    ],
+    [
+      "floating",
+      true,
+      96,
+      54,
+      true
+    ],
+    [
+      "textbox",
+      false,
+      "missing value",
+      null,
+      null,
+      null,
+      null,
+      false,
+      null,
+      null
+    ]
+  ],
+  "hashes": {
+    "source.png": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41",
+    "business-objects.docx": "79a0a72fc12599fec31ffd598854e21cc6e8875839d04792cb74f5b67f216804",
+    "business-objects.pdf": "2c50a4b3b992b86f7c9021ba678130632e4b19e6909a81894fb61e8f4711660e"
+  }
+}

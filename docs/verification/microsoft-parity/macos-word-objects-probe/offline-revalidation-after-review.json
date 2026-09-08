@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "native_rerun": false,
+  "items": [
+    {
+      "name": "probe",
+      "checks": {
+        "ooxml_two_native_tables": true,
+        "ooxml_horizontal_and_vertical_merges": true,
+        "ooxml_merge_outside_text": true,
+        "ooxml_embedded_media": true,
+        "ooxml_inline_and_floating_drawings": true,
+        "ooxml_alt_text": true,
+        "ooxml_native_textbox": true,
+        "ooxml_table_repeat_and_split": true,
+        "ooxml_table_cell_format": true,
+        "pdf_visible_table_text": true,
+        "pdf_visible_textbox_and_following_text": true,
+        "pdf_contains_images": true
+      },
+      "all_pass": true,
+      "artifact_hashes": {
+        "word-objects.docx": "76686847de10884d5c1f0963158b315e65c9001d7075ec40bb934b007c7a3010",
+        "word-objects.pdf": "db4d78c8be3945b57fc3eddc7ce8d0217c23c804adf12232358a89d53c1857f0",
+        "probe-source.png": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+      }
+    },
+    {
+      "name": "production",
+      "checks": {
+        "ooxml_tables_merges": true,
+        "ooxml_inline_floating_textbox": true,
+        "ooxml_embedded_only": true,
+        "ooxml_following_paragraph": true,
+        "pdf_visible_objects": true,
+        "pdf_images": true
+      },
+      "all_pass": true,
+      "artifact_hashes": {
+        "business-objects.docx": "21ecb36dfc01ed8bf00f17c010bb0981b6701aae8fe7006dfd5c6130a1f9ac25",
+        "business-objects.pdf": "33f1995e0daca26891911a4f6b7804f119a32f9cea77ac0f2b8a12fd411fa4df",
+        "source.png": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+      }
+    }
+  ],
+  "source_hashes": {
+    "probe_fixture": "ddaca274d954f23a30a34e26aecb1c9ecc2d8303aea8dae4878deeabb505284a",
+    "production_fixture": "30a413637675eb7e979cb7dbb4ad3ad4c6aacde6afc0b570276ba05ffa21b030",
+    "shared_verifier": "5e3108a1fa38ea0a354609ef9a4d5bf37e45193cc5c649bef9ef4679744e8023",
+    "probe_tests": "28d9781910bf6df7f352caf4f86b190c70b88350bf5e20a5af2e8cef8ed81ec5"
+  }
+}

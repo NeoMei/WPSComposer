@@ -1,0 +1,17 @@
+{
+  "status": "FAIL",
+  "source_sha256": "7a2336cef0847a731f12f594c9d8758043df31bae2ccaca3dec1c2fd178f7b80",
+  "plain": [
+    [
+      "plain",
+      0,
+      3,
+      3,
+      3
+    ]
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-qfeqpq49 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-qfeqpq49/0f75290d1f774ad2911ba79077a6ce29.log"
+  }
+}

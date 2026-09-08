@@ -1,0 +1,660 @@
+{
+  "schema": 1,
+  "probe": "A",
+  "status": "PARTIAL",
+  "checks": {
+    "native_counts": true,
+    "native_table_dimensions": true,
+    "native_table_header_and_split": true,
+    "native_table_indents_spacing": true,
+    "native_table_alignments": true,
+    "native_table_widths": true,
+    "native_table_vertical_center": true,
+    "native_table_border": true,
+    "native_table_utf16_text": true,
+    "native_merged_table_present": true,
+    "native_inline_one_dimension": true,
+    "native_inline_two_dimensions": true,
+    "native_floating_image": true,
+    "native_floating_geometry": true,
+    "native_textbox": false,
+    "native_textbox_geometry": false,
+    "native_textbox_font_fill": true,
+    "native_block_paragraph": false,
+    "unrelated_documents_unchanged": true,
+    "exact_owned_close": true,
+    "native_reopen_readback": false,
+    "native_reopen_preserves_docx_hash": true,
+    "ooxml_two_native_tables": true,
+    "ooxml_horizontal_and_vertical_merges": true,
+    "ooxml_merge_outside_text": true,
+    "ooxml_embedded_media": false,
+    "ooxml_inline_and_floating_drawings": true,
+    "ooxml_alt_text": true,
+    "ooxml_native_textbox": true,
+    "ooxml_table_repeat_and_split": true,
+    "ooxml_table_cell_format": false,
+    "pdf_visible_table_text": false,
+    "pdf_visible_textbox_and_following_text": false,
+    "pdf_contains_images": false
+  },
+  "limitations": [
+    "Microsoft Word 16.101 rejects the alternative text setter on a native floating picture; run-02 retains the exact -10006 failure. Floating-image alt therefore remains unverified and must be rejected by any bounded production implementation."
+  ],
+  "source_hashes": {
+    "fixture": "5fb2fe1b480f91e19eb81608aa87c9484b31337a418d56946ad1967abd4c679c",
+    "macos_word_session": "7cf9bfd705e49987c154ae7f9adfdbf818ae721ca09ed66a1996ccc281e40641",
+    "probe_image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "native_rows": [
+    [
+      "probe",
+      0,
+      "word_version",
+      "16.112.3"
+    ],
+    [
+      "probe",
+      0,
+      "table_count",
+      2
+    ],
+    [
+      "probe",
+      0,
+      "inline_count",
+      3
+    ],
+    [
+      "probe",
+      0,
+      "shape_count",
+      2
+    ],
+    [
+      "table1",
+      1,
+      "rows",
+      3
+    ],
+    [
+      "table1",
+      1,
+      "columns",
+      3
+    ],
+    [
+      "table1",
+      1,
+      "auto_fit",
+      false
+    ],
+    [
+      "table1",
+      1,
+      "repeat_header",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "row_split",
+      false
+    ],
+    [
+      "table1",
+      1,
+      "first_text",
+      "Header 中文😀\r\u0007"
+    ],
+    [
+      "table1",
+      1,
+      "first_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "left_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "right_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "space_before",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "space_after",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "vertical_center",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "widths",
+      [
+        90,
+        150,
+        105
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "alignments",
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "top_border",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "header_shade",
+      [
+        17476,
+        29041,
+        50372
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "header_font",
+      [
+        65535,
+        65535,
+        65535
+      ]
+    ],
+    [
+      "table2",
+      2,
+      "rows",
+      3
+    ],
+    [
+      "table2",
+      2,
+      "columns",
+      3
+    ],
+    [
+      "inline1",
+      1,
+      "width",
+      72
+    ],
+    [
+      "inline1",
+      1,
+      "height",
+      40.5
+    ],
+    [
+      "inline1",
+      1,
+      "alt",
+      "Inline 中文😀 alt"
+    ],
+    [
+      "inline2",
+      2,
+      "width",
+      90
+    ],
+    [
+      "inline2",
+      2,
+      "height",
+      45
+    ],
+    [
+      "inline2",
+      2,
+      "alt",
+      "Bounded two dimension alt"
+    ],
+    [
+      "floating",
+      1,
+      "type",
+      0
+    ],
+    [
+      "floating",
+      1,
+      "geometry",
+      [
+        300,
+        120,
+        96,
+        54
+      ]
+    ],
+    [
+      "floating",
+      1,
+      "wrap",
+      0
+    ],
+    [
+      "floating",
+      1,
+      "alt",
+      "missing value"
+    ],
+    [
+      "textbox",
+      2,
+      "type",
+      1
+    ],
+    [
+      "textbox",
+      2,
+      "text",
+      "Textbox 中文😀\r"
+    ],
+    [
+      "textbox",
+      2,
+      "geometry",
+      [
+        -18,
+        -55.20000076293945,
+        220,
+        54
+      ]
+    ],
+    [
+      "textbox",
+      2,
+      "wrap",
+      1
+    ],
+    [
+      "textbox",
+      2,
+      "fill_visible",
+      true
+    ],
+    [
+      "textbox",
+      2,
+      "fill_color",
+      [
+        65535,
+        61680,
+        46260
+      ]
+    ],
+    [
+      "textbox",
+      2,
+      "font_size",
+      13
+    ],
+    [
+      "textbox",
+      2,
+      "bold",
+      true
+    ],
+    [
+      "block",
+      3,
+      "center",
+      true
+    ],
+    [
+      "block",
+      3,
+      "keep_with_next",
+      true
+    ],
+    [
+      "block",
+      3,
+      "space_after",
+      0
+    ],
+    [
+      "block",
+      3,
+      "following_text",
+      "missing value"
+    ]
+  ],
+  "inventory_before": [],
+  "inventory_after": [],
+  "native_reopen_rows": [
+    [
+      "probe",
+      0,
+      "word_version",
+      "16.112.3"
+    ],
+    [
+      "probe",
+      0,
+      "table_count",
+      2
+    ],
+    [
+      "probe",
+      0,
+      "inline_count",
+      3
+    ],
+    [
+      "probe",
+      0,
+      "shape_count",
+      2
+    ],
+    [
+      "table1",
+      1,
+      "rows",
+      3
+    ],
+    [
+      "table1",
+      1,
+      "columns",
+      3
+    ],
+    [
+      "table1",
+      1,
+      "auto_fit",
+      false
+    ],
+    [
+      "table1",
+      1,
+      "repeat_header",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "row_split",
+      false
+    ],
+    [
+      "table1",
+      1,
+      "first_text",
+      "Header 中文😀\r\u0007"
+    ],
+    [
+      "table1",
+      1,
+      "first_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "left_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "right_indent",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "space_before",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "space_after",
+      0
+    ],
+    [
+      "table1",
+      1,
+      "vertical_center",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "widths",
+      [
+        90,
+        150,
+        105
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "alignments",
+      [
+        0,
+        1,
+        2
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "top_border",
+      true
+    ],
+    [
+      "table1",
+      1,
+      "header_shade",
+      [
+        17476,
+        29041,
+        50372
+      ]
+    ],
+    [
+      "table1",
+      1,
+      "header_font",
+      [
+        65535,
+        65535,
+        65535
+      ]
+    ],
+    [
+      "table2",
+      2,
+      "rows",
+      3
+    ],
+    [
+      "table2",
+      2,
+      "columns",
+      3
+    ],
+    [
+      "inline1",
+      1,
+      "width",
+      72
+    ],
+    [
+      "inline1",
+      1,
+      "height",
+      40.5
+    ],
+    [
+      "inline1",
+      1,
+      "alt",
+      "Inline 中文😀 alt"
+    ],
+    [
+      "inline2",
+      2,
+      "width",
+      90
+    ],
+    [
+      "inline2",
+      2,
+      "height",
+      45
+    ],
+    [
+      "inline2",
+      2,
+      "alt",
+      "Bounded two dimension alt"
+    ],
+    [
+      "floating",
+      1,
+      "type",
+      0
+    ],
+    [
+      "floating",
+      1,
+      "geometry",
+      [
+        300,
+        120,
+        96,
+        54
+      ]
+    ],
+    [
+      "floating",
+      1,
+      "wrap",
+      0
+    ],
+    [
+      "floating",
+      1,
+      "alt",
+      "missing value"
+    ],
+    [
+      "textbox",
+      2,
+      "type",
+      1
+    ],
+    [
+      "textbox",
+      2,
+      "text",
+      "Textbox 中文😀\r"
+    ],
+    [
+      "textbox",
+      2,
+      "geometry",
+      [
+        -18,
+        -55.20000076293945,
+        220,
+        54
+      ]
+    ],
+    [
+      "textbox",
+      2,
+      "wrap",
+      1
+    ],
+    [
+      "textbox",
+      2,
+      "fill_visible",
+      true
+    ],
+    [
+      "textbox",
+      2,
+      "fill_color",
+      [
+        65535,
+        61680,
+        46260
+      ]
+    ],
+    [
+      "textbox",
+      2,
+      "font_size",
+      13
+    ],
+    [
+      "textbox",
+      2,
+      "bold",
+      true
+    ],
+    [
+      "block",
+      3,
+      "center",
+      true
+    ],
+    [
+      "block",
+      3,
+      "keep_with_next",
+      true
+    ],
+    [
+      "block",
+      3,
+      "space_after",
+      0
+    ],
+    [
+      "block",
+      3,
+      "following_text",
+      "missing value"
+    ]
+  ],
+  "hashes": {
+    "probe-source.png": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41",
+    "word-objects.docx": "f53568ac341fc740a6b70e5ad4d5f5982650c9d4d30d0e0ba565d5b38a9db2a0",
+    "word-objects.pdf": "985fe30e3a9898bf2de48050f097a37635e75969ecc9ba13aef5363437d2b14f"
+  }
+}
