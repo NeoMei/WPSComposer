@@ -1,0 +1,18 @@
+{
+  "docx_application_properties": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Template>Normal.dotm</Template><Pages>4</Pages><Words>0</Words><Characters>0</Characters><Lines>0</Lines><Paragraphs>0</Paragraphs><TotalTime>0</TotalTime><ScaleCrop>false</ScaleCrop><LinksUpToDate>false</LinksUpToDate><CharactersWithSpaces>0</CharactersWithSpaces><Application>WPS Office_12.1.0.28505_F1E327BC-269C-435d-A152-05C5408002CA</Application><DocSecurity>0</DocSecurity></Properties>",
+  "pdf_metadata": {
+    "format": "PDF 1.7",
+    "title": "原生文档生产验收报告",
+    "author": "WPSComposer acceptance",
+    "subject": "",
+    "keywords": "",
+    "creator": "WPS 文字",
+    "producer": "",
+    "creationDate": "D:20260908183655+08'00'",
+    "modDate": "D:20260908183655+08'00'",
+    "trapped": "",
+    "encryption": null
+  },
+  "com_identity_source": "wps-routing-readonly.json: app.Path points to installed WPS office6, Version 12.0; Name alone is not used",
+  "explicit_engine": "wps"
+}

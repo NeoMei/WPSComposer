@@ -1,0 +1,11 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "build/msoffice-production/numbering_round3.py"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 0,
+  "started_unix": 1788863175.9041414,
+  "ended_unix": 1788863494.06035,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}
