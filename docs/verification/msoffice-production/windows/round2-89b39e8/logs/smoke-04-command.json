@@ -1,0 +1,19 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "fixtures/verify_msoffice_production.py",
+    "--output-root",
+    "build/msoffice-production/smoke-04",
+    "--fixture",
+    "smoke",
+    "--engine",
+    "msoffice",
+    "--timeout",
+    "180"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 1,
+  "started_unix": 1788860464.1529787,
+  "ended_unix": 1788860644.9915931,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}
