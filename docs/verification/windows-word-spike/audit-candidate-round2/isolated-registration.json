@@ -1,0 +1,15 @@
+{
+  "legacy_application_mutated": false,
+  "quit_or_kill_called": false,
+  "errors": [
+    "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-candidate-round2\\run_isolated_registered_sentinel.py\", line 20, in <module>\n    cookie=pythoncom.RegisterActiveObject(owned._oleobj_,pythoncom.MakeIID('{000209FF-0000-0000-C000-000000000046}'),pythoncom.ACTIVEOBJECT_WEAK)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npywintypes.com_error: (-2147024809, '\u53c2\u6570\u9519\u8bef\u3002', None, None)\n"
+  ],
+  "task_registered_application_candidate": {
+    "pid": 14432,
+    "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "name": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.17932"
+  },
+  "overall": "blocked"
+}

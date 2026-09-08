@@ -1,0 +1,35 @@
+{
+  "code_candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
+  "fetched_review_tip": "067a23c560b317e3b9f1f5d7ae65e37e01b95e47",
+  "execution_head": "dc6a781de0a7eb5416796d70b7952ab122f533f0",
+  "sources": {
+    "windows_word.py": {
+      "raw_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+      "normalized_lf_sha256": "5dc4f102fb1f0243181b4eaea2362b75b1b6b5eebb634f0692fd7ca2671cb65a",
+      "git_blob_oid": "8c2fc817a5ee54a1ef5f9fcc4f132642456823ed",
+      "snapshot": "executed-windows_word.py.txt",
+      "normalized_equals_candidate_blob": true
+    },
+    "windows_unsaved_sentinel.py": {
+      "raw_sha256": "3a85457595d4fd2cfc063a8d8323f3c037c260b2c16f01f06c444eacb98fafd7",
+      "normalized_lf_sha256": "454e4b7650721d21821c6b76984f29cf1dcc7b5a48eb9feff78ed1eb404760b6",
+      "git_blob_oid": "4dcf55bc67f36a5058a5eb753c0b76a291c0a31a",
+      "snapshot": "executed-windows_unsaved_sentinel.py.txt",
+      "normalized_equals_candidate_blob": true
+    },
+    "validate_windows_artifacts.py": {
+      "raw_sha256": "c09068b599c5ddc2130052859748e817c4403caae38afd4cb33c4d31a033ae21",
+      "normalized_lf_sha256": "861329f1d24b516e5d5f8ac3de8d996e041e4ffc72f5db20d80c61eae83db26b",
+      "git_blob_oid": "aef3f25b0bad3d8ecaf83cbc7885f1ab157e5da8",
+      "snapshot": "executed-validate_windows_artifacts.py.txt",
+      "normalized_equals_candidate_blob": true
+    },
+    "mac_word.py": {
+      "raw_sha256": "31d7056f5c26269ff7b6d54581ce9a4306725d50c6de2436a6d2b5981061c5eb",
+      "normalized_lf_sha256": "20295b6ebc7012be7094d13bbf6aebfc55a02bbd4b546ae986545267ea2c7034",
+      "git_blob_oid": "ce48867252d400a811d4964abbded7e7b9cdeca5",
+      "snapshot": "executed-mac_word.py.txt",
+      "normalized_equals_candidate_blob": true
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
+  "code_equals_candidate": true,
+  "pytest": {
+    "passed": 56,
+    "failed": 0,
+    "duration_seconds": 18.58,
+    "exit_code": 0,
+    "platform": "Windows",
+    "dependencies": "pytest 9.1.1 isolated under ignored build; existing Python 3.11.9, PyMuPDF and Pillow"
+  },
+  "validator_only": {
+    "checks_passed": 12,
+    "exit_code": 0,
+    "input": "independent copy of historical native run10",
+    "new_native_execution": false
+  },
+  "new_native_sentinel": {
+    "status": "awaiting_scope_clarification",
+    "reason": "Only legacy registered instance available; separate task registration failed with E_INVALIDARG; no sentinel launched"
+  },
+  "ui_round1": "../audit-ui-round1/report.md",
+  "production_admission": "NO_GO"
+}

@@ -1,0 +1,12 @@
+{
+  "test_files": [
+    "tests/test_msoffice_artifact_validation.py",
+    "tests/test_msoffice_sentinel_failures.py",
+    "tests/test_msoffice_spike_ownership.py"
+  ],
+  "interpreter": "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+  "pytest_import_path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-pytest-deps",
+  "pytest_version": "9.1.1",
+  "exit_code": 0,
+  "duration_seconds": 20.672
+}

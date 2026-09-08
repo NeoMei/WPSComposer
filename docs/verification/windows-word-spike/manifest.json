@@ -208,5 +208,11 @@
     "manifest": "final-cleanup-review/manifest.json",
     "report": "final-cleanup-review/report.md",
     "historical_01_to_08_source_sha256_unchanged": true
+  },
+  "additional_audits": {
+    "ui_round1": "audit-ui-round1/manifest.json",
+    "reviewed_candidate_round2": "audit-candidate-round2/manifest.json",
+    "latest_candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
+    "fresh_native_gate": "awaiting scope clarification; no new native pass claimed"
   }
 }
