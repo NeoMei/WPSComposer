@@ -50,9 +50,9 @@ if __name__ == "__main__":
 
 Library and unattended calls leave `open_result` at its default `False`, so
 they publish without opening a desktop application. Each call returns only the
-one requested format. Opening is an asynchronous, best-effort request to the
-platform default application; a launcher warning does not invalidate an
-artifact that was already published.
+one requested format. Opening is asynchronous and best effort: DOCX uses the
+selected engine, while PDF uses the platform default reader. A launcher warning
+does not invalidate an artifact that was already published.
 
 Under the hood:
 1. ``md_parser.py`` parses Markdown into a ``StructuredDocument``

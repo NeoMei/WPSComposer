@@ -12,7 +12,7 @@ Release status: **PENDING final Windows native acceptance after section-numberin
 | Word native images, captions, REF / SEQ | macos-word/media-report.json, transparent-report.json | PASS |
 | Word timeout, quarantine, refused unsafe recovery and successful explicit recovery | macos-word/timeout-recovery.json | PASS |
 | Legacy DOC conversion with source preservation | macos-word/legacy-doc-report.json | PASS |
-| Portable integrated suite | pytest-ead655a.log | 2846 passed, 12 native-gated skips |
+| Portable integrated suite | pytest-legal-outline.log | 2859 passed, 12 native-gated skips |
 | Windows production public API, native UI and ownership | remote production evidence required | PENDING |
 | WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
@@ -29,3 +29,5 @@ Candidate deb67ba portable verification: 2836 passed, 12 native-gated skips, exi
 Candidate ead655a integrates the native Windows section fix: unlink headers/footers before PAGE insertion, use COM boolean restart values and verify section policy readback. Independent review and all ten new section tests pass. Complete portable rerun: 2846 passed, 12 native-gated skips, exit 0 in 221.96 seconds. Clean isolated installation and both adapter imports/source comparisons pass (install-ead655a.json). The complete final Windows representative and WPS COM regression remain pending.
 
 Structural acceptance correction: generic Mac field updates left stale TOC entries, and style-side list linking created separate numbering instances for Heading 1–4. Dedicated native collection updates and level-side localized style binding correct both defects. Current public-representative-shared-outline passes all three routes and the new shared-list gate; structural-shared-outline verifies native descendant list strings, cached/visible TOC, actual PDF pages, insertion/deletion and save/close/reopen. The earlier structural-edit-final report is explicitly superseded because its Heading-1-only checks missed descendants. Mac portable snapshot: 2855 passed, 12 skips in 186.39 seconds. Windows round3 independently found the same structural defect and remains under correction.
+
+Current Mac hybrid-bid native rerun preserves Chinese chapter numbers and Arabic dotted descendants through Word legal numbering, with both chapters verified; chinese-formal and sequence-transparent figure/reference native regressions also pass. Integrated suite after WPS first-section compatibility and legal numbering: 2859 passed, 12 skipped, exit 0 in 199.34 seconds. The independent shared-outline-recheck.json accepts both existing WPS artifacts and corrected Mac Word, while rejecting the pre-correction Windows Word list instances. Windows final structural and auto-detection correction remains pending.

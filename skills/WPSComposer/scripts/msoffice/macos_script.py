@@ -315,7 +315,9 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
                 number_style = 'simp chin num1'
             elif scheme == 'hybrid-bid':
                 pattern = {1:'第%1章', 2:'%1.%2', 3:'%1.%2.%3', 4:'关键工法%4：'}[level]
-                number_style = 'simp chin num1' if level == 1 else 'arabic lz' if level == 4 else 'arabic'
+                # Legal numbering renders inherited chapter counters as Arabic
+                # in dotted subheadings while the chapter itself stays Chinese.
+                number_style = 'simp chin num1' if level == 1 else 'arabic lz' if level == 4 else 'legal'
             else:
                 pattern = '.'.join('%' + str(i) for i in range(1, level+1))
                 number_style = 'arabic'

@@ -1,0 +1,4 @@
+{
+  "status": "PASS",
+  "text": "[HEADING_PREFIX_AMBIGUOUS] Heading prefix does not match the selected scheme\n'decimal' at level 1.\n⽬录\n1 Numbered chapter ............................................................................................................................................. 1\ni\nNative transparent heading\nNative transparent heading\n1 Numbered chapter\n图 1-1 First numbered figure\n第二章 Unnumbered boundary\n图 1-2 Second numbered figure\nReference pair: 图 1-1 and 图 1-2.\n1"
+}
