@@ -1,4 +1,5 @@
 """Public failures retain recovery data without exposing native document text."""
+import os
 import subprocess
 from pathlib import Path
 
@@ -29,6 +30,7 @@ def test_public_mac_unsupported_plan_names_capability_without_starting_word(monk
 
 
 @pytest.mark.parametrize('failure', ['timeout', 'cleanup'])
+@pytest.mark.skipif(os.name != 'posix', reason='This macOS recovery test acquires a real POSIX job lock')
 def test_public_mac_failure_retains_safe_recovery_locations(monkeypatch, tmp_path, failure):
     monkeypatch.setattr(platform_runtime.sys, 'platform', 'darwin')
     stage = tmp_path/'private-stage'
