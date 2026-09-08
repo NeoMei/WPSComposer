@@ -1,0 +1,100 @@
+{
+  "gate": "nonempty_registered_unsaved_document_preservation",
+  "errors": [],
+  "application_quit_attempted": false,
+  "sentinel_saved_to_disk": false,
+  "sentinel_close_without_saving": true,
+  "overall": "passed",
+  "runner_timeout_seconds": 660,
+  "timeout_scope": "Only the native Python helper; sentinel COM calls may still block",
+  "registered_documents_before_sentinel": 0,
+  "word_version": "16.0",
+  "word_build": "16.0.17932",
+  "sentinel_application": {
+    "pid": 9252,
+    "hwnd": 72616348,
+    "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+  },
+  "marker": "WPSCOMPOSER-UNSAVED-SENTINEL-d096471438db4026abc8dbb0c7c4c395",
+  "registered_sentinel_verified": true,
+  "before": {
+    "name": "文档4",
+    "full_name": "文档4",
+    "saved": false,
+    "characters": 62,
+    "text_sha256": "8b29801468a9bed8e8d9a25a22b6163eb1ad85e5919688ce583a38e9e4222e4f"
+  },
+  "runner_command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "D:\\MyDocuments\\codexprojects\\WpsComposer\\fixtures\\msoffice_spike\\windows_word.py",
+    "--output-dir",
+    "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\windows-run-11"
+  ],
+  "runner_source_sha256": "0770f34d18e4bb2ecccf15572efb017183c8e99cb1588e4328b6d73e52d028ed",
+  "runner_exit_code": 0,
+  "after": {
+    "name": "文档4",
+    "full_name": "文档4",
+    "saved": false,
+    "characters": 62,
+    "text_sha256": "8b29801468a9bed8e8d9a25a22b6163eb1ad85e5919688ce583a38e9e4222e4f"
+  },
+  "runner_existing_before_matches_sentinel": true,
+  "runner_existing_after_matches_sentinel": true,
+  "sentinel_state_unchanged": true,
+  "runner_application_pid": 3936,
+  "runner_pid_different": true,
+  "runner_document_pid_matches": true,
+  "runner_cleanup": "Quit isolated DispatchEx instance after confirming zero documents",
+  "process_exit_observations": [
+    {
+      "elapsed_seconds": 0.016,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 0.297,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 0.578,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 0.86,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 1.141,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 1.422,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 1.703,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 1.985,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 2.25,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 2.516,
+      "task_pid_present": true
+    },
+    {
+      "elapsed_seconds": 2.797,
+      "task_pid_present": false
+    }
+  ],
+  "runner_process_absent_after_cleanup": true,
+  "runner_operations_succeeded": true,
+  "preservation_passed": true,
+  "registered_documents_after_sentinel_close": 0,
+  "registered_application_responsive_after_close": true
+}

@@ -213,6 +213,7 @@
     "ui_round1": "audit-ui-round1/manifest.json",
     "reviewed_candidate_round2": "audit-candidate-round2/manifest.json",
     "latest_candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
-    "fresh_native_gate": "awaiting scope clarification; no new native pass claimed"
+    "fresh_native_gate": "passed: audit-native-round3/windows-sentinel-04 and windows-run-11; 14 native operations, 12 artifact checks",
+    "fresh_native_round3": "audit-native-round3/manifest.json"
   }
 }

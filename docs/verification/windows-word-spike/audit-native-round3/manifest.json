@@ -1,0 +1,18 @@
+{
+  "candidate": "d4884a55fe8a0db48d1f2f48543948959aa08dbf",
+  "execution_head": "af20be53e05a6b4a0f0a18374665b6ff091bd747",
+  "native_run": "windows-run-11",
+  "sentinel_gate": "windows-sentinel-04",
+  "native_operations_passed": 14,
+  "artifact_checks_passed": 12,
+  "pages": 9,
+  "sentinel_status": "passed",
+  "task_pid": 3936,
+  "registered_pid": 9252,
+  "task_process_absent": true,
+  "registered_process_preserved": true,
+  "previous_round2_pending_status_resolved": true,
+  "historical_files_verified_before_archive": 112,
+  "pytest_and_ui_repeated": false,
+  "production_admission": "NO_GO"
+}

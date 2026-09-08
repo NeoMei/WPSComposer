@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "fixtures/msoffice_spike/windows_unsaved_sentinel.py",
+    "--evidence-dir",
+    "build/msoffice-spike/windows-sentinel-04",
+    "--output-dir",
+    "build/msoffice-spike/windows-run-11"
+  ],
+  "exit_code": 0,
+  "started_utc": "2026-09-08T00:56:36.377733+00:00",
+  "completed_utc": "2026-09-08T00:57:36.925114+00:00",
+  "duration_seconds": 60.547
+}
