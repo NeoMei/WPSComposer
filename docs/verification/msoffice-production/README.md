@@ -6,7 +6,7 @@ Release status: **PENDING final Windows representative structural pagination/TOC
 |---|---|---|
 | macOS Microsoft Word public DOCX / conversion / direct PDF | macos-word/public-representative-shared-outline/report.json and native artifacts | PASS, 5 pages |
 | macOS WPS existing public flow | macos-wps/public-representative-all-schemes/report.json and native artifacts | PASS, 4 pages |
-| Real edit → Undo → explicit save → close → reopen | each platform ui-report.json | PASS |
+| macOS real edit → Undo → explicit save → close → reopen | macos-word/ui-report.json and macos-wps/ui-report.json, bound to identified test copies | PASS; final Windows UI is a separate gate below |
 | Structural heading edits, automatic renumbering and refreshed TOC pagination | macos-word/structural-shared-outline/report.json and native DOCX/PDF files | Mac PASS: 64 checks, H1 insertion/deletion with all four levels and TOC; Windows pending |
 | Word unsaved document preservation | macos-word/preservation.json | PASS |
 | Word native images, captions, REF / SEQ | macos-word/media-report.json, transparent-report.json | PASS |

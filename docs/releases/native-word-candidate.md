@@ -14,12 +14,13 @@ WPS native built-in styles now receive the planned six heading sizes. Cover Titl
 
 ## Verification available
 
-- Integrated legal-outline snapshot: 2859 passed, 12 native-gated skips. Earlier candidate ead655a isolated plugin installation, public signatures and installed source hashes passed; repeat installation on final promoted source.
+- Integrated all-host scheme snapshot: 2874 passed, 12 native-gated skips. Earlier candidate ead655a isolated plugin installation, public signatures and installed source hashes passed; repeat installation on final promoted source.
 - macOS Word and WPS: native public DOCX generation, conversion and direct PDF; cover, six heading levels, native numbering, repeated-header long table, source preservation, overwrite refusal, actual section page numbers and visible PDF review.
 - Both local clients: actual keyboard edit, Undo, explicit save, close and reopen on identified test copies.
 - macOS Word: native images, captions, REF/SEQ and indexes, unsaved-document preservation, legacy DOC conversion, timeout/quarantine/recovery, explicit rejection of unsupported equations.
 - macOS Word: native chapter insertion/deletion updates all four numbering levels and TOC page references after save/close/reopen; dedicated TOC rebuilding and shared native list binding fix the observed regressions. Chinese and hybrid numbering have additional two-chapter native coverage.
-- Windows round3: Word and WPS public flows pass strict section-numbering gates; native media, references and sentinel preservation pass. Final review exposed Word split heading-list instances and missed WPS auto detection; remote correction and final merged acceptance remain required. Prior static PASS does not certify release.
+- Windows round4: both Word and WPS pass three numbering schemes, chapter insertion/deletion, save/reopen and visible PDF numbering (30 checks). Real read-only auto detection and public generation/conversion select WPS correctly. Round3 also passed section page numbering, media, references and sentinel preservation. Final representative structural pagination/TOC, native UI/postflight and full Windows suite remain pending.
+- macOS WPS: updated Chinese/hybrid scheme public generation and conversion pass, followed by a complete representative regression and home-window check with zero open document tabs.
 
 Full evidence and raw failures: [production acceptance](../verification/msoffice-production/README.md).
 
