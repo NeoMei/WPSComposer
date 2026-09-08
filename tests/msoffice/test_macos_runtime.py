@@ -11,6 +11,7 @@ def test_invalid_timeout_does_not_start_word(tmp_path):
 
 
 def test_cross_process_lock_respects_total_deadline(tmp_path):
+    pytest.importorskip("fcntl", reason="Native macOS/POSIX job locking is unavailable on Windows")
     from skills.WPSComposer.scripts.msoffice.macos_runtime import WordJobLock
     path = tmp_path/'word.lock'
     one, two = WordJobLock(path), WordJobLock(path)
@@ -62,6 +63,7 @@ def test_failed_unpublished_job_preserves_staging(tmp_path):
 
 
 def test_persistent_quarantine_blocks_next_job(tmp_path):
+    pytest.importorskip("fcntl", reason="Native macOS/POSIX job locking is unavailable on Windows")
     from skills.WPSComposer.scripts.msoffice.macos_runtime import WordJobLock
     lock=WordJobLock(tmp_path/'native.lock')
     lock.quarantine('uncertain AppleEvent; diagnostic.log')
@@ -86,6 +88,7 @@ def test_failed_native_cleanup_persists_job_quarantine(tmp_path, monkeypatch):
 
 
 def test_timeout_preserves_partial_diagnostics_and_blocks_next_job(tmp_path, monkeypatch):
+    pytest.importorskip("fcntl", reason="Native macOS/POSIX job locking is unavailable on Windows")
     import subprocess
     from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
     from skills.WPSComposer.scripts.msoffice.macos_runtime import MacWordAdapter, WordJobLock
@@ -95,8 +98,9 @@ def test_timeout_preserves_partial_diagnostics_and_blocks_next_job(tmp_path, mon
     def timeout(*args,**kwargs):
         raise subprocess.TimeoutExpired(args[0],2,output=b'partial output',stderr=b'partial diagnostic')
     monkeypatch.setattr(subprocess,'run',timeout)
-    with pytest.raises(subprocess.TimeoutExpired):
+    with pytest.raises(TimeoutError) as caught:
         adapter._run('native source',time.monotonic()+30)
+    assert caught.value.code == 'NATIVE_WORD_TIMEOUT'
     assert next(tmp_path.glob('*.log')).read_text() == 'partial diagnostic\npartial output'
     assert adapter.lock.quarantine_path.is_file()
     with pytest.raises(RuntimeError,match='quarantin'):
@@ -104,6 +108,7 @@ def test_timeout_preserves_partial_diagnostics_and_blocks_next_job(tmp_path, mon
 
 
 def test_recovery_without_marker_returns_without_launch(tmp_path, monkeypatch):
+    pytest.importorskip("fcntl", reason="Native macOS/POSIX job locking is unavailable on Windows")
     import subprocess
     from skills.WPSComposer.scripts.msoffice.macos_runtime import recover_quarantine
     monkeypatch.setattr(subprocess,'run',lambda *a,**kw: pytest.fail('unnecessary native launch'))

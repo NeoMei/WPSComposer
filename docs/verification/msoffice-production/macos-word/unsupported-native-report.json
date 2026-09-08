@@ -1,0 +1,6 @@
+{
+  "type": "LongformLifecycleError",
+  "code": "NATIVE_WORD_UNSUPPORTED",
+  "message": "Native Word does not support native equations on macOS.",
+  "artifact_absent": true
+}

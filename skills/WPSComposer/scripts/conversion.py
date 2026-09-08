@@ -15,6 +15,7 @@ from .artifact_transport import (
 )
 from .presentation import present_artifact, validate_open_result
 from .office_engines import com_engine, resolve_engine, validate_engine, validate_timeout
+from .msoffice.errors import NativeWordError, NATIVE_WORD_ERROR_CODES, RECOVERY_FIELDS
 
 
 _COMPONENT_BY_SUFFIX = {
@@ -26,7 +27,7 @@ _COMPONENT_BY_SUFFIX = {
     ".pptx": "presentation",
 }
 
-STABLE_CONVERSION_ERROR_CODES = frozenset(
+STABLE_CONVERSION_ERROR_CODES = NATIVE_WORD_ERROR_CODES | frozenset(
     {
         "ARTIFACT_PUBLISH_FAILED",
         "BACKEND_UNAVAILABLE",
@@ -95,13 +96,18 @@ class ConversionError(RuntimeError):
         self.message = message
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "code": self.code,
             "source": self.source,
             "component": self.component,
             "backend": self.backend,
             "message": self.message,
         }
+        for name in RECOVERY_FIELDS:
+            value = getattr(self, name, None)
+            if value is not None:
+                result[name] = value
+        return result
 
 
 Backend = Callable[[ConversionRequest], Path]
@@ -190,6 +196,14 @@ def convert_to_pdf(
     try:
         with com_engine(request.engine):
             result = Path(backend(request)).expanduser().resolve()
+    except NativeWordError as exc:
+        error = ConversionError(
+            code=exc.code, source=str(request.source), component=request.component,
+            backend=backend_name, message=exc.safe_message,
+        )
+        for name in RECOVERY_FIELDS:
+            setattr(error, name, getattr(exc, name))
+        raise error from None
     except (FileNotFoundError, FileExistsError, ValueError):
         raise
     except ConversionError as exc:

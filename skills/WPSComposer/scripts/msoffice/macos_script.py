@@ -14,9 +14,10 @@ from typing import Mapping
 
 from ..generation_plan import GenerationPlan, validate_generation_plan
 from ..longform.executor import ExecutionOutcome, ExecutionIssue, PaginationMap, PaginationNode, PaginationFragment
+from .errors import NativeWordCapabilityError
 
 
-class MacWordCapabilityError(ValueError):
+class MacWordCapabilityError(NativeWordCapabilityError):
     """The native Mac engine cannot faithfully execute a requested operation."""
 
 
@@ -190,7 +191,9 @@ def _format(target, args):
         align = ('left', 'center', 'right', 'justify')[int(args['align'])]
         lines.append(f'set alignment of paragraph format of {target} to align paragraph {align}')
     if 'outlineLevel' in args:
-        lines.append(f'set outline level of paragraph format of {target} to outline level{int(args["outlineLevel"])}')
+        level = int(args["outlineLevel"])
+        value = "outline level body text" if level == 10 else f"outline level{level}"
+        lines.append(f"set outline level of paragraph format of {target} to {value}")
     if 'lineSpacing' in args:
         value = args['lineSpacing']
         rule = 'line space1 pt5' if value == 1.5 else 'line space single' if value == 1 or args.get('lineSpacingRule') == 'single' else 'line space multiple'

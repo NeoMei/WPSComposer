@@ -181,3 +181,53 @@ def test_runner_also_exercises_direct_public_pdf_generation(monkeypatch, tmp_pat
     assert calls[:2] == ['docx', 'pdf']
     assert report['status'] == 'FAIL'
     assert report['errors'][0]['message'] == 'direct PDF route reached'
+
+
+def test_cover_title_repeated_in_cached_toc_is_rejected(tmp_path):
+    docx = tmp_path / 'cover-in-toc.docx'
+    document_package(docx)
+    with zipfile.ZipFile(docx) as package:
+        members = {name: package.read(name) for name in package.namelist()}
+    paragraphs = '<w:p><w:r><w:t>Cover title</w:t></w:r></w:p><w:p><w:r><w:t>Cover title</w:t></w:r><w:r><w:t>1</w:t></w:r></w:p>'
+    members['word/document.xml'] = members['word/document.xml'].replace(b'</w:body>', paragraphs.encode() + b'</w:body>')
+    with zipfile.ZipFile(docx, 'w') as package:
+        for name, payload in members.items():
+            package.writestr(name, payload)
+    spec = {'title': 'Cover title', 'body': '正文验收文本。', 'headings': ['章节验收'], 'table_rows': [], 'toc': False, 'numbered': True, 'markers': []}
+    assert not runner.inspect_docx(docx, spec)['checks']['single_cover_title']
+
+
+@pytest.mark.parametrize("starts, cover_page, expected", [(True, False, True), (False, False, False), (True, True, False)])
+def test_native_section_page_number_policy_is_enforced(tmp_path, starts, cover_page, expected):
+    docx = tmp_path / 'sections.docx'
+    document_package(docx)
+    with zipfile.ZipFile(docx) as package:
+        members = {name: package.read(name) for name in package.namelist()}
+    ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    relationship_ns = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+    section = lambda ref, fmt: f'<w:sectPr xmlns:r="{relationship_ns}"><w:footerReference r:id="{ref}" w:type="default"/>{fmt}</w:sectPr>'
+    start = ' w:start="1"' if starts else ''
+    sections = section('r1', '') + section('r2', f'<w:pgNumType w:fmt="lowerRoman"{start}/>') + section('r3', f'<w:pgNumType{start}/>')
+    members['word/document.xml'] = members['word/document.xml'].replace(b'</w:body>', sections.encode() + b'</w:body>')
+    members['word/_rels/document.xml.rels'] = ('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + ''.join(f'<Relationship Id="r{i}" Target="footer{i}.xml" Type="{relationship_ns}/footer"/>' for i in range(1,4)) + '</Relationships>').encode()
+    for i in range(1,4):
+        field = '<w:p><w:r><w:instrText> PAGE </w:instrText></w:r></w:p>' if i>1 or cover_page else '<w:p/>'
+        members[f'word/footer{i}.xml'] = f'<w:ftr xmlns:w="{ns}">{field}</w:ftr>'.encode()
+    with zipfile.ZipFile(docx,'w') as package:
+        for name,payload in members.items(): package.writestr(name,payload)
+    spec = {'title': None, 'body': '正文验收文本。', 'headings': ['章节验收'], 'table_rows': [], 'toc': False, 'numbered': True, 'markers': [], 'section_page_number_policy': True}
+    assert runner.inspect_docx(docx,spec)['checks']['section_page_number_policy'] is expected
+
+
+@pytest.mark.parametrize('footers, expected', [(['','i','1','2'],True), (['1','ii','3','4'],False)])
+def test_actual_pdf_page_numbers_follow_section_policy(tmp_path, footers, expected):
+    reportlab = pytest.importorskip('reportlab.pdfgen.canvas')
+    pdf = tmp_path/'numbering.pdf'
+    canvas=reportlab.Canvas(str(pdf),pagesize=(595.28,841.89))
+    for footer in footers:
+        canvas.drawString(50,750,'Body acceptance')
+        if footer: canvas.drawString(295,60,footer)
+        canvas.showPage()
+    canvas.save()
+    spec={'title':None,'body':'Body acceptance','headings':[],'markers':[],'table_rows':[],'section_page_number_policy':True}
+    assert runner.inspect_pdf(pdf,spec)['checks']['pdf_section_page_numbers'] is expected

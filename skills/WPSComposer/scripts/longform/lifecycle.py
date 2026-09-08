@@ -17,6 +17,7 @@ from .quality import (
     QualitySeverity,
 )
 from .relayout import RelayoutDirective, build_relayout_directives
+from ..msoffice.errors import NativeWordError, RECOVERY_FIELDS
 
 
 class LongformLifecycleError(RuntimeError):
@@ -85,6 +86,11 @@ def _call_stage(
         return operation()
     except (LongformLifecycleError, FileExistsError):
         raise
+    except NativeWordError as exc:
+        error = LongformLifecycleError(exc.code, exc.safe_message)
+        for name in RECOVERY_FIELDS:
+            setattr(error, name, getattr(exc, name))
+        raise error from None
     except Exception:
         raise LongformLifecycleError(code, message) from None
 

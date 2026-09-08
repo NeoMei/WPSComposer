@@ -38,7 +38,8 @@ def test_clone_writer_activation_document_uses_pinned_native_blank(tmp_path: Pat
 
     assert cloned == staging / "wpscomposer-writer-blank.docx"
     assert cloned.read_bytes() == NATIVE_WRITER_BLANK.read_bytes()
-    assert stat.S_IMODE(cloned.stat().st_mode) == 0o600
+    if os.name == "posix":
+        assert stat.S_IMODE(cloned.stat().st_mode) == 0o600
     validate_office_package(cloned, "docx")
 
 

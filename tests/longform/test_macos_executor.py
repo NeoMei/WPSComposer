@@ -867,6 +867,7 @@ for (let level=1;level<=6;level++) {
   assert.equal(target.ParagraphFormat.OutlineLevel,level);
 }
 assert.equal(builtin[-63].Font.Size,22);
+assert.equal(builtin[-63].ParagraphFormat.OutlineLevel,10);
 assert.equal(builtin[-67].Font.Size,12);
 assert.equal(builtin[-67].Font.NameFarEast,'仿宋');
 assert.equal(builtin[-67].ParagraphFormat.FirstLineIndent,24);

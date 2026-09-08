@@ -69,31 +69,32 @@
       throw new Error("session.json is unavailable");
     }
     const bootstrap = await sessionResponse.json();
-    const capability = bootstrap.capability || "";
-    if (!capability) {
-      throw new Error("Bridge bootstrap capability is unavailable");
-    }
-    const claimed = await request(bootstrap, "/v1/session", {
-      method: "POST",
-      body: JSON.stringify({
-        component: bootstrap.component,
-        clientId: bootstrap.clientId,
-        capability
-      })
-    });
-    const token = claimed.body.token;
-    const session = Object.assign({}, bootstrap, {token});
-    const activationDocument = bootstrap.activationDocument ||
+    const candidate = bootstrap.activationDocument ||
       bootstrap.activationFixture || "";
-    if (activationDocument) {
-      if (bootstrap.retainActivationDocument === true) {
+    const activationDocument = typeof candidate === "string" ? candidate : "";
+    let session;
+    let registered = false;
+    let startupFailure = null;
+    try {
+      const capability = bootstrap.capability || "";
+      if (!capability) {
+        throw new Error("Bridge bootstrap capability is unavailable");
+      }
+      const claimed = await request(bootstrap, "/v1/session", {
+        method: "POST",
+        body: JSON.stringify({
+          component: bootstrap.component,
+          clientId: bootstrap.clientId,
+          capability
+        })
+      });
+      session = Object.assign({}, bootstrap, {token: claimed.body.token});
+      if (activationDocument && bootstrap.retainActivationDocument === true) {
         if (typeof window.WPSComposerProbe.claimActivationDocument !== "function") {
           throw new Error("Activation document ownership is unavailable");
         }
         window.WPSComposerProbe.claimActivationDocument(activationDocument);
       }
-    }
-    try {
       await request(session, "/v1/register", {
         method: "POST",
         body: JSON.stringify({
@@ -101,10 +102,21 @@
           clientId: session.clientId
         })
       });
+      registered = true;
+    } catch (error) {
+      startupFailure = error;
+      throw error;
     } finally {
-      if (activationDocument && bootstrap.retainActivationDocument !== true &&
+      // Only a successfully read local bootstrap identifies an owned fixture.
+      // A failed handshake never transfers a retained document to a command.
+      if (activationDocument && (!registered || bootstrap.retainActivationDocument !== true) &&
           typeof window.WPSComposerProbe.closeActivationFixture === "function") {
-        window.WPSComposerProbe.closeActivationFixture(activationDocument);
+        try {
+          window.WPSComposerProbe.closeActivationFixture(activationDocument);
+        } catch (cleanupError) {
+          if (!startupFailure) throw cleanupError;
+          console.error("Activation fixture cleanup unverified; retain staging", cleanupError);
+        }
       }
     }
 

@@ -15,6 +15,7 @@ import json
 import math
 from pathlib import Path
 import platform
+import posixpath
 import re
 import subprocess
 import sys
@@ -49,7 +50,7 @@ def fixture_content(name):
     text += '| ' + ' | '.join(rows[0]) + ' |\n| --- | --- | --- |\n'
     text += ''.join('| ' + ' | '.join(row) + ' |\n' for row in rows[1:])
     text += '\n' + END + '\n'
-    return text, {'title': title, 'body': BODY, 'headings': HEADINGS, 'table_rows': rows, 'toc': True, 'numbered': True, 'numbered_levels': 4, 'markers': [END]}
+    return text, {'title': title, 'body': BODY, 'headings': HEADINGS, 'table_rows': rows, 'toc': True, 'numbered': True, 'numbered_levels': 4, 'markers': [END], 'section_page_number_policy': True}
 
 
 def sha256(path):
@@ -129,14 +130,51 @@ def _heading_numbered(paragraph, styles, numbering, level):
     return '%' + str(level + 1) in (_value(native_level, 'w:lvlText', '') or '')
 
 
+def _section_numbering_policy(package, document):
+    sections = document.findall('.//w:sectPr', NS)
+    if len(sections) != 3:
+        return False
+    for section, expected_format in zip(sections[1:], ['lowerRoman', 'decimal']):
+        number = section.find('w:pgNumType', NS)
+        if number is None or number.get(W + 'start') != '1' or number.get(W + 'fmt', 'decimal') != expected_format:
+            return False
+    relpath = 'word/_rels/document.xml.rels'
+    if relpath not in package.namelist():
+        return False
+    rels = ET.fromstring(package.read(relpath))
+    targets = {r.get('Id'): r.get('Target') for r in rels if r.get('TargetMode') != 'External'}
+    rid = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'
+    prior = {}
+    for index, section in enumerate(sections):
+        for ref in section.findall('w:footerReference', NS):
+            target = targets.get(ref.get(rid))
+            if not target:
+                return False
+            path = posixpath.normpath(posixpath.join('word', target)) if not target.startswith('/') else target.lstrip('/')
+            if not path.startswith('word/') or path not in package.namelist():
+                return False
+            prior[ref.get(W + 'type', 'default')] = ET.fromstring(package.read(path))
+        has_page = any(
+            re.search(r'\bPAGE\b', text)
+            for footer in prior.values()
+            for text in ([n.text or '' for n in footer.findall('.//w:instrText', NS)] + [n.get(W + 'instr', '') for n in footer.findall('.//w:fldSimple', NS)])
+        )
+        if bool(has_page) != (index > 0):
+            return False
+    return True
+
+
 def inspect_docx(path, spec):
     with zipfile.ZipFile(path) as package:
         document = ET.fromstring(package.read('word/document.xml'))
         styles_xml = ET.fromstring(package.read('word/styles.xml'))
         numbering = ET.fromstring(package.read('word/numbering.xml')) if 'word/numbering.xml' in package.namelist() else None
+        numbering_policy = _section_numbering_policy(package, document) if spec.get('section_page_number_policy') else None
     styles = {item.get(W + 'styleId'): item for item in styles_xml.findall('w:style', NS)}
     paragraphs = document.findall('.//w:p', NS)
     checks = {}
+    if numbering_policy is not None:
+        checks['section_page_number_policy'] = numbering_policy
     bodies = [p for p in paragraphs if _text(p) == spec['body']]
     body_ok = len(bodies) == 1
     if bodies:
@@ -159,7 +197,7 @@ def inspect_docx(path, spec):
     checks['heading_sizes_and_outline_levels'] = all(p is not None and bool(_run_property(p, styles, 'sz')) and all(v == str(sizes[i]) for v in _run_property(p, styles, 'sz')) for i, p in enumerate(headings))
     checks['native_heading_numbering'] = not spec['numbered'] or all(p is not None and _heading_numbered(p, styles, numbering, i) for i, p in enumerate(headings[:spec.get('numbered_levels', len(headings))]))
     if spec['title']:
-        checks['single_cover_title'] = sum(_text(p) == spec['title'] for p in paragraphs) == 1
+        checks['single_cover_title'] = _text(document).count(spec['title']) == 1
     fields = [x.text or '' for x in document.findall('.//w:instrText', NS)]
     fields += [x.get(W + 'instr', '') for x in document.findall('.//w:fldSimple', NS)]
     checks['native_toc_field'] = not spec['toc'] or any(re.search(r'\bTOC\b', field) for field in fields)
@@ -200,6 +238,7 @@ def inspect_pdf(path, spec):
     import pdfplumber
     with pdfplumber.open(path) as pdf:
         pages = [page.extract_text() or '' for page in pdf.pages]
+        footers = [''.join(word['text'] for word in page.extract_words() if word['top'] > page.height - 80) for page in pdf.pages] if spec.get('section_page_number_policy') else None
         page_sizes = [{'width_points': float(page.width), 'height_points': float(page.height)} for page in pdf.pages]
     compact = re.sub(r'\s+', '', ''.join(pages))
     required = [spec['body'], *spec['headings'], *spec['markers']]
@@ -212,7 +251,9 @@ def inspect_pdf(path, spec):
         'pdf_required_content': all(re.sub(r'\s+', '', text) in compact for text in required),
         'pdf_end_marker_once': all(compact.count(marker) == 1 for marker in spec['markers']),
     }
-    return {'checks': checks, 'pages': len(pages), 'page_sizes': page_sizes, 'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
+    if footers is not None:
+        checks['pdf_section_page_numbers'] = len(footers) >= 3 and footers == ['', 'i'] + [str(i) for i in range(1, len(footers)-1)]
+    return {'checks': checks, 'footer_text': footers, 'pages': len(pages), 'page_sizes': page_sizes, 'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
 
 
 def _candidate(deadline):

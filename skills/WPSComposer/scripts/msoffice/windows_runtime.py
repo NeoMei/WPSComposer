@@ -32,6 +32,7 @@ from ..longform.pipeline import _build_executor_resources
 from ..longform.platform_runtime import _BaseAdapter, _apply_relayout
 from ..longform.quality import QualityFinding
 from ..longform.resources import ImageProfile, PreparedLongformResource
+from .errors import NativeWordError, NativeWordTimeoutError
 
 
 _MODULE = 'skills.WPSComposer.scripts.msoffice.windows_runtime'
@@ -42,7 +43,7 @@ def _require_deadline(deadline):
     if isinstance(deadline, bool) or not isinstance(deadline, (int, float)) or not math.isfinite(deadline):
         raise ValueError('Word deadline must be a finite monotonic timestamp')
     if time.monotonic() >= deadline:
-        raise TimeoutError('Native Word deadline expired')
+        raise NativeWordTimeoutError()
 
 
 def _private_root():
@@ -64,6 +65,22 @@ def _owned_path(root, value):
     if not path.is_file():
         raise RuntimeError('Native Word did not produce its staged artifact')
     return path
+
+
+def _worker_failure(operation):
+    diagnostic = operation / 'diagnostics.json'
+    code = 'NATIVE_WORD_EXECUTION_FAILED'
+    try:
+        data = json.loads(diagnostic.read_text(encoding='utf-8'))
+        if data.get('public_code') in {'NATIVE_WORD_QUARANTINED', 'NATIVE_WORD_TIMEOUT', 'NATIVE_WORD_UNAVAILABLE'}:
+            code = data['public_code']
+    except (OSError, ValueError, AttributeError):
+        pass
+    locations = dict(staging_path=operation,
+                     diagnostic_path=diagnostic if diagnostic.is_file() else operation / 'worker.log')
+    if code == 'NATIVE_WORD_TIMEOUT':
+        return NativeWordTimeoutError(**locations)
+    return NativeWordError(code, **locations)
 
 
 def _run_worker(root, payload, deadline):
@@ -92,7 +109,9 @@ def _run_worker(root, payload, deadline):
                 'status': 'failed', 'error_type': type(exc).__name__,
                 'message': str(exc), 'word_termination_attempted': False,
             })
-            raise
+            if not isinstance(exc, Exception):
+                raise
+            raise _worker_failure(operation) from None
         try:
             child.wait(timeout=max(0.001, deadline - time.monotonic()))
         except subprocess.TimeoutExpired:
@@ -102,13 +121,17 @@ def _run_worker(root, payload, deadline):
             child.wait(timeout=5)
             if not diagnostic.exists():
                 _write_json(diagnostic, {'status': 'timeout', 'python_pid': child.pid, 'word_termination_attempted': False})
-            raise TimeoutError(f'Native Word timed out; private evidence retained at {operation}') from None
+            raise NativeWordTimeoutError(staging_path=operation, diagnostic_path=diagnostic) from None
     if child.returncode != 0 or not response.is_file():
-        raise RuntimeError(f'Native Word worker failed; private evidence retained at {operation}')
+        raise _worker_failure(operation)
     result = json.loads(response.read_text(encoding='utf-8'))
     if not isinstance(result, dict) or result.get('status') != 'ok':
-        raise RuntimeError(f'Native Word worker failed; private evidence retained at {operation}')
-    _require_deadline(deadline)
+        raise _worker_failure(operation)
+    try:
+        _require_deadline(deadline)
+    except NativeWordTimeoutError:
+        raise NativeWordTimeoutError(staging_path=operation,
+                                     diagnostic_path=diagnostic if diagnostic.exists() else operation / 'worker.log') from None
     return result['value']
 
 
@@ -288,7 +311,7 @@ def _execute_request(payload, operation):
         # to report success in this adapter, even before their strict hook lands.
         for composer in created:
             if composer.cleanup_error is not None or not composer._closed:
-                raise RuntimeError('Native Word cleanup was not verified; owned stage retained')
+                raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=operation)
 
 
 def _worker_main(request, response):
@@ -308,6 +331,7 @@ def _worker_main(request, response):
             'status': 'failed', 'error_type': type(exc).__name__,
             'message': str(exc), 'traceback': traceback.format_exc(),
             'word_termination_attempted': False,
+            'public_code': exc.code if isinstance(exc, NativeWordError) else None,
         })
         return 1
 
