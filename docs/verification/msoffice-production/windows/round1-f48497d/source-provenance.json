@@ -1,0 +1,26 @@
+{
+  "candidate": "f48497d9e8d2c453a5075824229e287fab849b7e",
+  "fix_commit": "a745d2ac352f5f9d5c2037c9dd826ce54f797c91",
+  "files": {
+    "skills/WPSComposer/scripts/msoffice/windows_host.py": {
+      "raw_sha256": "6364f75fd6d894191089fe601a4464b4d58fcd83190955f2d0ff9d75bc3cdba4",
+      "lf_sha256": "6364f75fd6d894191089fe601a4464b4d58fcd83190955f2d0ff9d75bc3cdba4",
+      "snapshot": "source/windows_host.py.txt"
+    },
+    "skills/WPSComposer/scripts/msoffice/windows_runtime.py": {
+      "raw_sha256": "4f16bfefb7fe58b6faebc17967cf032a5251fcbda56411fa5551b087465acaaf",
+      "lf_sha256": "4f16bfefb7fe58b6faebc17967cf032a5251fcbda56411fa5551b087465acaaf",
+      "snapshot": "source/windows_runtime.py.txt"
+    },
+    "tests/msoffice/test_windows_host.py": {
+      "raw_sha256": "432856c08e52e94958ef39c3083890ad0fcfec59bc0c1eed334b9dec7dec65d0",
+      "lf_sha256": "432856c08e52e94958ef39c3083890ad0fcfec59bc0c1eed334b9dec7dec65d0",
+      "snapshot": "source/test_windows_host.py.txt"
+    },
+    "fixtures/verify_msoffice_production.py": {
+      "raw_sha256": "adee7b7ceee6e009c154c05424e741ad42b5a292d90373cc10040e0d45927f4a",
+      "lf_sha256": "adee7b7ceee6e009c154c05424e741ad42b5a292d90373cc10040e0d45927f4a",
+      "snapshot": "source/verify_msoffice_production.py.txt"
+    }
+  }
+}

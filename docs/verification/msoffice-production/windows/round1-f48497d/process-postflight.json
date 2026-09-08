@@ -1,0 +1,32 @@
+{
+  "task_pids": [
+    1812,
+    5396,
+    11120,
+    21576,
+    21768,
+    23256,
+    24892,
+    26048,
+    26892
+  ],
+  "task_pids_absent": {
+    "1812": true,
+    "5396": true,
+    "11120": true,
+    "21576": true,
+    "21768": true,
+    "23256": true,
+    "24892": true,
+    "26048": true,
+    "26892": true
+  },
+  "all_task_pids_absent": true,
+  "registered_9252_retained": true,
+  "registered_name": "Microsoft Word",
+  "registered_documents_count": 0,
+  "all_native_composers_closed": true,
+  "observed_unix": 1788859413.9955986,
+  "observation_hook_errors": [],
+  "word_file_version": "16.0.17932.20910"
+}

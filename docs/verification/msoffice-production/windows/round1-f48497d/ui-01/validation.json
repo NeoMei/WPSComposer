@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "text_restored_after_undo_and_reopen": true,
+    "inserted_marker_was_unsaved": true,
+    "marker_absent_after_undo_and_reopen": true,
+    "saved_file_bytes_unchanged": true,
+    "table_and_toc_retained": true,
+    "closed_then_reopened": true,
+    "final_owned_instance_closed": true
+  },
+  "all_passed": true,
+  "source_sha256": "7a7dbf2604cb57feaa615b73ada7b72bbedd431f533aa62a4400615b28c84cf5",
+  "ui_pid": 21576,
+  "limitations": [
+    "CUA focused_element repeatedly reported the navigation search box while the visible caret and actual insertion were in the body.",
+    "Several captures returned null accessibility, one element index was unavailable, and a reopened capture returned unrelated browser document_text. Re-observation, window screenshots, retained COM identity and task-document hashes were used; these UIA fields are not treated as authoritative.",
+    "Screenshots published as document-only crops exclude account controls, unrelated navigation and file-dialog directory listings. Raw captures remain in ignored build."
+  ]
+}

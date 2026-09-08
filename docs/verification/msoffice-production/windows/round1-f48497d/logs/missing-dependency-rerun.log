@@ -1,0 +1,30 @@
+..................F..........................                            [100%]
+================================== FAILURES ===================================
+_______ test_clone_writer_activation_document_uses_pinned_native_blank ________
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-163/test_clone_writer_activation_d0')
+
+    def test_clone_writer_activation_document_uses_pinned_native_blank(tmp_path: Path):
+        probe_root = tmp_path / "probe"
+        source = probe_root / "resources/writer-blank.docx"
+        source.parent.mkdir(parents=True)
+        shutil.copy2(NATIVE_WRITER_BLANK, source)
+        staging = tmp_path / "session"
+        staging.mkdir(mode=0o700)
+    
+        cloned = clone_activation_document(probe_root, staging, "writer")
+    
+        assert cloned == staging / "wpscomposer-writer-blank.docx"
+        assert cloned.read_bytes() == NATIVE_WRITER_BLANK.read_bytes()
+>       assert stat.S_IMODE(cloned.stat().st_mode) == 0o600
+E       AssertionError: assert 438 == 384
+E        +  where 438 = <built-in function S_IMODE>(33206)
+E        +    where <built-in function S_IMODE> = stat.S_IMODE
+E        +    and   33206 = os.stat_result(st_mode=33206, st_ino=5629499535380787, st_dev=4004665961, st_nlink=1, st_uid=0, st_gid=0, st_size=10223, st_atime=1788859372, st_mtime=1788859372, st_ctime=1788859372).st_mode
+E        +      where os.stat_result(st_mode=33206, st_ino=5629499535380787, st_dev=4004665961, st_nlink=1, st_uid=0, st_gid=0, st_size=10223, st_atime=1788859372, st_mtime=1788859372, st_ctime=1788859372) = stat()
+E        +        where stat = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-163/test_clone_writer_activation_d0/session/wpscomposer-writer-blank.docx').stat
+
+tests\macos_probe\test_templates.py:41: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/macos_probe/test_templates.py::test_clone_writer_activation_document_uses_pinned_native_blank
+1 failed, 44 passed in 175.53s (0:02:55)

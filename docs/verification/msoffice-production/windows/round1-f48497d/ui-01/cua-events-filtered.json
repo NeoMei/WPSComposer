@@ -1,0 +1,90 @@
+[
+  {
+    "label": "01-opened",
+    "time": "2026-09-08T09:12:27.671Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "document_text": "35\u0007长表第35项\u0007内容完整\u0007\u000736\u0007长表第36项\u0007内容完整\u0007\u0007\nNATIVE-PRODUCTION-END"
+  },
+  {
+    "label": "02-end-position",
+    "time": "2026-09-08T09:13:03.396Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "document_text": "35\u0007长表第35项\u0007内容完整\u0007\u000736\u0007长表第36项\u0007内容完整\u0007\u0007\nNATIVE-PRODUCTION-END"
+  },
+  {
+    "label": "03-inserted",
+    "time": "2026-09-08T09:13:25.269Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "document_text": "35\u0007长表第35项\u0007内容完整\u0007\u000736\u0007长表第36项\u0007内容完整\u0007\u0007\nNATIVE-PRODUCTION-END\nWPS-PRODUCTION-UI-MARKER"
+  },
+  {
+    "label": "04-undone",
+    "time": "2026-09-08T09:14:32.151Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "document_text": "35\u0007长表第35项\u0007内容完整\u0007\u000736\u0007长表第36项\u0007内容完整\u0007\u0007\nNATIVE-PRODUCTION-END"
+  },
+  {
+    "label": "05-saved",
+    "time": "2026-09-08T09:14:54.568Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "document_text": "35\u0007长表第35项\u0007内容完整\u0007\u000736\u0007长表第36项\u0007内容完整\u0007\u0007\nNATIVE-PRODUCTION-END"
+  },
+  {
+    "label": "06-closed",
+    "time": "2026-09-08T09:15:16.936Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "8 编辑框 搜索文档",
+    "unreliable_document_text_omitted": true
+  },
+  {
+    "label": "07-reopened",
+    "time": "2026-09-08T09:18:41.262Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "886 文档 ChatGPT ID: RootWebArea",
+    "unreliable_document_text_omitted": true
+  },
+  {
+    "label": "08-final-closed",
+    "time": "2026-09-08T09:19:26.592Z",
+    "window": {
+      "app": "Microsoft.Office.WINWORD.EXE.15",
+      "id": 723604,
+      "title": "production-ui-edit - Word"
+    },
+    "focused": "886 文档 ChatGPT ID: RootWebArea",
+    "unreliable_document_text_omitted": true
+  }
+]

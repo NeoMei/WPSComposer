@@ -1,0 +1,169 @@
+{
+  "pid": 6332,
+  "documents_before": 0,
+  "old_caption": "Word",
+  "new_processes": {
+    "6332": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+  },
+  "quit_attempted": false,
+  "documents_added": false,
+  "windows_before": [
+    {
+      "hwnd": 133720,
+      "class": "HardwareMonitorWindowClass",
+      "caption": "HardwareMonitorWindow"
+    },
+    {
+      "hwnd": 133826,
+      "class": "MsoStdCompMgr",
+      "caption": ""
+    },
+    {
+      "hwnd": 133758,
+      "class": "OleDdeWndClass",
+      "caption": "DDE Server Window"
+    },
+    {
+      "hwnd": 199292,
+      "class": "_WwO",
+      "caption": ""
+    },
+    {
+      "hwnd": 330360,
+      "class": "OpusApp",
+      "caption": "Word"
+    },
+    {
+      "hwnd": 133712,
+      "class": "OfficePowerManagerWindow",
+      "caption": "OfficePowerManagerWindow"
+    },
+    {
+      "hwnd": 7866500,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 15206524,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 7211526,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 13175316,
+      "class": "IME",
+      "caption": "Default IME"
+    }
+  ],
+  "challenge": "WPSComposer-identity-b1f32218319d47298ea09fb32f157f6d",
+  "windows_during": [
+    {
+      "hwnd": 133720,
+      "class": "HardwareMonitorWindowClass",
+      "caption": "HardwareMonitorWindow"
+    },
+    {
+      "hwnd": 133826,
+      "class": "MsoStdCompMgr",
+      "caption": ""
+    },
+    {
+      "hwnd": 133758,
+      "class": "OleDdeWndClass",
+      "caption": "DDE Server Window"
+    },
+    {
+      "hwnd": 199292,
+      "class": "_WwO",
+      "caption": ""
+    },
+    {
+      "hwnd": 330360,
+      "class": "OpusApp",
+      "caption": "WPSComposer-identity-b1f32218319d47298ea09fb32f157f6d"
+    },
+    {
+      "hwnd": 133712,
+      "class": "OfficePowerManagerWindow",
+      "caption": "OfficePowerManagerWindow"
+    },
+    {
+      "hwnd": 7866500,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 15206524,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 7211526,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 13175316,
+      "class": "IME",
+      "caption": "Default IME"
+    }
+  ],
+  "windows_after": [
+    {
+      "hwnd": 133720,
+      "class": "HardwareMonitorWindowClass",
+      "caption": "HardwareMonitorWindow"
+    },
+    {
+      "hwnd": 133826,
+      "class": "MsoStdCompMgr",
+      "caption": ""
+    },
+    {
+      "hwnd": 133758,
+      "class": "OleDdeWndClass",
+      "caption": "DDE Server Window"
+    },
+    {
+      "hwnd": 199292,
+      "class": "_WwO",
+      "caption": ""
+    },
+    {
+      "hwnd": 330360,
+      "class": "OpusApp",
+      "caption": "Word"
+    },
+    {
+      "hwnd": 133712,
+      "class": "OfficePowerManagerWindow",
+      "caption": "OfficePowerManagerWindow"
+    },
+    {
+      "hwnd": 7866500,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 15206524,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 7211526,
+      "class": "ARC Event Window 00",
+      "caption": ""
+    },
+    {
+      "hwnd": 13175316,
+      "class": "IME",
+      "caption": "Default IME"
+    }
+  ],
+  "caption_after": "Word",
+  "documents_after": 0
+}
