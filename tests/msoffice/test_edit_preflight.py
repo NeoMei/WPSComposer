@@ -314,3 +314,112 @@ def test_word_structural_text_conversion_matches_execution(recording_word,kind,p
     assert supports_edit_ops('writer',[operation],platform='darwin')
     session.apply_structural_op(operation)
     assert any('to "42"' in line for line in calls[0])
+
+
+@pytest.fixture
+def windows_engines(monkeypatch):
+    monkeypatch.setattr(engines.sys, 'platform', 'win32')
+
+
+@pytest.mark.parametrize('installed', ['msoffice-only', 'both-installed'])
+@pytest.mark.parametrize('suffix,operations', [
+    ('docx', [
+        {'op':'set','target':'paragraph:1','font':{'bold':True}},
+        {'op':'set','target':'paragraph:1','geometry':{'width':200}},
+    ]),
+    ('xlsx', [
+        {'op':'set','target':'sheet:1/cell:A1','value':42},
+        {'op':'set','target':'sheet:1/cell:A1','fill':{'transparency':.5}},
+    ]),
+    ('pptx', [
+        {'op':'set','target':'slide:1/shape:1','text':'first'},
+        {'op':'set','target':'presentation','font':{'bold':True}},
+    ]),
+])
+def test_windows_auto_rejects_supported_first_known_ignored_later_before_native_open(
+        windows_engines, monkeypatch, installed, suffix, operations):
+    opened=[]
+    monkeypatch.setattr(
+        engines, 'engine_executable',
+        lambda engine, component: ('/installed/' + engine)
+        if installed == 'both-installed' or engine == 'msoffice' else None,
+    )
+    monkeypatch.setattr(
+        api, 'open_document',
+        lambda *args, **kwargs: opened.append(kwargs.get('engine')),
+    )
+    with pytest.raises(engines.EngineUnavailableError):
+        api.edit('/source.' + suffix, engine='auto', ops=operations)
+    assert opened == []
+
+
+@pytest.mark.parametrize('suffix,operation', [
+    ('docx', {'op':'set','target':'paragraph:@paraId=ABCD','font':{'bold':True}}),
+    ('xlsx', {'op':'set','target':'sheet:99/shape:@name=Future','geometry':{'width':200}}),
+    ('pptx', {'op':'set','target':'slide:99/shape:@id=7/paragraph:2/run:3',
+              'font':{'underline':99}}),
+])
+def test_windows_auto_supported_request_preserves_wps_preference(
+        windows_engines, monkeypatch, suffix, operation):
+    monkeypatch.setattr(engines, 'engine_executable', lambda *args: '/installed/app')
+    assert api._document_engine('/source.' + suffix, None, 'auto', action='edit',
+                                operations=[operation]) == 'wps'
+
+
+@pytest.mark.parametrize('operation', [
+    {'op':'move','target':'sheet:2','to':'start'},
+    {'op':'clone','target':'sheet:1','to':'end'},
+])
+def test_windows_auto_can_skip_wps_for_microsoft_only_structural_form(
+        windows_engines, monkeypatch, operation):
+    monkeypatch.setattr(engines, 'engine_executable', lambda *args: '/installed/app')
+    assert api._document_engine('/source.xlsx', None, 'auto', action='edit',
+                                operations=[operation]) == 'msoffice'
+
+
+def test_windows_auto_preserves_wps_for_in_place_worksheet_clone(
+        windows_engines, monkeypatch):
+    monkeypatch.setattr(engines, 'engine_executable', lambda *args: '/installed/app')
+    operation={'op':'clone','target':'sheet:1','to':None}
+    assert api._document_engine('/source.xlsx', None, 'auto', action='edit',
+                                operations=[operation]) == 'wps'
+
+
+@pytest.mark.parametrize('family,operation,expected', [
+    ('writer', {'op':'set','target':'paragraph:1','geometry':{'width':200}}, 'unsupported'),
+    ('sheet', {'op':'set','target':'sheet:1/cell:A1','fill':{'transparency':.5}}, 'unsupported'),
+    ('slide', {'op':'set','target':'presentation','font':{'bold':True}}, 'unsupported'),
+    ('writer', {'op':'set','target':'paragraph:@paraId=ABCDEF','paragraph':{'line_spacing_rule':99}}, 'supported'),
+    ('slide', {'op':'set','target':'slide:99/shape:@id=7/paragraph:2/run:3',
+               'font':{'underline':99}}, 'supported'),
+    ('slide', {'op':'set','target':'slide:99/shape:@id=7/table/cell:2,3',
+               'text_frame':{'vertical_anchor':99}}, 'supported'),
+])
+def test_windows_confirmed_target_field_cases(family, operation, expected):
+    from skills.WPSComposer.scripts.msoffice.edit_preflight import classify_windows_set_op
+    assert classify_windows_set_op(family, operation) == expected
+
+
+@pytest.mark.parametrize('family,operation', [
+    ('writer', {'op':'set','target':'paragraph:1','font':{'unknown':1}}),
+    ('writer', {'op':'set','target':'shape:1','fill':{'color':'#GG0000'}}),
+    ('sheet', {'op':'set','target':'sheet:1/cell:A1','borders':{'x':{'style':1}}}),
+    ('slide', {'op':'set','target':'slide:1/shape:1','text_frame':{'unknown':1}}),
+    ('slide', {'op':'set','target':'slide:1/shape:1','unknown':{}}),
+])
+def test_windows_nested_rejection_and_unknown_keyword_are_unsupported(family, operation):
+    from skills.WPSComposer.scripts.msoffice.edit_preflight import classify_windows_set_op
+    assert classify_windows_set_op(family, operation) == 'unsupported'
+
+
+def test_windows_pure_validation_does_not_resolve_live_ids_or_launch_native(monkeypatch):
+    from skills.WPSComposer.scripts.msoffice import edit_preflight as pure
+    import subprocess
+    monkeypatch.setattr(subprocess, 'run', lambda *a, **k: pytest.fail('launched process'))
+    monkeypatch.setattr(subprocess, 'Popen', lambda *a, **k: pytest.fail('launched process'))
+    assert pure.classify_windows_set_op('writer', {
+        'op':'set','target':'range:100-200','font':{'bold':True}}) == 'supported'
+    assert pure.classify_windows_set_op('sheet', {
+        'op':'set','target':'sheet:999/shape:@id=999','line':{'dash_style':99}}) == 'supported'
+    assert pure.classify_windows_set_op('slide', {
+        'op':'set','target':'selection','geometry':{'width':200}}) == 'supported'

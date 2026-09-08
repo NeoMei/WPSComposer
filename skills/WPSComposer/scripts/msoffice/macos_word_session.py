@@ -19,7 +19,7 @@ import tempfile
 import time
 from uuid import uuid4
 
-from ..artifact_transport import copy_file_before_deadline, publish_artifact, validate_office_package, validate_pdf, validate_before_deadline, ValidatorSpec
+from ..artifact_transport import copy_file_before_deadline, copy_stream_before_deadline, publish_artifact, validate_office_package, validate_pdf, validate_before_deadline, ValidatorSpec
 from .errors import NativeWordCapabilityError, NativeWordError, NativeWordTimeoutError
 from .input_validation import validate_native_input
 from .macos_runtime import WordJobLock, remaining
@@ -955,6 +955,507 @@ class MacWordSession:
         self._business_commit(self._position('end') + [
             'set insertionRange to create range boundDoc start insertionPoint end insertionPoint',
             'insert break at insertionRange break type page break'], structural=True)
+
+    @staticmethod
+    def _table_preflight(rows, cols, data, shade_header, header_color,
+                         font_size, col_widths, alignments, banded_rows,
+                         auto_fit, repeat_header, border_color, merges=()):
+        if any(type(value) is not int or not 1 <= value <= 1000 for value in (rows, cols)) or rows * cols > 10000:
+            raise ValueError('Invalid table dimensions')
+        if not isinstance(data, (list, tuple)):
+            raise TypeError('Table data must be rows')
+        normalized = []
+        for row in data:
+            if not isinstance(row, (list, tuple)) or len(row) > cols:
+                raise ValueError('Table data exceeds dimensions')
+            normalized.append([str(value) for value in row] + [''] * (cols - len(row)))
+        if len(normalized) > rows:
+            raise ValueError('Table data exceeds dimensions')
+        normalized += [[''] * cols for _ in range(rows - len(normalized))]
+        for color in (shade_header, header_color, border_color):
+            if color is not None:
+                _value('color', color)
+        _value('size', font_size)
+        if font_size <= 0:
+            raise ValueError('Expected positive font size')
+        if any(type(value) is not bool for value in (banded_rows, auto_fit, repeat_header)):
+            raise TypeError('Table flags must be boolean')
+        if col_widths is not None:
+            if not isinstance(col_widths, (list, tuple)) or len(col_widths) != cols:
+                raise ValueError('Column widths must match table columns')
+            widths = [float(_number(value)) for value in col_widths]
+            if any(value <= 0 for value in widths):
+                raise ValueError('Column widths must be positive')
+        else:
+            widths = None
+        if alignments is not None:
+            if not isinstance(alignments, (list, tuple)) or len(alignments) != cols or any(value not in ('left', 'center', 'right') for value in alignments):
+                raise ValueError('Alignments must match table columns')
+            alignments = list(alignments)
+        else:
+            alignments = ['left'] * cols
+        accepted = []
+        occupied = set()
+        for merge in merges or ():
+            if not isinstance(merge, (list, tuple)) or len(merge) != 4 or any(type(value) is not int for value in merge):
+                raise ValueError('Invalid table merge')
+            top, left, bottom, right = merge
+            if not (1 <= top <= bottom <= rows and 1 <= left <= right <= cols) or (top == bottom and left == right):
+                raise ValueError('Invalid table merge')
+            cells = {(row, column) for row in range(top, bottom + 1) for column in range(left, right + 1)}
+            if occupied & cells:
+                raise ValueError('Overlapping table merge')
+            occupied |= cells
+            accepted.append(tuple(merge))
+        return normalized, widths, alignments, sorted(accepted, key=lambda value: (value[0], value[1]), reverse=True)
+
+    def _table_commands(self, rows, cols, data, shade_header, header_color,
+                        font_size, col_widths, alignments, banded_rows,
+                        auto_fit, repeat_header, border_color, merges=()):
+        from ..reference_styles import BODY_FONT, LATIN_FONT
+        inferred_ratios = None
+        if col_widths is None and auto_fit:
+            from ..writer import _content_column_widths
+            inferred_ratios = _content_column_widths(data, cols, 1.0)
+        lines = ['activate object boundWindow',
+                 'set previousTableCount to count tables of boundDoc'] + self._position('end') + self._paragraph_boundary() + [
+            'set insertionRange to create range boundDoc start insertionPoint end insertionPoint',
+            f'set insertedTable to make new table at boundDoc with properties {{text object:insertionRange, number of rows:{rows}, number of columns:{cols}}}',
+            'set allow page breaks of insertedTable to false',
+            'set left padding of insertedTable to 4', 'set right padding of insertedTable to 4',
+            'set top padding of insertedTable to 1.5', 'set bottom padding of insertedTable to 1.5',
+            'set allow auto fit of insertedTable to false',
+        ]
+        if inferred_ratios is not None:
+            lines += ['set availableWidth to (page width of page setup of section (count sections of boundDoc) of boundDoc) - (left margin of page setup of section (count sections of boundDoc) of boundDoc) - (right margin of page setup of section (count sections of boundDoc) of boundDoc)',
+                      'if availableWidth < 72 then set availableWidth to 72']
+        for row_index, row in enumerate(data, 1):
+            lines += [f'set allow break across pages of row {row_index} of insertedTable to false',
+                      f'set height rule of row {row_index} of insertedTable to row height auto']
+            for column_index, text in enumerate(row, 1):
+                lines += [f'set ownCell to get cell from table insertedTable row {row_index} column {column_index}',
+                          f'set content of text object of ownCell to {apple_string(text)}',
+                          'set first line indent of paragraph format of text object of ownCell to 0',
+                          'set character unit first line indent of paragraph format of text object of ownCell to 0',
+                          'set paragraph format left indent of paragraph format of text object of ownCell to 0',
+                          'set paragraph format right indent of paragraph format of text object of ownCell to 0',
+                          'set space before of paragraph format of text object of ownCell to 0',
+                          'set space after of paragraph format of text object of ownCell to 0',
+                          'set line spacing rule of paragraph format of text object of ownCell to line space single',
+                          f'set alignment of paragraph format of text object of ownCell to align paragraph {alignments[column_index - 1]}',
+                          'set vertical alignment of ownCell to cell align vertical center',
+                          f'set font size of font object of text object of ownCell to {_number(font_size)}',
+                          f'set east asian name of font object of text object of ownCell to {apple_string(BODY_FONT)}',
+                          f'set ascii name of font object of text object of ownCell to {apple_string(LATIN_FONT)}']
+                if col_widths is not None:
+                    lines.append(f'set width of ownCell to {_number(col_widths[column_index - 1])}')
+                elif inferred_ratios is not None:
+                    lines.append(f'set width of ownCell to availableWidth * {_number(inferred_ratios[column_index - 1])}')
+                if row_index == 1:
+                    lines += ['set bold of font object of text object of ownCell to true']
+                    if shade_header is not None:
+                        lines.append('set background pattern color of shading of text object of ownCell to ' + _value('color', shade_header))
+                    if header_color is not None:
+                        lines.append('set color of font object of text object of ownCell to ' + _value('color', header_color))
+                elif banded_rows and row_index % 2 == 1:
+                    lines.append('set background pattern color of shading of text object of ownCell to {62194, 62194, 62194}')
+        for border in ('top', 'bottom', 'left', 'right', 'horizontal', 'vertical'):
+            lines += [f'set ownBorder to get border insertedTable which border border {border}',
+                      'set line style of ownBorder to line style single',
+                      'set line width of ownBorder to line width25 point',
+                      'set color of ownBorder to ' + _value('color', border_color)]
+        if repeat_header and rows > 1:
+            lines.append('set heading format of row 1 of insertedTable to true')
+        for top, left, bottom, right in merges:
+            lines += [f'set mergeStart to get cell from table insertedTable row {top} column {left}',
+                      f'set mergeEnd to get cell from table insertedTable row {bottom} column {right}',
+                      'merge cell mergeStart with mergeEnd']
+        lines += ['set tableIndex to count tables of boundDoc',
+                  'if tableIndex is not previousTableCount + 1 then error "WPSC_TABLE_COUNT_DELTA_FAILED"',
+                  'set insertedTable to table tableIndex of boundDoc',
+                  f'if (number of rows of insertedTable) is not {rows} or (number of columns of insertedTable) is not {cols} then error "WPSC_TABLE_READBACK_FAILED"',
+                  f'set nativeRows to {{{{"created", "table", tableIndex, previousTableCount, number of rows of insertedTable, number of columns of insertedTable, allow auto fit of insertedTable}}}}']
+        return lines
+
+    def _execute_structural(self, lines):
+        # Once the native batch starts, failure can mean that Word applied a
+        # prefix of the commands. Invalidate positional targets conservatively.
+        self._structural_changed = True
+        try:
+            return self._execute(lines)
+        except BaseException:
+            self._retain_evidence = True
+            raise
+
+    @staticmethod
+    def _table_ack(rows_out, rows, cols, merges):
+        return (len(rows_out) == 1 and isinstance(rows_out[0], list) and len(rows_out[0]) == 7 and
+                rows_out[0][:2] == ['created', 'table'] and
+                all(type(value) is int for value in rows_out[0][2:6]) and
+                rows_out[0][2] == rows_out[0][3] + 1 and
+                rows_out[0][4:6] == [rows, cols] and
+                rows_out[0][6] is False)
+
+    def add_table(self, rows, cols, data, shade_header="#4472C4",
+                  header_color="#FFFFFF", font_size=10,
+                  col_widths=None, alignments=None,
+                  banded_rows=True, auto_fit=True,
+                  repeat_header=True, border_color="#D0D0D0"):
+        self._writable()
+        data, widths, alignments, merges = self._table_preflight(
+            rows, cols, data, shade_header, header_color, font_size,
+            col_widths, alignments, banded_rows, auto_fit, repeat_header,
+            border_color,
+        )
+        rows_out = self._execute_structural(self._table_commands(
+            rows, cols, data, shade_header, header_color, font_size, widths,
+            alignments, banded_rows, auto_fit, repeat_header, border_color,
+            merges,
+        ))
+        if not self._table_ack(rows_out, rows, cols, merges):
+            self._retain_evidence = True
+            raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root)
+        return f'table:{rows_out[0][2]}'
+
+    def add_merged_table(self, data, merges=None, shade_header="#4472C4"):
+        if not data:
+            return None
+        self._writable()
+        if not isinstance(data, (list, tuple)) or any(not isinstance(row, (list, tuple)) for row in data):
+            raise TypeError('Table data must be rows')
+        rows = len(data)
+        cols = max((len(row) for row in data), default=0)
+        normalized, widths, alignments, merges = self._table_preflight(
+            rows, cols, data, shade_header, '#FFFFFF', 10, None, None,
+            False, True, True, '#D0D0D0', merges,
+        )
+        rows_out = self._execute_structural(self._table_commands(
+            rows, cols, normalized, shade_header, '#FFFFFF', 10, widths,
+            alignments, False, True, True, '#D0D0D0', merges,
+        ))
+        if not self._table_ack(rows_out, rows, cols, merges):
+            self._retain_evidence = True
+            raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root)
+        return f'table:{rows_out[0][2]}'
+
+    @staticmethod
+    def _object_wrap(wrap, *, textbox=False, inline=False):
+        if type(wrap) is not int or not 0 <= wrap < len(_WRAP):
+            raise ValueError('Unsupported object wrap')
+        if inline:
+            return _WRAP[wrap]
+        allowed = {0, 4} if textbox else {0}
+        if wrap not in allowed:
+            raise NativeWordCapabilityError('Native Word object wrap has not been verified')
+        return _WRAP[wrap]
+
+    @staticmethod
+    def _image_arguments(width, height, max_width, max_height, inline,
+                         preserve_aspect, alt, wrap):
+        values = {}
+        for name, value in [('width', width), ('height', height),
+                            ('max_width', max_width), ('max_height', max_height)]:
+            if value is not None:
+                rendered = float(_number(value))
+                if rendered <= 0:
+                    raise ValueError('Image dimensions must be positive')
+                values[name] = rendered
+            else:
+                values[name] = None
+        if type(inline) is not bool or type(preserve_aspect) is not bool:
+            raise TypeError('Image flags must be boolean')
+        if alt is not None and not isinstance(alt, str):
+            raise TypeError('Image alt text must be text')
+        if alt is not None:
+            apple_string(alt)
+        MacWordSession._object_wrap(wrap, inline=inline)
+        if inline and wrap != 0:
+            raise NativeWordCapabilityError('Native Word inline image wrap has not been verified')
+        if not inline and alt is not None:
+            raise NativeWordCapabilityError('Native Word floating image alt text is unsupported')
+        return values
+
+    def _stage_image(self, path):
+        import io
+        from ..longform.resources import MAX_RESOURCE_BYTES, _ResourceRejected, _prepare_payload
+        source = Path(path).expanduser().resolve(strict=True)
+        self._remaining()
+        if source.stat().st_size > MAX_RESOURCE_BYTES:
+            raise ValueError('Image resource exceeds the 50 MiB limit')
+        payload_stream = io.BytesIO()
+        with source.open('rb') as incoming:
+            copy_stream_before_deadline(incoming, payload_stream, self._deadline)
+        payload = payload_stream.getvalue()
+        self._remaining()
+        try:
+            media_type, _normalizer, normalized, _profile, _multiframe = _prepare_payload(payload)
+        except _ResourceRejected as error:
+            raise NativeWordCapabilityError('Mac Word image resource is unsupported') from error
+        if media_type not in {'image/png', 'image/jpeg', 'image/tiff', 'image/bmp', 'image/gif'}:
+            raise NativeWordCapabilityError('Mac Word image resource type has not been verified')
+        if len(normalized) > MAX_RESOURCE_BYTES:
+            raise ValueError('Normalized image resource exceeds the 50 MiB limit')
+        suffix = {'image/png': '.png', 'image/jpeg': '.jpg', 'image/tiff': '.tiff',
+                  'image/bmp': '.bmp', 'image/gif': '.gif'}[media_type]
+        target = self.staging_root / ('image-' + uuid4().hex + suffix)
+        created = False
+        try:
+            with target.open('xb') as stream:
+                created = True
+                copy_stream_before_deadline(io.BytesIO(normalized), stream, self._deadline)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(target, 0o600)
+            if self._digest(target) != hashlib.sha256(normalized).hexdigest():
+                raise ValueError('Private image staging digest mismatch')
+            self._remaining()
+            return target
+        except BaseException:
+            if created:
+                target.unlink(missing_ok=True)
+            raise
+
+    @staticmethod
+    def _image_size_commands(target, width, height, max_width, max_height,
+                             preserve_aspect):
+        effective_aspect = preserve_aspect or ((width is None) != (height is None))
+        lines = [f'set naturalWidth to width of {target}',
+                 f'set naturalHeight to height of {target}',
+                 f'set lock aspect ratio of {target} to {str(bool(effective_aspect)).lower()}']
+        if width is not None and height is not None:
+            if preserve_aspect:
+                lines += [f'set scaleFactor to {_number(width)} / naturalWidth',
+                          f'if ({_number(height)} / naturalHeight) < scaleFactor then set scaleFactor to {_number(height)} / naturalHeight',
+                          f'set width of {target} to naturalWidth * scaleFactor',
+                          f'set height of {target} to naturalHeight * scaleFactor']
+            else:
+                lines += [f'set width of {target} to {_number(width)}',
+                          f'set height of {target} to {_number(height)}']
+        elif width is not None:
+            lines.append(f'set width of {target} to {_number(width)}')
+        elif height is not None:
+            lines.append(f'set height of {target} to {_number(height)}')
+        lines += [f'set currentWidth to width of {target}',
+                  f'set currentHeight to height of {target}',
+                  'set scaleFactor to 1.0']
+        if max_width is not None:
+            lines += [f'set maxWidth to {_number(max_width)}',
+                      'if currentWidth > maxWidth then set scaleFactor to maxWidth / currentWidth']
+        if max_height is not None:
+            lines += [f'set maxHeight to {_number(max_height)}',
+                      'if currentHeight > maxHeight then',
+                      'set heightScale to maxHeight / currentHeight',
+                      'if heightScale < scaleFactor then set scaleFactor to heightScale',
+                      'end if']
+        lines += ['if scaleFactor < 1.0 then',
+                  f'set width of {target} to currentWidth * scaleFactor',
+                  f'set height of {target} to currentHeight * scaleFactor',
+                  'end if']
+        return lines
+
+    @staticmethod
+    def _expected_image_size(natural_width, natural_height, width, height,
+                             max_width, max_height, preserve_aspect):
+        natural_width = float(natural_width)
+        natural_height = float(natural_height)
+        if not all(math.isfinite(value) and value > 0 for value in (natural_width, natural_height)):
+            raise ValueError('Invalid native image dimensions')
+        actual_width, actual_height = natural_width, natural_height
+        if width is not None and height is not None:
+            if preserve_aspect:
+                scale = min(width / natural_width, height / natural_height)
+                actual_width, actual_height = natural_width * scale, natural_height * scale
+            else:
+                actual_width, actual_height = width, height
+        elif width is not None:
+            actual_height *= width / actual_width
+            actual_width = width
+        elif height is not None:
+            actual_width *= height / actual_height
+            actual_height = height
+        scale = min(1.0,
+                    max_width / actual_width if max_width is not None else 1.0,
+                    max_height / actual_height if max_height is not None else 1.0)
+        return actual_width * scale, actual_height * scale
+
+    def _add_image(self, path, width, height, wrap, max_width, max_height,
+                   inline, preserve_aspect, alt, *, block):
+        self._writable()
+        values = self._image_arguments(width, height, max_width, max_height,
+                                       inline, preserve_aspect, alt, wrap)
+        private_image = self._stage_image(path)
+        count_expression = 'count inline pictures of boundDoc' if inline else 'count shapes of boundDoc'
+        lines = ['activate object boundWindow',
+                 f'set previousImageCount to {count_expression}'] + self._position('end') + self._paragraph_boundary() + [
+            'set imageRange to create range boundDoc start insertionPoint end insertionPoint']
+        if inline:
+            lines += [f'set insertedImage to make new inline picture at imageRange with properties {{file name:{apple_string(str(private_image))}, link to file:false, save with document:true}}',
+                      'set imageIndex to count inline pictures of boundDoc',
+                      'set insertedImage to inline picture imageIndex of boundDoc']
+        else:
+            lines += [f'set insertedImage to make new picture at boundDoc with properties {{file name:{apple_string(str(private_image))}, link to file:false, save with document:true, anchor:imageRange}}',
+                      'set imageIndex to count shapes of boundDoc',
+                      'set insertedImage to shape imageIndex of boundDoc',
+                      'set relative horizontal position of insertedImage to relative horizontal position page',
+                      'set relative vertical position of insertedImage to relative vertical position page',
+                      'set left position of insertedImage to 0', 'set top of insertedImage to 0',
+                      f'set wrap type of wrap format of insertedImage to {self._object_wrap(wrap)}']
+        if inline:
+            lines += self._image_size_commands('insertedImage', values['width'],
+                                               values['height'], values['max_width'],
+                                               values['max_height'], preserve_aspect)
+        else:
+            # Match WriterComposer: exact two-dimensional floating geometry
+            # stretches to the requested box; max constraints apply only to
+            # inline pictures, and a single dimension preserves aspect.
+            floating_aspect = not (values['width'] is not None and values['height'] is not None)
+            lines += self._image_size_commands('insertedImage', values['width'],
+                                               values['height'], None, None,
+                                               floating_aspect)
+        if inline and alt is not None:
+            lines.append(f'set alternative text of insertedImage to {apple_string(alt)}')
+        if block:
+            lines += ['set blockRange to text object of insertedImage',
+                      'set alignment of paragraph format of blockRange to align paragraph center',
+                      'set keep with next of paragraph format of blockRange to true',
+                      'set space after of paragraph format of blockRange to 0',
+                      'set boundaryPoint to (end of content of text object of boundDoc) - 1',
+                      'set followingBoundary to create range boundDoc start boundaryPoint end boundaryPoint',
+                      'set content of followingBoundary to return']
+        kind = 'inline_shape' if inline else 'shape'
+        lines.append('if imageIndex is not previousImageCount + 1 then error "WPSC_IMAGE_COUNT_DELTA_FAILED"')
+        row = f'{{"created", "{kind}", imageIndex, previousImageCount, naturalWidth, naturalHeight, width of insertedImage, height of insertedImage'
+        if inline:
+            row += ', alternative text of insertedImage as text'
+        else:
+            row += ', my enumIndex(wrap type of wrap format of insertedImage, {' + ', '.join(_WRAP) + '}), (shape type of insertedImage is shape type picture)'
+        row += '}'
+        lines.append('set nativeRows to {' + row + '}')
+        rows_out = self._execute_structural(lines)
+        if not self._image_ack(rows_out, kind, values, preserve_aspect, alt, wrap):
+            self._retain_evidence = True
+            raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root)
+        return f'{kind}:{rows_out[0][2]}'
+
+    @staticmethod
+    def _image_ack(rows_out, kind, values, preserve_aspect, alt, wrap):
+        expected_length = 9 if kind == 'inline_shape' else 10
+        if (len(rows_out) != 1 or not isinstance(rows_out[0], list) or
+                len(rows_out[0]) != expected_length):
+            return False
+        row = rows_out[0]
+        if (row[:2] != ['created', kind] or type(row[2]) is not int or
+                type(row[3]) is not int or row[2] < 1 or row[3] < 0 or
+                row[2] != row[3] + 1):
+            return False
+        try:
+            natural_width, natural_height = float(row[4]), float(row[5])
+            actual_width, actual_height = float(row[6]), float(row[7])
+        except (TypeError, ValueError):
+            return False
+        if not all(math.isfinite(value) and value > 0 for value in (actual_width, actual_height)):
+            return False
+        close = lambda actual, expected: abs(actual - expected) <= 1.0
+        max_width = values['max_width'] if kind == 'inline_shape' else None
+        max_height = values['max_height'] if kind == 'inline_shape' else None
+        try:
+            expected_width, expected_height = MacWordSession._expected_image_size(
+                natural_width, natural_height, values['width'], values['height'],
+                max_width, max_height, preserve_aspect if kind == 'inline_shape' else not (
+                    values['width'] is not None and values['height'] is not None))
+        except ValueError:
+            return False
+        if not close(actual_width, expected_width) or not close(actual_height, expected_height):
+            return False
+        if kind == 'inline_shape':
+            return isinstance(row[8], str) and (alt is None or row[8] == alt)
+        return row[8] == wrap and row[9] is True
+
+    def add_image(self, path, width=None, height=None, wrap=0, *,
+                  max_width=None, max_height=None, inline=True,
+                  preserve_aspect=True, alt=None):
+        return self._add_image(path, width, height, wrap, max_width,
+                               max_height, inline, preserve_aspect, alt,
+                               block=False)
+
+    def add_image_block(self, *args, **kwargs):
+        # Bind exactly as WriterComposer.add_image() would before native work.
+        from inspect import signature
+        bound = signature(self.add_image).bind(*args, **kwargs)
+        bound.apply_defaults()
+        if not bound.arguments['inline']:
+            raise NativeWordCapabilityError('Native Word floating image block layout has not been verified')
+        return self._add_image(**bound.arguments, block=True)
+
+    def add_floating_textbox(self, text, left, top, width, height,
+                             wrap=0, fill_color=None, font_size=11,
+                             bold=False):
+        self._writable()
+        if not isinstance(text, str):
+            raise TypeError('Text box content must be text')
+        geometry = {name: float(_number(value)) for name, value in
+                    [('left', left), ('top', top), ('width', width), ('height', height)]}
+        if geometry['width'] <= 0 or geometry['height'] <= 0:
+            raise ValueError('Text box dimensions must be positive')
+        wrap_name = self._object_wrap(wrap, textbox=True)
+        _value('size', font_size)
+        if font_size <= 0:
+            raise ValueError('Text box font size must be positive')
+        if type(bold) is not bool:
+            raise TypeError('Text box bold flag must be boolean')
+        if fill_color is not None:
+            _value('color', fill_color)
+        lines = ['activate object boundWindow',
+                 'set previousShapeCount to count shapes of boundDoc'] + self._position('end') + self._paragraph_boundary() + [
+            'set insertionRange to create range boundDoc start insertionPoint end insertionPoint',
+            f'set insertedShape to make new text box at boundDoc with properties {{anchor:insertionRange, left position:{_number(left)}, top:{_number(top)}, width:{_number(width)}, height:{_number(height)}}}',
+            'set shapeIndex to count shapes of boundDoc',
+            'set insertedShape to shape shapeIndex of boundDoc',
+            'set relative horizontal position of insertedShape to relative horizontal position page',
+            'set relative vertical position of insertedShape to relative vertical position page',
+            f'set left position of insertedShape to {_number(left)}',
+            f'set top of insertedShape to {_number(top)}',
+            f'set width of insertedShape to {_number(width)}',
+            f'set height of insertedShape to {_number(height)}',
+            f'set content of text range of text frame of insertedShape to {apple_string(text)}',
+            f'set font size of font object of text range of text frame of insertedShape to {_number(font_size)}',
+            f'set bold of font object of text range of text frame of insertedShape to {str(bold).lower()}',
+            f'set wrap type of wrap format of insertedShape to {wrap_name}']
+        if fill_color is not None:
+            lines += ['set visible of fill format of insertedShape to true',
+                      'set fore color of fill format of insertedShape to ' + _value('color', fill_color)]
+        lines += ['if shapeIndex is not previousShapeCount + 1 then error "WPSC_TEXTBOX_COUNT_DELTA_FAILED"',
+                  'set nativeRows to {{"created", "shape", shapeIndex, previousShapeCount, (shape type of insertedShape is shape type text box), content of text range of text frame of insertedShape as text, left position of insertedShape, top of insertedShape, width of insertedShape, height of insertedShape, my enumIndex(wrap type of wrap format of insertedShape, {' + ', '.join(_WRAP) + '}), font size of font object of text range of text frame of insertedShape, bold of font object of text range of text frame of insertedShape, visible of fill format of insertedShape, fore color of fill format of insertedShape}}']
+        rows_out = self._execute_structural(lines)
+        if not self._textbox_ack(rows_out, text, geometry, wrap, font_size, bold, fill_color):
+            self._retain_evidence = True
+            raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root)
+        return f'shape:{rows_out[0][2]}'
+
+    @staticmethod
+    def _textbox_ack(rows_out, text, geometry, wrap, font_size, bold, fill_color):
+        if (len(rows_out) != 1 or not isinstance(rows_out[0], list) or len(rows_out[0]) != 15):
+            return False
+        row = rows_out[0]
+        if (row[:2] != ['created', 'shape'] or type(row[2]) is not int or
+                type(row[3]) is not int or row[2] < 1 or row[3] < 0 or
+                row[2] != row[3] + 1 or row[4] is not True or
+                not str(row[5]).startswith(text)):
+            return False
+        close = lambda actual, expected, tolerance=0.8: isinstance(actual, (int, float)) and not isinstance(actual, bool) and math.isfinite(actual) and abs(float(actual) - expected) <= tolerance
+        if not all(close(row[index], geometry[name]) for index, name in enumerate(('left', 'top', 'width', 'height'), 6)):
+            return False
+        if row[10] != wrap or not close(row[11], float(font_size), 0.2) or row[12] is not bold:
+            return False
+        if fill_color is not None:
+            if row[13] is not True or not isinstance(row[14], list) or len(row[14]) != 3:
+                return False
+            expected = [int(fill_color[index:index + 2], 16) * 257 for index in (1, 3, 5)] if isinstance(fill_color, str) else [fill_color & 255, (fill_color >> 8) & 255, (fill_color >> 16) & 255]
+            if isinstance(fill_color, int):
+                expected = [value * 257 for value in expected]
+            if any(not close(actual, target, 300) for actual, target in zip(row[14], expected)):
+                return False
+        return True
 
     def set_margins(self, top, bottom, left, right):
         props = dict(top_margin=top, bottom_margin=bottom, left_margin=left, right_margin=right)

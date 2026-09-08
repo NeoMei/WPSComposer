@@ -8,6 +8,479 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Literal
+
+
+WindowsCapability = Literal['supported', 'unsupported', 'unknown']
+
+_FONT_FIELDS = {
+    'name', 'size', 'bold', 'italic', 'underline', 'strikethrough', 'color',
+}
+_PARAGRAPH_FIELDS = {
+    'alignment', 'left_indent', 'right_indent', 'first_line_indent',
+    'space_before', 'space_after', 'line_spacing', 'line_spacing_rule',
+    'keep_together', 'keep_with_next', 'page_break_before', 'widow_control',
+}
+_GEOMETRY_FIELDS = {'left', 'top', 'width', 'height', 'rotation'}
+_FILL_FIELDS = {'color', 'back_color', 'visible', 'transparency'}
+_LINE_FIELDS = {'color', 'visible', 'weight', 'dash_style', 'transparency'}
+_TEXT_FRAME_FIELDS = {
+    'margin_left', 'margin_right', 'margin_top', 'margin_bottom',
+    'word_wrap', 'auto_size', 'vertical_anchor',
+}
+_WORD_PAGE_FIELDS = {
+    'orientation', 'page_width', 'page_height', 'top_margin', 'bottom_margin',
+    'left_margin', 'right_margin', 'header_distance', 'footer_distance',
+    'gutter', 'paper_size',
+}
+_SHEET_PAGE_FIELDS = {
+    'orientation', 'top_margin', 'bottom_margin', 'left_margin',
+    'right_margin', 'header_margin', 'footer_margin', 'paper_size', 'zoom',
+    'fit_to_pages_wide', 'fit_to_pages_tall', 'print_area',
+    'print_title_rows', 'print_title_columns',
+}
+_SLIDE_PAGE_FIELDS = {'slide_width', 'slide_height'}
+
+_WINDOWS_SIGNATURE_FIELDS = {
+    'writer': {
+        'text', 'font', 'paragraph', 'geometry', 'fill', 'line', 'style',
+        'wrap', 'vertical_alignment', 'page_setup', 'columns',
+    },
+    'sheet': {
+        'value', 'formula', 'font', 'fill', 'line', 'geometry',
+        'number_format', 'horizontal_alignment', 'vertical_alignment',
+        'wrap_text', 'indent', 'row_height', 'column_width', 'borders',
+        'page_setup', 'name', 'chart_type', 'chart_title',
+    },
+    'slide': {
+        'text', 'font', 'paragraph', 'geometry', 'fill', 'line', 'text_frame',
+        'name', 'shape_type', 'background', 'follow_master_background',
+        'page_setup', 'vertical_alignment',
+    },
+}
+
+_WINDOWS_TARGET_FIELDS = {
+    'writer': {
+        'range': {'text', 'font', 'paragraph', 'style'},
+        'cell': {'text', 'font', 'paragraph', 'style', 'fill', 'vertical_alignment'},
+        'shape': {'text', 'font', 'geometry', 'fill', 'line', 'wrap'},
+        'section': {'page_setup', 'columns'},
+    },
+    'sheet': {
+        'range': {
+            'value', 'formula', 'font', 'fill', 'number_format',
+            'horizontal_alignment', 'vertical_alignment', 'wrap_text',
+            'indent', 'row_height', 'column_width', 'borders',
+        },
+        'shape': {'geometry', 'fill', 'line', 'name'},
+        'chart': {'geometry', 'chart_type', 'chart_title'},
+        'sheet': {'name', 'page_setup'},
+    },
+    'slide': {
+        'presentation': {'page_setup'},
+        'slide': {'name', 'background', 'follow_master_background'},
+        'text': {'text', 'font', 'paragraph'},
+        'cell': {
+            'text', 'font', 'paragraph', 'fill', 'line', 'text_frame',
+            'vertical_alignment',
+        },
+        'shape': {
+            'text', 'font', 'paragraph', 'geometry', 'fill', 'line',
+            'text_frame', 'vertical_alignment', 'name',
+        },
+        # A live selection is either a text range or a shape range. The
+        # concrete kind remains an identity-bound session check.
+        'selection': {
+            'text', 'font', 'paragraph', 'geometry', 'fill', 'line',
+            'text_frame', 'vertical_alignment',
+        },
+    },
+}
+
+
+def _windows_target_kind(family, target):
+    if family == 'writer':
+        if target == 'selection':
+            return 'range'
+        if not isinstance(target, str):
+            return None
+        if re.fullmatch(r'paragraph:(?:[1-9]\d*|@paraId=[0-9a-fA-F]+)', target):
+            return 'range'
+        if re.fullmatch(r'range:\d+-\d+', target):
+            return 'range'
+        if re.fullmatch(r'table:[1-9]\d*/cell:[1-9]\d*,[1-9]\d*', target):
+            return 'cell'
+        if re.fullmatch(r'shape:[1-9]\d*', target):
+            return 'shape'
+        if re.fullmatch(r'section:[1-9]\d*', target):
+            return 'section'
+        return None
+    if family == 'sheet':
+        if target == 'selection':
+            return 'range'
+        if not isinstance(target, str):
+            return None
+        if re.fullmatch(r'sheet:[1-9]\d*/(?:cell|range):.+', target):
+            return 'range'
+        if re.fullmatch(r'sheet:[1-9]\d*/shape:(?:[1-9]\d*|@id=[1-9]\d*|@name=.+)', target):
+            return 'shape'
+        if re.fullmatch(r'sheet:[1-9]\d*/chart:[1-9]\d*', target):
+            return 'chart'
+        if re.fullmatch(r'sheet:[1-9]\d*', target):
+            return 'sheet'
+        return None
+    if family == 'slide':
+        if target == 'selection':
+            return 'selection'
+        if target == 'presentation':
+            return 'presentation'
+        if not isinstance(target, str):
+            return None
+        if re.fullmatch(r'slide:[1-9]\d*', target):
+            return 'slide'
+        shape = r'(?:[1-9]\d*|@id=[1-9]\d*|@name=.+)'
+        stable_nested = r'(?:[1-9]\d*|@id=[1-9]\d*)'
+        if re.fullmatch(rf'slide:[1-9]\d*/shape:{stable_nested}/table/cell:[1-9]\d*,[1-9]\d*', target):
+            return 'cell'
+        if re.fullmatch(rf'slide:[1-9]\d*/shape:{stable_nested}/paragraph:[1-9]\d*(?:/run:[1-9]\d*)?', target):
+            return 'text'
+        if re.fullmatch(rf'slide:[1-9]\d*/shape:{shape}', target):
+            return 'shape'
+    return None
+
+
+def _has_requested_value(value):
+    return value is not None and not (isinstance(value, dict) and not value)
+
+
+def _valid_color(value):
+    from .._colors import hex_to_rgb_long
+    try:
+        hex_to_rgb_long(value)
+        return True
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+def _valid_nested(value, allowed, *, color_fields=()):
+    if not isinstance(value, dict) or set(value) - set(allowed):
+        return False
+    return all(_valid_color(value[key]) for key in color_fields if key in value)
+
+
+def _valid_borders(value):
+    if not isinstance(value, dict):
+        return False
+    for edge, spec in value.items():
+        try:
+            int(edge)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        if not isinstance(spec, dict) or set(spec) - {'style', 'weight', 'color'}:
+            return False
+        if 'color' in spec and not _valid_color(spec['color']):
+            return False
+    return True
+
+
+def _windows_sheet_values_are_screened(patch):
+    """Reuse the existing Microsoft spreadsheet automation-string screen."""
+    from .windows_office_runtime import validate_plan
+
+    def strings(value):
+        if isinstance(value, dict):
+            for nested in value.values():
+                yield from strings(nested)
+        elif isinstance(value, (list, tuple)):
+            for nested in value:
+                yield from strings(nested)
+        elif isinstance(value, str):
+            yield value
+
+    cells = [[value] for value in strings(patch)]
+    if cells:
+        validate_plan({
+            'component': 'spreadsheet',
+            'operations': [
+                {'op': 'sheet.reset', 'args': {}},
+                {'op': 'sheet.write_table', 'args': {
+                    'startRow': 1, 'startCol': 1, 'values': cells,
+                }},
+            ],
+        }, {})
+
+
+def classify_windows_set_op(family, op) -> WindowsCapability:
+    """Classify deterministic Python-side support for one Windows set op.
+
+    A supported result means the current composer has an implemented target
+    branch and conversion path. Native COM acceptance and live target
+    existence remain deferred to the identity-bound session.
+    """
+    try:
+        from ..document_api import validate_op
+        if not validate_op(op, family).get('valid') or op.get('op', 'set') != 'set':
+            return 'unsupported'
+        signature = _WINDOWS_SIGNATURE_FIELDS.get(family)
+        target_kind = _windows_target_kind(family, op.get('target'))
+        if signature is None or target_kind is None:
+            return 'unsupported'
+        patch = {key: value for key, value in op.items() if key not in {'op', 'target'}}
+        if set(patch) - signature:
+            return 'unsupported'
+        requested = {key for key, value in patch.items() if _has_requested_value(value)}
+        if requested - _WINDOWS_TARGET_FIELDS[family][target_kind]:
+            return 'unsupported'
+
+        nested = {
+            'font': (_FONT_FIELDS, {'color'}),
+            'paragraph': (_PARAGRAPH_FIELDS, set()),
+            'geometry': (_GEOMETRY_FIELDS, set()),
+            'line': (_LINE_FIELDS, {'color'}),
+            'text_frame': (_TEXT_FRAME_FIELDS, set()),
+            'background': (_FILL_FIELDS, {'color', 'back_color'}),
+        }
+        for key, (allowed, colors) in nested.items():
+            if key in patch and _has_requested_value(patch[key]):
+                if not _valid_nested(patch[key], allowed, color_fields=colors):
+                    return 'unsupported'
+        if 'fill' in patch and _has_requested_value(patch['fill']):
+            allowed = {'color'} if target_kind in {'cell', 'range'} else _FILL_FIELDS
+            if not _valid_nested(
+                    patch['fill'], allowed,
+                    color_fields={'color', 'back_color'} & allowed):
+                return 'unsupported'
+        if 'page_setup' in patch and _has_requested_value(patch['page_setup']):
+            allowed = {
+                'writer': _WORD_PAGE_FIELDS,
+                'sheet': _SHEET_PAGE_FIELDS,
+                'slide': _SLIDE_PAGE_FIELDS,
+            }[family]
+            if not _valid_nested(patch['page_setup'], allowed):
+                return 'unsupported'
+        if 'borders' in patch and _has_requested_value(patch['borders']):
+            if not _valid_borders(patch['borders']):
+                return 'unsupported'
+        if family == 'sheet':
+            _windows_sheet_values_are_screened(patch)
+        return 'supported'
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return 'unsupported'
+
+
+def _positive_int(value):
+    return type(value) is int and value >= 1
+
+
+def _windows_slide_structural(op):
+    verb = op.get('op')
+    if verb == 'insert':
+        kind = op.get('type')
+        props = op.get('props') or {}
+        if not isinstance(props, dict):
+            return False
+        if kind == 'slide':
+            try:
+                int(props.get('layout', 12))
+            except (TypeError, ValueError, OverflowError):
+                return False
+            return None if set(props) - {'layout'} else True
+        if kind not in {'textbox', 'image'}:
+            return False
+        if not re.fullmatch(r'slide:[1-9]\d*', str(op.get('parent', ''))):
+            return False
+        allowed = {'left', 'top', 'width', 'height', 'text'}
+        if kind == 'image':
+            allowed.add('path')
+        if set(props) - allowed:
+            return None
+        try:
+            for key in {'left', 'top', 'width', 'height'} & set(props):
+                float(props[key])
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return kind != 'image' or isinstance(props.get('path'), (str, Path))
+    target = str(op.get('target', ''))
+    match = re.fullmatch(
+        r'slide:[1-9]\d*(?:/shape:(?:[1-9]\d*|@id=[1-9]\d*|@name=.+))?',
+        target,
+    )
+    if verb == 'remove':
+        return match is not None
+    if verb not in {'move', 'clone'} or match is None:
+        return False
+    to = op.get('to', 'end')
+    if '/shape:' in target:
+        if to in (None, 'start', 'end'):
+            return True
+        return (isinstance(to, dict) and set(to) == {'slide'} and
+                _positive_int(to['slide']))
+    if to in (None, 'start', 'end'):
+        return True
+    if not isinstance(to, dict) or len(to) != 1:
+        return False
+    key, value = next(iter(to.items()))
+    if key == 'index':
+        return _positive_int(value)
+    return key in {'before', 'after'} and bool(
+        re.fullmatch(r'slide:[1-9]\d*', str(value)))
+
+
+def _windows_sheet_structural(op, engine):
+    verb = op.get('op')
+    props = op.get('props') or {}
+    if not isinstance(props, dict):
+        return False
+    if verb == 'insert':
+        kind = op.get('type')
+        if kind == 'sheet':
+            return None if set(props) - {'name'} else True
+        if kind not in {'row', 'column'}:
+            return False
+        if set(props) - {'values'}:
+            return None
+        if not re.fullmatch(r'sheet:[1-9]\d*(?:/(?:cell|range):.+)?', str(op.get('parent', ''))):
+            return False
+        position = op.get('position', 'end')
+        if position in (None, 'end'):
+            return True
+        return (isinstance(position, dict) and set(position) == {'index'} and
+                _positive_int(position['index']))
+    target = str(op.get('target', ''))
+    sheet = re.fullmatch(r'sheet:[1-9]\d*', target)
+    cell = re.fullmatch(r'sheet:[1-9]\d*/(?:cell|range):.+', target)
+    object_target = re.fullmatch(
+        r'sheet:[1-9]\d*/(?:shape:(?:[1-9]\d*|@id=[1-9]\d*|@name=.+)|chart:[1-9]\d*)',
+        target,
+    )
+    if verb == 'remove':
+        return bool(sheet or cell or object_target) and (
+            not cell or op.get('axis', 'row') in {'row', 'column'})
+    if verb not in {'move', 'clone'}:
+        return False
+    to = op.get('to')
+    if sheet:
+        if to is None:
+            return True
+        if to == 'end':
+            return verb == 'move' or engine == 'msoffice'
+        if to == 'start':
+            return engine == 'msoffice'
+        return (isinstance(to, dict) and len(to) == 1 and
+                next(iter(to)) in {'before', 'after'} and
+                _positive_int(next(iter(to.values()))))
+    if not cell or not isinstance(to, dict) or set(to) != {'index'}:
+        return False
+    if not _positive_int(to['index']):
+        return False
+    if verb == 'clone' and op.get('axis', 'row') != 'row':
+        return False
+    return op.get('axis', 'row') in {'row', 'column'}
+
+
+def _windows_writer_structural(op):
+    verb = op.get('op')
+    props = op.get('props') or {}
+    if not isinstance(props, dict):
+        return False
+    if verb == 'insert':
+        if op.get('parent', 'body') != 'body':
+            return False
+        allowed = {
+            'paragraph': {'text', 'style', 'level'},
+            'heading': {'text', 'style', 'level'},
+            'page_break': set(),
+            'table': {'rows', 'cols', 'data'},
+            'textbox': {'text', 'left', 'top', 'width', 'height'},
+            'image': {'path'},
+        }
+        kind = op.get('type')
+        if kind not in allowed:
+            return False
+        if set(props) - allowed[kind]:
+            return None
+        position = op.get('position', 'end')
+        if position not in (None, 'start', 'end'):
+            if not isinstance(position, dict) or len(position) != 1:
+                return False
+            key, value = next(iter(position.items()))
+            if key == 'index':
+                if not _positive_int(value):
+                    return False
+            elif key not in {'before', 'after'} or not re.fullmatch(
+                    r'paragraph:(?:[1-9]\d*|@paraId=[0-9a-fA-F]+)', str(value)):
+                return False
+        try:
+            if kind == 'heading':
+                int(props.get('level', 1))
+            if kind == 'table':
+                rows, cols = int(props.get('rows', 2)), int(props.get('cols', 2))
+                if rows < 1 or cols < 1:
+                    return False
+            if kind == 'textbox':
+                for key in {'left', 'top', 'width', 'height'} & set(props):
+                    float(props[key])
+        except (TypeError, ValueError, OverflowError):
+            return False
+        return kind != 'image' or isinstance(props.get('path'), (str, Path))
+    target = str(op.get('target', ''))
+    if not re.fullmatch(
+            r'(?:paragraph:(?:[1-9]\d*|@paraId=[0-9a-fA-F]+)|'
+            r'(?:table|shape|inline_shape):[1-9]\d*)', target):
+        return False
+    if verb == 'remove':
+        return True
+    if verb not in {'move', 'clone'}:
+        return False
+    to = op.get('to', 'end')
+    if to in (None, 'start', 'end'):
+        return True
+    if not isinstance(to, dict) or len(to) != 1:
+        return False
+    key, value = next(iter(to.items()))
+    return (_positive_int(value) if key == 'index' else
+            key in {'before', 'after'} and bool(re.fullmatch(
+                r'paragraph:(?:[1-9]\d*|@paraId=[0-9a-fA-F]+)', str(value))))
+
+
+def classify_windows_structural_op(
+        family, op, *, engine='msoffice') -> WindowsCapability:
+    try:
+        from ..document_api import validate_op
+        if not validate_op(op, family).get('valid') or op.get('op') == 'set':
+            return 'unsupported'
+        supported = {
+            'writer': lambda: _windows_writer_structural(op),
+            'sheet': lambda: _windows_sheet_structural(op, engine),
+            'slide': lambda: _windows_slide_structural(op),
+        }[family]()
+        if supported is None:
+            return 'unknown'
+        return 'supported' if supported else 'unsupported'
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return 'unsupported'
+
+
+def rejects_windows_edit_ops(family, operations, *, engine='msoffice'):
+    for op in operations:
+        state = (classify_windows_set_op(family, op)
+                 if op.get('op', 'set') == 'set'
+                 else classify_windows_structural_op(family, op, engine=engine))
+        if state == 'unsupported':
+            return True
+    return False
+
+
+def rejects_windows_common_edit_ops(family, operations):
+    """Reject only invariants shared by both Windows candidate engines."""
+    from ..document_api import validate_op
+    for op in operations:
+        if not validate_op(op, family).get('valid'):
+            return True
+        if (op.get('op', 'set') == 'set' and
+                classify_windows_set_op(family, op) == 'unsupported'):
+            return True
+    return False
 
 
 def word_target_kind(target):
@@ -308,15 +781,19 @@ def validate_powerpoint_structural(op):
         if type(destination) is not int or destination<1: raise ValueError('Invalid destination slide')
 
 
-def supports_edit_ops(family, operations, *, platform):
+def supports_edit_ops(family, operations, *, platform, engine='msoffice'):
     from ..document_api import validate_op
     try:
         may_have_fresh_sheet = False
         for op in operations:
             if not validate_op(op,family).get('valid'): return False
             if platform != 'darwin':
-                # Windows COM supports target/property forms absent from Mac
-                # dictionaries. Only shared envelope validation applies here.
+                state = (classify_windows_set_op(family, op)
+                         if op.get('op', 'set') == 'set'
+                         else classify_windows_structural_op(
+                             family, op, engine=engine))
+                if state == 'unsupported':
+                    return False
                 continue
             if op.get('op','set')=='set':
                 patch={key:value for key,value in op.items() if key not in ('op','target')}

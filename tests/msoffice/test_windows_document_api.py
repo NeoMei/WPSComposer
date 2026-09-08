@@ -169,9 +169,14 @@ def test_owned_open_and_semantic_edit_use_private_copy_until_explicit_save(api, 
 def test_read_only_sessions_reject_mutation_before_native_call(api, monkeypatch, tmp_path, kind):
     session, composer, source = owned(api, monkeypatch, tmp_path, kind, read_only=True)
     with pytest.raises(PermissionError):
-        session.apply_format_patch('anything', text='changed')
+        session.apply_format_patch(
+            'selection', **({'value': 'changed'} if kind == 'sheet' else {'text': 'changed'}))
     with pytest.raises(PermissionError):
-        session.apply_structural_op({'op': 'remove', 'target': 'anything'})
+        session.apply_structural_op({
+            'op': 'remove',
+            'target': {'writer': 'paragraph:1', 'sheet': 'sheet:1',
+                       'slide': 'slide:1'}[kind],
+        })
     assert composer._doc.data == 'initial'
     session.close()
 
@@ -328,7 +333,9 @@ def test_active_document_switch_cannot_redirect_selection_edit(api, monkeypatch,
     app.ActiveWindow = other.Windows.Item(1)
     app.Selection = SimpleNamespace(Parent=SimpleNamespace(Parent=other))
     with pytest.raises(api.DocumentIdentityError):
-        session.apply_format_patch('selection', text='must not redirect')
+        session.apply_format_patch(
+            'selection', **({'value': 'must not redirect'} if kind == 'sheet'
+                            else {'text': 'must not redirect'}))
     assert doc.data == other.data == 'initial'
     session.close()
     assert not other.closed and not doc.closed
@@ -422,7 +429,8 @@ def test_live_macro_project_blocks_edits_without_changing_shared_security(api, m
     session = cls(api, kind).attach_active()
     doc.HasVBProject = True
     with pytest.raises(PermissionError, match='macro'):
-        session.apply_format_patch('selection', text='blocked')
+        session.apply_format_patch(
+            'selection', **({'value': 'blocked'} if kind == 'sheet' else {'text': 'blocked'}))
     assert doc.data == 'initial' and app.AutomationSecurity == 1
     session.close()
     assert not doc.closed
@@ -500,7 +508,9 @@ def test_structural_image_uses_private_resource_copy(api, monkeypatch, tmp_path,
     image.write_bytes(b'image bytes')
     seen = []
     composer.apply_structural_op = lambda op: seen.append(op)
-    operation = {'op': 'insert', 'type': 'image', 'parent': 'slide:1', 'props': {'path': str(image)}}
+    operation = {'op': 'insert', 'type': 'image',
+                 'parent': 'body' if kind == 'writer' else 'slide:1',
+                 'props': {'path': str(image)}}
     session.apply_structural_op(operation)
     copied = Path(seen[0]['props']['path'])
     assert copied != image and copied.parent == session.staging_root
@@ -818,3 +828,29 @@ def test_native_excel_invalid_clone_destination_does_not_create_workbook_or_shee
         s.apply_structural_op({'op':'clone','target':'sheet:1','to':{'after':99}})
     assert doc.Worksheets.Count==2 and not doc.Worksheets.Item(1).calls
     s.close()
+
+
+def test_windows_session_uses_shared_pure_set_validator_before_verify_or_dispatch(api,monkeypatch):
+    session=api.WindowsWordSession.__new__(api.WindowsWordSession)
+    observed=[]
+    session._verify=lambda **kwargs:observed.append('verify')
+    session._retain_error=lambda exc:None
+    session._composer=SimpleNamespace(
+        apply_format_patch=lambda *a,**k:observed.append('dispatch'))
+    with pytest.raises(ValueError,match='unsupported'):
+        session.apply_format_patch('paragraph:1',geometry={'width':200})
+    assert observed == []
+
+
+def test_windows_session_uses_shared_pure_structural_validator_before_verify_stage_or_clipboard(api,monkeypatch):
+    session=api.WindowsPowerPointSession.__new__(api.WindowsPowerPointSession)
+    observed=[]
+    session._verify=lambda **kwargs:observed.append('verify')
+    session._retain_error=lambda exc:None
+    session._stage_resource=lambda path:observed.append('stage')
+    session._powerpoint_relocate=lambda op:observed.append('clipboard')
+    session._composer=SimpleNamespace(apply_structural_op=lambda op:observed.append('dispatch'))
+    with pytest.raises(ValueError,match='unsupported'):
+        session.apply_structural_op({
+            'op':'move','target':'slide:1/shape:1','to':{'slide':False}})
+    assert observed == []

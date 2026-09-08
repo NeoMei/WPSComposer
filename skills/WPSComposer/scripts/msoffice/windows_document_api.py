@@ -326,6 +326,10 @@ class _WindowsSession:
 
     def apply_format_patch(self, target, **patch):
         try:
+            from .edit_preflight import classify_windows_set_op
+            operation = {'op': 'set', 'target': target, **patch}
+            if classify_windows_set_op(self.kind, operation) == 'unsupported':
+                raise ValueError('Windows Microsoft set operation is unsupported')
             self._verify(mutation=True, selection=target == 'selection')
             self._screen_values(patch)
             return self._composer.apply_format_patch(target, **patch)
@@ -356,6 +360,10 @@ class _WindowsSession:
 
     def apply_structural_op(self, op):
         try:
+            from .edit_preflight import classify_windows_structural_op
+            if classify_windows_structural_op(
+                    self.kind, op, engine='msoffice') == 'unsupported':
+                raise ValueError('Windows Microsoft structural operation is unsupported')
             # Word shape move/clone uses the app clipboard selection internally.
             selection = self.kind == 'writer' and op.get('op') in {'move', 'clone'} and str(op.get('target', '')).startswith('shape:')
             self._verify(mutation=True, selection=selection)

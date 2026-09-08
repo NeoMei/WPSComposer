@@ -610,6 +610,11 @@ def _document_engine(path, kind, engine, *, action="open_document", operations=(
     if engine != "auto":
         return resolve_engine(engine, component)
     from . import office_engines
+    if office_engines.sys.platform == "win32" and action == "edit":
+        from .msoffice.edit_preflight import rejects_windows_common_edit_ops
+        if rejects_windows_common_edit_ops(family, operations):
+            raise office_engines.EngineUnavailableError(
+                "No installed native engine supports this document action")
     for candidate in ("wps", "msoffice"):
         if not office_engines.engine_executable(candidate, component):
             continue
@@ -630,9 +635,17 @@ def _document_engine(path, kind, engine, *, action="open_document", operations=(
         if candidate == "msoffice" and path is not None:
             if suffix != {"writer": ".docx", "sheet": ".xlsx", "slide": ".pptx"}[family]:
                 continue
-        if candidate == "msoffice" and action == "edit":
+        if office_engines.sys.platform == "win32" and action == "edit":
             from .msoffice.edit_preflight import supports_edit_ops
-            if not supports_edit_ops(family, operations, platform=office_engines.sys.platform):
+            if not supports_edit_ops(
+                    family, operations, platform=office_engines.sys.platform,
+                    engine=candidate):
+                continue
+        elif candidate == "msoffice" and action == "edit":
+            from .msoffice.edit_preflight import supports_edit_ops
+            if not supports_edit_ops(
+                    family, operations, platform=office_engines.sys.platform,
+                    engine=candidate):
                 continue
         return candidate
     raise office_engines.EngineUnavailableError("No installed native engine supports this document action")
