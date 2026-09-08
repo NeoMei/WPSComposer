@@ -41,7 +41,7 @@ Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.
 - [x] Native heading insertion/deletion renumbering and updated TOC pagination after save/reopen on both operating systems.
 - [x] Update exact API/capability/install/release docs.
 - [x] Full pytest, repeated code/task audit and exact candidate clean install.
-- [ ] Commit/push reviewed candidate; report release readiness with concrete evidence and no automatic release publication.
+- [x] Commit/push reviewed candidate; report release readiness with concrete evidence and no automatic release publication.
 
 ## Execution ledger
 
@@ -64,3 +64,5 @@ Latest superseding checkpoint (d12b458): Windows round4 three-scheme tests pass 
 Final Windows checkpoint (1114df5): final native admission passes after importing 12debd1 and independently verifying 181 artifact checksums, production source identity, representative/structural PDFs, actual synchronous UI reopen, 28 task-owned PID exits and complete Windows test coverage (2838 + 1 serial passed, 45 skipped). Original helper failures and old/uncertain probes remain recorded. 0.9.0 metadata promotion passes its RED/GREEN check; final local full-suite and promoted-source installation are in progress.
 
 Final 0.9.0 verification: 2874 passed / 12 native-gated skipped, exit 0 in 331.87 s. Isolated installation matches 105 files; real installed Word generation and conversion preserve source bytes and produce the expected PDF content. Source archive and wheel build successfully. Final incremental metadata/docs review and independent Windows evidence review find no blocker. No further production code changed after native acceptance; final candidate push and PR review-state transition remain the last administrative step.
+
+Release readiness complete: promoted candidate and native installation artifacts pushed (fd2d308, 5dfbb20); PR #8 marked ready for review. No merge, tag, upload or installation into the user's live plugin directory was performed. The complete diff whitespace check passes outside one preserved historical raw TSV stderr file whose trailing empty event fields are intentional. All task checkboxes are complete.
