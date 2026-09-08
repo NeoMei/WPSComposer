@@ -96,3 +96,31 @@ def test_conversion_office_spreadsheet_rejected_before_launch(monkeypatch, tmp_p
     monkeypatch.setattr(conversion, '_select_backend', lambda req: pytest.fail('backend launched'))
     with pytest.raises(engines.EngineUnavailableError):
         conversion.convert_to_pdf(str(source), engine='msoffice')
+
+
+def test_wps_docx_presentation_pins_application(monkeypatch, tmp_path):
+    target = tmp_path / 'out.docx'
+    target.write_bytes(b'artifact')
+    calls = []
+    monkeypatch.setattr(presentation.sys, 'platform', 'darwin')
+    monkeypatch.setattr(presentation.subprocess, 'run', lambda argv, **kw: calls.append(argv))
+    orchestrator._return_artifact(target, open_result=True, engine='wps')
+    assert calls == [['open', '-a', '/Applications/wpsoffice.app', str(target)]]
+
+
+def test_mac_auto_ignores_wps_locations_not_supported_by_runtime(monkeypatch):
+    monkeypatch.setattr(engines.sys, 'platform', 'darwin')
+    monkeypatch.setattr(Path, 'is_dir', lambda p: str(p) in {'/Applications/WPS Office.app', '/Applications/Microsoft Word.app'})
+    assert engines.resolve_engine('auto', 'writer') == 'msoffice'
+
+
+def test_windows_presentation_does_not_wait_or_terminate_interactive_office(monkeypatch, tmp_path):
+    target = tmp_path / 'result.docx'
+    target.write_bytes(b'artifact')
+    monkeypatch.setattr(presentation.sys, 'platform', 'win32')
+    monkeypatch.setattr(engines, 'engine_executable', lambda *args: 'WINWORD.EXE')
+    calls = []
+    monkeypatch.setattr(presentation.subprocess, 'Popen', lambda argv, **kw: calls.append(argv))
+    monkeypatch.setattr(presentation.subprocess, 'run', lambda *a, **k: pytest.fail('must not wait and kill interactive Office'))
+    presentation.present_artifact(target, engine='msoffice')
+    assert calls == [['WINWORD.EXE', str(target)]]

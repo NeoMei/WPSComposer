@@ -17,7 +17,7 @@ Windows files: new scripts/msoffice/windows_host.py, windows_runtime.py, tests/m
 
 Mac files: scripts/msoffice/macos_script.py, macos_runtime.py and tests/msoffice. Consume GenerationPlan and PreparedLongformResource -> ExecutionOutcome. Produce MacWordAdapter(build) lifecycle interface; convert(request, timeout=...) -> Path. Compile actual Word dictionary commands, TDD serializers/unsupported operations/strict parsing. Add concrete native smoke fixture to prove section/header/image/bookmark page mapping before wiring public API. Test source escaping and ensure no user content becomes AppleScript code.
 
-- [ ] Implement Windows native adapter and regression tests.
+- [x] Implement Windows native adapter and regression tests.
 - [ ] Implement Mac plan adapter and regression/native capability checks.
 - [ ] Independent reviews of each adapter; fix findings.
 
@@ -27,8 +27,8 @@ Files: new scripts/office_engines.py, scripts/orchestrator.py, conversion.py, lo
 
 Tests first: invalidengine fails without launches; explicit msoffice xlsx fails; auto chooses WPS first and pins fallback beforeexecution only; default positional compatibility preserved; requested Word open-result does not call systemdefault app; total deadline isfinitepositive. Implement engine resolver and lazy adapter imports. Pass explicit selections into native quality lifecycle; preserve old injected testfactory signatures for default route if necessary. Conversion timeout new keyword only.
 
-- [ ] Routing tests RED then GREEN.
-- [ ] Public generate/convert integration and presentation behavior.
+- [x] Routing tests RED then GREEN.
+- [x] Public generate/convert integration and presentation behavior.
 - [ ] Independent routing and cross-platform lifecycle review.
 
 ### Task3: Native acceptance and install/release preparation
@@ -45,3 +45,5 @@ Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.
 ## Execution ledger
 
 Ruling: reuse current linked review worktree, create production branch from c4762c5; audit evidence remains ancestor. The user approved implementation and release readiness, so do not add repeated approval gates for these reversible changes.
+
+2026-09-08 integration checkpoint: f48497d pushed on codex/msoffice-production for Windows native acceptance. Windows adapter independent review found and fixed pre-document application PID binding, A4 Normal-template drift, and resource quarantine after failed cleanup; re-review 78 tests passed. Portable integration snapshot 2757 passed, 12 native-gated skips. Isolated installer at /tmp/wpscomposer-production-install-0908 succeeded and both native adapters imported from the installed package; repeat on final candidate. Mac public smoke succeeded, but complex section/header and semantic coverage still under active fixes. WPS public representative generation/conversion succeeded but artifact gate caught real Heading 1–3 style alias drift (22/16/16 pt vs 16/15/15), now being fixed with native regression required. Remote Windows task dispatched exact f48497d plus public runner; do not confuse historical spike results with production acceptance. Release is not yet ready.

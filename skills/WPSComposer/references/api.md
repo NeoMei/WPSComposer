@@ -17,7 +17,10 @@ task. An execution or content error never triggers a switch to another engine.
 Unsupported native operations fail explicitly; no alternate OOXML renderer is used.
 Windows requires `pywin32`; macOS requires desktop Word and macOS Automation
 permission for the launching terminal/application to control Microsoft Word.
-MS Word DOCX results with `open_result=True` open in Word explicitly.
+DOCX results with `open_result=True` open in the selected WPS/Word application.
+On macOS, install WPS at `/Applications/wpsoffice.app` or Word at
+`/Applications/Microsoft Word.app`; automatic detection matches these runtime
+locations.
 
 ```python
 generate("report.md", output="report.docx", engine="msoffice")

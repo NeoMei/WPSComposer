@@ -64,13 +64,10 @@ def engine_executable(engine: str, component: str = 'writer'):
     if engine == 'msoffice' and component != 'writer':
         return None
     if sys.platform == 'darwin':
-        names = ('wpsoffice.app', 'WPS Office.app') if engine == 'wps' else ('Microsoft Word.app',)
-        for base in (Path('/Applications'), Path.home() / 'Applications'):
-            for name in names:
-                candidate = base / name
-                if candidate.is_dir():
-                    return str(candidate)
-        return None
+        # Match locations accepted by the native execution adapters.
+        name = 'wpsoffice.app' if engine == 'wps' else 'Microsoft Word.app'
+        candidate = Path('/Applications') / name
+        return str(candidate) if candidate.is_dir() else None
     if sys.platform == 'win32':
         if engine == 'msoffice':
             return _registered_executable(('Word.Application',), {'winword.exe'})

@@ -55,7 +55,7 @@ def _return_artifact(path: Path, *, open_result: bool, engine: str = "wps") -> s
     artifact = Path(path).expanduser().resolve()
     if open_result:
         try:
-            if engine == "msoffice" and artifact.suffix.lower() == ".docx":
+            if artifact.suffix.lower() == ".docx":
                 present_artifact(artifact, engine=engine)
             else:
                 present_artifact(artifact)
