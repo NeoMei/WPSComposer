@@ -58,6 +58,7 @@ def test_failed_public_call_preserves_structured_report_and_actual_source_digest
     assert report['errors'][0]['type'] == 'RuntimeError'
     assert report['source']['sha256'] == runner.sha256(root / 'source.md')
     assert report['candidate']['source_files']
+    assert report['candidate']['source_files']['macos/wps-jsapi-probe/addin/writer-longform-v2.js'] == runner.sha256(runner.ROOT / 'macos/wps-jsapi-probe/addin/writer-longform-v2.js')
     assert calls[0][1]['engine'] == 'msoffice'
     assert calls[0][1]['format'] == 'docx'
     assert 0 < calls[0][1]['timeout'] <= 30
@@ -118,3 +119,65 @@ def test_pdf_inspector_checks_real_pdf_text_and_nonempty_pages(tmp_path):
     assert all(runner.inspect_pdf(pdf, spec)['checks'].values())
     spec['body'] = 'Missing native content'
     assert not runner.inspect_pdf(pdf, spec)['checks']['pdf_required_content']
+
+
+@pytest.mark.parametrize('sizes, expected', [
+    ([('11906', '16838', 'portrait')], True),
+    ([('12240', '15840', 'portrait')], False),
+    ([('11906', '16838', 'portrait'), ('12240', '15840', 'portrait')], False),
+    ([('16838', '11906', 'landscape')], False),
+    ([], False),
+])
+def test_all_native_sections_must_be_a4_portrait(tmp_path, sizes, expected):
+    docx = tmp_path / 'page-policy.docx'
+    document_package(docx)
+    with zipfile.ZipFile(docx) as package:
+        members = {name: package.read(name) for name in package.namelist()}
+    sections = ''.join(f'<w:sectPr><w:pgSz w:w="{w}" w:h="{h}" w:orient="{orientation}"/></w:sectPr>' for w, h, orientation in sizes)
+    members['word/document.xml'] = members['word/document.xml'].replace(b'</w:body>', sections.encode() + b'</w:body>')
+    with zipfile.ZipFile(docx, 'w') as package:
+        for name, payload in members.items():
+            package.writestr(name, payload)
+    spec = {'title': None, 'body': '正文验收文本。', 'headings': ['章节验收'], 'table_rows': [], 'toc': False, 'numbered': True, 'markers': []}
+    result = runner.inspect_docx(docx, spec)
+    assert result['checks']['all_sections_a4_portrait'] is expected
+    assert len(result['sections']) == len(sizes)
+
+
+def test_letter_pdf_cannot_pass_a4_native_output_gate(tmp_path):
+    reportlab = pytest.importorskip('reportlab.pdfgen.canvas')
+    pdf = tmp_path / 'letter.pdf'
+    canvas = reportlab.Canvas(str(pdf), pagesize=(612, 792))
+    canvas.drawString(50, 700, 'required text')
+    canvas.save()
+    spec = {'title': None, 'body': 'required text', 'headings': [], 'table_rows': [], 'markers': []}
+    assert not runner.inspect_pdf(pdf, spec)['checks']['all_pdf_pages_a4_portrait']
+
+
+def test_runner_also_exercises_direct_public_pdf_generation(monkeypatch, tmp_path):
+    import skills.WPSComposer as public
+    reportlab = pytest.importorskip('reportlab.pdfgen.canvas')
+    calls = []
+
+    def generate(source, **kwargs):
+        calls.append(kwargs['format'])
+        if kwargs['format'] == 'pdf':
+            raise RuntimeError('direct PDF route reached')
+        destination = Path(kwargs['output'])
+        if destination.exists():
+            raise FileExistsError(destination)
+        document_package(destination)
+        return str(destination)
+
+    def convert(source, output, **kwargs):
+        canvas = reportlab.Canvas(output)
+        canvas.drawString(50, 700, 'synthetic parser input')
+        canvas.save()
+        return output
+
+    monkeypatch.setattr(public, 'generate', generate)
+    monkeypatch.setattr(public, 'convert_to_pdf', convert)
+    report = runner.run_acceptance(tmp_path / 'direct-pdf', fixture='smoke')
+    assert calls[:2] == ['docx', 'pdf']
+    assert report['status'] == 'FAIL'
+    assert report['errors'][0]['message'] == 'direct PDF route reached'

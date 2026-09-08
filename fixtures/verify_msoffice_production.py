@@ -170,24 +170,49 @@ def inspect_docx(path, spec):
         checks['table_header_repeats'] = bool(matches) and matches[0].find('w:tr/w:trPr/w:tblHeader', NS) is not None
     combined = _text(document)
     checks['end_markers_preserved_once'] = all(combined.count(marker) == 1 for marker in spec['markers'])
-    return {'checks': checks, 'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
+    sections = []
+    for section in document.findall('.//w:sectPr', NS):
+        page_size = section.find('w:pgSz', NS)
+        sections.append({
+            'width_twips': page_size.get(W + 'w') if page_size is not None else None,
+            'height_twips': page_size.get(W + 'h') if page_size is not None else None,
+            'orientation': page_size.get(W + 'orient', 'portrait') if page_size is not None else None,
+        })
+    def a4_portrait(section):
+        try:
+            return (section['orientation'] == 'portrait'
+                    and abs(float(section['width_twips']) - 11906) <= 4
+                    and abs(float(section['height_twips']) - 16838) <= 4)
+        except (TypeError, ValueError):
+            return False
+    checks['all_sections_a4_portrait'] = bool(sections) and all(a4_portrait(section) for section in sections)
+    heading_details = [{
+        'label': spec['headings'][i],
+        'style_id': _value(paragraph, 'w:pPr/w:pStyle') if paragraph is not None else None,
+        'effective_half_point_sizes': _run_property(paragraph, styles, 'sz') if paragraph is not None else [],
+        'expected_half_point_size': sizes[i],
+    } for i, paragraph in enumerate(headings)]
+    return {'checks': checks, 'sections': sections, 'headings': heading_details,
+            'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
 
 
 def inspect_pdf(path, spec):
     import pdfplumber
     with pdfplumber.open(path) as pdf:
         pages = [page.extract_text() or '' for page in pdf.pages]
+        page_sizes = [{'width_points': float(page.width), 'height_points': float(page.height)} for page in pdf.pages]
     compact = re.sub(r'\s+', '', ''.join(pages))
     required = [spec['body'], *spec['headings'], *spec['markers']]
     if spec['title']:
         required.append(spec['title'])
     required.extend(row[1] for row in spec['table_rows'][1:])
     checks = {
+        'all_pdf_pages_a4_portrait': bool(page_sizes) and all(abs(size['width_points'] - 595.28) <= 0.25 and abs(size['height_points'] - 841.89) <= 0.25 for size in page_sizes),
         'nonempty_native_pdf_pages': bool(pages) and all(text.strip() for text in pages),
         'pdf_required_content': all(re.sub(r'\s+', '', text) in compact for text in required),
         'pdf_end_marker_once': all(compact.count(marker) == 1 for marker in spec['markers']),
     }
-    return {'checks': checks, 'pages': len(pages), 'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
+    return {'checks': checks, 'pages': len(pages), 'page_sizes': page_sizes, 'bytes': Path(path).stat().st_size, 'sha256': sha256(path)}
 
 
 def _candidate(deadline):
@@ -200,7 +225,10 @@ def _candidate(deadline):
     def git(*args):
         result = subprocess.run(['git', '-C', str(ROOT), *args], capture_output=True, text=True, timeout=min(10, remaining()))
         return result.stdout.strip() if result.returncode == 0 else None
-    files = sorted((ROOT / 'skills' / 'WPSComposer').rglob('*.py')) + [Path(__file__).resolve()]
+    addin = ROOT / 'macos' / 'wps-jsapi-probe' / 'addin'
+    files = sorted((ROOT / 'skills' / 'WPSComposer').rglob('*.py')) + sorted(addin.glob('*.js')) + [Path(__file__).resolve()]
+    if (addin / 'asset-manifest.json').is_file():
+        files.append(addin / 'asset-manifest.json')
     return {
         'commit': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),
         'working_tree_status': git('status', '--porcelain'),
@@ -253,6 +281,11 @@ def run_acceptance(output_root, *, fixture='representative', engine='msoffice', 
         report['checks']['public_conversion_returned_requested_path'] = Path(converted).resolve() == pdf
         report['checks']['conversion_preserved_source_docx_bytes'] = sha256(docx) == before
         report['artifacts']['pdf'] = inspect_pdf(pdf, spec)
+        persist()
+        direct_pdf = root / 'direct-generated.pdf'
+        direct_result = generate(str(source), format='pdf', output=str(direct_pdf), engine=engine, timeout=remaining(), open_result=False)
+        report['checks']['public_direct_pdf_returned_requested_path'] = Path(direct_result).resolve() == direct_pdf
+        report['artifacts']['direct_pdf'] = inspect_pdf(direct_pdf, spec)
         persist()
         refused_generate = refused_convert = False
         pdf_before = sha256(pdf)

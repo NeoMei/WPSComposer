@@ -1406,9 +1406,11 @@ class WriterComposer(BaseComposer):
 
     def add_heading_level_native(
         self, text, level, numbering=None, scheme=None, keep_with_next=False,
-        bookmark_name=None,
+        bookmark_name=None, sequence_transparent=False,
     ):
-        """Add a heading and, when requested, link it to native numbering."""
+        """Add native headings, optionally keeping an unnumbered boundary out of SEQ resets."""
+        if sequence_transparent and numbering:
+            raise ValueError("sequence-transparent headings cannot request numbering")
         heading_start = self._native_position()
         self.add_heading_level(text, level=level)
         self._wpsc_last_heading_start = heading_start
@@ -1431,6 +1433,35 @@ class WriterComposer(BaseComposer):
             except Exception:
                 raise NativeWriterObjectError(
                     "PAGINATION_SNAPSHOT_FAILED", "heading cohesion failed"
+                ) from None
+        if sequence_transparent or numbering is False:
+            try:
+                level_idx = min(max(int(level), 1), 6)
+                source_style = self._doc.Styles(-1 - level_idx)
+                style_name = (
+                    "WPSC Sequence Transparent Heading " if sequence_transparent
+                    else "WPSC Unnumbered Heading "
+                ) + str(level_idx)
+                outline_level = 10 if sequence_transparent else level_idx
+                try:
+                    unnumbered_style = self._doc.Styles(style_name)
+                except Exception:
+                    unnumbered_style = self._doc.Styles.Add(style_name, 1)
+                # Base on Normal, not Heading N: inheriting the heading style
+                # would also inherit its list template and STYLEREF identity.
+                # Duplicate the complete appearance to retain heading font,
+                # spacing, alignment and cohesion independently of its outline.
+                unnumbered_style.BaseStyle = self._doc.Styles(-1)
+                unnumbered_style.Font = source_style.Font.Duplicate
+                unnumbered_style.ParagraphFormat = source_style.ParagraphFormat.Duplicate
+                unnumbered_style.ParagraphFormat.OutlineLevel = outline_level
+                heading_range = self._doc.Range(heading_start, self._native_position())
+                heading_range.Style = unnumbered_style
+                heading_range.ListFormat.RemoveNumbers(1)
+                heading_range.ParagraphFormat.OutlineLevel = outline_level
+            except Exception:
+                raise NativeWriterObjectError(
+                    "EXECUTION_ABORTED", "unnumbered heading style failed"
                 ) from None
         if not numbering:
             return

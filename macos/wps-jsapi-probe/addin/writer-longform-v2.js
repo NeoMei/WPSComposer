@@ -362,17 +362,28 @@
     if (!document.Styles) {
       return null;
     }
+    // Canonical plan styles must resolve to the same built-ins used by native
+    // outline numbering. WPS can expose "heading 1" while exact "Heading 1"
+    // lookup fails, otherwise ensureStyles silently creates a second style.
+    const canonical = typeof name === "string" ? name.trim().toLowerCase() : "";
+    const heading = /^heading ([1-6])$/.exec(canonical);
+    const builtin = heading ? -1 - Number(heading[1])
+      : canonical === "title" ? -63 : canonical === "body text" ? -67 : null;
+    if (builtin !== null) {
+      try {
+        const nativeStyle = collectionItem(document.Styles, builtin);
+        if (nativeStyle) return nativeStyle;
+      } catch (error) {
+        // An unsupported numeric id must not bypass exact-name fallback.
+      }
+    }
+    // Arbitrary/custom names retain their exact-name identity. Older hosts
+    // without a particular built-in can still use an existing named style.
     try {
-      if (typeof document.Styles.Item === "function") {
-        return document.Styles.Item(name);
-      }
-      if (typeof document.Styles === "function") {
-        return document.Styles(name);
-      }
+      return collectionItem(document.Styles, name);
     } catch (error) {
       return null;
     }
-    return null;
   }
 
   function insertText(document, text, styleName, formatting) {

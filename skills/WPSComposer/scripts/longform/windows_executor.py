@@ -921,6 +921,8 @@ class WindowsLongformExecutor(LongformExecutor):
             # The new argument is only required by the one bounded M5 relayout.
             if args.get("keepWithNext") is True:
                 heading_args["keep_with_next"] = True
+            if args.get("sequenceTransparent") is True:
+                heading_args["sequence_transparent"] = True
             if args.get("bookmarkName"):
                 heading_args["bookmark_name"] = args["bookmarkName"]
             composer.add_heading_level_native(**heading_args)

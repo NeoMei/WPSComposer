@@ -619,6 +619,7 @@ _OPERATION_ARG_SCHEMAS = MappingProxyType(
             lineSpacingRule=_string,
             spaceAfter=_number,
             numbering=_boolean,
+            sequenceTransparent=_boolean,
             numberingScheme=_enum(_NUMBERING_SCHEMES, "numbering scheme"),
             keepWithNext=_boolean,
             bookmarkName=_heading_bookmark,

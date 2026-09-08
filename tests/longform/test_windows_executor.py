@@ -1322,3 +1322,21 @@ def test_set_header_footer_uses_schema_keys(executor, fake_composer):
     assert call.kwargs["footer"] == "Footer from plan"
     assert call.kwargs["link_to_previous_header"] is False
     assert call.kwargs["link_to_previous_footer"] is True
+
+
+@pytest.mark.parametrize('transparent', [True, False, None])
+def test_sequence_transparent_heading_forwarded_only_when_requested(transparent):
+    seen = []
+
+    class Composer:
+        def add_heading_level_native(self, **kwargs):
+            seen.append(kwargs)
+
+    args = {'text': 'Unnumbered boundary', 'level': 1, 'numbering': False}
+    if transparent is not None:
+        args['sequenceTransparent'] = transparent
+    executor = WindowsLongformExecutor(composer_factory=lambda: Composer())
+    executor._run_op(Composer(), GenerationOperation(op='writer.add_heading', args=args))
+    assert seen[0].get('sequence_transparent') is (True if transparent is True else None)
+    if transparent is not True:
+        assert 'sequence_transparent' not in seen[0]

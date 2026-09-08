@@ -486,7 +486,7 @@ def test_generate_open_result_presents_each_final_artifact_once_after_backend_re
     monkeypatch.setattr(
         orchestrator,
         "present_artifact",
-        lambda path: events.append(("present", Path(path))),
+        lambda path, **kwargs: events.append(("present", Path(path))),
         raising=False,
     )
 
@@ -568,7 +568,7 @@ def test_generate_opener_failure_warns_and_returns_published_artifact(
         Path(routed_output).write_bytes(b"published")
         return SimpleNamespace(path=str(routed_output))
 
-    def fail_to_present(path):
+    def fail_to_present(path, **kwargs):
         raise OSError("desktop launch failed")
 
     monkeypatch.setattr(orchestrator, "_generate_longform_outcome", fake_longform)
