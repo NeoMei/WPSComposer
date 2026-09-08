@@ -1,0 +1,267 @@
+{
+  "passed": true,
+  "kind": "sheet",
+  "installed_plugin": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-install-resume-yyxuo1v0/codex/plugins/wps-composer",
+  "checks": {
+    "create_session_close_completed": true,
+    "public_native_created": true,
+    "public_native_edit_saved": true,
+    "source_preserved": true,
+    "edited_value_after_native_reopen": true,
+    "native_pdf_contents": true
+  },
+  "create_session_close_evidence": {
+    "method": "context_exit_returned",
+    "native_ack_log_available": false
+  },
+  "snapshot": {
+    "kind": "sheet",
+    "name": "owned-46759c2dd6534d3285b29f74b81596c1.xlsx",
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/installed-resume-01/sheet/installed.xlsx",
+    "saved": true,
+    "sheet_count": 1,
+    "cells_truncated": false,
+    "sheets": [
+      {
+        "id": "sheet:1",
+        "index": 1,
+        "name": "Sheet1",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$B$2",
+        "used_rows": 2,
+        "used_columns": 2,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": 100,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": null,
+          "left_header": "",
+          "center_header": "",
+          "right_header": ""
+        },
+        "freeze_panes": false,
+        "cells": [
+          {
+            "id": "sheet:1/cell:$A$1",
+            "address": "$A$1",
+            "value": "Installed native Excel",
+            "formula": "Installed native Excel",
+            "display_text": "Installed native Excel",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$2",
+            "address": "$A$2",
+            "value": 4,
+            "formula": "4",
+            "display_text": "4",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$2",
+            "address": "$B$2",
+            "value": 12,
+            "formula": "=A2*3",
+            "display_text": "12",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [],
+        "charts": []
+      }
+    ]
+  },
+  "reopened": {
+    "kind": "sheet",
+    "name": "owned-5a0a6e1e440442f69fe0f6fdb8376781.xlsx",
+    "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/installed-resume-01/sheet/edited.xlsx",
+    "saved": true,
+    "sheet_count": 1,
+    "cells_truncated": false,
+    "sheets": [
+      {
+        "id": "sheet:1",
+        "index": 1,
+        "name": "Sheet1",
+        "visible": "sheet visible",
+        "used_range": "$A$1:$B$2",
+        "used_rows": 2,
+        "used_columns": 2,
+        "page_setup": {
+          "top_margin": 54,
+          "bottom_margin": 54,
+          "left_margin": 50.4,
+          "right_margin": 50.4,
+          "orientation": "portrait",
+          "zoom": 100,
+          "fit_to_pages_wide": 1,
+          "fit_to_pages_tall": 1,
+          "print_area": null,
+          "left_header": "",
+          "center_header": "",
+          "right_header": ""
+        },
+        "freeze_panes": false,
+        "cells": [
+          {
+            "id": "sheet:1/cell:$A$1",
+            "address": "$A$1",
+            "value": "Installed native Excel",
+            "formula": "Installed native Excel",
+            "display_text": "Installed native Excel",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$A$2",
+            "address": "$A$2",
+            "value": 5,
+            "formula": "5",
+            "display_text": "5",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          },
+          {
+            "id": "sheet:1/cell:$B$2",
+            "address": "$B$2",
+            "value": 15,
+            "formula": "=A2*3",
+            "display_text": "15",
+            "number_format": "General",
+            "horizontal_alignment": 1,
+            "vertical_alignment": -4108,
+            "wrap_text": false,
+            "indent": 0,
+            "row_height": 16,
+            "column_width": 10,
+            "merged": false,
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": false,
+              "italic": false,
+              "underline": -4142,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "fill": {
+              "color": "#FFFFFF"
+            },
+            "merge_area": null
+          }
+        ],
+        "shapes": [],
+        "charts": []
+      }
+    ]
+  },
+  "hashes": {
+    "edited.pdf": "890e5908a6847bf4b9bb914bb05db4b1d6db4209670ef4a3524f4e4a143eb7f9",
+    "edited.xlsx": "d1c329077a76413cc7996fe63e134bca97ea86a0661717b53e8dbb4eb1cd7cb7",
+    "installed.xlsx": "bdda60819172ff5e7c9647b5fa4b0fe84800dd2281dade8d3f5a0cba865cb913",
+    "installed.pdf": "e8a4d48d4c2770c1328043762127593f54f32512d237bb3cc556f889dc445509"
+  }
+}

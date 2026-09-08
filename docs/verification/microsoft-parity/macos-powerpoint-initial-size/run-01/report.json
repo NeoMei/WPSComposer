@@ -1,0 +1,10 @@
+{
+  "status": "FAILED_RETAINED",
+  "engine": "msoffice",
+  "sentinel": "演示文稿33",
+  "checks": {
+    "create_initial_size": true
+  },
+  "source_sha256": "e31fd292ba37fb228a913d91ed5964339b42b6b0a9b5736d227ba6d962550270",
+  "error": "KeyError: 'slide_width'"
+}

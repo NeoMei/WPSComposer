@@ -1,0 +1,487 @@
+{
+  "kind": "writer",
+  "counts": {
+    "paragraphs": 13,
+    "tables": 0,
+    "shapes": 0,
+    "sections": 3,
+    "inline_shapes": 0,
+    "styles": 375
+  },
+  "paragraphs": [
+    {
+      "id": "paragraph:@paraId=19A3AEAA",
+      "index": 1,
+      "start": 0,
+      "end": 21,
+      "text": "Followup native body",
+      "font": {
+        "name": "DengXian",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#123456"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 24,
+        "space_before": 0,
+        "space_after": 4,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "Custom Body",
+      "para_id": "19A3AEAA"
+    },
+    {
+      "id": "paragraph:@paraId=6076E099",
+      "index": 2,
+      "start": 21,
+      "end": 37,
+      "text": "native_code = 1",
+      "font": {
+        "name": "Consolas",
+        "size": 9,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 36,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "Source Code",
+      "para_id": "6076E099"
+    },
+    {
+      "id": "paragraph:@paraId=7E61736C",
+      "index": 3,
+      "start": 37,
+      "end": 39,
+      "text": " ",
+      "font": {
+        "name": "Consolas",
+        "size": 9,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 36,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "Source Code",
+      "para_id": "7E61736C"
+    },
+    {
+      "id": "paragraph:@paraId=3ADEEDCE",
+      "index": 4,
+      "start": 39,
+      "end": 56,
+      "text": "native_code += 1",
+      "font": {
+        "name": "Consolas",
+        "size": 9,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 36,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "Source Code",
+      "para_id": "3ADEEDCE"
+    },
+    {
+      "id": "paragraph:@paraId=6801F38B",
+      "index": 5,
+      "start": 56,
+      "end": 57,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 4,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "6801F38B"
+    },
+    {
+      "id": "paragraph:@paraId=4C7BB3BB",
+      "index": 6,
+      "start": 57,
+      "end": 1898,
+      "text": "Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text Two-column native text ",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "4C7BB3BB"
+    },
+    {
+      "id": "paragraph:@paraId=58D7AA7F",
+      "index": 7,
+      "start": 1898,
+      "end": 1899,
+      "text": "\f",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "58D7AA7F"
+    },
+    {
+      "id": "paragraph:@paraId=30FFA280",
+      "index": 8,
+      "start": 1899,
+      "end": 1900,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "30FFA280"
+    },
+    {
+      "id": "paragraph:@paraId=44578227",
+      "index": 9,
+      "start": 1900,
+      "end": 1927,
+      "text": "Landscape followup section",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "44578227"
+    },
+    {
+      "id": "paragraph:@paraId=227C30DE",
+      "index": 10,
+      "start": 1927,
+      "end": 1928,
+      "text": "\f",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "227C30DE"
+    },
+    {
+      "id": "paragraph:@paraId=17212ED1",
+      "index": 11,
+      "start": 1928,
+      "end": 1929,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "17212ED1"
+    },
+    {
+      "id": "paragraph:@paraId=7BD59BDB",
+      "index": 12,
+      "start": 1929,
+      "end": 1955,
+      "text": "Portrait followup section",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "7BD59BDB"
+    },
+    {
+      "id": "paragraph:@paraId=78E6EDB7",
+      "index": 13,
+      "start": 1955,
+      "end": 1956,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 1,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 1,
+        "line_spacing_rule": 4,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "78E6EDB7"
+    }
+  ],
+  "tables": [],
+  "shapes": [],
+  "sections": [
+    {
+      "id": "section:1",
+      "index": 1,
+      "page_setup": {
+        "orientation": 0,
+        "page_width": 595.2999877929688,
+        "page_height": 841.9000244140625,
+        "top_margin": 72,
+        "bottom_margin": 72,
+        "left_margin": 90,
+        "right_margin": 90,
+        "header_distance": 42.54999923706055,
+        "footer_distance": 49.599998474121094,
+        "gutter": 0
+      },
+      "columns": 2
+    },
+    {
+      "id": "section:2",
+      "index": 2,
+      "page_setup": {
+        "orientation": 1,
+        "page_width": 841.9000244140625,
+        "page_height": 595.2999877929688,
+        "top_margin": 90,
+        "bottom_margin": 90,
+        "left_margin": 72,
+        "right_margin": 72,
+        "header_distance": 42.54999923706055,
+        "footer_distance": 49.599998474121094,
+        "gutter": 0
+      },
+      "columns": 2
+    },
+    {
+      "id": "section:3",
+      "index": 3,
+      "page_setup": {
+        "orientation": 0,
+        "page_width": 595.2999877929688,
+        "page_height": 841.9000244140625,
+        "top_margin": 72,
+        "bottom_margin": 72,
+        "left_margin": 90,
+        "right_margin": 90,
+        "header_distance": 42.54999923706055,
+        "footer_distance": 49.599998474121094,
+        "gutter": 0
+      },
+      "columns": 2
+    }
+  ],
+  "name": "document-e91c38f092024b6280133015aff7f5d4.docx",
+  "saved": true,
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4mjp8obw/document-e91c38f092024b6280133015aff7f5d4.docx"
+}

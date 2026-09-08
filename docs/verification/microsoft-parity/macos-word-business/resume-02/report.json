@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "checks": {
+    "unsupported_hyperlink_preflight": true,
+    "unrelated_bindings_saved_state_unchanged": true,
+    "exact_owned_close": true,
+    "native_reopen_text_and_list_prefixes": true,
+    "native_page_break": true,
+    "native_header_footer_pdf": true
+  },
+  "limitations": [
+    "Rich hyperlink spans are explicitly unsupported.",
+    "Two-section header linkage requires a separate multi-section fixture.",
+    "Native font slots, tab stops and header border require artifact readback."
+  ],
+  "hashes": {
+    "direct.docx": "fa0db017817b4d1fc68f1f5e8c9e24b09396136f9e2be331f99c896ba14fa38f",
+    "direct.pdf": "9f6edde8296208e8d57b4cec60499adb040f05aefe95bb25b2a94d16b65bfa3a"
+  },
+  "requires_manual_artifact_checks": [
+    "CJK/Latin/code fonts",
+    "heading sizes and outline levels",
+    "span formatting",
+    "list tab stop and wrapped geometry",
+    "header border"
+  ],
+  "acceptance_status": "BASIC_CHECKS_ONLY_PENDING_FONT_AND_LAYOUT_ARTIFACT_REVIEW"
+}

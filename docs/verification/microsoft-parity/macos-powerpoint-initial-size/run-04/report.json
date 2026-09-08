@@ -1,0 +1,1125 @@
+{
+  "status": "PASS",
+  "engine": "msoffice",
+  "sentinel": "演示文稿33",
+  "checks": {
+    "create_variants": true,
+    "lower_level_recorded_size": true,
+    "generate_default_size": true,
+    "generate_reopened": true,
+    "generate_pdf": true,
+    "generate_source_preserved": true,
+    "sentinel_unchanged": true,
+    "no_quarantine": true
+  },
+  "source_sha256": "c93db582d7d0635c00abb89258a089929731a30aa2eaf98187f2312d8500201d",
+  "create": [
+    {
+      "requested": [
+        720,
+        405
+      ],
+      "checks": {
+        "size": true,
+        "reopen_width": true,
+        "geometry": true,
+        "pdf": true,
+        "existing_content_rejected_without_change": true,
+        "reopen_source_preserved": true
+      },
+      "pptx_sha256": "823abdb162c24c444f47cb25d008bb4b8e5abdd9c7f75afbe74d52693e3334e2",
+      "existing_content_rejection": "Arbitrary initial slide size requires an empty presentation",
+      "created": {
+        "kind": "slide",
+        "engine": "msoffice",
+        "name": "bound-e55b5d9c5f3d4362b745d2c7ceb0dd4b.pptx",
+        "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-_l_h5hjw/bound-e55b5d9c5f3d4362b745d2c7ceb0dd4b.pptx",
+        "saved": false,
+        "slide_count": 1,
+        "page_setup": {
+          "slide_width": 720
+        },
+        "shapes_truncated": false,
+        "slides": [
+          {
+            "id": "slide:1",
+            "index": 1,
+            "native_slide_id": 256,
+            "name": null,
+            "layout": 12,
+            "native_layout": "slide layout blank",
+            "notes": "",
+            "follow_master_background": true,
+            "background": {
+              "color": "#FFFFFF"
+            },
+            "shape_count": 2,
+            "shapes": [
+              {
+                "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269",
+                "index": 1,
+                "shape_id": null,
+                "name": "wpscomposer-a57fe3dcab104e49817f3e19094f7269",
+                "type": 17,
+                "native_type": "shape type text box",
+                "geometry": {
+                  "left": 30,
+                  "top": 30,
+                  "width": 260,
+                  "height": 40,
+                  "rotation": 0,
+                  "z_order": 1
+                },
+                "fill": {
+                  "color": "#FFFFFF",
+                  "visible": false,
+                  "transparency": 1
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 18,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#000000",
+                          "strikethrough": false
+                        },
+                        "text": "Public create 720 x 405"
+                      }
+                    ],
+                    "text": "Public create 720 x 405"
+                  }
+                ],
+                "text": "Public create 720 x 405",
+                "line": {
+                  "color": "#FFFFFF",
+                  "weight": null,
+                  "visible": null,
+                  "transparency": null
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              },
+              {
+                "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df",
+                "index": 2,
+                "shape_id": null,
+                "name": "wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df",
+                "type": 1,
+                "native_type": "shape type auto",
+                "geometry": {
+                  "left": 40,
+                  "top": 110,
+                  "width": 180,
+                  "height": 60,
+                  "rotation": 0,
+                  "z_order": 2
+                },
+                "fill": {
+                  "color": "#2463A6",
+                  "visible": true,
+                  "transparency": 0
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 14,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 14,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#FFFFFF",
+                          "strikethrough": false
+                        },
+                        "text": "Native rectangle"
+                      }
+                    ],
+                    "text": "Native rectangle"
+                  }
+                ],
+                "text": "Native rectangle",
+                "line": {
+                  "color": "#172C51",
+                  "weight": 1,
+                  "visible": null,
+                  "transparency": 1
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              }
+            ]
+          }
+        ],
+        "limitations": [
+          "Native numeric Shape.Id is not exposed by this adapter",
+          "Independent page height unavailable in native dictionary"
+        ]
+      },
+      "reopened": {
+        "kind": "slide",
+        "engine": "msoffice",
+        "name": "bound-390f155011454a068959830a7da1804d.pptx",
+        "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-9bv_bx_h/bound-390f155011454a068959830a7da1804d.pptx",
+        "saved": true,
+        "slide_count": 1,
+        "page_setup": {
+          "slide_width": 720
+        },
+        "shapes_truncated": false,
+        "slides": [
+          {
+            "id": "slide:1",
+            "index": 1,
+            "native_slide_id": 256,
+            "name": null,
+            "layout": 12,
+            "native_layout": "slide layout blank",
+            "notes": "",
+            "follow_master_background": true,
+            "background": {
+              "color": "#FFFFFF"
+            },
+            "shape_count": 2,
+            "shapes": [
+              {
+                "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269",
+                "index": 1,
+                "shape_id": null,
+                "name": "wpscomposer-a57fe3dcab104e49817f3e19094f7269",
+                "type": 17,
+                "native_type": "shape type text box",
+                "geometry": {
+                  "left": 30,
+                  "top": 30,
+                  "width": 260,
+                  "height": 40,
+                  "rotation": 0,
+                  "z_order": 1
+                },
+                "fill": {
+                  "color": "#FFFFFF",
+                  "visible": false,
+                  "transparency": 1
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-a57fe3dcab104e49817f3e19094f7269/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 18,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#000000",
+                          "strikethrough": false
+                        },
+                        "text": "Public create 720 x 405"
+                      }
+                    ],
+                    "text": "Public create 720 x 405"
+                  }
+                ],
+                "text": "Public create 720 x 405",
+                "line": {
+                  "color": "#FFFFFF",
+                  "weight": null,
+                  "visible": null,
+                  "transparency": null
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              },
+              {
+                "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df",
+                "index": 2,
+                "shape_id": null,
+                "name": "wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df",
+                "type": 1,
+                "native_type": "shape type auto",
+                "geometry": {
+                  "left": 40,
+                  "top": 110,
+                  "width": 180,
+                  "height": 60,
+                  "rotation": 0,
+                  "z_order": 2
+                },
+                "fill": {
+                  "color": "#2463A6",
+                  "visible": true,
+                  "transparency": 0
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 14,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-a23a28e1b3c547ec8f9defc8849bd7df/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 14,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#FFFFFF",
+                          "strikethrough": false
+                        },
+                        "text": "Native rectangle"
+                      }
+                    ],
+                    "text": "Native rectangle"
+                  }
+                ],
+                "text": "Native rectangle",
+                "line": {
+                  "color": "#172C51",
+                  "weight": 1,
+                  "visible": null,
+                  "transparency": 1
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              }
+            ]
+          }
+        ],
+        "limitations": [
+          "Native numeric Shape.Id is not exposed by this adapter",
+          "Independent page height unavailable in native dictionary"
+        ]
+      },
+      "pdf": {
+        "pages": [
+          [
+            720.0,
+            405.0
+          ]
+        ],
+        "text": "Public create 720 x 405\nNative rectangle\n"
+      }
+    },
+    {
+      "requested": [
+        405,
+        720
+      ],
+      "checks": {
+        "size": true,
+        "reopen_width": true,
+        "geometry": true,
+        "pdf": true,
+        "existing_content_rejected_without_change": true,
+        "reopen_source_preserved": true
+      },
+      "pptx_sha256": "3af1692fc5f1249a6605b7f3085d7f1490ce03efbc5b953736de1d7a55ebe35c",
+      "existing_content_rejection": "Arbitrary initial slide size requires an empty presentation",
+      "created": {
+        "kind": "slide",
+        "engine": "msoffice",
+        "name": "bound-ade39befd2a548abaf4bc66d3f330672.pptx",
+        "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-zyu5v1lr/bound-ade39befd2a548abaf4bc66d3f330672.pptx",
+        "saved": false,
+        "slide_count": 1,
+        "page_setup": {
+          "slide_width": 405
+        },
+        "shapes_truncated": false,
+        "slides": [
+          {
+            "id": "slide:1",
+            "index": 1,
+            "native_slide_id": 256,
+            "name": null,
+            "layout": 12,
+            "native_layout": "slide layout blank",
+            "notes": "",
+            "follow_master_background": true,
+            "background": {
+              "color": "#FFFFFF"
+            },
+            "shape_count": 2,
+            "shapes": [
+              {
+                "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6",
+                "index": 1,
+                "shape_id": null,
+                "name": "wpscomposer-2178f2ad074b4de3a7ee52bca4627db6",
+                "type": 17,
+                "native_type": "shape type text box",
+                "geometry": {
+                  "left": 30,
+                  "top": 30,
+                  "width": 260,
+                  "height": 40,
+                  "rotation": 0,
+                  "z_order": 1
+                },
+                "fill": {
+                  "color": "#FFFFFF",
+                  "visible": false,
+                  "transparency": 1
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 18,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#000000",
+                          "strikethrough": false
+                        },
+                        "text": "Public create 405 x 720"
+                      }
+                    ],
+                    "text": "Public create 405 x 720"
+                  }
+                ],
+                "text": "Public create 405 x 720",
+                "line": {
+                  "color": "#FFFFFF",
+                  "weight": null,
+                  "visible": null,
+                  "transparency": null
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              },
+              {
+                "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f",
+                "index": 2,
+                "shape_id": null,
+                "name": "wpscomposer-fc8caa616bea42cfb5adfd07ff62151f",
+                "type": 1,
+                "native_type": "shape type auto",
+                "geometry": {
+                  "left": 40,
+                  "top": 110,
+                  "width": 180,
+                  "height": 60,
+                  "rotation": 0,
+                  "z_order": 2
+                },
+                "fill": {
+                  "color": "#2463A6",
+                  "visible": true,
+                  "transparency": 0
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 14,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 14,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#FFFFFF",
+                          "strikethrough": false
+                        },
+                        "text": "Native rectangle"
+                      }
+                    ],
+                    "text": "Native rectangle"
+                  }
+                ],
+                "text": "Native rectangle",
+                "line": {
+                  "color": "#172C51",
+                  "weight": 1,
+                  "visible": null,
+                  "transparency": 1
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              }
+            ]
+          }
+        ],
+        "limitations": [
+          "Native numeric Shape.Id is not exposed by this adapter",
+          "Independent page height unavailable in native dictionary"
+        ]
+      },
+      "reopened": {
+        "kind": "slide",
+        "engine": "msoffice",
+        "name": "bound-54d882cd72e440a2a94c0dc4b8a91633.pptx",
+        "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-uj7mak1e/bound-54d882cd72e440a2a94c0dc4b8a91633.pptx",
+        "saved": true,
+        "slide_count": 1,
+        "page_setup": {
+          "slide_width": 405
+        },
+        "shapes_truncated": false,
+        "slides": [
+          {
+            "id": "slide:1",
+            "index": 1,
+            "native_slide_id": 256,
+            "name": null,
+            "layout": 12,
+            "native_layout": "slide layout blank",
+            "notes": "",
+            "follow_master_background": true,
+            "background": {
+              "color": "#FFFFFF"
+            },
+            "shape_count": 2,
+            "shapes": [
+              {
+                "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6",
+                "index": 1,
+                "shape_id": null,
+                "name": "wpscomposer-2178f2ad074b4de3a7ee52bca4627db6",
+                "type": 17,
+                "native_type": "shape type text box",
+                "geometry": {
+                  "left": 30,
+                  "top": 30,
+                  "width": 260,
+                  "height": 40,
+                  "rotation": 0,
+                  "z_order": 1
+                },
+                "fill": {
+                  "color": "#FFFFFF",
+                  "visible": false,
+                  "transparency": 1
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 18,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#000000"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-2178f2ad074b4de3a7ee52bca4627db6/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 18,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#000000",
+                          "strikethrough": false
+                        },
+                        "text": "Public create 405 x 720"
+                      }
+                    ],
+                    "text": "Public create 405 x 720"
+                  }
+                ],
+                "text": "Public create 405 x 720",
+                "line": {
+                  "color": "#FFFFFF",
+                  "weight": null,
+                  "visible": null,
+                  "transparency": null
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              },
+              {
+                "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f",
+                "index": 2,
+                "shape_id": null,
+                "name": "wpscomposer-fc8caa616bea42cfb5adfd07ff62151f",
+                "type": 1,
+                "native_type": "shape type auto",
+                "geometry": {
+                  "left": 40,
+                  "top": 110,
+                  "width": 180,
+                  "height": 60,
+                  "rotation": 0,
+                  "z_order": 2
+                },
+                "fill": {
+                  "color": "#2463A6",
+                  "visible": true,
+                  "transparency": 0
+                },
+                "font": {
+                  "name": "等线",
+                  "size": 14,
+                  "bold": false,
+                  "italic": false,
+                  "underline": false,
+                  "color": "#FFFFFF"
+                },
+                "paragraphs": [
+                  {
+                    "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f/paragraph:1",
+                    "index": 1,
+                    "runs": [
+                      {
+                        "id": "slide:1/shape:@name=wpscomposer-fc8caa616bea42cfb5adfd07ff62151f/paragraph:1/run:1",
+                        "index": 1,
+                        "font": {
+                          "name": "等线",
+                          "size": 14,
+                          "bold": false,
+                          "italic": false,
+                          "underline": false,
+                          "color": "#FFFFFF",
+                          "strikethrough": false
+                        },
+                        "text": "Native rectangle"
+                      }
+                    ],
+                    "text": "Native rectangle"
+                  }
+                ],
+                "text": "Native rectangle",
+                "line": {
+                  "color": "#172C51",
+                  "weight": 1,
+                  "visible": null,
+                  "transparency": 1
+                },
+                "text_frame": {
+                  "margin_left": 7.199999809265137,
+                  "margin_right": 7.199999809265137,
+                  "margin_top": 3.5999999046325684,
+                  "margin_bottom": 3.5999999046325684,
+                  "word_wrap": true
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "space_before": 0,
+                  "space_after": 0,
+                  "line_spacing": 1
+                }
+              }
+            ]
+          }
+        ],
+        "limitations": [
+          "Native numeric Shape.Id is not exposed by this adapter",
+          "Independent page height unavailable in native dictionary"
+        ]
+      },
+      "pdf": {
+        "pages": [
+          [
+            405.0,
+            720.0
+          ]
+        ],
+        "text": "Public create 405 x 720\nNative rectangle\n"
+      }
+    }
+  ],
+  "recorded": {
+    "entry": "generate_recorded",
+    "requested": [
+      720,
+      405
+    ],
+    "pptx_sha256": "c8f1c3236c06fa64976f7b85dd6b6dd3f386bfdac4cf9ccc95bef692af805630",
+    "size": [
+      720.0,
+      405.0
+    ],
+    "passed": true
+  },
+  "generate": {
+    "pptx_sha256": "a945c663b1566b9b4c3cde39d12682b369337922c314fed371ab0c25c10d93db",
+    "snapshot": {
+      "kind": "slide",
+      "engine": "msoffice",
+      "name": "bound-842ce845993344cea9217d523da8df05.pptx",
+      "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-wac0ltgy/bound-842ce845993344cea9217d523da8df05.pptx",
+      "saved": true,
+      "slide_count": 2,
+      "page_setup": {
+        "slide_width": 960
+      },
+      "shapes_truncated": false,
+      "slides": [
+        {
+          "id": "slide:1",
+          "index": 1,
+          "native_slide_id": 256,
+          "name": null,
+          "layout": 1,
+          "native_layout": "slide layout title slide",
+          "notes": "",
+          "follow_master_background": true,
+          "background": {
+            "color": "#FFFFFF"
+          },
+          "shape_count": 2,
+          "shapes": [
+            {
+              "id": "slide:1/shape:@name=Title 3",
+              "index": 1,
+              "shape_id": null,
+              "name": "Title 3",
+              "type": 14,
+              "native_type": "shape type place holder",
+              "geometry": {
+                "left": 120,
+                "top": 88.37503814697266,
+                "width": 720,
+                "height": 188,
+                "rotation": 0,
+                "z_order": 1
+              },
+              "fill": {
+                "color": "#FFFFFF",
+                "visible": false,
+                "transparency": 1
+              },
+              "font": {
+                "name": "等线 Light",
+                "size": 40,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": "#1A1A1A"
+              },
+              "paragraphs": [
+                {
+                  "id": "slide:1/shape:@name=Title 3/paragraph:1",
+                  "index": 1,
+                  "runs": [
+                    {
+                      "id": "slide:1/shape:@name=Title 3/paragraph:1/run:1",
+                      "index": 1,
+                      "font": {
+                        "name": "等线 Light",
+                        "size": 40,
+                        "bold": false,
+                        "italic": false,
+                        "underline": false,
+                        "color": "#1A1A1A",
+                        "strikethrough": false
+                      },
+                      "text": "Public generate default"
+                    }
+                  ],
+                  "text": "Public generate default"
+                }
+              ],
+              "text": "Public generate default",
+              "line": {
+                "color": "#FFFFFF",
+                "weight": null,
+                "visible": null,
+                "transparency": null
+              },
+              "text_frame": {
+                "margin_left": 7.199999809265137,
+                "margin_right": 7.199999809265137,
+                "margin_top": 3.5999999046325684,
+                "margin_bottom": 3.5999999046325684,
+                "word_wrap": true
+              },
+              "paragraph": {
+                "alignment": 2,
+                "space_before": 0,
+                "space_after": 0,
+                "line_spacing": 0.8999999761581421
+              }
+            },
+            {
+              "id": "slide:1/shape:@name=Subtitle 4",
+              "index": 2,
+              "shape_id": null,
+              "name": "Subtitle 4",
+              "type": 14,
+              "native_type": "shape type place holder",
+              "geometry": {
+                "left": 120,
+                "top": 283.6250305175781,
+                "width": 720,
+                "height": 130.3749542236328,
+                "rotation": 0,
+                "z_order": 2
+              },
+              "fill": {
+                "color": "#FFFFFF",
+                "visible": false,
+                "transparency": 1
+              },
+              "font": {
+                "name": "等线",
+                "size": 18,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": "#000000"
+              },
+              "paragraphs": [],
+              "text": "",
+              "line": {
+                "color": "#FFFFFF",
+                "weight": null,
+                "visible": null,
+                "transparency": null
+              },
+              "text_frame": {
+                "margin_left": 7.199999809265137,
+                "margin_right": 7.199999809265137,
+                "margin_top": 3.5999999046325684,
+                "margin_bottom": 3.5999999046325684,
+                "word_wrap": true
+              },
+              "paragraph": {
+                "alignment": 2,
+                "space_before": 7.5,
+                "space_after": 0,
+                "line_spacing": 0.8999999761581421
+              }
+            }
+          ]
+        },
+        {
+          "id": "slide:2",
+          "index": 2,
+          "native_slide_id": 257,
+          "name": null,
+          "layout": 2,
+          "native_layout": "slide layout text slide",
+          "notes": "",
+          "follow_master_background": true,
+          "background": {
+            "color": "#FFFFFF"
+          },
+          "shape_count": 2,
+          "shapes": [
+            {
+              "id": "slide:2/shape:@name=Title 3",
+              "index": 1,
+              "shape_id": null,
+              "name": "Title 3",
+              "type": 14,
+              "native_type": "shape type place holder",
+              "geometry": {
+                "left": 66,
+                "top": 28.750078201293945,
+                "width": 828,
+                "height": 104.37503814697266,
+                "rotation": 0,
+                "z_order": 1
+              },
+              "fill": {
+                "color": "#FFFFFF",
+                "visible": false,
+                "transparency": 1
+              },
+              "font": {
+                "name": "等线 Light",
+                "size": 28,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": "#1A1A1A"
+              },
+              "paragraphs": [
+                {
+                  "id": "slide:2/shape:@name=Title 3/paragraph:1",
+                  "index": 1,
+                  "runs": [
+                    {
+                      "id": "slide:2/shape:@name=Title 3/paragraph:1/run:1",
+                      "index": 1,
+                      "font": {
+                        "name": "等线 Light",
+                        "size": 28,
+                        "bold": false,
+                        "italic": false,
+                        "underline": false,
+                        "color": "#1A1A1A",
+                        "strikethrough": false
+                      },
+                      "text": "Body"
+                    }
+                  ],
+                  "text": "Body"
+                }
+              ],
+              "text": "Body",
+              "line": {
+                "color": "#FFFFFF",
+                "weight": null,
+                "visible": null,
+                "transparency": null
+              },
+              "text_frame": {
+                "margin_left": 7.199999809265137,
+                "margin_right": 7.199999809265137,
+                "margin_top": 3.5999999046325684,
+                "margin_bottom": 3.5999999046325684,
+                "word_wrap": true
+              },
+              "paragraph": {
+                "alignment": 1,
+                "space_before": 0,
+                "space_after": 0,
+                "line_spacing": 0.8999999761581421
+              }
+            },
+            {
+              "id": "slide:2/shape:@name=Text Placeholder 4",
+              "index": 2,
+              "shape_id": null,
+              "name": "Text Placeholder 4",
+              "type": 14,
+              "native_type": "shape type place holder",
+              "geometry": {
+                "left": 66,
+                "top": 143.75,
+                "width": 828,
+                "height": 342.6250305175781,
+                "rotation": 0,
+                "z_order": 2
+              },
+              "fill": {
+                "color": "#FFFFFF",
+                "visible": false,
+                "transparency": 1
+              },
+              "font": {
+                "name": "等线",
+                "size": 18,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": "#1A1A1A"
+              },
+              "paragraphs": [
+                {
+                  "id": "slide:2/shape:@name=Text Placeholder 4/paragraph:1",
+                  "index": 1,
+                  "runs": [
+                    {
+                      "id": "slide:2/shape:@name=Text Placeholder 4/paragraph:1/run:1",
+                      "index": 1,
+                      "font": {
+                        "name": "等线",
+                        "size": 18,
+                        "bold": false,
+                        "italic": false,
+                        "underline": false,
+                        "color": "#1A1A1A",
+                        "strikethrough": false
+                      },
+                      "text": "Generated through native PowerPoint."
+                    }
+                  ],
+                  "text": "Generated through native PowerPoint."
+                }
+              ],
+              "text": "Generated through native PowerPoint.",
+              "line": {
+                "color": "#FFFFFF",
+                "weight": null,
+                "visible": null,
+                "transparency": null
+              },
+              "text_frame": {
+                "margin_left": 7.199999809265137,
+                "margin_right": 7.199999809265137,
+                "margin_top": 3.5999999046325684,
+                "margin_bottom": 3.5999999046325684,
+                "word_wrap": true
+              },
+              "paragraph": {
+                "alignment": 1,
+                "space_before": 7.5,
+                "space_after": 0,
+                "line_spacing": 0.8999999761581421
+              }
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "Native numeric Shape.Id is not exposed by this adapter",
+        "Independent page height unavailable in native dictionary"
+      ]
+    },
+    "pdf": {
+      "pages": [
+        [
+          960.0,
+          540.0
+        ],
+        [
+          960.0,
+          540.0
+        ]
+      ],
+      "text": "Public generate default\n\nBody\n• Generated through native PowerPoint.\n"
+    }
+  }
+}

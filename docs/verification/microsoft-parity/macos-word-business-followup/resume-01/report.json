@@ -1,0 +1,31 @@
+{
+  "passed": false,
+  "checks": {
+    "refresh_return_contract": true,
+    "unrelated_bindings_saved_state_unchanged": true,
+    "exact_owned_close": true,
+    "native_reopen_text_sections": true
+  },
+  "limitations": [
+    "Custom character styles remain unsupported.",
+    "Index refresh with nonempty TOC/TOF requires a separate native seeded fixture.",
+    "Fresh generation proof does not establish attached-session behavior."
+  ],
+  "field_snapshot": {
+    "stableKey": [
+      "doc:finalize",
+      "PAGE",
+      0
+    ],
+    "fieldCategory": "page",
+    "resultHash": "3-0",
+    "tocPageCount": 0,
+    "figureIndexPageCount": 0,
+    "tableIndexPageCount": 0,
+    "totalPages": 3
+  },
+  "error": {
+    "type": "AssertionError",
+    "message": ""
+  }
+}

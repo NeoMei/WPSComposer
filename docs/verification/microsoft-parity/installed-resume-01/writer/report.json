@@ -1,0 +1,161 @@
+{
+  "passed": true,
+  "kind": "writer",
+  "installed_plugin": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-install-resume-yyxuo1v0/codex/plugins/wps-composer",
+  "checks": {
+    "create_session_close_completed": true,
+    "public_native_created": true,
+    "public_native_edit_saved": true,
+    "source_preserved": true,
+    "edited_value_after_native_reopen": true,
+    "native_pdf_contents": true
+  },
+  "create_session_close_evidence": {
+    "method": "context_exit_returned",
+    "native_ack_log_available": false
+  },
+  "snapshot": {
+    "kind": "writer",
+    "counts": {
+      "paragraphs": 1,
+      "tables": 0,
+      "shapes": 0,
+      "sections": 1,
+      "inline_shapes": 0,
+      "styles": 373
+    },
+    "paragraphs": [
+      {
+        "id": "paragraph:@paraId=58A1541B",
+        "index": 1,
+        "start": 0,
+        "end": 22,
+        "text": "Installed native Word",
+        "font": {
+          "name": "DengXian",
+          "size": 16,
+          "bold": true,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文",
+        "para_id": "58A1541B"
+      }
+    ],
+    "tables": [],
+    "shapes": [],
+    "sections": [
+      {
+        "id": "section:1",
+        "index": 1,
+        "page_setup": {
+          "orientation": 0,
+          "page_width": 595.2999877929688,
+          "page_height": 841.9000244140625,
+          "top_margin": 72,
+          "bottom_margin": 72,
+          "left_margin": 90,
+          "right_margin": 90,
+          "header_distance": 42.54999923706055,
+          "footer_distance": 49.599998474121094,
+          "gutter": 0
+        },
+        "columns": 1
+      }
+    ],
+    "name": "document-170bf0029ac34c1bacaa3da95eefb5f4.docx",
+    "saved": true,
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-u6m2ifth/document-170bf0029ac34c1bacaa3da95eefb5f4.docx"
+  },
+  "reopened": {
+    "kind": "writer",
+    "counts": {
+      "paragraphs": 1,
+      "tables": 0,
+      "shapes": 0,
+      "sections": 1,
+      "inline_shapes": 0,
+      "styles": 373
+    },
+    "paragraphs": [
+      {
+        "id": "paragraph:@paraId=58A1541B",
+        "index": 1,
+        "start": 0,
+        "end": 22,
+        "text": "Installed Word edited",
+        "font": {
+          "name": "DengXian",
+          "size": 16,
+          "bold": true,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文",
+        "para_id": "58A1541B"
+      }
+    ],
+    "tables": [],
+    "shapes": [],
+    "sections": [
+      {
+        "id": "section:1",
+        "index": 1,
+        "page_setup": {
+          "orientation": 0,
+          "page_width": 595.2999877929688,
+          "page_height": 841.9000244140625,
+          "top_margin": 72,
+          "bottom_margin": 72,
+          "left_margin": 90,
+          "right_margin": 90,
+          "header_distance": 42.54999923706055,
+          "footer_distance": 49.599998474121094,
+          "gutter": 0
+        },
+        "columns": 1
+      }
+    ],
+    "name": "document-fc8e4bcf4d244bcc8d180754ed78587e.docx",
+    "saved": true,
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-jfoxwsds/document-fc8e4bcf4d244bcc8d180754ed78587e.docx"
+  },
+  "hashes": {
+    "edited.pdf": "190e5928994577261f73d3a663a0ba46faf6850a655c7b8bb6d0a38d24940678",
+    "edited.docx": "146c30388fa107b357bacf1a9d71dce00c71e8687313bab3af5dea5be3f44045",
+    "installed.pdf": "5f19bc3d7f4b9fa1423bf5ddbf19b9ddb2e42a9e462bbe41c93a1d96c9a557bc",
+    "installed.docx": "9929bdce292c0583c843b1daea8a0b85b4205de9bb16c94cc2541d48e8a74258"
+  }
+}

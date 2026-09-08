@@ -1,0 +1,13 @@
+{
+  "passed": false,
+  "checks": {},
+  "limitations": [
+    "Rich hyperlink spans are explicitly unsupported.",
+    "Two-section header linkage requires a separate multi-section fixture.",
+    "Native font slots, tab stops and header border require artifact readback."
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-gacvl1bk diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-gacvl1bk/f0a8987162994b51a6a5d31b05f62416.log"
+  }
+}

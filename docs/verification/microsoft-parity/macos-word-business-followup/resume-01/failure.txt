@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_business_followup.py", line 71, in run
+    assert any('PAGE' in ''.join(node.itertext()) for node in footer_xml)
+AssertionError

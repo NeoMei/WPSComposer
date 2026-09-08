@@ -1,0 +1,85 @@
+{
+  "artifact_modifications": false,
+  "status": "TESTED_SIZE_BEFORE_CONTENT_CONFIRMED",
+  "variants": [
+    {
+      "variant": "variant-01",
+      "pptx_sha256": "c68916c6ab90820084882635e44cdb0576f3938cb68226a70489252ab1f64e95",
+      "pdf_sha256": "cd320559db42f7324677ce7f179862c9f14f9a0dc325e5fd42816167be8d0045",
+      "xml_shapes": [
+        {
+          "text": "Size probe 720 x 405",
+          "geometry_pt": {
+            "x": 30.0,
+            "y": 30.0,
+            "cx": 260.0,
+            "cy": 40.0
+          }
+        },
+        {
+          "text": "Native rectangle",
+          "geometry_pt": {
+            "x": 40.0,
+            "y": 110.0,
+            "cx": 180.0,
+            "cy": 60.0
+          }
+        }
+      ],
+      "fitz_pages": [
+        {
+          "width": 720.0,
+          "height": 405.0,
+          "text": "Size probe 720 x 405\nNative rectangle\n"
+        }
+      ],
+      "pdf_contains_all_requested_text": true
+    },
+    {
+      "variant": "variant-02",
+      "pptx_sha256": "a936bd63c793963bd3d7e658d88e758d547ab4d0f5cc8133857f74eabeb87095",
+      "pdf_sha256": "1fa0e787f050d46c761e32c6dc91b573e6ea52a5db1f5f6e22bc3616d4f442a5",
+      "xml_shapes": [
+        {
+          "text": "Size probe 405 x 720",
+          "geometry_pt": {
+            "x": 30.0,
+            "y": 30.0,
+            "cx": 260.0,
+            "cy": 40.0
+          }
+        },
+        {
+          "text": "Native rectangle",
+          "geometry_pt": {
+            "x": 40.0,
+            "y": 110.0,
+            "cx": 180.0,
+            "cy": 60.0
+          }
+        }
+      ],
+      "fitz_pages": [
+        {
+          "width": 405.0,
+          "height": 720.0,
+          "text": "Size probe 405 x 720\nNative rectangle\n"
+        }
+      ],
+      "pdf_contains_all_requested_text": true
+    }
+  ],
+  "source_digest_after": "83ebce85cd2e425a4565d40f10279b2a07a342d0074629df272a49a7e39818db",
+  "pdf_parser_warnings_observed": [
+    "Ignoring wrong pointing object 7 0 (offset 0)",
+    "Ignoring wrong pointing object 9 0 (offset 0)"
+  ],
+  "warning_source": "pypdf, each warning once per variant",
+  "same_source_digest_through_run": false,
+  "all_owned_jobs_have_close_marker": true,
+  "quarantine_exists": false,
+  "preexisting_document_count": 24,
+  "current_fixture_sha256": "7c5c4a506dddab7b47381afc0166328038e87d0d3f2b92ec422eeba85ae8114d",
+  "current_session_sha256": "f1fa0675b537dea9c30c50123662e3b60d4ba8c0b8dd76df034f6c655b8fb66c",
+  "session_source_unchanged_since_run": true
+}
