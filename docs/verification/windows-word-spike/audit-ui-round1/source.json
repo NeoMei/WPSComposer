@@ -1,0 +1,7 @@
+{
+  "source": "docs/verification/windows-word-spike/final-cleanup-review/windows-run-10/probe.docx",
+  "source_sha256": "90776e2747736b37834c7858cd1383c0cfa52567824324f115f7d31087f6028c",
+  "copy": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+  "copy_initial_sha256": "90776e2747736b37834c7858cd1383c0cfa52567824324f115f7d31087f6028c",
+  "baseline_commit": "760704fc4b976dcc49f88d0e34835b1f5b7abbea"
+}

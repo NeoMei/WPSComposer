@@ -1,0 +1,129 @@
+{
+  "transport": "COM setup/readback plus native CUA actions recorded separately",
+  "identity": {
+    "pid": 19732,
+    "executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+    "name": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.17932"
+  },
+  "owned_hwnd": 1968272,
+  "owned_pid": 19732,
+  "registered_before_count": 0,
+  "events": [
+    {
+      "label": "opened_copy_before_ui",
+      "state": {
+        "owned_instance_document_count": 1,
+        "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+        "saved": true,
+        "text_sha256": "e74f28843df6174118e3341ed08ad7fb5639932883383ec63610326d52bda751",
+        "characters": 3741,
+        "audit_marker_present": false,
+        "end_marker_present": true,
+        "tables": [
+          {
+            "rows": 82,
+            "columns": 3,
+            "header": true
+          }
+        ],
+        "toc_count": 1,
+        "field_count": 5
+      }
+    },
+    {
+      "label": "after_cua_type",
+      "transport": "COM read-only verification of existing document",
+      "state": {
+        "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+        "pid": 19732,
+        "hwnd": 1968272,
+        "saved": false,
+        "text_sha256": "07054323edce2468fdb2d9cf1fa38b259087cd07c29e5a6437fc3180602a75a1",
+        "characters": 3768,
+        "audit_marker_present": true,
+        "end_marker_present": true,
+        "tables": [
+          {
+            "rows": 82,
+            "columns": 3,
+            "header": true
+          }
+        ],
+        "toc_count": 1,
+        "field_count": 5
+      }
+    },
+    {
+      "label": "after_cua_undo",
+      "transport": "COM read-only verification of existing document",
+      "state": {
+        "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+        "pid": 19732,
+        "hwnd": 1968272,
+        "saved": true,
+        "text_sha256": "e74f28843df6174118e3341ed08ad7fb5639932883383ec63610326d52bda751",
+        "characters": 3741,
+        "audit_marker_present": false,
+        "end_marker_present": true,
+        "tables": [
+          {
+            "rows": 82,
+            "columns": 3,
+            "header": true
+          }
+        ],
+        "toc_count": 1,
+        "field_count": 5
+      }
+    },
+    {
+      "label": "after_cua_explicit_save",
+      "transport": "COM read-only verification of existing document",
+      "state": {
+        "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+        "pid": 19732,
+        "hwnd": 1968272,
+        "saved": true,
+        "text_sha256": "e74f28843df6174118e3341ed08ad7fb5639932883383ec63610326d52bda751",
+        "characters": 3741,
+        "audit_marker_present": false,
+        "end_marker_present": true,
+        "tables": [
+          {
+            "rows": 82,
+            "columns": 3,
+            "header": true
+          }
+        ],
+        "toc_count": 1,
+        "field_count": 5
+      }
+    },
+    {
+      "label": "after_cua_reopen",
+      "transport": "COM read-only verification of existing document",
+      "state": {
+        "path": "D:\\MyDocuments\\codexprojects\\WpsComposer\\build\\msoffice-spike\\audit-ui-round1\\audit-ui-probe.docx",
+        "pid": 19732,
+        "hwnd": 1968272,
+        "saved": true,
+        "text_sha256": "e74f28843df6174118e3341ed08ad7fb5639932883383ec63610326d52bda751",
+        "characters": 3741,
+        "audit_marker_present": false,
+        "end_marker_present": true,
+        "tables": [
+          {
+            "rows": 82,
+            "columns": 3,
+            "header": true
+          }
+        ],
+        "toc_count": 1,
+        "field_count": 5
+      }
+    }
+  ],
+  "quit_called": false
+}

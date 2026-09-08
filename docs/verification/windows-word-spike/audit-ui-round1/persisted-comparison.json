@@ -1,0 +1,11 @@
+{
+  "source_unchanged": true,
+  "copy_sha256": "90776e2747736b37834c7858cd1383c0cfa52567824324f115f7d31087f6028c",
+  "copy_byte_identical_to_original": true,
+  "xml_part_checks": {
+    "word/document.xml": true,
+    "word/styles.xml": true,
+    "word/numbering.xml": true
+  },
+  "changed_zip_parts": []
+}

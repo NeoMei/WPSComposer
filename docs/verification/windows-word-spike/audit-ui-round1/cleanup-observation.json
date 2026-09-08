@@ -1,0 +1,10 @@
+{
+  "registered_application_name": "Microsoft Word",
+  "registered_document_count": 0,
+  "task_document_window_closed": true,
+  "cua_last_task_window_title": "Word",
+  "quit_or_kill_called": false,
+  "pid9252_handling": "Observed process path and creation time; did not infer launch ownership or close it",
+  "task_pid": 19732,
+  "task_application_retained": true
+}
