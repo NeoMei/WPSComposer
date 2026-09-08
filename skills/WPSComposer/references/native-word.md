@@ -45,3 +45,7 @@ python -m skills.WPSComposer.scripts.msoffice.macos_runtime --recover --timeout 
 ```
 
 恢复命令核查旧脚本进程和本次暂存文档；仍有不确定的任务时拒绝解除隔离。保留的诊断用于排查，恢复命令不会关闭用户文档。
+
+## 错误与诊断
+
+公开生成仍抛出 `LongformLifecycleError`，转换仍抛出 `ConversionError`。Word 错误代码包括 `NATIVE_WORD_UNSUPPORTED`、`NATIVE_WORD_TIMEOUT`、`NATIVE_WORD_QUARANTINED`、`NATIVE_WORD_EXECUTION_FAILED`、`NATIVE_WORD_UNAVAILABLE`。恢复信息可通过可选的 `staging_path`、`diagnostic_path`、`quarantine_path` 属性读取；转换的 `to_dict()` 同样保留这些字段。详细原生脚本与文档内容留在本地诊断文件，公共异常仅包含固定说明和恢复路径。

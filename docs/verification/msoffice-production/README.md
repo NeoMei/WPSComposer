@@ -13,10 +13,12 @@ Release status: **PENDING Windows production acceptance and final integration ch
 | Legacy DOC conversion with source preservation | macos-word/legacy-doc-report.json | PASS |
 | Portable integrated suite | build/msoffice-production/pytest-native-integrated.log | 2795 passed, 12 native-gated skips |
 | Windows production public API, native UI and ownership | remote production evidence required | PENDING |
-| WPS missing bootstrap recovery tabs | investigation of six visible missing-file tabs | PENDING |
+| WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
 The runner records the Git base and source SHA256 values for the actual dirty working tree used; these source digests, not only the base commit, bind each native report to its implementation. Artifacts are unmodified native outputs. macOS Word theme colors and pagination may differ from WPS; the shared typography, numbering, content and A4 guards all pass.
 
 The UI reports describe observed CUA interactions. WPS records one undo step per typed character, so all inserted characters were undone before saving. The saved WPS copy changes package metadata, but its document text and native typography checks match the original. Word saved copy is byte-identical.
 
 Reproduce with `python fixtures/verify_msoffice_production.py --output-root NEW_DIRECTORY --fixture representative --engine msoffice --timeout 600`; use `--engine wps` for the regression. The runner does not certify native UI or Windows by itself. Operator support boundaries and recovery instructions: [native-word.md](../../../skills/WPSComposer/references/native-word.md).
+
+Final local rerun: Mac Word public-representative-final-2 and WPS wps-regression-05 pass the strengthened title-occurrence gate. The WPS Title outline regression is fixed; its earlier PASS used an insufficient exact-paragraph-only title test. Current report/artifacts are the corrected native rerun. `ui-source.docx` binds the previously observed edit/undo/reopen report to its exact source; the UI report is not relabelled as an edit test of the new bytes. Native unsupported-equation rejection also passed through the public API with the explicit safe error code. Windows first production API/UI/sentinel round passed its initial checks with the separately committed identity fix. Parent visual and OOXML review subsequently found the cover PAGE field and missing front-matter/body numbering restarts; these are release blockers under native correction, so initial PASS does not admit release. Final merged-source admission remains pending.

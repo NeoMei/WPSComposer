@@ -188,7 +188,21 @@ def test_child_launch_failure_preserves_diagnostic(monkeypatch, tmp_path):
     def fail_launch(*args, **kwargs):
         raise OSError('Cannot launch Python')
     monkeypatch.setattr(runtime.subprocess, 'Popen', fail_launch)
-    with pytest.raises(OSError):
+    with pytest.raises(RuntimeError) as caught:
         runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 10)
+    assert caught.value.code == 'NATIVE_WORD_EXECUTION_FAILED'
     diagnostic = json.loads(next(tmp_path.glob('*/diagnostics.json')).read_text())
     assert diagnostic['error_type'] == 'OSError'
+
+
+@pytest.mark.parametrize('signal', [KeyboardInterrupt(), SystemExit(7)])
+def test_child_launch_cancellation_preserves_signal_and_diagnostic(monkeypatch, tmp_path, signal):
+    def cancel_launch(*args, **kwargs):
+        raise signal
+    monkeypatch.setattr(runtime.subprocess, 'Popen', cancel_launch)
+    with pytest.raises(type(signal)) as caught:
+        runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 10)
+    assert caught.value is signal
+    diagnostic = json.loads(next(tmp_path.glob('*/diagnostics.json')).read_text())
+    assert diagnostic['error_type'] == type(signal).__name__
+    assert diagnostic['word_termination_attempted'] is False

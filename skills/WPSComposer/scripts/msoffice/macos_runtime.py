@@ -16,6 +16,7 @@ from uuid import uuid4
 from ..artifact_transport import validate_office_package, validate_pdf, publish_artifact, copy_file_before_deadline
 from ..longform.pipeline import _build_executor_resources
 from ..longform.platform_runtime import _BaseAdapter, _apply_relayout
+from .errors import NativeWordError, NativeWordTimeoutError
 from .macos_script import (
     MacWordCapabilityError, apple_string, compile_plan, parse_result,
     pagination_source, refresh_source, wrap_owned,
@@ -27,7 +28,7 @@ def remaining(deadline: float) -> float:
         raise ValueError('Word deadline must be finite')
     value = deadline - time.monotonic()
     if value <= 0:
-        raise TimeoutError('Native Word total deadline expired')
+        raise NativeWordTimeoutError()
     return value
 
 
@@ -57,7 +58,7 @@ class WordJobLock:
                 try:
                     fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                     if self.quarantine_path.exists() and not recovery:
-                        raise RuntimeError('Native Word is quarantined after uncertain execution; inspect ' + str(self.quarantine_path) + ' and verify owned-document cleanup before explicit recovery')
+                        raise NativeWordError('NATIVE_WORD_QUARANTINED', quarantine_path=self.quarantine_path)
                     self.file = stream
                     return
                 except BlockingIOError:
@@ -95,10 +96,10 @@ class MacWordAdapter(_BaseAdapter):
         if self.staging_root is not None:
             return
         if sys.platform != 'darwin' or not Path('/Applications/Microsoft Word.app').is_dir():
-            raise RuntimeError('Native Microsoft Word is not installed on macOS')
+            raise NativeWordError('NATIVE_WORD_UNAVAILABLE')
         parent = Path.home() / 'Library/Containers/com.microsoft.Word/Data/tmp'
         if not parent.is_dir():
-            raise RuntimeError('Word container staging is unavailable; open Word once to initialize it')
+            raise NativeWordError('NATIVE_WORD_UNAVAILABLE')
         self.lock = WordJobLock(parent/'wpscomposer-native-word.lock')
         self.lock.acquire(deadline)
         self.staging_root = Path(tempfile.mkdtemp(prefix='wpscomposer-native-', dir=parent))
@@ -120,7 +121,11 @@ class MacWordAdapter(_BaseAdapter):
             diagnostic = path.with_suffix('.log')
             diagnostic.write_text(stderr + '\n' + stdout, encoding='utf-8')
             self.lock.quarantine({'schema':1, 'stagingRoot':str(self.staging_root), 'diagnostic':str(diagnostic), 'reason':'Native AppleEvent completion uncertain'})
-            raise
+            locations = dict(staging_path=self.staging_root, diagnostic_path=diagnostic,
+                             quarantine_path=self.lock.quarantine_path)
+            if isinstance(error, subprocess.TimeoutExpired):
+                raise NativeWordTimeoutError(**locations) from None
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', **locations) from None
         diagnostic = result.stderr + '\n' + result.stdout
         # Diagnostics contain only the task's script/results, never sentinel text.
         path.with_suffix('.log').write_text(diagnostic, encoding='utf-8')
@@ -128,8 +133,17 @@ class MacWordAdapter(_BaseAdapter):
             self.quarantined = True
             if 'WPSC_CLEAN' not in diagnostic.splitlines():
                 self.lock.quarantine({'schema':1,'stagingRoot':str(self.staging_root),'diagnostic':str(path.with_suffix('.log')),'reason':'Native cleanup or sentinel preservation unverified'})
-            raise RuntimeError('Native Word execution failed; retained private diagnostic: ' + str(path.with_suffix('.log')))
-        remaining(deadline)
+            locations = dict(staging_path=self.staging_root, diagnostic_path=path.with_suffix('.log'),
+                             quarantine_path=self.lock.quarantine_path if self.lock.quarantine_path.exists() else None)
+            if any(line.startswith('WPSC_ERROR\t-1712\t') for line in diagnostic.splitlines()):
+                raise NativeWordTimeoutError(**locations)
+            code = 'NATIVE_WORD_QUARANTINED' if locations['quarantine_path'] else 'NATIVE_WORD_EXECUTION_FAILED'
+            raise NativeWordError(code, **locations)
+        try:
+            remaining(deadline)
+        except NativeWordTimeoutError:
+            raise NativeWordTimeoutError(staging_path=self.staging_root,
+                                         diagnostic_path=path.with_suffix('.log')) from None
         return diagnostic
 
     def execute(self, build, directives, deadline):

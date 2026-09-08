@@ -557,3 +557,12 @@ def test_native_heading_none_numbering_keeps_legacy_path():
     # Legacy None does not require detached-style host APIs.
     writer.add_heading_level_native('Legacy heading', 1)
     assert state.text == 'Legacy heading'
+
+
+@pytest.mark.parametrize("key", ["outlineLevel", "outline_level"])
+def test_title_style_clears_inherited_heading_outline_level(key):
+    from types import SimpleNamespace
+    composer = object.__new__(WriterComposer)
+    style = SimpleNamespace(Font=SimpleNamespace(), ParagraphFormat=SimpleNamespace(OutlineLevel=1))
+    composer._configure_style(style, {key: 10})
+    assert style.ParagraphFormat.OutlineLevel == 10

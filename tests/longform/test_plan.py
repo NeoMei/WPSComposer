@@ -130,6 +130,7 @@ def test_heading_styles_restore_formal_document_typography():
                 styles[definition["name"]] = definition
 
     assert styles["Title"]["fontSize"] == 22
+    assert styles["Title"]["outlineLevel"] == 10
     expected_sizes = {
         "Heading 1": 16,
         "Heading 2": 15,

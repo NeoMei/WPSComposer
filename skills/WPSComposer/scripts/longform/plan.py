@@ -195,6 +195,8 @@ def _build_begin(state: _BuilderState, document: StructuredDocument, policy: Lon
                     "fontName": policy.heading_font["cjk"],
                     "fontNameAscii": policy.latin_font,
                     "fontSize": _TITLE_SIZE_PT,
+                    # Native WPS Title can inherit Heading 1 outline membership.
+                    "outlineLevel": 10,
                     "align": 1,
                     "bold": True,
                 },

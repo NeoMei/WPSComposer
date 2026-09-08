@@ -676,3 +676,7 @@ All composers expose these constants for direct `SaveAs` / `ExportAsFixedFormat`
 - PPTX→PDF uses `SaveAs(path,32)` not `ExportAsFixedFormat`.
 - `Quit()` may raise on some WPP builds; engine swallows it.
 - Non-Windows / no COM host → raises `WPSUnavailable`.
+
+### Native Word error recovery
+
+`engine="msoffice"` preserves the existing `LongformLifecycleError` (generation) and `ConversionError` (conversion) types. Native codes are `NATIVE_WORD_UNSUPPORTED`, `NATIVE_WORD_TIMEOUT`, `NATIVE_WORD_QUARANTINED`, `NATIVE_WORD_EXECUTION_FAILED`, and `NATIVE_WORD_UNAVAILABLE`. Optional `staging_path`, `diagnostic_path`, and `quarantine_path` attributes locate retained task evidence; `ConversionError.to_dict()` includes available recovery fields. See [native-word.md](native-word.md) for capabilities and explicit macOS recovery.

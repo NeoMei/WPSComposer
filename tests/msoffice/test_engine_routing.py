@@ -110,7 +110,7 @@ def test_wps_docx_presentation_pins_application(monkeypatch, tmp_path):
 
 def test_mac_auto_ignores_wps_locations_not_supported_by_runtime(monkeypatch):
     monkeypatch.setattr(engines.sys, 'platform', 'darwin')
-    monkeypatch.setattr(Path, 'is_dir', lambda p: str(p) in {'/Applications/WPS Office.app', '/Applications/Microsoft Word.app'})
+    monkeypatch.setattr(Path, 'is_dir', lambda p: p in {Path('/Applications/WPS Office.app'), Path('/Applications/Microsoft Word.app')})
     assert engines.resolve_engine('auto', 'writer') == 'msoffice'
 
 

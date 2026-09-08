@@ -16,6 +16,8 @@ def test_compiler_preserves_body_styles_and_uses_real_pagination(tmp_path):
     compiled = compile_plan(build.plan, {}, tmp_path / 'owned.docx', timeout=20)
     assert 'east asian name' in compiled.source
     assert 'first line indent' in compiled.source
+    assert 'outline level body text' in compiled.source
+    assert 'outline level10' not in compiled.source
     assert 'get range information' in compiled.source
     assert 'active end page number' in compiled.source
     assert 'active document' not in compiled.source.lower()

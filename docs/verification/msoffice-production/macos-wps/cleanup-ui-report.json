@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "method": "CUA observed WPS home before and after three real public operations in wps-regression-05",
+  "old_tabs": "Six task bootstrap tabs closed individually; five confirmed missing private session paths, final blank tab closed without save prompt",
+  "before": "WPS home; zero document tabs",
+  "after": "WPS home; zero document tabs",
+  "scope": "No new open bootstrap tabs after this successful generation/conversion/direct-PDF run; recent-file entries remain and historical recovery origin is not established"
+}

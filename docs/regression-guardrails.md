@@ -12,6 +12,7 @@
 ### 1. 封面页
 - markdown front matter `author` / `date` / `title_page: true` → 标准封面（Title 样式 + 署名 + 日期）
 - **标题全文只出现一次**（仅封面）；正文从第一章直接开始
+- Title 显式 `outlineLevel=10`（正文大纲级别），避免 WPS 内置 Title 被目录再次收录；验收必须计入目录缓存中的重复标题
 - 教训：H1 下手写署名行且无 front matter 时，引擎会把标题块渲染两遍——封面信息一律走 front matter，不要在 H1 下重复手写
 
 ### 2. 标题分级排版（正式公文层级）

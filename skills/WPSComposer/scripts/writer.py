@@ -344,6 +344,7 @@ class WriterComposer(BaseComposer):
         "rightIndent": "right_indent",
         "lineSpacing": "line_spacing",
         "lineSpacingRule": "line_spacing_rule",
+        "outlineLevel": "outline_level",
     }
 
     def _configure_style(self, style, props, is_char=False):
@@ -404,6 +405,9 @@ class WriterComposer(BaseComposer):
                     pf.KeepTogether = props["keep_together"]
                 if props.get("keep_with_next") is not None:
                     pf.KeepWithNext = props["keep_with_next"]
+                if (props.get("outline_level") is not None
+                        and getattr(pf, "OutlineLevel", None) != props["outline_level"]):
+                    pf.OutlineLevel = props["outline_level"]
                 if props.get("shading"):
                     try:
                         style.Shading.BackgroundPatternColor = hex_to_rgb_long(props["shading"])

@@ -542,6 +542,136 @@ def _identity(pid: int, started: str = "start-a") -> ProcessIdentity:
     )
 
 
+@pytest.mark.parametrize('failure', ['deadline', 'identity-query', 'still-running'])
+def test_uncertain_wps_teardown_preserves_fixture_and_ownership(monkeypatch, tmp_path, failure):
+    probe = _probe_with_writer_fixture(tmp_path)
+    fixture = probe.staging_dir / 'wpscomposer-writer-blank.docx'
+    fixture.write_bytes(b'open task fixture')
+    owned = _identity(201)
+    probe._owned_wps_processes = {201: owned}
+    now = [0.0]
+    monkeypatch.setattr(runtime.time, 'monotonic', lambda: now[0])
+    monkeypatch.setattr(runtime.time, 'sleep', lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(runtime, 'CLEANUP_GRACE_SECONDS', 0 if failure == 'deadline' else 0.2)
+    signals = []
+    monkeypatch.setattr(runtime.os, 'kill', lambda pid, action: signals.append((pid, action)))
+    if failure == 'identity-query':
+        def unavailable(*args, **kwargs):
+            raise OSError('identity query unavailable')
+        monkeypatch.setattr(runtime, 'read_wps_process_identity', unavailable)
+    else:
+        monkeypatch.setattr(runtime, 'read_wps_process_identity', lambda *args, **kwargs: owned)
+    with pytest.raises(runtime.RuntimeCleanupError):
+        probe.close()
+    assert fixture.read_bytes() == b'open task fixture'
+    assert probe._owned_wps_processes == {201: owned}
+    evidence = json.loads((fixture.parent / 'cleanup-quarantine.json').read_text())
+    assert evidence['owned_processes'][0]['pid'] == 201
+    if failure != 'still-running':
+        assert signals == []
+
+
+def test_failed_activation_without_verified_host_retains_stage(monkeypatch, tmp_path):
+    probe = _probe_with_writer_fixture(tmp_path)
+    fixture = probe.staging_dir / 'wpscomposer-writer-blank.docx'
+    fixture.write_bytes(b'uncertain task fixture')
+    probe._activation_attempted.add('writer')
+    monkeypatch.setattr(runtime.os, 'kill', lambda *args: pytest.fail('unowned process signaled'))
+    failure = TimeoutError('bootstrap unavailable')
+    probe.__exit__(TimeoutError, failure, None)
+    assert fixture.read_bytes() == b'uncertain task fixture'
+    assert (fixture.parent / 'cleanup-quarantine.json').is_file()
+
+
+@pytest.mark.parametrize('other_host_exited', [False, True])
+def test_successful_shared_activation_retains_unverified_fixture_without_failing(monkeypatch, tmp_path, other_host_exited):
+    probe = _probe_with_writer_fixture(tmp_path)
+    stage = probe.staging_dir
+    launches = []
+    monkeypatch.setattr(runtime.subprocess, 'run', lambda command, **kwargs: launches.append(command))
+    monkeypatch.setattr(runtime.os, 'kill', lambda *args: pytest.fail('unowned process signaled'))
+
+    fixture = probe.activate_component('writer')
+    contents = fixture.read_bytes()
+    if other_host_exited:
+        probe._owned_wps_processes = {201: _identity(201)}
+        monkeypatch.setattr(runtime, 'read_wps_process_identity', lambda *args, **kwargs: None)
+    probe.__exit__(None, None, None)
+
+    assert launches == [['open', '-a', str(probe.wps_app), str(fixture)]]
+    assert fixture.read_bytes() == contents
+    assert probe.staging_dir == stage
+    evidence = json.loads((stage / 'cleanup-quarantine.json').read_text())
+    assert evidence['reason'] == 'Activation document closure was not verified'
+    assert evidence['fixtures'] == {'writer': str(fixture)}
+    assert evidence['owned_processes'] == []
+    probe.close()
+
+
+@pytest.mark.parametrize('other_host_exited', [False, True])
+def test_unverified_isolated_launch_still_fails_cleanup(monkeypatch, tmp_path, other_host_exited):
+    probe = _probe_with_writer_fixture(tmp_path)
+    stage = probe.staging_dir
+    failure = OSError('uncertain isolated launch')
+
+    def fail_launch(*args, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(runtime.subprocess, 'run', fail_launch)
+    monkeypatch.setattr(runtime.os, 'kill', lambda *args: pytest.fail('unowned process signaled'))
+    with pytest.raises(OSError) as caught:
+        probe.activate_component('writer', isolated=True)
+    assert caught.value is failure
+    if other_host_exited:
+        probe._owned_wps_processes = {201: _identity(201)}
+        monkeypatch.setattr(runtime, 'read_wps_process_identity', lambda *args, **kwargs: None)
+    with pytest.raises(runtime.RuntimeCleanupError):
+        probe.close()
+    assert (stage / 'fixtures/wpscomposer-writer-blank.docx').is_file()
+    assert (stage / 'cleanup-quarantine.json').is_file()
+    probe.__exit__(OSError, failure, None)
+
+
+def test_verified_host_exit_removes_stage_and_close_is_idempotent(monkeypatch, tmp_path):
+    probe = _probe_with_writer_fixture(tmp_path)
+    fixture = probe.staging_dir / 'wpscomposer-writer-blank.docx'
+    fixture.write_bytes(b'closed fixture')
+    probe._activation_attempted.add('writer')
+    alive = {201: _identity(201)}
+    probe._owned_wps_processes = dict(alive)
+    monkeypatch.setattr(runtime, 'read_wps_process_identity', lambda pid, app, **kwargs: alive.get(pid))
+    monkeypatch.setattr(runtime.os, 'kill', lambda pid, action: alive.pop(pid))
+    probe.close()
+    assert not fixture.exists()
+    assert not probe._owned_wps_processes
+    probe.close()
+
+
+def test_identified_isolated_activation_removes_stage_after_verified_exit(monkeypatch, tmp_path):
+    probe = _probe_with_writer_fixture(tmp_path)
+    launches = []
+    monkeypatch.setattr(runtime.subprocess, 'run', lambda command, **kwargs: launches.append(command))
+    monkeypatch.setattr(runtime, 'list_wps_processes', lambda *args, **kwargs: {201: _identity(201)})
+    monkeypatch.setattr(runtime, 'read_wps_process_identity', lambda *args, **kwargs: None)
+    monkeypatch.setattr(runtime.os, 'kill', lambda *args: pytest.fail('exited process signaled'))
+
+    fixture = probe.activate_component('writer', isolated=True)
+    probe.__exit__(None, None, None)
+
+    assert launches[0][:3] == ['open', '-n', '-a']
+    assert not fixture.exists()
+    assert probe.staging_dir is None
+    probe.close()
+
+
+def test_strict_process_lookup_does_not_treat_ps_failure_as_exit(monkeypatch):
+    def fail(*args, **kwargs):
+        raise runtime.subprocess.TimeoutExpired('ps', 1)
+    monkeypatch.setattr(runtime.subprocess, 'run', fail)
+    with pytest.raises(RuntimeError, match='identity'):
+        runtime.read_wps_process_identity(201, Path('/Applications/wpsoffice.app'), strict=True)
+
+
 def test_runtime_never_signals_user_wps_launched_during_run(monkeypatch, tmp_path):
     probe = runtime.ProbeRuntime(
         tmp_path,
@@ -594,7 +724,10 @@ def test_runtime_kill_set_cannot_grow_during_term_grace(monkeypatch, tmp_path):
     signals = []
     monkeypatch.setattr(runtime.os, "kill", lambda pid, action: signals.append((pid, action)))
 
-    probe.close()
+    # The owned process still appears alive even after SIGKILL; do not claim
+    # successful cleanup merely because both signals were delivered.
+    with pytest.raises(runtime.RuntimeCleanupError):
+        probe.close()
 
     assert signals == [(201, signal.SIGTERM), (201, signal.SIGKILL)]
 

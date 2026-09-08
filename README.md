@@ -8,6 +8,8 @@ WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS
 
 > **0.8.1（2026-09-07）**：macOS Word 改用原生空白任务文档启动，首次生成直接复用；只启动所需组件服务，完整回收连接和独立 WPS 宿主。`open_result=True` 可在成功清理后打开最终文件。详见 [0.8.1 验证记录](docs/releases/0.8.1.md)。
 
+> **开发分支：Microsoft Word 原生支持**：新增 `engine="msoffice"` 的 DOCX/PDF 生成和 DOC/DOCX 转 PDF，默认仍为 WPS。Mac 原生验收已通过，Windows 正式接口验收仍在进行，尚未发布。参见 [使用与恢复说明](skills/WPSComposer/references/native-word.md) 和 [验收记录](docs/verification/msoffice-production/README.md)。
+
 ## ✨ 核心特性
 
 ### 🎨 专业排版
@@ -29,7 +31,7 @@ WPSComposer 是一个强大的文档生成工具，让 AI agent 能够通过 WPS
 
 ### 🌍 跨平台
 - **Windows**：通过 COM 接口驱动 WPS Office / MS Office
-- **macOS**：通过 JSAPI 容器驱动 WPS Office
+- **macOS**：通过 JSAPI 容器驱动 WPS Office；开发分支可显式通过 AppleScript 驱动 Microsoft Word
 - **统一 API**：相同的 Python 接口，跨平台一致体验
 
 ### 🛡️ 交付安全

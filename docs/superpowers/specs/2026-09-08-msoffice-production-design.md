@@ -12,7 +12,7 @@ Use existing build_longform_generation() -> GenerationPlan -> ExecutionOutcome -
 
 ## Windows
 
-Reuse WindowsLongformExecutor through injected dedicated Word composer factory. Native factory verifies actual WINWORD.EXE and window PID plus isolation, closes only its own documents, never shared application. Native operations run in a bounded Python worker so parent deadlines apply even if COM blocks; preserve failure diagnostics and quarantine uncertain owned files instead of deleting open files. No global process kill/template/security/registration changes. Explicit WPS factory excludes MS ProgIDs. Same identity gate for PDF conversion. Keep existing WPS route behavior compatible.
+Reuse WindowsLongformExecutor through injected dedicated Word composer factory. Native factory verifies actual WINWORD.EXE and window PID plus isolation, closes only its own documents, never shared application. Native operations run in a bounded Python worker so parent deadlines apply even if COM blocks; preserve failure diagnostics and quarantine uncertain owned files instead of deleting open files. No global process kill/template/security/registration changes. Explicit WPS factory excludes MS ProgIDs. Same identity gate for PDF conversion. On Word versions without Application.Hwnd, a unique temporary application Caption challenge is allowed after the new-process/IUnknown/empty-document checks; restore and verify the caption, bind its exact OpusApp HWND to the new PID, and recheck isolation before any document mutation. A hard worker timeout may retain the temporary caption on the uncertain empty host. Keep existing WPS route behavior compatible.
 
 ## macOS
 
