@@ -55,6 +55,46 @@ def compile_steps(width, height):
     ]
 
 
+CONTENT_GEOMETRY = {
+    'textbox': {'left': 30, 'top': 30, 'width': 260, 'height': 40},
+    'rectangle': {'left': 40, 'top': 110, 'width': 180, 'height': 60},
+}
+
+
+def variant_actions(width, height, *, size_before_content=False):
+    if type(size_before_content) is not bool:
+        raise ValueError('size_before_content must be boolean')
+    steps = [dict(step, kind='size') for step in compile_steps(width, height)]
+    content = {'kind': 'content', 'name': 'content'}
+    return steps + [content] if size_before_content else [content] + steps
+
+
+def _add_sized_content(session, width, height):
+    _, index = session.add_blank_slide()
+    text = f'Size probe {width} x {height}'
+    target = session.add_textbox(index, text, **CONTENT_GEOMETRY['textbox'])
+    # Public creation styling requests fixed textbox bounds explicitly. Native
+    # text boxes otherwise default to auto height, independently of slide size.
+    session.apply_format_patch(target, text_frame={'auto_size': 0},
+                               geometry=CONTENT_GEOMETRY['textbox'])
+    rectangle = session.add_shape(index, 1, **CONTENT_GEOMETRY['rectangle'],
+                                  fill_color='#2463A6', text='Native rectangle')
+    return {'textbox': {'target': target, 'text': text},
+            'rectangle': {'target': rectangle, 'text': 'Native rectangle'}}
+
+
+def _content_matches(snapshot, contract):
+    shapes = [shape for slide in snapshot.get('slides', []) for shape in slide.get('shapes', [])]
+    for role, expected in contract.items():
+        found = [shape for shape in shapes if shape.get('text', '').strip() == expected['text']]
+        if len(found) != 1:
+            return False
+        if any(abs(found[0]['geometry'][key] - value) >= 0.1
+               for key, value in CONTENT_GEOMETRY[role].items()):
+            return False
+    return True
+
+
 def require_owned(session, container):
     job = Path(str(session._job)).resolve()
     path = Path(str(session._path)).resolve()
@@ -181,10 +221,10 @@ def _add_probe_slide(session, width, height):
     session.add_textbox(slide_index, f'Size probe {width} x {height}', 30, 30, 260, 40)
 
 
-def run(output, sizes, *, sentinel_names, execute=False):
+def run(output, sizes, *, sentinel_names, execute=False, size_before_content=False):
     if execute is not True:
         raise ValueError('Native execution requires execute=True')
-    plans = [(width, height, compile_steps(width, height)) for width, height in sizes]
+    plans = [(width, height, variant_actions(width, height, size_before_content=size_before_content)) for width, height in sizes]
     if not 1 <= len(plans) <= 3:
         raise ValueError('Use one to three size variants')
     if (not sentinel_names or len(set(sentinel_names)) != len(sentinel_names)
@@ -207,7 +247,7 @@ def run(output, sizes, *, sentinel_names, execute=False):
               'fixture_sha256': _digest(__file__),
               'session_sha256': _digest(macos_powerpoint_session.__file__),
               'source_digest': source_digest(Path(__file__).resolve().parents[2]),
-              'sentinel_names': sentinel_names}
+              'sentinel_names': sentinel_names, 'size_before_content': size_before_content}
     dictionary = Path('/Applications/Microsoft PowerPoint.app/Contents/Resources/PowerPoint.sdef')
     report['dictionary_sha256'] = _digest(dictionary)
     session = None
@@ -226,12 +266,26 @@ def run(output, sizes, *, sentinel_names, execute=False):
             _deadline_session(session, deadline)
             report['native_jobs'].append(str(session._job))
             require_owned(session, container)
-            _add_probe_slide(session, width, height)
-            session.save(variant_dir / '00-baseline.pptx')
-            for index, step in enumerate(steps, 1):
+            content_contract = None
+            if size_before_content:
+                session.save(variant_dir / '00-empty-baseline.pptx')
+            size_index = 0
+            for step in steps:
                 require_owned(session, container)
+                if step['kind'] == 'content':
+                    if size_before_content:
+                        content_contract = _add_sized_content(session, width, height)
+                        variant['content_contract'] = content_contract
+                        variant['created_snapshot'] = session.inspect_document()
+                        path = variant_dir / '05-created-content.pptx'
+                    else:
+                        _add_probe_slide(session, width, height)
+                        path = variant_dir / '00-baseline.pptx'
+                    session.save(path)
+                    continue
+                size_index += 1
                 session._run(step['command'] + '\nreturn "SIZE_STEP_OK"', mutation=True)
-                path = variant_dir / f'{index:02}-{step["name"]}.pptx'
+                path = variant_dir / f'{size_index:02}-{step["name"]}.pptx'
                 session.save(path)
                 variant['steps'].append({**step, 'native': _native_size(session),
                                          'artifact': str(path), 'sha256': _digest(path),
@@ -250,11 +304,19 @@ def run(output, sizes, *, sentinel_names, execute=False):
             require_owned(session, container)
             variant['reopened_native'] = _native_size(session)
             variant['reopened_ooxml'] = read_size(session._path)
+            if size_before_content:
+                variant['reopened_snapshot'] = session.inspect_document()
             session.close(save_changes=False)
             session = None
             variant['reopen_source_preserved'] = _digest(final_path) == final_hash
             pdf = PdfReader(variant_dir / 'final.pdf')
             variant['pdf_pages'] = [[float(page.mediabox.width), float(page.mediabox.height)] for page in pdf.pages]
+            if size_before_content:
+                variant['pdf_text'] = '\n'.join(page.extract_text() or '' for page in pdf.pages)
+                variant['content_confirmed'] = (
+                    _content_matches(variant['created_snapshot'], content_contract) and
+                    _content_matches(variant['reopened_snapshot'], content_contract) and
+                    all(item['text'] in variant['pdf_text'] for item in content_contract.values()))
             actual = variant['reopened_ooxml']
             variant['size_confirmed'] = (abs(actual['width_pt'] - width) < 0.1 and
                 abs(actual['height_pt'] - height) < 0.1 and
@@ -268,8 +330,11 @@ def run(output, sizes, *, sentinel_names, execute=False):
             if not variant['size_confirmed']:
                 report['status'] = 'HYPOTHESIS_NOT_CONFIRMED'
                 break
+            if size_before_content and not variant['content_confirmed']:
+                report['status'] = 'CONTENT_NOT_CONFIRMED'
+                break
         else:
-            report['status'] = 'TESTED_SIZES_CONFIRMED'
+            report['status'] = 'TESTED_SIZE_BEFORE_CONTENT_CONFIRMED' if size_before_content else 'TESTED_SIZES_CONFIRMED'
     except BaseException as exc:
         report.update(status='FAILED_RETAINED', error=type(exc).__name__ + ': ' + str(exc))
         if session is not None:
@@ -287,16 +352,18 @@ def main(argv=None):
     parser.add_argument('--output', type=Path)
     parser.add_argument('--sentinel', action='append', default=[])
     parser.add_argument('--size', type=float, nargs=2, action='append')
+    parser.add_argument('--size-before-content', action='store_true')
     args = parser.parse_args(argv)
     sizes = args.size or [(720, 405), (405, 720)]
     if not args.execute:
         print(json.dumps({'status': 'PREPARED_NOT_EXECUTED', 'hypothesis_only': True,
-                          'variants': [compile_steps(*size) for size in sizes]}, indent=2))
+                          'variants': [variant_actions(*size, size_before_content=args.size_before_content) for size in sizes]}, indent=2))
         return 0
     if args.output is None:
         parser.error('--execute requires --output NEW_DIR')
-    result = run(args.output, sizes, sentinel_names=args.sentinel, execute=True)
-    return 0 if result['status'] == 'TESTED_SIZES_CONFIRMED' else 1
+    result = run(args.output, sizes, sentinel_names=args.sentinel, execute=True,
+                 size_before_content=args.size_before_content)
+    return 0 if result['status'] in ('TESTED_SIZES_CONFIRMED', 'TESTED_SIZE_BEFORE_CONTENT_CONFIRMED') else 1
 
 
 if __name__ == '__main__':

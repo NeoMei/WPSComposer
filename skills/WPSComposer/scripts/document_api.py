@@ -630,6 +630,10 @@ def _document_engine(path, kind, engine, *, action="open_document", operations=(
         if candidate == "msoffice" and path is not None:
             if suffix != {"writer": ".docx", "sheet": ".xlsx", "slide": ".pptx"}[family]:
                 continue
+        if candidate == "msoffice" and action == "edit":
+            from .msoffice.edit_preflight import supports_edit_ops
+            if not supports_edit_ops(family, operations, platform=office_engines.sys.platform):
+                continue
         return candidate
     raise office_engines.EngineUnavailableError("No installed native engine supports this document action")
 
@@ -944,6 +948,12 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
     # providing single-use iterators instead of lists.
     patches = tuple(patches or ())
     ops = tuple(ops or ())
+    if engine == "auto":
+        from . import office_engines
+        family = _document_family(path, kind) if path is not None else _normalize_kind(kind)
+        if office_engines.sys.platform == "darwin" and family == "writer":
+            from .msoffice.edit_preflight import materialize_word_structural
+            ops = tuple(materialize_word_structural(op) for op in ops)
     selected = _document_engine(path, kind, engine, action="edit",
                                 operations=tuple({"op": "set", **p} for p in (patches or ())) + tuple(ops or ()),
                                 export_pdf=export_pdf)

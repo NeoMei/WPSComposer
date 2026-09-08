@@ -364,9 +364,38 @@ def test_semantic_invalid_shape_and_size_rejected_before_mutation(monkeypatch):
     s=api().MacPowerPointSession();calls=[]
     monkeypatch.setattr(s,'_run',lambda *a,**k:calls.append(a))
     with pytest.raises(ValueError):s.add_shape(1,999999,0,0,100,100)
-    with pytest.raises(ValueError):s.set_slide_size(960,600)
+    with pytest.raises(ValueError):s.set_slide_size(960,-1)
     with pytest.raises(ValueError):s.add_table(1,2,2,0,0,100,100,[['x']],font_size=-1)
     assert not calls
+
+
+def test_direct_arbitrary_size_guards_empty_presentation_before_any_setter(monkeypatch):
+    s=api().MacPowerPointSession();calls=[]
+    monkeypatch.setattr(s,'_run',lambda body,**kwargs:(calls.append((body,kwargs)) or 'SIZED'))
+    s.set_slide_size(720,405)
+    source,kwargs=calls[0]
+    guard='if (count of slides of ownedDoc) is not 0 then return "EXISTING_SLIDES"'
+    assert source.index(guard)<source.index('set slide orientation')<source.index('set slide width')
+    assert kwargs=={'mutation':True}
+
+
+def test_direct_arbitrary_size_existing_slides_is_clean_capability_rejection(monkeypatch):
+    s=api().MacPowerPointSession();calls=[]
+    monkeypatch.setattr(s,'_run',lambda body,**kwargs:(calls.append(body) or 'EXISTING_SLIDES'))
+    with pytest.raises(api().PowerPointSessionCapabilityError,match='empty presentation'):
+        s.set_slide_size(720,405)
+    assert calls[0].index('return "EXISTING_SLIDES"')<calls[0].index('set slide orientation')
+    assert not s._uncertain
+
+
+def test_direct_540_size_keeps_existing_session_behavior(monkeypatch):
+    s=api().MacPowerPointSession();calls=[]
+    monkeypatch.setattr(s,'_run',lambda body,**kwargs:(calls.append(body) or 'SIZED'))
+    s.set_slide_size(960,540)
+    assert calls == [
+        'set slide size of page setup of ownedDoc to slide size on screen\n'
+        'set slide width of page setup of ownedDoc to 960\nreturn "SIZED"'
+    ]
 
 
 def test_native_table_uses_editable_cells_and_layout_lines_use_native_line(monkeypatch):

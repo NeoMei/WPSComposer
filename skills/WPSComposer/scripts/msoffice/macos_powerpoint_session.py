@@ -533,6 +533,8 @@ if z order position of shape 1 of shape range of boundSelection is not {selected
         from ..document_api import validate_op
         validation=validate_op(op,'slide')
         if not validation.get('valid',False):raise ValueError(str(validation))
+        from .edit_preflight import validate_powerpoint_structural
+        validate_powerpoint_structural(op)
         verb=op.get('op');props=op.get('props') or {};target=op.get('target','');position=op.get('position','end')
         if verb=='insert':
             etype=op['type'];parent=op.get('parent')
@@ -685,8 +687,15 @@ end if"""
 
     def set_slide_size(self,width_pt=960,height_pt=540):
         self._mutable();_number(width_pt,positive=True);_number(height_pt,positive=True)
-        if height_pt!=540:raise PowerPointSessionCapabilityError('Native independent slide height is unavailable; verified height is 540 points')
-        self._run(f'set slide size of page setup of ownedDoc to slide size on screen\nset slide width of page setup of ownedDoc to {width_pt}\nreturn "SIZED"',mutation=True)
+        if height_pt==540:
+            body=f'set slide size of page setup of ownedDoc to slide size on screen\nset slide width of page setup of ownedDoc to {width_pt}'
+        else:
+            from .macos_powerpoint_script import compile_initial_slide_size
+            body=compile_initial_slide_size(width_pt,height_pt)
+        result=self._run(body+'\nreturn "SIZED"',mutation=True)
+        if result=='EXISTING_SLIDES':
+            raise PowerPointSessionCapabilityError(
+                'Arbitrary initial slide size requires an empty presentation')
 
     def _role_font(self,target,role,size,color,default_size):
         _number(size,positive=True)

@@ -420,7 +420,11 @@ class MacWordSession:
     def apply_format_patch(self, target, *, text=None, font=None, paragraph=None, geometry=None, fill=None, line=None, style=None, wrap=None, vertical_alignment=None, page_setup=None, columns=None):
         self._writable()
         patch = {k: v for k, v in locals().copy().items() if k not in ('self', 'target') and v is not None}
-        accepted, rejected, mutations = [], [], []
+        from .edit_preflight import compile_word_patch
+        mutations, result = compile_word_patch(target, patch)
+        if result['rejected']:
+            return result
+        accepted = result['accepted']
         shape = re.fullmatch(r'shape:([1-9]\d*)', target or '')
         section = re.fullmatch(r'section:([1-9]\d*)', target or '')
         cell = target.startswith('table:') if isinstance(target, str) else False
@@ -430,52 +434,6 @@ class MacWordSession:
             resolve = [f'set targetSetup to page setup of section {int(section[1])} of boundDoc']
         else:
             resolve = self._range(target)
-        mappings = {'font': (_FONT, 'font object of targetRange'), 'paragraph': (_PARA, 'paragraph format of targetRange')}
-        if shape:
-            mappings.update({'geometry': (_GEOMETRY, 'targetShape'), 'fill': ({'color': 'fore color', 'back_color': 'back color', 'visible': 'visible', 'transparency': 'transparency'}, 'fill format of targetShape'), 'line': ({'color': 'fore color', 'weight': 'weight', 'visible': 'visible', 'transparency': 'transparency'}, 'line format of targetShape')})
-        if cell:
-            mappings['fill'] = ({'color': 'background pattern color'}, 'shading of targetCell')
-        if section:
-            mappings = {'page_setup': (_PAGE, 'targetSetup')}
-        for group, values in patch.items():
-            if group in mappings and isinstance(values, dict):
-                names, obj = mappings[group]
-                for key, value in values.items():
-                    label = group + '.' + key
-                    try:
-                        if key not in names:
-                            raise ValueError()
-                        rendered = _value(key, value)
-                        mutations.append(f'set {names[key]} of {obj} to {rendered}')
-                        accepted.append(label)
-                    except (ValueError, TypeError):
-                        rejected.append(label)
-            elif group in ('text', 'style') and not section:
-                try:
-                    rendered = _value(group, values)
-                    if group == 'text' and (target.startswith('paragraph:') or cell):
-                        mutations += ['set replacementStart to start of content of targetRange', 'set replacementEnd to end of content of targetRange', 'set replacementRange to create range boundDoc start replacementStart end (replacementEnd - 1)', f'set content of replacementRange to {rendered}']
-                    else:
-                        mutations.append(f'set {"content" if group == "text" else "style"} of targetRange to {rendered}')
-                    accepted.append(group)
-                except (TypeError, ValueError):
-                    rejected.append(group)
-            elif group == 'vertical_alignment' and cell:
-                try:
-                    mutations.append('set vertical alignment of targetCell to ' + _value(group, values))
-                    accepted.append(group)
-                except (TypeError, ValueError):
-                    rejected.append(group)
-            elif group == 'columns' and section and type(values) is int and 1 <= values <= 45:
-                mutations.append(f'set number of text columns targetSetup number of columns {values}')
-                accepted.append(group)
-            elif group == 'wrap' and shape and type(values) is int and 0 <= values < len(_WRAP):
-                mutations.append(f'set wrap type of wrap format of targetShape to {_WRAP[values]}')
-                accepted.append(group)
-            else:
-                rejected.extend(group + '.' + k for k in values) if isinstance(values, dict) else rejected.append(group)
-        if rejected:
-            return {'accepted': [], 'rejected': rejected}
         if mutations:
             # Range/selection/cell replacement may remove old paragraph marks even
             # when the replacement contains none. Do not reuse on-disk identities.
@@ -514,6 +472,9 @@ class MacWordSession:
 
     def apply_structural_op(self, op):
         self._writable()
+        from .edit_preflight import materialize_word_structural, validate_word_structural
+        op = materialize_word_structural(op)
+        validate_word_structural(op)
         verb = op.get('op')
         if verb == 'insert':
             if op.get('parent', 'body') != 'body':
@@ -819,6 +780,10 @@ class MacWordSession:
             latin = latin or family
             _value('name', latin)
             for prop, value in [('name', family), ('east asian name', family), ('ascii name', latin), ('other name', latin), ('complex script name', latin)]:
+                # Word rejects Consolas in its East Asian slot (-10006). Keep
+                # the inherited CJK face; its Latin slots render Consolas.
+                if prop == 'east asian name' and family.casefold() == 'consolas':
+                    continue
                 lines.append(f'set {prop} of font object of {target} to {apple_string(value)}')
         elif latin is not None:
             # The baseline ignores ascii_name without font_name; still validate it.
@@ -1215,9 +1180,11 @@ class MacWordSession:
 
     def set_page_number_in_footer(self):
         self._business_commit(['set pagePart to get footer (section 1 of boundDoc) index header footer primary',
-            'set content of text object of pagePart to "Page "',
-            'set footerRange to collapse range (character 5 of text object of pagePart) direction collapse end',
-            'create new field text range footerRange field type field page preserve formatting true'])
+            'set content of text object of pagePart to ""',
+            # A range returned by collapse range loses its footer story on
+            # Word 16.112.3. Pass the native footer specifier directly.
+            'create new field text range (text object of pagePart) field type field page preserve formatting true',
+            'insert text "Page " at beginning of text object of pagePart'])
 
     def compact_terminal_paragraph(self):
         # Match Python str.strip used by the frozen implementation, plus the

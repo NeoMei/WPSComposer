@@ -157,3 +157,30 @@ def test_probe_uses_real_blank_slide_return_contract(monkeypatch):
     monkeypatch.setattr(session, 'add_textbox', textbox)
     probe()._add_probe_slide(session, 720, 405)
     assert captured == [1]
+
+
+def test_size_before_content_action_order_and_requested_geometry():
+    module = probe()
+    actions = module.variant_actions(720, 405, size_before_content=True)
+    assert [a['kind'] for a in actions] == ['size'] * 4 + ['content']
+    assert [a['kind'] for a in module.variant_actions(720, 405)] == ['content'] + ['size'] * 4
+    assert module.CONTENT_GEOMETRY == {
+        'textbox': {'left': 30, 'top': 30, 'width': 260, 'height': 40},
+        'rectangle': {'left': 40, 'top': 110, 'width': 180, 'height': 60},
+    }
+
+
+def test_content_checks_detect_missing_text_or_changed_geometry():
+    import copy
+    module = probe()
+    contract = {'textbox': {'text': 'Probe text'}, 'rectangle': {'text': 'Native rectangle'}}
+    snapshot = {'slides': [{'shapes': [
+        {'text': value['text'], 'geometry': dict(module.CONTENT_GEOMETRY[role])}
+        for role, value in contract.items()]}]}
+    assert module._content_matches(snapshot, contract)
+    wrong = copy.deepcopy(snapshot)
+    wrong['slides'][0]['shapes'][0]['geometry']['top'] = -28
+    assert not module._content_matches(wrong, contract)
+    wrong = copy.deepcopy(snapshot)
+    wrong['slides'][0]['shapes'][1]['text'] = ''
+    assert not module._content_matches(wrong, contract)

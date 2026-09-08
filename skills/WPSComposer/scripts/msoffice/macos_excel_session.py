@@ -367,71 +367,8 @@ return rangeJSON''')
     def apply_format_patch(self,target,**patch):
         self._assert_live(write=True)
         prefix,kind=self._target_script(target)
-        operations=[]
-        def add(key,prop,value): operations.append((key,f'set {prop} to {value}'))
-        range_kind=kind in ('cell','range','selection')
-        allowed={'value','formula','font','fill','number_format','horizontal_alignment','vertical_alignment','wrap_text','indent','row_height','column_width','borders'} if range_kind else ({'name','page_setup'} if kind=='sheet' else {'geometry','name','chart_type','chart_title'} if kind=='chart' else {'geometry','name','fill','line'})
-        if set(patch)-allowed: raise ValueError('Unsupported Excel patch fields')
-        for key,value in patch.items():
-            if value is None: continue
-            if key in ('value','formula'):
-                if key=='formula':validate_spreadsheet_formula(value)
-                add(key,key+' of obj',_native_value(value))
-            elif key=='font':
-                mapping={'name':'name','size':'font size','bold':'bold','italic':'italic','underline':'underline','strikethrough':'strikethrough','color':'color'}
-                if not isinstance(value,dict) or set(value)-set(mapping): raise ValueError('Unsupported Excel font fields')
-                for sub,item in value.items():
-                    val=_color(item) if sub=='color' else _number(item,1,409) if sub=='size' else _enum(item,_UNDERLINE) if sub=='underline' else _quote(item) if sub=='name' else _native_value(item) if type(item) is bool else None
-                    if val is None: raise ValueError('Invalid Excel font value')
-                    add('font.'+sub,mapping[sub]+' of font object of obj',val)
-            elif key in ('fill','line'):
-                if range_kind:
-                    if key!='fill' or not isinstance(value,dict) or set(value)-{'color'}: raise ValueError('Unsupported Excel range fill fields')
-                    if 'color' in value:add('fill.color','color of interior object of obj',_color(value['color']))
-                else:
-                    mapping={'color':'fore color','back_color':'back color','transparency':'transparency','visible':'visible'}
-                    if key=='line':mapping['weight']='weight'
-                    if not isinstance(value,dict) or set(value)-set(mapping):raise ValueError('Unsupported Excel shape format fields')
-                    for sub,item in value.items():
-                        if sub in ('color','back_color'):val=_color(item)
-                        elif sub=='visible':
-                            if type(item) is not bool:raise ValueError('Shape visibility must be boolean')
-                            val=_native_value(item)
-                        else:val=_number(item,0,1 if sub=='transparency' else 1000)
-                        add(key+'.'+sub,mapping[sub]+' of '+key+' format of obj',val)
-            elif key=='geometry':
-                mapping={'left':'left position','top':'top','width':'width','height':'height','rotation':'rotation'}
-                if not isinstance(value,dict) or set(value)-set(mapping): raise ValueError('Unsupported Excel geometry fields')
-                for sub,item in value.items(): add('geometry.'+sub,mapping[sub]+' of obj',_number(item))
-            elif key=='name': add(key,'name of obj',_sheet_name(value) if kind=='sheet' else _quote(value))
-            elif key=='chart_type': add(key,'chart type of chart of obj',_enum(value,_CHART))
-            elif key=='chart_title':
-                operations.append((key,'set has title of chart of obj to true\nset chart title text of chart title of chart of obj to '+_quote(value)))
-            elif key=='borders':
-                if not isinstance(value,dict): raise ValueError('Invalid Excel borders')
-                for edge,spec in value.items():
-                    try: native_edge=_enum(int(edge),_BORDER)
-                    except (TypeError,ValueError): raise ValueError('Invalid border edge') from None
-                    if not isinstance(spec,dict) or set(spec)-{'style','weight','color'}: raise ValueError('Unsupported border properties')
-                    commands=[f'set ownedBorder to get border obj which border {native_edge}']
-                    for sub,item in spec.items(): commands += [f'set '+{'style':'line style','weight':'weight','color':'color'}[sub]+' of ownedBorder to '+(_color(item) if sub=='color' else _enum(item,_BORDER_STYLE if sub=='style' else _BORDER_WEIGHT))]
-                    operations.append(('borders.'+str(edge),'\n'.join(commands)))
-            elif key=='page_setup':
-                mapping={'orientation':'page orientation','top_margin':'top margin','bottom_margin':'bottom margin','left_margin':'left margin','right_margin':'right margin','header_margin':'header margin','footer_margin':'footer margin','zoom':'zoom','fit_to_pages_wide':'fit to pages wide','fit_to_pages_tall':'fit to pages tall','print_area':'print area','print_title_rows':'print title rows','print_title_columns':'print title columns'}
-                if not isinstance(value,dict) or set(value)-set(mapping): raise ValueError('Unsupported Excel page setup fields')
-                for sub,item in value.items():
-                    val=_enum(item,{1:'portrait',2:'landscape'}) if sub=='orientation' else _quote(item) if sub.startswith('print_') else 'false' if sub=='zoom' and item is False else _number(item)
-                    add('page_setup.'+sub,mapping[sub]+' of page setup object of obj',val)
-            else:
-                prop={'number_format':'number format','horizontal_alignment':'horizontal alignment','vertical_alignment':'vertical alignment','wrap_text':'wrap text','indent':'indent level','row_height':'row height','column_width':'column width'}[key]
-                if key=='number_format': val=_quote(value)
-                elif key=='horizontal_alignment': val=_enum(value,_H_ALIGN)
-                elif key=='vertical_alignment': val=_enum(value,_V_ALIGN)
-                elif key=='wrap_text':
-                    if type(value) is not bool: raise ValueError('wrap_text must be boolean')
-                    val=_native_value(value)
-                else: val=_number(value,0,255 if key=='column_width' else 15 if key=='indent' else 409)
-                add(key,prop+' of obj',val)
+        from .edit_preflight import compile_excel_patch
+        operations, range_kind = compile_excel_patch(target, patch)
         lines=[prefix,'set acceptedKeys to {}','set rejectedKeys to {}']
         # Native failure aborts the session; do not hide timeout/late-writer errors
         # in per-property try blocks. Validation already happened for every key.
@@ -444,6 +381,8 @@ return rangeJSON''')
     def apply_structural_op(self,op):
         self._assert_live(write=True)
         if not isinstance(op,dict): raise ValueError('Invalid Excel structural operation')
+        from .edit_preflight import validate_excel_structural
+        validate_excel_structural(op)
         verb=op.get('op');target=op.get('target');etype=op.get('type')
         if verb in ('move','clone'):
             self._fresh_empty_sheets=set()

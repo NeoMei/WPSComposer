@@ -70,7 +70,7 @@ def test_sections_columns_and_footer_page_semantics(session):
     assert 'orient landscape' in '\n'.join(calls[1])
     page='\n'.join(calls[2]);assert 'section 1 of boundDoc' in page
     assert '"Page "' in page and 'field type field page' in page
-    assert 'character 5 of text object of pagePart' in page
+    assert 'text range (text object of pagePart)' in page
 
 def test_compaction_guard_precedes_all_native_format_changes(session):
     s,calls=session;s.compact_terminal_paragraph()
@@ -113,7 +113,7 @@ def test_footer_page_insertion_preserves_footer_story(session):
     s,calls=session;s.set_page_number_in_footer()
     script='\n'.join(calls[0])
     assert 'create range boundDoc' not in script
-    assert 'collapse range (character 5 of text object of pagePart) direction collapse end' in script
+    assert 'create new field text range (text object of pagePart)' in script
 
 
 def test_style_dependencies_preflight_and_creation_order(session):
@@ -232,3 +232,13 @@ def test_style_case_variant_dependency_uses_one_declared_base(session):
     assert 'set base style of semanticStyle to requestedStyle0' in lines
     assert not any('to Word style "base"' in line for line in lines)
     assert 'set requestedStyle0 to Word style "Base" of boundDoc' in lines
+
+
+def test_footer_field_uses_native_footer_specifier_without_returned_range(session):
+    s,calls=session;s.set_page_number_in_footer()
+    lines=calls[0]
+    field='create new field text range (text object of pagePart) field type field page preserve formatting true'
+    prefix='insert text "Page " at beginning of text object of pagePart'
+    assert field in lines and prefix in lines
+    assert lines.index(field)<lines.index(prefix)
+    assert not any('collapse range' in line for line in lines)

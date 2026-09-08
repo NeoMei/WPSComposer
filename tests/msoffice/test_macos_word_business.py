@@ -163,3 +163,10 @@ def test_rich_body_clears_inherited_left_and_right_indent(session,style):
     script='\n'.join(calls[0])
     assert 'set paragraph format left indent of paragraph format of semanticRange to 0' in script
     assert 'set paragraph format right indent of paragraph format of semanticRange to 0' in script
+
+
+def test_consolas_preserves_inherited_east_asian_font_and_sets_latin_slots():
+    lines=MacWordSession._business_format('r',{'font_name':'Consolas','font_name_ascii':'Consolas'})
+    assert not any('east asian name' in line for line in lines)
+    for slot in ['ascii name','other name','complex script name']:
+        assert f'set {slot} of font object of r to "Consolas"' in lines

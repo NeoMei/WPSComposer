@@ -50,4 +50,4 @@ The baseline is unchanged. These are implementation gaps, not waived requirement
 - `snapshot_fields`
 - `upsert_document_quality_notice`
 
-The newly declared style methods still reject character styles and unsupported properties explicitly. All new direct-method typography, section, field and attached-session behavior needs native acceptance. The Office.js supplement and Windows results do not automatically close these method rows.
+The newly declared style methods still reject character styles and unsupported properties explicitly. Representative new direct-method typography, section and field native acceptance is recorded in `macos-word-business/resume-03` and `macos-word-business-followup/resume-03`; complete argument combinations and attached-session behavior remain unverified. The Office.js supplement and Windows results do not automatically close these method rows.

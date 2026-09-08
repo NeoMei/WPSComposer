@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 import pytest
 from skills.WPSComposer.scripts.generation_plan import GenerationPlan, GenerationOperation
@@ -45,10 +46,55 @@ def test_paths_need_not_exist_but_must_be_absolute(tmp_path):
         c.compile_plan(plan(('slide.add_blank', {})), {}, Path('relative.pptx'))
 
 
-def test_unverified_arbitrary_height_is_explicit_capability_error(tmp_path):
+def test_initial_arbitrary_size_compiles_verified_orientation_swap_sequence(tmp_path):
     c = compiler()
-    with pytest.raises(c.MacPowerPointCapabilityError, match='height'):
-        c.compile_plan(plan(('slide.set_size', {'width':800,'height':600}), ('slide.add_blank', {})), {}, tmp_path/'x.pptx')
+    source = c.compile_plan(
+        plan(('slide.set_size', {'width':720,'height':405}), ('slide.add_blank', {})),
+        {}, tmp_path/'x.pptx')
+    commands = [
+        'if (count of slides of ownedDoc) is not 0 then return "EXISTING_SLIDES"',
+        'set slide orientation of page setup of ownedDoc to vertical orientation',
+        'set slide width of page setup of ownedDoc to 405',
+        'set slide orientation of page setup of ownedDoc to horizontal orientation',
+        'set slide width of page setup of ownedDoc to 720',
+    ]
+    assert [source.index(command) for command in commands] == sorted(source.index(command) for command in commands)
+    assert 'slide height' not in source
+
+    tall = c.compile_initial_slide_size(405, 720)
+    assert tall.splitlines() == [
+        commands[0],
+        'set slide orientation of page setup of ownedDoc to horizontal orientation',
+        'set slide width of page setup of ownedDoc to 720',
+        'set slide orientation of page setup of ownedDoc to vertical orientation',
+        'set slide width of page setup of ownedDoc to 405',
+    ]
+
+
+def test_arbitrary_size_after_content_is_rejected_before_native_compilation(tmp_path):
+    c = compiler()
+    with pytest.raises(c.MacPowerPointCapabilityError, match='before adding slides'):
+        c.compile_plan(
+            plan(('slide.add_blank', {}), ('slide.set_size', {'width':800,'height':600})),
+            {}, tmp_path/'x.pptx')
+
+
+@pytest.mark.parametrize('width,height', [
+    (True, 405), (720, False), (0, 405), (720, -1),
+    (math.inf, 405), (720, math.nan), ('720', 405),
+])
+def test_initial_size_script_rejects_invalid_dimensions(width, height):
+    with pytest.raises(ValueError):
+        compiler().compile_initial_slide_size(width, height)
+
+
+def test_existing_540_height_sequence_is_unchanged(tmp_path):
+    source = compiler().compile_plan(
+        plan(('slide.add_blank', {}), ('slide.set_size', {'width':960,'height':540})),
+        {}, tmp_path/'x.pptx')
+    assert 'set slide size of page setup of ownedDoc to slide size on screen' in source
+    assert 'set slide width of page setup of ownedDoc to 960' in source
+    assert 'Arbitrary initial slide size requires an empty presentation' not in source
 
 
 def test_conversion_requires_macro_free_native_source_and_distinct_output(tmp_path):

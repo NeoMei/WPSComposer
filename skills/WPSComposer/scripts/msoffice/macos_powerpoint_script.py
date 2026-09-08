@@ -18,6 +18,27 @@ class MacPowerPointCapabilityError(ValueError):
     """A requested PowerPoint primitive is not yet natively verified."""
 
 
+def _dimension(value):
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not math.isfinite(value) or value <= 0):
+        raise ValueError('PowerPoint dimensions must be finite positive numbers')
+    return format(value, '.15g')
+
+
+def compile_initial_slide_size(width, height):
+    """Compile the verified arbitrary-size sequence for an empty presentation."""
+    width_text, height_text = _dimension(width), _dimension(height)
+    desired = 'horizontal orientation' if width >= height else 'vertical orientation'
+    opposite = 'vertical orientation' if width >= height else 'horizontal orientation'
+    return '\n'.join([
+        'if (count of slides of ownedDoc) is not 0 then return "EXISTING_SLIDES"',
+        f'set slide orientation of page setup of ownedDoc to {opposite}',
+        f'set slide width of page setup of ownedDoc to {height_text}',
+        f'set slide orientation of page setup of ownedDoc to {desired}',
+        f'set slide width of page setup of ownedDoc to {width_text}',
+    ])
+
+
 def _path(value):
     path = Path(value)
     if not path.is_absolute():
@@ -145,14 +166,15 @@ def compile_plan(plan, resources, native_path, pdf_path=None, timeout=60):
             lines.append('repeat while (count of slides of ownedDoc) > 0\n delete slide 1 of ownedDoc\nend repeat')
             count = 0
         elif op == 'slide.set_size':
-            # Dictionary exposes slide width but not independent height. Fix the
-            # known 540 pt height using a native on-screen page preset; retain the
-            # unsupported height as a capability error, never silently discard it.
-            if a['height'] != 540:
-                raise MacPowerPointCapabilityError('PowerPoint arbitrary slide height is not natively verified; supported height is 540 points')
             width = a['width']
-            lines += ['set slide size of page setup of ownedDoc to slide size on screen',
-                      f'set slide width of page setup of ownedDoc to {width}']
+            if a['height'] == 540:
+                lines += ['set slide size of page setup of ownedDoc to slide size on screen',
+                          f'set slide width of page setup of ownedDoc to {width}']
+            else:
+                if count != 0:
+                    raise MacPowerPointCapabilityError(
+                        'Arbitrary PowerPoint slide size must be set before adding slides')
+                lines.append(compile_initial_slide_size(width, a['height']))
         elif op == 'slide.apply_preset':
             preset = a['preset']
             lines.append(f'set fore color of fill format of background of slide master of ownedDoc to {_rgb(preset["colors"]["background"])}')
