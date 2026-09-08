@@ -16,7 +16,7 @@ Release status: **PENDING final Windows representative structural pagination/TOC
 | Windows Word public API and section policy | windows/round3-deb67ba/representative-03/ | PASS for static sample; multilevel structural editing correction pending |
 | Windows WPS public flow and section policy | windows/round3-deb67ba/wps-representative-02/ | PASS, 4 pages; actual WPS executable and artifacts verified |
 | Final Windows native UI, postflight and automatic engine choice | remote final evidence required; automatic WPS selection passes round4/auto-02 | UI/postflight PENDING |
-| Candidate isolated installation | install-848c72f.json | PASS, 104 installed source/document/manifest files match |
+| Candidate isolated installation | install-db7df29.json | PASS, 104 installed source/document/manifest files match; both native adapters import from the installed package |
 | WPS bootstrap tabs | six old task tabs closed; full representative rerun from WPS home returned to home without document tabs | PASS for current successful flow |
 
 The runner records the Git base and source SHA256 values for the actual dirty working tree used; these source digests, not only the base commit, bind each native report to its implementation. Artifacts are unmodified native outputs. macOS Word theme colors and pagination may differ from WPS; the shared typography, numbering, content and A4 guards all pass.

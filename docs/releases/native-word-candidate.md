@@ -14,7 +14,7 @@ WPS native built-in styles now receive the planned six heading sizes. Cover Titl
 
 ## Verification available
 
-- Integrated all-host scheme snapshot: 2874 passed, 12 native-gated skips. Earlier candidate ead655a isolated plugin installation, public signatures and installed source hashes passed; repeat installation on final promoted source.
+- Integrated all-host scheme snapshot: 2874 passed, 12 native-gated skips. Candidate db7df29 isolated plugin installation passes, with 104 installed source/document/manifest files matching and both native adapters imported from the installed package; repeat installation on final promoted source.
 - macOS Word and WPS: native public DOCX generation, conversion and direct PDF; cover, six heading levels, native numbering, repeated-header long table, source preservation, overwrite refusal, actual section page numbers and visible PDF review.
 - Both local clients: actual keyboard edit, Undo, explicit save, close and reopen on identified test copies.
 - macOS Word: native images, captions, REF/SEQ and indexes, unsaved-document preservation, legacy DOC conversion, timeout/quarantine/recovery, explicit rejection of unsupported equations.
