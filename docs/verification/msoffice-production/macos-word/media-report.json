@@ -1,0 +1,18 @@
+{
+  "docx": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/public-media/media.docx",
+  "pdf": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/windows-word-spike-review/build/msoffice-production-mac/public-media/media.pdf",
+  "fields": [
+    " TOC \\o \"1-3\" \\h \\z \\u \\* MERGEFORMAT ",
+    " PAGEREF _Toc239779526 \\h ",
+    " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239779527 \\h ",
+    " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239779528 \\h ",
+    " SEQ WPSC_FIG \\* ARABIC \\* MERGEFORMAT ",
+    " SEQ WPSC_TAB \\* ARABIC \\* MERGEFORMAT ",
+    " REF wpsc_fig_8d01c177ce34d0abf8b5251a \\h \\* MERGEFORMAT ",
+    " REF wpsc_tab_e38fa241016d6255c2bb270d \\h \\* MERGEFORMAT "
+  ],
+  "tables": 1,
+  "images": 1
+}

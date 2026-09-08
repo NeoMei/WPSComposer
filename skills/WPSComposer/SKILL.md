@@ -23,7 +23,8 @@ switches after a native task begins. MS Excel/PowerPoint and MS conversational
 editing are not supported by this interface. Word requires `pywin32` on Windows
 or macOS Automation permission to control desktop Microsoft Word.
 See [API reference](references/api.md#native-engine-selection) for scope and
-failure behavior. Do not bypass an unsupported-operation error with a custom
+failure behavior, and [native Word setup and recovery](references/native-word.md).
+Do not bypass an unsupported-operation error with a custom
 OOXML generator.
 
 The ``generate()`` function is the single entry point for all document

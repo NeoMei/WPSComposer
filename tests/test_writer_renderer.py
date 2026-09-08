@@ -1,6 +1,8 @@
 from pathlib import Path
 import struct
 
+import pytest
+
 from skills.WPSComposer.scripts.document_model import (
     CodeBlock,
     ImageBlock,
@@ -460,3 +462,98 @@ def test_render_body_keeps_multiple_h1_without_cover_title():
         if op.op == "writer.add_heading"
     ]
     assert heads == ["第一章 引言", "第二章 结论"]
+
+
+@pytest.mark.parametrize('transparent, style_name, outline', [
+    (True, 'WPSC Sequence Transparent Heading 1', 10),
+    (False, 'WPSC Unnumbered Heading 1', 1),
+])
+def test_native_unnumbered_heading_keeps_appearance_without_inheriting_later_numbering(transparent, style_name, outline):
+    from copy import deepcopy
+    from types import SimpleNamespace
+
+    class Format(SimpleNamespace):
+        @property
+        def Duplicate(self):
+            return deepcopy(self)
+
+    source = SimpleNamespace(
+        Font=Format(NameFarEast='黑体', Size=16, Bold=True, Color=0),
+        ParagraphFormat=Format(OutlineLevel=1, Alignment=1, SpaceBefore=16, SpaceAfter=5, KeepWithNext=True),
+    )
+    normal = SimpleNamespace(NameLocal='Normal')
+    named = {}
+
+    class Styles:
+        def __call__(self, key):
+            if key == -2:
+                return source
+            if key == -1:
+                return normal
+            return named[key]
+
+        def Add(self, name, style_type):
+            assert style_type == 1
+            target = SimpleNamespace(Font=Format(), ParagraphFormat=Format())
+            named[name] = target
+            return target
+
+    class ListFormat:
+        ListString = '2'
+
+        def RemoveNumbers(self, number_type):
+            assert number_type == 1
+            self.ListString = ''
+
+    native_range = SimpleNamespace(
+        Style=source, Font=source.Font,
+        ParagraphFormat=Format(OutlineLevel=1), ListFormat=ListFormat(),
+    )
+    writer = object.__new__(WriterComposer)
+    position = [0]
+    writer._native_position = lambda: position[0]
+    writer.add_heading_level = lambda text, level: position.__setitem__(0, len(text) + 1)
+    writer._doc = SimpleNamespace(Styles=Styles(), Range=lambda start, end: native_range)
+    writer.add_heading_level_native('Unnumbered boundary', 1, numbering=False, sequence_transparent=transparent)
+    assert native_range.Style is named[style_name]
+    assert native_range.Style.BaseStyle is normal
+    assert native_range.Style.Font.Size == 16
+    assert native_range.Style.Font.NameFarEast == '黑体'
+    assert native_range.Style.Font.Bold is True
+    assert native_range.Style.ParagraphFormat.Alignment == 1
+    assert native_range.Style.ParagraphFormat.SpaceBefore == 16
+    assert native_range.Style.ParagraphFormat.SpaceAfter == 5
+    assert native_range.Style.ParagraphFormat.KeepWithNext is True
+    assert native_range.Style.ParagraphFormat.OutlineLevel == outline
+    assert native_range.ParagraphFormat.OutlineLevel == outline
+    assert native_range.ListFormat.ListString == ''
+    assert source.ParagraphFormat.OutlineLevel == 1
+    # A later numbered chapter links a list to the same built-in heading.
+    # Effective inheritance of the already emitted paragraph must remain empty.
+    source.LinkToListTemplate = lambda template, level: setattr(source, 'ListTemplate', template)
+    template = object()
+    source.LinkToListTemplate(template, 1)
+    effective = native_range.Style
+    while effective is not None and not getattr(effective, 'ListTemplate', None):
+        effective = getattr(effective, 'BaseStyle', None)
+    assert effective is None
+    assert source.ListTemplate is template
+
+
+def test_native_sequence_transparent_heading_rejects_numbering_before_writing():
+    import pytest
+    writer = object.__new__(WriterComposer)
+    writer._native_position = lambda: pytest.fail('native document inspected before conflicting flags rejected')
+    with pytest.raises(ValueError, match='number'):
+        writer.add_heading_level_native('Conflict', 1, numbering=True, sequence_transparent=True)
+
+
+def test_native_heading_none_numbering_keeps_legacy_path():
+    from types import SimpleNamespace
+    writer = object.__new__(WriterComposer)
+    writer._native_position = lambda: 0
+    state = SimpleNamespace(text='')
+    writer.add_heading_level = lambda text, level: setattr(state, 'text', text)
+    # Legacy None does not require detached-style host APIs.
+    writer.add_heading_level_native('Legacy heading', 1)
+    assert state.text == 'Legacy heading'

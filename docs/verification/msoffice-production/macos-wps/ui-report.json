@@ -1,0 +1,93 @@
+{
+  "status": "PASS",
+  "application": "WPS Office",
+  "method": "CUA keyboard edit -> character-wise Undo -> Cmd+S -> close -> reopen -> visible marker absence -> close",
+  "typed_marker": "WPSC-UI-WPS-0908",
+  "marker_absent_after_reopen": true,
+  "document_xml_text_identical": true,
+  "original_sha256": "9559ad583fe239fd658706db8db617565a9b109e569f1afaa8684b687b42b247",
+  "saved_copy_sha256": "1dcc1b679086689662971fb9f88fa7062d652ca9515220a269730801829f84be",
+  "artifact_check": {
+    "checks": {
+      "body_fangsong_12pt_two_character_indent": true,
+      "heading_sizes_and_outline_levels": true,
+      "native_heading_numbering": true,
+      "single_cover_title": true,
+      "native_toc_field": true,
+      "table_content_exact": true,
+      "table_header_repeats": true,
+      "end_markers_preserved_once": true,
+      "all_sections_a4_portrait": true
+    },
+    "sections": [
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      },
+      {
+        "width_twips": "11906",
+        "height_twips": "16838",
+        "orientation": "portrait"
+      }
+    ],
+    "headings": [
+      {
+        "label": "一级章节验收",
+        "style_id": "2",
+        "effective_half_point_sizes": [
+          "32"
+        ],
+        "expected_half_point_size": 32
+      },
+      {
+        "label": "二级章节验收",
+        "style_id": "3",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "三级章节验收",
+        "style_id": "4",
+        "effective_half_point_sizes": [
+          "30"
+        ],
+        "expected_half_point_size": 30
+      },
+      {
+        "label": "四级章节验收",
+        "style_id": "5",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "五级章节验收",
+        "style_id": "18",
+        "effective_half_point_sizes": [
+          "28"
+        ],
+        "expected_half_point_size": 28
+      },
+      {
+        "label": "六级章节验收",
+        "style_id": "19",
+        "effective_half_point_sizes": [
+          "24"
+        ],
+        "expected_half_point_size": 24
+      }
+    ],
+    "bytes": 20975,
+    "sha256": "1dcc1b679086689662971fb9f88fa7062d652ca9515220a269730801829f84be"
+  },
+  "final_window": "Test copy closed; six pre-existing missing bootstrap tabs under investigation"
+}

@@ -18,8 +18,8 @@ Windows files: new scripts/msoffice/windows_host.py, windows_runtime.py, tests/m
 Mac files: scripts/msoffice/macos_script.py, macos_runtime.py and tests/msoffice. Consume GenerationPlan and PreparedLongformResource -> ExecutionOutcome. Produce MacWordAdapter(build) lifecycle interface; convert(request, timeout=...) -> Path. Compile actual Word dictionary commands, TDD serializers/unsupported operations/strict parsing. Add concrete native smoke fixture to prove section/header/image/bookmark page mapping before wiring public API. Test source escaping and ensure no user content becomes AppleScript code.
 
 - [x] Implement Windows native adapter and regression tests.
-- [ ] Implement Mac plan adapter and regression/native capability checks.
-- [ ] Independent reviews of each adapter; fix findings.
+- [x] Implement Mac plan adapter and regression/native capability checks.
+- [x] Independent reviews of each adapter; fix findings.
 
 ### Task2: Public engine routing and lifecycle
 
@@ -29,15 +29,15 @@ Tests first: invalidengine fails without launches; explicit msoffice xlsx fails;
 
 - [x] Routing tests RED then GREEN.
 - [x] Public generate/convert integration and presentation behavior.
-- [ ] Independent routing and cross-platform lifecycle review.
+- [x] Independent routing and cross-platform lifecycle review.
 
 ### Task3: Native acceptance and install/release preparation
 
 Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.md, references/api.md, README.md, package manifests/install metadata as required. Public fixtures generate Chinese body/sixlevels/cover/numbered chapters/longtable/image/refs/formula and separatePDF; verify actualOOXML/PDF with no helper make-up. Test unsupportedcapabilities rather than silentlydegradeunconfigured content. Windows remote run exactsourceand reportdiagnostics/UI. Mac localsame. Compare WPS representative output to protectedguardrails. Test cleaninstallmodule availability inisolateddestination. Versioncandidate0.9.0 onlywhenfeaturegatespass; existing0.8.1 untoucheduntilthen.
 
-- [ ] Mac public native acceptance and UI save/reopen.
+- [x] Mac public native acceptance and UI save/reopen.
 - [ ] Windows public native acceptance and UI save/reopen.
-- [ ] Existing WPS native representative regression.
+- [x] Existing WPS native representative regression.
 - [ ] Update exact API/capability/install/release docs.
 - [ ] Full pytest, repeated code/task audit and exact candidate clean install.
 - [ ] Commit/push reviewed candidate; report release readiness with concrete evidence and no automatic release publication.
@@ -47,3 +47,5 @@ Files docs/verification/msoffice-production/, fixtures/msoffice_release/, SKILL.
 Ruling: reuse current linked review worktree, create production branch from c4762c5; audit evidence remains ancestor. The user approved implementation and release readiness, so do not add repeated approval gates for these reversible changes.
 
 2026-09-08 integration checkpoint: f48497d pushed on codex/msoffice-production for Windows native acceptance. Windows adapter independent review found and fixed pre-document application PID binding, A4 Normal-template drift, and resource quarantine after failed cleanup; re-review 78 tests passed. Portable integration snapshot 2757 passed, 12 native-gated skips. Isolated installer at /tmp/wpscomposer-production-install-0908 succeeded and both native adapters imported from the installed package; repeat on final candidate. Mac public smoke succeeded, but complex section/header and semantic coverage still under active fixes. WPS public representative generation/conversion succeeded but artifact gate caught real Heading 1–3 style alias drift (22/16/16 pt vs 16/15/15), now being fixed with native regression required. Remote Windows task dispatched exact f48497d plus public runner; do not confuse historical spike results with production acceptance. Release is not yet ready.
+
+2026-09-08 integrated checkpoint: both production adapters and repeated independent reviews completed. Full suite: 2795 passed, 12 native-gated skips (build/msoffice-production/pytest-native-integrated.log). Mac Word final public representative generated DOCX, converted PDF and directly generated PDF, all 5 pages; WPS final representative all 4 pages with native style alias fix. Real keyboard edit, Undo, explicit save, close and reopen passed in both applications. Mac Word unsaved sentinel, native image/REF/SEQ, transparent headings, legacy DOC conversion and timeout/quarantine/recovery passed. Committed evidence is under docs/verification/msoffice-production. Windows production acceptance remains pending; historical spike evidence does not satisfy this gate. Six missing WPS bootstrap recovery tabs observed during UI verification are under investigation. Keep version 0.8.1 until remaining gates pass.
