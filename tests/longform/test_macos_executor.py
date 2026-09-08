@@ -480,8 +480,16 @@ assert.equal(document.Styles.Item("TOC 3").Font.Size, 9.5);
     subprocess.run(["node", str(path)], check=True, capture_output=True, text=True)
 
 
-def test_addin_routes_add_heading_to_native_numbering(project_root: Path):
-    """writer.add_heading applies native numbering via the v2 add-in."""
+@pytest.mark.parametrize(
+    ('scheme', 'formats', 'number_styles'),
+    [
+        ('decimal', ['%1', '%1.%2', '%1.%2.%3', '%1.%2.%3.%4'], [0, 0, 0, 0]),
+        ('chinese-formal', ['第%1章', '第%2节', '%3、', '（%4）'], [37, 37, 37, 37]),
+        ('hybrid-bid', ['第%1章', '%1.%2', '%1.%2.%3', '关键工法%4：'], [37, 253, 253, 22]),
+    ],
+)
+def test_addin_routes_add_heading_to_native_numbering(project_root: Path, scheme, formats, number_styles):
+    """Bridge operations configure one native outline with the shared scheme contract."""
     addin_dir = project_root / "macos" / "wps-jsapi-probe" / "addin"
     v2_path = json.dumps(str(addin_dir / "writer-longform-v2.js"))
     js = f"""
@@ -489,11 +497,13 @@ const fs = require("fs");
 const assert = require("assert");
 global.window = {{}};
 let templateName = null;
+let templateCount = 0;
 const linkedLevels = [];
-function makeStyle() {{ return {{ Name: "", Font: {{}}, ParagraphFormat: {{}},
-  LinkToListTemplate: function(template, level) {{ linkedLevels.push([template, level]); }}
+const listLevels = Array.from({{length: 4}}, function() {{ return {{}}; }});
+function makeStyle(name) {{ return {{ Name: name, Font: {{}}, ParagraphFormat: {{}},
+  LinkToListTemplate: function(template, level) {{ linkedLevels.push([template, level, name]); }}
 }}; }}
-function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return {{ NumberFormat: null }}; }} }}; }}
+function makeListTemplate() {{ return {{ ListLevels: function(level) {{ return listLevels[level - 1]; }} }}; }}
 const writtenRange = {{
   Font: {{}}, ParagraphFormat: {{}}, Style: null,
   ListFormat: {{ListString: "1", ListLevelNumber: null}}
@@ -503,8 +513,8 @@ const document = {{
   Content: {{ End: 0, Text: "" }},
   Range: function() {{ return Object.assign({{Start: 0, End: 0, InsertAfter: function() {{}}}}, writtenRange); }},
   PageSetup: {{}},
-  Styles: {{ Item: function(name) {{ return makeStyle(); }}, Add: function(name) {{ return makeStyle(); }} }},
-  ListTemplates: {{ Add: function(outline, name) {{ assert.equal(outline, true); templateName = name; return makeListTemplate(); }} }},
+  Styles: {{ Item: function(name) {{ return makeStyle(name); }}, Add: function(name) {{ return makeStyle(name); }} }},
+  ListTemplates: {{ Add: function(outline, name) {{ assert.equal(outline, true); templateCount += 1; templateName = name; return makeListTemplate(); }} }},
   TablesOfContents: {{ Add: function() {{}} }},
   SaveAs2: function() {{}},
   Close: function() {{}}
@@ -520,14 +530,23 @@ window.WPSComposerLongformV2.run({{
   outputPath: "/staged/output.docx",
   plan: {{
     component: "writer",
-    operations: [
-      {{op: "writer.add_heading", args: {{text: "Intro", level: 1, numbering: true, numberingScheme: "decimal"}}, nodeId: "sec:1"}}
-    ]
+    operations: [1, 2, 3, 4].map(function(level) {{ return {{
+      op: "writer.add_heading", args: {{text: "Heading " + level, level: level, numbering: true, numberingScheme: {json.dumps(scheme)}}}, nodeId: "sec:" + level
+    }}; }})
   }}
 }});
-assert.equal(templateName, "wpsc_m3_decimal");
+assert.equal(templateName, "wpsc_m3_" + {json.dumps(scheme)});
+assert.equal(templateCount, 1);
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberFormat; }}), {json.dumps(formats)});
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberStyle; }}), {json.dumps(number_styles)});
+assert.deepEqual(listLevels.map(function(item) {{ return item.ResetOnHigher; }}), [0, 1, 2, 3]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.StartAt; }}), [1, 1, 1, 1]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.NumberPosition; }}), [0, 18, 36, 54]);
+assert.deepEqual(listLevels.map(function(item) {{ return item.TextPosition; }}), [18, 36, 54, 72]);
 assert.deepEqual(linkedLevels.map(function(item) {{ return item[1]; }}), [1, 2, 3, 4]);
-assert.equal(writtenRange.ListFormat.ListLevelNumber, 1);
+assert.deepEqual(linkedLevels.map(function(item) {{ return item[2]; }}), [-2, -3, -4, -5]);
+assert(linkedLevels.every(function(item) {{ return item[0] === linkedLevels[0][0]; }}));
+assert.equal(writtenRange.ListFormat.ListLevelNumber, 4);
 """
     path = Path(tempfile.mkdtemp()) / "heading_native_test.js"
     path.write_text(js, encoding="utf-8")
