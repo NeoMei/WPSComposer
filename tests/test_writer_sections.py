@@ -56,6 +56,7 @@ def test_page_number_restart_uses_com_boolean_and_sets_requested_start():
 
 def test_section_detaches_footer_before_inserting_page_field():
     writer, footer, _ = _writer()
+    writer._doc.Sections.Count = 2
     footer.LinkToPrevious = True
     previous_footer = []
     footer.Range.Fields.Add.side_effect = lambda *args: previous_footer.append('PAGE') if footer.LinkToPrevious else None
@@ -114,6 +115,7 @@ def test_cover_numbering_none_removes_page_field_content():
 
 def test_failed_footer_unlink_stops_before_any_content_mutation():
     writer, footer, _ = _writer()
+    writer._doc.Sections.Count = 2
     class RefusedUnlink:
         Range = footer.Range
         @property
@@ -127,3 +129,24 @@ def test_failed_footer_unlink_stops_before_any_content_mutation():
     with pytest.raises(NativeWriterObjectError, match='header/footer'):
         writer.set_header_footer(footer='New text', link_to_previous_footer=False)
     assert footer.Range.Text != 'New text'
+
+
+def test_first_section_does_not_require_a_previous_header_or_footer():
+    writer, footer, header = _writer()
+    class FirstSectionPart:
+        def __init__(self, native_range):
+            self.Range = native_range
+        @property
+        def LinkToPrevious(self):
+            # WPS reports True until an empty first header/footer is realized.
+            return True
+        @LinkToPrevious.setter
+        def LinkToPrevious(self, value):
+            pass
+    section = SimpleNamespace(Headers=lambda index: FirstSectionPart(header.Range),
+                              Footers=lambda index: FirstSectionPart(footer.Range))
+    writer._doc.Sections.return_value = section
+    writer.set_header_footer(header='', footer='', link_to_previous_header=False,
+                             link_to_previous_footer=False)
+    assert header.Range.Text == ''
+    assert footer.Range.Text == ''

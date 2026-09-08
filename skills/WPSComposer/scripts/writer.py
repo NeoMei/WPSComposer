@@ -1319,11 +1319,15 @@ class WriterComposer(BaseComposer):
         """Set header/footer text for the current section."""
         try:
             section = self._doc.Sections(self._doc.Sections.Count)
-            if link_to_previous_header is not None:
+            # The first section has no predecessor. WPS reports a linked empty
+            # first header until its range is realized; that is not a failed
+            # isolation boundary. Later sections still require exact readback.
+            has_previous = self._doc.Sections.Count > 1
+            if has_previous and link_to_previous_header is not None:
                 section.Headers(1).LinkToPrevious = bool(link_to_previous_header)
                 if bool(section.Headers(1).LinkToPrevious) != bool(link_to_previous_header):
                     raise RuntimeError("header link was not applied")
-            if link_to_previous_footer is not None:
+            if has_previous and link_to_previous_footer is not None:
                 section.Footers(1).LinkToPrevious = bool(link_to_previous_footer)
                 if bool(section.Footers(1).LinkToPrevious) != bool(link_to_previous_footer):
                     raise RuntimeError("footer link was not applied")
