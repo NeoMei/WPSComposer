@@ -1,0 +1,117 @@
+[
+  {
+    "path": "fixtures/verify_msoffice_production.py",
+    "before_sha256": "f33a9a31297890b2329a5ec57dac7636c564c42e5581bd369f096aa5bc4896f1",
+    "committed_lf_sha256": "e9ab978966f34318c8edc67fbf254432859e9856c0cbc6399a943444859ac09c"
+  },
+  {
+    "path": "macos/wps-jsapi-probe/addin/asset-manifest.json",
+    "before_sha256": "7078266148d3bb2689ad72c8fd5336988ac3ab87ca540cd14a75897b79ad1374",
+    "committed_lf_sha256": "a1150c2542901c12f425d0827cf0dd132150c7cb706b75c640003c2f9d47b3fb"
+  },
+  {
+    "path": "macos/wps-jsapi-probe/addin/writer-longform-v2.js",
+    "before_sha256": "de118d5b4e0f027f5d8bfdc42f1e6d7862cfc5c6fea6628e069fcf02ed55f728",
+    "committed_lf_sha256": "9e5d0c7ec5da13658c70e4d7ae275564c5bb27ee06ec8c94e37e5fa129511800"
+  },
+  {
+    "path": "skills/WPSComposer/SKILL.md",
+    "before_sha256": "ac898f90ed8ba94a22f4dcb18b64e84b0c082c826e37d65e47cc3fc792701ec6",
+    "committed_lf_sha256": "74e76a9f8ad0c5c517bed4d4a1256fed325fe9be1a5e7fad64696e0634033ae2"
+  },
+  {
+    "path": "skills/WPSComposer/references/api.md",
+    "before_sha256": "979e635b78187d26adace32b294888505d8f9d37112789a222c1efb8fcd997e6",
+    "committed_lf_sha256": "eec731ae04142f282c7bf8b04c13bc05a0fe1bc5d8e19ba1b04084f3cdd50658"
+  },
+  {
+    "path": "skills/WPSComposer/references/native-word.md",
+    "before_sha256": "c8875d9d781a68c7b36a3dfec50e247fdb27e1871ed51cd14f89ef23e7d724ca",
+    "committed_lf_sha256": "51640d33324ffc0997c52e1b31c2dd22a0b01c4ba4995d40e414579eed2d94b2"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/generation_plan.py",
+    "before_sha256": "b00d7635ee497fe957e1dfe9a81f11f8c36dddf01fae7027dcd1da1348d6510c",
+    "committed_lf_sha256": "ce7f1673547afd994d41d8cf9c7fc841fb5018557a50cd4fca99df6d0eea8fb3"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/longform/windows_executor.py",
+    "before_sha256": "d5422590986b6687bea8e8f5c90478c99292a4c83e3d5e203acf2fae1349224a",
+    "committed_lf_sha256": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/msoffice/macos_runtime.py",
+    "before_sha256": "45e506c28a3f843b616a58dd43c54ee8da18d6a02336c2b5ec833f07094abcd8",
+    "committed_lf_sha256": "0a105a3d075991705e6d08788251b3f273bfb64390d4a6e35e82611bdf7ea6f3"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/msoffice/macos_script.py",
+    "before_sha256": "11d45f6d5735f941e482948d74453b51ced756ad19e5cfb64f760a2256d4caeb",
+    "committed_lf_sha256": "615d9b253bf2ad4d9400b0289258faca7f6efdd8be857349b38e5e5c66e94cff"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/office_engines.py",
+    "before_sha256": "7bef1d4e73dab2e94c2c92e71c11ee52718a1d635c6e0ff600f73d70d0e839e2",
+    "committed_lf_sha256": "93f1c2839fa3d67e3422cd23ae5ca1f9146e6f579f02297d76be8832c67ca7b6"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/orchestrator.py",
+    "before_sha256": "9547c1dc8f6364b13d59bcab204e37e6a7b9bdbb3655470f44bdd4f58c67d3ab",
+    "committed_lf_sha256": "4fb8698498f852aa8f647962a4865549b1766a071ea707bc7bc64749a086b915"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/presentation.py",
+    "before_sha256": "8c40d86bd60ea36b559f8e65e6558ae77ecd47b620957fe6c811a309d5df29d2",
+    "committed_lf_sha256": "7e0f6f93d1fc73fb7f304a847f02a5c546c1a571ab474aa9c01c929ca3d9d514"
+  },
+  {
+    "path": "skills/WPSComposer/scripts/writer.py",
+    "before_sha256": "5d9cbbda2c0dc901d2851bb7422fb114513f4a77173b0ae703086f063938e5e8",
+    "committed_lf_sha256": "2ecd3e4938c9ae06416ccc383d8fee02594f5b5ef0c3f13ac07b2dcab6affef0"
+  },
+  {
+    "path": "tests/longform/test_macos_executor.py",
+    "before_sha256": "be625227a4dad393179090e3b76e62b7cab88802dd11fdaf2c82d2e20aa9a97a",
+    "committed_lf_sha256": "32ee3153b669e32519a0f8328f3cdb1da8355b040566eb98c791a79eb6d3dbac"
+  },
+  {
+    "path": "tests/longform/test_windows_executor.py",
+    "before_sha256": "5010c73aeb915165a3a22a21630e310245e132a7601406afdf37e0bcf2f59fd4",
+    "committed_lf_sha256": "63164fe3ba457be37d2b4b048befaae7e8d817626a9f98be21c05047a6123855"
+  },
+  {
+    "path": "tests/msoffice/test_engine_routing.py",
+    "before_sha256": "193eff6d9df73d1c4fd602f3dec7f91b045a99b638b18c44dbae043831b05cd7",
+    "committed_lf_sha256": "c0c21088aabb5d97d03fa6888dfe3aa027f81d661c960463d11cbc74d4d9ba3a"
+  },
+  {
+    "path": "tests/msoffice/test_macos_runtime.py",
+    "before_sha256": "2204446a3c119a9770672bfca6bbc4a39710b96ffce73712767a814e7d38c2e5",
+    "committed_lf_sha256": "94d7e46f860cc3f7d486fe6d91419eda0e24253744ba338912eb994504b69eda"
+  },
+  {
+    "path": "tests/msoffice/test_macos_script.py",
+    "before_sha256": "ab0cb6c53d62a3fedc427d51b957c47e07fcd6703670c929e4ef7a0ae310e823",
+    "committed_lf_sha256": "1c054aac06d9170db6716d790d068ace16d20ae37b8cba61317c785a9ad4fb80"
+  },
+  {
+    "path": "tests/msoffice/test_production_runner.py",
+    "before_sha256": "1c494f76561e6ea0308a41a87534116f7601431e1af372adcbae909ab6b0c71d",
+    "committed_lf_sha256": "e1ecbaa97e55cd7ef3200b857e9a6d60d4179cf1cb0ef5b9b2512cc2b61c133f"
+  },
+  {
+    "path": "tests/test_generation.py",
+    "before_sha256": "3e97acadf56b80e87f0e5c090b3c5eeccbbe0ee70282047c6d5fce88b9d6a7c3",
+    "committed_lf_sha256": "522ae4128a03477a23e6b4cff66d0caa5a9f0320f21e122e423cc9a3cf31ed85"
+  },
+  {
+    "path": "tests/test_generation_plan.py",
+    "before_sha256": "f3c2aa350d8816d865a402d649a35f49e3f1f11629cada2626c93c201b683b3f",
+    "committed_lf_sha256": "f62d9eac5b53d8141b0a486034c85040969641c16c0f4b2fc312eb2bd4d1cf3e"
+  },
+  {
+    "path": "tests/test_writer_renderer.py",
+    "before_sha256": "c16a869cf1269e6200972ab452f6d1c0ee33bc7620c86d6c73a7287358a57516",
+    "committed_lf_sha256": "489ce9c277153217b0f6b4559b613e77c7674e84b8ac0bea7dbfc5700e27a9d7"
+  }
+]

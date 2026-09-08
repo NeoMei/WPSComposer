@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "registered_quit_attempted": false,
+  "sentinel_saved": false,
+  "errors": [],
+  "registered_documents_before": 0,
+  "registered_pid": 9252,
+  "sentinel_hwnd": 72616348,
+  "before": {
+    "name": "文档6",
+    "path": "文档6",
+    "saved": false,
+    "characters": 65,
+    "text_sha256": "545764cf7388f3c223c1e1e43fca4bf3d9b7a8c044abe3bc103a85ac5d84ab1d"
+  },
+  "runs": [
+    {
+      "name": "representative-02",
+      "exit_code": 0,
+      "after": {
+        "name": "文档6",
+        "path": "文档6",
+        "saved": false,
+        "characters": 65,
+        "text_sha256": "545764cf7388f3c223c1e1e43fca4bf3d9b7a8c044abe3bc103a85ac5d84ab1d"
+      },
+      "unchanged": true
+    }
+  ],
+  "sentinel_closed_without_saving": true,
+  "registered_documents_after": 0,
+  "registered_responsive": true,
+  "registered_pid_retained": true
+}

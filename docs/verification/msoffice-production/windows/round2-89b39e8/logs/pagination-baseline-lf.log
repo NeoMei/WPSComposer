@@ -1,0 +1,100 @@
+........................................................................ [  8%]
+........................................................................ [ 16%]
+..................................................F..................... [ 24%]
+..............................................ss..s..................... [ 32%]
+........................................................................ [ 40%]
+........................................................................ [ 48%]
+...............ssssss................................................... [ 57%]
+........................................................................ [ 65%]
+........................................................................ [ 73%]
+..............................s......................................... [ 81%]
+........................................................................ [ 89%]
+........................................................................ [ 97%]
+..................                                                       [100%]
+================================== FAILURES ===================================
+______ test_build_longform_generation_writes_no_files_and_cwd_unchanged _______
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-167/test_build_longform_generation3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000027F10A2C990>
+
+    def test_build_longform_generation_writes_no_files_and_cwd_unchanged(tmp_path, monkeypatch):
+        """The pipeline must not write files and must not modify the working directory."""
+        image_path = tmp_path / "sample.png"
+        image_path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"fake-png-data")
+    
+        markdown = f"""---
+    title: Side Effect Test
+    ---
+    
+    # Chapter
+    
+    :::figure {{caption="Sample"}}
+    ![sample]({image_path.name})
+    :::
+    """
+        before_tmp_files = {p for p in tmp_path.rglob("*") if p.is_file()}
+        cwd_before = {p for p in Path.cwd().rglob("*") if p.is_file()}
+    
+        build = build_longform_generation(markdown, base_dir=str(tmp_path))
+        assert build is not None
+    
+        after_tmp_files = {p for p in tmp_path.rglob("*") if p.is_file()}
+        cwd_after = {p for p in Path.cwd().rglob("*") if p.is_file()}
+    
+        assert after_tmp_files == before_tmp_files, f"Pipeline wrote files in base_dir: {after_tmp_files - before_tmp_files}"
+>       assert cwd_after == cwd_before, f"Pipeline wrote files in cwd: {cwd_after - cwd_before}"
+E       AssertionError: Pipeline wrote files in cwd: {WindowsPath('D:/MyDocuments/codexprojects/WpsComposer/.worktrees/windows-word-production/build/msoffice-production/pagination-probe-02/setters.pdf')}
+E       assert {WindowsPath(...ignore'), ...} == {WindowsPath(...ignore'), ...}
+E         
+E         Extra items in the left set:
+E         WindowsPath('D:/MyDocuments/codexprojects/WpsComposer/.worktrees/windows-word-production/build/msoffice-production/pagination-probe-02/setters.pdf')
+E         Extra items in the right set:
+E         WindowsPath('D:/MyDocuments/codexprojects/WpsComposer/.worktrees/windows-word-production/build/msoffice-production/pagination-probe-02/~$etters.docx')
+E         Use -v to get more diff
+
+tests\longform\test_pipeline.py:278: AssertionError
+============================== warnings summary ===============================
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:52: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    actual_pixels = list(actual.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_exif_orientation_normalizes_losslessly_and_retains_valid_icc
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[animated.gif-gif-first-frame-png-v1]
+tests/longform_m3/test_image_preflight.py::test_multiframe_inputs_flatten_first_frame_without_path_leaks[multipage.tiff-tiff-first-page-png-v1]
+tests/longform_m3/test_image_preflight.py::test_oriented_cmyk_jpeg_normalizes_to_deterministic_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_cmyk_tiff_normalizes_first_page_to_rgb_png
+tests/longform_m3/test_image_preflight.py::test_multiframe_float_tiff_normalizes_first_page_deterministically
+tests/longform_m3/test_image_preflight.py::test_wide_signed_integer_tiff_uses_deterministic_rgb_fallback
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:53: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected_pixels = list(expected.convert("RGB").getdata())
+
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16L-<]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I;16B->]
+tests/longform_m3/test_image_preflight.py::test_multiframe_unsigned_16bit_tiff_preserves_exact_first_page_samples[I-None]
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:430: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == samples
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:448: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    expected = list(ImageOps.exif_transpose(decoded_source).getdata())
+
+tests/longform_m3/test_image_preflight.py::test_oriented_unsigned_16bit_tiff_preserves_exact_transposed_samples
+  D:\MyDocuments\codexprojects\WpsComposer\.worktrees\windows-word-production\tests\longform_m3\test_image_preflight.py:452: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    assert list(normalized.getdata()) == expected
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\longform\test_resources.py:209: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:229: os.symlink needs SeCreateSymbolicLinkPrivilege on Windows
+SKIPPED [1] tests\longform\test_resources.py:284: chmod 0o000 does not revoke owner read access on Windows
+SKIPPED [6] tests\longform_m2\test_acceptance_m2.py:679: real-WPS acceptance requires macOS
+SKIPPED [1] tests\longform_m3\test_macos_real_wps_m3.py:18: set WPSCOMPOSER_RUN_REAL_WPS=1 for native macOS WPS acceptance
+FAILED tests/longform/test_pipeline.py::test_build_longform_generation_writes_no_files_and_cwd_unchanged
+1 failed, 871 passed, 10 skipped, 20 warnings in 30.04s
