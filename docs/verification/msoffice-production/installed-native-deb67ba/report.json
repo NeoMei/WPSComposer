@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "candidate": "deb67ba",
+  "module": "/tmp/wpscomposer-deb67ba/codex/plugins/wps-composer/skills/WPSComposer/__init__.py",
+  "returned_path": "/private/tmp/wpscomposer-deb67ba-native-check/installed-smoke.docx",
+  "bytes": 21182,
+  "sha256": "a70a1fdae3f9014dc8287ba805820e4257776b96d279ae19f231df224bf129d7"
+}
