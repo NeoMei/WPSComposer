@@ -75,3 +75,7 @@ Windows 异常清理补丁的复验门已关闭。进入正式实现前，还需
 任务审查与整体审查均通过，无Critical/Important问题；两轮原生脚本与HEAD一致、原生文件与工作区产物SHA256一致均获独立核对。两项非阻塞诊断改进留待正式适配器阶段：Mac超时后JSON未解析已执行阶段，但保留原始stderr且总结果失败；Windows早期快照失败仅归入core错误。Windows非Windows平台保护已实测拒绝运行且未生成Office产物。
 
 原型与 Windows 证据、审查修复已推送独立 codex 分支，未合并主分支或安装。Windows 的成功原生运行和合成未保存哨兵门已获产物证明；清理修复 f0dc91f 通过 2630 项平台无关测试（12 项跳过）、独立复审以及 Windows run09/run10 最终原生复验。控制端核对最终原始脚本、全部 65 项证据哈希及 25 项最终复验子清单、DOCX 语义和 PDF 全部 9 页像素，与已目视检查版面一致。首轮遗留 Word 进程启动归属仍未完全证明，没有强制关闭；不宣称完整会话清理或正式双平台产品支持完成。
+
+## Repeated audit closure — 2026-09-08
+
+Three review rounds fixed sentinel setup/timeout and artifact-validation false positives. Final suite2680 passed/12 skipped; actual Word UI edit/Undo/save/close/reopen passed on both platforms. Fresh Windows run11/sentinel04 on candidate d4884a5 passed all14 native operations and12 saved-artifact gates, independently rechecked after evidence f7e3ed7. The approved feasibility spike is complete; production engine integration remains a separate next phase. Full record: [repeated audit](verification/msoffice-audit/report.md).

@@ -14,7 +14,7 @@ Mac Word 16.112.3, macOS 26.6.2 arm64: a fresh native run completed all 14 opera
 
 Actual Mac Word UI: opened an independent synthetic copy, typed `UI-AUDIT-MAC-20260908` at its end, observed the marker, pressed Undo and Save, closed, reopened through Word's local Open dialog, observed correct heading/TOC layout and the absent marker, then closed. Saved XML text exactly matches the original. The copy required a per-file access grant; this manual UI check is separate from the successful automatic native run. Original generated artifacts were not edited.
 
-Previous final Windows native runs 09/10 and the unsaved sentinel gate remain retained under `../windows-word-spike/final-cleanup-review/`. The stronger validator passed temporary copies of both with all 12 checks; original 65 + 25 evidence hashes were unchanged. A new remote UI audit and final revised sentinel native run are pending; do not interpret prior runs as native evidence for the newly changed sentinel helper.
+Previous final Windows native runs 09/10 and the unsaved sentinel gate remain retained under `../windows-word-spike/final-cleanup-review/`. The stronger validator passed temporary copies of both with all 12 checks; original 65 + 25 evidence hashes were unchanged. Fresh Windows evidence f7e3ed7 now closes the remaining gate: run11 on exact d4884a5 code passed all 14 native operations and 12 artifact checks; sentinel04 preserved the 62-character unsaved document and closed only that sentinel. Task PID 3936 exited after 2.797 seconds and registered Word returned to zero documents. The controller verified all 146 root-manifest entries plus nested manifests, matched exact executed sources, reran all 12 artifact checks on an independent copy, and inspected the contact sheet. See `../windows-word-spike/audit-native-round3/report.md`.
 
 ## Validation and boundaries
 
@@ -23,3 +23,9 @@ First full suite after round1: 2672 passed, 12 explicitly skipped native gates. 
 The child Python deadline cannot bound the sentinel wrapper's own COM calls. A timeout reports child Word cleanup unverified, preserves partial logs and never kills Word. Prior failed-run PID ownership is not reconstructed from elapsed time and no unowned process is closed. Synthetic table page splits and sparse last page reflect probe formatting, not a polished production template.
 
 Production WPS/MS Office backend selection, Excel/PowerPoint parity and release admission remain later work outside this approved investigation. The architecture recommendation and complete original task mapping are in `../../msoffice-native-spike.md` and `../../superpowers/plans/2026-09-08-msoffice-native-spike.md`.
+
+## Final task closure
+
+All approved spike plan tasks and this bounded repeated audit are complete. Windows also executed all56 focused regressions (18.58s) and the actual CUA mouse/keyboard edit/Undo/save/close/reopen flow on a synthetic copy. Its full persisted DOCX matched the original byte for byte. Screenshots and independent COM readbacks are in `../windows-word-spike/audit-ui-round1/`; the controller inspected insertion, Undo and reopen captures. Windows round2's registration experiment failed with E_INVALIDARG and never launched the sentinel; this historical failure was superseded by the authorized normal registered-empty-instance workflow in round3, without a registration workaround.
+
+Final snapshot review found no remaining worthwhile defects in the approved spike scope. This conclusion is bounded by the tested scenarios and is not a guarantee about every WPS/Office application function. The 12 skipped platform gates, unbounded native COM calls in the wrapper, and production integration remain explicitly outside this completion claim.
