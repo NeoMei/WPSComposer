@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\1\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+    "build/msoffice-production/numbering_schemes_native.py",
+    "wps"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production",
+  "exit_code": 0,
+  "started_unix": 1788865573.2062094,
+  "ended_unix": 1788865605.6357121,
+  "observation_hook": "audit-hooks/sitecustomize.py"
+}

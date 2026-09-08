@@ -1,0 +1,7 @@
+{
+  "checks": {},
+  "registration": [],
+  "status": "FAIL",
+  "error": "ModuleNotFoundError(\"No module named 'psutil'\")",
+  "traceback": "Traceback (most recent call last):\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\auto_native_gate.py\", line 14, in <module>\n    before = processes()\n             ^^^^^^^^^^^\n  File \"D:\\MyDocuments\\codexprojects\\WpsComposer\\.worktrees\\windows-word-production\\build\\msoffice-production\\auto_native_gate.py\", line 11, in processes\n    import psutil\nModuleNotFoundError: No module named 'psutil'\n"
+}

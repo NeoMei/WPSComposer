@@ -1,0 +1,568 @@
+{
+  "engine": "wps",
+  "cases": {
+    "decimal": {
+      "status": "PASS",
+      "checks": {
+        "two_chapters": true,
+        "insert_renumbers_all_levels": true,
+        "delete_restores_all_levels": true,
+        "reopen_retains_all_levels": true,
+        "pdf_displays_expected_numbers": true
+      },
+      "states": {
+        "before": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "1"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "1.1.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "2"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "2.1.1.1"
+          }
+        ],
+        "inserted": [
+          {
+            "text": "Inserted Chapter",
+            "number": "1"
+          },
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "2"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "2.1.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "3"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "3.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "3.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "3.1.1.1"
+          }
+        ],
+        "deleted": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "1"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "1.1.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "2"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "2.1.1.1"
+          }
+        ],
+        "reopened": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "1"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "1.1.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "2"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "2.1.1.1"
+          }
+        ]
+      },
+      "application": {
+        "name": "Microsoft Word",
+        "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+        "version": "12.0"
+      },
+      "levels": [
+        {
+          "level": 1,
+          "format": "%1",
+          "style": 0,
+          "reset": 0
+        },
+        {
+          "level": 2,
+          "format": "%1.%2",
+          "style": 0,
+          "reset": 1
+        },
+        {
+          "level": 3,
+          "format": "%1.%2.%3",
+          "style": 0,
+          "reset": 2
+        },
+        {
+          "level": 4,
+          "format": "%1.%2.%3.%4",
+          "style": 0,
+          "reset": 3
+        }
+      ],
+      "pdf_text": "1 Chapter 1 Level 1\n1.1 Chapter 1 Level 2\n1.1.1 Chapter 1 Level 3\n1.1.1.1Chapter 1 Level 4\n2 Chapter 2 Level 1\n2.1 Chapter 2 Level 2\n2.1.1 Chapter 2 Level 3\n2.1.1.1Chapter 2 Level 4\n",
+      "owned_document_closed": true,
+      "quit_attempted": false
+    },
+    "chinese-formal": {
+      "status": "PASS",
+      "checks": {
+        "two_chapters": true,
+        "insert_renumbers_all_levels": true,
+        "delete_restores_all_levels": true,
+        "reopen_retains_all_levels": true,
+        "pdf_displays_expected_numbers": true
+      },
+      "states": {
+        "before": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "（一）"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "（一）"
+          }
+        ],
+        "inserted": [
+          {
+            "text": "Inserted Chapter",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "（一）"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第三章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "（一）"
+          }
+        ],
+        "deleted": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "（一）"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "（一）"
+          }
+        ],
+        "reopened": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "（一）"
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "第一节"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "一、"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "（一）"
+          }
+        ]
+      },
+      "application": {
+        "name": "Microsoft Word",
+        "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+        "version": "12.0"
+      },
+      "levels": [
+        {
+          "level": 1,
+          "format": "第%1章",
+          "style": 37,
+          "reset": 0
+        },
+        {
+          "level": 2,
+          "format": "第%2节",
+          "style": 37,
+          "reset": 1
+        },
+        {
+          "level": 3,
+          "format": "%3、",
+          "style": 37,
+          "reset": 2
+        },
+        {
+          "level": 4,
+          "format": "（%4）",
+          "style": 37,
+          "reset": 3
+        }
+      ],
+      "pdf_text": "第一章\nChapter 1 Level 1\n第一节\nChapter 1 Level 2\n一、Chapter 1 Level 3\n（一）Chapter 1 Level 4\n第二章\nChapter 2 Level 1\n第一节\nChapter 2 Level 2\n一、Chapter 2 Level 3\n（一）Chapter 2 Level 4\n",
+      "owned_document_closed": true,
+      "quit_attempted": false
+    },
+    "hybrid-bid": {
+      "status": "PASS",
+      "checks": {
+        "two_chapters": true,
+        "insert_renumbers_all_levels": true,
+        "delete_restores_all_levels": true,
+        "reopen_retains_all_levels": true,
+        "pdf_displays_expected_numbers": true
+      },
+      "states": {
+        "before": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "关键工法01："
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "关键工法01："
+          }
+        ],
+        "inserted": [
+          {
+            "text": "Inserted Chapter",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "关键工法01："
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第三章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "3.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "3.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "关键工法01："
+          }
+        ],
+        "deleted": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "关键工法01："
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "关键工法01："
+          }
+        ],
+        "reopened": [
+          {
+            "text": "Chapter 1 Level 1",
+            "number": "第一章"
+          },
+          {
+            "text": "Chapter 1 Level 2",
+            "number": "1.1"
+          },
+          {
+            "text": "Chapter 1 Level 3",
+            "number": "1.1.1"
+          },
+          {
+            "text": "Chapter 1 Level 4",
+            "number": "关键工法01："
+          },
+          {
+            "text": "Chapter 2 Level 1",
+            "number": "第二章"
+          },
+          {
+            "text": "Chapter 2 Level 2",
+            "number": "2.1"
+          },
+          {
+            "text": "Chapter 2 Level 3",
+            "number": "2.1.1"
+          },
+          {
+            "text": "Chapter 2 Level 4",
+            "number": "关键工法01："
+          }
+        ]
+      },
+      "application": {
+        "name": "Microsoft Word",
+        "path": "C:\\Users\\1\\AppData\\Local\\12.1.0.28505\\office6",
+        "version": "12.0"
+      },
+      "levels": [
+        {
+          "level": 1,
+          "format": "第%1章",
+          "style": 37,
+          "reset": 0
+        },
+        {
+          "level": 2,
+          "format": "%1.%2",
+          "style": 253,
+          "reset": 1
+        },
+        {
+          "level": 3,
+          "format": "%1.%2.%3",
+          "style": 253,
+          "reset": 2
+        },
+        {
+          "level": 4,
+          "format": "关键工法%4：",
+          "style": 22,
+          "reset": 3
+        }
+      ],
+      "pdf_text": "第一章\nChapter 1 Level 1\n1.1 Chapter 1 Level 2\n1.1.1 Chapter 1 Level 3\n关键工法01：Chapter 1 Level 4\n第二章\nChapter 2 Level 1\n2.1 Chapter 2 Level 2\n2.1.1 Chapter 2 Level 3\n关键工法01：Chapter 2 Level 4\n",
+      "owned_document_closed": true,
+      "quit_attempted": false
+    }
+  },
+  "source_sha256": {
+    "writer.py": "1ae2d577d7e4a69facfbf3df084f4d3a893e22b79027ea5eee6ffe338bb2d70b",
+    "msoffice/windows_host.py": "f67d1771b7481b895ca71eb32fba556ac316b4e22494ba46880c1f5a84499d55"
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,9 @@
+{
+  "head": "09d400f7e1e948161f5b64a6f9bf102361993d35",
+  "source_sha256": {
+    "skills/WPSComposer/scripts/writer.py": "1ae2d577d7e4a69facfbf3df084f4d3a893e22b79027ea5eee6ffe338bb2d70b",
+    "skills/WPSComposer/scripts/msoffice/windows_host.py": "f67d1771b7481b895ca71eb32fba556ac316b4e22494ba46880c1f5a84499d55",
+    "skills/WPSComposer/scripts/office_engines.py": "6302b68d96e3ad1de473711709b46a4005de8d073247b4c641ed101c19be84d6"
+  },
+  "windows_source_unchanged_by_latest_mac_merge": true
+}
