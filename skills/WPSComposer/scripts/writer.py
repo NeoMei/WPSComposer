@@ -1496,17 +1496,26 @@ class WriterComposer(BaseComposer):
             list_template = cache.get(normalized_scheme)
             if list_template is None:
                 list_template = self._doc.ListTemplates.Add(True)
-                formats = (
-                    ("第%1章", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4")
-                    if normalized_scheme == "chinese-formal"
-                    else ("%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4")
-                )
+                formats, number_styles = {
+                    "decimal": (
+                        ("%1", "%1.%2", "%1.%2.%3", "%1.%2.%3.%4"),
+                        (0, 0, 0, 0),
+                    ),
+                    "chinese-formal": (
+                        ("第%1章", "第%2节", "%3、", "（%4）"),
+                        (37, 37, 37, 37),
+                    ),
+                    "hybrid-bid": (
+                        ("第%1章", "%1.%2", "%1.%2.%3", "关键工法%4："),
+                        # Legal numbering forces included Chinese ancestors to
+                        # Arabic digits; level four uses Arabic leading zero.
+                        (37, 253, 253, 22),
+                    ),
+                }[normalized_scheme]
                 for index, number_format in enumerate(formats, start=1):
                     descriptor = list_template.ListLevels(index)
                     descriptor.NumberFormat = number_format
-                    descriptor.NumberStyle = (
-                        37 if normalized_scheme == "chinese-formal" and index == 1 else 0
-                    )
+                    descriptor.NumberStyle = number_styles[index - 1]
                     descriptor.NumberPosition = (index - 1) * 18
                     descriptor.TextPosition = index * 18
                     descriptor.ResetOnHigher = 0 if index == 1 else index - 1
