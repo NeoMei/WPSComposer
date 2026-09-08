@@ -1,0 +1,88 @@
+{
+  "events": [
+    {
+      "label": "production_configure_cover",
+      "section": 1,
+      "link": false,
+      "count": 0,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": []
+    },
+    {
+      "label": "production_configure_toc",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "production_configure_body",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "before_manual",
+      "section": 1,
+      "link": false,
+      "count": 0,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": []
+    },
+    {
+      "label": "before_manual",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "before_manual",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    }
+  ],
+  "errors": [],
+  "pid": 16396,
+  "binding": {
+    "hwnd": 6687604,
+    "pid": 16396,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "checks": {
+    "cover_has_no_page_field": true,
+    "toc_restarts_at_one_roman": true,
+    "body_restarts_at_one_arabic": true
+  },
+  "status": "PASS",
+  "closed": true,
+  "pid_absent": false
+}

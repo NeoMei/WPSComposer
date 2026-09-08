@@ -1,0 +1,169 @@
+FFFFFFFF.F                                                               [100%]
+================================== FAILURES ===================================
+_____ test_page_number_restart_uses_com_boolean_and_sets_requested_start ______
+
+    def test_page_number_restart_uses_com_boolean_and_sets_requested_start():
+        writer, footer, _ = _writer()
+        writer.set_page_numbering('roman', start=1, restart=True)
+>       assert footer.PageNumbers.RestartNumberingAtSection is True
+E       AssertionError: assert False is True
+E        +  where False = <test_writer_sections._PageNumbers object at 0x000002BD9694EC90>.RestartNumberingAtSection
+E        +    where <test_writer_sections._PageNumbers object at 0x000002BD9694EC90> = namespace(PageNumbers=<test_writer_sections._PageNumbers object at 0x000002BD9694EC90>, Range=<Mock id='3013298413200'>, LinkToPrevious=False).PageNumbers
+
+tests\test_writer_sections.py:52: AssertionError
+__________ test_section_detaches_footer_before_inserting_page_field ___________
+
+    def test_section_detaches_footer_before_inserting_page_field():
+        writer, footer, _ = _writer()
+        footer.LinkToPrevious = True
+        previous_footer = []
+        footer.Range.Fields.Add.side_effect = lambda *args: previous_footer.append('PAGE') if footer.LinkToPrevious else None
+        writer.set_page_role = Mock()
+        writer._current_section_page_setup = Mock(return_value=SimpleNamespace())
+        writer.configure_section(role='toc', page_number_format='roman', restart_page_numbering=True,
+                                 start_page_number=1, link_to_previous_footer=False)
+>       assert previous_footer == [], 'A new section must not add PAGE to the preceding cover'
+E       AssertionError: A new section must not add PAGE to the preceding cover
+E       assert ['PAGE'] == []
+E         
+E         Left contains one more item: 'PAGE'
+E         Use -v to get more diff
+
+tests\test_writer_sections.py:66: AssertionError
+_____________ test_explicit_empty_footer_clears_inherited_content _____________
+
+    def test_explicit_empty_footer_clears_inherited_content():
+        writer, footer, _ = _writer()
+        footer.Range.Text = 'Inherited footer text'
+        writer.set_header_footer(footer='', link_to_previous_footer=False)
+>       assert footer.Range.Text == ''
+E       AssertionError: assert 'Inherited footer text' == ''
+E         
+E         + Inherited footer text
+
+tests\test_writer_sections.py:73: AssertionError
+_ test_silently_ignored_page_number_setting_is_an_execution_failure[RestartNumberingAtSection-False] _
+
+property_name = 'RestartNumberingAtSection', ignored_value = False
+
+    @pytest.mark.parametrize('property_name, ignored_value', [
+        ('RestartNumberingAtSection', False), ('StartingNumber', 0), ('NumberStyle', 0),
+    ])
+    def test_silently_ignored_page_number_setting_is_an_execution_failure(property_name, ignored_value):
+        writer, footer, _ = _writer()
+        class IgnoredSetting(_PageNumbers):
+            def __setattr__(self, name, value):
+                if name != property_name:
+                    super().__setattr__(name, value)
+            def __getattribute__(self, name):
+                return ignored_value if name == property_name else super().__getattribute__(name)
+        footer.PageNumbers = IgnoredSetting()
+>       with pytest.raises(NativeWriterObjectError, match='page number'):
+E       Failed: DID NOT RAISE NativeWriterObjectError
+
+tests\test_writer_sections.py:88: Failed
+_ test_silently_ignored_page_number_setting_is_an_execution_failure[StartingNumber-0] _
+
+property_name = 'StartingNumber', ignored_value = 0
+
+    @pytest.mark.parametrize('property_name, ignored_value', [
+        ('RestartNumberingAtSection', False), ('StartingNumber', 0), ('NumberStyle', 0),
+    ])
+    def test_silently_ignored_page_number_setting_is_an_execution_failure(property_name, ignored_value):
+        writer, footer, _ = _writer()
+        class IgnoredSetting(_PageNumbers):
+            def __setattr__(self, name, value):
+                if name != property_name:
+                    super().__setattr__(name, value)
+            def __getattribute__(self, name):
+                return ignored_value if name == property_name else super().__getattribute__(name)
+        footer.PageNumbers = IgnoredSetting()
+>       with pytest.raises(NativeWriterObjectError, match='page number'):
+E       Failed: DID NOT RAISE NativeWriterObjectError
+
+tests\test_writer_sections.py:88: Failed
+_ test_silently_ignored_page_number_setting_is_an_execution_failure[NumberStyle-0] _
+
+property_name = 'NumberStyle', ignored_value = 0
+
+    @pytest.mark.parametrize('property_name, ignored_value', [
+        ('RestartNumberingAtSection', False), ('StartingNumber', 0), ('NumberStyle', 0),
+    ])
+    def test_silently_ignored_page_number_setting_is_an_execution_failure(property_name, ignored_value):
+        writer, footer, _ = _writer()
+        class IgnoredSetting(_PageNumbers):
+            def __setattr__(self, name, value):
+                if name != property_name:
+                    super().__setattr__(name, value)
+            def __getattribute__(self, name):
+                return ignored_value if name == property_name else super().__getattribute__(name)
+        footer.PageNumbers = IgnoredSetting()
+>       with pytest.raises(NativeWriterObjectError, match='page number'):
+E       Failed: DID NOT RAISE NativeWriterObjectError
+
+tests\test_writer_sections.py:88: Failed
+__________________ test_page_field_failure_is_not_swallowed ___________________
+
+    def test_page_field_failure_is_not_swallowed():
+        writer, footer, _ = _writer()
+        footer.Range.Fields.Add.side_effect = RuntimeError('host refused PAGE field')
+>       with pytest.raises(NativeWriterObjectError, match='page number'):
+E       Failed: DID NOT RAISE NativeWriterObjectError
+
+tests\test_writer_sections.py:95: Failed
+_________________ test_existing_page_field_is_not_duplicated __________________
+
+    def test_existing_page_field_is_not_duplicated():
+        writer, footer, _ = _writer()
+        footer.Range.Fields.Count = 1
+        footer.Range.Fields.return_value.Type = 33
+        writer.set_page_numbering('arabic', start=1, restart=True)
+>       footer.Range.Fields.Add.assert_not_called()
+
+tests\test_writer_sections.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Mock name='mock.Fields.Add' id='3013303103504'>
+
+    def assert_not_called(self):
+        """assert that the mock was never called.
+        """
+        if self.call_count != 0:
+            msg = ("Expected '%s' to not have been called. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'Add' to not have been called. Called 1 times.
+E           Calls: [call(<Mock id='3013337743888'>, 33)].
+
+C:\Users\1\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:900: AssertionError
+_________ test_failed_footer_unlink_stops_before_any_content_mutation _________
+
+    def test_failed_footer_unlink_stops_before_any_content_mutation():
+        writer, footer, _ = _writer()
+        class RefusedUnlink:
+            Range = footer.Range
+            @property
+            def LinkToPrevious(self):
+                return True
+            @LinkToPrevious.setter
+            def LinkToPrevious(self, value):
+                raise RuntimeError('unlink refused')
+        section = SimpleNamespace(Footers=lambda index: RefusedUnlink(), Headers=Mock())
+        writer._doc.Sections.return_value = section
+>       with pytest.raises(NativeWriterObjectError, match='header/footer'):
+E       Failed: DID NOT RAISE NativeWriterObjectError
+
+tests\test_writer_sections.py:127: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_writer_sections.py::test_page_number_restart_uses_com_boolean_and_sets_requested_start
+FAILED tests/test_writer_sections.py::test_section_detaches_footer_before_inserting_page_field
+FAILED tests/test_writer_sections.py::test_explicit_empty_footer_clears_inherited_content
+FAILED tests/test_writer_sections.py::test_silently_ignored_page_number_setting_is_an_execution_failure[RestartNumberingAtSection-False]
+FAILED tests/test_writer_sections.py::test_silently_ignored_page_number_setting_is_an_execution_failure[StartingNumber-0]
+FAILED tests/test_writer_sections.py::test_silently_ignored_page_number_setting_is_an_execution_failure[NumberStyle-0]
+FAILED tests/test_writer_sections.py::test_page_field_failure_is_not_swallowed
+FAILED tests/test_writer_sections.py::test_existing_page_field_is_not_duplicated
+FAILED tests/test_writer_sections.py::test_failed_footer_unlink_stops_before_any_content_mutation
+9 failed, 1 passed in 0.62s

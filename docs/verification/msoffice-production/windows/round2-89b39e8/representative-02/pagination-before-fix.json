@@ -1,0 +1,77 @@
+{
+  "status": "FAIL",
+  "reason": "Section-numbering contract regression; independent of official runner status",
+  "docx_sections": [
+    {
+      "page_number_type": null,
+      "footer_references": [
+        {
+          "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "default",
+          "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id": "rId8"
+        }
+      ]
+    },
+    {
+      "page_number_type": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fmt": "lowerRoman"
+      },
+      "footer_references": [
+        {
+          "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "default",
+          "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id": "rId10"
+        }
+      ]
+    },
+    {
+      "page_number_type": null,
+      "footer_references": [
+        {
+          "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "default",
+          "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id": "rId12"
+        }
+      ]
+    }
+  ],
+  "footer_parts": {
+    "word/footer1.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<w:ftr xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:cx=\"http://schemas.microsoft.com/office/drawing/2014/chartex\" xmlns:cx1=\"http://schemas.microsoft.com/office/drawing/2015/9/8/chartex\" xmlns:cx2=\"http://schemas.microsoft.com/office/drawing/2015/10/21/chartex\" xmlns:cx3=\"http://schemas.microsoft.com/office/drawing/2016/5/9/chartex\" xmlns:cx4=\"http://schemas.microsoft.com/office/drawing/2016/5/10/chartex\" xmlns:cx5=\"http://schemas.microsoft.com/office/drawing/2016/5/11/chartex\" xmlns:cx6=\"http://schemas.microsoft.com/office/drawing/2016/5/12/chartex\" xmlns:cx7=\"http://schemas.microsoft.com/office/drawing/2016/5/13/chartex\" xmlns:cx8=\"http://schemas.microsoft.com/office/drawing/2016/5/14/chartex\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:aink=\"http://schemas.microsoft.com/office/drawing/2016/ink\" xmlns:am3d=\"http://schemas.microsoft.com/office/drawing/2017/model3d\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:oel=\"http://schemas.microsoft.com/office/2019/extlst\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:w16cex=\"http://schemas.microsoft.com/office/word/2018/wordml/cex\" xmlns:w16cid=\"http://schemas.microsoft.com/office/word/2016/wordml/cid\" xmlns:w16=\"http://schemas.microsoft.com/office/word/2018/wordml\" xmlns:w16sdtdh=\"http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash\" xmlns:w16se=\"http://schemas.microsoft.com/office/word/2015/wordml/symex\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\" mc:Ignorable=\"w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14\"><w:p w14:paraId=\"02799111\" w14:textId=\"2A329C22\" w:rsidR=\"004E6CC6\" w:rsidRPr=\"004E6CC6\" w:rsidRDefault=\"004E6CC6\" w:rsidP=\"004E6CC6\"><w:pPr><w:pStyle w:val=\"af0\"/><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:instrText xml:space=\"preserve\"> PAGE  \\* MERGEFORMAT </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/><w:noProof/></w:rPr><w:t>ii</w:t></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r></w:p></w:ftr>",
+    "word/footer2.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<w:ftr xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:cx=\"http://schemas.microsoft.com/office/drawing/2014/chartex\" xmlns:cx1=\"http://schemas.microsoft.com/office/drawing/2015/9/8/chartex\" xmlns:cx2=\"http://schemas.microsoft.com/office/drawing/2015/10/21/chartex\" xmlns:cx3=\"http://schemas.microsoft.com/office/drawing/2016/5/9/chartex\" xmlns:cx4=\"http://schemas.microsoft.com/office/drawing/2016/5/10/chartex\" xmlns:cx5=\"http://schemas.microsoft.com/office/drawing/2016/5/11/chartex\" xmlns:cx6=\"http://schemas.microsoft.com/office/drawing/2016/5/12/chartex\" xmlns:cx7=\"http://schemas.microsoft.com/office/drawing/2016/5/13/chartex\" xmlns:cx8=\"http://schemas.microsoft.com/office/drawing/2016/5/14/chartex\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:aink=\"http://schemas.microsoft.com/office/drawing/2016/ink\" xmlns:am3d=\"http://schemas.microsoft.com/office/drawing/2017/model3d\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:oel=\"http://schemas.microsoft.com/office/2019/extlst\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:w16cex=\"http://schemas.microsoft.com/office/word/2018/wordml/cex\" xmlns:w16cid=\"http://schemas.microsoft.com/office/word/2016/wordml/cid\" xmlns:w16=\"http://schemas.microsoft.com/office/word/2018/wordml\" xmlns:w16sdtdh=\"http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash\" xmlns:w16se=\"http://schemas.microsoft.com/office/word/2015/wordml/symex\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\" mc:Ignorable=\"w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14\"><w:p w14:paraId=\"78D7F225\" w14:textId=\"5342A3CC\" w:rsidR=\"004E6CC6\" w:rsidRPr=\"004E6CC6\" w:rsidRDefault=\"004E6CC6\" w:rsidP=\"004E6CC6\"><w:pPr><w:pStyle w:val=\"af0\"/><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:instrText xml:space=\"preserve\"> PAGE  \\* MERGEFORMAT </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/><w:noProof/></w:rPr><w:t>3</w:t></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r></w:p></w:ftr>",
+    "word/footer3.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<w:ftr xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:cx=\"http://schemas.microsoft.com/office/drawing/2014/chartex\" xmlns:cx1=\"http://schemas.microsoft.com/office/drawing/2015/9/8/chartex\" xmlns:cx2=\"http://schemas.microsoft.com/office/drawing/2015/10/21/chartex\" xmlns:cx3=\"http://schemas.microsoft.com/office/drawing/2016/5/9/chartex\" xmlns:cx4=\"http://schemas.microsoft.com/office/drawing/2016/5/10/chartex\" xmlns:cx5=\"http://schemas.microsoft.com/office/drawing/2016/5/11/chartex\" xmlns:cx6=\"http://schemas.microsoft.com/office/drawing/2016/5/12/chartex\" xmlns:cx7=\"http://schemas.microsoft.com/office/drawing/2016/5/13/chartex\" xmlns:cx8=\"http://schemas.microsoft.com/office/drawing/2016/5/14/chartex\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:aink=\"http://schemas.microsoft.com/office/drawing/2016/ink\" xmlns:am3d=\"http://schemas.microsoft.com/office/drawing/2017/model3d\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:oel=\"http://schemas.microsoft.com/office/2019/extlst\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:w16cex=\"http://schemas.microsoft.com/office/word/2018/wordml/cex\" xmlns:w16cid=\"http://schemas.microsoft.com/office/word/2016/wordml/cid\" xmlns:w16=\"http://schemas.microsoft.com/office/word/2018/wordml\" xmlns:w16sdtdh=\"http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash\" xmlns:w16se=\"http://schemas.microsoft.com/office/word/2015/wordml/symex\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\" mc:Ignorable=\"w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14\"><w:p w14:paraId=\"00EDCCA2\" w14:textId=\"77777777\" w:rsidR=\"004E6CC6\" w:rsidRPr=\"004E6CC6\" w:rsidRDefault=\"004E6CC6\" w:rsidP=\"004E6CC6\"><w:pPr><w:pStyle w:val=\"af0\"/><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:instrText xml:space=\"preserve\"> PAGE  \\* MERGEFORMAT </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/><w:noProof/></w:rPr><w:t>3</w:t></w:r><w:r><w:rPr><w:rFonts w:hint=\"eastAsia\"/></w:rPr><w:fldChar w:fldCharType=\"end\"/></w:r></w:p></w:ftr>"
+  },
+  "pdf_pages": [
+    {
+      "physical_page": 1,
+      "footer_spans": [
+        "1 "
+      ],
+      "text": " \n1 \n原生文档生产验收报告 \nWPSComposer acceptance \n2026-09-08 \n"
+    },
+    {
+      "physical_page": 2,
+      "footer_spans": [
+        "ii "
+      ],
+      "text": " \nii \n目录 \n1 \n一级章节验收 .................................................................................................................................................3 \n1.1 \n二级章节验收 ................................................................................................................................................... 3 \n1.1.1 \n三级章节验收 .................................................................................................................................... 3 \n \n \n \n"
+    },
+    {
+      "physical_page": 3,
+      "footer_spans": [
+        "3 "
+      ],
+      "text": "原生文档生产验收报告 \n3 \n1 一级章节验收 \n这是原生排版正文验收段落，用于检查仿宋十二磅和两字符首行缩进，同时确保\n中文内容完整保留。 \n1.1 二级章节验收 \n层级2 内容保留。 \n1.1.1 三级章节验收 \n层级3 内容保留。 \n1.1.1.1 四级章节验收 \n层级4 内容保留。 \n五级章节验收 \n层级5 内容保留。 \n六级章节验收 \n层级6 内容保留。 \n序号 \n验收项目 \n结果 \n1 \n长表第01 项 \n内容完整 \n2 \n长表第02 项 \n内容完整 \n3 \n长表第03 项 \n内容完整 \n4 \n长表第04 项 \n内容完整 \n5 \n长表第05 项 \n内容完整 \n6 \n长表第06 项 \n内容完整 \n7 \n长表第07 项 \n内容完整 \n8 \n长表第08 项 \n内容完整 \n9 \n长表第09 项 \n内容完整 \n10 \n长表第10 项 \n内容完整 \n"
+    },
+    {
+      "physical_page": 4,
+      "footer_spans": [
+        "4 "
+      ],
+      "text": "原生文档生产验收报告 \n4 \n序号 \n验收项目 \n结果 \n11 \n长表第11 项 \n内容完整 \n12 \n长表第12 项 \n内容完整 \n13 \n长表第13 项 \n内容完整 \n14 \n长表第14 项 \n内容完整 \n15 \n长表第15 项 \n内容完整 \n16 \n长表第16 项 \n内容完整 \n17 \n长表第17 项 \n内容完整 \n18 \n长表第18 项 \n内容完整 \n19 \n长表第19 项 \n内容完整 \n20 \n长表第20 项 \n内容完整 \n21 \n长表第21 项 \n内容完整 \n22 \n长表第22 项 \n内容完整 \n23 \n长表第23 项 \n内容完整 \n24 \n长表第24 项 \n内容完整 \n25 \n长表第25 项 \n内容完整 \n26 \n长表第26 项 \n内容完整 \n27 \n长表第27 项 \n内容完整 \n28 \n长表第28 项 \n内容完整 \n29 \n长表第29 项 \n内容完整 \n30 \n长表第30 项 \n内容完整 \n31 \n长表第31 项 \n内容完整 \n32 \n长表第32 项 \n内容完整 \n33 \n长表第33 项 \n内容完整 \n34 \n长表第34 项 \n内容完整 \n"
+    },
+    {
+      "physical_page": 5,
+      "footer_spans": [
+        "5 "
+      ],
+      "text": "原生文档生产验收报告 \n5 \n序号 \n验收项目 \n结果 \n35 \n长表第35 项 \n内容完整 \n36 \n长表第36 项 \n内容完整 \n \nNATIVE-PRODUCTION-END \n \n"
+    }
+  ]
+}

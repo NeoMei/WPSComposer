@@ -1,0 +1,236 @@
+{
+  "events": [
+    {
+      "label": "production_configure_cover",
+      "section": 1,
+      "link": false,
+      "count": 0,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": []
+    },
+    {
+      "label": "production_configure_toc",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "production_configure_body",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "before_manual",
+      "section": 1,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "before_manual",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "before_manual",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "unlink",
+      "section": 1,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "clear_cover",
+      "section": 1,
+      "link": false,
+      "count": 0,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": []
+    },
+    {
+      "label": "unlink",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "restart_true",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 0,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "start_one",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "style",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "unlink",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "restart_true",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "start_one",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "style",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "after_saved",
+      "section": 1,
+      "link": false,
+      "count": 0,
+      "restart": false,
+      "starting_number": 0,
+      "number_style": 0,
+      "field_codes": []
+    },
+    {
+      "label": "after_saved",
+      "section": 2,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 2,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    },
+    {
+      "label": "after_saved",
+      "section": 3,
+      "link": false,
+      "count": 1,
+      "restart": true,
+      "starting_number": 1,
+      "number_style": 0,
+      "field_codes": [
+        " PAGE  \\* MERGEFORMAT "
+      ]
+    }
+  ],
+  "errors": [],
+  "pid": 27532,
+  "binding": {
+    "hwnd": 4852606,
+    "pid": 27532,
+    "method": "restored per-instance Caption challenge",
+    "documents_before_add": 0
+  },
+  "closed": true,
+  "pid_absent": true
+}
