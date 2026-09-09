@@ -37,3 +37,8 @@ The bridge now performs bounded staged teardown for early rejected POSTs while r
 ## Run05 actual result and reviewed follow-up
 
 Run34348802682 binds370c8c5. Linux3.9/3.12:4,948pass44skip each. Windows3.9:4,916pass1fail75skip; Windows3.12:4,915pass2fail75skip. All failures are initial real-worker binding errors due to a budget slightly above600 from floating-point subtraction; the original403 regression now passes. Raw four-job artifacts and metadata remain in run-05. The independently reviewed clamp preserves the absolute deadline, expiry guard and strict worker600maximum. Together with the adjacent early400 bridge repair it passes full36:5,001pass12skip478.47s,383hashes unchanged. Hosted run06 is the next validation; no native Office acceptance follows from these portable tests.
+
+
+## Run06 actual result
+
+Hosted run06 (`34352720870`) at `0b4f86e35baf09e58c3b817cde4e41a8b991f597` passes all four jobs: Linux Python 3.9/3.12 each 4,969 passed / 44 skipped; Windows Python 3.9/3.12 each 4,938 passed / 75 skipped. Raw logs, JUnit and metadata are retained in `run-06/`. These portable results do not establish installed Office native/UI acceptance.

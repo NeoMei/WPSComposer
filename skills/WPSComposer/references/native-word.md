@@ -18,6 +18,8 @@ convert_to_pdf("existing.docx", "existing.pdf", engine="msoffice", timeout=600)
 
 已发布 0.9.0 的 Microsoft 范围限于上述 Word 生成/转换。当前开发候选还实现了 Excel、PowerPoint 生成/转换和三应用文档会话，详见 [候选 API](api.md)。Windows 候选原生验收、完整方法/参数覆盖及部分活动文档操作仍未完成。`layout_engine: legacy` 不适用于 Microsoft 后端；直接 Composer API 保持原有签名。
 
+当前 Mac Word 候选的结构性插表只接受省略位置、`None` 或 `end`。中间、开头和相对段落位置会在公共编辑打开文档前、或已打开会话的批次首次写入前被拒绝，防止插表位置错误。该保护不代表完整位置编辑已实现。
+
 ## 安装要求
 
 Windows 使用与 Microsoft Word 注册一致的 Python 环境及 `pywin32`，例如安装项目的 `windows` 可选依赖。仅检查到 `Word.Application` 不足以证明可用：运行时还核对真实 WINWORD 进程和窗口身份。WPS 占用 Word ProgID 时会明确失败，不能当作 Word 验收通过。

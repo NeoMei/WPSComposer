@@ -1,0 +1,136 @@
+FFFFFFFFFFFFFFFFFFFF..........                                           [100%]
+=================================== FAILURES ===================================
+___ test_later_nonterminal_table_rejects_entire_edit_before_open[auto-start] ___
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position1] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position2] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position3] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-start] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position1] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position2] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position3] _
+tests/msoffice/test_mac_word_table_position_guard.py:33: in test_later_nonterminal_table_rejects_entire_edit_before_open
+    api.edit('/source.docx', engine=engine, ops=operations, atomic=False,
+skills/WPSComposer/scripts/document_api.py:1166: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+tests/msoffice/test_mac_word_table_position_guard.py:27: in forbidden_open
+    raise AssertionError('unsafe batch reached native open')
+E   AssertionError: unsafe batch reached native open
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-start] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position1] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position2] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position3] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-start] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position1] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position2] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_ test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position3] _
+tests/msoffice/test_mac_word_table_position_guard.py:49: in test_later_nonterminal_table_rejects_existing_session_batch_before_any_write
+    api.apply_ops(session, operations, atomic=atomic)
+E   Failed: DID NOT RAISE <class 'ValueError'>
+_____ test_direct_nonterminal_table_rejects_before_native_transport[start] _____
+tests/msoffice/test_mac_word_table_position_guard.py:58: in test_direct_nonterminal_table_rejects_before_native_transport
+    session.apply_structural_op(table_op(position))
+E   Failed: DID NOT RAISE <class 'ValueError'>
+___ test_direct_nonterminal_table_rejects_before_native_transport[position1] ___
+tests/msoffice/test_mac_word_table_position_guard.py:58: in test_direct_nonterminal_table_rejects_before_native_transport
+    session.apply_structural_op(table_op(position))
+E   Failed: DID NOT RAISE <class 'ValueError'>
+___ test_direct_nonterminal_table_rejects_before_native_transport[position2] ___
+tests/msoffice/test_mac_word_table_position_guard.py:58: in test_direct_nonterminal_table_rejects_before_native_transport
+    session.apply_structural_op(table_op(position))
+E   Failed: DID NOT RAISE <class 'ValueError'>
+___ test_direct_nonterminal_table_rejects_before_native_transport[position3] ___
+tests/msoffice/test_mac_word_table_position_guard.py:58: in test_direct_nonterminal_table_rejects_before_native_transport
+    session.apply_structural_op(table_op(position))
+E   Failed: DID NOT RAISE <class 'ValueError'>
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[auto-start]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position1]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position2]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[auto-position3]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-start]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position1]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position2]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_entire_edit_before_open[msoffice-position3]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-start]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position1]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position2]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[True-position3]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-start]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position1]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position2]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_later_nonterminal_table_rejects_existing_session_batch_before_any_write[False-position3]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_direct_nonterminal_table_rejects_before_native_transport[start]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_direct_nonterminal_table_rejects_before_native_transport[position1]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_direct_nonterminal_table_rejects_before_native_transport[position2]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_direct_nonterminal_table_rejects_before_native_transport[position3]
+20 failed, 10 passed in 2.68s

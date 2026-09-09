@@ -1,0 +1,42 @@
+[
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-01/retention-manifest.json",
+    "count": 250,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-02/retention-manifest.json",
+    "count": 229,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-03/retention-manifest.json",
+    "count": 190,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-03-prepared/retention-manifest.json",
+    "count": 14,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-04/retention-manifest.json",
+    "count": 210,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-04-prepared/retention-manifest.json",
+    "count": 12,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-05/retention-manifest.json",
+    "count": 195,
+    "mismatches": []
+  },
+  {
+    "manifest": "docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-05-prepared/retention-manifest.json",
+    "count": 16,
+    "mismatches": []
+  }
+]

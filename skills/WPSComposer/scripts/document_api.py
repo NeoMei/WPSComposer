@@ -533,6 +533,12 @@ def apply_ops(composer, ops, *, atomic=True):
     raises :class:`PatchError` carrying every report so far.
     """
     kind = _kind_from_composer(composer)
+    from . import office_engines
+    if (office_engines.sys.platform == "darwin" and kind == "writer"
+            and getattr(composer, "engine", None) == "msoffice"):
+        from .msoffice.edit_preflight import validate_mac_word_table_positions
+        ops = tuple(ops)
+        validate_mac_word_table_positions(ops)
     reports = []
 
     for index, op in enumerate(ops):
@@ -972,18 +978,18 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         if office_engines.sys.platform == "darwin" and family == "writer":
             from .msoffice.edit_preflight import materialize_word_structural
             ops = tuple(materialize_word_structural(op) for op in ops)
+    combined = tuple({"op": "set", **patch} for patch in patches) + ops
     selected = _document_engine(path, kind, engine, action="edit",
-                                operations=tuple({"op": "set", **p} for p in (patches or ())) + tuple(ops or ()),
+                                operations=combined,
                                 export_pdf=export_pdf)
+    from . import office_engines
+    if (selected == "msoffice" and office_engines.sys.platform == "darwin"
+            and (_document_family(path, kind) if path is not None else _normalize_kind(kind)) == "writer"):
+        from .msoffice.edit_preflight import validate_mac_word_table_positions
+        validate_mac_word_table_positions(combined)
     routing = {"engine": selected} if selected != "wps" else {}
     if stop_on_error is not None:
         atomic = bool(stop_on_error)
-
-    combined = []
-    if patches:
-        combined.extend({"op": "set", **patch} for patch in patches)
-    if ops:
-        combined.extend(ops)
 
     attached = path is None
     preflight_deadline = time.monotonic() + 600

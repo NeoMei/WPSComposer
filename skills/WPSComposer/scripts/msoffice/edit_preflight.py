@@ -660,8 +660,22 @@ def materialize_word_structural(op):
     return {**op, 'props': {**props, 'data': tuple(islice(iterator, rows + 1))}}
 
 
+def validate_mac_word_table_positions(operations):
+    """Reject table positions the native constructor cannot reliably honor.
+
+    Check the whole request before opening or mutating a document. This is an
+    interim guard; precise nonterminal insertion still needs native support.
+    """
+    for op in operations:
+        if (isinstance(op, dict) and op.get('op') == 'insert'
+                and op.get('type') == 'table'
+                and op.get('position') not in (None, 'end')):
+            raise ValueError('Mac Word table insertion currently requires position end')
+
+
 def validate_word_structural(op):
     from .macos_word_session import _number, apple_string
+    validate_mac_word_table_positions((op,))
     verb, target, kind, props = op.get('op'), op.get('target',''), op.get('type'), op.get('props') or {}
     if not isinstance(props, dict): raise ValueError('Invalid insertion properties')
     if verb == 'insert':

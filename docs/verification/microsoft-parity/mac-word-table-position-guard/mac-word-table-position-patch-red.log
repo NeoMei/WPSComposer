@@ -1,0 +1,58 @@
+FFFF..FF                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[True-True] _
+tests/msoffice/test_mac_word_table_position_guard.py:123: in test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation
+    api.edit('/source.docx', engine='msoffice', patches=iter(patches),
+skills/WPSComposer/scripts/document_api.py:1049: in edit
+    source_state = snapshot_artifact_state(Path(path), deadline=preflight_deadline)
+tests/msoffice/test_mac_word_table_position_guard.py:116: in forbidden_stage
+    raise AssertionError('unsafe patch batch reached document preparation')
+E   AssertionError: unsafe patch batch reached document preparation
+_ test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[True-False] _
+tests/msoffice/test_mac_word_table_position_guard.py:123: in test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation
+    api.edit('/source.docx', engine='msoffice', patches=iter(patches),
+skills/WPSComposer/scripts/document_api.py:1049: in edit
+    source_state = snapshot_artifact_state(Path(path), deadline=preflight_deadline)
+tests/msoffice/test_mac_word_table_position_guard.py:116: in forbidden_stage
+    raise AssertionError('unsafe patch batch reached document preparation')
+E   AssertionError: unsafe patch batch reached document preparation
+_ test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[False-True] _
+tests/msoffice/test_mac_word_table_position_guard.py:123: in test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation
+    api.edit('/source.docx', engine='msoffice', patches=iter(patches),
+skills/WPSComposer/scripts/document_api.py:1049: in edit
+    source_state = snapshot_artifact_state(Path(path), deadline=preflight_deadline)
+tests/msoffice/test_mac_word_table_position_guard.py:116: in forbidden_stage
+    raise AssertionError('unsafe patch batch reached document preparation')
+E   AssertionError: unsafe patch batch reached document preparation
+_ test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[False-False] _
+tests/msoffice/test_mac_word_table_position_guard.py:123: in test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation
+    api.edit('/source.docx', engine='msoffice', patches=iter(patches),
+skills/WPSComposer/scripts/document_api.py:1049: in edit
+    source_state = snapshot_artifact_state(Path(path), deadline=preflight_deadline)
+tests/msoffice/test_mac_word_table_position_guard.py:116: in forbidden_stage
+    raise AssertionError('unsafe patch batch reached document preparation')
+E   AssertionError: unsafe patch batch reached document preparation
+_______ test_patch_supplied_structural_op_is_rejected_before_open[True] ________
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py:16: in test_patch_supplied_structural_op_is_rejected_before_open
+    api.edit('/source.docx', engine='msoffice', patches=iter([patch]),
+skills/WPSComposer/scripts/document_api.py:1177: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py:11: in open_native
+    raise RuntimeError('native opener reached')
+E   RuntimeError: native opener reached
+_______ test_patch_supplied_structural_op_is_rejected_before_open[False] _______
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py:16: in test_patch_supplied_structural_op_is_rejected_before_open
+    api.edit('/source.docx', engine='msoffice', patches=iter([patch]),
+skills/WPSComposer/scripts/document_api.py:1177: in edit
+    composer = open_document(path, kind=kind, read_only=False, visible=visible, **routing)
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py:11: in open_native
+    raise RuntimeError('native opener reached')
+E   RuntimeError: native opener reached
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[True-True]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[True-False]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[False-True]
+FAILED tests/msoffice/test_mac_word_table_position_guard.py::test_patch_override_nonterminal_table_rejects_before_open_or_output_preparation[False-False]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py::test_patch_supplied_structural_op_is_rejected_before_open[True]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_table_position_patch_review.py::test_patch_supplied_structural_op_is_rejected_before_open[False]
+6 failed, 2 passed, 33 deselected in 1.18s

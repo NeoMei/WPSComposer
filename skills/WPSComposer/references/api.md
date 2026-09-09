@@ -14,6 +14,11 @@ Representative macOS flows have native evidence; Windows candidate native
 acceptance, remaining methods, arguments and legacy formats are incomplete.
 The candidate session API below describes implementation scope, not full
 Microsoft/WPS parity or release approval.
+Mac Word structural `insert` operations for tables currently accept only an
+omitted position, `None`, or `"end"`. Other positions are rejected before a
+public edit opens the document, or before an existing-session batch performs
+any write. This interim guard prevents known misplaced tables; precise
+nonterminal insertion remains an unfinished required capability.
 The deprecated `layout_engine: legacy` route is not available with MS Office.
 
 `auto` detects installed applications without starting them, prefers WPS,
