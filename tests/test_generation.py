@@ -506,6 +506,7 @@ def test_generate_open_result_presents_each_final_artifact_once_after_backend_re
 
 
 def test_generate_default_does_not_present_final_artifact(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
 
     def fake_longform(build, format_name, routed_output, timeout, overwrite):
@@ -528,6 +529,7 @@ def test_generate_default_does_not_present_final_artifact(monkeypatch, tmp_path)
 
 
 def test_generate_failure_never_presents_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
     presented = []
 
@@ -562,6 +564,7 @@ def test_generate_failure_never_presents_output(monkeypatch, tmp_path):
 def test_generate_opener_failure_warns_and_returns_published_artifact(
     monkeypatch, tmp_path
 ):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
 
     def fake_longform(build, format_name, routed_output, timeout, overwrite):

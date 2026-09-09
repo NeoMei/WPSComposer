@@ -4,6 +4,7 @@ import importlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -132,6 +133,7 @@ def test_guarded_fixture_requires_execute_and_rejects_existing_output(tmp_path):
         m.main(['--execute', '--output', str(tmp_path)])
 
 
+@pytest.mark.skipif(sys.platform != 'darwin', reason='requires macOS Word dictionary compilation')
 def test_generated_rule_script_compiles_without_launch(tmp_path):
     m = api()
     source = 'use framework "Foundation"\nuse scripting additions\ntell application "/Applications/Microsoft Word.app"\n' + '\n'.join(m.paragraph_rule_commands(MacWordSession())) + '\nend tell\n'
@@ -265,12 +267,18 @@ def test_fixture_resolves_actual_native_localized_style_id_and_rejects_wrong_sty
         assert not fixture.xml_checks(xml, wrong)['following_style_spacing_xml']
 
 
-def test_fixture_native_style_readback_uses_exact_names_and_compiles(tmp_path):
+def test_fixture_native_style_readback_uses_exact_names():
     from fixtures.microsoft_parity import macos_word_paragraph_rule as fixture
     code = '\n'.join(fixture.readback())
     assert "NSString" in code and 'isEqualToString:' in code
     assert 'name local of style of followingRange' in code
     assert 'name local of Word style (style body text) of boundDoc' in code
+
+
+@pytest.mark.skipif(sys.platform != 'darwin', reason='requires macOS Word dictionary compilation')
+def test_fixture_native_style_readback_compiles(tmp_path):
+    from fixtures.microsoft_parity import macos_word_paragraph_rule as fixture
+    code = '\n'.join(fixture.readback())
     source = 'use framework "Foundation"\nuse scripting additions\ntell application "/Applications/Microsoft Word.app"\n'+code+'\nend tell\n'
     script = tmp_path/'fixture-style.applescript';script.write_text(source)
     result = subprocess.run(['/usr/bin/osacompile','-o',str(tmp_path/'fixture-style.scpt'),str(script)],capture_output=True,text=True,timeout=20)

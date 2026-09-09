@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
-import pytest
-
 from skills.WPSComposer.scripts.longform.executor import ExecutionOutcome, PaginationMap
+from skills.WPSComposer.scripts.macos_probe import longform_evidence
 from skills.WPSComposer.scripts.macos_probe.longform_evidence import (
     inspect_docx,
     run_longform_m2_evidence,
@@ -122,11 +120,8 @@ def test_inspect_docx_reads_structural_evidence(tmp_path: Path) -> None:
     assert result["contentTypes"] is True
 
 
-@pytest.mark.skipif(
-    os.name != "posix",
-    reason="reads the installed macOS WPS app bundle for wpsVersion",
-)
-def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
+def test_run_longform_m2_evidence_with_mocks(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(longform_evidence, "read_wps_version", lambda: "12.0-test")
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()
     (fixtures_dir / "plain_short.md").write_text("# Test\n\nHello.\n", encoding="utf-8")
@@ -162,16 +157,13 @@ def test_run_longform_m2_evidence_with_mocks(tmp_path: Path) -> None:
     assert fixture["status"] == "passed"
     assert fixture["appliedOperations"] == 10
     assert Path(fixture["artifact"]).is_file()
-    assert report["wpsVersion"] != "unknown"
+    assert report["wpsVersion"] == "12.0-test"
     assert runtime._activated == ["writer"]
     assert runtime._servers_started is True
 
 
-@pytest.mark.skipif(
-    os.name != "posix",
-    reason="reads the installed macOS WPS app bundle for wpsVersion",
-)
-def test_run_longform_m2_evidence_records_pdf_conversion(tmp_path: Path) -> None:
+def test_run_longform_m2_evidence_records_pdf_conversion(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(longform_evidence, "read_wps_version", lambda: "12.0-test")
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()
     (fixtures_dir / "academic.md").write_text("# Test\n\nHello.\n", encoding="utf-8")
