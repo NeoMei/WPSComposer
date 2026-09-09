@@ -1,0 +1,99 @@
+['/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python', '-m', 'pip', 'install', '--upgrade', 'pip']
+Requirement already satisfied: pip in /private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/lib/python3.9/site-packages (21.2.4)
+Collecting pip
+  Downloading pip-26.0.1-py3-none-any.whl (1.8 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 21.2.4
+    Uninstalling pip-21.2.4:
+      Successfully uninstalled pip-21.2.4
+Successfully installed pip-26.0.1
+['/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python', '-m', 'pip', 'install', '-e', '.[dev]']
+Obtaining file:///private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Collecting Pillow>=10 (from wps-composer==0.9.0)
+  Downloading pillow-11.3.0-cp39-cp39-macosx_11_0_arm64.whl.metadata (9.0 kB)
+Collecting pypdf>=4 (from wps-composer==0.9.0)
+  Downloading pypdf-6.18.0-py3-none-any.whl.metadata (7.5 kB)
+Collecting pdfplumber>=0.11 (from wps-composer==0.9.0)
+  Using cached pdfplumber-0.11.10-py3-none-any.whl.metadata (43 kB)
+Collecting pytest>=8 (from wps-composer==0.9.0)
+  Downloading pytest-8.4.2-py3-none-any.whl.metadata (7.7 kB)
+Collecting reportlab>=4 (from wps-composer==0.9.0)
+  Downloading reportlab-5.0.1-py3-none-any.whl.metadata (1.6 kB)
+Collecting PyMuPDF>=1.24 (from wps-composer==0.9.0)
+  Downloading pymupdf-1.26.5-cp39-abi3-macosx_11_0_arm64.whl.metadata (3.4 kB)
+INFO: pip is looking at multiple versions of pdfplumber to determine which version is compatible with other requirements. This could take a while.
+Collecting pdfplumber>=0.11 (from wps-composer==0.9.0)
+  Downloading pdfplumber-0.11.9-py3-none-any.whl.metadata (43 kB)
+  Downloading pdfplumber-0.11.8-py3-none-any.whl.metadata (43 kB)
+Collecting pdfminer.six==20251107 (from pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading pdfminer_six-20251107-py3-none-any.whl.metadata (4.2 kB)
+Collecting pypdfium2>=4.18.0 (from pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading pypdfium2-5.13.0-py3-none-macosx_13_0_arm64.whl.metadata (66 kB)
+Collecting charset-normalizer>=2.0.0 (from pdfminer.six==20251107->pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading charset_normalizer-3.5.1-cp39-cp39-macosx_10_9_universal2.whl.metadata (45 kB)
+Collecting cryptography>=36.0.0 (from pdfminer.six==20251107->pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading cryptography-50.0.1-cp39-abi3-macosx_11_0_arm64.whl.metadata (4.3 kB)
+Collecting cffi>=2.0.0 (from cryptography>=36.0.0->pdfminer.six==20251107->pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading cffi-2.0.0-cp39-cp39-macosx_11_0_arm64.whl.metadata (2.6 kB)
+Collecting typing-extensions>=4.13.2 (from cryptography>=36.0.0->pdfminer.six==20251107->pdfplumber>=0.11->wps-composer==0.9.0)
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=36.0.0->pdfminer.six==20251107->pdfplumber>=0.11->wps-composer==0.9.0)
+  Downloading pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+Collecting exceptiongroup>=1 (from pytest>=8->wps-composer==0.9.0)
+  Downloading exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+Collecting iniconfig>=1 (from pytest>=8->wps-composer==0.9.0)
+  Downloading iniconfig-2.1.0-py3-none-any.whl.metadata (2.7 kB)
+Collecting packaging>=20 (from pytest>=8->wps-composer==0.9.0)
+  Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting pluggy<2,>=1.5 (from pytest>=8->wps-composer==0.9.0)
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting pygments>=2.7.2 (from pytest>=8->wps-composer==0.9.0)
+  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting tomli>=1 (from pytest>=8->wps-composer==0.9.0)
+  Downloading tomli-2.4.1-py3-none-any.whl.metadata (10 kB)
+Downloading pdfplumber-0.11.8-py3-none-any.whl (60 kB)
+Downloading pdfminer_six-20251107-py3-none-any.whl (5.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 9.4 MB/s  0:00:00
+Downloading charset_normalizer-3.5.1-cp39-cp39-macosx_10_9_universal2.whl (368 kB)
+Downloading cryptography-50.0.1-cp39-abi3-macosx_11_0_arm64.whl (4.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.0/4.0 MB 15.8 MB/s  0:00:00
+Downloading cffi-2.0.0-cp39-cp39-macosx_11_0_arm64.whl (180 kB)
+Downloading pillow-11.3.0-cp39-cp39-macosx_11_0_arm64.whl (4.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 16.0 MB/s  0:00:00
+Downloading pymupdf-1.26.5-cp39-abi3-macosx_11_0_arm64.whl (22.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 22.4/22.4 MB 24.2 MB/s  0:00:00
+Downloading pypdf-6.18.0-py3-none-any.whl (393 kB)
+Downloading pypdfium2-5.13.0-py3-none-macosx_13_0_arm64.whl (3.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 11.6 MB/s  0:00:00
+Downloading pytest-8.4.2-py3-none-any.whl (365 kB)
+Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+Downloading iniconfig-2.1.0-py3-none-any.whl (6.0 kB)
+Using cached packaging-26.3-py3-none-any.whl (129 kB)
+Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 6.7 MB/s  0:00:00
+Downloading reportlab-5.0.1-py3-none-any.whl (2.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 6.5 MB/s  0:00:00
+Downloading tomli-2.4.1-py3-none-any.whl (14 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+Building wheels for collected packages: wps-composer
+  Building editable for wps-composer (pyproject.toml): started
+  Building editable for wps-composer (pyproject.toml): finished with status 'done'
+  Created wheel for wps-composer: filename=wps_composer-0.9.0-0.editable-py3-none-any.whl size=12504 sha256=eb9df839793e0cdd5150e41be83d29b2d1bd941b956280d97fee1e86c5185b8c
+  Stored in directory: /private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pip-ephem-wheel-cache-v22iom_q/wheels/d1/02/27/c340918f9770df75ba9f81e180ed23ec3b4e3988cf84ca7292
+Successfully built wps-composer
+Installing collected packages: typing-extensions, tomli, pypdfium2, PyMuPDF, pygments, pycparser, pluggy, Pillow, packaging, iniconfig, charset-normalizer, reportlab, pypdf, exceptiongroup, cffi, pytest, cryptography, pdfminer.six, pdfplumber, wps-composer
+
+Successfully installed Pillow-11.3.0 PyMuPDF-1.26.5 cffi-2.0.0 charset-normalizer-3.5.1 cryptography-50.0.1 exceptiongroup-1.3.1 iniconfig-2.1.0 packaging-26.3 pdfminer.six-20251107 pdfplumber-0.11.8 pluggy-1.6.0 pycparser-2.23 pygments-2.21.0 pypdf-6.18.0 pypdfium2-5.13.0 pytest-8.4.2 reportlab-5.0.1 tomli-2.4.1 typing-extensions-4.16.0 wps-composer-0.9.0
+['/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python', '-m', 'pip', 'check']
+No broken requirements found.

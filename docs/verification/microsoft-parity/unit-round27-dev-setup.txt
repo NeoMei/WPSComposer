@@ -1,0 +1,6 @@
+['/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/wps-task-session-startup/.venv/bin/python', '-m', 'venv', '/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv']
+['/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python', '-m', 'pip', 'install', '-e', '.[dev]']
+ERROR: File "setup.py" or "setup.cfg" not found. Directory cannot be installed in editable mode: /private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout
+(A "pyproject.toml" file was found, but editable mode currently requires a setuptools-based build.)
+WARNING: You are using pip version 21.2.4; however, version 26.0.1 is available.
+You should consider upgrading via the '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python -m pip install --upgrade pip' command.

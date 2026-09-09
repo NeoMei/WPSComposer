@@ -419,10 +419,17 @@ pip install pywin32
 
 ## 🧪 测试
 
+请在具有完整 Git 历史的克隆中运行测试，保留能力基线提交 `6dd3a00dff226096ad963cc68a65088865541c25`；浅克隆和源码 ZIP 缺少基线测试所需的历史。
+
 ```bash
+# 确认能力基线历史可用
+git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
+
 # 创建开发环境并安装依赖
 python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e ".[dev]"
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
 
 # 运行完整测试
 .venv/bin/python -m pytest -q
@@ -432,7 +439,7 @@ python3 -m venv .venv
 .venv/bin/python -m pytest tests/test_writer_renderer.py
 ```
 
-完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。macOS JSAPI 固定模板测试还需要运行 `python3 install.py` 安装锁定的运行时资源。
+完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。dev 依赖包含 PDF 绘图验证使用的 PyMuPDF；macOS JSAPI 固定模板资源由上述 `npm ci` 准备。运行测试不需要安装个人插件。
 
 ## 📝 更新日志
 
@@ -497,20 +504,25 @@ python3 -m venv .venv
 ### 开发环境设置
 
 ```bash
-# 克隆仓库
+# 完整克隆仓库，保留能力基线测试所需的历史（不要使用浅克隆或源码 ZIP）
 git clone https://github.com/NeoMei/WPSComposer.git
 cd WPSComposer
+git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
 
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 安装开发依赖
+# 安装开发依赖（先更新 pip，以支持 pyproject.toml 的可编辑安装）
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
 
 # 运行测试
 pytest
 ```
+
+开发测试需要完整 Git 历史（含上述基线提交）及锁定的 npm 资源，不需要安装个人插件。
 
 ## 📄 许可证
 

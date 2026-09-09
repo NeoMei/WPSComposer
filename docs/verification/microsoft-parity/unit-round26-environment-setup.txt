@@ -1,0 +1,12 @@
+{"command": ["git", "init", "-q"], "cwd": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout"}
+{"command": ["git", "fetch", "--no-tags", "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description", "6dd3a00dff226096ad963cc68a65088865541c25"], "cwd": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout"}
+From /Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description
+ * branch            6dd3a00dff226096ad963cc68a65088865541c25 -> FETCH_HEAD
+{"command": ["/usr/local/bin/npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund", "--cache", "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/npm-cache"], "cwd": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout/macos/wps-jsapi-probe"}
+
+added 152 packages in 4s
+npm notice
+npm notice New major version of npm available! 11.16.0 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
