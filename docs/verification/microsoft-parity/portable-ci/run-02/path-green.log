@@ -1,0 +1,17 @@
+........................................................................ [ 50%]
+.......................................................................  [100%]
+=============================== warnings summary ===============================
+tests/msoffice/test_macos_word_objects_probe.py::test_artifact_verifier_rejects_missing_image_relationship_target
+tests/msoffice/test_macos_word_objects_probe.py::test_artifact_verifier_rejects_missing_image_relationship_target
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/msoffice/test_macos_word_objects_probe.py::test_artifact_verifier_rejects_missing_image_relationship_target
+tests/msoffice/test_macos_word_objects_probe.py::test_artifact_verifier_rejects_missing_image_relationship_target
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/msoffice/test_macos_word_objects_probe.py::test_artifact_verifier_rejects_missing_image_relationship_target
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+143 passed, 5 warnings in 5.75s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

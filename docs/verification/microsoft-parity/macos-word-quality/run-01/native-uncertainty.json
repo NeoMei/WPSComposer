@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "stage": "first-upsert-public",
+  "error": "quality notice upsert failed",
+  "action": "Stop native calls; root must independently reconcile this task before another native run.",
+  "owned_document": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx",
+    "closed": false,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf"
+  },
+  "sentinel": {
+    "name": "文档87",
+    "preimage": [
+      "文档87",
+      "文档87",
+      false,
+      "747071eeda1fa26309bb53bd27b744ac9dc5064abe34e87451b03ea41a289f33"
+    ],
+    "state": "unknown",
+    "close_script": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/run-01/sentinel-close.applescript"
+  }
+}

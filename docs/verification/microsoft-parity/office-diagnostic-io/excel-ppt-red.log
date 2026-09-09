@@ -1,0 +1,1666 @@
+FFFFFFF.FFFFFFFFFFFFFFFFFF..                                             [100%]
+=================================== FAILURES ===================================
+_______ test_success_log_failure_blocks_further_native_and_close[excel] ________
+
+app = 'excel'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_success_log_failure_block0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c12070>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    def test_success_log_failure_blocks_further_native_and_close(app, tmp_path, monkeypatch):
+        calls = []
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            payload = '{}' if app == 'excel' else '["WPSCOMPOSER_PPT_SESSION_OK", "OK"]'
+            return subprocess.CompletedProcess(command, 0, payload, '')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, 'logs')
+        with pytest.raises(Exception):
+            obj._run('return "{}"')
+>       assert quarantined(app, obj)
+E       AssertionError: assert False
+E        +  where False = quarantined('excel', <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106c12340>)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:86: AssertionError
+_____ test_success_log_failure_blocks_further_native_and_close[powerpoint] _____
+
+app = 'powerpoint'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_success_log_failure_block1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c4cbb0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    def test_success_log_failure_blocks_further_native_and_close(app, tmp_path, monkeypatch):
+        calls = []
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            payload = '{}' if app == 'excel' else '["WPSCOMPOSER_PPT_SESSION_OK", "OK"]'
+            return subprocess.CompletedProcess(command, 0, payload, '')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, 'logs')
+        with pytest.raises(Exception):
+            obj._run('return "{}"')
+>       assert quarantined(app, obj)
+E       AssertionError: assert False
+E        +  where False = quarantined('powerpoint', <skills.WPSComposer.scripts.msoffice.macos_powerpoint_session.MacPowerPointSession object at 0x106c4c910>)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:86: AssertionError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[logs-native-excel] __
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106c60670>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+                if result.returncode: raise RuntimeError('Native Excel session operation failed')
+                return _normalize(json.loads(stdout))
+            except BaseException as exc:
+                if isinstance(exc,subprocess.TimeoutExpired): stdout,stderr=exc.stdout or '',exc.stderr or ''
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'step':self._counter,'closed':False,'code':'NATIVE_OFFICE_TIMEOUT' if isinstance(exc,subprocess.TimeoutExpired) else 'NATIVE_OFFICE_EXECUTION_FAILED'}
+                if getattr(self,'_clipboard_operation',False):detail.update(clipboard_changed=True,clipboard_may_have_changed=True)
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None: self._lock.quarantine(detail)
+                error=RuntimeError('Native Excel session failed; owned recovery files retained')
+                error.staging_path=str(self._job);error.diagnostic_path=str(self._job/'recovery.json')
+                if getattr(self,'_clipboard_operation',False):error.clipboard_changed=True;error.clipboard_may_have_changed=True
+>               raise error from None
+E               RuntimeError: Native Excel session failed; owned recovery files retained
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:263: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'native', fault = 'logs'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c60fa0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser0/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[logs-native-powerpoint] _
+
+app = 'powerpoint', primary = 'native', fault = 'logs'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1063e31f0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:453: in _run
+    path.with_suffix('.stdout').write_text(result.stdout);path.with_suffix('.stderr').write_text(result.stderr)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser1/001.stdout')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[logs-timeout-excel] _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106c4c310>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+                if result.returncode: raise RuntimeError('Native Excel session operation failed')
+                return _normalize(json.loads(stdout))
+            except BaseException as exc:
+                if isinstance(exc,subprocess.TimeoutExpired): stdout,stderr=exc.stdout or '',exc.stderr or ''
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'step':self._counter,'closed':False,'code':'NATIVE_OFFICE_TIMEOUT' if isinstance(exc,subprocess.TimeoutExpired) else 'NATIVE_OFFICE_EXECUTION_FAILED'}
+                if getattr(self,'_clipboard_operation',False):detail.update(clipboard_changed=True,clipboard_may_have_changed=True)
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None: self._lock.quarantine(detail)
+                error=RuntimeError('Native Excel session failed; owned recovery files retained')
+                error.staging_path=str(self._job);error.diagnostic_path=str(self._job/'recovery.json')
+                if getattr(self,'_clipboard_operation',False):error.clipboard_changed=True;error.clipboard_may_have_changed=True
+>               raise error from None
+E               RuntimeError: Native Excel session failed; owned recovery files retained
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:263: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'timeout', fault = 'logs'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c4c3a0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser2/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[logs-timeout-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser3/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999475584}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser3/001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'timeout', fault = 'logs'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cba910>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:464: in _run
+    path.with_suffix('.stdout').write_bytes(exc.stdout if isinstance(exc.stdout,bytes) else (exc.stdout or '').encode())
+tests/msoffice/test_macos_office_diagnostic_io.py:62: in write_bytes
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser3/001.stdout')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[logs-cancel-excel] __
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106cee0d0>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+                if result.returncode: raise RuntimeError('Native Excel session operation failed')
+                return _normalize(json.loads(stdout))
+            except BaseException as exc:
+                if isinstance(exc,subprocess.TimeoutExpired): stdout,stderr=exc.stdout or '',exc.stderr or ''
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'step':self._counter,'closed':False,'code':'NATIVE_OFFICE_TIMEOUT' if isinstance(exc,subprocess.TimeoutExpired) else 'NATIVE_OFFICE_EXECUTION_FAILED'}
+                if getattr(self,'_clipboard_operation',False):detail.update(clipboard_changed=True,clipboard_may_have_changed=True)
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None: self._lock.quarantine(detail)
+                error=RuntimeError('Native Excel session failed; owned recovery files retained')
+                error.staging_path=str(self._job);error.diagnostic_path=str(self._job/'recovery.json')
+                if getattr(self,'_clipboard_operation',False):error.clipboard_changed=True;error.clipboard_may_have_changed=True
+>               raise error from None
+E               RuntimeError: Native Excel session failed; owned recovery files retained
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:263: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'cancel', fault = 'logs'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cee190>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser4/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-native-excel] _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106d6a2b0>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+>               if result.returncode: raise RuntimeError('Native Excel session operation failed')
+E               RuntimeError: Native Excel session operation failed
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:251: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'native', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d43220>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:258: in _run
+    (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser6/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-native-powerpoint] _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_powerpoint_session.MacPowerPointSession object at 0x106cd1640>
+body = 'return "{}"'
+
+        def _run(self,body,*,bound=True,prefix='',mutation=False):
+            if self._uncertain:raise RuntimeError('Native session is quarantined; inspect retained recovery evidence')
+            if bound and not self._entered:raise RuntimeError('Session must be entered')
+            guard=''
+            if bound:
+                guard=f'''set identityCount to 0
+    repeat with di from 1 to (count of presentations)
+     if name of presentation di is {apple_string(self._name)} then set identityCount to identityCount + 1
+    end repeat
+    if identityCount is not 1 then error "Stale or ambiguous bound presentation"
+    set ownedDoc to presentation {apple_string(self._name)}
+    if full name of ownedDoc is not {apple_string(str(self._path))} then error "Bound presentation path changed"
+    '''
+            script=_JSON+'on sessionOperation()\n'+prefix+f'with timeout of {max(1,int(self._remaining()))} seconds\n tell application "Microsoft PowerPoint"\n{guard}{body}\n end tell\nend timeout\nend sessionOperation\nset operationResult to my sessionOperation()\nreturn my encodeJSON({{"WPSCOMPOSER_PPT_SESSION_OK",operationResult}})\n'
+            self._sequence+=1;path=self._job/f'{self._sequence:03}.applescript';path.write_text(script)
+            try:
+                result=subprocess.run(['/usr/bin/osascript',str(path)],capture_output=True,text=True,timeout=self._remaining())
+                path.with_suffix('.stdout').write_text(result.stdout);path.with_suffix('.stderr').write_text(result.stderr)
+>               if result.returncode:raise NativeOfficeError('NATIVE_OFFICE_EXECUTION_FAILED',staging_path=self._job,diagnostic_path=path.with_suffix('.stderr'))
+E               skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError: Native Office did not produce a verified artifact; private diagnostics are retained.
+
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:454: NativeOfficeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'native', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cd1b20>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser7/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-timeout-excel] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser8/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999935667}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser8/step-0001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'timeout', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser8')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106cc1430>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:258: in _run
+    (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser8/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-timeout-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser9/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999530833}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser9/001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'timeout', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser9')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1063c26a0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser9/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-cancel-excel] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser10/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999806875000004}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'cancel', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser10')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c60730>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:258: in _run
+    (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser10/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[recovery-cancel-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser11/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999381916000004}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'cancel', fault = 'recovery'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser11')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ca80d0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser11/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-native-excel] __
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106c49fd0>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+>               if result.returncode: raise RuntimeError('Native Excel session operation failed')
+E               RuntimeError: Native Excel session operation failed
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:251: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'native', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser12')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c49550>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:259: in _run
+    if self._lock is not None: self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x106c497c0>
+detail = {'closed': False, 'code': 'NATIVE_OFFICE_EXECUTION_FAILED', 'component': 'spreadsheet', 'owned_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser12/owned.xlsx', ...}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-native-powerpoint] _
+
+self = <skills.WPSComposer.scripts.msoffice.macos_powerpoint_session.MacPowerPointSession object at 0x106c4cf40>
+body = 'return "{}"'
+
+        def _run(self,body,*,bound=True,prefix='',mutation=False):
+            if self._uncertain:raise RuntimeError('Native session is quarantined; inspect retained recovery evidence')
+            if bound and not self._entered:raise RuntimeError('Session must be entered')
+            guard=''
+            if bound:
+                guard=f'''set identityCount to 0
+    repeat with di from 1 to (count of presentations)
+     if name of presentation di is {apple_string(self._name)} then set identityCount to identityCount + 1
+    end repeat
+    if identityCount is not 1 then error "Stale or ambiguous bound presentation"
+    set ownedDoc to presentation {apple_string(self._name)}
+    if full name of ownedDoc is not {apple_string(str(self._path))} then error "Bound presentation path changed"
+    '''
+            script=_JSON+'on sessionOperation()\n'+prefix+f'with timeout of {max(1,int(self._remaining()))} seconds\n tell application "Microsoft PowerPoint"\n{guard}{body}\n end tell\nend timeout\nend sessionOperation\nset operationResult to my sessionOperation()\nreturn my encodeJSON({{"WPSCOMPOSER_PPT_SESSION_OK",operationResult}})\n'
+            self._sequence+=1;path=self._job/f'{self._sequence:03}.applescript';path.write_text(script)
+            try:
+                result=subprocess.run(['/usr/bin/osascript',str(path)],capture_output=True,text=True,timeout=self._remaining())
+                path.with_suffix('.stdout').write_text(result.stdout);path.with_suffix('.stderr').write_text(result.stderr)
+>               if result.returncode:raise NativeOfficeError('NATIVE_OFFICE_EXECUTION_FAILED',staging_path=self._job,diagnostic_path=path.with_suffix('.stderr'))
+E               skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError: Native Office did not produce a verified artifact; private diagnostics are retained.
+
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:454: NativeOfficeError
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'native', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser13')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c4ccd0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:434: in _quarantine
+    if self._lock and not self._lock.quarantine_path.exists():self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x106c4c4c0>
+detail = {'bound_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_...private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser13'}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-timeout-excel] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser14/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999971167}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser14/step-0001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'timeout', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser14')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c4b3a0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:259: in _run
+    if self._lock is not None: self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x106c4b790>
+detail = {'closed': False, 'code': 'NATIVE_OFFICE_TIMEOUT', 'component': 'spreadsheet', 'owned_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser14/owned.xlsx', ...}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-timeout-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser15/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999586625}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser15/001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'timeout', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser15')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d6ea30>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:434: in _quarantine
+    if self._lock and not self._lock.quarantine_path.exists():self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x106d6e070>
+detail = {'bound_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_...private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser15'}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-cancel-excel] __
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser16/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.99996475}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'cancel', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser16')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1063efc70>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:259: in _run
+    if self._lock is not None: self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x1063ef190>
+detail = {'closed': False, 'code': 'NATIVE_OFFICE_EXECUTION_FAILED', 'component': 'spreadsheet', 'owned_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser16/owned.xlsx', ...}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[lock-cancel-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser17/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999651708}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'cancel', fault = 'lock'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser17')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d6e490>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:434: in _quarantine
+    if self._lock and not self._lock.quarantine_path.exists():self._lock.quarantine(detail)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_macos_office_diagnostic_io.Lock object at 0x106d6e2e0>
+detail = {'bound_path': '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_...private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser17'}
+
+    def quarantine(self, detail):
+        if self.fail:
+>           raise OSError('injected quarantine file write failure')
+E           OSError: injected quarantine file write failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:20: OSError
+__ test_diagnostic_failure_preserves_primary_and_quarantine[all-native-excel] __
+
+self = <skills.WPSComposer.scripts.msoffice.macos_excel_session.MacExcelSession object at 0x106ca6040>
+body = 'return "{}"'
+
+        def _run(self,body,*,bind=True):
+            self._assert_live()
+            remaining=min(60,self._deadline-time.monotonic())
+            if remaining<=0:
+                self._failed=True
+                detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
+                (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')
+                if self._lock is not None:self._lock.quarantine(detail)
+                raise RuntimeError('Excel session deadline expired; owned recovery files retained')
+            self._counter+=1
+            stem=self._job/f'step-{self._counter:04d}'
+            binding=f'''set ownedBook to workbook {_quote(self._native.name)}
+    if full name of ownedBook is not {_quote(str(self._native))} then error "Owned workbook identity mismatch"''' if bind else ''
+            guard=''
+            if self._attached:
+                guard='if not application '+_quote(_APP)+' is running then '+('error \"Bound Excel application is no longer running\"' if bind else 'return \"{\\\"active\\\":false}\"')+'\n'
+            script=_JSON+guard+f'with timeout of {max(1,math.ceil(remaining))} seconds\n tell application {_quote(_APP)}\n'+binding+'\n'+body+'\n end tell\nend timeout\n'
+            stem.with_suffix('.applescript').write_text(script)
+            stdout=stderr=''
+            try:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+                stdout,stderr=result.stdout,result.stderr
+>               if result.returncode: raise RuntimeError('Native Excel session operation failed')
+E               RuntimeError: Native Excel session operation failed
+
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:251: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser18/recovery.json')
+data = '{"component": "spreadsheet", "staging_path": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neom.../test_diagnostic_failure_preser18/owned.xlsx", "step": 1, "closed": false, "code": "NATIVE_OFFICE_EXECUTION_FAILED"}\n'
+args = (), kwargs = {}
+
+    def write(path, data, *args, **kwargs):
+>       reject(path)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser18/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'native', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser18')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ca65b0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser18/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[all-native-powerpoint] _
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser19/001.stdout')
+data = '', args = (), kwargs = {}
+
+    def write(path, data, *args, **kwargs):
+>       reject(path)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser19/001.stdout')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'native', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser19')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ccf820>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser19/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[all-timeout-excel] __
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999969584}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20/step-0001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20/recovery.json')
+data = '{"component": "spreadsheet", "staging_path": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neom...test-1246/test_diagnostic_failure_preser20/owned.xlsx", "step": 1, "closed": false, "code": "NATIVE_OFFICE_TIMEOUT"}\n'
+args = (), kwargs = {}
+
+    def write(path, data, *args, **kwargs):
+>       reject(path)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'timeout', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106d43f10>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser20/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[all-timeout-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser21/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999646459000004}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+            raise cancellation
+        if primary == 'timeout':
+>           raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+E           subprocess.TimeoutExpired: Command '['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser21/001.applescript']' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_diagnostic_io.py:105: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'timeout', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser21')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1063b4d30>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser21/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+__ test_diagnostic_failure_preserves_primary_and_quarantine[all-cancel-excel] __
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser22/step-0001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999975167}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser22/recovery.json')
+data = '{"component": "spreadsheet", "staging_path": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neom.../test_diagnostic_failure_preser22/owned.xlsx", "step": 1, "closed": false, "code": "NATIVE_OFFICE_EXECUTION_FAILED"}\n'
+args = (), kwargs = {}
+
+    def write(path, data, *args, **kwargs):
+>       reject(path)
+
+tests/msoffice/test_macos_office_diagnostic_io.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser22/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+
+During handling of the above exception, another exception occurred:
+
+app = 'excel', primary = 'cancel', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser22')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ca0910>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_excel_session.py:266: in _run
+    stem.with_suffix('.'+name+'.log').write_text(text.decode(errors='replace') if isinstance(text,bytes) else text)
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser22/step-0001.stdout.log')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+_ test_diagnostic_failure_preserves_primary_and_quarantine[all-cancel-powerpoint] _
+
+command = ['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser23/001.applescript']
+kwargs = {'capture_output': True, 'text': True, 'timeout': 59.999715875}
+
+    def execute(command, **kwargs):
+        calls.append(command)
+        if primary == 'cancel':
+>           raise cancellation
+E           KeyboardInterrupt: injected primary cancellation
+
+tests/msoffice/test_macos_office_diagnostic_io.py:103: KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+app = 'powerpoint', primary = 'cancel', fault = 'all'
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser23')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c6feb0>
+
+    @pytest.mark.parametrize('app', ['excel', 'powerpoint'])
+    @pytest.mark.parametrize('primary', ['native', 'timeout', 'cancel'])
+    @pytest.mark.parametrize('fault', ['logs', 'recovery', 'lock', 'all'])
+    def test_diagnostic_failure_preserves_primary_and_quarantine(app, primary, fault, tmp_path, monkeypatch):
+        calls = []
+        cancellation = KeyboardInterrupt('injected primary cancellation')
+    
+        def execute(command, **kwargs):
+            calls.append(command)
+            if primary == 'cancel':
+                raise cancellation
+            if primary == 'timeout':
+                raise subprocess.TimeoutExpired(command, 1, output=b'partial', stderr=b'timeout')
+            return subprocess.CompletedProcess(command, 1, '', 'execution error: native (-2700)')
+    
+        obj = session(app, tmp_path, monkeypatch, execute, fault)
+        expected = KeyboardInterrupt if primary == 'cancel' else RuntimeError
+        with pytest.raises(expected) as caught:
+>           obj._run('return "{}"', **({'mutation': True} if app == 'powerpoint' else {}))
+
+tests/msoffice/test_macos_office_diagnostic_io.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:462: in _run
+    self._quarantine(str(exc))
+skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py:433: in _quarantine
+    if self._job is not None:(self._job/'recovery.json').write_text(json.dumps(detail,ensure_ascii=False))
+tests/msoffice/test_macos_office_diagnostic_io.py:58: in write
+    reject(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1246/test_diagnostic_failure_preser23/recovery.json')
+
+    def reject(path):
+        is_log = path.suffix in ('.log', '.stdout', '.stderr')
+        if (fault in ('logs', 'all') and is_log
+                or fault in ('recovery', 'all') and path.name == 'recovery.json'
+                or fault == 'script' and path.suffix == '.applescript'):
+>           raise OSError('injected diagnostic I/O failure')
+E           OSError: injected diagnostic I/O failure
+
+tests/msoffice/test_macos_office_diagnostic_io.py:55: OSError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_success_log_failure_blocks_further_native_and_close[excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_success_log_failure_blocks_further_native_and_close[powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[logs-native-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[logs-native-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[logs-timeout-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[logs-timeout-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[logs-cancel-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-native-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-native-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-timeout-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-timeout-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-cancel-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[recovery-cancel-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-native-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-native-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-timeout-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-timeout-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-cancel-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[lock-cancel-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-native-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-native-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-timeout-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-timeout-powerpoint]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-cancel-excel]
+FAILED tests/msoffice/test_macos_office_diagnostic_io.py::test_diagnostic_failure_preserves_primary_and_quarantine[all-cancel-powerpoint]
+25 failed, 3 passed in 1.48s

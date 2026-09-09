@@ -113,4 +113,5 @@ def test_native_staging_copies_exact_output_and_keeps_failed_recovery(tmp_path):
     native_dir = Path(report['native_directory'])
     assert native_dir.parent == staging_root
     assert (native_dir / 'native.xlsx').read_bytes() == native_bytes
-    assert str(native_dir) in (out / 'probe.applescript').read_text()
+    from skills.WPSComposer.scripts.msoffice.macos_script import apple_string
+    assert apple_string(str(native_dir / 'native.xlsx')) in (out / 'probe.applescript').read_text()

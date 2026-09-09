@@ -183,7 +183,7 @@ def test_native_field_owner_identity_survives_snapshot(session,monkeypatch):
     monkeypatch.setattr(s,'_execute',execute)
     assert s.add_cross_reference_paragraph(runs=[REF],owner_node_id='owner:two')=={'issues':[]}
     handle,code=s._tracked_references[0]
-    rows=[['stats',1],['identity',handle.bookmark,5],['field','main',3,'REF',code,5,'2',0,0,1]]
+    rows=[['stats',1],['identity',handle.bookmark,5],['field','story:main text/chain:1',3,'REF',code,5,'2',0,0,1]]
     monkeypatch.setattr(s,'_execute',lambda lines:rows)
     snapshot=s.snapshot_fields()
     assert snapshot[0].stable_key==('owner:two','REF',0) and snapshot[0].field_category=='reference'

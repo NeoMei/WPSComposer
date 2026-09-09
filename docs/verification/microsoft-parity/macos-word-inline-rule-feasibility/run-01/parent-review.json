@@ -1,0 +1,10 @@
+{
+  "status": "FAIL_RETAINED",
+  "native_report_sha256": "2111ba9d0febe8617bf4af0c5faee616d1ec7f18d53d68c3f0168e4caa8a4fe6",
+  "retained_sources_verified": 158,
+  "artifacts_verified": 26,
+  "finding": "Native constructor made zero inline shapes and one floating shape; strict count/type gate remains failed. No public method enabled.",
+  "native_final_inventory": [],
+  "sentinel_close_state": "closed-acknowledged",
+  "scope": "Offline parent integrity and semantic review; live source equivalence after subsequent concurrent implementation is not claimed."
+}

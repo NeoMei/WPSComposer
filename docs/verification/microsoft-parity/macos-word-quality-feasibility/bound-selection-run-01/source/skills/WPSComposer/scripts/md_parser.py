@@ -1,0 +1,770 @@
+"""Lightweight Markdown parser — zero external dependencies.
+
+Parses CommonMark-flavoured Markdown into a StructuredDocument.
+Supports Chinese content and YAML frontmatter.
+"""
+
+from __future__ import annotations
+
+import re
+import os
+from typing import Any, List, Optional, Tuple
+from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
+
+from .document_model import (
+    StructuredDocument, Section, Span, Paragraph,
+    ListBlock, TableBlock, CodeBlock, ImageBlock, BlockQuote,
+    HorizontalRule, TaskList, ExcalidrawBlock, MathBlock,
+)
+from .longform.md_parser_longform import (
+    LONGFORM_DIRECTIVE_UNKNOWN,
+    DUPLICATE_FRONT_MATTER_BLOCK,
+    LONGFORM_FRONTMATTER_VALUE_IGNORED,
+    parse_longform,
+)
+
+
+# ---------------------------------------------------------------------------
+# Inline parsing
+# ---------------------------------------------------------------------------
+
+_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+# Inline math: $...$ but not $$...$$  (negative lookbehind/ahead for extra $)
+# Post-filter rejects false positives where plain text contains $ signs (prices etc.)
+_INLINE_MATH_RE = re.compile(r"(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)")
+
+
+# Known math words that look like English but are legitimate in formulas
+_MATH_WORDS = frozenset(
+    "sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh "
+    "log ln exp lim sup inf max min arg dim det deg ker mod "
+    "gcd lcm Re Im".split()
+)
+# Common 2-letter English words that signal non-math content
+_EN_2LETTER = frozenset(
+    "on is to in or as at by of it an do no so up us we he be me my "
+    "if am go".split()
+)
+
+
+def _looks_like_math(content: str) -> bool:
+    """Heuristic: reject false-positive $...$ matches from dollar amounts etc.
+
+    Returns True only if the content between $...$ looks like a math expression.
+    """
+    if not content:
+        return False
+    # Strong indicators: LaTeX commands, super/subscripts, braces, norm notation
+    if "\\" in content or "^" in content or "_" in content or "{" in content:
+        return True
+    if content.count("|") >= 2:
+        return True
+    # Short, space-free expressions like $x$, $n$, $2^n$, $xy+yz$
+    if " " not in content and len(content) <= 15:
+        return True
+    # Content with spaces: check for English words to reject prose
+    # 3+ letter words not in math vocabulary
+    for w in re.findall(r"[a-z]{3,}", content):
+        if w not in _MATH_WORDS:
+            return False
+    # 2-letter English words (only relevant when content has spaces)
+    for token in content.split():
+        clean = re.sub(r"[^a-z]", "", token.lower())
+        if len(clean) == 2 and clean in _EN_2LETTER:
+            return False
+    return True
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+_ITALIC_RE = re.compile(r"\*(.+?)\*")
+_LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)]+)\)")
+_IMAGE_RE = re.compile(
+    r"!\[([^\]]*)\]\(\s*(?:<([^>]+)>|([^)]+?))"
+    r"(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)"
+)
+
+# Obsidian wikilink image syntax: ![[path]] or ![[path|width]] or ![[path|widthxheight]]
+# Supports: ![[path]], ![[path|300]], ![[path|300x200]], ![[path|100%]], ![[path| 100%]]
+_WIKILINK_IMAGE_RE = re.compile(r"^!\[\[([^\]|]+)(?:\|\s*(\d+%?))?(?:\s*x\s*(\d+%?))?\]\]\s*$")
+
+# Extended syntax
+_HR_RE = re.compile(r"^(?:-{3,}|\*{3,}|_{3,})\s*$")
+_TASK_RE = re.compile(r"^[-*]\s+\[([ xX])\]\s+(.+)$")
+_STRIKE_RE = re.compile(r"~~(.+?)~~")
+_LINK_TITLE_RE = re.compile(r'(?<!!)\[([^\]]+)\]\(([^)\s]+)\s+"([^"]+)"\)')
+_NESTED_UL_RE = re.compile(r"^(\s+)[-*+]\s+(.+)$")
+_NESTED_OL_RE = re.compile(r"^(\s+)\d+\.\s+(.+)$")
+
+
+def _parse_inline(text: str) -> List[Span]:
+    """Parse inline formatting: **bold**, *italic*, `code`, [link](url).
+
+    Returns a list of Span objects preserving order.
+    """
+    # First, protect code spans
+    codes: List[tuple] = []
+    for m in _INLINE_CODE_RE.finditer(text):
+        codes.append((m.start(), m.end(), m.group(1)))
+
+    def _inside_code(position: int) -> bool:
+        return any(start <= position < end for start, end, _ in codes)
+
+    def _escaped(position: int) -> bool:
+        slash_count = 0
+        position -= 1
+        while position >= 0 and text[position] == "\\":
+            slash_count += 1
+            position -= 1
+        return slash_count % 2 == 1
+
+    if any(
+        not _inside_code(match.start()) and not _escaped(match.start())
+        for match in _IMAGE_RE.finditer(text)
+    ):
+        raise ValueError(
+            "Inline Markdown images are not supported; put the image on its own line."
+        )
+
+    if (
+        not codes
+        and not _INLINE_MATH_RE.search(text)
+        and not _BOLD_RE.search(text)
+        and not _ITALIC_RE.search(text)
+        and not _LINK_RE.search(text)
+    ):
+        return [Span(text=text)] if text else []
+
+    # Simple approach: tokenize by priority
+    spans: List[Span] = []
+    remaining = text
+
+    while remaining:
+        # Find earliest match
+        matches = []
+        for m in _INLINE_CODE_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "code", m.group(1)))
+        for m in _INLINE_MATH_RE.finditer(remaining):
+            if _looks_like_math(m.group(1)):
+                matches.append((m.start(), m.end(), "math", m.group(1)))
+        for m in _BOLD_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "bold", m.group(1)))
+        for m in _ITALIC_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "italic", m.group(1)))
+        for m in _STRIKE_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "strike", m.group(1)))
+        # Link with title (tooltip) takes priority
+        for m in _LINK_TITLE_RE.finditer(remaining):
+            title = m.group(3) or ""
+            matches.append((m.start(), m.end(), "link", m.group(1), m.group(2), title))
+        for m in _LINK_RE.finditer(remaining):
+            matches.append((m.start(), m.end(), "link", m.group(1), m.group(2)))
+
+        if not matches:
+            if remaining:
+                spans.append(Span(text=remaining))
+            break
+
+        matches.sort(key=lambda x: x[0])
+        first = matches[0]
+
+        # Text before match
+        if first[0] > 0:
+            spans.append(Span(text=remaining[:first[0]]))
+
+        # The matched span
+        mtype = first[2]
+        if mtype == "code":
+            spans.append(Span(text=first[3], code=True))
+        elif mtype == "math":
+            spans.append(Span(text=first[3], math=first[3]))
+        elif mtype == "bold":
+            spans.append(Span(text=first[3], bold=True))
+        elif mtype == "italic":
+            spans.append(Span(text=first[3], italic=True))
+        elif mtype == "strike":
+            spans.append(Span(text=first[3], strikethrough=True))
+        elif mtype == "link":
+            link_url = first[4]
+            link_title = first[5] if len(first) > 5 else None
+            spans.append(Span(text=first[3], link=link_url, link_title=link_title))
+
+        remaining = remaining[first[1]:]
+
+    # Merge adjacent plain-text spans
+    merged = []
+    for s in spans:
+        if merged and not s.bold and not s.italic and not s.code and not s.link and not s.strikethrough and not s.math \
+           and not merged[-1].bold and not merged[-1].italic and not merged[-1].code and not merged[-1].link and not merged[-1].strikethrough and not merged[-1].math:
+            merged[-1].text += s.text
+        else:
+            merged.append(s)
+
+    # Recursively resolve inline math nested inside bold/italic/strikethrough spans
+    expanded = []
+    for s in merged:
+        if (s.bold or s.italic or s.strikethrough) and not s.math and not s.code and not s.link and "$" in s.text:
+            inner = _parse_inline(s.text)
+            if any(sub.math for sub in inner):
+                for sub in inner:
+                    sub.bold = sub.bold or s.bold
+                    sub.italic = sub.italic or s.italic
+                    sub.strikethrough = sub.strikethrough or s.strikethrough
+                    expanded.append(sub)
+                continue
+        expanded.append(s)
+    return expanded
+
+
+# ---------------------------------------------------------------------------
+# Block-level parsing
+# ---------------------------------------------------------------------------
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
+_UL_RE = re.compile(r"^[-*]\s+(.+)$")
+_OL_RE = re.compile(r"^\d+\.\s+(.+)$")
+_TABLE_SEP_RE = re.compile(r"^\|?[\s\-:]+\|[\s\-:|]+\|?$")
+
+
+def _is_table_row(line: str) -> bool:
+    return line.strip().startswith("|") and "|" in line[1:]
+
+
+def _parse_table_row(line: str) -> List[str]:
+    # Table cells are currently rendered as plain strings.  Preserve the
+    # visible text while removing Markdown control markers such as ``**``
+    # and backticks so they never leak into formal Writer output.
+    #
+    # Split on unescaped | so LaTeX \| (norm) and |A| (cardinality) survive.
+    raw_cells = re.split(r"(?<!\\)\|", line.strip().strip("|"))
+    result = []
+    for cell in raw_cells:
+        cell = cell.strip()
+        parts = []
+        for span in _parse_inline(cell):
+            if span.math:
+                # Inline math in table cells: convert to readable text.
+                from .math_render import latex_to_unicode
+                parts.append(latex_to_unicode(span.math))
+            else:
+                parts.append(span.text)
+        result.append("".join(parts))
+    return result
+
+
+def _is_separator_row(line: str) -> bool:
+    return bool(_TABLE_SEP_RE.match(line.strip()))
+
+
+def _image_match_path(match: re.Match) -> str:
+    return (match.group(2) or match.group(3) or "").strip()
+
+
+def _resolve_image_path(path: str, base_dir: str = "") -> str:
+    """Resolve a Markdown image target to a renderer-ready path."""
+    path = unquote(path.strip())
+    parsed = urlparse(path)
+    if parsed.scheme in ("http", "https", "data"):
+        return path
+    if parsed.scheme == "file":
+        return os.path.abspath(url2pathname(parsed.path))
+    if os.path.isabs(path):
+        return os.path.normpath(path)
+    
+    # First try resolving relative to base_dir
+    resolved = os.path.abspath(os.path.join(base_dir or os.curdir, path))
+    if os.path.exists(resolved):
+        return resolved
+    
+    # For Obsidian wikilinks, path is relative to vault root
+    # Try to find vault root by looking for .obsidian folder
+    vault_root = _find_vault_root(base_dir or os.curdir)
+    if vault_root:
+        resolved_from_vault = os.path.abspath(os.path.join(vault_root, path))
+        if os.path.exists(resolved_from_vault):
+            return resolved_from_vault
+        # Try with .md extension (Obsidian hides .md extension in wikilinks)
+        if not path.endswith('.md'):
+            resolved_from_vault_md = resolved_from_vault + '.md'
+            if os.path.exists(resolved_from_vault_md):
+                return resolved_from_vault_md
+    
+    # Try with .md extension relative to base_dir
+    if not path.endswith('.md'):
+        resolved_md = resolved + '.md'
+        if os.path.exists(resolved_md):
+            return resolved_md
+    
+    return resolved
+
+
+def _find_vault_root(start_dir: str) -> Optional[str]:
+    """Find the Obsidian vault root by looking for .obsidian folder."""
+    current = os.path.abspath(start_dir)
+    while True:
+        if os.path.isdir(os.path.join(current, '.obsidian')):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return None
+        current = parent
+
+
+def _extract_image_refs(text: str, base_dir: str = "") -> List[ImageBlock]:
+    """Extract inline image references from text."""
+    images = []
+    for m in _IMAGE_RE.finditer(text):
+        path = _resolve_image_path(_image_match_path(m), base_dir)
+        images.append(ImageBlock(path=path, alt=m.group(1)))
+    return images
+
+
+def _is_excalidraw_file(path: str) -> bool:
+    """Check if a file path is an Excalidraw file."""
+    return path.endswith('.excalidraw.md') or path.endswith('.excalidraw')
+
+
+def _parse_wikilink_image(
+    line: str, base_dir: str = ""
+) -> Optional[ImageBlock | ExcalidrawBlock]:
+    """Parse an Obsidian wikilink image reference.
+    
+    Returns an ExcalidrawBlock if it's an Excalidraw file,
+    or None if it's not a wikilink image.
+    """
+    m = _WIKILINK_IMAGE_RE.match(line.strip())
+    if not m:
+        return None
+    
+    path = m.group(1).strip()
+    # Handle percentage widths (e.g., "100%") - treat as None for now
+    width_str = m.group(2)
+    width = int(width_str.replace('%', '')) if width_str and '%' not in width_str else None
+    height_str = m.group(3)
+    height = int(height_str.replace('%', '')) if height_str and '%' not in height_str else None
+    
+    resolved_path = _resolve_image_path(path, base_dir)
+    
+    block_type = ExcalidrawBlock if _is_excalidraw_file(path) else ImageBlock
+    return block_type(
+        path=resolved_path,
+        alt=os.path.basename(path),
+        width=width,
+        height=height,
+    )
+
+
+def _plain_text(text: str) -> str:
+    """Strip inline markdown markers, keeping the visible text.
+    Converts inline math spans to Unicode approximation."""
+    parts = []
+    for s in _parse_inline(text):
+        if s.math:
+            from .math_render import latex_to_unicode
+            parts.append(latex_to_unicode(s.math))
+        else:
+            parts.append(s.text)
+    return "".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
+
+
+def _detect_first_h1(lines: List[str]) -> str:
+    """Return the first H1 heading text outside code fences, or empty."""
+    in_fence = False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = _HEADING_RE.match(line)
+        if m and m.group(1) == "#":
+            return m.group(2).strip()
+    return ""
+
+
+def _parse_block_lines(
+    lines: List[str],
+    base_dir: str,
+    sections: Optional[List[Section]] = None,
+    current_section: Optional[Section] = None,
+) -> Tuple[List[Section], Optional[Section]]:
+    """Parse a list of Markdown lines into sections and elements.
+
+    This is the legacy block parser extracted so it can be reused for
+    literal Markdown regions inside a long-form document.
+    """
+    if sections is None:
+        sections = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Skip empty lines
+        if not line.strip():
+            i += 1
+            continue
+
+        # Horizontal rule (---, ***, ___)
+        if _HR_RE.match(line.strip()):
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(HorizontalRule())
+            i += 1
+            continue
+
+        # Task list (- [ ] / - [x])
+        tm = _TASK_RE.match(line)
+        if tm:
+            items = []
+            while i < len(lines):
+                tm2 = _TASK_RE.match(lines[i])
+                if tm2:
+                    checked = tm2.group(1).lower() == "x"
+                    items.append((_plain_text(tm2.group(2).strip()), checked))
+                    i += 1
+                elif not lines[i].strip():
+                    i += 1
+                else:
+                    break
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(TaskList(items=items))
+            continue
+
+        # Heading
+        hm = _HEADING_RE.match(line)
+        if hm:
+            level = len(hm.group(1))
+            heading = hm.group(2).strip()
+            current_section = Section(level=level, heading=heading)
+            sections.append(current_section)
+            i += 1
+            continue
+
+        # Standalone image.  Resolve relative paths while the Markdown file's
+        # directory is still available; renderers should not depend on cwd.
+        image_match = _IMAGE_RE.fullmatch(line.strip())
+        if image_match:
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(ImageBlock(
+                path=_resolve_image_path(
+                    _image_match_path(image_match), base_dir
+                ),
+                alt=image_match.group(1).strip(),
+            ))
+            i += 1
+            continue
+
+        # Obsidian wikilink image: ![[path]] or ![[path|width]] or ![[path|widthxheight]]
+        wikilink_block = _parse_wikilink_image(line, base_dir)
+        if wikilink_block is not None:
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(wikilink_block)
+            i += 1
+            continue
+
+        # Display math block: $$...$$
+        if line.strip() == "$$":
+            math_lines = []
+            i += 1
+            while i < len(lines) and lines[i].strip() != "$$":
+                math_lines.append(lines[i])
+                i += 1
+            if i >= len(lines):
+                # Unterminated $$: treat opening $$ as literal text, not a block
+                current_section = _ensure_section(current_section, sections)
+                current_section.elements.append(Paragraph(spans=[Span(text="$$")]))
+                for ml in math_lines:
+                    current_section.elements.append(Paragraph(spans=_parse_inline(ml)))
+                continue
+            i += 1  # skip closing $$
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(MathBlock(latex="\n".join(math_lines)))
+            continue
+
+        # Single-line display math: $$ ... $$ on one line
+        single_math = re.match(r"^\$\$(.+)\$\$\s*$", line.strip())
+        if single_math:
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(MathBlock(latex=single_math.group(1).strip()))
+            i += 1
+            continue
+
+        # Fenced code block
+        if line.strip().startswith("```"):
+            language = line.strip()[3:].strip()
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            i += 1  # skip closing ```
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(
+                CodeBlock(code="\n".join(code_lines), language=language)
+            )
+            continue
+
+        # Blockquote
+        if line.startswith(">"):
+            quote_lines = []
+            while i < len(lines) and lines[i].startswith(">"):
+                quote_lines.append(lines[i][1:].strip())
+                i += 1
+            current_section = _ensure_section(current_section, sections)
+            paras = [Paragraph(spans=_parse_inline(ql)) for ql in quote_lines if ql]
+            current_section.elements.append(BlockQuote(paragraphs=paras))
+            continue
+
+        # Table
+        if _is_table_row(line):
+            table_lines = []
+            while i < len(lines) and _is_table_row(lines[i]):
+                table_lines.append(lines[i])
+                i += 1
+            if len(table_lines) < 2:
+                # a lone pipe-prefixed line is a paragraph, not a table
+                current_section = _ensure_section(current_section, sections)
+                current_section.elements.append(
+                    Paragraph(spans=_parse_inline(table_lines[0].strip()))
+                )
+            else:
+                _parse_table_block(table_lines, current_section, sections)
+            continue
+
+        # Unordered list
+        ulm = _UL_RE.match(line)
+        if ulm:
+            items = []
+            while i < len(lines):
+                ulm2 = _UL_RE.match(lines[i])
+                if ulm2:
+                    items.append(_parse_inline(ulm2.group(1).strip()))
+                    i += 1
+                elif _NESTED_UL_RE.match(lines[i]):
+                    # ponytail: ListBlock is flat; nested items are flattened
+                    items.append(
+                        _parse_inline(_NESTED_UL_RE.match(lines[i]).group(2).strip())
+                    )
+                    i += 1
+                elif not lines[i].strip():
+                    i += 1
+                else:
+                    break
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(ListBlock(items=items, ordered=False))
+            continue
+
+        # Ordered list
+        olm = _OL_RE.match(line)
+        if olm:
+            items = []
+            while i < len(lines):
+                olm2 = _OL_RE.match(lines[i])
+                if olm2:
+                    items.append(_parse_inline(olm2.group(1).strip()))
+                    i += 1
+                elif _NESTED_OL_RE.match(lines[i]):
+                    # ponytail: ListBlock is flat; nested items are flattened
+                    items.append(
+                        _parse_inline(_NESTED_OL_RE.match(lines[i]).group(2).strip())
+                    )
+                    i += 1
+                elif not lines[i].strip():
+                    i += 1
+                else:
+                    break
+            current_section = _ensure_section(current_section, sections)
+            current_section.elements.append(ListBlock(items=items, ordered=True))
+            continue
+
+        # Regular paragraph
+        para_lines = [line]
+        i += 1
+        while i < len(lines) and lines[i].strip() and not _is_block_start(lines[i]):
+            para_lines.append(lines[i])
+            i += 1
+        para_text = " ".join(pl.strip() for pl in para_lines)
+        spans = _parse_inline(para_text)
+        current_section = _ensure_section(current_section, sections)
+        current_section.elements.append(Paragraph(spans=spans))
+
+
+    return sections, current_section
+
+
+def parse_markdown(md_text: str, base_dir: str = "", longform: bool = False) -> StructuredDocument:
+    """Parse Markdown text into a StructuredDocument.
+
+    Args:
+        md_text: Raw Markdown string.
+        base_dir: Directory for resolving relative image paths.
+        longform: If True, use the long-form semantic parser that recognises
+            block directives, restricted frontmatter, abstract/keywords/etc.
+            If False (default), legacy behaviour is preserved exactly.
+
+    Returns:
+        A StructuredDocument ready for rendering.
+    """
+    if not longform:
+        return _parse_legacy(md_text, base_dir=base_dir)
+    return _parse_longform(md_text, base_dir=base_dir)
+
+
+def parse(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Legacy alias for parse_markdown(..., longform=False)."""
+    return parse_markdown(md_text, base_dir=base_dir, longform=False)
+
+
+def _parse_legacy(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Legacy parser path — unchanged behaviour for existing callers."""
+    lines = md_text.split("\n")
+    doc = StructuredDocument()
+
+    # --- YAML frontmatter ---
+    if lines and lines[0].strip() == "---":
+        end_idx = 1
+        while end_idx < len(lines) and lines[end_idx].strip() != "---":
+            end_idx += 1
+        if end_idx < len(lines):
+            fm_lines = lines[1:end_idx]
+            if any(re.match(r"^\s*[\w.-]+\s*:\s*\S", l) for l in fm_lines):
+                _parse_frontmatter(fm_lines, doc)
+                lines = lines[end_idx + 1:]
+
+    if not doc.title:
+        doc.title = _detect_first_h1(lines)
+
+    sections, _ = _parse_block_lines(lines, base_dir=base_dir)
+
+    if not doc.title and sections and sections[0].has_heading:
+        doc.title = sections[0].heading
+
+    doc.sections = sections
+    return doc
+
+
+def _parse_longform(md_text: str, base_dir: str = "") -> StructuredDocument:
+    """Long-form parser path with block directives and restricted frontmatter."""
+    return parse_longform(
+        md_text,
+        base_dir,
+        _parse_inline,
+        _parse_block_lines,
+        _detect_first_h1,
+    )
+
+
+def _ensure_section(current: Optional[Section], sections: List[Section]) -> Section:
+    """Ensure there's a current section; create one if not."""
+    if current is None:
+        current = Section(level=0, heading="")
+        sections.append(current)
+    return current
+
+
+def _detect_alignments(separator_line: str) -> list:
+    cells = [c.strip() for c in separator_line.strip().strip("|").split("|")]
+    alignments = []
+    for cell in cells:
+        left = cell.startswith(":")
+        right = cell.endswith(":")
+        if left and right:
+            alignments.append("center")
+        elif right:
+            alignments.append("right")
+        else:
+            alignments.append("left")
+    return alignments
+def _is_separator_cell(cell: str) -> bool:
+    return bool(re.match(r"^[\-\s:]+\+?$", cell))
+
+
+_BLOCK_STARTS = {"#", ">", "|", "```", "---", "***", "___", "$$"}
+
+
+def _is_block_start(line: str) -> bool:
+    s = line.strip()
+    if not s:
+        return False
+    if s == "$$":
+        return True
+    if _IMAGE_RE.fullmatch(s):
+        return True
+    if _WIKILINK_IMAGE_RE.match(s):
+        return True
+    for prefix in _BLOCK_STARTS:
+        if s.startswith(prefix):
+            return True
+    # list markers require whitespace after the marker, so continuation
+    # lines like "-5 percent" or "*emphasis*" stay in the paragraph
+    return _UL_RE.match(s) is not None or _OL_RE.match(s) is not None
+
+
+
+def _parse_table_block(table_lines: List[str], current: Optional[Section], sections: List[Section]):
+    if len(table_lines) < 2:
+        return
+    rows = [_parse_table_row(tl) for tl in table_lines]
+    sep_idx = None
+    alignments = []
+    for idx, row in enumerate(rows):
+        if all(_is_separator_cell(c) for c in row):
+            sep_idx = idx
+            alignments = _detect_alignments(table_lines[idx])
+            break
+    if sep_idx == 0:
+        headers, data = [], rows[1:]
+    elif sep_idx == 1:
+        headers, data = rows[0], rows[2:]
+    else:
+        # a separator beyond row 2 is not a markdown table separator;
+        # treat rows as content so nothing is silently dropped
+        headers = rows[0] if rows else []
+        data = [
+            row for row in rows[1:]
+            if not all(_is_separator_cell(c) for c in row)
+        ]
+        alignments = []
+    # pad ragged rows: renderers and the macOS plan validators require
+    # rectangular grids, and Word pads short rows too
+    width = max((len(r) for r in [headers, *data]), default=0)
+    if headers:
+        headers = headers + [""] * (width - len(headers))
+    data = [row + [""] * (width - len(row)) for row in data]
+    current = _ensure_section(current, sections)
+    current.elements.append(TableBlock(headers=headers, rows=data, alignments=alignments))
+def _parse_frontmatter(lines: List[str], doc: StructuredDocument):
+    """Parse YAML frontmatter lines into doc.metadata."""
+    for line in lines:
+        line = line.strip()
+        if ":" in line:
+            key, _, value = line.partition(":")
+            key = key.strip()
+            value = value.strip().strip("'").strip('"')
+            if key.lower() == "title":
+                doc.title = value
+            else:
+                doc.metadata[key] = value
+
+
+# ---------------------------------------------------------------------------
+# Convenience
+# ---------------------------------------------------------------------------
+
+
+def parse_file(md_path: str) -> StructuredDocument:
+    """Parse a Markdown file into a StructuredDocument.
+
+    Args:
+        md_path: Path to the .md file.
+
+    Returns:
+        StructuredDocument.
+    """
+    base_dir = os.path.dirname(os.path.abspath(md_path))
+    with open(md_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    return parse(text, base_dir=base_dir)

@@ -109,9 +109,38 @@ def test_rejects_linked_resources_other_than_hyperlinks(tmp_path, target, mode):
 
 @pytest.mark.parametrize('bad_name', ['../escape.xml', '/absolute.xml', 'xl/../escape.xml', 'xl\\opaque.xml'])
 def test_rejects_noncanonical_zip_names(tmp_path, bad_name):
-    path = package(tmp_path / 'normal.xlsx', extra_parts={bad_name: '<x/>'})
+    path = package(tmp_path / 'normal.xlsx')
+    # ZipInfo normalizes backslashes on Windows when constructing a writer.
+    # Preserve the deliberately malformed raw member rather than testing a
+    # silently repaired archive on that host.
+    info = zipfile.ZipInfo(bad_name)
+    info.filename = bad_name
+    with zipfile.ZipFile(path, 'a') as archive:
+        archive.writestr(info, '<x/>')
     with pytest.raises(ValueError):
         validator().validate_native_input(path, 'spreadsheet')
+
+
+@pytest.mark.parametrize('separator', ['/', '\\'])
+@pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+    import os
+    from types import SimpleNamespace
+
+    path = package(tmp_path / 'raw-name.xlsx')
+    info = zipfile.ZipInfo(raw_name)
+    info.filename = raw_name
+    with zipfile.ZipFile(path, 'a') as archive:
+        archive.writestr(info, '<x/>')
+    before = path.read_bytes()
+    assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+    # Exercise the real reader's normalization independently of the test host.
+    monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+    with zipfile.ZipFile(path) as archive:
+        assert archive.infolist()[-1].orig_filename == raw_name
+    with pytest.raises(ValueError, match='Unsupported or unsafe'):
+        validator().validate_native_input(path, 'spreadsheet')
+    assert path.read_bytes() == before
 
 
 def test_rejects_duplicate_members_and_xml_entities(tmp_path):

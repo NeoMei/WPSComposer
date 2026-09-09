@@ -1,0 +1,119 @@
+{
+  "all_stable": true,
+  "source_comparisons": [
+    {
+      "set": "run",
+      "path": "fixtures/microsoft_parity/macos_word_heading_feasibility.py",
+      "expected": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+      "live": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+      "retained": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "tests/msoffice/test_macos_word_heading_feasibility.py",
+      "expected": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+      "live": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+      "retained": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_session.py",
+      "expected": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "live": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "retained": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_script.py",
+      "expected": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+      "live": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+      "retained": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_runtime.py",
+      "expected": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+      "live": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+      "retained": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py",
+      "expected": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "live": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "retained": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "fixtures/microsoft_parity/macos_word_paragraph_rule.py",
+      "expected": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+      "live": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+      "retained": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "fixtures/microsoft_parity/macos_word_recovery.py",
+      "expected": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+      "live": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+      "retained": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "fixtures/microsoft_parity/macos_word_fields.py",
+      "expected": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+      "live": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+      "retained": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+      "stable": true
+    },
+    {
+      "set": "run",
+      "path": "skills/WPSComposer/scripts/writer.py",
+      "expected": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+      "live": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+      "retained": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+      "stable": true
+    },
+    {
+      "set": "preflight",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_session.py",
+      "expected": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "live": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "retained": "df56137d38d793c878659144676b7b1d23ae3f16b34adbee2304ee06399171d9",
+      "stable": true
+    },
+    {
+      "set": "preflight",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_fields.py",
+      "expected": "5785fa66ac4aa24276280996f46286b685626f6c1dd4ade7fc840bfde6b052f4",
+      "live": "5785fa66ac4aa24276280996f46286b685626f6c1dd4ade7fc840bfde6b052f4",
+      "retained": "5785fa66ac4aa24276280996f46286b685626f6c1dd4ade7fc840bfde6b052f4",
+      "stable": true
+    },
+    {
+      "set": "preflight",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py",
+      "expected": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "live": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "retained": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+      "stable": true
+    },
+    {
+      "set": "preflight",
+      "path": "skills/WPSComposer/scripts/msoffice/macos_word_numbering.py",
+      "expected": "2048cdf59b8f86a50ff7db74f5e9c5ad0c7e8f39d01f31ec11d69966e52ed9ea",
+      "live": "2048cdf59b8f86a50ff7db74f5e9c5ad0c7e8f39d01f31ec11d69966e52ed9ea",
+      "retained": "2048cdf59b8f86a50ff7db74f5e9c5ad0c7e8f39d01f31ec11d69966e52ed9ea",
+      "stable": true
+    }
+  ],
+  "independent_final_inventory": [],
+  "report_sha256": "646ad80747b41995f9fe00d8a25523c0091a45e0159748f4b1145da9403975e5"
+}

@@ -1,0 +1,47 @@
+✖ express: bracket comma arrays obey configured limits (0.990417ms)
+✔ express: parsed constructor.isBuffer is data when serialized (0.445667ms)
+✖ body-parser: bracket comma arrays obey configured limits (0.103209ms)
+✔ body-parser: parsed constructor.isBuffer is data when serialized (0.259834ms)
+✔ Express query and urlencoded requests preserve nested fields, arrays and Unicode (31.214375ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.62875
+
+✖ failing tests:
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:16:3
+✖ express: bracket comma arrays obey configured limits (0.990417ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError): a%5B%5D=1%2C2%2C3%2C4
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:19:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:16:3
+✖ body-parser: bracket comma arrays obey configured limits (0.103209ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError): a%5B%5D=1%2C2%2C3%2C4
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:19:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

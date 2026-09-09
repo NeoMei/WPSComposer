@@ -54,7 +54,8 @@ def test_probe_compiler_uses_exact_bound_objects_and_no_global_commands(tmp_path
     assert 'set alternative text of floatingPicture' not in source
     assert "wrap type of wrap format" in source
     assert "中文😀" in source
-    assert str(image) in source
+    from skills.WPSComposer.scripts.msoffice.macos_script import apple_string
+    assert apple_string(str(image)) in source
     lowered = source.lower()
     for forbidden in ("quit", "kill", "clipboard", "normal template", "macro security"):
         assert forbidden not in lowered

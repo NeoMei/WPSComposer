@@ -1,0 +1,9 @@
+{
+  "verdict": "PASS_SCOPED",
+  "report_sha256": "cc64fcd4741dde305c0781ae2c515379b1303231d117627a08922a93d98cc313",
+  "sources_verified_live_and_retained": 125,
+  "artifact_hashes_verified": 3,
+  "visual_review": "One PDF page inspected. Right-aligned formula paragraphs, chapter/global fields and REF values readable; emoji/CJK affixes retained, no clipping.",
+  "ui_evidence": "../../ui-word-numbering-01/report.json",
+  "scope": "add_equation_number_native text plus native numbering. No OMath or full direct-method parity."
+}

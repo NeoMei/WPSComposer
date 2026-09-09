@@ -1,0 +1,314 @@
+use framework "Foundation"
+use scripting additions
+on jsonRows(rows)
+  set dataValue to current application's NSJSONSerialization's dataWithJSONObject:rows options:0 |error|:(missing value)
+  return (current application's NSString's alloc()'s initWithData:dataValue encoding:4) as text
+end jsonRows
+on enumIndex(v, choices)
+  repeat with i from 1 to count choices
+    if v is item i of choices then return i - 1
+  end repeat
+  return -1
+end enumIndex
+with timeout of 60 seconds
+tell application "/Applications/Microsoft Word.app"
+set nativeRows to {}
+set boundDoc to document "document-24b9eeeefdfa401d98aeaf110636b092.docx"
+set boundWindow to active window of boundDoc
+if (posix full name of boundDoc as text) is not "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx" then error "WPSC_STALE_DOCUMENT"
+set qualitySelection to selection of boundWindow
+if not ((current application's NSString's stringWithString:(posix full name of boundDoc as text))'s isEqualToString:("/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx")) then error "WPSC_STALE_DOCUMENT"
+if not ((current application's NSString's stringWithString:(posix full name of document of boundWindow as text))'s isEqualToString:("/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx")) then error "WPSC_STALE_DOCUMENT"
+if not ((current application's NSString's stringWithString:(posix full name of document of qualitySelection as text))'s isEqualToString:("/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx")) then error "WPSC_STALE_DOCUMENT"
+set qualityPoint to 111
+set qualityDocEnd to end of content of text object of boundDoc
+if qualityDocEnd > 10000 then error "WPSC_QUALITY_SIZE_UNVERIFIED"
+if qualityPoint <= 0 or qualityPoint >= qualityDocEnd - 1 then error "WPSC_QUALITY_POSITION_UNVERIFIED"
+if (count shapes of boundDoc) is not 0 or (count inline shapes of boundDoc) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+set qualityTarget to create range boundDoc start qualityPoint end qualityPoint
+if start of content of qualityTarget is not qualityPoint or end of content of qualityTarget is not qualityPoint then error "WPSC_QUALITY_RANGE_INVALID"
+set qualityParagraph to text object of paragraph 1 of qualityTarget
+if start of content of qualityParagraph is not qualityPoint then error "WPSC_QUALITY_POSITION_UNVERIFIED"
+repeat with qt in tables of boundDoc
+if (start of content of text object of qt) <= qualityPoint + 1 and (end of content of text object of qt) >= qualityPoint - 1 then error "WPSC_QUALITY_TABLE_POSITION_UNVERIFIED"
+end repeat
+repeat with qf in fields of boundDoc
+if (start of content of field code of qf) <= qualityPoint and (end of content of result range of qf) >= qualityPoint then error "WPSC_QUALITY_FIELD_POSITION_UNVERIFIED"
+end repeat
+repeat with qb in bookmarks of boundDoc
+if start of bookmark of qb < qualityPoint and end of bookmark of qb > qualityPoint then error "WPSC_QUALITY_CROSSING_BOOKMARK_UNVERIFIED"
+end repeat
+set qualityDelta to 0
+set qe to end of content of text object of boundDoc
+set qp to create range boundDoc start 0 end qualityPoint
+set qs to create range boundDoc start (qualityPoint + qualityDelta) end qe
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of qp as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityPrefixHash to text 1 thru 64 of recoveryDigestText
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of qs as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualitySuffixHash to text 1 thru 64 of recoveryDigestText
+set qualityState to {{"quality-state",qe - qualityDelta,qualityPrefixHash,qualitySuffixHash}}
+set qualityLayout to {}
+repeat with qi from 1 to count sections of boundDoc
+set qsection to section qi of boundDoc
+set qsetup to page setup of qsection
+set end of qualityLayout to {"section",qi as integer,orientation of qsetup as text,page width of qsetup,page height of qsetup,top margin of qsetup,bottom margin of qsetup,left margin of qsetup,right margin of qsetup,header distance of qsetup,footer distance of qsetup,gutter of qsetup,count text columns of qsetup}
+repeat with qindex in {header footer primary,header footer first page,header footer even pages}
+set qheader to get header qsection index qindex
+set qfooter to get footer qsection index qindex
+repeat with qpart in {qheader,qfooter}
+if count shapes of qpart is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+set qr to text object of qpart
+set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as text}
+repeat with qfield in fields of qr
+set end of qualityLayout to {"page-field",field type of qfield as text,content of field code of qfield as text,content of result range of qfield as text,start of content of field code of qfield,end of content of field code of qfield,start of content of result range of qfield,end of content of result range of qfield,locked of qfield}
+end repeat
+end repeat
+end repeat
+end repeat
+repeat with qi from 1 to count list templates of boundDoc
+set qtemplate to list template qi of boundDoc
+set end of qualityLayout to {"list-template",qi as integer,name of qtemplate as text,outline numbered of qtemplate}
+repeat with qlevel in list levels of qtemplate
+set end of qualityLayout to {"list-level",entry_index of qlevel,linked style of qlevel as text,number format of qlevel as text,number style of qlevel as text,start at of qlevel,reset on higher of qlevel,number position of qlevel,text position of qlevel,tab position of qlevel,trailing character of qlevel as text,list level alignment of qlevel as text}
+end repeat
+end repeat
+repeat with qstyle in Word styles of boundDoc
+set end of qualityLayout to {"style",name local of qstyle as text,description of qstyle as text,automatically update of qstyle}
+end repeat
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(my jsonRows(qualityLayout)))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityLayoutHash to text 1 thru 64 of recoveryDigestText
+set end of qualityState to {"layout",qualityLayoutHash}
+repeat with qi from 1 to count paragraphs of boundDoc
+set qr to text object of paragraph qi of boundDoc
+set qa to start of content of qr
+set qz to end of content of qr
+if qualityDelta is 0 or qa < qualityPoint or qz > qualityPoint + qualityDelta then
+if qualityDelta > 0 and qa >= qualityPoint and qa < qualityPoint + qualityDelta and qz > qualityPoint + qualityDelta then
+set qa to qualityPoint + qualityDelta
+set qr to create range boundDoc start qa end qz
+end if
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityTextHash to text 1 thru 64 of recoveryDigestText
+set qpf to paragraph format of qr
+set qualityFormats to {{name local of style of qr as text,first line indent of qpf,paragraph format left indent of qpf,paragraph format right indent of qpf,space before of qpf,space after of qpf,line spacing of qpf,line spacing rule of qpf as text,alignment of qpf as text,keep with next of qpf,keep together of qpf,widow control of qpf,outline level of qpf as text,character unit first line indent of qpf,list type of list format of qr as text,list level number of list format of qr,list value of list format of qr,list string of list format of qr as text}}
+repeat with qc from qa to qz - 1
+set qcr to create range boundDoc start qc end (qc + 1)
+set qcf to font object of qcr
+set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,background pattern color of shading of qcr}
+end repeat
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(my jsonRows(qualityFormats)))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityFormatHash to text 1 thru 64 of recoveryDigestText
+if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+set end of qualityState to {"paragraph",qa,qz,qualityTextHash,qualityFormatHash}
+end if
+end repeat
+repeat with qi from 1 to count fields of boundDoc
+set qf to field qi of boundDoc
+set qa to start of content of field code of qf
+set qz to end of content of field code of qf
+set qra to start of content of result range of qf
+set qrz to end of content of result range of qf
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of field code of qf as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityCodeHash to text 1 thru 64 of recoveryDigestText
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of result range of qf as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityResultHash to text 1 thru 64 of recoveryDigestText
+if qa >= qualityPoint + qualityDelta then
+set qa to qa - qualityDelta
+set qz to qz - qualityDelta
+set qra to qra - qualityDelta
+set qrz to qrz - qualityDelta
+end if
+set end of qualityState to {"field",qi as integer,field type of qf as text,qa,qz,qra,qrz,qualityCodeHash,qualityResultHash,locked of qf}
+end repeat
+set qualityOldOrdinal to 0
+repeat with qi from 1 to count tables of boundDoc
+set qt to table qi of boundDoc
+set qa to start of content of text object of qt
+set qz to end of content of text object of qt
+if qualityDelta is 0 or qa is not qualityPoint or qz is not qualityPoint + qualityDelta then
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of text object of qt as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityTextHash to text 1 thru 64 of recoveryDigestText
+if qa >= qualityPoint + qualityDelta then
+set qa to qa - qualityDelta
+set qz to qz - qualityDelta
+end if
+set qualityOldOrdinal to qualityOldOrdinal + 1
+set qualityRowFlags to {}
+repeat with qrow in rows of qt
+set end of qualityRowFlags to allow break across pages of qrow
+end repeat
+set end of qualityState to {"table",qualityOldOrdinal,qa,qz,count rows of qt,count columns of qt,qualityTextHash,qualityRowFlags}
+end if
+end repeat
+repeat with qi from 1 to count bookmarks of boundDoc
+set qb to bookmark qi of boundDoc
+set qa to start of bookmark of qb
+set qz to end of bookmark of qb
+set qhashStart to qa
+if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+set qr to create range boundDoc start qhashStart end qz
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set qualityTextHash to text 1 thru 64 of recoveryDigestText
+if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+end repeat
+set end of qualityState to {"quality-state-end"}
+set nativeRows to {{"quality-target","/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tmtm7mzf/document-24b9eeeefdfa401d98aeaf110636b092.docx",qualityPoint,qualityDocEnd},{"preimage",qualityState}}
+end tell
+end timeout
+return my jsonRows({"WPSCOMPOSER_WORD_SESSION_OK", nativeRows})

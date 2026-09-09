@@ -1,0 +1,75 @@
+✖ express: bracket comma arrays obey configured limits (1.483792ms)
+✖ express: parsed constructor.isBuffer is data when serialized (0.329875ms)
+✖ body-parser: bracket comma arrays obey configured limits (0.297125ms)
+✖ body-parser: parsed constructor.isBuffer is data when serialized (0.117916ms)
+✔ Express query and urlencoded requests preserve nested fields, arrays and Unicode (42.077ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 87.785333
+
+✖ failing tests:
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:16:3
+✖ express: bracket comma arrays obey configured limits (1.483792ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError): a[]=1,2,3,4
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:19:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:24:3
+✖ express: parsed constructor.isBuffer is data when serialized (0.329875ms)
+  TypeError: obj.constructor.isBuffer is not a function
+      at Object.isBuffer (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/utils.js:332:78)
+      at stringify (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/stringify.js:127:45)
+      at module.exports [as stringify] (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/stringify.js:327:27)
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:29:23)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:16:3
+✖ body-parser: bracket comma arrays obey configured limits (0.297125ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError): a[]=1,2,3,4
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:19:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/macos_probe/qs_dependency_regressions.cjs:24:3
+✖ body-parser: parsed constructor.isBuffer is data when serialized (0.117916ms)
+  TypeError: obj.constructor.isBuffer is not a function
+      at Object.isBuffer (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/utils.js:332:78)
+      at stringify (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/stringify.js:127:45)
+      at module.exports [as stringify] (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/macos/wps-jsapi-probe/node_modules/qs/lib/stringify.js:327:27)
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/macos_probe/qs_dependency_regressions.cjs:29:23)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)

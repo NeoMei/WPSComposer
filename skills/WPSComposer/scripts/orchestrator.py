@@ -162,7 +162,8 @@ def generate(
     # Determine output path
     if output is None:
         output = f"{base_name}.{format}"
-    output_path = Path(output).expanduser().resolve()
+    # Windows Python 3.9 may leave missing relative paths unresolved.
+    output_path = Path(output).expanduser().absolute().resolve()
     if output_path.suffix.lower() != f".{format}":
         raise ValueError(
             f"Output extension must match requested format '.{format}'."

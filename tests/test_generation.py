@@ -634,6 +634,28 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     assert calls == [((tmp_path / "document.pptx").resolve(), 600, False)]
 
 
+
+def test_generate_default_output_survives_legacy_missing_path_resolution(monkeypatch, tmp_path):
+    """Python 3.9 Windows resolve can leave a missing relative path unchanged."""
+    class LegacyMissingPath(type(tmp_path)):
+        def resolve(self, strict=False):
+            if not self.is_absolute() and not self.exists():
+                return self
+            return super().resolve(strict=strict)
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(orchestrator, "Path", LegacyMissingPath)
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
+    outputs = []
+    monkeypatch.setattr(
+        orchestrator, "generate_macos",
+        lambda doc, format_name, output, preset, **kwargs: outputs.append(output) or output,
+    )
+    result = orchestrator.generate("# Report", format="pptx", source_is_text=True)
+    expected = tmp_path / "document.pptx"
+    assert result == str(expected)
+    assert outputs == [expected]
+
 def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
     output = tmp_path / "report.docx"
     output.write_bytes(b"keep")

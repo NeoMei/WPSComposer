@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "macos/wps-jsapi-probe/package.json": "4d605b579d068cdd84cbeec1006c695494a28b5412d25f6caf760926330ab3d8",
+    "macos/wps-jsapi-probe/package-lock.json": "4a0b46e5b7818906573a58fed894bdd3eb3b4d8aa915801cdeabb4d0351e4f70",
+    "tests/macos_probe/test_runtime.py": "f0d90c943dd351d2c9128f1014f594a5c031d21f8d063ff943f1c03cec6f41c0",
+    "tests/macos_probe/qs_dependency_regressions.cjs": "508de54b044f593a57e4094dd1e9c441f0eee596871b41de6d7dc28011e0a695",
+    "tests/macos_probe/test_qs_dependency.py": "49815ab614ed336edd0c5f492a63cc6260d9fba4679f58dbada3b01a3328f7a1"
+  },
+  "aggregate_sha256": "35e93eb12e07deeadfaf51ca9efa3799f7441256e0a4671a06e1fc61e1bfa626",
+  "timestamp_utc": "2026-09-09T09:32:38.269076+00:00"
+}

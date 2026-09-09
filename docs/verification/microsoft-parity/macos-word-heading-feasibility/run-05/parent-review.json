@@ -1,0 +1,16 @@
+{
+  "verdict": "FAIL_RETAINED",
+  "report_sha256": "646ad80747b41995f9fe00d8a25523c0091a45e0159748f4b1145da9403975e5",
+  "retained_source_hashes_verified": 10,
+  "native_checks": {
+    "seed": true,
+    "source_definition_unique": true,
+    "formatted_text_style_redefinition": true,
+    "source_properties_preserved": true,
+    "complete_font_appearance_equal": false,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "scope": "Complete font appearance check failed after acknowledged formatted-text style redefinition. No subsequent XML/independence challenge/PDF/reopen acceptance inferred.",
+  "inventory_after_sentinel_close": []
+}

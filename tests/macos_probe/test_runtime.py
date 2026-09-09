@@ -283,7 +283,7 @@ def test_probe_toolchain_is_pinned_and_audit_override_is_reviewed():
     )
     assert package["dependencies"] == {"wpsjs": "2.2.3"}
     assert package["devDependencies"] == {"wps-jsapi-declare": "2.2.0"}
-    assert package["overrides"] == {"tmp": "0.2.7"}
+    assert package["overrides"] == {"tmp": "0.2.7", "qs": "6.16.0"}
 
 
 def test_read_configured_node_uses_installer_runtime_file(tmp_path: Path):

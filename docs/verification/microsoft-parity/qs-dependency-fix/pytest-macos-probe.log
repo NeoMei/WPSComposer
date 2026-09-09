@@ -1,0 +1,28 @@
+........................................................................ [ 15%]
+........................................................................ [ 30%]
+........................................................................ [ 46%]
+........................................................................ [ 61%]
+........................................................................ [ 76%]
+......................................................F................. [ 92%]
+.....................................                                    [100%]
+=================================== FAILURES ===================================
+________ test_probe_toolchain_is_pinned_and_audit_override_is_reviewed _________
+
+    def test_probe_toolchain_is_pinned_and_audit_override_is_reviewed():
+        package = json.loads(
+            Path("macos/wps-jsapi-probe/package.json").read_text(encoding="utf-8")
+        )
+        assert package["dependencies"] == {"wpsjs": "2.2.3"}
+        assert package["devDependencies"] == {"wps-jsapi-declare": "2.2.0"}
+>       assert package["overrides"] == {"tmp": "0.2.7"}
+E       AssertionError: assert {'qs': '6.16....tmp': '0.2.7'} == {'tmp': '0.2.7'}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Left contains 1 more item:
+E         {'qs': '6.16.0'}
+E         Use -v to get more diff
+
+tests/macos_probe/test_runtime.py:286: AssertionError
+=========================== short test summary info ============================
+FAILED tests/macos_probe/test_runtime.py::test_probe_toolchain_is_pinned_and_audit_override_is_reviewed
+1 failed, 468 passed in 67.21s (0:01:07)

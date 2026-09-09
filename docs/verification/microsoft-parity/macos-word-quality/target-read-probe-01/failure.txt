@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/target-read-probe-01/probe.py", line 72, in <module>
+    if rows!=expected:raise RuntimeError('Unexpected typed probe outcome; no further native calls')
+RuntimeError: Unexpected typed probe outcome; no further native calls

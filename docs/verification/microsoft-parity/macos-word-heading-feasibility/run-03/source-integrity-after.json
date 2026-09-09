@@ -1,0 +1,42 @@
+{
+  "fixtures/microsoft_parity/macos_word_heading_feasibility.py": {
+    "live": true,
+    "retained": true
+  },
+  "tests/msoffice/test_macos_word_heading_feasibility.py": {
+    "live": true,
+    "retained": true
+  },
+  "skills/WPSComposer/scripts/msoffice/macos_word_session.py": {
+    "live": true,
+    "retained": true
+  },
+  "skills/WPSComposer/scripts/msoffice/macos_script.py": {
+    "live": true,
+    "retained": true
+  },
+  "skills/WPSComposer/scripts/msoffice/macos_runtime.py": {
+    "live": true,
+    "retained": true
+  },
+  "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": {
+    "live": true,
+    "retained": true
+  },
+  "fixtures/microsoft_parity/macos_word_paragraph_rule.py": {
+    "live": true,
+    "retained": true
+  },
+  "fixtures/microsoft_parity/macos_word_recovery.py": {
+    "live": true,
+    "retained": true
+  },
+  "fixtures/microsoft_parity/macos_word_fields.py": {
+    "live": true,
+    "retained": true
+  },
+  "skills/WPSComposer/scripts/writer.py": {
+    "live": true,
+    "retained": true
+  }
+}

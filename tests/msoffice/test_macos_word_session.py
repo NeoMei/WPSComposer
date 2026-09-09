@@ -639,3 +639,157 @@ def test_plain_single_paragraph_replacement_keeps_stable_ids(host):
     with m.MacWordSession.open_document(source) as session:
         session.apply_format_patch('paragraph:1',text='Same paragraph')
         assert not session._structural_changed
+
+
+@pytest.mark.parametrize('native', ['success', 'ordinary', 'native-timeout', 'timeout', 'cancel'])
+@pytest.mark.parametrize('lost', ['log', 'quarantine', 'both'])
+def test_submitted_diagnostic_failure_retains_original_outcome_and_blocks_reentry(host, monkeypatch, native, lost):
+    """Disk failures must not hide the primary native error or allow another run."""
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    session._observed_field_topology = (('before', 1),)
+    cancelled = KeyboardInterrupt('original cancellation')
+    calls = []
+    original_write = Path.write_text
+
+    def write(path, value, **kwargs):
+        if lost in ('log', 'both') and path.suffix == '.log':
+            raise OSError('injected diagnostic disk full')
+        return original_write(path, value, **kwargs)
+
+    def quarantine(detail):
+        raise OSError('injected quarantine disk full')
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if native == 'cancel':
+            raise cancelled
+        if native == 'timeout':
+            raise subprocess.TimeoutExpired(command, 1, output=b'partial output')
+        if native in ('ordinary', 'native-timeout'):
+            code = -2700 if native == 'ordinary' else -1712
+            return subprocess.CompletedProcess(command, 1, '', f'execution error: native ({code})')
+        return subprocess.CompletedProcess(command, 0, json.dumps([m._COMPLETION_MARKER, [['ok']]]), '')
+
+    monkeypatch.setattr(Path, 'write_text', write)
+    monkeypatch.setattr(m.subprocess, 'run', run)
+    if lost in ('quarantine', 'both'):
+        monkeypatch.setattr(session.lock, 'quarantine', quarantine)
+    # A normal result does not need quarantine unless its diagnostic fails.
+    if native == 'success' and lost == 'quarantine':
+        assert session._execute(['set nativeRows to {{"ok"}}']) == [['ok']]
+        assert not session._quarantined
+        return
+    error_type = KeyboardInterrupt if native == 'cancel' else m.NativeWordTimeoutError if native in ('timeout', 'native-timeout') else m.NativeWordError
+    with pytest.raises(error_type) as observed:
+        session._execute(['set nativeRows to {{"ok"}}'])
+    if native == 'cancel':
+        assert observed.value is cancelled
+    else:
+        if native == 'ordinary':
+            assert observed.value.code == 'NATIVE_WORD_EXECUTION_FAILED'
+        if lost in ('log', 'both'):
+            assert observed.value.diagnostic_path is None
+        else:
+            assert Path(observed.value.diagnostic_path).is_file()
+        if lost in ('quarantine', 'both'):
+            assert observed.value.quarantine_path is None
+    if native == 'ordinary' and lost == 'quarantine':
+        # A fully recorded ordinary error retains its existing nonquarantine
+        # classification; this path never attempts the injected lock write.
+        assert not session._quarantined and session._retain_evidence
+        return
+    assert session._quarantined and session._retain_evidence
+    assert session._observed_field_topology == (('before', 1),)
+    assert len(calls) == 1
+    with pytest.raises(m.NativeWordError) as blocked:
+        session._execute(['set nativeRows to {{"must not launch"}}'])
+    assert blocked.value.code == 'NATIVE_WORD_QUARANTINED'
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize('failure', ['script', 'chmod', 'deadline'])
+def test_transport_diagnostic_fix_does_not_turn_prelaunch_failure_into_submission(host, monkeypatch, failure):
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    session._observed_field_topology = (('before', 1),)
+    calls = []
+    original_write = Path.write_text
+
+    def write(path, value, **kwargs):
+        if failure == 'script' and path.suffix == '.applescript':
+            raise OSError('script disk full')
+        return original_write(path, value, **kwargs)
+
+    def chmod(path, mode):
+        raise OSError('chmod failed')
+
+    monkeypatch.setattr(Path, 'write_text', write)
+    monkeypatch.setattr(m.subprocess, 'run', lambda *a, **k: calls.append(a))
+    if failure == 'chmod':
+        monkeypatch.setattr(m.os, 'chmod', chmod)
+    if failure == 'deadline':
+        session._deadline = -1
+    with pytest.raises((OSError, m.NativeWordTimeoutError)):
+        session._execute_topology_mutation(['set nativeRows to {{"ok"}}'])
+    assert not calls and session._observed_field_topology == (('before', 1),)
+    assert session._quarantined is (failure == 'deadline')
+    assert not list(session.staging_root.glob('*.log'))[1:]
+
+
+def test_partial_quarantine_record_is_not_advertised_by_later_retention(host, monkeypatch):
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    path = session.lock.quarantine_path
+    def partial_record(detail):
+        path.write_text('{', encoding='utf-8')
+        raise OSError('partial quarantine write')
+    monkeypatch.setattr(session.lock, 'quarantine', partial_record)
+    session._retain('first failure')
+    session._retain('outer wrapper retains again')
+    assert session._quarantined and path.is_file()
+    assert session._quarantine_location() is None
+
+
+@pytest.mark.parametrize('primary', ['timeout', 'cancel'])
+def test_secondary_evidence_cancellation_cannot_replace_original_native_error(host, monkeypatch, primary):
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    original = KeyboardInterrupt('primary cancellation')
+    def run(*args, **kwargs):
+        if primary == 'cancel':
+            raise original
+        raise subprocess.TimeoutExpired('osascript', 1)
+    def cancelled_evidence(*args, **kwargs):
+        raise SystemExit('secondary diagnostic cancellation')
+    original_write = Path.write_text
+    def write(path, data, **kwargs):
+        if path.suffix == '.log':
+            cancelled_evidence()
+        return original_write(path, data, **kwargs)
+    monkeypatch.setattr(m.subprocess, 'run', run)
+    monkeypatch.setattr(Path, 'write_text', write)
+    monkeypatch.setattr(session.lock, 'quarantine', cancelled_evidence)
+    with pytest.raises(KeyboardInterrupt if primary == 'cancel' else m.NativeWordTimeoutError) as observed:
+        session._execute(['set nativeRows to {{"ok"}}'])
+    if primary == 'cancel':
+        assert observed.value is original
+    else:
+        assert observed.value.diagnostic_path is observed.value.quarantine_path is None
+    assert session._quarantined
+
+
+def test_post_submission_log_failure_invalidates_content_observations(host, monkeypatch):
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    session._observed_field_topology = (('before', 1),)
+    original_write = Path.write_text
+    def write(path, data, **kwargs):
+        if path.suffix == '.log':
+            raise OSError('diagnostic failure')
+        return original_write(path, data, **kwargs)
+    monkeypatch.setattr(Path, 'write_text', write)
+    with pytest.raises(m.NativeWordError):
+        session._execute_topology_mutation(['set nativeRows to {{"ok"}}'])
+    assert session._quarantined and not hasattr(session, '_observed_field_topology')
+    assert not session._field_topology_mutation_pending

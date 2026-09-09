@@ -6,6 +6,7 @@ These tests are pure and do not start WPS or import platform/COM/JSAPI modules.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from dataclasses import replace
@@ -64,6 +65,9 @@ if loaded:
 print("pure")
 """
     env = {"PYTHONPATH": str(project_root)}
+    # Windows Python needs SystemRoot to initialize OS randomness.
+    env.update({key: value for key, value in os.environ.items()
+                if key.upper() == "SYSTEMROOT"})
     result = subprocess.run(
         [sys.executable, "-c", script],
         capture_output=True,

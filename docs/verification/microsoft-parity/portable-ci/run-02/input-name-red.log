@@ -1,0 +1,149 @@
+.....FFFFF                                                               [100%]
+=================================== FAILURES ===================================
+_ test_rejects_raw_member_names_before_zipinfo_normalization[xl\\opaque.xml-\\] _
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1247/test_rejects_raw_member_names_1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a55aaf0>
+separator = '\\', raw_name = 'xl\\opaque.xml'
+
+    @pytest.mark.parametrize('separator', ['/', '\\'])
+    @pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+    def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+        import os
+        from types import SimpleNamespace
+    
+        path = package(tmp_path / 'raw-name.xlsx')
+        info = zipfile.ZipInfo(raw_name)
+        info.filename = raw_name
+        with zipfile.ZipFile(path, 'a') as archive:
+            archive.writestr(info, '<x/>')
+        before = path.read_bytes()
+        assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+        # Exercise the real reader's normalization independently of the test host.
+        monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+        with zipfile.ZipFile(path) as archive:
+            assert archive.infolist()[-1].orig_filename == raw_name
+        with pytest.raises(ValueError, match='Unsupported or unsafe'):
+>           validator().validate_native_input(path, 'spreadsheet')
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/msoffice/test_input_validation.py:142: Failed
+_ test_rejects_raw_member_names_before_zipinfo_normalization[xl/opaque.xml\x00hidden-/] _
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1247/test_rejects_raw_member_names_2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a59ecd0>
+separator = '/', raw_name = 'xl/opaque.xml\x00hidden'
+
+    @pytest.mark.parametrize('separator', ['/', '\\'])
+    @pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+    def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+        import os
+        from types import SimpleNamespace
+    
+        path = package(tmp_path / 'raw-name.xlsx')
+        info = zipfile.ZipInfo(raw_name)
+        info.filename = raw_name
+        with zipfile.ZipFile(path, 'a') as archive:
+            archive.writestr(info, '<x/>')
+        before = path.read_bytes()
+        assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+        # Exercise the real reader's normalization independently of the test host.
+        monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+        with zipfile.ZipFile(path) as archive:
+            assert archive.infolist()[-1].orig_filename == raw_name
+        with pytest.raises(ValueError, match='Unsupported or unsafe'):
+>           validator().validate_native_input(path, 'spreadsheet')
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/msoffice/test_input_validation.py:142: Failed
+_ test_rejects_raw_member_names_before_zipinfo_normalization[xl/opaque.xml\x00hidden-\\] _
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1247/test_rejects_raw_member_names_3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a6226d0>
+separator = '\\', raw_name = 'xl/opaque.xml\x00hidden'
+
+    @pytest.mark.parametrize('separator', ['/', '\\'])
+    @pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+    def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+        import os
+        from types import SimpleNamespace
+    
+        path = package(tmp_path / 'raw-name.xlsx')
+        info = zipfile.ZipInfo(raw_name)
+        info.filename = raw_name
+        with zipfile.ZipFile(path, 'a') as archive:
+            archive.writestr(info, '<x/>')
+        before = path.read_bytes()
+        assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+        # Exercise the real reader's normalization independently of the test host.
+        monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+        with zipfile.ZipFile(path) as archive:
+            assert archive.infolist()[-1].orig_filename == raw_name
+        with pytest.raises(ValueError, match='Unsupported or unsafe'):
+>           validator().validate_native_input(path, 'spreadsheet')
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/msoffice/test_input_validation.py:142: Failed
+_ test_rejects_raw_member_names_before_zipinfo_normalization[unused/\x00hidden-/] _
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1247/test_rejects_raw_member_names_4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a61f9d0>
+separator = '/', raw_name = 'unused/\x00hidden'
+
+    @pytest.mark.parametrize('separator', ['/', '\\'])
+    @pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+    def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+        import os
+        from types import SimpleNamespace
+    
+        path = package(tmp_path / 'raw-name.xlsx')
+        info = zipfile.ZipInfo(raw_name)
+        info.filename = raw_name
+        with zipfile.ZipFile(path, 'a') as archive:
+            archive.writestr(info, '<x/>')
+        before = path.read_bytes()
+        assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+        # Exercise the real reader's normalization independently of the test host.
+        monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+        with zipfile.ZipFile(path) as archive:
+            assert archive.infolist()[-1].orig_filename == raw_name
+        with pytest.raises(ValueError, match='Unsupported or unsafe'):
+>           validator().validate_native_input(path, 'spreadsheet')
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/msoffice/test_input_validation.py:142: Failed
+_ test_rejects_raw_member_names_before_zipinfo_normalization[unused/\x00hidden-\\] _
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1247/test_rejects_raw_member_names_5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a6220a0>
+separator = '\\', raw_name = 'unused/\x00hidden'
+
+    @pytest.mark.parametrize('separator', ['/', '\\'])
+    @pytest.mark.parametrize('raw_name', ['xl\\opaque.xml', 'xl/opaque.xml\0hidden', 'unused/\0hidden'])
+    def test_rejects_raw_member_names_before_zipinfo_normalization(tmp_path, monkeypatch, separator, raw_name):
+        import os
+        from types import SimpleNamespace
+    
+        path = package(tmp_path / 'raw-name.xlsx')
+        info = zipfile.ZipInfo(raw_name)
+        info.filename = raw_name
+        with zipfile.ZipFile(path, 'a') as archive:
+            archive.writestr(info, '<x/>')
+        before = path.read_bytes()
+        assert before.count(raw_name.encode('utf-8')) == 2  # local and central names
+        # Exercise the real reader's normalization independently of the test host.
+        monkeypatch.setattr(zipfile, 'os', SimpleNamespace(**dict(vars(os), sep=separator)))
+        with zipfile.ZipFile(path) as archive:
+            assert archive.infolist()[-1].orig_filename == raw_name
+        with pytest.raises(ValueError, match='Unsupported or unsafe'):
+>           validator().validate_native_input(path, 'spreadsheet')
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/msoffice/test_input_validation.py:142: Failed
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_input_validation.py::test_rejects_raw_member_names_before_zipinfo_normalization[xl\\opaque.xml-\\]
+FAILED tests/msoffice/test_input_validation.py::test_rejects_raw_member_names_before_zipinfo_normalization[xl/opaque.xml\x00hidden-/]
+FAILED tests/msoffice/test_input_validation.py::test_rejects_raw_member_names_before_zipinfo_normalization[xl/opaque.xml\x00hidden-\\]
+FAILED tests/msoffice/test_input_validation.py::test_rejects_raw_member_names_before_zipinfo_normalization[unused/\x00hidden-/]
+FAILED tests/msoffice/test_input_validation.py::test_rejects_raw_member_names_before_zipinfo_normalization[unused/\x00hidden-\\]
+5 failed, 5 passed, 47 deselected in 0.20s

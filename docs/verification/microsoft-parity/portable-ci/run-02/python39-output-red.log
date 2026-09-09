@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_generate_default_output_survives_legacy_missing_path_resolution _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10685a250>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1271/test_generate_default_output_s0')
+
+    def test_generate_default_output_survives_legacy_missing_path_resolution(monkeypatch, tmp_path):
+        """Python 3.9 Windows resolve can leave a missing relative path unchanged."""
+        class LegacyMissingPath(type(tmp_path)):
+            def resolve(self, strict=False):
+                if not self.is_absolute() and not self.exists():
+                    return self
+                return super().resolve(strict=strict)
+    
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(orchestrator, "Path", LegacyMissingPath)
+        monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
+        outputs = []
+        monkeypatch.setattr(
+            orchestrator, "generate_macos",
+            lambda doc, format_name, output, preset, **kwargs: outputs.append(output) or output,
+        )
+        result = orchestrator.generate("# Report", format="pptx", source_is_text=True)
+        expected = tmp_path / "document.pptx"
+>       assert result == str(expected)
+E       AssertionError: assert 'document.pptx' == '/private/var...document.pptx'
+E         
+E         - /private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1271/test_generate_default_output_s0/document.pptx
+E         + document.pptx
+
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/tests/test_generation.py:656: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_generation.py::test_generate_default_output_survives_legacy_missing_path_resolution
+1 failed, 52 deselected in 0.16s

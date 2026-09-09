@@ -46,7 +46,11 @@ def actual_rollback_commands():
     header = ('checkpoint-state', 1, 6, 7, 1, 0, 7, hashlib.sha256(b'target').hexdigest(),
               0, 6, 'target', hashlib.sha256(b'target\r').hexdigest())
     state = (header, ('objects', 0, 0, 0, 0, 0), ('checkpoint-end',))
-    saved = r.CheckpointSnapshot(6, state, (), (), None)
+    saved = r.CheckpointSnapshot(
+        coordinate=6, state=state, tracked_indexes_prefix=(),
+        tracked_references_prefix=(), tracked_numbering_prefix=(),
+        observed_field_topology=None,
+    )
     field = ('field', 'main', 1, 'REF', ' REF probe ', 8, 15, 16, 19)
     table = ('table', 1, 6, 23, 1, 1)
     current_header = (*header[:2], 23, 24, *header[4:])
@@ -84,11 +88,12 @@ def test_temporary_compiler_wrapper_restores_real_function_even_on_failure():
     assert module.recovery.rollback_commands is original and records == []
 
 
-def test_independent_snapshot_is_exact_bound_readonly_and_never_rebinds_session():
+def test_independent_snapshot_is_exact_bound_readonly_and_never_rebinds_session(tmp_path):
     module = load()
-    path = '/private/synthetic/owned-document.docx'
+    path = str(tmp_path / 'owned-document.docx')
     source = module.snapshot_source(path, 20)
-    assert 'owned-document.docx' in source and path in source
+    from skills.WPSComposer.scripts.msoffice.macos_script import apple_string
+    assert 'owned-document.docx' in source and apple_string(path) in source
     assert 'isEqualToString:' in source and 'WPSC_DIAGNOSTIC_BINDING_CHANGED' in source
     assert 'if not application "Microsoft Word" is running' in source
     assert 'window wi of guardedDoc' in source and 'active window' not in source

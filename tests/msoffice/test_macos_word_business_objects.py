@@ -310,7 +310,8 @@ def test_multiframe_resource_uses_shared_first_frame_png_normalization(session, 
     with Image.open(staged) as normalized:
         assert normalized.format == "PNG"
         assert getattr(normalized, "n_frames", 1) == 1
-    assert str(staged) in script
+    from skills.WPSComposer.scripts.msoffice.macos_script import apple_string
+    assert apple_string(str(staged)) in script
 
 
 def test_image_block_is_one_native_batch_and_keeps_following_boundary(session, tmp_path):

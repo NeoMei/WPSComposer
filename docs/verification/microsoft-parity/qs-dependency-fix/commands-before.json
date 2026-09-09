@@ -1,0 +1,33 @@
+{
+  "npm-ci-before": {
+    "command": [
+      "npm",
+      "ci",
+      "--prefix",
+      "macos/wps-jsapi-probe",
+      "--ignore-scripts"
+    ],
+    "exit_code": 0
+  },
+  "node-regressions-red": {
+    "command": [
+      "node",
+      "--test",
+      "tests/macos_probe/qs_dependency_regressions.cjs"
+    ],
+    "exit_code": 1
+  },
+  "npm-ls-before": {
+    "command": [
+      "npm",
+      "ls",
+      "--prefix",
+      "macos/wps-jsapi-probe",
+      "qs",
+      "express",
+      "body-parser",
+      "--json"
+    ],
+    "exit_code": 0
+  }
+}

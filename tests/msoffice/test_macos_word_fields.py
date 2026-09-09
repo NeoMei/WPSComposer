@@ -118,13 +118,13 @@ def test_result_refresh_changes_hash_not_semantic_key(session,monkeypatch):
 def test_snapshot_tracks_real_index_page_span_and_rejects_missing_identity(session,monkeypatch):
     s,calls=session;h=s.insert_toc()
     code=s._tracked_indexes[0][1]
-    rows=[['stats',9],['identity',h.bookmark,10],['field','main',1,'INDEX',code,10,'Entry\t3\rEntry\t5',2,4,15]]
+    rows=[['stats',9],['identity',h.bookmark,10],['field','story:main text/chain:1',1,'INDEX',code,10,'Entry\t3\rEntry\t5',2,4,15]]
     monkeypatch.setattr(s,'_execute',lambda _lines:rows)
     a=s.snapshot_fields();assert a[0].toc_page_count==3 and a[0].total_pages==9
     rows.pop(1)
     with pytest.raises(NativeWordError):s.snapshot_fields()
 
-@pytest.mark.parametrize('rows',[[],[['stats',0]],[['stats',2],['field']], [['stats',2],['field','main',1,'PAGE',' PAGE ',2,'1',2,1]]])
+@pytest.mark.parametrize('rows',[[],[['stats',0]],[['stats',2],['field']], [['stats',2],['field','story:main text/chain:1',1,'PAGE',' PAGE ',2,'1',2,1]]])
 def test_snapshot_rejects_malformed_required_readback(session,monkeypatch,rows):
     s,calls=session;monkeypatch.setattr(s,'_execute',lambda _lines:rows)
     with pytest.raises(NativeWordError):s.snapshot_fields()
@@ -137,7 +137,7 @@ def test_story_enumeration_uses_native_supported_stories_not_broken_collection(s
     assert 'if errorNumber is not -2753 then error' in code
 
 def test_cached_result_length_change_keeps_following_semantic_field_identity(session,monkeypatch):
-    s,calls=session;rows=[['stats',1],['field','main',1,'REF',' REF a ',1,'x',0,0,1],['field','main',2,'REF',' REF b ',15,'y',0,0,1]]
+    s,calls=session;rows=[['stats',1],['field','story:main text/chain:1',1,'REF',' REF a ',1,'x',0,0,1],['field','story:main text/chain:1',2,'REF',' REF b ',15,'y',0,0,1]]
     monkeypatch.setattr(s,'_execute',lambda _lines:rows)
     first=s.snapshot_fields();rows[1][6]='longer😀';rows[1][9]=len('longer😀'.encode('utf-16-le'))//2;rows[2][5]+=len('longer😀'.encode('utf-16-le'))//2-1
     last=s.snapshot_fields();assert [x.stable_key for x in first]==[x.stable_key for x in last]
@@ -182,7 +182,7 @@ def test_native_stale_marker_maps_to_closed_identity_error(monkeypatch,tmp_path)
 
 def test_tracked_toc_growth_compensates_following_ref_with_nested_native_extent(session,monkeypatch):
     s,calls=session;h=s.insert_toc();code=s._tracked_indexes[0][1]
-    rows=[['stats',3],['identity',h.bookmark,10],['field','main',1,'INDEX',code,10,'A',1,1,80],['field','main',4,'REF',' REF target ',120,'X',0,0,1]]
+    rows=[['stats',3],['identity',h.bookmark,10],['field','story:main text/chain:1',1,'INDEX',code,10,'A',1,1,80],['field','story:main text/chain:1',4,'REF',' REF target ',120,'X',0,0,1]]
     monkeypatch.setattr(s,'_execute',lambda _lines:rows)
     before=s.snapshot_fields();rows[2][6]='ABCDE';rows[2][9]+=40;rows[3][2]+=2;rows[3][5]+=40
     after=s.snapshot_fields();assert [x.stable_key for x in before]==[x.stable_key for x in after]
@@ -190,7 +190,7 @@ def test_tracked_toc_growth_compensates_following_ref_with_nested_native_extent(
 @pytest.mark.parametrize('first,last,total',[(1,99,2),(3,3,2),(0,1,2)])
 def test_snapshot_rejects_impossible_index_page_bounds(session,monkeypatch,first,last,total):
     s,calls=session;h=s.insert_toc();code=s._tracked_indexes[0][1]
-    rows=[['stats',total],['identity',h.bookmark,10],['field','main',1,'INDEX',code,10,'A',first,last,1]]
+    rows=[['stats',total],['identity',h.bookmark,10],['field','story:main text/chain:1',1,'INDEX',code,10,'A',first,last,1]]
     monkeypatch.setattr(s,'_execute',lambda _lines:rows)
     with pytest.raises(NativeWordError) as error:s.snapshot_fields()
     assert error.value.code=='NATIVE_WORD_EXECUTION_FAILED'
@@ -216,7 +216,7 @@ def test_fixture_rejects_duplicate_semantic_snapshot_and_preserves_every_source(
     for relative,digest in hashes.items():assert hashlib.sha256((tmp_path/'source'/relative).read_bytes()).hexdigest()==digest
 
 def test_malformed_snapshot_retains_native_evidence(session,monkeypatch):
-    s,calls=session;monkeypatch.setattr(s,'_execute',lambda _lines:[['stats',2],['field','main',1,'PAGE',' PAGE ',1,'1',1,1,1]])
+    s,calls=session;monkeypatch.setattr(s,'_execute',lambda _lines:[['stats',2],['field','story:main text/chain:1',1,'PAGE',' PAGE ',1,'1',1,1,1]])
     with pytest.raises(NativeWordError) as error:s.snapshot_fields()
     assert error.value.code=='NATIVE_WORD_EXECUTION_FAILED' and s._retain_evidence
 
@@ -224,7 +224,7 @@ def test_malformed_snapshot_retains_native_evidence(session,monkeypatch):
 def test_owned_reference_insertion_rebases_field_topology(session, monkeypatch):
     s, calls = session
     bookmark = 'wpsc_fig_' + 'a' * 24
-    rows = [['stats', 3], ['field', 'main', 1, 'REF', ' REF existing ', 1, '1', 0, 0, 1]]
+    rows = [['stats', 3], ['field', 'story:main text/chain:1', 1, 'REF', ' REF existing ', 1, '1', 0, 0, 1]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
     original = s.snapshot_fields()
 
@@ -242,7 +242,7 @@ def test_owned_reference_insertion_rebases_field_topology(session, monkeypatch):
     }], owner_node_id='owner:new')
     handle, code = s._tracked_references[0]
     rows += [['identity', handle.bookmark, 25],
-             ['field', 'main', 2, 'REF', code, 25, '2', 0, 0, 1]]
+             ['field', 'story:main text/chain:1', 2, 'REF', code, 25, '2', 0, 0, 1]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
 
     current = s.snapshot_fields()
@@ -251,14 +251,14 @@ def test_owned_reference_insertion_rebases_field_topology(session, monkeypatch):
 
 def test_owned_toc_and_structural_insert_rebase_field_topology(session, monkeypatch):
     s, calls = session
-    rows = [['stats', 3], ['field', 'main', 1, 'REF', ' REF existing ', 12, '1', 0, 0, 1]]
+    rows = [['stats', 3], ['field', 'story:main text/chain:1', 1, 'REF', ' REF existing ', 12, '1', 0, 0, 1]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
     original = s.snapshot_fields()
     monkeypatch.setattr(s, '_execute', lambda _lines: [['index', 30, 60, ' TOC \\o "1-3" \\h \\z \\* MERGEFORMAT ']])
     handle = s.insert_toc()
     code = s._tracked_indexes[0][1]
     rows += [['identity', handle.bookmark, 30],
-             ['field', 'main', 2, 'INDEX', code, 30, 'Heading\t1', 1, 1, 20]]
+             ['field', 'story:main text/chain:1', 2, 'INDEX', code, 30, 'Heading\t1', 1, 1, 20]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
     after_toc = s.snapshot_fields()
     assert [item.stable_key for item in after_toc] == [original[0].stable_key, ('doc:toc', 'TOC', 0)]
@@ -274,7 +274,7 @@ def test_owned_toc_and_structural_insert_rebase_field_topology(session, monkeypa
 
 def test_same_paragraph_text_replacement_rebases_later_field_position(session, monkeypatch):
     s, calls = session
-    rows = [['stats', 1], ['field', 'main', 1, 'REF', ' REF later ', 20, '1', 0, 0, 1]]
+    rows = [['stats', 1], ['field', 'story:main text/chain:1', 1, 'REF', ' REF later ', 20, '1', 0, 0, 1]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
     original = s.snapshot_fields()
     monkeypatch.setattr(s, '_execute', lambda _lines: [['ok']])
@@ -286,7 +286,7 @@ def test_same_paragraph_text_replacement_rebases_later_field_position(session, m
 
 def test_field_refresh_keeps_drift_guard_for_position_and_code(session, monkeypatch):
     s, calls = session
-    baseline = [['stats', 1], ['field', 'main', 1, 'REF', ' REF target ', 20, '1', 0, 0, 1]]
+    baseline = [['stats', 1], ['field', 'story:main text/chain:1', 1, 'REF', ' REF target ', 20, '1', 0, 0, 1]]
     monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(baseline))
     s.snapshot_fields()
     monkeypatch.setattr(s, '_execute', lambda _lines: [['ok']])
@@ -306,7 +306,7 @@ def test_field_refresh_keeps_drift_guard_for_position_and_code(session, monkeypa
 
 def test_header_field_topology_change_preserves_pending_body_heading(session):
     s, calls = session
-    s._observed_field_topology = (('main', 0, 'REF', 'digest', 1, 1),)
+    s._observed_field_topology = (('story:main text/chain:1', 0, 'REF', 'digest', 1, 1),)
     s._pending_heading = (10, 20, 2)
     s.set_header('header')
     assert not hasattr(s, '_observed_field_topology')
@@ -324,7 +324,7 @@ def test_header_link_change_invalidates_field_topology(session):
 @pytest.mark.parametrize('operation', ['structural', 'business', 'format'])
 def test_local_preflight_failure_keeps_field_topology(session, monkeypatch, operation):
     s, calls = session
-    baseline = (('main', 0, 'REF', 'digest', 1, 1),)
+    baseline = (('story:main text/chain:1', 0, 'REF', 'digest', 1, 1),)
     s._observed_field_topology = baseline
     monkeypatch.setattr(s, '_remaining', lambda: (_ for _ in ()).throw(RuntimeError('preflight')))
     with pytest.raises(RuntimeError, match='preflight'):
@@ -340,7 +340,7 @@ def test_local_preflight_failure_keeps_field_topology(session, monkeypatch, oper
 def test_transport_pre_submission_failure_keeps_field_topology(session, monkeypatch, tmp_path):
     import types
     s, calls = session
-    baseline = (('main', 0, 'REF', 'digest', 1, 1),)
+    baseline = (('story:main text/chain:1', 0, 'REF', 'digest', 1, 1),)
     s._observed_field_topology = baseline
     s._retain_evidence = True
     s.staging_root = tmp_path
