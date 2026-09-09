@@ -1,0 +1,17 @@
+{
+  "file_count": 12,
+  "sha256": {
+    "pytest.log": "14c58959d90907312b6090abc234cf4de7f3a2e668bba18c4ad09efa35dcde44",
+    "preparation.json": "5040b70005cfa83808c9c94e0aa47eb66b40db95e1dbbbe0da633db1c3c1ed4a",
+    "A-explicit-range-conversion.scpt": "952618ec91adecf6f9868c021a4087151ffac9a1f84eb323f4cd028fb339e232",
+    "A-explicit-range-conversion.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "proposal.md": "5d546b5cd61936c799a75c4d28c091eb707a1351441da96ddc5f27ff8e78f0e2",
+    "A-explicit-range-conversion.applescript": "f56aa57e55ad2cb65886501b2b449359818590268a6e34685bfb4ab451eac74a",
+    "source/tests/msoffice/test_semantic_table_conversion_preparation.py": "9bf68bb936d0cfa3ae7809ae22388d0290968e41843e89e1587e78987cecd9b3",
+    "source/tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3",
+    "source/tests/msoffice/test_semantic_table_explicit_range_preparation.py": "fd84a8f3fb28a19631ecc444e4eeb913c35625e1aa55b556b279cc6a5b01395d",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "dcb3d96039671729d0bd3f2a7071c984d695bf23b898084a43ce4f38de339a01",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_explicit_range_probe.py": "6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2"
+  }
+}

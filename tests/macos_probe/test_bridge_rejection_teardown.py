@@ -198,3 +198,97 @@ def test_missing_body_gets_response_before_bounded_finish(monkeypatch):
             assert json.loads(response.read())["error"]["code"] == "UNAUTHORIZED"
             assert finished.wait(1), "missing body must not hold the handler indefinitely"
             response.close()
+
+
+@pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+@pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+    handler, events = handler_double(
+        monkeypatch, length=length, fault="missing" if peer == "missing" else None
+    )
+    handler.path = "/v1/register"
+    handler._authorize = lambda: ("writer", "client")
+    handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+    if peer == "slow":
+        clock = iter([0, 0, 0.08, 0.16, 0.24])
+        monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+
+        def trickle(count):
+            events.append(("read", 1))
+            return b"x"
+
+        handler.rfile.read1 = trickle
+    handler.do_POST()
+    handler.finish()
+    assert handler.close_connection
+    assert events[0][0] == "flush"
+    response = events[0][1]
+    assert b"400 Bad Request\r\n" in response
+    assert b"Connection: close\r\n" in response
+    assert json.loads(response.split(b"\r\n\r\n", 1)[1])["error"] == {
+        "code": "INVALID_REQUEST",
+        "message": "Invalid Content-Length" if length == "invalid" else "Request body is too large",
+    }
+    assert events[1] == ("shutdown", socket.SHUT_WR)
+    reads = [value for kind, value in events if kind == "read"]
+    timeouts = [value for kind, value in events if kind == "timeout"]
+    if peer == "over-cap":
+        assert sum(reads) == module.MAX_BODY_BYTES + 1
+        assert max(reads) <= 65536
+    elif peer == "slow":
+        assert reads == [1, 1, 1]
+        assert timeouts == pytest.approx([0.2, 0.12, 0.04])
+    else:
+        assert len(reads) == 1
+        assert timeouts == pytest.approx([0.2])
+    assert handler.wfile.closed and handler.rfile.closed
+
+
+@pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+def test_max_plus_one_body_gets_exact_early_400_without_registration(length):
+    with module.LoopbackBridge({ORIGIN}) as bridge:
+        credentials = bridge.bootstrap_credentials("writer")
+        token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+        body = json.dumps({"component": "writer", "clientId": credentials["clientId"], "padding": ""}).encode()
+        size = module.MAX_BODY_BYTES + 1
+        body = body[:-2] + b"x" * (size - len(body)) + body[-2:]
+        assert len(body) == size and isinstance(json.loads(body), dict)
+        for _ in range(3):
+            connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+            try:
+                connection.request("POST", "/v1/register", body, {
+                    "Origin": ORIGIN, "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json", "Content-Length": length,
+                })
+                response = connection.getresponse()
+                assert response.status == 400
+                assert response.getheader("Connection") == "close"
+                assert json.loads(response.read())["error"] == {
+                    "code": "INVALID_REQUEST",
+                    "message": "Invalid Content-Length" if length == "invalid" else "Request body is too large",
+                }
+            finally:
+                connection.close()
+            assert not bridge.state._registered
+
+
+@pytest.mark.parametrize("body", [b"not json", b"[]", b'{"component":"sheet","clientId":"client"}'])
+def test_consumed_json_and_business_errors_do_not_linger(monkeypatch, body):
+    handler, events = handler_double(monkeypatch, length=str(len(body)))
+    handler.path = "/v1/register"
+    handler._authorize = lambda: ("writer", "client")
+
+    def read(count):
+        assert count == len(body)
+        events.append(("body-read", count))
+        return body
+
+    handler.rfile.read = read
+    handler.do_POST()
+    handler.finish()
+    assert events[0] == ("body-read", len(body))
+    response = next(value for kind, value in events if kind == "flush")
+    assert b"400 Bad Request\r\n" in response
+    assert json.loads(response.split(b"\r\n\r\n", 1)[1])["error"]["code"] == "INVALID_REQUEST"
+    assert b"Connection: close\r\n" not in response
+    assert not any(kind in {"shutdown", "timeout", "read"} for kind, value in events)

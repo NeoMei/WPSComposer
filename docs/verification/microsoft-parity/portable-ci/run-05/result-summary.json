@@ -1,0 +1,43 @@
+{
+  "pytest-ubuntu-24.04-python-3.12": {
+    "passed": 4948,
+    "failed": 0,
+    "skipped": 44,
+    "failures": []
+  },
+  "pytest-ubuntu-24.04-python-3.9": {
+    "passed": 4948,
+    "failed": 0,
+    "skipped": 44,
+    "failures": []
+  },
+  "pytest-windows-2022-python-3.12": {
+    "passed": 4915,
+    "failed": 2,
+    "skipped": 75,
+    "failures": [
+      {
+        "class": "tests.msoffice.test_windows_session_proxy",
+        "name": "test_actual_worker_serve_subprocess_preserves_error_metadata_and_close",
+        "message": "ValueError: Invalid remaining session budget"
+      },
+      {
+        "class": "tests.msoffice.test_windows_session_proxy",
+        "name": "test_handles_roundtrip_real_worker_with_com_object_return_doubles",
+        "message": "ValueError: Invalid remaining session budget"
+      }
+    ]
+  },
+  "pytest-windows-2022-python-3.9": {
+    "passed": 4916,
+    "failed": 1,
+    "skipped": 75,
+    "failures": [
+      {
+        "class": "tests.msoffice.test_windows_session_proxy",
+        "name": "test_handles_roundtrip_real_worker_with_com_object_return_doubles",
+        "message": "ValueError: Invalid remaining session budget"
+      }
+    ]
+  }
+}

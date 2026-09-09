@@ -828,3 +828,53 @@ def test_handle_capacity_and_table_target_preflight():
     assert args==[{'op':'remove','target':'table:1'}]
     registry.records.update({str(i):(table,'table') for i in range(1024)})
     with pytest.raises(ValueError,match='before mutation'):registry.prepare_call('add_table',[1,1,[['x']]],{})
+
+
+@pytest.mark.parametrize('tick', [1558.546, 424.005])
+@pytest.mark.parametrize('scenario', [
+    test_actual_worker_serve_subprocess_preserves_error_metadata_and_close,
+    test_handles_roundtrip_real_worker_with_com_object_return_doubles,
+])
+def test_real_worker_roundtrip_at_floating_point_budget_boundary(
+    transport, monkeypatch, tick, scenario,
+):
+    module, _, _ = transport
+    assert (tick + 600) - tick > 600
+    # Replace only the proxy clock; the actual worker retains its own clock.
+    monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+    scenario(transport, monkeypatch)
+
+
+def test_remaining_budget_cap_preserves_deadline_and_expiry(monkeypatch):
+    module, _ = modules()
+    session = object.__new__(module._SessionProxy)
+    deadline = 2158.5460000000003
+    session._deadline = deadline
+    for tick in [1558.546, 1558.547, 2000.0, 2158.545]:
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+        raw_remaining = deadline - tick
+        remaining = session._remaining()
+        assert remaining == min(600, raw_remaining)
+        assert 0 < remaining <= raw_remaining
+        assert session.publication_deadline == deadline
+    for tick in [deadline, deadline + 1]:
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+        with pytest.raises(TimeoutError, match='Session deadline expired'):
+            session._remaining()
+        assert session.publication_deadline == deadline
+
+
+def test_worker_still_rejects_budget_immediately_above_strict_maximum(tmp_path):
+    _, worker = modules()
+    frame = request(1, 'open_document', args=['source.docx'])
+    frame['remaining_seconds'] = 600.0000000000002
+    calls = []
+    output = io.BytesIO()
+    worker.serve(
+        io.BytesIO(json.dumps(frame).encode() + b'\n'), output, tmp_path,
+        factory=lambda *args: calls.append(args),
+    )
+    response = json.loads(output.getvalue())
+    assert response['status'] == 'error'
+    assert response['error']['type'] == 'ValueError'
+    assert calls == []

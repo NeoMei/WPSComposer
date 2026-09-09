@@ -1,0 +1,50 @@
+[
+  {
+    "tag": "p",
+    "text": "PREFIX 中文😀",
+    "rows": 0,
+    "grid_columns": 0
+  },
+  {
+    "tag": "tbl",
+    "text": "REPLACE",
+    "rows": 1,
+    "grid_columns": 3
+  },
+  {
+    "tag": "p",
+    "text": "",
+    "rows": 0,
+    "grid_columns": 0
+  },
+  {
+    "tag": "p",
+    "text": "SUFFIX preserved 中文😀",
+    "rows": 0,
+    "grid_columns": 0
+  },
+  {
+    "tag": "tbl",
+    "text": "EXISTING TABLE 原样",
+    "rows": 1,
+    "grid_columns": 1
+  },
+  {
+    "tag": "p",
+    "text": "",
+    "rows": 0,
+    "grid_columns": 0
+  },
+  {
+    "tag": "p",
+    "text": "",
+    "rows": 0,
+    "grid_columns": 0
+  },
+  {
+    "tag": "sectPr",
+    "text": "",
+    "rows": 0,
+    "grid_columns": 0
+  }
+]

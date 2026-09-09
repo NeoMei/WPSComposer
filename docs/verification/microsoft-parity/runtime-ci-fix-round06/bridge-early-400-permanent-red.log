@@ -1,0 +1,493 @@
+FFFFFFFFFFFF...                                                          [100%]
+=================================== FAILURES ===================================
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap-invalid] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108804400>
+length = 'invalid', peer = 'over-cap'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x108804d00>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap--1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1089e8d00>
+length = '-1', peer = 'over-cap'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x1089e8490>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap-1048577] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108a7cd90>
+length = '1048577', peer = 'over-cap'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x108a7c670>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow-invalid] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108804ca0>
+length = 'invalid', peer = 'slow'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x1088047f0>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow--1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108a7dca0>
+length = '-1', peer = 'slow'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x108a7d580>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow-1048577] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10882bbb0>
+length = '1048577', peer = 'slow'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x1086e85b0>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing-invalid] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1089bb340>
+length = 'invalid', peer = 'missing'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x1089bbf40>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing--1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1086e83a0>
+length = '-1', peer = 'missing'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x1086c0be0>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+_ test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing-1048577] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108a95b20>
+length = '1048577', peer = 'missing'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    @pytest.mark.parametrize("peer", ["over-cap", "slow", "missing"])
+    def test_early_length_rejection_uses_bounded_discard_without_body_parsing(monkeypatch, length, peer):
+        handler, events = handler_double(
+            monkeypatch, length=length, fault="missing" if peer == "missing" else None
+        )
+        handler.path = "/v1/register"
+        handler._authorize = lambda: ("writer", "client")
+        handler.rfile.read = lambda count: pytest.fail("invalid length must reject before parsing")
+        if peer == "slow":
+            clock = iter([0, 0, 0.08, 0.16, 0.24])
+            monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+            def trickle(count):
+                events.append(("read", 1))
+                return b"x"
+    
+            handler.rfile.read1 = trickle
+        handler.do_POST()
+        handler.finish()
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x108a95040>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:223: AssertionError
+__ test_max_plus_one_body_gets_exact_early_400_without_registration[invalid] ___
+
+length = 'invalid'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    def test_max_plus_one_body_gets_exact_early_400_without_registration(length):
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            body = json.dumps({"component": "writer", "clientId": credentials["clientId"], "padding": ""}).encode()
+            size = module.MAX_BODY_BYTES + 1
+            body = body[:-2] + b"x" * (size - len(body)) + body[-2:]
+            assert len(body) == size and isinstance(json.loads(body), dict)
+            for _ in range(3):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", "/v1/register", body, {
+                        "Origin": ORIGIN, "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json", "Content-Length": length,
+                    })
+
+tests/macos_probe/test_bridge_rejection_teardown.py:259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x1086cb550>
+data = b'{"component": "writer", "clientId": "02eda0aa8195527fea7026b57a88ee3a4767c834b4dbff7910b5e2447d9cd7d2", "padding": "...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           BrokenPipeError: [Errno 32] Broken pipe
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: BrokenPipeError
+_____ test_max_plus_one_body_gets_exact_early_400_without_registration[-1] _____
+
+length = '-1'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    def test_max_plus_one_body_gets_exact_early_400_without_registration(length):
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            body = json.dumps({"component": "writer", "clientId": credentials["clientId"], "padding": ""}).encode()
+            size = module.MAX_BODY_BYTES + 1
+            body = body[:-2] + b"x" * (size - len(body)) + body[-2:]
+            assert len(body) == size and isinstance(json.loads(body), dict)
+            for _ in range(3):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", "/v1/register", body, {
+                        "Origin": ORIGIN, "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json", "Content-Length": length,
+                    })
+
+tests/macos_probe/test_bridge_rejection_teardown.py:259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x108aa4040>
+data = b'{"component": "writer", "clientId": "f84bde003dff1b6b06bc829df9df5c012fb99fe8f6e0e4599ba54874cb89549b", "padding": "...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           ConnectionResetError: [Errno 54] Connection reset by peer
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: ConnectionResetError
+__ test_max_plus_one_body_gets_exact_early_400_without_registration[1048577] ___
+
+length = '1048577'
+
+    @pytest.mark.parametrize("length", ["invalid", "-1", str(module.MAX_BODY_BYTES + 1)])
+    def test_max_plus_one_body_gets_exact_early_400_without_registration(length):
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            body = json.dumps({"component": "writer", "clientId": credentials["clientId"], "padding": ""}).encode()
+            size = module.MAX_BODY_BYTES + 1
+            body = body[:-2] + b"x" * (size - len(body)) + body[-2:]
+            assert len(body) == size and isinstance(json.loads(body), dict)
+            for _ in range(3):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", "/v1/register", body, {
+                        "Origin": ORIGIN, "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json", "Content-Length": length,
+                    })
+
+tests/macos_probe/test_bridge_rejection_teardown.py:259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x108b7b4c0>
+data = b'{"component": "writer", "clientId": "e975ee1fc96265d5f14fb6e14fd62225b4d413a460b38c7d7b92ac0f731df047", "padding": "...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           BrokenPipeError: [Errno 32] Broken pipe
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: BrokenPipeError
+=========================== short test summary info ============================
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap-invalid]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap--1]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[over-cap-1048577]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow-invalid]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow--1]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[slow-1048577]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing-invalid]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing--1]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_early_length_rejection_uses_bounded_discard_without_body_parsing[missing-1048577]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_max_plus_one_body_gets_exact_early_400_without_registration[invalid]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_max_plus_one_body_gets_exact_early_400_without_registration[-1]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_max_plus_one_body_gets_exact_early_400_without_registration[1048577]
+12 failed, 3 passed, 19 deselected in 2.89s

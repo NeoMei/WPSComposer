@@ -33,3 +33,7 @@ Run34343657808 binds candidate `595268ec209df7f8fd533452d30b61609696134f`: Linux
 ## Reviewed candidate for run05
 
 The bridge now performs bounded staged teardown for early rejected POSTs while retaining the strict original HTTP403 assertion. Its local large-body reproduction and 488-test module regression pass; this does not prove the sole cause of the small-request Windows10053 result. All Windows proxy and one-shot primary-error/cleanup repairs have independent scoped acceptance. Full round34 passes **4,980 tests / 12 skips** in 394.26s, snapshot `bd8067a22741958d91a9823cdee0a1616fad62aa`; all383source/configuration hashes are unchanged and equal to the candidate. Run05 must still establish actual hosted results. Records are in `../runtime-ci-fix-round05/` and `../full-round34/`.
+
+## Run05 actual result and reviewed follow-up
+
+Run34348802682 binds370c8c5. Linux3.9/3.12:4,948pass44skip each. Windows3.9:4,916pass1fail75skip; Windows3.12:4,915pass2fail75skip. All failures are initial real-worker binding errors due to a budget slightly above600 from floating-point subtraction; the original403 regression now passes. Raw four-job artifacts and metadata remain in run-05. The independently reviewed clamp preserves the absolute deadline, expiry guard and strict worker600maximum. Together with the adjacent early400 bridge repair it passes full36:5,001pass12skip478.47s,383hashes unchanged. Hosted run06 is the next validation; no native Office acceptance follows from these portable tests.

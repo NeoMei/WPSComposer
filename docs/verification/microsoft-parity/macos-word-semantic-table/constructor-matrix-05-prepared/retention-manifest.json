@@ -1,0 +1,21 @@
+{
+  "file_count": 16,
+  "sha256": {
+    "pytest.log": "582970e56d50f231c7768bcbf534afb253d08b2407e2dc8e0542a367c54ceaf9",
+    "enumeration.xml": "480c0156894ca9b04b1e3ae7368fac2788832165b25a732fbad979b0020324bb",
+    "preparation.json": "6410054bd5aec85dc80e58a6e433377954633af484968c053b401feddb4c0caf",
+    "A-grid-range-conversion.applescript": "bfcf1d24ba8c0b9a7cdb29a564b0e9713464fa44471955dd44318793b4132ade",
+    "A-grid-range-conversion.scpt": "62eaa84d719619bc9df40c89b6922791fd16e209a1f44e48e41eee993cf61776",
+    "command.xml": "f8ed3aea33abbb99c9b4194708d3fc211390a8ae9a22268a1b27dac67f62b4d4",
+    "proposal.md": "ff4e2468d954edfc8c878a002cd10b581f321b9ec3addcac21049e17afaa27ca",
+    "A-grid-range-conversion.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source/tests/msoffice/test_semantic_table_conversion_preparation.py": "9bf68bb936d0cfa3ae7809ae22388d0290968e41843e89e1587e78987cecd9b3",
+    "source/tests/msoffice/test_semantic_table_grid_preparation.py": "77563fc9d5d82507fe1bd0c76a3f5eab4fc536ea5c19da657167a75b5bab500d",
+    "source/tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3",
+    "source/tests/msoffice/test_semantic_table_explicit_range_preparation.py": "fd84a8f3fb28a19631ecc444e4eeb913c35625e1aa55b556b279cc6a5b01395d",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "dcb3d96039671729d0bd3f2a7071c984d695bf23b898084a43ce4f38de339a01",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_explicit_range_probe.py": "6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_grid_probe.py": "dd5df01002d60fc1d71a946f66b83e177b0368ad0a08d145c0dcb97c9e827250"
+  }
+}

@@ -194,7 +194,7 @@ class _SessionProxy:
         value = self._deadline - time.monotonic()
         if value <= 0:
             raise TimeoutError('Session deadline expired')
-        return value
+        return min(600, value)
 
     def _read_responses(self):
         try:

@@ -365,8 +365,10 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
             try:
                 length = int(raw_length)
             except ValueError as exc:
+                self._mark_rejected_post()
                 raise ValueError("Invalid Content-Length") from exc
             if length < 0 or length > MAX_BODY_BYTES:
+                self._mark_rejected_post()
                 raise ValueError("Request body is too large")
             raw = self.rfile.read(length)
             try:
@@ -377,12 +379,15 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
                 raise ValueError("Request body must be a JSON object")
             return body
 
+        def _mark_rejected_post(self) -> None:
+            self._rejected_post = True
+            self.close_connection = True
+
         def _send_error_json(
             self, status: int, code: str, message: str
         ) -> None:
             if self.command == "POST" and status in (401, 403):
-                self._rejected_post = True
-                self.close_connection = True
+                self._mark_rejected_post()
             self._send_json(
                 status, {"error": {"code": code, "message": message}}
             )

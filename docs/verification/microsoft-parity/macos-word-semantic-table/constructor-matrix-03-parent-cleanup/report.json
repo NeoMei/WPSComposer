@@ -1,0 +1,30 @@
+{
+  "owned_exact_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-slllu409/document-84d3fb78ec694c61a59ae081eda976bf.docx",
+  "owned_ui_save_prompt": true,
+  "owned_ui_discard": true,
+  "sentinel_name": "\u6587\u686394",
+  "sentinel_exact_text_verified": true,
+  "sentinel_ui_delete": true,
+  "inventory": [],
+  "quarantine_recovered": true,
+  "final_inventory": [],
+  "reconciled_table_count": 2,
+  "new_table_range": [
+    12,
+    23
+  ],
+  "new_table_rows_columns": [
+    1,
+    3
+  ],
+  "requested_rows_columns": [
+    4,
+    3
+  ],
+  "old_table_range": [
+    46,
+    65
+  ],
+  "original_result": "FAIL -1708 with mutation",
+  "B_executed": false
+}

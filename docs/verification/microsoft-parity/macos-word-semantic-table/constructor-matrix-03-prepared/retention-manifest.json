@@ -1,0 +1,19 @@
+{
+  "file_count": 14,
+  "sha256": {
+    "pytest.log": "1dca912e707a4c7190ae97c9d692ce3cfa514493e03bfe5ef2a6ddd5ee303604",
+    "preparation.json": "597dba6cb566ce9f206cf57f126efc25bd57d3f99de2fb4fc7703fef1dfdcbf1",
+    "A-convert-noncollapsed.applescript": "7891f3d33ca47e7cb9a5af4f5d3ac7e37d84792acd7a3557df2ada5d15a76426",
+    "B-convert-collapsed.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sdef-convert-to-table.xml": "f8ed3aea33abbb99c9b4194708d3fc211390a8ae9a22268a1b27dac67f62b4d4",
+    "B-convert-collapsed.scpt": "759e6529902f1eee1c5363033286a5fa23da300ef9ad75ea45aef39f6162cd22",
+    "A-convert-noncollapsed.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "B-convert-collapsed.applescript": "3b638478892a585e46c7ae056b317419d05cdf07dd758e9ca755155e1f34d246",
+    "proposal.md": "fac9019456c395c19f76a5bfa6c3386499b97d7fc8643e0e940a8cb24943b930",
+    "A-convert-noncollapsed.scpt": "c884886f2a515582132eab8df5762d49f47b83423170b4e8de6aa07d8f02d5a0",
+    "source/tests/msoffice/test_semantic_table_conversion_preparation.py": "618ca086cfcf129e9fd3b2577ae1e6480005a8463c95ea02f38def777d7dc102",
+    "source/tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "4a96d67da669ef1e11a4cfad94fbc1353306983ebb551483265ae051292ec8ea",
+    "source/fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c"
+  }
+}

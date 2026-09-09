@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "stage": "A-grid-range-conversion-one-constructor",
+  "error": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-glg0bgrl diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-glg0bgrl/fdf7bad51f3b4d0e8ab9edfe581aa855.log",
+  "action": "Stop native calls; root must independently reconcile this task before another native run.",
+  "owned_document": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-glg0bgrl/document-14d4fd91b1ce4cf3aa46a244cf2d6584.docx",
+    "closed": false,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-glg0bgrl"
+  },
+  "sentinel": {
+    "name": "文档96",
+    "preimage": [
+      "文档96",
+      "文档96",
+      false,
+      "467e699f6bdaf866d9d75893e97d90da5010b9eee8a6a221b75330eaf4febef0"
+    ],
+    "state": "unknown",
+    "close_script": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-05/sentinel-close.applescript"
+  }
+}

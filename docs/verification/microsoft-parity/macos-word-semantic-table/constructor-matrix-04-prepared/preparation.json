@@ -1,0 +1,15 @@
+{
+  "native_executed": false,
+  "source_root": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout",
+  "files": {
+    "fixtures/microsoft_parity/macos_word_semantic_table_explicit_range_probe.py": "6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2",
+    "tests/msoffice/test_semantic_table_explicit_range_preparation.py": "fd84a8f3fb28a19631ecc444e4eeb913c35625e1aa55b556b279cc6a5b01395d",
+    "fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "dcb3d96039671729d0bd3f2a7071c984d695bf23b898084a43ce4f38de339a01",
+    "tests/msoffice/test_semantic_table_conversion_preparation.py": "9bf68bb936d0cfa3ae7809ae22388d0290968e41843e89e1587e78987cecd9b3",
+    "fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c",
+    "tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3"
+  },
+  "compile_exit_code": 0,
+  "script_sha256": "f56aa57e55ad2cb65886501b2b449359818590268a6e34685bfb4ab451eac74a",
+  "only_script_change": "set diagRange to text object of diagSelection -> set diagRange to create range boundDoc start 12 end 19"
+}
