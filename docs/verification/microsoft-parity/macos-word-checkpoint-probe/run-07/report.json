@@ -1,0 +1,38 @@
+{
+  "passed": false,
+  "mode": "fields-only",
+  "steps": [
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "seed-text-ack",
+      "rows": [
+        [
+          "seed-text-ack"
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_checkpoint_followup.py": "e956c820fec72bbc1962fdfe1623f7acf9bc13c5c1ff1001bb03b44957709a7c",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "532550b1fa7dbb10de1e9025307f406bfc69e6409cf5a056da1266808488a467",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb"
+  },
+  "starting_inventory": [],
+  "word_version": "16.112.3",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xpvx_qrl diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xpvx_qrl/30c655790ddc48788290b5248f749143.log"
+  },
+  "recovery_targets": {
+    "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xpvx_qrl/document-b62a4b20518f4c7792f38a3eedbf087d.docx",
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-xpvx_qrl"
+  }
+}

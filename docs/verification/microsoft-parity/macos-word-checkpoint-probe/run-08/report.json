@@ -1,0 +1,258 @@
+{
+  "passed": false,
+  "mode": "fields-only",
+  "steps": [
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "seed-text-ack",
+      "rows": [
+        [
+          "seed-text-ack"
+        ]
+      ]
+    },
+    {
+      "label": "seed-bookmark-field-ack",
+      "rows": [
+        [
+          "seed-bookmark-field-ack",
+          "wpsc_checkpoint_preexisting",
+          "targe",
+          0,
+          5,
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          60,
+          65
+        ]
+      ]
+    },
+    {
+      "label": "before",
+      "rows": [
+        [
+          "document",
+          "targettarge\r",
+          66,
+          67,
+          12,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarge\r",
+          0,
+          67
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "targe",
+          0,
+          5
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "targe",
+          60,
+          65
+        ]
+      ]
+    },
+    {
+      "label": "append-prefix-ack",
+      "rows": [
+        [
+          "append-prefix-ack"
+        ]
+      ]
+    },
+    {
+      "label": "append-ref-ack",
+      "rows": [
+        [
+          "append-ref-ack",
+          2,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          126,
+          131
+        ]
+      ]
+    },
+    {
+      "label": "before-delete-field-inventory",
+      "rows": [
+        [
+          "document",
+          "targettarge tail targe\r",
+          132,
+          133,
+          23,
+          1,
+          0,
+          2
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarge tail targe\r",
+          0,
+          133
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "targe",
+          0,
+          5
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "targe",
+          60,
+          65
+        ],
+        [
+          "field",
+          2,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "targe",
+          126,
+          131
+        ]
+      ]
+    },
+    {
+      "label": "delete-ack",
+      "rows": [
+        [
+          "delete-ack",
+          66,
+          67,
+          68
+        ]
+      ]
+    },
+    {
+      "label": "after-delete",
+      "rows": [
+        [
+          "document",
+          "targettarge \r",
+          67,
+          68,
+          13,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarge \r",
+          0,
+          68
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "targe",
+          0,
+          5
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "targe",
+          60,
+          65
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_checkpoint_followup.py": "55ffc650468219e8d9612e9ee18d4f4efa95cdd56a26172fc0c23bcc3225f513",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "532550b1fa7dbb10de1e9025307f406bfc69e6409cf5a056da1266808488a467",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb"
+  },
+  "starting_inventory": [],
+  "word_version": "16.112.3",
+  "checkpoint": 66,
+  "tracking_contract": {
+    "preexisting_bookmark": [
+      [
+        "bookmark",
+        1,
+        "wpsc_checkpoint_preexisting",
+        "targe",
+        0,
+        5
+      ]
+    ],
+    "preexisting_fields": [
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "targe",
+        60,
+        65
+      ]
+    ],
+    "all_fields_before_delete": [
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "targe",
+        60,
+        65
+      ],
+      [
+        "field",
+        2,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "targe",
+        126,
+        131
+      ]
+    ],
+    "fields_after_delete": [
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "targe",
+        60,
+        65
+      ]
+    ]
+  },
+  "error": {
+    "type": "AssertionError",
+    "message": ""
+  },
+  "recovery_targets": {
+    "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_i_azoko/document-be54c81261854831b48fe052750b3a0b.docx",
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_i_azoko"
+  }
+}

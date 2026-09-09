@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_followup.py", line 143, in run
+    passed = table_only(session, journal) if mode == "table-only" else fields_only(session, journal)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_followup.py", line 128, in fields_only
+    assert len(bookmark) == 1 and bookmark[0][2] == "wpsc_checkpoint_preexisting" and bookmark[0][3:] == ["target", 0, 5]
+AssertionError

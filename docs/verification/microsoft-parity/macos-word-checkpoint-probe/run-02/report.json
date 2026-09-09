@@ -1,0 +1,179 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_checkpoint_probe.py": "58961bbfd42671f44e5d930dfecf103edcfe4dbbad4212363f9fc8218cb8baa6",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "39129d22315eb5701dde8f1f5cfe305de404d07ce538d10d44b2fa1f562d502a",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb"
+  },
+  "checks": {},
+  "cases": [
+    {
+      "name": "empty",
+      "checkpoint": 0,
+      "content_end": 1,
+      "before": [
+        [
+          "body",
+          "\r",
+          0,
+          1,
+          1,
+          0,
+          0
+        ]
+      ],
+      "changed": [
+        [
+          "body",
+          "A\r",
+          1,
+          2,
+          1,
+          0,
+          0
+        ]
+      ],
+      "after": [
+        [
+          "body",
+          "\r",
+          0,
+          1,
+          1,
+          0,
+          0
+        ]
+      ],
+      "repeated_noop_acknowledged": true
+    },
+    {
+      "name": "terminal-paragraph",
+      "checkpoint": 6,
+      "content_end": 7,
+      "before": [
+        [
+          "body",
+          "prefix\r",
+          6,
+          7,
+          1,
+          0,
+          0
+        ]
+      ],
+      "changed": [
+        [
+          "body",
+          "prefix appended\r",
+          15,
+          16,
+          1,
+          0,
+          0
+        ]
+      ],
+      "after": [
+        [
+          "body",
+          "prefix\r",
+          6,
+          7,
+          1,
+          0,
+          0
+        ]
+      ],
+      "repeated_noop_acknowledged": true
+    },
+    {
+      "name": "cjk-emoji",
+      "checkpoint": 6,
+      "content_end": 7,
+      "before": [
+        [
+          "body",
+          "前缀中文😀\r",
+          6,
+          6,
+          1,
+          0,
+          0
+        ]
+      ],
+      "changed": [
+        [
+          "body",
+          "前缀中文😀追加🧪\r",
+          10,
+          9,
+          1,
+          0,
+          0
+        ]
+      ],
+      "after": [
+        [
+          "body",
+          "前缀中文😀\r",
+          6,
+          6,
+          1,
+          0,
+          0
+        ]
+      ],
+      "repeated_noop_acknowledged": true
+    },
+    {
+      "name": "appended-paragraph",
+      "checkpoint": 4,
+      "content_end": 5,
+      "before": [
+        [
+          "body",
+          "base\r",
+          4,
+          5,
+          1,
+          0,
+          0
+        ]
+      ],
+      "changed": [
+        [
+          "body",
+          "base\rnew paragraph\r",
+          18,
+          19,
+          2,
+          0,
+          0
+        ]
+      ],
+      "after": [
+        [
+          "body",
+          "base\r",
+          4,
+          5,
+          1,
+          0,
+          0
+        ]
+      ],
+      "repeated_noop_acknowledged": true
+    }
+  ],
+  "starting_inventory": [],
+  "word_version": "16.112.3",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bdwhv31_ diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bdwhv31_/a1235ba6706a41e291988abdde8d1ca0.log"
+  },
+  "quarantine": {
+    "sentinel_name": "文档185",
+    "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bdwhv31_/document-a22d1c02449b434b9d467f2e8808f9be.docx",
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bdwhv31_"
+  }
+}

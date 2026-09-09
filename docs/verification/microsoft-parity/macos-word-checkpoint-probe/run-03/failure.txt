@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 115, in run
+    report["cases"].append(run_case(session, "partial-table", "table-prefix\r", partial_table))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 84, in run_case
+    rollback(s, cp)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 64, in rollback
+    assert rows == [["rollback", target, target, target + 1]]
+AssertionError

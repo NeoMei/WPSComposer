@@ -1,0 +1,365 @@
+{
+  "passed": false,
+  "mode": "table-only",
+  "steps": [
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "set-prefix-ack",
+      "rows": [
+        [
+          "set-prefix-ack"
+        ]
+      ]
+    },
+    {
+      "label": "before",
+      "rows": [
+        [
+          "document",
+          "table-prefix\r\r",
+          13,
+          14,
+          14,
+          2,
+          0,
+          0
+        ],
+        [
+          "paragraph",
+          1,
+          "table-prefix\r",
+          0,
+          13
+        ],
+        [
+          "paragraph",
+          2,
+          "\r",
+          13,
+          14
+        ]
+      ]
+    },
+    {
+      "label": "table-insert-ack",
+      "rows": [
+        [
+          "table-insert-ack",
+          13,
+          24
+        ]
+      ]
+    },
+    {
+      "label": "after-table",
+      "rows": [
+        [
+          "document",
+          "table-prefix\rT1\r\u0007表😀\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r",
+          24,
+          25,
+          24,
+          8,
+          1,
+          0
+        ],
+        [
+          "paragraph",
+          1,
+          "table-prefix\r",
+          0,
+          13
+        ],
+        [
+          "paragraph",
+          2,
+          "T1\r\u0007",
+          13,
+          16
+        ],
+        [
+          "paragraph",
+          3,
+          "表😀\r\u0007",
+          16,
+          20
+        ],
+        [
+          "paragraph",
+          4,
+          "\r\u0007",
+          20,
+          21
+        ],
+        [
+          "paragraph",
+          5,
+          "\r\u0007",
+          21,
+          22
+        ],
+        [
+          "paragraph",
+          6,
+          "\r\u0007",
+          22,
+          23
+        ],
+        [
+          "paragraph",
+          7,
+          "\r\u0007",
+          23,
+          24
+        ],
+        [
+          "paragraph",
+          8,
+          "\r",
+          24,
+          25
+        ],
+        [
+          "table",
+          1,
+          13,
+          24,
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "label": "first-delete-ack",
+      "rows": [
+        [
+          "delete-ack",
+          13,
+          19,
+          20
+        ]
+      ]
+    },
+    {
+      "label": "after-first-delete",
+      "rows": [
+        [
+          "document",
+          "table-prefix\r\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r",
+          19,
+          20,
+          20,
+          8,
+          1,
+          0
+        ],
+        [
+          "paragraph",
+          1,
+          "table-prefix\r",
+          0,
+          13
+        ],
+        [
+          "paragraph",
+          2,
+          "\r\u0007",
+          13,
+          14
+        ],
+        [
+          "paragraph",
+          3,
+          "\r\u0007",
+          14,
+          15
+        ],
+        [
+          "paragraph",
+          4,
+          "\r\u0007",
+          15,
+          16
+        ],
+        [
+          "paragraph",
+          5,
+          "\r\u0007",
+          16,
+          17
+        ],
+        [
+          "paragraph",
+          6,
+          "\r\u0007",
+          17,
+          18
+        ],
+        [
+          "paragraph",
+          7,
+          "\r\u0007",
+          18,
+          19
+        ],
+        [
+          "paragraph",
+          8,
+          "\r",
+          19,
+          20
+        ],
+        [
+          "table",
+          1,
+          13,
+          19,
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "label": "second-delete-ack",
+      "rows": [
+        [
+          "delete-ack",
+          13,
+          19,
+          20
+        ]
+      ]
+    },
+    {
+      "label": "after-second-delete",
+      "rows": [
+        [
+          "document",
+          "table-prefix\r\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r",
+          19,
+          20,
+          20,
+          8,
+          1,
+          0
+        ],
+        [
+          "paragraph",
+          1,
+          "table-prefix\r",
+          0,
+          13
+        ],
+        [
+          "paragraph",
+          2,
+          "\r\u0007",
+          13,
+          14
+        ],
+        [
+          "paragraph",
+          3,
+          "\r\u0007",
+          14,
+          15
+        ],
+        [
+          "paragraph",
+          4,
+          "\r\u0007",
+          15,
+          16
+        ],
+        [
+          "paragraph",
+          5,
+          "\r\u0007",
+          16,
+          17
+        ],
+        [
+          "paragraph",
+          6,
+          "\r\u0007",
+          17,
+          18
+        ],
+        [
+          "paragraph",
+          7,
+          "\r\u0007",
+          18,
+          19
+        ],
+        [
+          "paragraph",
+          8,
+          "\r",
+          19,
+          20
+        ],
+        [
+          "table",
+          1,
+          13,
+          19,
+          2,
+          2
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_checkpoint_followup.py": "e956c820fec72bbc1962fdfe1623f7acf9bc13c5c1ff1001bb03b44957709a7c",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "532550b1fa7dbb10de1e9025307f406bfc69e6409cf5a056da1266808488a467",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb"
+  },
+  "starting_inventory": [],
+  "word_version": "16.112.3",
+  "checkpoint": 13,
+  "prefix": "table-prefix\r",
+  "observations": {
+    "before_document": [
+      "document",
+      "table-prefix\r\r",
+      13,
+      14,
+      14,
+      2,
+      0,
+      0
+    ],
+    "after_first_document": [
+      "document",
+      "table-prefix\r\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r",
+      19,
+      20,
+      20,
+      8,
+      1,
+      0
+    ],
+    "checkpoint": 13,
+    "second_delete_legal": true,
+    "after_second_document": [
+      "document",
+      "table-prefix\r\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r\u0007\r",
+      19,
+      20,
+      20,
+      8,
+      1,
+      0
+    ]
+  },
+  "after_owned_close": []
+}
