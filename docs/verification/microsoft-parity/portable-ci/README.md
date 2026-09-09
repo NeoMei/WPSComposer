@@ -42,3 +42,8 @@ Run34348802682 binds370c8c5. Linux3.9/3.12:4,948pass44skip each. Windows3.9:4,91
 ## Run06 actual result
 
 Hosted run06 (`34352720870`) at `0b4f86e35baf09e58c3b817cde4e41a8b991f597` passes all four jobs: Linux Python 3.9/3.12 each 4,969 passed / 44 skipped; Windows Python 3.9/3.12 each 4,938 passed / 75 skipped. Raw logs, JUnit and metadata are retained in `run-06/`. These portable results do not establish installed Office native/UI acceptance.
+
+
+## Run07 actual result
+
+Hosted CI07 run34355506749 at237691e1e016a3b1fc75febb5b383867f0d4a435 passes all four jobs: Linux Python3.9/3.12 each5,008passed44skipped; Windows Python3.9/3.12 each4,977passed75skipped. Raw four-job logs/JUnit and metadata are retained in portable-ci/run-07. This certifies the portable candidate sources, not installed Office/WPS native/UI acceptance.

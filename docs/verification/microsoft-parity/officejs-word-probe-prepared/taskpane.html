@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Word capability probe — not parity acceptance</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="probe.js" defer></script>
+  <script src="taskpane.js" defer></script>
+  <link rel="stylesheet" href="taskpane.css">
+</head>
+<body>
+  <h1>Word capability probe</h1>
+  <p>Preparation for a controlled test. An in-pane ID identifies this page lifetime only; it is not a durable document ID.</p>
+  <p>No document text, snapshot bytes or metadata are written. Results remain in this pane until you copy or export them. Office.js loads from Microsoft's official CDN.</p>
+  <p><strong>Manifest permission: ReadWriteDocument.</strong> Microsoft requires this permission for Word-specific APIs, including reads. The probe code only performs the listed reads.</p>
+  <p id="status" role="status">Waiting for Office.js. No host read has been submitted.</p>
+  <p id="identity"></p>
+  <label for="case-label">Optional test label (synthetic labels only)</label>
+  <input id="case-label" maxlength="80" placeholder="Mac unsaved A">
+  <button id="capabilities" disabled>Report requirement flags</button>
+  <button id="observe" disabled>Read saved flag and gated range coordinates</button>
+  <button id="export" disabled>Export local JSON</button>
+  <label for="result">Result — select and copy manually</label>
+  <textarea id="result" rows="24" readonly spellcheck="false"></textarea>
+  <p>Requirement flags and exposed methods do not prove the nine methods or snapshots work. A read ACK proves only that particular read. Snapshots, object insertion, multiwindow identity and preservation are not exercised.</p>
+</body>
+</html>
