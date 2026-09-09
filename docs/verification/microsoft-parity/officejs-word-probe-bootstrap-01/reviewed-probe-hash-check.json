@@ -1,0 +1,21 @@
+{
+  "taskpane.css": true,
+  "configure.py": true,
+  "REPORT.md": true,
+  "taskpane.js": true,
+  "manifest.word.xml": true,
+  "README.md": true,
+  "manifest.word.xml.template": true,
+  "taskpane.html": true,
+  "probe.js": true,
+  "evidence/red-js.log": true,
+  "evidence/green-manifest.log": true,
+  "evidence/review-key-red-js.log": true,
+  "evidence/review-key-green-manifest.log": true,
+  "evidence/green-js.log": true,
+  "evidence/review-key-green-js.log": true,
+  "evidence/red-manifest.log": true,
+  "tests/probe.test.cjs": true,
+  "tests/test_manifest.py": true,
+  "tests/taskpane.test.cjs": true
+}

@@ -1,0 +1,13 @@
+{
+  "status": "PREPARED_FOR_REVIEW",
+  "native_executed": false,
+  "persistent_server_started": false,
+  "file_count": 5,
+  "sha256": {
+    "server.py": "4f804c287fa2c5cacc648ee166e083569df489eb6ebd66a095eb894fac6e86f1",
+    "REPORT.md": "cb8ed058f352538222231715b36ee36143b23d2be2893f84842e2e70d7be7266",
+    "evidence/red.log": "81379e5011ab7e2a627445e03b4253688f93cdfbb1a11435bdc8b66926e823a3",
+    "evidence/green.log": "b603b3de6a2e2da098100f76635f5bf1c8346f68734a2c1fe19f943fb0ebbf0b",
+    "tests/test_server.py": "3d5515c41c2595b62ed9c057c1994752c433251ccd74937b2565504e2734ec7a"
+  }
+}

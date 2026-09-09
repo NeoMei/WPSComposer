@@ -1,0 +1,11 @@
+# Office.js Word bootstrap preparation — native pending
+
+The user approved enabling the reviewed Word capability probe. There was no standard Office development certificate directory, existing Word Wef directory or matching localhost/Office Add-in certificate in the login keychain. A new task-only certificate was generated locally: localhost DNS only, serverAuth, CA:false, valid seven days. Its public certificate/details are retained; its private key is excluded and remains permission0600 inside the ignored task TLS directory.
+
+A separate explicit approval request for current-user SSL/localhost-only certificate trust and later removal is pending. No trust setting, manifest installation, Office add-in activation or native document mutation occurred. Ordinary macOS verification returns CSSMERR_TP_NOT_TRUSTED. Providing the same public certificate explicitly as the verification anchor succeeds without changing system trust.
+
+The independently reviewed frozen HTTPS service passes eight tests plus two independent edge cases. Parent actual-certificate smoke first fails using the system Python LibreSSL2.8.3 client; both legacy standalone verification and that client cannot use this non-CA leaf as an explicit anchor. The exact unchanged certificate/server pass using already-installed Python3.12/OpenSSL3.6.3 with CERT_REQUIRED and hostname checking: two exact assets return200, key and manifest paths404. Both smoke runs close their listener; no service remains on3443. This is process-local TLS evidence, not Word trust or native Office.js acceptance.
+
+The target is an owned byte-identical copy of retained native ui-word-01/parity-word-ui.docx. An initial optional python-docx preparation attempt failed before writing because the library is absent; no dependency was installed. CUA showed Word's DocStage recent-files window with no visible document window. The fixture has not been opened for this run.
+
+Before continuing: obtain the exact certificate-trust response, apply only the approved user/SSL/localhost trust if allowed, start the reviewed loopback service, register the exact reviewed manifest, and run the controlled Word probe with an unrelated sentinel. Preserve all nine-method/snapshot/Windows acceptance gaps until actual native evidence exists. Do not clear Office caches or modify other trust settings.

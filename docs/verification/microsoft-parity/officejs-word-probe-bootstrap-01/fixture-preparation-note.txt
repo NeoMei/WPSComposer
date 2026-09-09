@@ -1,0 +1,1 @@
+Initial optional python-docx fixture creation failed with ModuleNotFoundError before any write. Used a byte-identical owned copy of the existing retained native Word test fixture instead; no dependency installed.

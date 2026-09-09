@@ -6,7 +6,7 @@ This is an implementation checkpoint, not a release approval. The frozen baselin
 
 Hosted CI07 run34355506749 at237691e1e016a3b1fc75febb5b383867f0d4a435 passes all four jobs: Linux Python3.9/3.12 each5,008passed44skipped; Windows Python3.9/3.12 each4,977passed75skipped. Raw four-job logs/JUnit and metadata are retained in portable-ci/run-07. This certifies the portable candidate sources, not installed Office/WPS native/UI acceptance.
 
-Full37 passes **5,040 tests / 12 skips** in278.49s from snapshot00216a96813f9f0247f125fa98f21b4d890bec79 with384unchanged source/configuration hashes. The Mac Word table-position guard passes independent re-review; middle insertion itself remains incomplete. An offline Office.js probe passes21Node+6Python tests and independent re-review, with exact permissions/setup/removal documented in officejs-word-probe-prepared. User enablement decision is pending; no installation or trust changes occurred.
+Full37 passes **5,040 tests / 12 skips** in278.49s from snapshot00216a96813f9f0247f125fa98f21b4d890bec79 with384unchanged source/configuration hashes. The Mac Word table-position guard passes independent re-review; middle insertion itself remains incomplete. An offline Office.js probe passes21Node+6Python tests and independent re-review, with exact permissions/setup/removal documented in officejs-word-probe-prepared. The user subsequently approved probe enablement. The reviewed local HTTPS server and concrete short-lived certificate are prepared in officejs-word-probe-server and officejs-word-probe-bootstrap-01. Explicit certificate trust approval is pending; no installation or trust changes occurred.
 
 Earlier checkpoints follow.
 

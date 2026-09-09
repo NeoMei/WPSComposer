@@ -1,0 +1,37 @@
+{
+  "ssl_version": "OpenSSL 3.6.3 9 Jun 2026",
+  "certificate_trust": "explicit process-local CA file only; OS/Word trust unchanged",
+  "hostname_verification": true,
+  "certificate_required": true,
+  "bound_host": "127.0.0.1",
+  "port": 3443,
+  "server_stopped": true,
+  "checks": [
+    {
+      "path": "/taskpane.html",
+      "status": 200,
+      "body_sha256": "66d009da4426202fd357a10d6f9a9c6793ea703dd68c3f46f84541dbcd2458b4",
+      "bytes": 1859
+    },
+    {
+      "path": "/probe.js?_host_Info=synthetic",
+      "status": 200,
+      "body_sha256": "8da68b4f4e2420e66262e3b56086a71db3251c3269d54d85ccd7fd8ebdf0f046",
+      "bytes": 6588
+    },
+    {
+      "path": "/localhost.key",
+      "status": 404,
+      "body_sha256": "493fda53120050f85836032324409be6c6484f90a0755ae0c6a673ba7626818b",
+      "bytes": 10
+    },
+    {
+      "path": "/manifest.word.xml",
+      "status": 404,
+      "body_sha256": "493fda53120050f85836032324409be6c6484f90a0755ae0c6a673ba7626818b",
+      "bytes": 10
+    }
+  ],
+  "native_word_executed": false,
+  "error": null
+}

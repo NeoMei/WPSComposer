@@ -1,0 +1,13 @@
+test_assets_match_frozen_manifest_and_pinned_hashes (test_server.ServerTests) ... ok
+test_bytes_are_frozen_after_startup_not_reloaded_from_disk (test_server.ServerTests) ... ok
+test_missing_certificate_and_invalid_timeout_never_bind (test_server.ServerTests) ... ok
+test_opaque_host_query_is_ignored_on_exact_asset_path (test_server.ServerTests) ... ok
+test_reject_paths_methods_and_foreign_hosts_without_leaking_files (test_server.ServerTests) ... ok
+test_tamper_missing_symlink_and_forged_manifest_fail_before_bind (test_server.ServerTests) ... ok
+test_tls_and_read_timeouts_do_not_block_next_client (test_server.ServerTests) ... ok
+test_tls_serves_only_four_exact_assets_with_correct_types (test_server.ServerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.593s
+
+OK
