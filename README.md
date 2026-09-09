@@ -524,6 +524,8 @@ pytest
 
 开发测试需要完整 Git 历史（含上述基线提交）及锁定的 npm 资源，不需要安装个人插件。
 
+[便携测试工作流](.github/workflows/portable-tests.yml) 在 PR 和 `master`、`main`、`codex/microsoft-parity` 分支推送时，运行 Linux/Windows × Python 3.9/3.12 的完整 pytest 套件，并保留测试日志和 JUnit 报告 14 天。工作流使用完整 Git 历史、锁定的 npm 资源和开发依赖，不启用原生验收开关；通过 CI 代表便携测试通过，WPS/Microsoft Office 的实际生成、编辑、撤销和重开仍需单独验收。
+
 ## 📄 许可证
 
 MIT License
