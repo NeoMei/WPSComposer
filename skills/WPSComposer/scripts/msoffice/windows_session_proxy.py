@@ -114,6 +114,9 @@ class _SessionProxy:
         self = cls.__new__(cls)
         self._deadline = time.monotonic() + 600
         self._closed = self._uncertain = False
+        self._recovery_written = self._quarantine_written = False
+        self._diagnostic_io_failures = []
+        self._cleanup_io_failures = []
         self._sequence = 0
         self._identity = {}
         self._last_request = None
@@ -142,10 +145,12 @@ class _SessionProxy:
             if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
                 raise ValueError('Worker did not acknowledge the requested document binding')
             return self
-        except BaseException:
+        except BaseException as exc:
             if self._child is not None and not self._uncertain:
                 self._abort('Initial document binding failed')
-            self._lock.close()
+            elif self._child is None:
+                self._attempt_abort('lock.close', self._lock.close, self._cleanup_io_failures)
+            self._with_abort_failures(exc)
             raise
 
     @property
@@ -153,12 +158,37 @@ class _SessionProxy:
         return self._deadline
 
     def _error(self, suffix):
+        def evidenced(path, written):
+            try:
+                return path if written and path.is_file() else None
+            except BaseException:
+                # Optional evidence must not replace the primary failure, even
+                # when a second cancellation interrupts filesystem metadata.
+                return None
         locations = {'staging_path': self.staging_root,
-                     'diagnostic_path': self.staging_root / 'recovery.json',
-                     'quarantine_path': self._lock.quarantine_path if self._uncertain else None}
+                     'diagnostic_path': evidenced(self.staging_root / 'recovery.json', self._recovery_written),
+                     'quarantine_path': evidenced(self._lock.quarantine_path, self._quarantine_written)}
         if self.kind == 'writer':
-            return NativeWordTimeoutError(**locations) if suffix == 'TIMEOUT' else NativeWordError('NATIVE_WORD_' + suffix, **locations)
-        return NativeOfficeError('NATIVE_OFFICE_' + suffix, **locations)
+            error = NativeWordTimeoutError(**locations) if suffix == 'TIMEOUT' else NativeWordError('NATIVE_WORD_' + suffix, **locations)
+        else:
+            error = NativeOfficeError('NATIVE_OFFICE_' + suffix, **locations)
+        return self._with_abort_failures(error)
+
+    def _with_abort_failures(self, error):
+        if self._diagnostic_io_failures:
+            error.diagnostic_io_failures = tuple(self._diagnostic_io_failures)
+        if self._cleanup_io_failures:
+            error.cleanup_io_failures = tuple(self._cleanup_io_failures)
+        return error
+
+    @staticmethod
+    def _attempt_abort(label, operation, failures):
+        try:
+            operation()
+        except BaseException as error:
+            failures.append((label, type(error).__name__))
+            return False
+        return True
 
     def _remaining(self):
         value = self._deadline - time.monotonic()
@@ -217,19 +247,28 @@ class _SessionProxy:
                   'python_pid': getattr(self._child, 'pid', None), 'identity': self._identity,
                   'last_request': self._last_request, 'cleanup_verified': False,
                   'office_termination_attempted': False}
-        try:
-            (self.staging_root / 'recovery.json').write_text(json.dumps(detail, ensure_ascii=False), encoding='utf-8')
+        def quarantine():
             if not self._lock.quarantine_path.exists():
                 self._lock.quarantine(detail)
-        finally:
-            if self._child is not None and self._child.poll() is None:
-                self._child.kill()
-                try:
-                    self._child.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    pass
-            self._stop_io()
-            self._lock.close()
+            elif not self._lock.quarantine_path.is_file():
+                raise OSError('Quarantine marker is not a regular file')
+
+        # In-memory uncertainty blocks this proxy immediately. Persist the
+        # cross-session gate before optional recovery evidence; failures of
+        # either must not mask the primary native error or cancellation.
+        self._quarantine_written = self._attempt_abort(
+            'quarantine', quarantine, self._diagnostic_io_failures)
+        self._recovery_written = self._attempt_abort('recovery', lambda:
+            (self.staging_root / 'recovery.json').write_text(
+                json.dumps(detail, ensure_ascii=False), encoding='utf-8'), self._diagnostic_io_failures)
+        if self._child is not None:
+            def kill_child():
+                if self._child.poll() is None:
+                    self._child.kill()
+            self._attempt_abort('child.kill', kill_child, self._cleanup_io_failures)
+            self._attempt_abort('child.wait', lambda: self._child.wait(timeout=1), self._cleanup_io_failures)
+        self._attempt_abort('io.stop', self._stop_io, self._cleanup_io_failures)
+        self._attempt_abort('lock.close', self._lock.close, self._cleanup_io_failures)
 
     def _remote_error(self, detail):
         if not isinstance(detail, dict):
@@ -314,8 +353,11 @@ class _SessionProxy:
         except (TimeoutError, queue.Empty):
             self._abort('Native session request exceeded the total deadline')
             raise self._error('TIMEOUT') from None
-        except BaseException:
+        except BaseException as exc:
             self._abort('Worker response or request completion could not be verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
             raise self._error('QUARANTINED') from None
         finally:
             if acquired:
@@ -362,7 +404,7 @@ class _SessionProxy:
             raise self._error('QUARANTINED')
         try:
             result = self._call('close', save_changes=save_changes)
-        except BaseException:
+        except BaseException as exc:
             # _call leaves a verified remote error non-uncertain. In the saving
             # close path the worker remains alive with the session lock held,
             # so the caller can retry, save elsewhere, or explicitly discard.
@@ -370,6 +412,9 @@ class _SessionProxy:
                 raise
             if not self._uncertain:
                 self._abort('Native session close was not verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
             raise self._error('QUARANTINED') from None
         try:
             if result != {'closed': True}:
@@ -380,8 +425,11 @@ class _SessionProxy:
                 raise ValueError('Session worker exited unsuccessfully')
             self._closed = True
             self._stop_io()
-        except BaseException:
+        except BaseException as exc:
             self._abort('Native session close was not verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
             raise self._error('QUARANTINED') from None
         self._lock.close()
 

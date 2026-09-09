@@ -1,0 +1,25 @@
+........F......................                                          [100%]
+=================================== FAILURES ===================================
+____________ test_abrupt_worker_exit_reports_existing_recovery_path ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1066c7af0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1318/test_abrupt_worker_exit_report0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1318/test_abrupt_worker_exit_report0/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+
+    def test_abrupt_worker_exit_reports_existing_recovery_path(monkeypatch, tmp_path, isolated):
+        class FailedChild:
+            pid = 812
+            returncode = 1
+            def wait(self, timeout):
+                return 1
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: FailedChild())
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+            execute(tmp_path)
+        path = caught.value.diagnostic_path
+>       assert path is None or Path(path).is_file(), path
+E       NameError: name 'Path' is not defined
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:189: NameError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_abrupt_worker_exit_reports_existing_recovery_path
+1 failed, 30 passed in 0.84s

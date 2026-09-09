@@ -1,0 +1,11 @@
+{
+  "checkout": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-native01-nncsoi7r/checkout",
+  "base_commit": "415c9d04f38e5d4a744baadce75a39bf76dc8cca",
+  "source_checkout": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-full32-zogqgbh1/checkout",
+  "overlay_hashes": {
+    "fixtures/microsoft_parity/macos_word_semantic_table.py": "46a275cda25eec64c664713564f6d9cde2f7cd6d402a697bad30060580e62871",
+    "tests/msoffice/test_macos_word_semantic_table_fixture.py": "363a02672c9b8a8d61e4290f95e9d1fa0157e064832234f4dc40012c5a59c7cc",
+    "skills/WPSComposer/scripts/msoffice/macos_word_semantic_table.py": "9655e9af00366228bcca63063d2341d9687348fa2cd9e9663632ddee9c2d65ec",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e"
+  }
+}

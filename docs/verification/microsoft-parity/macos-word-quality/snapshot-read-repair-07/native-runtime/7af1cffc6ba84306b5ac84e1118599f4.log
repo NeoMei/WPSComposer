@@ -1,0 +1,7 @@
+bulk-underline:0: set probeValues to "unresolved-sentinel"
+bulk-underline:1: set probeValues to get underline of font object of every character of text object of boundDoc
+bulk-underline:2: set probeVectorClass to (class of probeValues) as text
+bulk-underline:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST"
+bulk-underline:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST", -2700
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","bulk-underline:3: if class of probeValues is not list then error \"BULK_VALUES_NOT_LIST\"",-2700,"BULK_VALUES_NOT_LIST"]]]

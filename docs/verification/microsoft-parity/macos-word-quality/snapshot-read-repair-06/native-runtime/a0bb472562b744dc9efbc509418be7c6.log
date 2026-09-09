@@ -1,0 +1,8 @@
+main-text-original-type:0: set probeStoryRange to missing value
+main-text-original-type:1: set probeStoryRange to get story range boundDoc story type main text story
+main-text-original-type:2: set probeValue to "unresolved-sentinel"
+main-text-original-type:3: set probeValue to get story type of probeStoryRange
+main-text-original-type:4: set probeValueClass to (class of probeValue) as text
+main-text-original-type:5: set probeRows to {{"scalar",probeValueClass,probeValue as text}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["scalar","constant","main text story"]]]]]

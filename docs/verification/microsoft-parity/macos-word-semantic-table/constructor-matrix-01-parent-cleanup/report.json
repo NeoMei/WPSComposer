@@ -1,0 +1,23 @@
+{
+  "owned_exact_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf/document-798995b924bf4696abfc488e45e139b6.docx",
+  "owned_ui_save_prompt": true,
+  "owned_ui_discard": true,
+  "sentinel_name": "\u6587\u686392",
+  "sentinel_exact_text_verified": true,
+  "sentinel_ui_delete": true,
+  "inventory": [],
+  "quarantine_recovered": true,
+  "final_inventory": [],
+  "reconciled_table_count": 2,
+  "new_table_range": [
+    62,
+    78
+  ],
+  "requested_replace_range": [
+    12,
+    19
+  ],
+  "REPLACE_remains": true,
+  "original_matrix_D_remains": "ACK_FAILURE",
+  "semantic_replacement": "FAIL"
+}

@@ -1,0 +1,13 @@
+{
+  "prepared_only": true,
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf/document-798995b924bf4696abfc488e45e139b6.docx",
+  "sentinel_name": "文档92",
+  "sentinel_preimage": [
+    "文档92",
+    "文档92",
+    false,
+    "07bd08d93e3d7b5b976bf438fd7927768e55cf7eea170e16b2b1216b4b4bbc27"
+  ],
+  "script_sha256": "e912e8430fdebc6fd7014508bf5d889f2c2e49352eb2d8ca1c4d95739b990e63",
+  "scope": "Exact identity guard then body/table bounds/count/text reads only; no activation, selection change, save, close, create or recovery."
+}

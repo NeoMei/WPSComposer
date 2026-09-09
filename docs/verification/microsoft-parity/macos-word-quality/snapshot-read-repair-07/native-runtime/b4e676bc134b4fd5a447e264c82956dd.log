@@ -1,0 +1,7 @@
+bulk-italic:0: set probeValues to "unresolved-sentinel"
+bulk-italic:1: set probeValues to get italic of font object of every character of text object of boundDoc
+bulk-italic:2: set probeVectorClass to (class of probeValues) as text
+bulk-italic:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST"
+bulk-italic:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST", -2700
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","bulk-italic:3: if class of probeValues is not list then error \"BULK_VALUES_NOT_LIST\"",-2700,"BULK_VALUES_NOT_LIST"]]]

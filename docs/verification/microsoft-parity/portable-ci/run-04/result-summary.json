@@ -1,0 +1,44 @@
+{
+  "candidate": "595268ec209df7f8fd533452d30b61609696134f",
+  "run": 34343657808,
+  "original_conclusion": "failure",
+  "jobs": [
+    {
+      "job": "pytest-ubuntu-24.04-python-3.12",
+      "tests": 4855,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 44,
+      "passed": 4811,
+      "seconds": 221.742
+    },
+    {
+      "job": "pytest-ubuntu-24.04-python-3.9",
+      "tests": 4855,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 44,
+      "passed": 4811,
+      "seconds": 237.123
+    },
+    {
+      "job": "pytest-windows-2022-python-3.12",
+      "tests": 4855,
+      "errors": 0,
+      "failures": 1,
+      "skipped": 75,
+      "passed": 4779,
+      "seconds": 653.875
+    },
+    {
+      "job": "pytest-windows-2022-python-3.9",
+      "tests": 4855,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 75,
+      "passed": 4780,
+      "seconds": 638.894
+    }
+  ],
+  "remaining_failure": "Windows Python 3.12 unauthorized-origin POST reports ConnectionAbortedError WinError10053 instead of HTTP403; cause under investigation; no weakened assertion or retry-pass claimed"
+}

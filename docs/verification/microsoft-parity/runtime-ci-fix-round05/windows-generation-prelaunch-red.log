@@ -1,0 +1,277 @@
+.......................FFFFFF                                            [100%]
+=================================== FAILURES ===================================
+__________________ test_log_close_preserves_primary[timeout] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8ee040>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_log_close_preserves_prima0')
+outcome = 'timeout'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+            assert caught.value is primary
+        else:
+>           assert getattr(caught.value, 'code', None) == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+E           AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E            +  where None = getattr(OSError(5, 'secondary log close failure'), 'code', None)
+E            +    where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:338: AssertionError
+___________________ test_log_close_preserves_primary[cancel] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8f0460>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_log_close_preserves_prima1')
+outcome = 'cancel'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+>           assert caught.value is primary
+E           AssertionError: assert OSError(5, 'secondary log close failure') is KeyboardInterrupt('initial cancellation')
+E            +  where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:336: AssertionError
+___________________ test_log_close_preserves_primary[launch] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8fbd30>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_log_close_preserves_prima2')
+outcome = 'launch'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+            assert caught.value is primary
+        else:
+>           assert getattr(caught.value, 'code', None) == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+E           AssertionError: assert None == 'NATIVE_OFFICE_EXECUTION_FAILED'
+E            +  where None = getattr(OSError(5, 'secondary log close failure'), 'code', None)
+E            +    where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:338: AssertionError
+_______ test_prelaunch_preparation_failure_does_not_quarantine[request] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8f0370>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai0/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+phase = 'request'
+
+    @pytest.mark.parametrize('phase', ['request', 'log.open', 'log.chmod'])
+    def test_prelaunch_preparation_failure_does_not_quarantine(monkeypatch, tmp_path, isolated, phase):
+        root, _, _ = isolated
+        error = OSError('prelaunch failure')
+        launches = []
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: launches.append(a))
+        write = runtime._write_json
+        open_file = Path.open
+        chmod = runtime.os.chmod
+        if phase == 'request':
+            def fail(path, value):
+                if path.name == 'request.json':
+                    raise error
+                return write(path, value)
+            monkeypatch.setattr(runtime, '_write_json', fail)
+        elif phase == 'log.open':
+            def fail(path, *a, **k):
+                if path.name == 'worker.log':
+                    raise error
+                return open_file(path, *a, **k)
+            monkeypatch.setattr(Path, 'open', fail)
+        else:
+            def fail(path, *a, **k):
+                if Path(path).name == 'worker.log':
+                    raise error
+                return chmod(path, *a, **k)
+            monkeypatch.setattr(runtime.os, 'chmod', fail)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+        assert caught.value is error
+>       assert error.cleanup_verified is True
+E       AttributeError: 'OSError' object has no attribute 'cleanup_verified'
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:373: AttributeError
+_______ test_prelaunch_preparation_failure_does_not_quarantine[log.open] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10aaf1a30>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai1')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai1/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+phase = 'log.open'
+
+    @pytest.mark.parametrize('phase', ['request', 'log.open', 'log.chmod'])
+    def test_prelaunch_preparation_failure_does_not_quarantine(monkeypatch, tmp_path, isolated, phase):
+        root, _, _ = isolated
+        error = OSError('prelaunch failure')
+        launches = []
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: launches.append(a))
+        write = runtime._write_json
+        open_file = Path.open
+        chmod = runtime.os.chmod
+        if phase == 'request':
+            def fail(path, value):
+                if path.name == 'request.json':
+                    raise error
+                return write(path, value)
+            monkeypatch.setattr(runtime, '_write_json', fail)
+        elif phase == 'log.open':
+            def fail(path, *a, **k):
+                if path.name == 'worker.log':
+                    raise error
+                return open_file(path, *a, **k)
+            monkeypatch.setattr(Path, 'open', fail)
+        else:
+            def fail(path, *a, **k):
+                if Path(path).name == 'worker.log':
+                    raise error
+                return chmod(path, *a, **k)
+            monkeypatch.setattr(runtime.os, 'chmod', fail)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+        assert caught.value is error
+>       assert error.cleanup_verified is True
+E       AttributeError: 'OSError' object has no attribute 'cleanup_verified'
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:373: AttributeError
+______ test_prelaunch_preparation_failure_does_not_quarantine[log.chmod] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8f0a60>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai2')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1339/test_prelaunch_preparation_fai2/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+phase = 'log.chmod'
+
+    @pytest.mark.parametrize('phase', ['request', 'log.open', 'log.chmod'])
+    def test_prelaunch_preparation_failure_does_not_quarantine(monkeypatch, tmp_path, isolated, phase):
+        root, _, _ = isolated
+        error = OSError('prelaunch failure')
+        launches = []
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: launches.append(a))
+        write = runtime._write_json
+        open_file = Path.open
+        chmod = runtime.os.chmod
+        if phase == 'request':
+            def fail(path, value):
+                if path.name == 'request.json':
+                    raise error
+                return write(path, value)
+            monkeypatch.setattr(runtime, '_write_json', fail)
+        elif phase == 'log.open':
+            def fail(path, *a, **k):
+                if path.name == 'worker.log':
+                    raise error
+                return open_file(path, *a, **k)
+            monkeypatch.setattr(Path, 'open', fail)
+        else:
+            def fail(path, *a, **k):
+                if Path(path).name == 'worker.log':
+                    raise error
+                return chmod(path, *a, **k)
+            monkeypatch.setattr(runtime.os, 'chmod', fail)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+        assert caught.value is error
+>       assert error.cleanup_verified is True
+E       AttributeError: 'OSError' object has no attribute 'cleanup_verified'
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:373: AttributeError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[timeout]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[cancel]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[launch]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_prelaunch_preparation_failure_does_not_quarantine[request]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_prelaunch_preparation_failure_does_not_quarantine[log.open]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_prelaunch_preparation_failure_does_not_quarantine[log.chmod]
+6 failed, 23 passed in 0.48s

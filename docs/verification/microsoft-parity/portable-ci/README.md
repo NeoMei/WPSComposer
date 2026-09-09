@@ -24,3 +24,12 @@ Run `34339669535` binds candidate `1686155b5b16c6709b0182b40dbf5a6ed0f3d89f`. Bo
 ## Reviewed repair before run04
 
 The Office job lock now uses the platform native lock implementation, and three assertions normalize portable relative paths or AppleScript-escaped paths. Diagnostic persistence no longer replaces native errors or cancellation, and independent review closes two cleanup exception-masking findings (173 scoped tests). Full round32 passes 4,843 tests / 12 skips in 217.11s from immutable commit `415c9d04f38e5d4a744baadce75a39bf76dc8cca`, with all 377 recorded source hashes unchanged and equal to live. Actual hosted run04 and Windows native acceptance remain separate gates. Repair/review records are in `../runtime-ci-fix-round04/`.
+
+
+## Run04 actual result
+
+Run34343657808 binds candidate `595268ec209df7f8fd533452d30b61609696134f`: Linux Python3.9/3.12 each 4,811 passed / 44 skipped; Windows3.9 4,780 passed / 75 skipped; Windows3.12 4,779 passed / 1 failed / 75 skipped. Its one failure is a WinError10053 connection abort while expecting HTTP403 for an unlisted-origin POST. All earlier 10 Windows failures pass. `run-04/` retains every raw log/XML and metadata. The new failure is under investigation; no retry or weakened expected response is treated as a repair.
+
+## Reviewed candidate for run05
+
+The bridge now performs bounded staged teardown for early rejected POSTs while retaining the strict original HTTP403 assertion. Its local large-body reproduction and 488-test module regression pass; this does not prove the sole cause of the small-request Windows10053 result. All Windows proxy and one-shot primary-error/cleanup repairs have independent scoped acceptance. Full round34 passes **4,980 tests / 12 skips** in 394.26s, snapshot `bd8067a22741958d91a9823cdee0a1616fad62aa`; all383source/configuration hashes are unchanged and equal to the candidate. Run05 must still establish actual hosted results. Records are in `../runtime-ci-fix-round05/` and `../full-round34/`.

@@ -107,6 +107,30 @@ def _owned_path(root, value):
     return path
 
 
+def _worker_diagnostic_path(job, error):
+    for path in (job / 'diagnostics.json', job / 'worker.log'):
+        try:
+            if path.is_file():
+                return path
+        except BaseException as failure:
+            # Evidence discovery cannot substitute an inaccessible path for
+            # the native failure being reported.
+            error.diagnostic_io_failures = (getattr(error, 'diagnostic_io_failures', ())
+                                           + (('worker.diagnostic.stat', type(failure).__name__),))
+    return None
+
+
+def _retain_worker_diagnostic(error, job, detail):
+    try:
+        _write_json(job / 'diagnostics.json', detail)
+    except BaseException as failure:
+        error.diagnostic_io_failures = (getattr(error, 'diagnostic_io_failures', ())
+                                       + (('worker.diagnostics', type(failure).__name__),))
+    if isinstance(error, NativeOfficeError):
+        path = _worker_diagnostic_path(job, error)
+        error.diagnostic_path = str(path) if path is not None else None
+
+
 def _worker_failure(job):
     diagnostic = job / 'diagnostics.json'
     data = {}
@@ -114,54 +138,91 @@ def _worker_failure(job):
         data = json.loads(diagnostic.read_text(encoding='utf-8'))
     except (OSError, ValueError):
         pass
+    if not isinstance(data, dict):
+        data = {}
     code = data.get('public_code')
     if code not in {'NATIVE_OFFICE_TIMEOUT', 'NATIVE_OFFICE_QUARANTINED', 'NATIVE_OFFICE_UNSUPPORTED', 'NATIVE_OFFICE_UNAVAILABLE'}:
         code = 'NATIVE_OFFICE_EXECUTION_FAILED'
-    error = NativeOfficeError(code, staging_path=job, diagnostic_path=diagnostic)
+    error = NativeOfficeError(code, staging_path=job)
+    path = _worker_diagnostic_path(job, error)
+    error.diagnostic_path = str(path) if path is not None else None
     error.cleanup_verified = data.get('cleanup_verified') is True
     return error
 
 
 def _run_worker(job, payload, deadline):
-    _remaining(deadline)
-    request, response = job / 'request.json', job / 'response.json'
-    diagnostic = job / 'diagnostics.json'
-    _write_json(request, dict(payload, protocol=1, deadline=deadline))
-    env = os.environ.copy()
-    env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
-    command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
-    with (job / 'worker.log').open('wb') as log:
+    primary_error = None
+    log = None
+    launched = closed = False
+    try:
+        _remaining(deadline)
+        request, response = job / 'request.json', job / 'response.json'
+        diagnostic = job / 'diagnostics.json'
+        _write_json(request, dict(payload, protocol=1, deadline=deadline))
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
+        command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
+        log = (job / 'worker.log').open('wb')
         os.chmod(job / 'worker.log', 0o600)
         try:
             child = subprocess.Popen(command, cwd=str(_PACKAGE_ROOT), env=env,
                                      stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
+            launched = True
         except BaseException as exc:
-            _write_json(diagnostic, {'status': 'launch_failed', 'message': str(exc),
-                                    'cleanup_verified': True, 'office_termination_attempted': False})
-            raise _worker_failure(job) from None
+            error = (NativeOfficeError('NATIVE_OFFICE_EXECUTION_FAILED', staging_path=job)
+                     if isinstance(exc, Exception) else exc)
+            error.cleanup_verified = True
+            _retain_worker_diagnostic(error, job, {'status': 'launch_failed', 'message': str(exc),
+                                      'cleanup_verified': True, 'office_termination_attempted': False})
+            raise error from None
         try:
             child.wait(timeout=_remaining(deadline))
-        except (subprocess.TimeoutExpired, NativeOfficeError):
+        except BaseException as exc:
             # This exact handle is Python, not EXCEL/POWERPNT and not a tree.
-            child.kill()
-            try:
-                child.wait(timeout=1)
-            except subprocess.TimeoutExpired:
-                pass
-            if not diagnostic.exists():
-                _write_json(diagnostic, {'status': 'timeout', 'python_pid': child.pid,
+            timed_out = isinstance(exc, (subprocess.TimeoutExpired, NativeOfficeError))
+            error = (NativeOfficeError('NATIVE_OFFICE_TIMEOUT', staging_path=job)
+                     if timed_out else exc)
+            cleanup_failures = []
+            for label, cleanup in (('worker.kill', child.kill),
+                                   ('worker.wait', lambda: child.wait(timeout=1))):
+                try:
+                    cleanup()
+                except BaseException as failure:
+                    cleanup_failures.append((label, type(failure).__name__))
+            if cleanup_failures:
+                error.cleanup_io_failures = tuple(cleanup_failures)
+            if _worker_diagnostic_path(job, error) != diagnostic:
+                _retain_worker_diagnostic(error, job, {'status': 'timeout' if timed_out else 'interrupted', 'python_pid': child.pid,
                                         'cleanup_verified': False, 'office_termination_attempted': False})
-            raise NativeOfficeError('NATIVE_OFFICE_TIMEOUT', staging_path=job, diagnostic_path=diagnostic) from None
-    if child.returncode != 0 or not response.is_file():
-        raise _worker_failure(job)
-    try:
-        response_value = json.loads(response.read_text(encoding='utf-8'))
-        if response_value.get('status') != 'ok' or response_value['value'].get('cleanup_verified') is not True:
-            raise ValueError('Native Office cleanup was not verified')
-        _remaining(deadline)
-        return response_value['value']
-    except (ValueError, KeyError, AttributeError):
-        raise _worker_failure(job) from None
+            elif isinstance(error, NativeOfficeError):
+                error.diagnostic_path = str(diagnostic)
+            raise error from None
+        if child.returncode != 0 or not response.is_file():
+            raise _worker_failure(job)
+        try:
+            response_value = json.loads(response.read_text(encoding='utf-8'))
+            if response_value.get('status') != 'ok' or response_value['value'].get('cleanup_verified') is not True:
+                raise ValueError('Native Office cleanup was not verified')
+            closed = True
+            _remaining(deadline)
+            return response_value['value']
+        except (ValueError, KeyError, AttributeError):
+            raise _worker_failure(job) from None
+    except BaseException as error:
+        primary_error = error
+        if not launched or closed:
+            error.cleanup_verified = True
+        raise
+    finally:
+        if log is not None:
+            try:
+                log.close()
+            except BaseException as failure:
+                if primary_error is None:
+                    failure.cleanup_verified = not launched or closed
+                    raise
+                primary_error.cleanup_io_failures = (getattr(primary_error, 'cleanup_io_failures', ())
+                                                     + (('worker.log.close', type(failure).__name__),))
 
 
 def validate_plan(plan, resources):
@@ -222,6 +283,17 @@ def _execute(component, output, *, overwrite, deadline, prepare):
     lock = OfficeJobLock(root)
     job = None
     launched = closed = published = False
+    primary_error = None
+    diagnostic_failures = []
+
+    def persist_diagnostic(label, write):
+        try:
+            write()
+        except BaseException as error:
+            diagnostic_failures.append((label, type(error).__name__))
+            return False
+        return True
+
     try:
         lock.acquire(deadline)
         job = Path(tempfile.mkdtemp(prefix='job-', dir=root))
@@ -236,22 +308,39 @@ def _execute(component, output, *, overwrite, deadline, prepare):
         published = True
         return output
     except BaseException as exc:
+        primary_error = exc
         if job is not None:
             closed = closed or getattr(exc, 'cleanup_verified', False)
             detail = {'component': component, 'staging_path': str(job), 'cleanup_verified': closed,
                       'office_termination_attempted': False, 'code': getattr(exc, 'code', 'NATIVE_OFFICE_EXECUTION_FAILED')}
-            _write_json(job / 'recovery.json', detail)
+            quarantined = False
             if launched and not closed:
-                lock.quarantine(detail)
+                quarantined = persist_diagnostic('quarantine', lambda: lock.quarantine(detail))
+            recovery = job / 'recovery.json'
+            recovery_written = persist_diagnostic('recovery', lambda: _write_json(recovery, detail))
             if isinstance(exc, NativeOfficeError):
                 exc.staging_path = str(job)
-                exc.diagnostic_path = exc.diagnostic_path or str(job / 'recovery.json')
-                exc.quarantine_path = str(lock.quarantine_path) if launched and not closed else None
+                exc.diagnostic_path = exc.diagnostic_path or (str(recovery) if recovery_written else None)
+                exc.quarantine_path = str(lock.quarantine_path) if quarantined else None
+            if diagnostic_failures:
+                exc.diagnostic_io_failures = (getattr(exc, 'diagnostic_io_failures', ())
+                                              + tuple(diagnostic_failures))
         raise
     finally:
-        lock.close()
+        cleanups = [('lock.close', lock.close)]
         if published and job is not None:
-            shutil.rmtree(job)
+            cleanups.append(('staging.remove', lambda: shutil.rmtree(job)))
+        cleanup_failures = []
+        for label, cleanup in cleanups:
+            try:
+                cleanup()
+            except BaseException as error:
+                if primary_error is None:
+                    raise
+                cleanup_failures.append((label, type(error).__name__))
+        if cleanup_failures:
+            primary_error.cleanup_io_failures = (getattr(primary_error, 'cleanup_io_failures', ())
+                                                 + tuple(cleanup_failures))
 
 
 def generate_recorded(recorded, output, *, timeout=600, overwrite=False):

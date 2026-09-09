@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "stage": "semantic-table",
+  "error": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-1qyy66n5 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-1qyy66n5/fbd144020e0f4c178645c5a0b35548d3.log",
+  "action": "Stop native calls; root must independently reconcile this task before another native run.",
+  "owned_document": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-1qyy66n5/document-22111abb5db84f10a3267bdfcf23e892.docx",
+    "closed": false,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-1qyy66n5"
+  },
+  "sentinel": {
+    "name": "文档91",
+    "preimage": [
+      "文档91",
+      "文档91",
+      false,
+      "f130319f40db69e963795e8436c2bf9b4b901e732a40577273cdbbe67cf6ae3a"
+    ],
+    "state": "unknown",
+    "close_script": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-semantic-table/run-01/sentinel-close.applescript"
+  }
+}

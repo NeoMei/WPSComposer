@@ -1,0 +1,28 @@
+main-text-evaluated-content:0: set probeStoryRange to missing value
+main-text-evaluated-content:1: set probeStoryRange to get story range boundDoc story type main text story
+main-text-evaluated-content:2: set probeStoryRange to get probeStoryRange
+main-text-evaluated-content:3: set probeValue to "unresolved-sentinel"
+main-text-evaluated-content:4: set probeValue to get content of probeStoryRange
+main-text-evaluated-content:5: set probeValueClass to (class of probeValue) as text
+main-text-evaluated-content:6: set recoveryTask to current application's NSTask's alloc()'s init()
+main-text-evaluated-content:7: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+main-text-evaluated-content:8: recoveryTask's setArguments:{"-a", "256"}
+main-text-evaluated-content:9: set recoveryInput to current application's NSPipe's pipe()
+main-text-evaluated-content:10: set recoveryOutput to current application's NSPipe's pipe()
+main-text-evaluated-content:11: recoveryTask's setStandardInput:recoveryInput
+main-text-evaluated-content:12: recoveryTask's setStandardOutput:recoveryOutput
+main-text-evaluated-content:13: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+main-text-evaluated-content:14: set recoveryData to (current application's NSString's stringWithString:(probeValue as text))'s dataUsingEncoding:4
+main-text-evaluated-content:15: recoveryTask's |launch|()
+main-text-evaluated-content:16: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+main-text-evaluated-content:17: (recoveryInput's fileHandleForWriting())'s closeFile()
+main-text-evaluated-content:18: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+main-text-evaluated-content:19: recoveryTask's waitUntilExit()
+main-text-evaluated-content:20: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+main-text-evaluated-content:21: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+main-text-evaluated-content:22: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+main-text-evaluated-content:23: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+main-text-evaluated-content:24: set probeValueHash to text 1 thru 64 of recoveryDigestText
+main-text-evaluated-content:25: set probeRows to {{"value-hash",probeValueClass,probeValueHash}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["value-hash","text","9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b"]]]]]

@@ -1,0 +1,21 @@
+{"label": "main-text-original-class", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.482, "list_templates": [0, 0]}
+{"label": "main-text-original-type", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.563, "list_templates": [0, 0]}
+{"label": "main-text-original-start", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.532, "list_templates": [0, 0]}
+{"label": "main-text-original-end", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.532, "list_templates": [0, 0]}
+{"label": "main-text-original-content", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.869, "list_templates": [0, 0]}
+{"label": "main-text-evaluated-class", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.503, "list_templates": [0, 0]}
+{"label": "main-text-evaluated-type", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.55, "list_templates": [0, 0]}
+{"label": "main-text-evaluated-start", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.548, "list_templates": [0, 0]}
+{"label": "main-text-evaluated-end", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.546, "list_templates": [0, 0]}
+{"label": "main-text-evaluated-content", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.884, "list_templates": [0, 0]}
+{"label": "primary-header-original-class", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.48, "list_templates": [0, 0]}
+{"label": "primary-header-original-type", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.532, "list_templates": [0, 0]}
+{"label": "primary-header-original-start", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.531, "list_templates": [0, 0]}
+{"label": "primary-header-original-end", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.531, "list_templates": [0, 0]}
+{"label": "primary-header-original-content", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.547, "list_templates": [0, 0]}
+{"label": "primary-header-evaluated-class", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.496, "list_templates": [0, 0]}
+{"label": "primary-header-evaluated-type", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.553, "list_templates": [0, 0]}
+{"label": "primary-header-evaluated-start", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.559, "list_templates": [0, 0]}
+{"label": "primary-header-evaluated-end", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.78, "list_templates": [0, 0]}
+{"label": "primary-header-evaluated-content", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.565, "list_templates": [0, 0]}
+{"status": "DIAGNOSED", "checks": {"body_unchanged": true, "private_file_unchanged": true, "inventory_empty": true, "sources_unchanged": true}, "blocker": null, "error": null, "remaining_owned_path": null}

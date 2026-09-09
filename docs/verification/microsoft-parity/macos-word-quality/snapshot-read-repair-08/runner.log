@@ -1,0 +1,4 @@
+{"label": "record-vs-legacy-0", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.764, "list_templates": [0, 0]}
+{"label": "record-vs-legacy-59", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.782, "list_templates": [0, 0]}
+{"label": "record-vs-legacy-110", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.764, "list_templates": [0, 0]}
+{"status": "DIAGNOSED", "checks": {"body_unchanged": true, "private_file_unchanged": true, "inventory_empty": true, "sources_unchanged": true}, "blocker": null, "error": null, "remaining_owned_path": null}

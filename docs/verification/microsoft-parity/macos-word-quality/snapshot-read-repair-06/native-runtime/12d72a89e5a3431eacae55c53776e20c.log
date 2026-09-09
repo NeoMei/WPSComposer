@@ -1,0 +1,9 @@
+main-text-evaluated-end:0: set probeStoryRange to missing value
+main-text-evaluated-end:1: set probeStoryRange to get story range boundDoc story type main text story
+main-text-evaluated-end:2: set probeStoryRange to get probeStoryRange
+main-text-evaluated-end:3: set probeValue to "unresolved-sentinel"
+main-text-evaluated-end:4: set probeValue to get end of content of probeStoryRange
+main-text-evaluated-end:5: set probeValueClass to (class of probeValue) as text
+main-text-evaluated-end:6: set probeRows to {{"scalar",probeValueClass,probeValue as integer}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["scalar","integer",220]]]]]

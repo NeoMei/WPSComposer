@@ -1,0 +1,14 @@
+{
+  "production_unchanged": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": true,
+    "tests/msoffice/test_macos_word_quality_native.py": true
+  },
+  "closed_probe_collection_preservation": {
+    "01": true,
+    "02": true,
+    "04": true,
+    "06": true,
+    "07": true,
+    "08": true
+  }
+}

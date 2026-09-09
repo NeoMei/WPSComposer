@@ -1,0 +1,71 @@
+..............FFF                                                        [100%]
+=================================== FAILURES ===================================
+_ test_wait_cancellation_stops_only_owned_python_and_keeps_identity[KeyboardInterrupt] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a97bbe0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1320/test_wait_cancellation_stops_o0')
+signal_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize('signal_type', [KeyboardInterrupt, SystemExit])
+    def test_wait_cancellation_stops_only_owned_python_and_keeps_identity(monkeypatch, tmp_path, signal_type):
+        primary = signal_type()
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    raise primary
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        assert caught.value is primary
+>       assert child.returncode == -9
+E       assert None == -9
+E        +  where None = <test_windows_office_runtime_diagnostics.test_wait_cancellation_stops_only_owned_python_and_keeps_identity.<locals>.Child object at 0x10a97bdf0>.returncode
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:235: AssertionError
+_ test_wait_cancellation_stops_only_owned_python_and_keeps_identity[SystemExit] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a9cac70>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1320/test_wait_cancellation_stops_o1')
+signal_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize('signal_type', [KeyboardInterrupt, SystemExit])
+    def test_wait_cancellation_stops_only_owned_python_and_keeps_identity(monkeypatch, tmp_path, signal_type):
+        primary = signal_type()
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    raise primary
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        assert caught.value is primary
+>       assert child.returncode == -9
+E       assert None == -9
+E        +  where None = <test_windows_office_runtime_diagnostics.test_wait_cancellation_stops_only_owned_python_and_keeps_identity.<locals>.Child object at 0x10a9ca700>.returncode
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:235: AssertionError
+_________ test_timeout_child_cleanup_failure_does_not_replace_timeout __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a97bf70>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1320/test_timeout_child_cleanup_fai0')
+
+    def test_timeout_child_cleanup_failure_does_not_replace_timeout(monkeypatch, tmp_path):
+        class Child(TimedOutChild):
+            def kill(self):
+                raise OSError('cannot signal owned Python')
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: Child())
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+>       assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(OSError('cannot signal owned Python'), 'code', None)
+E        +    where OSError('cannot signal owned Python') = <ExceptionInfo OSError('cannot signal owned Python') tblen=3>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:245: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_wait_cancellation_stops_only_owned_python_and_keeps_identity[KeyboardInterrupt]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_wait_cancellation_stops_only_owned_python_and_keeps_identity[SystemExit]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_timeout_child_cleanup_failure_does_not_replace_timeout
+3 failed, 14 passed in 0.09s

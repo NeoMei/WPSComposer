@@ -1,0 +1,6 @@
+main-text-evaluated-class:0: set probeStoryRange to missing value
+main-text-evaluated-class:1: set probeStoryRange to get story range boundDoc story type main text story
+main-text-evaluated-class:2: set probeStoryRange to get probeStoryRange
+main-text-evaluated-class:3: set probeRows to {{"class",(class of probeStoryRange) as text}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["class","story range"]]]]]

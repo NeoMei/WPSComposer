@@ -1,0 +1,307 @@
+--- a/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py
++++ b/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py
+@@ -114,6 +114,9 @@
+         self = cls.__new__(cls)
+         self._deadline = time.monotonic() + 600
+         self._closed = self._uncertain = False
++        self._recovery_written = self._quarantine_written = False
++        self._diagnostic_io_failures = []
++        self._cleanup_io_failures = []
+         self._sequence = 0
+         self._identity = {}
+         self._last_request = None
+@@ -142,10 +145,12 @@
+             if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+                 raise ValueError('Worker did not acknowledge the requested document binding')
+             return self
+-        except BaseException:
++        except BaseException as exc:
+             if self._child is not None and not self._uncertain:
+                 self._abort('Initial document binding failed')
+-            self._lock.close()
++            elif self._child is None:
++                self._attempt_abort('lock.close', self._lock.close, self._cleanup_io_failures)
++            self._with_abort_failures(exc)
+             raise
+ 
+     @property
+@@ -153,12 +158,35 @@
+         return self._deadline
+ 
+     def _error(self, suffix):
++        def evidenced(path, written):
++            try:
++                return path if written and path.is_file() else None
++            except OSError:
++                return None
+         locations = {'staging_path': self.staging_root,
+-                     'diagnostic_path': self.staging_root / 'recovery.json',
+-                     'quarantine_path': self._lock.quarantine_path if self._uncertain else None}
++                     'diagnostic_path': evidenced(self.staging_root / 'recovery.json', self._recovery_written),
++                     'quarantine_path': evidenced(self._lock.quarantine_path, self._quarantine_written)}
+         if self.kind == 'writer':
+-            return NativeWordTimeoutError(**locations) if suffix == 'TIMEOUT' else NativeWordError('NATIVE_WORD_' + suffix, **locations)
+-        return NativeOfficeError('NATIVE_OFFICE_' + suffix, **locations)
++            error = NativeWordTimeoutError(**locations) if suffix == 'TIMEOUT' else NativeWordError('NATIVE_WORD_' + suffix, **locations)
++        else:
++            error = NativeOfficeError('NATIVE_OFFICE_' + suffix, **locations)
++        return self._with_abort_failures(error)
++
++    def _with_abort_failures(self, error):
++        if self._diagnostic_io_failures:
++            error.diagnostic_io_failures = tuple(self._diagnostic_io_failures)
++        if self._cleanup_io_failures:
++            error.cleanup_io_failures = tuple(self._cleanup_io_failures)
++        return error
++
++    @staticmethod
++    def _attempt_abort(label, operation, failures):
++        try:
++            operation()
++        except BaseException as error:
++            failures.append((label, type(error).__name__))
++            return False
++        return True
+ 
+     def _remaining(self):
+         value = self._deadline - time.monotonic()
+@@ -217,19 +245,28 @@
+                   'python_pid': getattr(self._child, 'pid', None), 'identity': self._identity,
+                   'last_request': self._last_request, 'cleanup_verified': False,
+                   'office_termination_attempted': False}
+-        try:
+-            (self.staging_root / 'recovery.json').write_text(json.dumps(detail, ensure_ascii=False), encoding='utf-8')
++        def quarantine():
+             if not self._lock.quarantine_path.exists():
+                 self._lock.quarantine(detail)
+-        finally:
+-            if self._child is not None and self._child.poll() is None:
+-                self._child.kill()
+-                try:
+-                    self._child.wait(timeout=1)
+-                except subprocess.TimeoutExpired:
+-                    pass
+-            self._stop_io()
+-            self._lock.close()
++            elif not self._lock.quarantine_path.is_file():
++                raise OSError('Quarantine marker is not a regular file')
++
++        # In-memory uncertainty blocks this proxy immediately. Persist the
++        # cross-session gate before optional recovery evidence; failures of
++        # either must not mask the primary native error or cancellation.
++        self._quarantine_written = self._attempt_abort(
++            'quarantine', quarantine, self._diagnostic_io_failures)
++        self._recovery_written = self._attempt_abort('recovery', lambda:
++            (self.staging_root / 'recovery.json').write_text(
++                json.dumps(detail, ensure_ascii=False), encoding='utf-8'), self._diagnostic_io_failures)
++        if self._child is not None:
++            def kill_child():
++                if self._child.poll() is None:
++                    self._child.kill()
++            self._attempt_abort('child.kill', kill_child, self._cleanup_io_failures)
++            self._attempt_abort('child.wait', lambda: self._child.wait(timeout=1), self._cleanup_io_failures)
++        self._attempt_abort('io.stop', self._stop_io, self._cleanup_io_failures)
++        self._attempt_abort('lock.close', self._lock.close, self._cleanup_io_failures)
+ 
+     def _remote_error(self, detail):
+         if not isinstance(detail, dict):
+@@ -314,8 +351,11 @@
+         except (TimeoutError, queue.Empty):
+             self._abort('Native session request exceeded the total deadline')
+             raise self._error('TIMEOUT') from None
+-        except BaseException:
++        except BaseException as exc:
+             self._abort('Worker response or request completion could not be verified')
++            if not isinstance(exc, Exception):
++                self._with_abort_failures(exc)
++                raise
+             raise self._error('QUARANTINED') from None
+         finally:
+             if acquired:
+@@ -362,7 +402,7 @@
+             raise self._error('QUARANTINED')
+         try:
+             result = self._call('close', save_changes=save_changes)
+-        except BaseException:
++        except BaseException as exc:
+             # _call leaves a verified remote error non-uncertain. In the saving
+             # close path the worker remains alive with the session lock held,
+             # so the caller can retry, save elsewhere, or explicitly discard.
+@@ -370,6 +410,9 @@
+                 raise
+             if not self._uncertain:
+                 self._abort('Native session close was not verified')
++            if not isinstance(exc, Exception):
++                self._with_abort_failures(exc)
++                raise
+             raise self._error('QUARANTINED') from None
+         try:
+             if result != {'closed': True}:
+@@ -380,8 +423,11 @@
+                 raise ValueError('Session worker exited unsuccessfully')
+             self._closed = True
+             self._stop_io()
+-        except BaseException:
++        except BaseException as exc:
+             self._abort('Native session close was not verified')
++            if not isinstance(exc, Exception):
++                self._with_abort_failures(exc)
++                raise
+             raise self._error('QUARANTINED') from None
+         self._lock.close()
+ 
+--- /dev/null
++++ b/tests/msoffice/test_windows_session_proxy_diagnostics.py
+@@ -0,0 +1,152 @@
++"""Abort persistence failures with real Python transports, without COM."""
++from __future__ import annotations
++
++import errno
++from pathlib import Path
++import queue
++import subprocess
++import sys
++
++import pytest
++
++from test_windows_session_proxy import transport
++
++
++COMPONENTS = [('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
++              ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
++              ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT')]
++
++
++@pytest.mark.parametrize('name,source,timeout_code', COMPONENTS)
++@pytest.mark.parametrize('fault', ['recovery.json', 'native-office.quarantine.json'])
++@pytest.mark.parametrize('outcome', ['timeout', 'cancel'])
++def test_abort_preserves_primary_and_truthful_paths_across_components(
++    transport, monkeypatch, name, source, timeout_code, fault, outcome,
++):
++    module, _, children = transport
++    session = getattr(module, name).open_document(source)
++    write_text = Path.write_text
++    attempted = []
++    targets = {session.staging_root / 'recovery.json', session._lock.quarantine_path}
++
++    def write(path, *args, **kwargs):
++        if path in targets:
++            attempted.append(path.name)
++            if path.name == fault:
++                raise OSError(errno.ENOSPC, 'controlled private storage failure')
++        return write_text(path, *args, **kwargs)
++
++    monkeypatch.setattr(Path, 'write_text', write)
++    primary = KeyboardInterrupt('original cancellation') if outcome == 'cancel' else queue.Empty()
++
++    def receive(*args, **kwargs):
++        raise primary
++
++    monkeypatch.setattr(session._responses, 'get', receive)
++    with pytest.raises(BaseException) as caught:
++        session.inspect_document()
++    error = caught.value
++    if outcome == 'cancel':
++        assert error is primary
++    else:
++        assert error.code == timeout_code
++    assert error.diagnostic_io_failures == ((
++        'recovery' if fault == 'recovery.json' else 'quarantine', 'OSError'),)
++    assert attempted == ['native-office.quarantine.json', 'recovery.json']
++    assert session._lock.closed and children[0].poll() is not None
++    later_error = session._error('QUARANTINED')
++    assert later_error.diagnostic_path == (None if fault == 'recovery.json' else str(session.staging_root / 'recovery.json'))
++    assert later_error.quarantine_path == (None if fault == 'native-office.quarantine.json' else str(session._lock.quarantine_path))
++    with pytest.raises((module.NativeWordError, module.NativeOfficeError)):
++        session.inspect_document()
++    if fault == 'recovery.json':
++        with pytest.raises(RuntimeError, match='quarantined'):
++            getattr(module, name).open_document(source)
++        assert len(children) == 1
++
++
++def test_initial_binding_error_retains_identity_when_abort_diagnostics_fail(transport, monkeypatch):
++    module, _, children = transport
++    primary = ValueError('original binding failure')
++    captured = []
++
++    def fail_binding(self, *args, **kwargs):
++        captured.append(self)
++        raise primary
++
++    monkeypatch.setattr(module.ProxyExcelSession, '_call', fail_binding)
++    write_text = Path.write_text
++
++    def write(path, *args, **kwargs):
++        if path.name == 'recovery.json':
++            raise OSError(errno.ENOSPC, 'controlled recovery failure')
++        return write_text(path, *args, **kwargs)
++
++    monkeypatch.setattr(Path, 'write_text', write)
++    with pytest.raises(ValueError) as caught:
++        module.ProxyExcelSession.open_document('/source.xlsx')
++    assert caught.value is primary
++    assert primary.diagnostic_io_failures == (('recovery', 'OSError'),)
++    assert captured[0]._lock.closed and children[0].poll() is not None
++    assert captured[0]._lock.quarantine_path.is_file()
++
++
++@pytest.mark.parametrize('phase', ['child.kill', 'io.stop', 'lock.close'])
++def test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup(transport, monkeypatch, phase):
++    module, _, children = transport
++    session = module.ProxyExcelSession.open_document('/source.xlsx')
++    primary = KeyboardInterrupt('original cancellation')
++
++    def receive(*args, **kwargs):
++        raise primary
++
++    monkeypatch.setattr(session._responses, 'get', receive)
++    target, method = {'child.kill': (children[0], 'kill'), 'io.stop': (session, '_stop_io'),
++                      'lock.close': (session._lock, 'close')}[phase]
++    original = getattr(target, method)
++
++    def cleanup():
++        original()
++        raise OSError(errno.EIO, 'controlled cleanup failure')
++
++    monkeypatch.setattr(target, method, cleanup)
++    with pytest.raises(BaseException) as caught:
++        session.inspect_document()
++    assert caught.value is primary
++    assert primary.cleanup_io_failures == ((phase, 'OSError'),)
++    assert session._lock.closed and children[0].poll() is not None
++    assert session._stop.is_set()
++
++
++def test_abort_only_terminates_its_exact_python_child(transport):
++    module, _, children = transport
++    session = module.ProxyPowerPointSession.open_document('/source.pptx')
++    unrelated = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])
++    children.append(unrelated)
++    session._abort('controlled uncertain response')
++    assert children[0].poll() is not None
++    assert unrelated.poll() is None
++    assert session._lock.closed
++
++
++def test_error_does_not_advertise_recovery_before_abort(transport):
++    module, _, _ = transport
++    with module.ProxyWordSession.open_document('/source.docx') as session:
++        error = session._error('EXECUTION_FAILED')
++        assert error.diagnostic_path is None and error.quarantine_path is None
++
++
++def test_cancel_during_close_is_not_replaced_with_quarantine_error(transport, monkeypatch):
++    module, _, children = transport
++    session = module.ProxyExcelSession.open_document('/source.xlsx')
++    primary = SystemExit('original cancellation')
++
++    def receive(*args, **kwargs):
++        raise primary
++
++    monkeypatch.setattr(session._responses, 'get', receive)
++    with pytest.raises(SystemExit) as caught:
++        session.close()
++    assert caught.value is primary
++    assert session._lock.quarantine_path.is_file()
++    assert session._lock.closed and children[0].poll() is not None
