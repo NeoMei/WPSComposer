@@ -1,0 +1,5 @@
+primary-header-get-object:0: set qsection to section 1 of boundDoc
+primary-header-get-object:1: set qpart to get header qsection index header footer primary
+primary-header-get-object:2: set probeRows to {{"part-reference-resolved"}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["part-reference-resolved"]]]]]

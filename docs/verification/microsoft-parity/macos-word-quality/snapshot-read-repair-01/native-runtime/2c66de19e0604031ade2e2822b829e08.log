@@ -1,0 +1,44 @@
+prefix-suffix-hashes:0: set qe to end of content of text object of boundDoc
+prefix-suffix-hashes:1: set qp to create range boundDoc start 0 end qualityPoint
+prefix-suffix-hashes:2: set qs to create range boundDoc start (qualityPoint + qualityDelta) end qe
+prefix-suffix-hashes:3: set recoveryTask to current application's NSTask's alloc()'s init()
+prefix-suffix-hashes:4: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+prefix-suffix-hashes:5: recoveryTask's setArguments:{"-a", "256"}
+prefix-suffix-hashes:6: set recoveryInput to current application's NSPipe's pipe()
+prefix-suffix-hashes:7: set recoveryOutput to current application's NSPipe's pipe()
+prefix-suffix-hashes:8: recoveryTask's setStandardInput:recoveryInput
+prefix-suffix-hashes:9: recoveryTask's setStandardOutput:recoveryOutput
+prefix-suffix-hashes:10: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+prefix-suffix-hashes:11: set recoveryData to (current application's NSString's stringWithString:(content of qp as text))'s dataUsingEncoding:4
+prefix-suffix-hashes:12: recoveryTask's |launch|()
+prefix-suffix-hashes:13: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+prefix-suffix-hashes:14: (recoveryInput's fileHandleForWriting())'s closeFile()
+prefix-suffix-hashes:15: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+prefix-suffix-hashes:16: recoveryTask's waitUntilExit()
+prefix-suffix-hashes:17: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:18: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+prefix-suffix-hashes:19: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:20: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:21: set qualityPrefixHash to text 1 thru 64 of recoveryDigestText
+prefix-suffix-hashes:22: set recoveryTask to current application's NSTask's alloc()'s init()
+prefix-suffix-hashes:23: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+prefix-suffix-hashes:24: recoveryTask's setArguments:{"-a", "256"}
+prefix-suffix-hashes:25: set recoveryInput to current application's NSPipe's pipe()
+prefix-suffix-hashes:26: set recoveryOutput to current application's NSPipe's pipe()
+prefix-suffix-hashes:27: recoveryTask's setStandardInput:recoveryInput
+prefix-suffix-hashes:28: recoveryTask's setStandardOutput:recoveryOutput
+prefix-suffix-hashes:29: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+prefix-suffix-hashes:30: set recoveryData to (current application's NSString's stringWithString:(content of qs as text))'s dataUsingEncoding:4
+prefix-suffix-hashes:31: recoveryTask's |launch|()
+prefix-suffix-hashes:32: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+prefix-suffix-hashes:33: (recoveryInput's fileHandleForWriting())'s closeFile()
+prefix-suffix-hashes:34: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+prefix-suffix-hashes:35: recoveryTask's waitUntilExit()
+prefix-suffix-hashes:36: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:37: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+prefix-suffix-hashes:38: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:39: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+prefix-suffix-hashes:40: set qualitySuffixHash to text 1 thru 64 of recoveryDigestText
+prefix-suffix-hashes:41: set qualityState to {{"quality-state",qe - qualityDelta,qualityPrefixHash,qualitySuffixHash}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[]]]]

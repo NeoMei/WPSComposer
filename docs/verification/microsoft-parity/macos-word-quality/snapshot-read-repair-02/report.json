@@ -1,0 +1,2155 @@
+{
+  "status": "DIAGNOSED",
+  "scope": "one fresh read-only owned copy; no body writes/save/export; ordinary errors are observations",
+  "steps": [
+    {
+      "label": "story-count",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "ordinary-read-error",
+          "story-count:0: set probeRows to {{\"story-count\",(count story ranges of boundDoc)}}",
+          -1708,
+          "“Microsoft Word”遇到一个错误：“every story range of document \"document-ff5405fea4934a65abece05841f98af8.docx\"”不理解“count”信息。"
+        ]
+      ],
+      "seconds": 0.448,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "story-types",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "ordinary-read-error",
+          "story-types:1: set probeRows to {{\"story-types\",probeTypes}}",
+          -2753,
+          "变量“probeTypes”没有定义。"
+        ]
+      ],
+      "seconds": 0.462,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.482,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.5,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer primary"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.499,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              true
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.497,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.515,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.549,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.503,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer primary"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.494,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.485,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.548,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.463,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.497,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer first page"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.515,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              true
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.498,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.502,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.493,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.498,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer first page"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.504,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.532,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.513,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.499,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.543,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer even pages"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.498,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              true
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.498,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.51,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-get-object",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.496,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-count-shapes",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "shapes",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.513,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-index",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              "header footer even pages"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.498,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-is-header",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.547,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-link-to-previous",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "metadata",
+              false
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.497,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.448,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-header-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.804,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.446,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "primary-footer-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.813,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.469,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-header-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.802,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.482,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "first-page-footer-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.833,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.461,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-header-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.815,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-get-story",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-reference-resolved"
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.56,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    },
+    {
+      "label": "even-pages-footer-story-hash",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "story-hash",
+              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              0
+            ]
+          ]
+        ]
+      ],
+      "seconds": 0.805,
+      "after": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ],
+      "body_unchanged": true,
+      "saved_transition": [
+        true,
+        true
+      ]
+    }
+  ],
+  "source_hashes": {
+    "docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-02/probe.py": "eefc3c4c4d03faf8d291f21c74621c7b5a85573bb033ba1b15421d542f014460",
+    "docs/verification/microsoft-parity/macos-word-quality/run-02/before.docx": "13f5c9a3d467c3aa4e96770c82591cef50f845d444024e24a999c01e10914b5e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "f3211eae27998d19e123894e54f620a3755c790cdbd23e6df66227151f37ff48",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "checks": {
+    "body_unchanged": true,
+    "private_file_unchanged": true,
+    "inventory_empty": true,
+    "sources_unchanged": true
+  },
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-htaez118/document-ff5405fea4934a65abece05841f98af8.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-htaez118",
+  "baseline": [
+    "state",
+    true,
+    true,
+    220,
+    "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+    true,
+    0,
+    1,
+    13,
+    2,
+    2,
+    9
+  ],
+  "current_phase": "even-pages-footer-story-hash",
+  "after": [
+    "state",
+    true,
+    true,
+    220,
+    "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+    true,
+    0,
+    1,
+    13,
+    2,
+    2,
+    9
+  ],
+  "owned_closed": true,
+  "inventory_final": []
+}

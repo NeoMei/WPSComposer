@@ -1,0 +1,136 @@
+.................FFFF..                                                  [100%]
+=================================== FAILURES ===================================
+_______ test_lock_cleanup_failure_does_not_replace_primary_error[native] _______
+
+job_host = namespace(outcome='native', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', 'r...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10624d1f0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105ed37c0>
+outcome = 'native'
+
+    @pytest.mark.parametrize('outcome', ['native', 'timeout', 'cancel'])
+    def test_lock_cleanup_failure_does_not_replace_primary_error(job_host, monkeypatch, outcome):
+        state = job_host
+        state.outcome = outcome
+        close = runtime.OfficeJobLock.close
+    
+        def failing_close(lock):
+            close(lock)
+            raise OSError(errno.EIO, 'injected unlock failure')
+    
+        monkeypatch.setattr(runtime.OfficeJobLock, 'close', failing_close)
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        if outcome == 'cancel':
+            assert caught.value is state.cancelled
+        else:
+>           assert isinstance(caught.value, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(5, 'injected unlock failure'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where OSError(5, 'injected unlock failure') = <ExceptionInfo OSError(5, 'injected unlock failure') tblen=4>.value
+E            +    and   <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:185: AssertionError
+______ test_lock_cleanup_failure_does_not_replace_primary_error[timeout] _______
+
+job_host = namespace(outcome='timeout', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', '...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10624d790>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106218ac0>
+outcome = 'timeout'
+
+    @pytest.mark.parametrize('outcome', ['native', 'timeout', 'cancel'])
+    def test_lock_cleanup_failure_does_not_replace_primary_error(job_host, monkeypatch, outcome):
+        state = job_host
+        state.outcome = outcome
+        close = runtime.OfficeJobLock.close
+    
+        def failing_close(lock):
+            close(lock)
+            raise OSError(errno.EIO, 'injected unlock failure')
+    
+        monkeypatch.setattr(runtime.OfficeJobLock, 'close', failing_close)
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        if outcome == 'cancel':
+            assert caught.value is state.cancelled
+        else:
+>           assert isinstance(caught.value, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(5, 'injected unlock failure'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where OSError(5, 'injected unlock failure') = <ExceptionInfo OSError(5, 'injected unlock failure') tblen=4>.value
+E            +    and   <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:185: AssertionError
+_______ test_lock_cleanup_failure_does_not_replace_primary_error[cancel] _______
+
+job_host = namespace(outcome='cancel', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', 'r...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10624daf0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106218c40>
+outcome = 'cancel'
+
+    @pytest.mark.parametrize('outcome', ['native', 'timeout', 'cancel'])
+    def test_lock_cleanup_failure_does_not_replace_primary_error(job_host, monkeypatch, outcome):
+        state = job_host
+        state.outcome = outcome
+        close = runtime.OfficeJobLock.close
+    
+        def failing_close(lock):
+            close(lock)
+            raise OSError(errno.EIO, 'injected unlock failure')
+    
+        monkeypatch.setattr(runtime.OfficeJobLock, 'close', failing_close)
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        if outcome == 'cancel':
+>           assert caught.value is state.cancelled
+E           AssertionError: assert OSError(5, 'injected unlock failure') is KeyboardInterrupt('original cancellation')
+E            +  where OSError(5, 'injected unlock failure') = <ExceptionInfo OSError(5, 'injected unlock failure') tblen=4>.value
+E            +  and   KeyboardInterrupt('original cancellation') = namespace(outcome='cancel', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', 'r...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10624daf0>).cancelled
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:183: AssertionError
+________ test_staging_cleanup_failure_preserves_prepare_error_identity _________
+
+job = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1294/test_staging_cleanup_failure_p0/container/job-990mghrj')
+deadline = 3.162515333
+
+    def failing_prepare(job, deadline):
+>       raise primary
+E       ValueError: original prepare failure
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:198: ValueError
+
+During handling of the above exception, another exception occurred:
+
+job_host = namespace(outcome='native', faults=set(), writes=[], calls=[], root=PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh7...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10624d160>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10628d310>
+
+    def test_staging_cleanup_failure_preserves_prepare_error_identity(job_host, monkeypatch):
+        primary = ValueError('original prepare failure')
+    
+        def failing_prepare(job, deadline):
+            raise primary
+    
+        def failing_remove(path):
+            raise OSError(errno.EACCES, 'injected staging cleanup failure')
+    
+        monkeypatch.setattr(runtime.shutil, 'rmtree', failing_remove)
+        with pytest.raises(ValueError) as caught:
+>           job_host.execute(prepare=failing_prepare)
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_macos_office_runtime_diagnostics.py:75: in <lambda>
+    state.execute = lambda **kwargs: runtime._execute(
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:214: in _execute
+    shutil.rmtree(job)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1294/test_staging_cleanup_failure_p0/container/job-990mghrj')
+
+    def failing_remove(path):
+>       raise OSError(errno.EACCES, 'injected staging cleanup failure')
+E       PermissionError: [Errno 13] injected staging cleanup failure
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:201: PermissionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_lock_cleanup_failure_does_not_replace_primary_error[native]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_lock_cleanup_failure_does_not_replace_primary_error[timeout]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_lock_cleanup_failure_does_not_replace_primary_error[cancel]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_staging_cleanup_failure_preserves_prepare_error_identity
+4 failed, 19 passed in 0.10s

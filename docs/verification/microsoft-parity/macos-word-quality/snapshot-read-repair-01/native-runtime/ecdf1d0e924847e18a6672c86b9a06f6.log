@@ -1,0 +1,7 @@
+section-setup-values:0: set qi to 1
+section-setup-values:1: set qsection to section 1 of boundDoc
+section-setup-values:2: set qsetup to page setup of qsection
+section-setup-values:3: set end of qualityLayout to {"section",qi as integer,orientation of qsetup as text,page width of qsetup,page height of qsetup,top margin of 
+section-setup-values:4: set probeRows to qualityLayout
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["section",1,"orient portrait",595.29998779296875,841.9000244140625,72,72,90,90,42.549999237060547,49.599998474121094,0,1]]]]]

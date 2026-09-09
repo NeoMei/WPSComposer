@@ -1,0 +1,5 @@
+first-page-header-count-shapes:0: set qsection to section 1 of boundDoc
+first-page-header-count-shapes:1: set qpart to get header qsection index header footer first page
+first-page-header-count-shapes:2: set probeRows to {{"shapes",(count shapes of qpart)}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["shapes",0]]]]]

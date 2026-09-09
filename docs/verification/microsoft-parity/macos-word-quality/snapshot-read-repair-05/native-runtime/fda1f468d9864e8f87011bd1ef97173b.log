@@ -1,0 +1,5 @@
+primary-header-scalar-field-count:0: set probeStoryRange to missing value
+primary-header-scalar-field-count:1: set probeStoryRange to get story range boundDoc story type primary header story
+primary-header-scalar-field-count:2: set probeRows to {{"value",(count fields of probeStoryRange) as integer}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["value",0]]]]]

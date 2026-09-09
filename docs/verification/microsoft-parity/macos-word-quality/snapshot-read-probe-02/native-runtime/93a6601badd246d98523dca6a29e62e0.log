@@ -1,0 +1,23 @@
+table-1-content-hash:0: set qt to table 1 of boundDoc
+table-1-content-hash:1: set recoveryTask to current application's NSTask's alloc()'s init()
+table-1-content-hash:2: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+table-1-content-hash:3: recoveryTask's setArguments:{"-a", "256"}
+table-1-content-hash:4: set recoveryInput to current application's NSPipe's pipe()
+table-1-content-hash:5: set recoveryOutput to current application's NSPipe's pipe()
+table-1-content-hash:6: recoveryTask's setStandardInput:recoveryInput
+table-1-content-hash:7: recoveryTask's setStandardOutput:recoveryOutput
+table-1-content-hash:8: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+table-1-content-hash:9: set recoveryData to (current application's NSString's stringWithString:(content of text object of qt as text))'s dataUsingEncoding:4
+table-1-content-hash:10: recoveryTask's |launch|()
+table-1-content-hash:11: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+table-1-content-hash:12: (recoveryInput's fileHandleForWriting())'s closeFile()
+table-1-content-hash:13: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+table-1-content-hash:14: recoveryTask's waitUntilExit()
+table-1-content-hash:15: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+table-1-content-hash:16: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+table-1-content-hash:17: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+table-1-content-hash:18: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+table-1-content-hash:19: set probeTableHash to text 1 thru 64 of recoveryDigestText
+table-1-content-hash:20: set probeRows to {{"table-hash",probeTableHash}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["table-hash","4da2627a20cd8caabe4ae72217812646a1822b55f70a064ea57f834e047303fc"]]]]]

@@ -1,0 +1,2 @@
+{"label": "story-availability-and-chain", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.731, "list_templates": [0, 0]}
+{"status": "DIAGNOSED", "checks": {"body_unchanged": true, "private_file_unchanged": true, "inventory_empty": true, "sources_unchanged": true}, "blocker": "Story scalar contract failed without dirty state; full snapshot not submitted", "error": null, "remaining_owned_path": null}

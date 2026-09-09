@@ -1,0 +1,5 @@
+even-pages-footer-get-object:0: set qsection to section 1 of boundDoc
+even-pages-footer-get-object:1: set qpart to get footer qsection index header footer even pages
+even-pages-footer-get-object:2: set probeRows to {{"part-reference-resolved"}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["part-reference-resolved"]]]]]

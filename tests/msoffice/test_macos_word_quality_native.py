@@ -288,3 +288,21 @@ def test_ordinal_resolution_patch_preserves_every_position_rejection_condition()
     old=[line for line in raw.split('set qualityDelta to 0',1)[0].splitlines() if line.startswith('if ') and 'then error "WPSC_QUALITY_' in line]
     current=[line for line in module()._position_gate() if line.startswith('if ')]
     assert current==old
+
+
+def test_snapshot_shape_count_completes_the_command_before_comparison():
+    """Native probe showed ungrouped count binds the comparison as an argument."""
+    lines=module()._layout_commands()
+    assert 'if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"' in lines
+    assert 'if count shapes of qpart is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"' not in lines
+
+
+def test_snapshot_resolves_each_table_row_before_reading_its_break_flag():
+    """Both fixture tables returned the same typed flags via bounded ordinals."""
+    lines=module()._snapshot_commands()
+    loop=lines.index('repeat with qualityRowOrdinal from 1 to count rows of qt')
+    assert lines[loop+1:loop+3]==[
+        'set qrow to row qualityRowOrdinal of qt',
+        'set end of qualityRowFlags to allow break across pages of qrow',
+    ]
+    assert 'repeat with qrow in rows of qt' not in lines

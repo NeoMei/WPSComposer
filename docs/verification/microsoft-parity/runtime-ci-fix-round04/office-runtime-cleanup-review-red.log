@@ -1,0 +1,45 @@
+......FF                                                                 [100%]
+=================================== FAILURES ===================================
+__________ test_unlock_failure_does_not_replace_primary_cancellation ___________
+
+job_host = namespace(outcome='cancel', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', 'r...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x108858b80>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108862ee0>
+
+    def test_unlock_failure_does_not_replace_primary_cancellation(job_host, monkeypatch):
+        job_host.outcome = 'cancel'
+        original_close = runtime.OfficeJobLock.close
+        def fail_after_close(lock):
+            original_close(lock)
+            raise OSError(errno.EIO, 'injected final unlock error')
+        monkeypatch.setattr(runtime.OfficeJobLock, 'close', fail_after_close)
+        with pytest.raises(BaseException) as caught:
+            job_host.execute()
+>       assert caught.value is job_host.cancelled
+E       AssertionError: assert OSError(5, 'injected final unlock error') is KeyboardInterrupt('original cancellation')
+E        +  where OSError(5, 'injected final unlock error') = <ExceptionInfo OSError(5, 'injected final unlock error') tblen=4>.value
+E        +  and   KeyboardInterrupt('original cancellation') = namespace(outcome='cancel', faults=set(), writes=['owned.xlsx', 'job.applescript', 'native-office.quarantine.json', 'r...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x108858b80>).cancelled
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_review_edges.py:78: AssertionError
+________ test_prelaunch_cleanup_failure_does_not_replace_prepare_error _________
+
+job_host = namespace(outcome='native', faults=set(), writes=[], calls=[], root=PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh7...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1087a6dc0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1088a48b0>
+
+    def test_prelaunch_cleanup_failure_does_not_replace_prepare_error(job_host, monkeypatch):
+        primary = ValueError('original prepare failure')
+        def failed_prepare(job, deadline):
+            raise primary
+        def failed_remove(path):
+            raise OSError(errno.EACCES, 'injected staging removal failure')
+        monkeypatch.setattr(runtime.shutil, 'rmtree', failed_remove)
+        with pytest.raises(BaseException) as caught:
+            job_host.execute(prepare=failed_prepare)
+>       assert caught.value is primary
+E       AssertionError: assert PermissionError(13, 'injected staging removal failure') is ValueError('original prepare failure')
+E        +  where PermissionError(13, 'injected staging removal failure') = <ExceptionInfo PermissionError(13, 'injected staging removal failure') tblen=4>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_review_edges.py:90: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_review_edges.py::test_unlock_failure_does_not_replace_primary_cancellation
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_review_edges.py::test_prelaunch_cleanup_failure_does_not_replace_prepare_error
+2 failed, 6 passed in 0.06s

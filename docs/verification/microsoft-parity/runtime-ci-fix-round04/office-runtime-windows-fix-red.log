@@ -1,0 +1,230 @@
+.FFFFFFFF.F                                                              [100%]
+=================================== FAILURES ===================================
+______ test_windows_lock_releases_same_byte_without_initialization_write _______
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_lock_releases_sam0')
+windows_backend = ([], [], [])
+
+    def test_windows_lock_releases_same_byte_without_initialization_write(tmp_path, windows_backend):
+        calls, _, streams = windows_backend
+        lock = runtime.OfficeJobLock(tmp_path)
+>       lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1080b3bb0>
+deadline = 3.261523333
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_________ test_windows_contention_retries_within_original_deadline[13] _________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_contention_retrie0')
+windows_backend = ([], [PermissionError(13, 'locked')], []), code = 13
+
+    @pytest.mark.parametrize('code', [errno.EACCES, errno.EAGAIN, errno.EDEADLK])
+    def test_windows_contention_retries_within_original_deadline(tmp_path, windows_backend, code):
+        calls, failures, _ = windows_backend
+        failures.append(OSError(code, 'locked'))
+        lock = runtime.OfficeJobLock(tmp_path)
+>       lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081b47c0>
+deadline = 3.279208333
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_________ test_windows_contention_retries_within_original_deadline[35] _________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_contention_retrie1')
+windows_backend = ([], [BlockingIOError(35, 'locked')], []), code = 35
+
+    @pytest.mark.parametrize('code', [errno.EACCES, errno.EAGAIN, errno.EDEADLK])
+    def test_windows_contention_retries_within_original_deadline(tmp_path, windows_backend, code):
+        calls, failures, _ = windows_backend
+        failures.append(OSError(code, 'locked'))
+        lock = runtime.OfficeJobLock(tmp_path)
+>       lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081fcaf0>
+deadline = 3.284624583
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_________ test_windows_contention_retries_within_original_deadline[11] _________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_contention_retrie2')
+windows_backend = ([], [OSError(11, 'locked')], []), code = 11
+
+    @pytest.mark.parametrize('code', [errno.EACCES, errno.EAGAIN, errno.EDEADLK])
+    def test_windows_contention_retries_within_original_deadline(tmp_path, windows_backend, code):
+        calls, failures, _ = windows_backend
+        failures.append(OSError(code, 'locked'))
+        lock = runtime.OfficeJobLock(tmp_path)
+>       lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081abdf0>
+deadline = 3.2972444579999998
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+____________ test_windows_permanent_contention_times_out_and_closes ____________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_permanent_content0')
+windows_backend = ([], [PermissionError(13, 'locked'), PermissionError(13, 'locked'), PermissionError(13, 'locked')], [])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1081b5a60>
+
+    def test_windows_permanent_contention_times_out_and_closes(tmp_path, windows_backend, monkeypatch):
+        calls, failures, streams = windows_backend
+        failures.extend([OSError(errno.EACCES, 'locked')] * 3)
+        clock = iter([0, 0, 1])
+        monkeypatch.setattr(runtime, 'time', SimpleNamespace(monotonic=lambda: next(clock), sleep=lambda _: None))
+        lock = runtime.OfficeJobLock(tmp_path)
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+>           lock.acquire(.5)
+
+tests/msoffice/test_office_job_lock_portable.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081b5a90>
+deadline = 0.5
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_____ test_windows_unrelated_io_failure_is_not_retried_or_masked[failure0] _____
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_unrelated_io_fail0')
+windows_backend = ([], [OSError(9, 'bad descriptor')], [])
+failure = OSError(9, 'bad descriptor')
+
+    @pytest.mark.parametrize('failure', [OSError(errno.EBADF, 'bad descriptor'),
+                                       BlockingIOError(errno.EIO, 'storage failure')])
+    def test_windows_unrelated_io_failure_is_not_retried_or_masked(tmp_path, windows_backend, failure):
+        calls, failures, streams = windows_backend
+        failures.append(failure)
+        lock = runtime.OfficeJobLock(tmp_path)
+        with pytest.raises(OSError) as caught:
+>           lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081a7b20>
+deadline = 3.320372875
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_____ test_windows_unrelated_io_failure_is_not_retried_or_masked[failure1] _____
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_unrelated_io_fail1')
+windows_backend = ([], [BlockingIOError(5, 'storage failure')], [])
+failure = BlockingIOError(5, 'storage failure')
+
+    @pytest.mark.parametrize('failure', [OSError(errno.EBADF, 'bad descriptor'),
+                                       BlockingIOError(errno.EIO, 'storage failure')])
+    def test_windows_unrelated_io_failure_is_not_retried_or_masked(tmp_path, windows_backend, failure):
+        calls, failures, streams = windows_backend
+        failures.append(failure)
+        lock = runtime.OfficeJobLock(tmp_path)
+        with pytest.raises(OSError) as caught:
+>           lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x1081a34c0>
+deadline = 3.329106375
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+______________ test_windows_unlock_error_still_closes_descriptor _______________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_windows_unlock_error_stil0')
+windows_backend = ([], [], [])
+
+    def test_windows_unlock_error_still_closes_descriptor(tmp_path, windows_backend):
+        _, failures, streams = windows_backend
+        lock = runtime.OfficeJobLock(tmp_path)
+>       lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x107fdafd0>
+deadline = 3.347540708
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+_______ test_quarantine_blocks_normal_jobs_but_allows_recovery[windows] ________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1282/test_quarantine_blocks_normal_1')
+backend = 'windows'
+request = <FixtureRequest for <Function test_quarantine_blocks_normal_jobs_but_allows_recovery[windows]>>
+
+    @pytest.mark.parametrize('backend', ['native', 'windows'])
+    def test_quarantine_blocks_normal_jobs_but_allows_recovery(tmp_path, backend, request):
+        if backend == 'windows':
+            request.getfixturevalue('windows_backend')
+        lock = runtime.OfficeJobLock(tmp_path)
+        detail = {'component': 'presentation', 'reason': 'completion uncertain'}
+        lock.quarantine(detail)
+        quarantine = tmp_path / 'native-office.quarantine.json'
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+>           lock.acquire(time.monotonic() + 3)
+
+tests/msoffice/test_office_job_lock_portable.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.macos_office_runtime.OfficeJobLock object at 0x107fb2070>
+deadline = 3.364969833
+
+    def acquire(self, deadline, *, recovery=False):
+>       import fcntl
+E       ModuleNotFoundError: import of fcntl halted; None in sys.modules
+
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:57: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_lock_releases_same_byte_without_initialization_write
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_contention_retries_within_original_deadline[13]
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_contention_retries_within_original_deadline[35]
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_contention_retries_within_original_deadline[11]
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_permanent_contention_times_out_and_closes
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_unrelated_io_failure_is_not_retried_or_masked[failure0]
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_unrelated_io_failure_is_not_retried_or_masked[failure1]
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_windows_unlock_error_still_closes_descriptor
+FAILED tests/msoffice/test_office_job_lock_portable.py::test_quarantine_blocks_normal_jobs_but_allows_recovery[windows]
+9 failed, 2 passed in 0.27s

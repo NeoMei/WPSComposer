@@ -1,0 +1,15 @@
+story-availability-and-chain:0: set probeStoryRange to missing value
+story-availability-and-chain:1: set probeStoryAvailable to false
+story-availability-and-chain:2: try
+story-availability-and-chain:3: set probeStoryRange to get story range boundDoc story type primary header story
+story-availability-and-chain:7: try
+story-availability-and-chain:8: set probeStoryAvailable to (probeStoryRange is not missing value)
+story-availability-and-chain:12: set end of qualityLayout to {"page-story-available","primary header",probeStoryAvailable as boolean}
+story-availability-and-chain:13: set probeStoryOrdinal to 0
+story-availability-and-chain:14: repeat while probeStoryAvailable
+story-availability-and-chain:15: set probeStoryOrdinal to probeStoryOrdinal + 1
+story-availability-and-chain:16: if probeStoryOrdinal > 10000 then error "WPSC_STORY_CHAIN_INVALID"
+story-availability-and-chain:17: set end of qualityLayout to {"page-story","primary header",probeStoryOrdinal as integer,story type of probeStoryRange as text,start of conte
+story-availability-and-chain:17: set end of qualityLayout to {"page-story","primary header",probeStoryOrdinal as integer,story type of probeStoryRange as text,start of conte, -2763
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","story-availability-and-chain:17: set end of qualityLayout to {\"page-story\",\"primary header\",probeStoryOrdinal as integer,story type of probeStoryRange as text,start of conte",-2763,"这个表达式的某部分没有结果返回。"]]]

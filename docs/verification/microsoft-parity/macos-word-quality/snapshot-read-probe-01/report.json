@@ -1,0 +1,254 @@
+{
+  "status": "FAIL",
+  "scope": "read-only fresh owned copy; capture ordinary getter errors and continue independent read blocks",
+  "steps": [
+    {
+      "label": "count-original",
+      "rows": [
+        [
+          "ordinary-read-error",
+          "5: if count shapes of qpart is not 0 then error \"WPSC_QUALITY_DRAWING_UNVERIFIED\"",
+          -1700,
+          "不能将“0”转换为“boolean”类型。"
+        ]
+      ]
+    },
+    {
+      "label": "count-parenthesized",
+      "rows": [
+        [
+          "read-ok",
+          []
+        ]
+      ]
+    },
+    {
+      "label": "count-atomic",
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "part",
+              true,
+              0,
+              false
+            ],
+            [
+              "part",
+              false,
+              0,
+              false
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "label": "complete-snapshot-parenthesized-count",
+      "rows": [
+        [
+          "ordinary-read-error",
+          "53: set end of qualityLayout to {\"page-part\",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as text}",
+          -1708,
+          "“Microsoft Word”遇到一个错误：“every Word style of document \"document-6324ad13159642c1ab0ce315541c35b0.docx\"”不理解“count”信息。"
+        ]
+      ]
+    },
+    {
+      "label": "section-and-page-part",
+      "rows": [
+        [
+          "read-ok",
+          7,
+          "c8cfeedbeea354b35bd7eb9f299e88d77f777682731f4826bdaef453678c1e51"
+        ]
+      ]
+    },
+    {
+      "label": "list-definitions",
+      "rows": [
+        [
+          "read-ok",
+          0,
+          "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ]
+      ]
+    },
+    {
+      "label": "styles",
+      "rows": [
+        [
+          "ordinary-read-error",
+          "start",
+          -1708,
+          "“Microsoft Word”遇到一个错误：“every Word style of document \"document-6324ad13159642c1ab0ce315541c35b0.docx\"”不理解“count”信息。"
+        ]
+      ]
+    },
+    {
+      "label": "paragraph-and-character",
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "paragraph",
+              0,
+              12,
+              "38720a7e55b1001d50cd5bd0257b10a715d96aa47facd117295b673dc6ed1de1",
+              "969b734a10b8412efdce00e7a472e04c8d8eae34121cc51f73df20bdfb4927ec"
+            ],
+            [
+              "paragraph",
+              12,
+              59,
+              "d3306bc0a63679159eebeb30c15c76ee714442c0ac5bddeb6182ff0fb7bf087b",
+              "87756b8f7e5c9a6d1f7e1b49666326113b4146dbe23bd9a0f64fc446543d59a3"
+            ],
+            [
+              "paragraph",
+              59,
+              76,
+              "280cb07cdb44cd258b942f8d3c6e88979a9f04cb3a15bd8664e09b2e58973feb",
+              "cc083e95987d6aa69dcb090df7c415a3ab463869796644c136b6c290c2c46475"
+            ],
+            [
+              "paragraph",
+              76,
+              77,
+              "3e8bc906d747a3ebcfcef4346dcefaf5705df83e28246715f1a8b58c65b157c1",
+              "125656ed6e350019ed9e74dc4d5e7f04ed04fc0cf5053997e83693fbda9067bd"
+            ],
+            [
+              "paragraph",
+              77,
+              95,
+              "e9296837dfb70d50f9fa27114b7541007833905dc4727c0f5ab757f2cf6e1d62",
+              "078fcc29ad7713cd30a9e76438b7f3bb432249b5ca8455e776fc1c704768d3b2"
+            ],
+            [
+              "paragraph",
+              95,
+              111,
+              "7a58df854b6380d3d3f9656286ad47e95527a6ec9ef17317415715dda4ed1752",
+              "35dcfd504a80249a0723e252ff268a7348f1cb9b305fe4176c2f26c133f6cd9d"
+            ],
+            [
+              "paragraph",
+              111,
+              126,
+              "b116a0b45d4eae022bd42fe934ccaacfcae27276ff25fe95da4064bb33547a09",
+              "6cf2a997152495ca1679893e474230a9a5a048b1dbadffe0d7f1708952e8d269"
+            ],
+            [
+              "paragraph",
+              126,
+              173,
+              "5e74deaf9d891b19f043fe14bb590bcf5a21b98fd2b13ab6509861fa7e090dd4",
+              "87756b8f7e5c9a6d1f7e1b49666326113b4146dbe23bd9a0f64fc446543d59a3"
+            ],
+            [
+              "paragraph",
+              173,
+              190,
+              "e5937619883be1b06d1c932c8600859ba2e905ae1dd01d3521bafec6f0ab47c0",
+              "cc083e95987d6aa69dcb090df7c415a3ab463869796644c136b6c290c2c46475"
+            ],
+            [
+              "paragraph",
+              190,
+              191,
+              "3e8bc906d747a3ebcfcef4346dcefaf5705df83e28246715f1a8b58c65b157c1",
+              "125656ed6e350019ed9e74dc4d5e7f04ed04fc0cf5053997e83693fbda9067bd"
+            ],
+            [
+              "paragraph",
+              191,
+              209,
+              "c79831d6ac8dd327e7a0b6dc2fd66006bdfd34033adfe9c59448d5157bbcdd1c",
+              "078fcc29ad7713cd30a9e76438b7f3bb432249b5ca8455e776fc1c704768d3b2"
+            ],
+            [
+              "paragraph",
+              209,
+              219,
+              "31bfa8e871024ce04d12e4d02e5b1ca17dd287c9522d5b58c6924027053dc1a9",
+              "bbb17ee40060a88d073d9e2ff753f8c26ec19fbafef9091c9941fbd7248af74a"
+            ],
+            [
+              "paragraph",
+              219,
+              220,
+              "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+              "2fed6e6bc3390369f8daeb454ab9c40049446f9fb259cd92cdaf288b4f164e0f"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "label": "main-fields",
+      "rows": [
+        [
+          "read-ok",
+          [
+            [
+              "field",
+              1,
+              "field sequence",
+              26,
+              55,
+              56,
+              57,
+              "6a2075f27676fe06b2f3f495a31ed56ce8cf3e54838d57997bc354ae4f191a59",
+              "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+              false
+            ],
+            [
+              "field",
+              2,
+              "field sequence",
+              140,
+              169,
+              170,
+              171,
+              "c54dd9a4c74ab878ec016649511929c0038366ecec73d30054fc75bb4367dc56",
+              "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+              false
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "checks": {},
+  "source_hashes": {
+    "docs/verification/microsoft-parity/macos-word-quality/snapshot-read-probe-01/probe.py": "bbbc87fb285a671375ae2342887cce404db77f8aefbe694dcada868ef068450c",
+    "docs/verification/microsoft-parity/macos-word-quality/run-02/before.docx": "13f5c9a3d467c3aa4e96770c82591cef50f845d444024e24a999c01e10914b5e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "724f193175390fbeedcfd32488c590e0785790b563a8a98b0e95f707e89981b9",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws/document-6324ad13159642c1ab0ce315541c35b0.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws",
+  "before_body": [
+    [
+      "before",
+      220,
+      "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+      true,
+      "16.112.3"
+    ]
+  ],
+  "current_phase": "tables-and-row-flags",
+  "error": {
+    "type": "NativeWordTimeoutError",
+    "message": "Native Word timed out; uncertain task files are retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws/1b41e4cfae8748f08b19d58308b96b54.log quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine"
+  },
+  "quarantined": true,
+  "remaining_owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws/document-6324ad13159642c1ab0ce315541c35b0.docx"
+}

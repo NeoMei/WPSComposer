@@ -1,0 +1,62 @@
+defined-auto-update:0: set qstyle to Word style "标题" of boundDoc
+defined-auto-update:1: set probeValue to automatically update of qstyle
+defined-auto-update:2: set end of probeRows to {"auto-update","标题",probeValue}
+defined-auto-update:3: set qstyle to Word style "标题 1" of boundDoc
+defined-auto-update:4: set probeValue to automatically update of qstyle
+defined-auto-update:5: set end of probeRows to {"auto-update","标题 1",probeValue}
+defined-auto-update:6: set qstyle to Word style "标题 2" of boundDoc
+defined-auto-update:7: set probeValue to automatically update of qstyle
+defined-auto-update:8: set end of probeRows to {"auto-update","标题 2",probeValue}
+defined-auto-update:9: set qstyle to Word style "标题 3" of boundDoc
+defined-auto-update:10: set probeValue to automatically update of qstyle
+defined-auto-update:11: set end of probeRows to {"auto-update","标题 3",probeValue}
+defined-auto-update:12: set qstyle to Word style "标题 4" of boundDoc
+defined-auto-update:13: set probeValue to automatically update of qstyle
+defined-auto-update:14: set end of probeRows to {"auto-update","标题 4",probeValue}
+defined-auto-update:15: set qstyle to Word style "标题 5" of boundDoc
+defined-auto-update:16: set probeValue to automatically update of qstyle
+defined-auto-update:17: set end of probeRows to {"auto-update","标题 5",probeValue}
+defined-auto-update:18: set qstyle to Word style "标题 6" of boundDoc
+defined-auto-update:19: set probeValue to automatically update of qstyle
+defined-auto-update:20: set end of probeRows to {"auto-update","标题 6",probeValue}
+defined-auto-update:21: set qstyle to Word style "标题 7" of boundDoc
+defined-auto-update:22: set probeValue to automatically update of qstyle
+defined-auto-update:23: set end of probeRows to {"auto-update","标题 7",probeValue}
+defined-auto-update:24: set qstyle to Word style "标题 8" of boundDoc
+defined-auto-update:25: set probeValue to automatically update of qstyle
+defined-auto-update:26: set end of probeRows to {"auto-update","标题 8",probeValue}
+defined-auto-update:27: set qstyle to Word style "标题 9" of boundDoc
+defined-auto-update:28: set probeValue to automatically update of qstyle
+defined-auto-update:29: set end of probeRows to {"auto-update","标题 9",probeValue}
+defined-auto-update:30: set qstyle to Word style "副标题" of boundDoc
+defined-auto-update:31: set probeValue to automatically update of qstyle
+defined-auto-update:32: set end of probeRows to {"auto-update","副标题",probeValue}
+defined-auto-update:33: set qstyle to Word style "列表段落" of boundDoc
+defined-auto-update:34: set probeValue to automatically update of qstyle
+defined-auto-update:35: set end of probeRows to {"auto-update","列表段落",probeValue}
+defined-auto-update:36: set qstyle to Word style "明显参考" of boundDoc
+defined-auto-update:37: set probeValue to automatically update of qstyle
+defined-auto-update:38: set end of probeRows to {"auto-update","明显参考",probeValue}
+defined-auto-update:39: set qstyle to Word style "明显强调" of boundDoc
+defined-auto-update:40: set probeValue to automatically update of qstyle
+defined-auto-update:41: set end of probeRows to {"auto-update","明显强调",probeValue}
+defined-auto-update:42: set qstyle to Word style "明显引用" of boundDoc
+defined-auto-update:43: set probeValue to automatically update of qstyle
+defined-auto-update:44: set end of probeRows to {"auto-update","明显引用",probeValue}
+defined-auto-update:45: set qstyle to Word style "默认段落字体" of boundDoc
+defined-auto-update:46: set probeValue to automatically update of qstyle
+defined-auto-update:47: set end of probeRows to {"auto-update","默认段落字体",probeValue}
+defined-auto-update:48: set qstyle to Word style "普通表格" of boundDoc
+defined-auto-update:49: set probeValue to automatically update of qstyle
+defined-auto-update:50: set end of probeRows to {"auto-update","普通表格",probeValue}
+defined-auto-update:51: set qstyle to Word style "无列表" of boundDoc
+defined-auto-update:52: set probeValue to automatically update of qstyle
+defined-auto-update:53: set end of probeRows to {"auto-update","无列表",probeValue}
+defined-auto-update:54: set qstyle to Word style "引用" of boundDoc
+defined-auto-update:55: set probeValue to automatically update of qstyle
+defined-auto-update:56: set end of probeRows to {"auto-update","引用",probeValue}
+defined-auto-update:57: set qstyle to Word style "正文" of boundDoc
+defined-auto-update:58: set probeValue to automatically update of qstyle
+defined-auto-update:59: set end of probeRows to {"auto-update","正文",probeValue}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["auto-update","标题",false],["auto-update","标题 1",false],["auto-update","标题 2",false],["auto-update","标题 3",false],["auto-update","标题 4",false],["auto-update","标题 5",false],["auto-update","标题 6",false],["auto-update","标题 7",false],["auto-update","标题 8",false],["auto-update","标题 9",false],["auto-update","副标题",false],["auto-update","列表段落",false],["auto-update","明显参考",null],["auto-update","明显强调",null],["auto-update","明显引用",false],["auto-update","默认段落字体",null],["auto-update","普通表格",null],["auto-update","无列表",null],["auto-update","引用",false],["auto-update","正文",false]]]]]

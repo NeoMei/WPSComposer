@@ -1,0 +1,5 @@
+primary-footer-index:0: set qsection to section 1 of boundDoc
+primary-footer-index:1: set qpart to get footer qsection index header footer primary
+primary-footer-index:2: set probeRows to {{"metadata",header footer index of qpart as text}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["metadata","header footer primary"]]]]]

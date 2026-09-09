@@ -5,6 +5,7 @@ their private files and quarantine the component until explicitly recovered.
 """
 from __future__ import annotations
 
+import errno
 import importlib
 import json
 import os
@@ -54,21 +55,34 @@ class OfficeJobLock:
         self.stream = None
 
     def acquire(self, deadline, *, recovery=False):
-        import fcntl
         fd = os.open(self.path, os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
-        self.stream = os.fdopen(fd, 'a')
+        stream = os.fdopen(fd, 'r+b')
         try:
             while True:
                 _remaining(deadline)
                 try:
-                    fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    if os.name == 'nt':
+                        import msvcrt
+                        # CRT locks can extend beyond EOF. An initialization
+                        # write would race another process holding this byte.
+                        stream.seek(0)
+                        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                    else:
+                        import fcntl
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                     break
-                except BlockingIOError:
+                except OSError as exc:
+                    contention = (errno.EACCES, errno.EAGAIN)
+                    if os.name == 'nt':
+                        contention += (errno.EDEADLK,)
+                    if exc.errno not in contention:
+                        raise
                     time.sleep(min(.05, _remaining(deadline)))
             if self.quarantine_path.exists() and not recovery:
                 raise NativeOfficeError('NATIVE_OFFICE_QUARANTINED', quarantine_path=self.quarantine_path)
+            self.stream = stream
         except BaseException:
-            self.close()
+            stream.close()
             raise
 
     def quarantine(self, detail):
@@ -81,10 +95,17 @@ class OfficeJobLock:
 
     def close(self):
         if self.stream is not None:
-            import fcntl
-            fcntl.flock(self.stream.fileno(), fcntl.LOCK_UN)
-            self.stream.close()
-            self.stream = None
+            try:
+                if os.name == 'nt':
+                    import msvcrt
+                    self.stream.seek(0)
+                    msvcrt.locking(self.stream.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(self.stream.fileno(), fcntl.LOCK_UN)
+            finally:
+                self.stream.close()
+                self.stream = None
 
 
 def _publish(staged, output, *, overwrite, deadline):
@@ -111,6 +132,37 @@ def _execute(component, output, *, overwrite, deadline, prepare):
     launched = False
     closed = False
     published = False
+    stdout = stderr = ''
+    logs_attempted = False
+    diagnostic_io_failures = []
+    primary_error = None
+
+    def persist_diagnostic(label, write):
+        try:
+            write()
+        except BaseException as error:
+            # Diagnostics must not replace the primary native failure or
+            # cancellation. Retain only safe failure categories on the error.
+            diagnostic_io_failures.append((label, type(error).__name__))
+            return error
+        return None
+
+    def write_logs():
+        nonlocal logs_attempted
+        logs_attempted = True
+        first_error = None
+        for name, value in (('stdout', stdout), ('stderr', stderr)):
+            path = job / (name + '.log')
+            def write(path=path, value=value):
+                if isinstance(value, bytes):
+                    path.write_bytes(value)
+                else:
+                    path.write_text(value or '', encoding='utf-8')
+            error = persist_diagnostic(name, write)
+            if first_error is None:
+                first_error = error
+        return first_error
+
     try:
         lock.acquire(deadline)
         job = Path(tempfile.mkdtemp(prefix='job-', dir=root))
@@ -118,40 +170,60 @@ def _execute(component, output, *, overwrite, deadline, prepare):
         script = job / 'job.applescript'
         script.write_text(source, encoding='utf-8')
         os.chmod(script, 0o600)
+        budget = _remaining(deadline)
         launched = True
         try:
             result = subprocess.run(['/usr/bin/osascript', str(script)],
-                                    capture_output=True, text=True, timeout=_remaining(deadline))
+                                    capture_output=True, text=True, timeout=budget)
         except subprocess.TimeoutExpired as exc:
-            for name, value in (('stdout', exc.stdout), ('stderr', exc.stderr)):
-                (job / (name + '.log')).write_bytes(value if isinstance(value, bytes) else (value or '').encode())
+            stdout, stderr = exc.stdout, exc.stderr
             raise NativeOfficeError('NATIVE_OFFICE_TIMEOUT') from None
-        (job / 'stdout.log').write_text(result.stdout, encoding='utf-8')
-        (job / 'stderr.log').write_text(result.stderr, encoding='utf-8')
+        stdout, stderr = result.stdout, result.stderr
         marker = 'WPSCOMPOSER_MS_OFFICE_OK:' + component
         closed = result.returncode == 0 and result.stdout.strip() == marker
         if not closed or not staged.is_file():
             raise NativeOfficeError('NATIVE_OFFICE_EXECUTION_FAILED')
+        log_error = write_logs()
+        if log_error is not None:
+            raise log_error
         _remaining(deadline)
         _publish(staged, output, overwrite=overwrite, deadline=deadline)
         published = True
         return output
     except BaseException as exc:
-        if job is not None:
+        primary_error = exc
+        if job is not None and launched:
             detail = {'component': component, 'staging_path': str(job), 'closed': closed,
                       'code': getattr(exc, 'code', 'NATIVE_OFFICE_EXECUTION_FAILED')}
-            (job / 'recovery.json').write_text(json.dumps(detail), encoding='utf-8')
-            if launched and not closed:
-                lock.quarantine(detail)
+            quarantined = False
+            if not closed:
+                quarantined = persist_diagnostic('quarantine', lambda: lock.quarantine(detail)) is None
+            recovery = job / 'recovery.json'
+            recovery_written = persist_diagnostic('recovery', lambda: recovery.write_text(
+                json.dumps(detail), encoding='utf-8')) is None
+            if not logs_attempted:
+                write_logs()
             if isinstance(exc, NativeOfficeError):
                 exc.staging_path = str(job)
-                exc.diagnostic_path = str(job / 'recovery.json')
-                exc.quarantine_path = str(lock.quarantine_path) if launched and not closed else None
+                exc.diagnostic_path = str(recovery) if recovery_written else None
+                exc.quarantine_path = str(lock.quarantine_path) if quarantined else None
+            if diagnostic_io_failures:
+                exc.diagnostic_io_failures = tuple(diagnostic_io_failures)
         raise
     finally:
-        lock.close()
+        cleanups = [('lock.close', lock.close)]
         if job is not None and (published or not launched):
-            shutil.rmtree(job)
+            cleanups.append(('staging.remove', lambda: shutil.rmtree(job)))
+        cleanup_failures = []
+        for label, cleanup in cleanups:
+            try:
+                cleanup()
+            except BaseException as error:
+                if primary_error is None:
+                    raise
+                cleanup_failures.append((label, type(error).__name__))
+        if cleanup_failures:
+            primary_error.cleanup_io_failures = tuple(cleanup_failures)
 
 
 def generate_recorded(recorded, output, *, timeout=600, overwrite=False):

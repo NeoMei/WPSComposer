@@ -1,0 +1,5 @@
+first-page-footer-link-to-previous:0: set qsection to section 1 of boundDoc
+first-page-footer-link-to-previous:1: set qpart to get footer qsection index header footer first page
+first-page-footer-link-to-previous:2: set probeRows to {{"metadata",link to previous of qpart}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["metadata",false]]]]]

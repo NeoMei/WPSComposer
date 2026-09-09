@@ -1,0 +1,57 @@
+{
+  "status": "FAIL",
+  "scope": "one fresh read-only owned copy; no body writes/save/export; ordinary errors are observations",
+  "steps": [
+    {
+      "label": "story-availability-and-chain",
+      "before": [
+        "state",
+        true,
+        true,
+        220,
+        "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+        true,
+        0,
+        1,
+        13,
+        2,
+        2,
+        9
+      ]
+    }
+  ],
+  "source_hashes": {
+    "docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-03/probe.py": "0b658048d98bedb987421a802f50f66f1af4c6ab8d28d84a9c5b4f5f6df7b805",
+    "docs/verification/microsoft-parity/macos-word-quality/run-02/before.docx": "13f5c9a3d467c3aa4e96770c82591cef50f845d444024e24a999c01e10914b5e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "f3211eae27998d19e123894e54f620a3755c790cdbd23e6df66227151f37ff48",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "checks": {},
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6/document-cb81bb637ef946c192e2a95469543a9b.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6",
+  "baseline": [
+    "state",
+    true,
+    true,
+    220,
+    "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+    true,
+    0,
+    1,
+    13,
+    2,
+    2,
+    9
+  ],
+  "current_phase": "story-availability-and-chain",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6/57727e82e6014861b4f168a7ac028bd8.log"
+  },
+  "quarantined": true,
+  "remaining_owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6/document-cb81bb637ef946c192e2a95469543a9b.docx"
+}

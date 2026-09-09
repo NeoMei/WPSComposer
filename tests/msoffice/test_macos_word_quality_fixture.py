@@ -245,7 +245,7 @@ def test_xml_preservation_rejects_field_or_surrounding_style_changes():
 
 def test_source_manifest_includes_cleanup_transitive_dependencies_and_test():
     m = module()
-    paths = {str(p.relative_to(ROOT)) for p in m.SOURCES}
+    paths = {p.relative_to(ROOT).as_posix() for p in m.SOURCES}
     assert {'fixtures/microsoft_parity/macos_word_inline_rule_feasibility.py',
             'fixtures/microsoft_parity/macos_word_quality.py',
             'fixtures/microsoft_parity/macos_word_quality_feasibility.py',

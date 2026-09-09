@@ -1,0 +1,4 @@
+section-object:0: set qsection to section 1 of boundDoc
+section-object:1: set probeRows to {{"section-reference-resolved"}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["section-reference-resolved"]]]]]

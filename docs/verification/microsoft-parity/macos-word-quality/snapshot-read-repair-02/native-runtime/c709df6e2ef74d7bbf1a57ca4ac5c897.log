@@ -1,0 +1,5 @@
+even-pages-footer-is-header:0: set qsection to section 1 of boundDoc
+even-pages-footer-is-header:1: set qpart to get footer qsection index header footer even pages
+even-pages-footer-is-header:2: set probeRows to {{"metadata",is header of qpart}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["metadata",false]]]]]

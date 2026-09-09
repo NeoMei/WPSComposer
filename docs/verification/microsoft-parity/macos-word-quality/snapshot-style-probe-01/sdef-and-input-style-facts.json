@@ -1,0 +1,241 @@
+{
+  "sdef_path": "/Applications/Microsoft Word.app/Contents/Resources/Word.sdef",
+  "sdef_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "properties": {
+    "automatically update": {
+      "name": "automatically update",
+      "code": "2519",
+      "type": "boolean",
+      "description": "True if the style is automatically redefined based on the selection. False if Word prompts for confirmation before redefining the style based on the selection."
+    },
+    "built in": {
+      "name": "built in",
+      "code": "pBtN",
+      "type": "boolean",
+      "access": "r",
+      "description": "Returns true if the specified object is one of the built-in styles in Word."
+    },
+    "description": {
+      "name": "description",
+      "code": "2503",
+      "type": "text",
+      "access": "r",
+      "description": "Returns the description of the specified style. For example, a typical description for the Heading 2 style might be Normal, Font: Arial, 12 pt, Bold, Italic, Space Before 12 pt After 3 pt, KeepWithNext, Level 2."
+    },
+    "in use": {
+      "name": "in use",
+      "code": "2508",
+      "type": "boolean",
+      "access": "r",
+      "description": "Returns true if the specified style is a built-in style that has been modified or applied in the document or a new style that has been created in the document."
+    },
+    "name local": {
+      "name": "name local",
+      "code": "2499",
+      "type": "text",
+      "description": "Returns or sets the name of a built-in style in the language of the user. Setting this property renames a user-defined style or adds an alias to a built-in style. "
+    }
+  },
+  "ooxml_materialized_style_count": 33,
+  "ooxml_styles": [
+    {
+      "id": "a",
+      "name": "Normal",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "1",
+      "name": "heading 1",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "2",
+      "name": "heading 2",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "3",
+      "name": "heading 3",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "4",
+      "name": "heading 4",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "5",
+      "name": "heading 5",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "6",
+      "name": "heading 6",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "7",
+      "name": "heading 7",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "8",
+      "name": "heading 8",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "9",
+      "name": "heading 9",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "a0",
+      "name": "Default Paragraph Font",
+      "custom": null,
+      "type": "character"
+    },
+    {
+      "id": "a1",
+      "name": "Normal Table",
+      "custom": null,
+      "type": "table"
+    },
+    {
+      "id": "a2",
+      "name": "No List",
+      "custom": null,
+      "type": "numbering"
+    },
+    {
+      "id": "10",
+      "name": "标题 1 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "20",
+      "name": "标题 2 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "30",
+      "name": "标题 3 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "40",
+      "name": "标题 4 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "50",
+      "name": "标题 5 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "60",
+      "name": "标题 6 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "70",
+      "name": "标题 7 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "80",
+      "name": "标题 8 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "90",
+      "name": "标题 9 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "a3",
+      "name": "Title",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "a4",
+      "name": "标题 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "a5",
+      "name": "Subtitle",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "a6",
+      "name": "副标题 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "a7",
+      "name": "Quote",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "a8",
+      "name": "引用 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "a9",
+      "name": "List Paragraph",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "aa",
+      "name": "Intense Emphasis",
+      "custom": null,
+      "type": "character"
+    },
+    {
+      "id": "ab",
+      "name": "Intense Quote",
+      "custom": null,
+      "type": "paragraph"
+    },
+    {
+      "id": "ac",
+      "name": "明显引用 字符",
+      "custom": "1",
+      "type": "character"
+    },
+    {
+      "id": "ad",
+      "name": "Intense Reference",
+      "custom": null,
+      "type": "character"
+    }
+  ],
+  "note": "Native every Word style name list exposes 373 entries, 20 in use, no custom names; source has 33 materialized styles, including 13 linked character definitions. This difference is retained; no coverage equivalence inferred."
+}

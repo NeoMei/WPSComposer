@@ -1,0 +1,7 @@
+table-1-ordinal-rows:0: set qt to table 1 of boundDoc
+table-1-ordinal-rows:1: repeat with probeRowOrdinal from 1 to count rows of qt
+table-1-ordinal-rows:2: set qrow to row probeRowOrdinal of qt
+table-1-ordinal-rows:3: set probeFlag to allow break across pages of qrow
+table-1-ordinal-rows:4: set end of probeRows to {"row",probeRowOrdinal as integer,probeFlag}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["row",1,true]]]]]

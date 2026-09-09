@@ -1,0 +1,6 @@
+primary-header-scalar-start:0: set probeStoryRange to missing value
+primary-header-scalar-start:1: set probeStoryRange to get story range boundDoc story type primary header story
+primary-header-scalar-start:2: set probeRows to {{"value",start of content of probeStoryRange as integer}}
+primary-header-scalar-start:2: set probeRows to {{"value",start of content of probeStoryRange as integer}}, -2763
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","primary-header-scalar-start:2: set probeRows to {{\"value\",start of content of probeStoryRange as integer}}",-2763,"这个表达式的某部分没有结果返回。"]]]

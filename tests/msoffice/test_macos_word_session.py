@@ -538,7 +538,7 @@ def test_new_word_uses_native_make_and_exact_private_binding(host, monkeypatch):
         assert session._source_path is None
         assert 'make new document' in scripts[0]
         assert 'save as boundDoc' in scripts[0]
-        assert str(session._private_path) in scripts[0]
+        assert m.apple_string(str(session._private_path)) in scripts[0]
         with pytest.raises(ValueError, match='explicit'):
             session.save_current()
     assert 'close boundDoc saving no' in scripts[-1]

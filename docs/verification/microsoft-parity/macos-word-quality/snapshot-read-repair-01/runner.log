@@ -1,0 +1,8 @@
+{"label": "prefix-suffix-hashes", "row_kind": "read-ok", "saved": [true, true], "seconds": 1.2, "list_templates": [0, 0]}
+{"label": "section-object", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.435, "list_templates": [0, 0]}
+{"label": "section-setup-object", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.483, "list_templates": [0, 0]}
+{"label": "section-setup-values", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.731, "list_templates": [0, 0]}
+{"label": "primary-header-get-object", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.494, "list_templates": [0, 0]}
+{"label": "primary-header-count-shapes", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.699, "list_templates": [0, 0]}
+{"label": "primary-header-text-object", "row_kind": "read-ok", "saved": [true, false], "seconds": 0.535, "list_templates": [0, 0]}
+{"status": "DIAGNOSED", "checks": {"body_unchanged": true, "private_file_unchanged": true, "inventory_empty": true, "sources_unchanged": true}, "blocker": "Native getter dirtied copy at primary-header-text-object", "error": null, "remaining_owned_path": null}

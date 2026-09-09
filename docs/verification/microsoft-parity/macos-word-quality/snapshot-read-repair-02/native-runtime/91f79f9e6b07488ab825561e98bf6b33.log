@@ -1,0 +1,4 @@
+primary-header-get-story:0: set qr to get story range boundDoc story type primary header story
+primary-header-get-story:1: set probeRows to {{"story-reference-resolved"}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["story-reference-resolved"]]]]]

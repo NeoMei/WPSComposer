@@ -1,0 +1,256 @@
+bookmarks:0: repeat with qi from 1 to count bookmarks of boundDoc
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:1: set qb to bookmark qi of boundDoc
+bookmarks:2: set qa to start of bookmark of qb
+bookmarks:3: set qz to end of bookmark of qb
+bookmarks:4: set qhashStart to qa
+bookmarks:5: if qualityDelta > 0 and qa is qualityPoint and qz > qualityPoint then set qhashStart to qa + qualityDelta
+bookmarks:6: set qr to create range boundDoc start qhashStart end qz
+bookmarks:7: set recoveryTask to current application's NSTask's alloc()'s init()
+bookmarks:8: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+bookmarks:9: recoveryTask's setArguments:{"-a", "256"}
+bookmarks:10: set recoveryInput to current application's NSPipe's pipe()
+bookmarks:11: set recoveryOutput to current application's NSPipe's pipe()
+bookmarks:12: recoveryTask's setStandardInput:recoveryInput
+bookmarks:13: recoveryTask's setStandardOutput:recoveryOutput
+bookmarks:14: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+bookmarks:15: set recoveryData to (current application's NSString's stringWithString:(content of qr as text))'s dataUsingEncoding:4
+bookmarks:16: recoveryTask's |launch|()
+bookmarks:17: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+bookmarks:18: (recoveryInput's fileHandleForWriting())'s closeFile()
+bookmarks:19: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+bookmarks:20: recoveryTask's waitUntilExit()
+bookmarks:21: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:22: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+bookmarks:23: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:24: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+bookmarks:25: set qualityTextHash to text 1 thru 64 of recoveryDigestText
+bookmarks:26: if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta
+bookmarks:27: if qz > qualityPoint + qualityDelta then set qz to qz - qualityDelta
+bookmarks:28: set end of qualityState to {"bookmark",name of qb as text,qa,qz,qualityTextHash}
+bookmarks:30: set end of qualityState to {"quality-state-end"}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["bookmark","quality_seed_1",0,12,"38720a7e55b1001d50cd5bd0257b10a715d96aa47facd117295b673dc6ed1de1"],["bookmark","quality_seed_2",12,59,"d3306bc0a63679159eebeb30c15c76ee714442c0ac5bddeb6182ff0fb7bf087b"],["bookmark","quality_seed_3",59,95,"eece85416c47bb3929a78afd8f64fd55261399fcf211311f53e88b446abd2473"],["bookmark","quality_seed_4",95,111,"7a58df854b6380d3d3f9656286ad47e95527a6ec9ef17317415715dda4ed1752"],["bookmark","quality_seed_5",111,126,"b116a0b45d4eae022bd42fe934ccaacfcae27276ff25fe95da4064bb33547a09"],["bookmark","quality_seed_6",126,173,"5e74deaf9d891b19f043fe14bb590bcf5a21b98fd2b13ab6509861fa7e090dd4"],["bookmark","quality_seed_7",173,209,"91c4cd38baa1444d1f5c8fe7cb60ed7c518204584e4046660356e314b78c86e8"],["bookmark","quality_seed_8",209,219,"31bfa8e871024ce04d12e4d02e5b1ca17dd287c9522d5b58c6924027053dc1a9"],["bookmark","wpsc_quality_splice",111,111,"5ec1196c1bed421f255114956dfe40fdb9d4413ea8d0e439cc0f1534901fabbd"],["quality-state-end"]]]]]

@@ -131,7 +131,8 @@ def test_recovery_checks_owned_documents_before_clearing(native, monkeypatch, tm
     assert runtime.recover_quarantine('presentation')
     assert not quarantine.exists() and job.exists()
     script = calls[-1][-1]
-    assert str(job) in script and 'full name' in script
+    from skills.WPSComposer.scripts.msoffice.macos_script import apple_string
+    assert apple_string(str(job) + '/') in script and 'full name' in script
     assert 'close ' not in script and 'quit' not in script.lower()
 
 

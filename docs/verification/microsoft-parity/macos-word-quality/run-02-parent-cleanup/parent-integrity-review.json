@@ -1,0 +1,8 @@
+{
+  "bound_commit": "1686155b5b16c6709b0182b40dbf5a6ed0f3d89f",
+  "sources_verified": 160,
+  "artifacts_verified": 41,
+  "report_sha256": "738c28524ef1727a90da2a052d1a8c17be5b494a75e226d7c8f68c69e3efb630",
+  "outcome": "FAIL_RETAINED",
+  "last_read_error": "-1700 header/footer shape-count comparison before table insertion"
+}
