@@ -1,0 +1,191 @@
+{
+  "passed": false,
+  "checks": {},
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_powerpoint_logical_save.py": "8c15196aa26f0168535f1ad4fa1927a8577cbe9ab9e5a9a938547f38073397cc",
+    "skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py": "4b7302089a4cb8506035e238880ef3ecdab15b23926bf69389152ce88d7e1368",
+    "skills/WPSComposer/scripts/artifact_transport.py": "a7d3352e2d54fa90829acb0a32da42c0db619a58eb4ad5ffeeaefbd1953f655e"
+  },
+  "inventory_before": [
+    [
+      "演示文稿1",
+      "演示文稿1",
+      false,
+      0,
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -"
+    ],
+    [
+      "演示文稿2",
+      "演示文稿2",
+      false,
+      1,
+      "19462221f7b35f86fe9a3a01115e7055bd36190f5df4d55d7153bf10160ffe3b  -"
+    ],
+    [
+      "演示文稿3",
+      "演示文稿3",
+      false,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿4",
+      "演示文稿4",
+      false,
+      1,
+      "f4f7573293098f676e79bfe1f13edd88e56b04896b1a40cdaf3c4f99d9cd3d26  -"
+    ],
+    [
+      "演示文稿5",
+      "演示文稿5",
+      false,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿6",
+      "演示文稿6",
+      false,
+      1,
+      "cea64b56ac65a08c41d55f79af498ac0cce95dcf99ca1dee8412fa8aadcaa1cc  -"
+    ],
+    [
+      "演示文稿8",
+      "演示文稿8",
+      false,
+      1,
+      "f21515d52906f965e8ee14e15144c3e2d47bad4fb3c66e6f5137e9e48bb841db  -"
+    ],
+    [
+      "native.pptx",
+      "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-06/native.pptx",
+      true,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿10",
+      "演示文稿10",
+      false,
+      1,
+      "eec4a3dd5ff5c76f17c51291c6131643f134aa0983ad356d86050c6b77aea1f2  -"
+    ],
+    [
+      "native.pptx",
+      "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-07/native.pptx",
+      true,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿12",
+      "演示文稿12",
+      false,
+      1,
+      "c8f26c939d88fb4903b0f3770e3c5587d98b4e3411b3ff550270458c694bc850  -"
+    ],
+    [
+      "演示文稿13",
+      "演示文稿13",
+      false,
+      0,
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -"
+    ],
+    [
+      "演示文稿14",
+      "演示文稿14",
+      false,
+      1,
+      "37c8289e2a70c6a99a5f8e9e9c49c3342d6fca7070f02f5b17b49665cc2faddf  -"
+    ],
+    [
+      "native.pptx",
+      "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-10/native.pptx",
+      true,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿16",
+      "演示文稿16",
+      false,
+      1,
+      "2938e43679839728b9321b001d81d420b922efb30c1c0a2c1b9d4df01ba7dde0  -"
+    ],
+    [
+      "native.pptx",
+      "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-5gbd1n6t/native.pptx",
+      true,
+      2,
+      "c26eedcaa7aea9fa427daea96506fb6f6700e0fbc94115ccb8ac90948b694eaa  -"
+    ],
+    [
+      "演示文稿18",
+      "演示文稿18",
+      false,
+      1,
+      "6cf59adca78eacdbf601ce170f34483cd68384c737884c3c3708ac72c1764c71  -"
+    ],
+    [
+      "演示文稿20",
+      "演示文稿20",
+      false,
+      1,
+      "785621aad7df71a2b912c37da112dac4236d48d5a8d780941e6ce8659c433c95  -"
+    ],
+    [
+      "演示文稿22",
+      "演示文稿22",
+      false,
+      1,
+      "64a6bb0ed617f4e476e6d542ae952a3dac6ccbf8d355a44d99a6119e994eb221  -"
+    ],
+    [
+      "演示文稿24",
+      "演示文稿24",
+      false,
+      1,
+      "b12f6a2bd9ba18b9f4985b27a94baf254922851866a08d9e6410b0e02a2c9bd0  -"
+    ],
+    [
+      "演示文稿27",
+      "演示文稿27",
+      false,
+      1,
+      "4aacf0e2586d56a388709403f23feba463548a68e2b94d37b8e15b2d4b2011f3  -"
+    ],
+    [
+      "演示文稿29",
+      "演示文稿29",
+      false,
+      1,
+      "71c65b1e86cdc65546512c1d4189e0352b0a2dd2b08a0340097aa1e2c6a2a032  -"
+    ],
+    [
+      "演示文稿31",
+      "演示文稿31",
+      false,
+      1,
+      "998879c4b8c4e16f39689961b5f7d0f7b2d6af5db0895b260f68fc0a2fa83cba  -"
+    ],
+    [
+      "演示文稿33",
+      "演示文稿33",
+      false,
+      1,
+      "5690212c3f2e207b2f1c7a6024c53e7bd06328e88ddef6a3328a48af7efc8f83  -"
+    ],
+    [
+      "演示文稿64",
+      "演示文稿64",
+      false,
+      1,
+      "dff4dd5ccf7b1c13d738aaeb7b2ff4fb363107b76513b7166e087c6aad2fde1a  -"
+    ]
+  ],
+  "error": {
+    "type": "NativeOfficeError",
+    "message": "Native Office did not produce a verified artifact; private diagnostics are retained."
+  },
+  "retained_sentinel": "演示文稿64"
+}

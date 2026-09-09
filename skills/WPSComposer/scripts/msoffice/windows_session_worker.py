@@ -16,6 +16,8 @@ import time
 import traceback
 from uuid import uuid4
 
+from .windows_business_protocol import decode_value, encode_value
+
 PROTOCOL = 1
 MAX_FRAME_BYTES = 32 * 1024 * 1024
 COMMON_METHODS = frozenset({
@@ -42,11 +44,29 @@ BUSINESS_METHODS = {
         'conditional_format', 'set_header_footer', 'save_xlsx'}),
     'slide': frozenset({'set_slide_size', 'add_title_slide', 'add_section_slide',
         'add_text_slide', 'add_bullets_slide', 'set_background_color', 'set_notes', 'save_pptx',
-        'add_blank_slide', 'add_textbox', 'add_shape', 'add_image', 'add_table'}),
+        'add_blank_slide', 'add_textbox', 'add_shape', 'add_image', 'add_table',
+        'apply_design_preset', 'apply_layout_template'}),
 }
+BUSINESS_METHODS['writer'] = BUSINESS_METHODS['writer'] | frozenset({
+    'add_bibliography_legacy', 'add_bibliography_native',
+    'add_captioned_figure_fallback', 'add_captioned_figure_native',
+    'add_citation_paragraph', 'add_cross_reference_fallback',
+    'add_cross_reference_paragraph', 'add_degradation_notice',
+    'add_document_quality_notice', 'add_equation_native',
+    'add_equation_native_fallback', 'add_equation_number_native',
+    'add_heading_level_native', 'add_inline_degradation',
+    'add_landscape_section_before_pending_heading', 'add_merged_table',
+    'add_quality_notice_at_bookmark', 'add_semantic_table_fallback',
+    'add_semantic_table_native', 'degradation_checkpoint', 'finalize_fields',
+    'insert_caption_index_native', 'insert_figure_index', 'insert_table_index',
+    'insert_toc', 'insert_toc_with_styles', 'pagination_fragment_for_bookmark',
+    'pagination_map_for_ranges', 'reserve_document_quality_anchor', 'reset',
+    'rollback_degradation_checkpoint', 'upsert_document_quality_notice',
+})
 GETTERS = {'writer': frozenset(), 'sheet': frozenset(), 'slide': frozenset({'slide_count'})}
-UNSUPPORTED_BUSINESS = frozenset({'apply_design_preset', 'apply_layout_template'})
-HANDLE_TYPES = frozenset({'slide', 'sheet', 'shape', 'table', 'inline_shape', 'chart', 'range'})
+UNSUPPORTED_BUSINESS = frozenset()
+HANDLE_TYPES = frozenset({'slide', 'sheet', 'shape', 'table', 'inline_shape',
+                          'chart', 'range', 'toc', 'table_of_figures'})
 _HANDLE_TAG = '__wpscomposer_handle__'
 _TUPLE_TAG = '__wpscomposer_tuple__'
 
@@ -73,6 +93,14 @@ class NativeHandleRegistry:
             collection = getattr(document, {'table':'Tables', 'shape':'Shapes', 'inline_shape':'InlineShapes'}[kind])
             for index, item in self._items(collection):
                 if identity(item) == token: return f'{kind}:{index}', index
+        elif family == 'writer' and kind in {'toc', 'table_of_figures'}:
+            collection = getattr(document, {
+                'toc': 'TablesOfContents',
+                'table_of_figures': 'TablesOfFigures',
+            }[kind])
+            for index, item in self._items(collection):
+                if identity(item) == token:
+                    return f'{kind}:{index}', index
         elif family == 'slide':
             for index, slide in self._items(document.Slides):
                 if kind == 'slide' and identity(slide) == token: return f'slide:{index}', index
@@ -140,6 +168,7 @@ class NativeHandleRegistry:
                 return index
             raise ValueError('Native handle is not supported for this argument type')
         if isinstance(value, list): return [self._value(item) for item in value]
+        if isinstance(value, tuple): return tuple(self._value(item) for item in value)
         if isinstance(value, dict):
             nested_roles = {'target':'target', 'parent':'parent', 'before':'anchor',
                             'after':'anchor', 'slide':'slide_index'}
@@ -147,10 +176,40 @@ class NativeHandleRegistry:
         return value
 
     def prepare_call(self, method, args, kwargs):
-        if len(self.records) >= 1024 and method in {'add_table','add_floating_textbox','add_wordart',
-                'add_image','add_image_block','select_sheet','rename_sheet','add_sheet','add_chart',
-                'add_blank_slide','add_textbox','add_shape'}:
+        handle_results = {
+            'add_table', 'add_floating_textbox', 'add_wordart', 'add_image',
+            'add_image_block', 'select_sheet', 'rename_sheet', 'add_sheet',
+            'add_chart', 'add_blank_slide', 'add_textbox', 'add_shape',
+            'add_merged_table', 'add_degradation_notice',
+            'add_inline_degradation', 'add_quality_notice_at_bookmark',
+            'insert_toc', 'insert_caption_index_native',
+        }
+        merged_data = kwargs.get('data', args[0] if args else None)
+        expects_handle = method in handle_results and not (
+            method == 'add_merged_table' and not merged_data
+        )
+        if len(self.records) >= 1024 and expects_handle:
             raise ValueError('Native session handle limit exceeded before mutation')
+        if method == 'pagination_map_for_ranges':
+            if len(args) == 1 and not kwargs:
+                tracked_ranges = args[0]
+                keyword = False
+            elif not args and set(kwargs) == {'tracked_ranges'}:
+                tracked_ranges = kwargs['tracked_ranges']
+                keyword = True
+            else:
+                raise ValueError('Invalid tracked range contract')
+            if not isinstance(tracked_ranges, (list, tuple)):
+                raise ValueError('Invalid tracked range contract')
+            tracked = []
+            for value in tracked_ranges:
+                if not isinstance(value, dict) or 'range' not in value:
+                    raise ValueError('Invalid tracked range contract')
+                value = dict(value)
+                value['range'] = self._value(value['range'], 'source_range')
+                tracked.append(value)
+            prepared = tuple(tracked)
+            return ([], {'tracked_ranges': prepared}) if keyword else ([prepared], {})
         roles = {}
         if method == 'apply_format_patch': roles = {0:'target', 'target':'target'}
         elif self.session.kind == 'slide' and method in {'add_textbox','add_shape','add_image','add_table','set_background_color','set_notes'}:
@@ -161,14 +220,28 @@ class NativeHandleRegistry:
             roles = {0:'range_str', 'range_str':'range_str'}
         elif self.session.kind == 'sheet' and method == 'add_chart':
             roles = {5:'source_range', 'source_range':'source_range'}
-        return ([self._value(value, roles.get(index)) for index,value in enumerate(args)],
-                {key:self._value(value, roles.get(key)) for key,value in kwargs.items()})
+        prepared_args = [
+            self._value(value, roles.get(index))
+            for index, value in enumerate(args)
+        ]
+        prepared_kwargs = {key:self._value(value, roles.get(key)) for key,value in kwargs.items()}
+        return prepared_args, prepared_kwargs
 
     def encode_result(self, method, value, args, kwargs):
         family = self.session.kind
         kind = None
         if family == 'writer':
-            kind = {'add_table':'table', 'add_floating_textbox':'shape', 'add_wordart':'shape'}.get(method)
+            kind = {
+                'add_table':'table', 'add_merged_table':'table',
+                'add_floating_textbox':'shape', 'add_wordart':'shape',
+                'add_quality_notice_at_bookmark':'table',
+                'add_inline_degradation':'range',
+                'insert_toc':'toc',
+                'insert_caption_index_native':'table_of_figures',
+            }.get(method)
+            if method == 'add_degradation_notice':
+                placement = kwargs.get('placement', args[3] if len(args) > 3 else 'block')
+                kind = 'range' if placement == 'inline' else 'table'
             if method in {'add_image','add_image_block'}: kind = 'inline_shape' if kwargs.get('inline', True) else 'shape'
         elif family == 'sheet':
             if method in {'select_sheet','rename_sheet','add_sheet'}: kind = 'sheet'
@@ -179,7 +252,20 @@ class NativeHandleRegistry:
                     raise ValueError('Native blank-slide result contract changed')
                 return {_TUPLE_TAG: [self.register(value[0], 'slide'), value[1]]}
             if method in {'add_textbox','add_shape','add_image','add_table'}: kind = 'shape'
-        return self.register(value, kind) if kind else value
+        if kind:
+            if value is None:
+                return None
+            if (family == 'writer' and kind == 'table' and
+                    method in {'add_degradation_notice', 'add_quality_notice_at_bookmark'}):
+                try:
+                    return self.register(value, 'table')
+                except (AttributeError, ValueError):
+                    native_range = getattr(value, 'Range', None)
+                    if native_range is None:
+                        raise
+                    return self.register(native_range, 'range')
+            return self.register(value, kind)
+        return encode_value(value)
 
 
 def encode_frame(value):
@@ -249,6 +335,10 @@ def serve(incoming, outgoing, job, *, factory=default_factory):
             if not raw:
                 break
             response = {'protocol': PROTOCOL, 'id': None, 'status': 'error'}
+            method = None
+            kwargs = {}
+            recoverable_close_error = False
+            close_phase = None
             try:
                 request = decode_frame(raw)
                 if not isinstance(request, dict) or set(request) != {'protocol', 'id', 'kind', 'method', 'args', 'kwargs', 'deadline', 'remaining_seconds'}:
@@ -283,6 +373,7 @@ def serve(incoming, outgoing, job, *, factory=default_factory):
                 method, args, kwargs = request['method'], request['args'], request['kwargs']
                 if not isinstance(method, str) or not isinstance(args, list) or not isinstance(kwargs, dict):
                     raise ValueError('Invalid session call')
+                args, kwargs = decode_value(args), decode_value(kwargs)
                 if session is None:
                     if method not in {'open_document', 'attach_active', 'new_document'}:
                         raise ValueError('The first request must establish a document binding')
@@ -305,11 +396,43 @@ def serve(incoming, outgoing, job, *, factory=default_factory):
                         raise NotImplementedError('Native method has no value-only session contract')
                     else:
                         args, kwargs = registry.prepare_call(method, args, kwargs)
-                        if method == 'close': registry.records.clear()
-                        with contextlib.redirect_stdout(sys.stderr):
-                            value = getattr(session, method)(*args, **kwargs)
+                        try:
+                            with contextlib.redirect_stdout(sys.stderr):
+                                if (
+                                    method == 'close'
+                                    and kwargs == {'save_changes': True}
+                                    and not getattr(session, '_attached', False)
+                                ):
+                                    # Keep the save phase distinguishable from
+                                    # native close. Only a failed save is safe
+                                    # to acknowledge as an open, retryable session.
+                                    close_phase = 'save'
+                                    session.save_current()
+                                    close_phase = 'native_close'
+                                    value = session.close(save_changes=False)
+                                else:
+                                    value = getattr(session, method)(*args, **kwargs)
+                        except BaseException:
+                            if (
+                                close_phase == 'save'
+                                and not getattr(session, '_closed', False)
+                            ):
+                                try:
+                                    # A Python flag cannot prove that the same
+                                    # native binding survived. Re-run the
+                                    # session's read-only identity guard within
+                                    # the existing request deadline.
+                                    with contextlib.redirect_stdout(sys.stderr):
+                                        session._verify()
+                                    recoverable_close_error = (
+                                        time.monotonic() < deadline
+                                    )
+                                except BaseException:
+                                    recoverable_close_error = False
+                            raise
                         value = registry.encode_result(method, value, args, kwargs)
                         if method == 'close':
+                            registry.records.clear()
                             value = {'closed': True}
                             closed = True
                 identity.update({key: value for key, value in _identity(session).items() if value is not None})
@@ -329,6 +452,14 @@ def serve(incoming, outgoing, job, *, factory=default_factory):
                 (job / 'worker-error.log').write_text(traceback.format_exc(), encoding='utf-8')
                 response.update(status='error', error=_error(exc))
                 response.pop('value', None)
+                if (
+                    recoverable_close_error
+                    and session is not None
+                    and not closed
+                ):
+                    # The complete error frame acknowledges that the saving
+                    # close failed before this worker relinquished its session.
+                    response['session_state'] = 'open'
                 frame = encode_frame(response)
             outgoing.write(frame)
             outgoing.flush()

@@ -1,0 +1,42 @@
+{
+  "kind": "writer",
+  "name": "source.docx",
+  "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/installed-audit-04/writer/edited.docx",
+  "saved": true,
+  "counts": {
+    "paragraphs": 1,
+    "tables": 0,
+    "shapes": 0,
+    "sections": 1
+  },
+  "paragraphs": [
+    {
+      "id": "paragraph:1",
+      "font": {
+        "name": "等线",
+        "size": 16,
+        "bold": -1,
+        "italic": 0,
+        "underline": 0,
+        "strikethrough": 0,
+        "subscript": 0,
+        "superscript": 0,
+        "name_far_east": "等线"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "first_line_indent": 0,
+        "line_spacing": 13.899999618530273,
+        "line_rule_within": null,
+        "space_before": 0,
+        "space_after": 8
+      },
+      "text": "Installed Word edited\r",
+      "index": 1,
+      "style": "正文"
+    }
+  ],
+  "tables": [],
+  "shapes": []
+}

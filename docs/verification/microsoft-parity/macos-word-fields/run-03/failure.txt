@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_fields.py", line 60, in run
+    session.repaginate_and_update_numbering();session.refresh_bookmarks_and_references();session.refresh_indexes();session.repaginate_and_update_page_fields()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 2010, in repaginate_and_update_numbering
+    refresh(self, 'numbering')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_fields.py", line 162, in refresh
+    _ack(session,session._execute(lines+['set nativeRows to {{"ok"}}']),[['ok']])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 333, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-136r8syl diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-136r8syl/aa91161849f84d7f97e10b64dbb3d051.log

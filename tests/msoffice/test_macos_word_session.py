@@ -88,6 +88,50 @@ def test_timeout_quarantines_stage_and_blocks_later_jobs(host, monkeypatch):
         m.MacWordSession.open_document(source)
 
 
+@pytest.mark.parametrize('cancelled', [KeyboardInterrupt('cancelled'), SystemExit('cancelled')])
+def test_cancelled_bound_transport_quarantines_without_context_exit_retry(host, monkeypatch, cancelled):
+    m, source, _ = host
+    session = m.MacWordSession.open_document(source)
+    stage = session.staging_root
+    calls = []
+
+    def cancel(*args, **kwargs):
+        calls.append(args)
+        raise cancelled
+
+    monkeypatch.setattr(m.subprocess, 'run', cancel)
+    with pytest.raises(type(cancelled), match='cancelled'):
+        with session:
+            session.inspect_document()
+
+    assert len(calls) == 1
+    assert stage.is_dir()
+    assert session.lock.quarantine_path.is_file()
+    logs = list(stage.glob('*.log'))
+    assert any(type(cancelled).__name__ in log.read_text() for log in logs)
+
+
+def test_cancelled_open_transport_retains_script_diagnostic_and_original_exception(host, monkeypatch):
+    m, source, _ = host
+    calls = []
+
+    def cancel(*args, **kwargs):
+        calls.append(args)
+        raise KeyboardInterrupt('cancelled while opening')
+
+    monkeypatch.setattr(m.subprocess, 'run', cancel)
+    with pytest.raises(KeyboardInterrupt, match='cancelled while opening'):
+        m.MacWordSession.open_document(source)
+
+    stages = list(m._temporary_root().glob('wpscomposer-session-*'))
+    assert len(calls) == 1
+    assert len(stages) == 1
+    assert list(stages[0].glob('*.applescript'))
+    logs = list(stages[0].glob('*.log'))
+    assert logs and 'KeyboardInterrupt' in logs[-1].read_text()
+    assert (m._temporary_root() / 'wpscomposer-native-word.lock.quarantine').is_file()
+
+
 def test_format_patch_uses_native_dictionary_without_selection(host):
     m, source, scripts = host
     with m.MacWordSession.open_document(source) as session:
@@ -327,7 +371,7 @@ def test_session_deadline_is_shared_by_copy_validation_and_publication(host, mon
     copy = m.copy_file_before_deadline
     monkeypatch.setattr(m, 'copy_file_before_deadline', lambda *a, **k: (deadlines.append(k['deadline']), copy(*a, **k))[1])
     monkeypatch.setattr(m, 'validate_native_input', lambda *a, **k: deadlines.append(k['deadline']))
-    monkeypatch.setattr(m, 'publish_artifact', lambda src, dst, **k: (deadlines.append(k['deadline']), dst)[1])
+    monkeypatch.setattr(m, 'publish_artifact', lambda src, dst, **k: (deadlines.append(k['deadline']), copy(src, dst, deadline=k['deadline']), dst)[2])
     with m.MacWordSession.open_document(source) as session:
         deadline = session.publication_deadline
         session.save(tmp_path / 'output.docx')

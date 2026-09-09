@@ -1,0 +1,1 @@
+{"checks": 8, "sources": 3, "artifacts": 5, "cells": {"bound.xlsx": {"A30": "PUBLISHED BEFORE CONFLICT", "A31": null}, "concurrent.xlsx": {"A30": "PUBLISHED BEFORE CONFLICT", "A31": null}, "recovery.xlsx": {"A30": "PUBLISHED BEFORE CONFLICT", "A31": "UNPUBLISHED RECOVERY EDIT"}}, "pdf_pages": 3, "inventory_restored": true, "close_scripts": ["step-0009.applescript"]}

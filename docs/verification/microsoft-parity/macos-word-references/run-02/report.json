@@ -1,0 +1,36 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_references.py": "9f6d60e62cbaa2e6ec5487a90b07a981506a26d1b9a11ccad1120d9bd8a4d163",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "39129d22315eb5701dde8f1f5cfe305de404d07ce538d10d44b2fa1f562d502a",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "cfa906d462c1f9b5872c263db9de4ae0d3105666815b756ecba5b7b2bea56f8d",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "c390342553fa4f9c30f77dc751da99e97ffd0abc1ff0e20822f9c5c974fa776d",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/artifact_transport.py": "75f6e3c3c43a6e4b205d950b9a05d923e7ae83198e919481c82706fdb2a66c42",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "fixtures/microsoft_parity/macos_word_sections.py": "93aedc946c725bafc1b15cf9ee48ad4f91a4a38dcf09d94af7fd5a959d1b2551"
+  },
+  "checks": {},
+  "dependencies": {
+    "real_controller_checkpoint_recovery": "NOT_RUN: checkpoint/rollback methods outside this five-method slice"
+  },
+  "starting_inventory": [],
+  "inventory_before": [
+    [
+      "文档176",
+      "文档176",
+      false,
+      "87a3c64ccceaf1af444b36eb05be3c0c8460b140bba771dea4ee6589c9c3b557  -"
+    ]
+  ],
+  "word_version": "16.112.3",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-eddiheun diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-eddiheun/3cd4f8e8075841a5b93726ec243c78a3.log"
+  },
+  "retained_sentinel_name": "文档176"
+}

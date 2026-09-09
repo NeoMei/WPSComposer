@@ -1,0 +1,91 @@
+{
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/installed-audit-04/sheet/edited.xlsx",
+  "source_sha256": "73bed6c69e676fa501c89911a5ab82eddc0e61562ca1a53b82f5c105c4231720",
+  "events": [
+    {
+      "seconds": 0.0921,
+      "event": "profile_request",
+      "method": "GET",
+      "path": "/index.html"
+    },
+    {
+      "seconds": 0.1385,
+      "event": "activation_start",
+      "component": "spreadsheet",
+      "existing_pids": [
+        15087
+      ]
+    },
+    {
+      "seconds": 0.3838,
+      "event": "activation_return",
+      "component": "spreadsheet",
+      "fixture": "/Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer/session-m4ebhzl5/fixtures/etDemo.xlsx",
+      "current_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 10.4543,
+      "event": "activation_start",
+      "component": "spreadsheet",
+      "existing_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 10.5048,
+      "event": "activation_return",
+      "component": "spreadsheet",
+      "fixture": "/Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer/session-m4ebhzl5/fixtures/etDemo.xlsx",
+      "current_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 20.5647,
+      "event": "activation_start",
+      "component": "spreadsheet",
+      "existing_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 20.613,
+      "event": "activation_return",
+      "component": "spreadsheet",
+      "fixture": "/Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer/session-m4ebhzl5/fixtures/etDemo.xlsx",
+      "current_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 30.6983,
+      "event": "activation_start",
+      "component": "spreadsheet",
+      "existing_pids": [
+        15087,
+        31772
+      ]
+    },
+    {
+      "seconds": 30.7498,
+      "event": "activation_return",
+      "component": "spreadsheet",
+      "fixture": "/Users/neomei/Library/Containers/com.kingsoft.wpsoffice.mac/Data/tmp/WPSComposer/session-m4ebhzl5/fixtures/etDemo.xlsx",
+      "current_pids": [
+        15087,
+        31772
+      ]
+    }
+  ],
+  "ok": false,
+  "error_type": "InspectionError",
+  "error": "Timed out waiting for the WPS add-in to register",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/inspection.py\", line 104, in _wait_for_registration\n    bridge.wait_registered({component}, min(10, budget))\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/bridge.py\", line 479, in wait_registered\n    self.state.wait_registered(expected, timeout)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/bridge.py\", line 205, in wait_registered\n    raise TimeoutError(\nTimeoutError: Timed out waiting for components: ['spreadsheet']\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/inspection.py\", line 141, in _run_inspection\n    _wait_for_registration(bridge, runtime, component, deadline)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/inspection.py\", line 108, in _wait_for_registration\n    bridge.wait_registered({component}, 0)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/bridge.py\", line 479, in wait_registered\n    self.state.wait_registered(expected, timeout)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/bridge.py\", line 205, in wait_registered\n    raise TimeoutError(\nTimeoutError: Timed out waiting for components: ['spreadsheet']\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/tmp/wps-sheet-registration-ui-observe.py\", line 87, in <module>\n    inspect(SOURCE, engine=\"wps\", timeout=50)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py\", line 703, in inspect\n    return inspect_macos(\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/inspection.py\", line 255, in inspect_macos\n    return _run_inspection(\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/macos_probe/inspection.py\", line 143, in _run_inspection\n    raise _error(\nskills.WPSComposer.scripts.macos_probe.inspection.InspectionError: Timed out waiting for the WPS add-in to register\n"
+}

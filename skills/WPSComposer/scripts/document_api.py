@@ -30,6 +30,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
+import time
 
 from .artifact_transport import (
     ArtifactValidationError,
@@ -37,6 +38,7 @@ from .artifact_transport import (
     validate_before_deadline,
     publish_artifact,
     publish_artifact_group,
+    snapshot_artifact_state,
     validate_office_package,
     validate_pdf,
 )
@@ -826,7 +828,9 @@ def _session_validator(composer, validator):
     return bounded
 
 
-def _save_edited_artifact(composer, destination, *, attached, overwrite):
+def _save_edited_artifact(
+    composer, destination, *, attached, overwrite, expected_destination=None
+):
     """Save beside the destination, validate, then atomically publish."""
     target = Path(destination).expanduser().resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -848,6 +852,7 @@ def _save_edited_artifact(composer, destination, *, attached, overwrite):
             target,
             overwrite=overwrite,
             validator=_session_validator(composer, _validate_edited_artifact),
+            expected_destination=expected_destination,
             **({"deadline": _session_deadline(composer)} if _session_deadline(composer) is not None else {}),
         )
         return str(published)
@@ -981,6 +986,10 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         combined.extend(ops)
 
     attached = path is None
+    preflight_deadline = time.monotonic() + 600
+    source_state = None
+    output_state = None
+    pdf_state = None
     if selected == "msoffice" and output is not None:
         family = _document_family(path, kind) if path is not None else _normalize_kind(kind)
         expected = {"writer": ".docx", "sheet": ".xlsx", "slide": ".pptx"}.get(family)
@@ -997,10 +1006,14 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                 "edit export_pdf is unsupported for attached documents because "
                 "the host cannot guarantee non-rebinding export"
             )
+        if overwrite:
+            pdf_state = snapshot_artifact_state(Path(export_pdf), deadline=preflight_deadline)
     if attached and output is not None:
         output_path = os.path.abspath(os.fspath(output))
         if os.path.exists(output_path) and not overwrite:
             raise FileExistsError(f"Output already exists: {output_path}")
+        if overwrite:
+            output_state = snapshot_artifact_state(Path(output), deadline=preflight_deadline)
 
     if path is not None and output is not None:
         source_family = _document_family(path, kind)
@@ -1014,6 +1027,15 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         output_path = os.path.abspath(os.fspath(output))
         if output_path != source_path and os.path.exists(output_path) and not overwrite:
             raise FileExistsError(f"Output already exists: {output_path}")
+        if overwrite:
+            output_state = snapshot_artifact_state(Path(output), deadline=preflight_deadline)
+
+    if not attached and (
+        output is None
+        or Path(output).expanduser().resolve(strict=False)
+        == Path(path).expanduser().resolve(strict=False)
+    ):
+        source_state = snapshot_artifact_state(Path(path), deadline=preflight_deadline)
 
     if attached and atomic and not _attached_atomic_is_single_primitive(combined):
         reports = [{
@@ -1196,6 +1218,7 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                     output,
                     attached=True,
                     overwrite=overwrite,
+                    expected_destination=output_state,
                 )
             elif not attached and export_pdf is not None:
                 destination = output if output is not None else path
@@ -1217,8 +1240,15 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                             destination_path,
                             overwrite or destination_path == source_path,
                             _session_validator(composer, _validate_edited_artifact),
+                            source_state if destination_path == source_path else output_state,
                         ),
-                        (staged_pdf, pdf_output, overwrite, _session_validator(composer, validate_pdf)),
+                        (
+                            staged_pdf,
+                            pdf_output,
+                            overwrite,
+                            _session_validator(composer, validate_pdf),
+                            pdf_state,
+                        ),
                     ],
                 )
                 saved_path = str(destination_path)
@@ -1236,6 +1266,7 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
                     staged_document,
                     destination_path,
                     overwrite or destination_path == source_path,
+                    source_state if destination_path == source_path else output_state,
                 )
                 saved_path = str(destination_path)
             else:
@@ -1274,12 +1305,13 @@ def edit(path=None, *, kind=None, patches=None, ops=None, output=None,
         try:
             if publication_attempted:
                 if pending_publication[0] == "single":
-                    _kind, stage, target, replace = pending_publication
+                    _kind, stage, target, replace, expected = pending_publication
                     published = publish_artifact(
                         stage,
                         target,
                         overwrite=replace,
                         validator=_session_validator(composer, _validate_edited_artifact),
+                        expected_destination=expected,
                         **publication_options,
                     )
                     result["saved_path"] = str(published)

@@ -1,0 +1,3584 @@
+{
+  "passed": true,
+  "mode": "accept",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_fields.py": "7d600cb9c3cf44d601941c35a4eee236560bba62a1ab3e0f9487946f98a1c0af",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "15912a38e5475b89f54aff9857517997a822765567d80d944a499cd24b5e5d87",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "2f09f6e8f62b9e49dbd5b3e841e17a7372e85758dea1d182ae8756bb24138b25",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b"
+  },
+  "checks": {
+    "repeat_snapshot_stable": true,
+    "exact_sequence_filtered_native_indexes_and_field_kinds": true,
+    "native_toc_title_exclusion": true,
+    "multi_page_native_toc_ranges": true,
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "deleted_owned_index_identity_rejected": true,
+    "exact_owned_close": true,
+    "native_reopen_source_preserved": true,
+    "exact_owned_reopen_close": true,
+    "independent_docx_and_pdf_read": true,
+    "tracked_toc_growth_preserves_following_ref_identity": true,
+    "growth_exact_owned_close": true
+  },
+  "inventory_before": [
+    [
+      "文档161",
+      "文档161",
+      false,
+      "fd11da905c932ed3b1bb4a06565cd8904583edd721a2538cc4eab19cf3691af4  -"
+    ]
+  ],
+  "snapshot": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "REF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "564cdfe9127e8cfa0aa04d1a4b1807928fa405c571b7fc735bb6ccfa428ab8c9",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "STYLEREF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "fedafb5add14696873167ad7b65636f99304fd3452d2a44834c3ef27de130f96",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "35b42c0bdfaee830188a2d9544703a8717bbeb3ebf98c3b18f4037aae9d12182",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        1
+      ],
+      "field_category": "index",
+      "result_hash": "35b42c0bdfaee830188a2d9544703a8717bbeb3ebf98c3b18f4037aae9d12182",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "figures",
+        "TOF_FIG",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "d42d4509c90e280670eef025e15e0041e0f8a4feb9013d6123c35b3d0c812342",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "tables",
+        "TOF_TAB",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "7b4c10924b8f0303b463136e1d72606c7b74540408a1bd8ecdd822fa41069600",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "PAGE",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "NUMPAGES",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "3fdba35f04dc8c462986c992bcf875546257113072a909c162f7e470e581e278",
+      "toc_page_count": 6,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 13
+    }
+  ],
+  "native_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " STYLEREF 1 \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\rHeading 😀 Duplicate 0\t2\rHeading 😀 Duplicate 1\t2\rHeading 😀 Duplicate 2\t2\rHeading 😀 Duplicate 3\t2\rHeading 😀 Duplicate 4\t2\rHeading 😀 Duplicate 5\t2\rHeading 😀 Duplicate 6\t2\rHeading 😀 Duplicate 7\t2\rHeading 😀 Duplicate 8\t2\rHeading 😀 Duplicate 9\t2\rHeading 😀 Duplicate 10\t2\rHeading 😀 Duplicate 11\t2\rHeading 😀 Duplicate 12\t2\rHeading 😀 Duplicate 13\t2\rHeading 😀 Duplicate 14\t2\rHeading 😀 Duplicate 15\t2\rHeading 😀 Duplicate 16\t2\rHeading 😀 Duplicate 17\t2\rHeading 😀 Duplicate 18\t3\rHeading 😀 Duplicate 19\t3\rHeading 😀 Duplicate 20\t3\rHeading 😀 Duplicate 21\t3\rHeading 😀 Duplicate 22\t3\rHeading 😀 Duplicate 23\t3\rHeading 😀 Duplicate 24\t3\rHeading 😀 Duplicate 25\t3\rHeading 😀 Duplicate 26\t3\rHeading 😀 Duplicate 27\t3\rHeading 😀 Duplicate 28\t3\rHeading 😀 Duplicate 29\t3\rHeading 😀 Duplicate 30\t3\rHeading 😀 Duplicate 31\t3\rHeading 😀 Duplicate 32\t3\rHeading 😀 Duplicate 33\t3\rHeading 😀 Duplicate 34\t3\rHeading 😀 Duplicate 35\t3\rHeading 😀 Duplicate 36\t4\rHeading 😀 Duplicate 37\t4\rHeading 😀 Duplicate 38\t4\rHeading 😀 Duplicate 39\t4\rHeading 😀 Duplicate 40\t4\rHeading 😀 Duplicate 41\t4\rHeading 😀 Duplicate 42\t4\rHeading 😀 Duplicate 43\t4\rHeading 😀 Duplicate 44\t4\rHeading 😀 Duplicate 45\t4\rHeading 😀 Duplicate 46\t4\rHeading 😀 Duplicate 47\t4\rHeading 😀 Duplicate 48\t4\rHeading 😀 Duplicate 49\t4\rHeading 😀 Duplicate 50\t4\rHeading 😀 Duplicate 51\t4\rHeading 😀 Duplicate 52\t4\rHeading 😀 Duplicate 53\t4\rHeading 😀 Duplicate 54\t5\rHeading 😀 Duplicate 55\t5\rHeading 😀 Duplicate 56\t5\rHeading 😀 Duplicate 57\t5\rHeading 😀 Duplicate 58\t5\rHeading 😀 Duplicate 59\t5\rHeading 😀 Duplicate 60\t5\rHeading 😀 Duplicate 61\t5\rHeading 😀 Duplicate 62\t5\rHeading 😀 Duplicate 63\t5\rHeading 😀 Duplicate 64\t5\rHeading 😀 Duplicate 65\t5\rHeading 😀 Duplicate 66\t5\rHeading 😀 Duplicate 67\t5\rHeading 😀 Duplicate 68\t5\rHeading 😀 Duplicate 69\t5\rHeading 😀 Duplicate 70\t5\rHeading 😀 Duplicate 71\t5\rHeading 😀 Duplicate\t7\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841330\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841330 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841331\" ",
+      "Heading 😀 Duplicate 0\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841331 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841332\" ",
+      "Heading 😀 Duplicate 1\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841332 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841333\" ",
+      "Heading 😀 Duplicate 2\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841333 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841334\" ",
+      "Heading 😀 Duplicate 3\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841334 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841335\" ",
+      "Heading 😀 Duplicate 4\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841335 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841336\" ",
+      "Heading 😀 Duplicate 5\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841336 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841337\" ",
+      "Heading 😀 Duplicate 6\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841337 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841338\" ",
+      "Heading 😀 Duplicate 7\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841338 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841339\" ",
+      "Heading 😀 Duplicate 8\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841339 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841340\" ",
+      "Heading 😀 Duplicate 9\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841340 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841341\" ",
+      "Heading 😀 Duplicate 10\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841341 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841342\" ",
+      "Heading 😀 Duplicate 11\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841342 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841343\" ",
+      "Heading 😀 Duplicate 12\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841343 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841344\" ",
+      "Heading 😀 Duplicate 13\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841344 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841345\" ",
+      "Heading 😀 Duplicate 14\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841345 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841346\" ",
+      "Heading 😀 Duplicate 15\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841346 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841347\" ",
+      "Heading 😀 Duplicate 16\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841347 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841348\" ",
+      "Heading 😀 Duplicate 17\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841348 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841349\" ",
+      "Heading 😀 Duplicate 18\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841349 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841350\" ",
+      "Heading 😀 Duplicate 19\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841350 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841351\" ",
+      "Heading 😀 Duplicate 20\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841351 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841352\" ",
+      "Heading 😀 Duplicate 21\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841352 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841353\" ",
+      "Heading 😀 Duplicate 22\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841353 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841354\" ",
+      "Heading 😀 Duplicate 23\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841354 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841355\" ",
+      "Heading 😀 Duplicate 24\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841355 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841356\" ",
+      "Heading 😀 Duplicate 25\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841356 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841357\" ",
+      "Heading 😀 Duplicate 26\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841357 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841358\" ",
+      "Heading 😀 Duplicate 27\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841358 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841359\" ",
+      "Heading 😀 Duplicate 28\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841359 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841360\" ",
+      "Heading 😀 Duplicate 29\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841360 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841361\" ",
+      "Heading 😀 Duplicate 30\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841361 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841362\" ",
+      "Heading 😀 Duplicate 31\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841362 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841363\" ",
+      "Heading 😀 Duplicate 32\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841363 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841364\" ",
+      "Heading 😀 Duplicate 33\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841364 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841365\" ",
+      "Heading 😀 Duplicate 34\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841365 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841366\" ",
+      "Heading 😀 Duplicate 35\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841366 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841367\" ",
+      "Heading 😀 Duplicate 36\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841367 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841368\" ",
+      "Heading 😀 Duplicate 37\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841368 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841369\" ",
+      "Heading 😀 Duplicate 38\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841369 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841370\" ",
+      "Heading 😀 Duplicate 39\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841370 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841371\" ",
+      "Heading 😀 Duplicate 40\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841371 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841372\" ",
+      "Heading 😀 Duplicate 41\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841372 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841373\" ",
+      "Heading 😀 Duplicate 42\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841373 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841374\" ",
+      "Heading 😀 Duplicate 43\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841374 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841375\" ",
+      "Heading 😀 Duplicate 44\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841375 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841376\" ",
+      "Heading 😀 Duplicate 45\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841376 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841377\" ",
+      "Heading 😀 Duplicate 46\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841377 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841378\" ",
+      "Heading 😀 Duplicate 47\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841378 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841379\" ",
+      "Heading 😀 Duplicate 48\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841379 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841380\" ",
+      "Heading 😀 Duplicate 49\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841380 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841381\" ",
+      "Heading 😀 Duplicate 50\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841381 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841382\" ",
+      "Heading 😀 Duplicate 51\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841382 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841383\" ",
+      "Heading 😀 Duplicate 52\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841383 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841384\" ",
+      "Heading 😀 Duplicate 53\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841384 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841385\" ",
+      "Heading 😀 Duplicate 54\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841385 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841386\" ",
+      "Heading 😀 Duplicate 55\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841386 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841387\" ",
+      "Heading 😀 Duplicate 56\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841387 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841388\" ",
+      "Heading 😀 Duplicate 57\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841388 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841389\" ",
+      "Heading 😀 Duplicate 58\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841389 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841390\" ",
+      "Heading 😀 Duplicate 59\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841390 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841391\" ",
+      "Heading 😀 Duplicate 60\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841391 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841392\" ",
+      "Heading 😀 Duplicate 61\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841392 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841393\" ",
+      "Heading 😀 Duplicate 62\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841393 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841394\" ",
+      "Heading 😀 Duplicate 63\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841394 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841395\" ",
+      "Heading 😀 Duplicate 64\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841395 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841396\" ",
+      "Heading 😀 Duplicate 65\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841396 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841397\" ",
+      "Heading 😀 Duplicate 66\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841397 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841398\" ",
+      "Heading 😀 Duplicate 67\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841398 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841399\" ",
+      "Heading 😀 Duplicate 68\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841399 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841400\" ",
+      "Heading 😀 Duplicate 69\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841400 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841401\" ",
+      "Heading 😀 Duplicate 70\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841401 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841402\" ",
+      "Heading 😀 Duplicate 71\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841402 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841403\" ",
+      "Heading 😀 Duplicate\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841403 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\rHeading 😀 Duplicate 0\t2\rHeading 😀 Duplicate 1\t2\rHeading 😀 Duplicate 2\t2\rHeading 😀 Duplicate 3\t2\rHeading 😀 Duplicate 4\t2\rHeading 😀 Duplicate 5\t2\rHeading 😀 Duplicate 6\t2\rHeading 😀 Duplicate 7\t2\rHeading 😀 Duplicate 8\t2\rHeading 😀 Duplicate 9\t2\rHeading 😀 Duplicate 10\t2\rHeading 😀 Duplicate 11\t2\rHeading 😀 Duplicate 12\t2\rHeading 😀 Duplicate 13\t2\rHeading 😀 Duplicate 14\t2\rHeading 😀 Duplicate 15\t2\rHeading 😀 Duplicate 16\t2\rHeading 😀 Duplicate 17\t2\rHeading 😀 Duplicate 18\t3\rHeading 😀 Duplicate 19\t3\rHeading 😀 Duplicate 20\t3\rHeading 😀 Duplicate 21\t3\rHeading 😀 Duplicate 22\t3\rHeading 😀 Duplicate 23\t3\rHeading 😀 Duplicate 24\t3\rHeading 😀 Duplicate 25\t3\rHeading 😀 Duplicate 26\t3\rHeading 😀 Duplicate 27\t3\rHeading 😀 Duplicate 28\t3\rHeading 😀 Duplicate 29\t3\rHeading 😀 Duplicate 30\t3\rHeading 😀 Duplicate 31\t3\rHeading 😀 Duplicate 32\t3\rHeading 😀 Duplicate 33\t3\rHeading 😀 Duplicate 34\t3\rHeading 😀 Duplicate 35\t3\rHeading 😀 Duplicate 36\t4\rHeading 😀 Duplicate 37\t4\rHeading 😀 Duplicate 38\t4\rHeading 😀 Duplicate 39\t4\rHeading 😀 Duplicate 40\t4\rHeading 😀 Duplicate 41\t4\rHeading 😀 Duplicate 42\t4\rHeading 😀 Duplicate 43\t4\rHeading 😀 Duplicate 44\t4\rHeading 😀 Duplicate 45\t4\rHeading 😀 Duplicate 46\t4\rHeading 😀 Duplicate 47\t4\rHeading 😀 Duplicate 48\t4\rHeading 😀 Duplicate 49\t4\rHeading 😀 Duplicate 50\t4\rHeading 😀 Duplicate 51\t4\rHeading 😀 Duplicate 52\t4\rHeading 😀 Duplicate 53\t4\rHeading 😀 Duplicate 54\t5\rHeading 😀 Duplicate 55\t5\rHeading 😀 Duplicate 56\t5\rHeading 😀 Duplicate 57\t5\rHeading 😀 Duplicate 58\t5\rHeading 😀 Duplicate 59\t5\rHeading 😀 Duplicate 60\t5\rHeading 😀 Duplicate 61\t5\rHeading 😀 Duplicate 62\t5\rHeading 😀 Duplicate 63\t5\rHeading 😀 Duplicate 64\t5\rHeading 😀 Duplicate 65\t5\rHeading 😀 Duplicate 66\t5\rHeading 😀 Duplicate 67\t5\rHeading 😀 Duplicate 68\t5\rHeading 😀 Duplicate 69\t5\rHeading 😀 Duplicate 70\t5\rHeading 😀 Duplicate 71\t5\rHeading 😀 Duplicate\t7\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841404\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841404 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841405\" ",
+      "Heading 😀 Duplicate 0\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841405 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841406\" ",
+      "Heading 😀 Duplicate 1\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841406 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841407\" ",
+      "Heading 😀 Duplicate 2\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841407 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841408\" ",
+      "Heading 😀 Duplicate 3\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841408 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841409\" ",
+      "Heading 😀 Duplicate 4\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841409 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841410\" ",
+      "Heading 😀 Duplicate 5\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841410 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841411\" ",
+      "Heading 😀 Duplicate 6\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841411 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841412\" ",
+      "Heading 😀 Duplicate 7\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841412 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841413\" ",
+      "Heading 😀 Duplicate 8\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841413 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841414\" ",
+      "Heading 😀 Duplicate 9\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841414 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841415\" ",
+      "Heading 😀 Duplicate 10\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841415 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841416\" ",
+      "Heading 😀 Duplicate 11\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841416 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841417\" ",
+      "Heading 😀 Duplicate 12\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841417 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841418\" ",
+      "Heading 😀 Duplicate 13\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841418 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841419\" ",
+      "Heading 😀 Duplicate 14\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841419 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841420\" ",
+      "Heading 😀 Duplicate 15\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841420 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841421\" ",
+      "Heading 😀 Duplicate 16\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841421 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841422\" ",
+      "Heading 😀 Duplicate 17\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841422 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841423\" ",
+      "Heading 😀 Duplicate 18\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841423 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841424\" ",
+      "Heading 😀 Duplicate 19\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841424 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841425\" ",
+      "Heading 😀 Duplicate 20\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841425 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841426\" ",
+      "Heading 😀 Duplicate 21\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841426 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841427\" ",
+      "Heading 😀 Duplicate 22\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841427 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841428\" ",
+      "Heading 😀 Duplicate 23\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841428 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841429\" ",
+      "Heading 😀 Duplicate 24\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841429 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841430\" ",
+      "Heading 😀 Duplicate 25\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841430 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841431\" ",
+      "Heading 😀 Duplicate 26\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841431 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841432\" ",
+      "Heading 😀 Duplicate 27\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841432 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841433\" ",
+      "Heading 😀 Duplicate 28\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841433 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841434\" ",
+      "Heading 😀 Duplicate 29\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841434 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841435\" ",
+      "Heading 😀 Duplicate 30\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841435 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841436\" ",
+      "Heading 😀 Duplicate 31\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841436 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841437\" ",
+      "Heading 😀 Duplicate 32\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841437 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841438\" ",
+      "Heading 😀 Duplicate 33\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841438 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841439\" ",
+      "Heading 😀 Duplicate 34\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841439 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841440\" ",
+      "Heading 😀 Duplicate 35\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841440 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841441\" ",
+      "Heading 😀 Duplicate 36\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841441 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841442\" ",
+      "Heading 😀 Duplicate 37\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841442 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841443\" ",
+      "Heading 😀 Duplicate 38\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841443 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841444\" ",
+      "Heading 😀 Duplicate 39\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841444 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841445\" ",
+      "Heading 😀 Duplicate 40\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841445 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841446\" ",
+      "Heading 😀 Duplicate 41\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841446 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841447\" ",
+      "Heading 😀 Duplicate 42\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841447 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841448\" ",
+      "Heading 😀 Duplicate 43\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841448 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841449\" ",
+      "Heading 😀 Duplicate 44\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841449 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841450\" ",
+      "Heading 😀 Duplicate 45\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841450 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841451\" ",
+      "Heading 😀 Duplicate 46\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841451 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841452\" ",
+      "Heading 😀 Duplicate 47\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841452 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841453\" ",
+      "Heading 😀 Duplicate 48\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841453 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841454\" ",
+      "Heading 😀 Duplicate 49\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841454 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841455\" ",
+      "Heading 😀 Duplicate 50\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841455 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841456\" ",
+      "Heading 😀 Duplicate 51\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841456 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841457\" ",
+      "Heading 😀 Duplicate 52\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841457 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841458\" ",
+      "Heading 😀 Duplicate 53\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841458 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841459\" ",
+      "Heading 😀 Duplicate 54\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841459 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841460\" ",
+      "Heading 😀 Duplicate 55\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841460 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841461\" ",
+      "Heading 😀 Duplicate 56\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841461 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841462\" ",
+      "Heading 😀 Duplicate 57\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841462 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841463\" ",
+      "Heading 😀 Duplicate 58\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841463 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841464\" ",
+      "Heading 😀 Duplicate 59\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841464 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841465\" ",
+      "Heading 😀 Duplicate 60\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841465 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841466\" ",
+      "Heading 😀 Duplicate 61\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841466 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841467\" ",
+      "Heading 😀 Duplicate 62\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841467 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841468\" ",
+      "Heading 😀 Duplicate 63\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841468 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841469\" ",
+      "Heading 😀 Duplicate 64\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841469 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841470\" ",
+      "Heading 😀 Duplicate 65\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841470 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841471\" ",
+      "Heading 😀 Duplicate 66\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841471 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841472\" ",
+      "Heading 😀 Duplicate 67\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841472 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841473\" ",
+      "Heading 😀 Duplicate 68\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841473 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841474\" ",
+      "Heading 😀 Duplicate 69\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841474 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841475\" ",
+      "Heading 😀 Duplicate 70\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841475 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841476\" ",
+      "Heading 😀 Duplicate 71\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841476 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841477\" ",
+      "Heading 😀 Duplicate\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841477 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t7\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841478\" ",
+      "1 Figure Caption 😀\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841478 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t7\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841479\" ",
+      "1 Table Caption 😀\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841479 \\h ",
+      "7"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 113\r"
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档161",
+      "文档161",
+      false,
+      "fd11da905c932ed3b1bb4a06565cd8904583edd721a2538cc4eab19cf3691af4  -"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " STYLEREF 1 \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\rHeading 😀 Duplicate 0\t2\rHeading 😀 Duplicate 1\t2\rHeading 😀 Duplicate 2\t2\rHeading 😀 Duplicate 3\t2\rHeading 😀 Duplicate 4\t2\rHeading 😀 Duplicate 5\t2\rHeading 😀 Duplicate 6\t2\rHeading 😀 Duplicate 7\t2\rHeading 😀 Duplicate 8\t2\rHeading 😀 Duplicate 9\t2\rHeading 😀 Duplicate 10\t2\rHeading 😀 Duplicate 11\t2\rHeading 😀 Duplicate 12\t2\rHeading 😀 Duplicate 13\t2\rHeading 😀 Duplicate 14\t2\rHeading 😀 Duplicate 15\t2\rHeading 😀 Duplicate 16\t2\rHeading 😀 Duplicate 17\t2\rHeading 😀 Duplicate 18\t3\rHeading 😀 Duplicate 19\t3\rHeading 😀 Duplicate 20\t3\rHeading 😀 Duplicate 21\t3\rHeading 😀 Duplicate 22\t3\rHeading 😀 Duplicate 23\t3\rHeading 😀 Duplicate 24\t3\rHeading 😀 Duplicate 25\t3\rHeading 😀 Duplicate 26\t3\rHeading 😀 Duplicate 27\t3\rHeading 😀 Duplicate 28\t3\rHeading 😀 Duplicate 29\t3\rHeading 😀 Duplicate 30\t3\rHeading 😀 Duplicate 31\t3\rHeading 😀 Duplicate 32\t3\rHeading 😀 Duplicate 33\t3\rHeading 😀 Duplicate 34\t3\rHeading 😀 Duplicate 35\t3\rHeading 😀 Duplicate 36\t4\rHeading 😀 Duplicate 37\t4\rHeading 😀 Duplicate 38\t4\rHeading 😀 Duplicate 39\t4\rHeading 😀 Duplicate 40\t4\rHeading 😀 Duplicate 41\t4\rHeading 😀 Duplicate 42\t4\rHeading 😀 Duplicate 43\t4\rHeading 😀 Duplicate 44\t4\rHeading 😀 Duplicate 45\t4\rHeading 😀 Duplicate 46\t4\rHeading 😀 Duplicate 47\t4\rHeading 😀 Duplicate 48\t4\rHeading 😀 Duplicate 49\t4\rHeading 😀 Duplicate 50\t4\rHeading 😀 Duplicate 51\t4\rHeading 😀 Duplicate 52\t4\rHeading 😀 Duplicate 53\t4\rHeading 😀 Duplicate 54\t5\rHeading 😀 Duplicate 55\t5\rHeading 😀 Duplicate 56\t5\rHeading 😀 Duplicate 57\t5\rHeading 😀 Duplicate 58\t5\rHeading 😀 Duplicate 59\t5\rHeading 😀 Duplicate 60\t5\rHeading 😀 Duplicate 61\t5\rHeading 😀 Duplicate 62\t5\rHeading 😀 Duplicate 63\t5\rHeading 😀 Duplicate 64\t5\rHeading 😀 Duplicate 65\t5\rHeading 😀 Duplicate 66\t5\rHeading 😀 Duplicate 67\t5\rHeading 😀 Duplicate 68\t5\rHeading 😀 Duplicate 69\t5\rHeading 😀 Duplicate 70\t5\rHeading 😀 Duplicate 71\t5\rHeading 😀 Duplicate\t7\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841330\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841330 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841331\"",
+      "Heading 😀 Duplicate 0\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841331 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841332\"",
+      "Heading 😀 Duplicate 1\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841332 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841333\"",
+      "Heading 😀 Duplicate 2\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841333 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841334\"",
+      "Heading 😀 Duplicate 3\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841334 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841335\"",
+      "Heading 😀 Duplicate 4\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841335 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841336\"",
+      "Heading 😀 Duplicate 5\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841336 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841337\"",
+      "Heading 😀 Duplicate 6\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841337 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841338\"",
+      "Heading 😀 Duplicate 7\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841338 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841339\"",
+      "Heading 😀 Duplicate 8\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841339 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841340\"",
+      "Heading 😀 Duplicate 9\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841340 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841341\"",
+      "Heading 😀 Duplicate 10\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841341 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841342\"",
+      "Heading 😀 Duplicate 11\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841342 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841343\"",
+      "Heading 😀 Duplicate 12\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841343 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841344\"",
+      "Heading 😀 Duplicate 13\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841344 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841345\"",
+      "Heading 😀 Duplicate 14\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841345 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841346\"",
+      "Heading 😀 Duplicate 15\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841346 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841347\"",
+      "Heading 😀 Duplicate 16\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841347 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841348\"",
+      "Heading 😀 Duplicate 17\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841348 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841349\"",
+      "Heading 😀 Duplicate 18\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841349 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841350\"",
+      "Heading 😀 Duplicate 19\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841350 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841351\"",
+      "Heading 😀 Duplicate 20\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841351 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841352\"",
+      "Heading 😀 Duplicate 21\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841352 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841353\"",
+      "Heading 😀 Duplicate 22\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841353 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841354\"",
+      "Heading 😀 Duplicate 23\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841354 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841355\"",
+      "Heading 😀 Duplicate 24\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841355 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841356\"",
+      "Heading 😀 Duplicate 25\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841356 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841357\"",
+      "Heading 😀 Duplicate 26\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841357 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841358\"",
+      "Heading 😀 Duplicate 27\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841358 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841359\"",
+      "Heading 😀 Duplicate 28\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841359 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841360\"",
+      "Heading 😀 Duplicate 29\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841360 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841361\"",
+      "Heading 😀 Duplicate 30\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841361 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841362\"",
+      "Heading 😀 Duplicate 31\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841362 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841363\"",
+      "Heading 😀 Duplicate 32\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841363 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841364\"",
+      "Heading 😀 Duplicate 33\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841364 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841365\"",
+      "Heading 😀 Duplicate 34\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841365 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841366\"",
+      "Heading 😀 Duplicate 35\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841366 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841367\"",
+      "Heading 😀 Duplicate 36\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841367 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841368\"",
+      "Heading 😀 Duplicate 37\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841368 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841369\"",
+      "Heading 😀 Duplicate 38\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841369 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841370\"",
+      "Heading 😀 Duplicate 39\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841370 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841371\"",
+      "Heading 😀 Duplicate 40\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841371 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841372\"",
+      "Heading 😀 Duplicate 41\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841372 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841373\"",
+      "Heading 😀 Duplicate 42\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841373 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841374\"",
+      "Heading 😀 Duplicate 43\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841374 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841375\"",
+      "Heading 😀 Duplicate 44\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841375 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841376\"",
+      "Heading 😀 Duplicate 45\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841376 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841377\"",
+      "Heading 😀 Duplicate 46\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841377 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841378\"",
+      "Heading 😀 Duplicate 47\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841378 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841379\"",
+      "Heading 😀 Duplicate 48\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841379 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841380\"",
+      "Heading 😀 Duplicate 49\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841380 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841381\"",
+      "Heading 😀 Duplicate 50\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841381 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841382\"",
+      "Heading 😀 Duplicate 51\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841382 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841383\"",
+      "Heading 😀 Duplicate 52\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841383 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841384\"",
+      "Heading 😀 Duplicate 53\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841384 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841385\"",
+      "Heading 😀 Duplicate 54\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841385 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841386\"",
+      "Heading 😀 Duplicate 55\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841386 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841387\"",
+      "Heading 😀 Duplicate 56\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841387 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841388\"",
+      "Heading 😀 Duplicate 57\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841388 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841389\"",
+      "Heading 😀 Duplicate 58\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841389 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841390\"",
+      "Heading 😀 Duplicate 59\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841390 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841391\"",
+      "Heading 😀 Duplicate 60\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841391 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841392\"",
+      "Heading 😀 Duplicate 61\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841392 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841393\"",
+      "Heading 😀 Duplicate 62\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841393 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841394\"",
+      "Heading 😀 Duplicate 63\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841394 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841395\"",
+      "Heading 😀 Duplicate 64\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841395 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841396\"",
+      "Heading 😀 Duplicate 65\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841396 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841397\"",
+      "Heading 😀 Duplicate 66\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841397 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841398\"",
+      "Heading 😀 Duplicate 67\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841398 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841399\"",
+      "Heading 😀 Duplicate 68\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841399 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841400\"",
+      "Heading 😀 Duplicate 69\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841400 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841401\"",
+      "Heading 😀 Duplicate 70\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841401 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841402\"",
+      "Heading 😀 Duplicate 71\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841402 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841403\"",
+      "Heading 😀 Duplicate\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841403 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\rHeading 😀 Duplicate 0\t2\rHeading 😀 Duplicate 1\t2\rHeading 😀 Duplicate 2\t2\rHeading 😀 Duplicate 3\t2\rHeading 😀 Duplicate 4\t2\rHeading 😀 Duplicate 5\t2\rHeading 😀 Duplicate 6\t2\rHeading 😀 Duplicate 7\t2\rHeading 😀 Duplicate 8\t2\rHeading 😀 Duplicate 9\t2\rHeading 😀 Duplicate 10\t2\rHeading 😀 Duplicate 11\t2\rHeading 😀 Duplicate 12\t2\rHeading 😀 Duplicate 13\t2\rHeading 😀 Duplicate 14\t2\rHeading 😀 Duplicate 15\t2\rHeading 😀 Duplicate 16\t2\rHeading 😀 Duplicate 17\t2\rHeading 😀 Duplicate 18\t3\rHeading 😀 Duplicate 19\t3\rHeading 😀 Duplicate 20\t3\rHeading 😀 Duplicate 21\t3\rHeading 😀 Duplicate 22\t3\rHeading 😀 Duplicate 23\t3\rHeading 😀 Duplicate 24\t3\rHeading 😀 Duplicate 25\t3\rHeading 😀 Duplicate 26\t3\rHeading 😀 Duplicate 27\t3\rHeading 😀 Duplicate 28\t3\rHeading 😀 Duplicate 29\t3\rHeading 😀 Duplicate 30\t3\rHeading 😀 Duplicate 31\t3\rHeading 😀 Duplicate 32\t3\rHeading 😀 Duplicate 33\t3\rHeading 😀 Duplicate 34\t3\rHeading 😀 Duplicate 35\t3\rHeading 😀 Duplicate 36\t4\rHeading 😀 Duplicate 37\t4\rHeading 😀 Duplicate 38\t4\rHeading 😀 Duplicate 39\t4\rHeading 😀 Duplicate 40\t4\rHeading 😀 Duplicate 41\t4\rHeading 😀 Duplicate 42\t4\rHeading 😀 Duplicate 43\t4\rHeading 😀 Duplicate 44\t4\rHeading 😀 Duplicate 45\t4\rHeading 😀 Duplicate 46\t4\rHeading 😀 Duplicate 47\t4\rHeading 😀 Duplicate 48\t4\rHeading 😀 Duplicate 49\t4\rHeading 😀 Duplicate 50\t4\rHeading 😀 Duplicate 51\t4\rHeading 😀 Duplicate 52\t4\rHeading 😀 Duplicate 53\t4\rHeading 😀 Duplicate 54\t5\rHeading 😀 Duplicate 55\t5\rHeading 😀 Duplicate 56\t5\rHeading 😀 Duplicate 57\t5\rHeading 😀 Duplicate 58\t5\rHeading 😀 Duplicate 59\t5\rHeading 😀 Duplicate 60\t5\rHeading 😀 Duplicate 61\t5\rHeading 😀 Duplicate 62\t5\rHeading 😀 Duplicate 63\t5\rHeading 😀 Duplicate 64\t5\rHeading 😀 Duplicate 65\t5\rHeading 😀 Duplicate 66\t5\rHeading 😀 Duplicate 67\t5\rHeading 😀 Duplicate 68\t5\rHeading 😀 Duplicate 69\t5\rHeading 😀 Duplicate 70\t5\rHeading 😀 Duplicate 71\t5\rHeading 😀 Duplicate\t7\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841404\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841404 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841405\"",
+      "Heading 😀 Duplicate 0\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841405 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841406\"",
+      "Heading 😀 Duplicate 1\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841406 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841407\"",
+      "Heading 😀 Duplicate 2\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841407 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841408\"",
+      "Heading 😀 Duplicate 3\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841408 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841409\"",
+      "Heading 😀 Duplicate 4\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841409 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841410\"",
+      "Heading 😀 Duplicate 5\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841410 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841411\"",
+      "Heading 😀 Duplicate 6\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841411 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841412\"",
+      "Heading 😀 Duplicate 7\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841412 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841413\"",
+      "Heading 😀 Duplicate 8\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841413 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841414\"",
+      "Heading 😀 Duplicate 9\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841414 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841415\"",
+      "Heading 😀 Duplicate 10\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841415 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841416\"",
+      "Heading 😀 Duplicate 11\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841416 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841417\"",
+      "Heading 😀 Duplicate 12\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841417 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841418\"",
+      "Heading 😀 Duplicate 13\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841418 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841419\"",
+      "Heading 😀 Duplicate 14\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841419 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841420\"",
+      "Heading 😀 Duplicate 15\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841420 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841421\"",
+      "Heading 😀 Duplicate 16\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841421 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841422\"",
+      "Heading 😀 Duplicate 17\t2"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841422 \\h ",
+      "2"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841423\"",
+      "Heading 😀 Duplicate 18\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841423 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841424\"",
+      "Heading 😀 Duplicate 19\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841424 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841425\"",
+      "Heading 😀 Duplicate 20\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841425 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841426\"",
+      "Heading 😀 Duplicate 21\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841426 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841427\"",
+      "Heading 😀 Duplicate 22\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841427 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841428\"",
+      "Heading 😀 Duplicate 23\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841428 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841429\"",
+      "Heading 😀 Duplicate 24\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841429 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841430\"",
+      "Heading 😀 Duplicate 25\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841430 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841431\"",
+      "Heading 😀 Duplicate 26\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841431 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841432\"",
+      "Heading 😀 Duplicate 27\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841432 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841433\"",
+      "Heading 😀 Duplicate 28\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841433 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841434\"",
+      "Heading 😀 Duplicate 29\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841434 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841435\"",
+      "Heading 😀 Duplicate 30\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841435 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841436\"",
+      "Heading 😀 Duplicate 31\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841436 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841437\"",
+      "Heading 😀 Duplicate 32\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841437 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841438\"",
+      "Heading 😀 Duplicate 33\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841438 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841439\"",
+      "Heading 😀 Duplicate 34\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841439 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841440\"",
+      "Heading 😀 Duplicate 35\t3"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841440 \\h ",
+      "3"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841441\"",
+      "Heading 😀 Duplicate 36\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841441 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841442\"",
+      "Heading 😀 Duplicate 37\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841442 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841443\"",
+      "Heading 😀 Duplicate 38\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841443 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841444\"",
+      "Heading 😀 Duplicate 39\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841444 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841445\"",
+      "Heading 😀 Duplicate 40\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841445 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841446\"",
+      "Heading 😀 Duplicate 41\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841446 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841447\"",
+      "Heading 😀 Duplicate 42\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841447 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841448\"",
+      "Heading 😀 Duplicate 43\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841448 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841449\"",
+      "Heading 😀 Duplicate 44\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841449 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841450\"",
+      "Heading 😀 Duplicate 45\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841450 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841451\"",
+      "Heading 😀 Duplicate 46\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841451 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841452\"",
+      "Heading 😀 Duplicate 47\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841452 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841453\"",
+      "Heading 😀 Duplicate 48\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841453 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841454\"",
+      "Heading 😀 Duplicate 49\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841454 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841455\"",
+      "Heading 😀 Duplicate 50\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841455 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841456\"",
+      "Heading 😀 Duplicate 51\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841456 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841457\"",
+      "Heading 😀 Duplicate 52\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841457 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841458\"",
+      "Heading 😀 Duplicate 53\t4"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841458 \\h ",
+      "4"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841459\"",
+      "Heading 😀 Duplicate 54\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841459 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841460\"",
+      "Heading 😀 Duplicate 55\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841460 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841461\"",
+      "Heading 😀 Duplicate 56\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841461 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841462\"",
+      "Heading 😀 Duplicate 57\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841462 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841463\"",
+      "Heading 😀 Duplicate 58\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841463 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841464\"",
+      "Heading 😀 Duplicate 59\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841464 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841465\"",
+      "Heading 😀 Duplicate 60\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841465 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841466\"",
+      "Heading 😀 Duplicate 61\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841466 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841467\"",
+      "Heading 😀 Duplicate 62\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841467 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841468\"",
+      "Heading 😀 Duplicate 63\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841468 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841469\"",
+      "Heading 😀 Duplicate 64\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841469 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841470\"",
+      "Heading 😀 Duplicate 65\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841470 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841471\"",
+      "Heading 😀 Duplicate 66\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841471 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841472\"",
+      "Heading 😀 Duplicate 67\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841472 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841473\"",
+      "Heading 😀 Duplicate 68\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841473 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841474\"",
+      "Heading 😀 Duplicate 69\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841474 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841475\"",
+      "Heading 😀 Duplicate 70\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841475 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841476\"",
+      "Heading 😀 Duplicate 71\t5"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841476 \\h ",
+      "5"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841477\"",
+      "Heading 😀 Duplicate\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841477 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t7\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841478\"",
+      "1 Figure Caption 😀\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841478 \\h ",
+      "7"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t7\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841479\"",
+      "1 Table Caption 😀\t7"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841479 \\h ",
+      "7"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 113\r"
+    ]
+  ],
+  "reopen_snapshot": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "REF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "564cdfe9127e8cfa0aa04d1a4b1807928fa405c571b7fc735bb6ccfa428ab8c9",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "STYLEREF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "fedafb5add14696873167ad7b65636f99304fd3452d2a44834c3ef27de130f96",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "PAGE",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "NUMPAGES",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "3fdba35f04dc8c462986c992bcf875546257113072a909c162f7e470e581e278",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 13
+    }
+  ],
+  "docx_sha256_before_reopen": "764d40aee3868810f02c49fd8b49f4787b8b60598110d3e64bb317133e13e281",
+  "docx_sha256_after_reopen": "764d40aee3868810f02c49fd8b49f4787b8b60598110d3e64bb317133e13e281",
+  "docx_field_codes": [
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841330 \\h ",
+    " PAGEREF _Toc239841331 \\h ",
+    " PAGEREF _Toc239841332 \\h ",
+    " PAGEREF _Toc239841333 \\h ",
+    " PAGEREF _Toc239841334 \\h ",
+    " PAGEREF _Toc239841335 \\h ",
+    " PAGEREF _Toc239841336 \\h ",
+    " PAGEREF _Toc239841337 \\h ",
+    " PAGEREF _Toc239841338 \\h ",
+    " PAGEREF _Toc239841339 \\h ",
+    " PAGEREF _Toc239841340 \\h ",
+    " PAGEREF _Toc239841341 \\h ",
+    " PAGEREF _Toc239841342 \\h ",
+    " PAGEREF _Toc239841343 \\h ",
+    " PAGEREF _Toc239841344 \\h ",
+    " PAGEREF _Toc239841345 \\h ",
+    " PAGEREF _Toc239841346 \\h ",
+    " PAGEREF _Toc239841347 \\h ",
+    " PAGEREF _Toc239841348 \\h ",
+    " PAGEREF _Toc239841349 \\h ",
+    " PAGEREF _Toc239841350 \\h ",
+    " PAGEREF _Toc239841351 \\h ",
+    " PAGEREF _Toc239841352 \\h ",
+    " PAGEREF _Toc239841353 \\h ",
+    " PAGEREF _Toc239841354 \\h ",
+    " PAGEREF _Toc239841355 \\h ",
+    " PAGEREF _Toc239841356 \\h ",
+    " PAGEREF _Toc239841357 \\h ",
+    " PAGEREF _Toc239841358 \\h ",
+    " PAGEREF _Toc239841359 \\h ",
+    " PAGEREF _Toc239841360 \\h ",
+    " PAGEREF _Toc239841361 \\h ",
+    " PAGEREF _Toc239841362 \\h ",
+    " PAGEREF _Toc239841363 \\h ",
+    " PAGEREF _Toc239841364 \\h ",
+    " PAGEREF _Toc239841365 \\h ",
+    " PAGEREF _Toc239841366 \\h ",
+    " PAGEREF _Toc239841367 \\h ",
+    " PAGEREF _Toc239841368 \\h ",
+    " PAGEREF _Toc239841369 \\h ",
+    " PAGEREF _Toc239841370 \\h ",
+    " PAGEREF _Toc239841371 \\h ",
+    " PAGEREF _Toc239841372 \\h ",
+    " PAGEREF _Toc239841373 \\h ",
+    " PAGEREF _Toc239841374 \\h ",
+    " PAGEREF _Toc239841375 \\h ",
+    " PAGEREF _Toc239841376 \\h ",
+    " PAGEREF _Toc239841377 \\h ",
+    " PAGEREF _Toc239841378 \\h ",
+    " PAGEREF _Toc239841379 \\h ",
+    " PAGEREF _Toc239841380 \\h ",
+    " PAGEREF _Toc239841381 \\h ",
+    " PAGEREF _Toc239841382 \\h ",
+    " PAGEREF _Toc239841383 \\h ",
+    " PAGEREF _Toc239841384 \\h ",
+    " PAGEREF _Toc239841385 \\h ",
+    " PAGEREF _Toc239841386 \\h ",
+    " PAGEREF _Toc239841387 \\h ",
+    " PAGEREF _Toc239841388 \\h ",
+    " PAGEREF _Toc239841389 \\h ",
+    " PAGEREF _Toc239841390 \\h ",
+    " PAGEREF _Toc239841391 \\h ",
+    " PAGEREF _Toc239841392 \\h ",
+    " PAGEREF _Toc239841393 \\h ",
+    " PAGEREF _Toc239841394 \\h ",
+    " PAGEREF _Toc239841395 \\h ",
+    " PAGEREF _Toc239841396 \\h ",
+    " PAGEREF _Toc239841397 \\h ",
+    " PAGEREF _Toc239841398 \\h ",
+    " PAGEREF _Toc239841399 \\h ",
+    " PAGEREF _Toc239841400 \\h ",
+    " PAGEREF _Toc239841401 \\h ",
+    " PAGEREF _Toc239841402 \\h ",
+    " PAGEREF _Toc239841403 \\h ",
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841404 \\h ",
+    " PAGEREF _Toc239841405 \\h ",
+    " PAGEREF _Toc239841406 \\h ",
+    " PAGEREF _Toc239841407 \\h ",
+    " PAGEREF _Toc239841408 \\h ",
+    " PAGEREF _Toc239841409 \\h ",
+    " PAGEREF _Toc239841410 \\h ",
+    " PAGEREF _Toc239841411 \\h ",
+    " PAGEREF _Toc239841412 \\h ",
+    " PAGEREF _Toc239841413 \\h ",
+    " PAGEREF _Toc239841414 \\h ",
+    " PAGEREF _Toc239841415 \\h ",
+    " PAGEREF _Toc239841416 \\h ",
+    " PAGEREF _Toc239841417 \\h ",
+    " PAGEREF _Toc239841418 \\h ",
+    " PAGEREF _Toc239841419 \\h ",
+    " PAGEREF _Toc239841420 \\h ",
+    " PAGEREF _Toc239841421 \\h ",
+    " PAGEREF _Toc239841422 \\h ",
+    " PAGEREF _Toc239841423 \\h ",
+    " PAGEREF _Toc239841424 \\h ",
+    " PAGEREF _Toc239841425 \\h ",
+    " PAGEREF _Toc239841426 \\h ",
+    " PAGEREF _Toc239841427 \\h ",
+    " PAGEREF _Toc239841428 \\h ",
+    " PAGEREF _Toc239841429 \\h ",
+    " PAGEREF _Toc239841430 \\h ",
+    " PAGEREF _Toc239841431 \\h ",
+    " PAGEREF _Toc239841432 \\h ",
+    " PAGEREF _Toc239841433 \\h ",
+    " PAGEREF _Toc239841434 \\h ",
+    " PAGEREF _Toc239841435 \\h ",
+    " PAGEREF _Toc239841436 \\h ",
+    " PAGEREF _Toc239841437 \\h ",
+    " PAGEREF _Toc239841438 \\h ",
+    " PAGEREF _Toc239841439 \\h ",
+    " PAGEREF _Toc239841440 \\h ",
+    " PAGEREF _Toc239841441 \\h ",
+    " PAGEREF _Toc239841442 \\h ",
+    " PAGEREF _Toc239841443 \\h ",
+    " PAGEREF _Toc239841444 \\h ",
+    " PAGEREF _Toc239841445 \\h ",
+    " PAGEREF _Toc239841446 \\h ",
+    " PAGEREF _Toc239841447 \\h ",
+    " PAGEREF _Toc239841448 \\h ",
+    " PAGEREF _Toc239841449 \\h ",
+    " PAGEREF _Toc239841450 \\h ",
+    " PAGEREF _Toc239841451 \\h ",
+    " PAGEREF _Toc239841452 \\h ",
+    " PAGEREF _Toc239841453 \\h ",
+    " PAGEREF _Toc239841454 \\h ",
+    " PAGEREF _Toc239841455 \\h ",
+    " PAGEREF _Toc239841456 \\h ",
+    " PAGEREF _Toc239841457 \\h ",
+    " PAGEREF _Toc239841458 \\h ",
+    " PAGEREF _Toc239841459 \\h ",
+    " PAGEREF _Toc239841460 \\h ",
+    " PAGEREF _Toc239841461 \\h ",
+    " PAGEREF _Toc239841462 \\h ",
+    " PAGEREF _Toc239841463 \\h ",
+    " PAGEREF _Toc239841464 \\h ",
+    " PAGEREF _Toc239841465 \\h ",
+    " PAGEREF _Toc239841466 \\h ",
+    " PAGEREF _Toc239841467 \\h ",
+    " PAGEREF _Toc239841468 \\h ",
+    " PAGEREF _Toc239841469 \\h ",
+    " PAGEREF _Toc239841470 \\h ",
+    " PAGEREF _Toc239841471 \\h ",
+    " PAGEREF _Toc239841472 \\h ",
+    " PAGEREF _Toc239841473 \\h ",
+    " PAGEREF _Toc239841474 \\h ",
+    " PAGEREF _Toc239841475 \\h ",
+    " PAGEREF _Toc239841476 \\h ",
+    " PAGEREF _Toc239841477 \\h ",
+    " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841478 \\h ",
+    " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841479 \\h ",
+    " SEQ WPSC_FIG \\* MERGEFORMAT ",
+    " SEQ WPSC_TAB \\* MERGEFORMAT ",
+    " REF WPSC_RefProbe \\* MERGEFORMAT ",
+    " STYLEREF 1 \\* MERGEFORMAT "
+  ],
+  "pdf_pages": 13,
+  "pdf_text": "Heading 😀 Duplicate\nProbe body preserves existing text.\nRetain PAGE NUMPAGES PAGEREF 113\n\nHeading 😀 Duplicate 0\nHeading 😀 Duplicate 1\nHeading 😀 Duplicate 2\nHeading 😀 Duplicate 3\nHeading 😀 Duplicate 4\nHeading 😀 Duplicate 5\nHeading 😀 Duplicate 6\nHeading 😀 Duplicate 7\nHeading 😀 Duplicate 8\nHeading 😀 Duplicate 9\nHeading 😀 Duplicate 10\nHeading 😀 Duplicate 11\nHeading 😀 Duplicate 12\nHeading 😀 Duplicate 13\nHeading 😀 Duplicate 14\nHeading 😀 Duplicate 15\nHeading 😀 Duplicate 16\nHeading 😀 Duplicate 17\nRetain PAGE NUMPAGES PAGEREF 213\n\nHeading 😀 Duplicate 18\nHeading 😀 Duplicate 19\nHeading 😀 Duplicate 20\nHeading 😀 Duplicate 21\nHeading 😀 Duplicate 22\nHeading 😀 Duplicate 23\nHeading 😀 Duplicate 24\nHeading 😀 Duplicate 25\nHeading 😀 Duplicate 26\nHeading 😀 Duplicate 27\nHeading 😀 Duplicate 28\nHeading 😀 Duplicate 29\nHeading 😀 Duplicate 30\nHeading 😀 Duplicate 31\nHeading 😀 Duplicate 32\nHeading 😀 Duplicate 33\nHeading 😀 Duplicate 34\nHeading 😀 Duplicate 35\nRetain PAGE NUMPAGES PAGEREF 313\n\nHeading 😀 Duplicate 36\nHeading 😀 Duplicate 37\nHeading 😀 Duplicate 38\nHeading 😀 Duplicate 39\nHeading 😀 Duplicate 40\nHeading 😀 Duplicate 41\nHeading 😀 Duplicate 42\nHeading 😀 Duplicate 43\nHeading 😀 Duplicate 44\nHeading 😀 Duplicate 45\nHeading 😀 Duplicate 46\nHeading 😀 Duplicate 47\nHeading 😀 Duplicate 48\nHeading 😀 Duplicate 49\nHeading 😀 Duplicate 50\nHeading 😀 Duplicate 51\nHeading 😀 Duplicate 52\nHeading 😀 Duplicate 53\nRetain PAGE NUMPAGES PAGEREF 413\n\nHeading 😀 Duplicate 54\nHeading 😀 Duplicate 55\nHeading 😀 Duplicate 56\nHeading 😀 Duplicate 57\nHeading 😀 Duplicate 58\nHeading 😀 Duplicate 59\nHeading 😀 Duplicate 60\nHeading 😀 Duplicate 61\nHeading 😀 Duplicate 62\nHeading 😀 Duplicate 63\nHeading 😀 Duplicate 64\nHeading 😀 Duplicate 65\nHeading 😀 Duplicate 66\nHeading 😀 Duplicate 67\nHeading 😀 Duplicate 68\nHeading 😀 Duplicate 69\nHeading 😀 Duplicate 70\nHeading 😀 Duplicate 71\nRetain PAGE NUMPAGES PAGEREF 513\n\nRetain PAGE NUMPAGES PAGEREF 613\n\nHeading 😀 Duplicate\nFigure 😀\n1 Figure Caption 😀\nTable 😀\n1 Table Caption 😀\nHeading\nHeading 😀 Duplicate\n⽬录😀\nHeading 😀 Duplicate .............................................................................................................................. 1\nHeading 😀 Duplicate 0 .................................................................................................................................. 2\nHeading 😀 Duplicate 1 .................................................................................................................................. 2\nHeading 😀 Duplicate 2 .................................................................................................................................. 2\nHeading 😀 Duplicate 3 .................................................................................................................................. 2\nHeading 😀 Duplicate 4 .................................................................................................................................. 2\nHeading 😀 Duplicate 5 .................................................................................................................................. 2\nHeading 😀 Duplicate 6 .................................................................................................................................. 2\nHeading 😀 Duplicate 7 .................................................................................................................................. 2\nHeading 😀 Duplicate 8 .................................................................................................................................. 2\nHeading 😀 Duplicate 9 .................................................................................................................................. 2\nHeading 😀 Duplicate 10 ............................................................................................................................... 2\nHeading 😀 Duplicate 11 ............................................................................................................................... 2\nHeading 😀 Duplicate 12 ............................................................................................................................... 2\nHeading 😀 Duplicate 13 ............................................................................................................................... 2\nHeading 😀 Duplicate 14 ............................................................................................................................... 2\nHeading 😀 Duplicate 15 ............................................................................................................................... 2\nHeading 😀 Duplicate 16 ............................................................................................................................... 2\nHeading 😀 Duplicate 17 ............................................................................................................................... 2\nHeading 😀 Duplicate 18 ............................................................................................................................... 3\nHeading 😀 Duplicate 19 ............................................................................................................................... 3\nHeading 😀 Duplicate 20 ............................................................................................................................... 3\nHeading 😀 Duplicate 21 ............................................................................................................................... 3\nRetain PAGE NUMPAGES PAGEREF 713\n\nHeading 😀 Duplicate 22 ............................................................................................................................... 3\nHeading 😀 Duplicate 23 ............................................................................................................................... 3\nHeading 😀 Duplicate 24 ............................................................................................................................... 3\nHeading 😀 Duplicate 25 ............................................................................................................................... 3\nHeading 😀 Duplicate 26 ............................................................................................................................... 3\nHeading 😀 Duplicate 27 ............................................................................................................................... 3\nHeading 😀 Duplicate 28 ............................................................................................................................... 3\nHeading 😀 Duplicate 29 ............................................................................................................................... 3\nHeading 😀 Duplicate 30 ............................................................................................................................... 3\nHeading 😀 Duplicate 31 ............................................................................................................................... 3\nHeading 😀 Duplicate 32 ............................................................................................................................... 3\nHeading 😀 Duplicate 33 ............................................................................................................................... 3\nHeading 😀 Duplicate 34 ............................................................................................................................... 3\nHeading 😀 Duplicate 35 ............................................................................................................................... 3\nHeading 😀 Duplicate 36 ............................................................................................................................... 4\nHeading 😀 Duplicate 37 ............................................................................................................................... 4\nHeading 😀 Duplicate 38 ............................................................................................................................... 4\nHeading 😀 Duplicate 39 ............................................................................................................................... 4\nHeading 😀 Duplicate 40 ............................................................................................................................... 4\nHeading 😀 Duplicate 41 ............................................................................................................................... 4\nHeading 😀 Duplicate 42 ............................................................................................................................... 4\nHeading 😀 Duplicate 43 ............................................................................................................................... 4\nHeading 😀 Duplicate 44 ............................................................................................................................... 4\nHeading 😀 Duplicate 45 ............................................................................................................................... 4\nHeading 😀 Duplicate 46 ............................................................................................................................... 4\nHeading 😀 Duplicate 47 ............................................................................................................................... 4\nHeading 😀 Duplicate 48 ............................................................................................................................... 4\nHeading 😀 Duplicate 49 ............................................................................................................................... 4\nHeading 😀 Duplicate 50 ............................................................................................................................... 4\nHeading 😀 Duplicate 51 ............................................................................................................................... 4\nHeading 😀 Duplicate 52 ............................................................................................................................... 4\nHeading 😀 Duplicate 53 ............................................................................................................................... 4\nHeading 😀 Duplicate 54 ............................................................................................................................... 5\nHeading 😀 Duplicate 55 ............................................................................................................................... 5\nRetain PAGE NUMPAGES PAGEREF 813\n\nHeading 😀 Duplicate 56 ............................................................................................................................... 5\nHeading 😀 Duplicate 57 ............................................................................................................................... 5\nHeading 😀 Duplicate 58 ............................................................................................................................... 5\nHeading 😀 Duplicate 59 ............................................................................................................................... 5\nHeading 😀 Duplicate 60 ............................................................................................................................... 5\nHeading 😀 Duplicate 61 ............................................................................................................................... 5\nHeading 😀 Duplicate 62 ............................................................................................................................... 5\nHeading 😀 Duplicate 63 ............................................................................................................................... 5\nHeading 😀 Duplicate 64 ............................................................................................................................... 5\nHeading 😀 Duplicate 65 ............................................................................................................................... 5\nHeading 😀 Duplicate 66 ............................................................................................................................... 5\nHeading 😀 Duplicate 67 ............................................................................................................................... 5\nHeading 😀 Duplicate 68 ............................................................................................................................... 5\nHeading 😀 Duplicate 69 ............................................................................................................................... 5\nHeading 😀 Duplicate 70 ............................................................................................................................... 5\nHeading 😀 Duplicate 71 ............................................................................................................................... 5\nHeading 😀 Duplicate ............................................................................................................................................... 7\nRetain PAGE NUMPAGES PAGEREF 913\n\nStyled Contents\nHeading 😀 Duplicate .............................................................................................................................. 1\nHeading 😀 Duplicate 0 .................................................................................................................................. 2\nHeading 😀 Duplicate 1 .................................................................................................................................. 2\nHeading 😀 Duplicate 2 .................................................................................................................................. 2\nHeading 😀 Duplicate 3 .................................................................................................................................. 2\nHeading 😀 Duplicate 4 .................................................................................................................................. 2\nHeading 😀 Duplicate 5 .................................................................................................................................. 2\nHeading 😀 Duplicate 6 .................................................................................................................................. 2\nHeading 😀 Duplicate 7 .................................................................................................................................. 2\nHeading 😀 Duplicate 8 .................................................................................................................................. 2\nHeading 😀 Duplicate 9 .................................................................................................................................. 2\nHeading 😀 Duplicate 10 ............................................................................................................................... 2\nHeading 😀 Duplicate 11 ............................................................................................................................... 2\nHeading 😀 Duplicate 12 ............................................................................................................................... 2\nHeading 😀 Duplicate 13 ............................................................................................................................... 2\nHeading 😀 Duplicate 14 ............................................................................................................................... 2\nHeading 😀 Duplicate 15 ............................................................................................................................... 2\nHeading 😀 Duplicate 16 ............................................................................................................................... 2\nHeading 😀 Duplicate 17 ............................................................................................................................... 2\nHeading 😀 Duplicate 18 ............................................................................................................................... 3\nHeading 😀 Duplicate 19 ............................................................................................................................... 3\nHeading 😀 Duplicate 20 ............................................................................................................................... 3\nHeading 😀 Duplicate 21 ............................................................................................................................... 3\nHeading 😀 Duplicate 22 ............................................................................................................................... 3\nHeading 😀 Duplicate 23 ............................................................................................................................... 3\nHeading 😀 Duplicate 24 ............................................................................................................................... 3\nHeading 😀 Duplicate 25 ............................................................................................................................... 3\nHeading 😀 Duplicate 26 ............................................................................................................................... 3\nHeading 😀 Duplicate 27 ............................................................................................................................... 3\nHeading 😀 Duplicate 28 ............................................................................................................................... 3\nHeading 😀 Duplicate 29 ............................................................................................................................... 3\nHeading 😀 Duplicate 30 ............................................................................................................................... 3\nRetain PAGE NUMPAGES PAGEREF 1013\n\nHeading 😀 Duplicate 31 ............................................................................................................................... 3\nHeading 😀 Duplicate 32 ............................................................................................................................... 3\nHeading 😀 Duplicate 33 ............................................................................................................................... 3\nHeading 😀 Duplicate 34 ............................................................................................................................... 3\nHeading 😀 Duplicate 35 ............................................................................................................................... 3\nHeading 😀 Duplicate 36 ............................................................................................................................... 4\nHeading 😀 Duplicate 37 ............................................................................................................................... 4\nHeading 😀 Duplicate 38 ............................................................................................................................... 4\nHeading 😀 Duplicate 39 ............................................................................................................................... 4\nHeading 😀 Duplicate 40 ............................................................................................................................... 4\nHeading 😀 Duplicate 41 ............................................................................................................................... 4\nHeading 😀 Duplicate 42 ............................................................................................................................... 4\nHeading 😀 Duplicate 43 ............................................................................................................................... 4\nHeading 😀 Duplicate 44 ............................................................................................................................... 4\nHeading 😀 Duplicate 45 ............................................................................................................................... 4\nHeading 😀 Duplicate 46 ............................................................................................................................... 4\nHeading 😀 Duplicate 47 ............................................................................................................................... 4\nHeading 😀 Duplicate 48 ............................................................................................................................... 4\nHeading 😀 Duplicate 49 ............................................................................................................................... 4\nHeading 😀 Duplicate 50 ............................................................................................................................... 4\nHeading 😀 Duplicate 51 ............................................................................................................................... 4\nHeading 😀 Duplicate 52 ............................................................................................................................... 4\nHeading 😀 Duplicate 53 ............................................................................................................................... 4\nHeading 😀 Duplicate 54 ............................................................................................................................... 5\nHeading 😀 Duplicate 55 ............................................................................................................................... 5\nHeading 😀 Duplicate 56 ............................................................................................................................... 5\nHeading 😀 Duplicate 57 ............................................................................................................................... 5\nHeading 😀 Duplicate 58 ............................................................................................................................... 5\nHeading 😀 Duplicate 59 ............................................................................................................................... 5\nHeading 😀 Duplicate 60 ............................................................................................................................... 5\nHeading 😀 Duplicate 61 ............................................................................................................................... 5\nHeading 😀 Duplicate 62 ............................................................................................................................... 5\nHeading 😀 Duplicate 63 ............................................................................................................................... 5\nHeading 😀 Duplicate 64 ............................................................................................................................... 5\nRetain PAGE NUMPAGES PAGEREF 1113\n\nHeading 😀 Duplicate 65 ............................................................................................................................... 5\nHeading 😀 Duplicate 66 ............................................................................................................................... 5\nHeading 😀 Duplicate 67 ............................................................................................................................... 5\nHeading 😀 Duplicate 68 ............................................................................................................................... 5\nHeading 😀 Duplicate 69 ............................................................................................................................... 5\nHeading 😀 Duplicate 70 ............................................................................................................................... 5\nHeading 😀 Duplicate 71 ............................................................................................................................... 5\nHeading 😀 Duplicate ............................................................................................................................................... 7\nRetain PAGE NUMPAGES PAGEREF 1213\n\nFigures😀\n1 Figure Caption 😀 ......................................................................................................................... 7\nTables😀\n1 Table Caption 😀 .......................................................................................................................... 7\nLiteral figures\n[Figure index placeholder]\nLiteral tables\n[Table index placeholder]\nRetain PAGE NUMPAGES PAGEREF 1313",
+  "growth_snapshots": {
+    "before": [
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "52dd9513e48f6f2bb1c5faa8337a8d47911ac03ab3518010ebcb6a57a1bcdf6e",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "1f397413e4399207fceaff181219f7e0f890e5652e3eb1b9cdb1f45b9699abf4",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ],
+    "after": [
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "12c8bc9a117b698de45768483e330a68764f637d1b79d22513bb3ce4e195b0f6",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "1f397413e4399207fceaff181219f7e0f890e5652e3eb1b9cdb1f45b9699abf4",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ]
+  },
+  "artifact_hashes": {
+    "fields.docx": "764d40aee3868810f02c49fd8b49f4787b8b60598110d3e64bb317133e13e281",
+    "fields.pdf": "8349cda85824fd44c255552f552adaaa8b23331e6c2cc1b517b209c86eb6ab70",
+    "growth.docx": "5912063b7f287ca316bd9ae1ba6dfcae167c5b1ea575b09b4d8ba26581fc1da8",
+    "growth.pdf": "24b71c4a79a3793975ac0d9f2956329a77ee2e0977104f104e2035b03944c144"
+  }
+}

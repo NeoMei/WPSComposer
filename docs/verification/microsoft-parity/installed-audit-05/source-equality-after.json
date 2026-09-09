@@ -1,0 +1,30 @@
+{
+  "shipped_files": 118,
+  "source_and_installed_hashes_equal": true,
+  "apps": {
+    "writer": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    },
+    "sheet": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    },
+    "slide": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    }
+  }
+}

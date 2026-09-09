@@ -19,6 +19,8 @@ from skills.WPSComposer.scripts.artifact_transport import (
     ValidatorSpec,
     copy_file_before_deadline,
     publish_artifact,
+    publish_artifact_group,
+    snapshot_artifact_state,
     validate_office_package,
     validate_before_deadline,
     validate_pdf,
@@ -121,6 +123,570 @@ def test_publish_validates_staged_temporary_and_final_copies(
     assert validated[1].name.startswith(".wpscomposer-")
     assert not validated[1].exists()
     assert result.read_bytes() == staged.read_bytes()
+
+
+def test_conditional_publish_preserves_destination_changed_after_preflight(
+    tmp_path: Path,
+):
+    staged = _write_pdf(tmp_path / "stage" / "result.pdf", b"edited" * 400)
+    destination = _write_pdf(tmp_path / "result.pdf", b"original" * 400)
+    expected = snapshot_artifact_state(destination)
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"concurrent" * 400).read_bytes()
+    destination.write_bytes(concurrent)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=validate_pdf,
+            expected_destination=expected,
+        )
+
+    assert caught.value.code == "ARTIFACT_DESTINATION_CHANGED"
+    assert destination.read_bytes() == concurrent
+
+
+def test_conditional_publish_keeps_an_unchanged_logical_symlink(tmp_path: Path):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"edited" * 400)
+    target = _write_pdf(tmp_path / "target.pdf", b"original" * 400)
+    logical = tmp_path / "logical.pdf"
+    logical.symlink_to(target)
+    expected = snapshot_artifact_state(logical)
+
+    result = publish_artifact(
+        staged,
+        logical,
+        overwrite=True,
+        validator=validate_pdf,
+        expected_destination=expected,
+    )
+
+    assert result == target.resolve()
+    assert logical.is_symlink()
+    assert logical.resolve().read_bytes() == staged.read_bytes()
+
+
+@pytest.mark.parametrize("replacement", ["deleted", "symlink"])
+def test_conditional_publish_rejects_deleted_or_retargeted_logical_destination(
+    tmp_path: Path, replacement: str,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"edited" * 400)
+    logical = _write_pdf(tmp_path / "logical.pdf", b"original" * 400)
+    expected = snapshot_artifact_state(logical)
+    if replacement == "deleted":
+        logical.unlink()
+    else:
+        other = _write_pdf(tmp_path / "other.pdf", b"other" * 400)
+        logical.unlink()
+        logical.symlink_to(other)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            expected.resolved_path,
+            overwrite=True,
+            validator=validate_pdf,
+            expected_destination=expected,
+        )
+
+    assert caught.value.code == "ARTIFACT_DESTINATION_CHANGED"
+    if replacement == "symlink":
+        assert logical.is_symlink()
+
+
+def test_conditional_group_checks_every_destination_before_first_replacement(
+    tmp_path: Path,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"first-new" * 400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"second-new" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"first-old" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"second-old" * 400)
+    first_before = first.read_bytes()
+    first_expected = snapshot_artifact_state(first)
+    second_expected = snapshot_artifact_state(second)
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"second-concurrent" * 300).read_bytes()
+    second.write_bytes(concurrent)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group(
+            [
+                (first_stage, first, True, validate_pdf, first_expected),
+                (second_stage, second, True, validate_pdf, second_expected),
+            ]
+        )
+
+    assert caught.value.code == "ARTIFACT_DESTINATION_CHANGED"
+    assert first.read_bytes() == first_before
+    assert second.read_bytes() == concurrent
+
+
+def test_single_publish_rolls_back_when_deadline_expires_after_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new" * 800)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    original = destination.read_bytes()
+    real_replace = os.replace
+    expired = False
+
+    def expire_after_replace(source, target):
+        nonlocal expired
+        real_replace(source, target)
+        if Path(target) == destination:
+            expired = True
+
+    def validator(path):
+        validate_pdf(path)
+        if Path(path) == destination and expired:
+            raise TimeoutError("deadline expired after replacement")
+
+    monkeypatch.setattr(os, "replace", expire_after_replace)
+    with pytest.raises(ArtifactTransportError, match="deadline expired"):
+        publish_artifact(staged, destination, overwrite=True, validator=validator)
+
+    assert destination.read_bytes() == original
+
+
+def test_group_rolls_back_when_final_validation_times_out_after_replace(
+    tmp_path: Path,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"new-first" * 400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    original = (first.read_bytes(), second.read_bytes())
+
+    def fail_final(path):
+        validate_pdf(path)
+        if Path(path) == second:
+            raise TimeoutError("late group validation timeout")
+
+    with pytest.raises(ArtifactTransportError, match="late group"):
+        publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, fail_final),
+        ])
+
+    assert first.read_bytes() == original[0]
+    assert second.read_bytes() == original[1]
+
+
+def test_failed_final_validation_preserves_a_concurrent_replacement(
+    tmp_path: Path,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new" * 800)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"concurrent" * 400)
+    concurrent_bytes = concurrent.read_bytes()
+
+    def replace_during_final_validation(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == destination:
+            os.replace(concurrent, destination)
+            raise ArtifactValidationError("late validation failure")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=replace_during_final_validation,
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.read_bytes() == concurrent_bytes
+    assert list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+
+
+def test_successful_final_validation_rejects_a_foreign_valid_replacement(
+    tmp_path: Path,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new" * 800)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    old_bytes = destination.read_bytes()
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"concurrent" * 400)
+    concurrent_bytes = concurrent.read_bytes()
+
+    def replace_during_final_validation(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == destination:
+            os.replace(concurrent, destination)
+            validate_pdf(destination)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=replace_during_final_validation,
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.read_bytes() == concurrent_bytes
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1
+    assert backups[0].read_bytes() == old_bytes
+
+
+def test_successful_final_validation_checks_hash_when_inode_and_stat_match(
+    tmp_path: Path,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"A" * 2400)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    old_bytes = destination.read_bytes()
+    foreign = _write_pdf(tmp_path / "foreign.pdf", b"B" * 2400)
+    foreign_bytes = foreign.read_bytes()
+    assert len(foreign_bytes) == len(staged.read_bytes())
+
+    def mutate_bytes_but_restore_stat(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == destination:
+            before = path.stat()
+            path.write_bytes(foreign_bytes)
+            os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+            after = path.stat()
+            assert (after.st_ino, after.st_size, after.st_mtime_ns) == (
+                before.st_ino, before.st_size, before.st_mtime_ns
+            )
+            validate_pdf(path)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=mutate_bytes_but_restore_stat,
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.read_bytes() == foreign_bytes
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == old_bytes
+
+
+def test_failed_final_validation_checks_content_before_rollback(tmp_path: Path):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"A" * 2400)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    old_bytes = destination.read_bytes()
+    foreign_bytes = _write_pdf(tmp_path / "foreign.pdf", b"B" * 2400).read_bytes()
+    assert len(foreign_bytes) == len(staged.read_bytes())
+
+    def mutate_in_place_then_fail(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == destination:
+            before = path.stat()
+            path.write_bytes(foreign_bytes)
+            os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+            assert path.stat().st_ino == before.st_ino
+            raise ArtifactValidationError("validator rejected after concurrent write")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=mutate_in_place_then_fail,
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.read_bytes() == foreign_bytes
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == old_bytes
+
+
+def test_failed_final_validation_preserves_output_when_ownership_hash_times_out(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    staged = _write_pdf(tmp_path / "stage.pdf", b"new" * 800)
+    destination = _write_pdf(tmp_path / "destination.pdf", b"old" * 800)
+    old_bytes = destination.read_bytes()
+    published_bytes = staged.read_bytes()
+    validator_failed = False
+    real_snapshot = artifact_transport.snapshot_artifact_state
+
+    def fail_final(path: Path) -> None:
+        nonlocal validator_failed
+        validate_pdf(path)
+        if Path(path) == destination:
+            validator_failed = True
+            raise ArtifactValidationError("late failure")
+
+    def time_out_ownership_snapshot(path: Path, *, deadline=None):
+        if validator_failed and Path(path) == destination:
+            raise TimeoutError("stable ownership snapshot timed out")
+        return real_snapshot(path, deadline=deadline)
+
+    monkeypatch.setattr(
+        artifact_transport, "snapshot_artifact_state", time_out_ownership_snapshot
+    )
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged, destination, overwrite=True, validator=fail_final
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.read_bytes() == published_bytes
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == old_bytes
+
+
+def test_final_validation_rejects_a_symlink_to_the_published_inode(tmp_path: Path):
+    staged = tmp_path / "stage.bin"
+    staged.write_bytes(b"published bytes")
+    destination = tmp_path / "destination.bin"
+    destination.write_bytes(b"previous bytes")
+    old_bytes = destination.read_bytes()
+    moved = tmp_path / "externally-moved.bin"
+
+    def replace_leaf_with_symlink(path: Path) -> None:
+        if Path(path) == destination:
+            destination.rename(moved)
+            destination.symlink_to(moved)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact(
+            staged,
+            destination,
+            overwrite=True,
+            validator=replace_leaf_with_symlink,
+        )
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.is_symlink() and destination.resolve() == moved
+    assert moved.read_bytes() == staged.read_bytes()
+    backups = list(tmp_path.glob(".wpscomposer-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == old_bytes
+
+
+def test_single_link_cleanup_failure_rolls_back_new_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    source = tmp_path / "source.bin"
+    source.write_bytes(b"new-data")
+    target = tmp_path / "target.bin"
+    real_unlink = Path.unlink
+    failures = []
+
+    def fail_first_temporary_cleanup(self, *args, **kwargs):
+        if self.name.startswith(".wpscomposer-") and target.exists() and not failures:
+            failures.append(True)
+            raise OSError("cleanup denied")
+        return real_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_first_temporary_cleanup)
+
+    with pytest.raises(ArtifactTransportError):
+        publish_artifact(
+            source, target, overwrite=False, validator=lambda _path: None
+        )
+
+    assert not target.exists()
+
+
+def test_group_rollback_preserves_a_concurrently_replaced_member(
+    tmp_path: Path,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"new-first" * 400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    second_before = second.read_bytes()
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"concurrent" * 400)
+    concurrent_bytes = concurrent.read_bytes()
+
+    def replace_first_during_final_validation(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == first:
+            os.replace(concurrent, first)
+            raise ArtifactValidationError("late group validation failure")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group([
+            (first_stage, first, True, replace_first_during_final_validation),
+            (second_stage, second, True, validate_pdf),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert first.read_bytes() == concurrent_bytes
+    assert second.read_bytes() == second_before
+    assert list(tmp_path.glob(".wpscomposer-group-backup-*.tmp"))
+
+
+def test_group_final_pass_detects_a_later_validator_replacing_an_earlier_member(
+    tmp_path: Path,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"new-first" * 400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    first_before = first.read_bytes()
+    second_before = second.read_bytes()
+    concurrent = _write_pdf(tmp_path / "concurrent.pdf", b"concurrent" * 400)
+    concurrent_bytes = concurrent.read_bytes()
+
+    def replace_first_while_validating_second(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == second:
+            os.replace(concurrent, first)
+            validate_pdf(first)
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, replace_first_while_validating_second),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert first.read_bytes() == concurrent_bytes
+    assert second.read_bytes() == second_before
+    backups = list(tmp_path.glob(".wpscomposer-group-backup-*.tmp"))
+    assert len(backups) == 1
+    assert backups[0].read_bytes() == first_before
+
+
+def test_group_validator_error_checks_every_published_member_before_rollback(
+    tmp_path: Path,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"A" * 2400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    first_old = first.read_bytes()
+    second_old = second.read_bytes()
+    foreign_bytes = _write_pdf(tmp_path / "foreign.pdf", b"B" * 2400).read_bytes()
+    assert len(foreign_bytes) == len(first_stage.read_bytes())
+
+    def mutate_first_then_fail(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == second:
+            before = first.stat()
+            first.write_bytes(foreign_bytes)
+            os.utime(first, ns=(before.st_atime_ns, before.st_mtime_ns))
+            assert first.stat().st_ino == before.st_ino
+            raise ArtifactValidationError("later member rejected")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, mutate_first_then_fail),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert first.read_bytes() == foreign_bytes
+    assert second.read_bytes() == second_old
+    backups = list(tmp_path.glob(".wpscomposer-group-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == first_old
+
+
+def test_group_publish_failure_content_checks_an_earlier_visible_member(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"A" * 2400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    first_old = first.read_bytes()
+    second_old = second.read_bytes()
+    foreign_bytes = _write_pdf(tmp_path / "foreign.pdf", b"B" * 2400).read_bytes()
+    real_replace = os.replace
+
+    def fail_second_publication(source, target):
+        if Path(target) == second and Path(source).name.startswith(
+            ".wpscomposer-group-publish-"
+        ):
+            before = first.stat()
+            first.write_bytes(foreign_bytes)
+            os.utime(first, ns=(before.st_atime_ns, before.st_mtime_ns))
+            raise OSError("second publication failed")
+        return real_replace(source, target)
+
+    monkeypatch.setattr(os, "replace", fail_second_publication)
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, validate_pdf),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert first.read_bytes() == foreign_bytes
+    assert second.read_bytes() == second_old
+    backups = list(tmp_path.glob(".wpscomposer-group-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == first_old
+
+
+def test_group_validator_error_preserves_symlink_to_published_inode(tmp_path: Path):
+    staged = tmp_path / "stage.bin"
+    staged.write_bytes(b"published bytes")
+    destination = tmp_path / "destination.bin"
+    destination.write_bytes(b"previous bytes")
+    old_bytes = destination.read_bytes()
+    moved = tmp_path / "externally-moved.bin"
+
+    def replace_leaf_then_fail(path: Path) -> None:
+        if Path(path) == destination:
+            destination.rename(moved)
+            destination.symlink_to(moved)
+            raise ArtifactValidationError("path binding changed")
+
+    with pytest.raises(ArtifactTransportError) as caught:
+        publish_artifact_group([
+            (staged, destination, True, replace_leaf_then_fail),
+        ])
+
+    assert caught.value.code == "ARTIFACT_ROLLBACK_FAILED"
+    assert destination.is_symlink() and destination.resolve() == moved
+    assert moved.read_bytes() == staged.read_bytes()
+    backups = list(tmp_path.glob(".wpscomposer-group-backup-*.tmp"))
+    assert len(backups) == 1 and backups[0].read_bytes() == old_bytes
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt(), SystemExit(17)])
+def test_group_final_validation_rethrows_control_exception_after_safe_rollback(
+    tmp_path: Path, failure: BaseException,
+):
+    first_stage = _write_pdf(tmp_path / "first-stage.pdf", b"new-first" * 400)
+    second_stage = _write_pdf(tmp_path / "second-stage.pdf", b"new-second" * 400)
+    first = _write_pdf(tmp_path / "first.pdf", b"old-first" * 400)
+    second = _write_pdf(tmp_path / "second.pdf", b"old-second" * 400)
+    original = (first.read_bytes(), second.read_bytes())
+
+    def interrupt_second(path: Path) -> None:
+        validate_pdf(path)
+        if Path(path) == second:
+            raise failure
+
+    with pytest.raises(type(failure)) as caught:
+        publish_artifact_group([
+            (first_stage, first, True, validate_pdf),
+            (second_stage, second, True, interrupt_second),
+        ])
+
+    assert caught.value is failure
+    assert (first.read_bytes(), second.read_bytes()) == original
+
+
+def test_snapshot_checks_deadline_after_slow_digest_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+):
+    path = _write_pdf(tmp_path / "artifact.pdf")
+    real_sha256 = artifact_transport.hashlib.sha256
+
+    class SlowDigest:
+        def __init__(self):
+            self._digest = real_sha256()
+
+        def update(self, data):
+            time.sleep(0.02)
+            self._digest.update(data)
+
+        def hexdigest(self):
+            return self._digest.hexdigest()
+
+    monkeypatch.setattr(artifact_transport.hashlib, "sha256", SlowDigest)
+
+    with pytest.raises(TimeoutError):
+        snapshot_artifact_state(path, deadline=time.monotonic() + 0.005)
 
 
 def test_publish_refuses_existing_output_without_overwrite(tmp_path: Path):

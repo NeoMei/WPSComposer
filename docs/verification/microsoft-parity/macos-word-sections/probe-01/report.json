@@ -1,0 +1,22 @@
+{
+  "passed": false,
+  "mode": "probe",
+  "checks": {},
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_sections.py": "51552e29706070019c3c3ff6014161b748fd1adb0703f24469580330cfaa20f3",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "4ad2483cf3d1f47f6e4b71ec3afa8a6204938645fbdb3f4c99af1007211d9bbb"
+  },
+  "inventory_before": [
+    [
+      "文档114",
+      "文档114",
+      false,
+      "Section sentinel 4d43efabfbcb410b8528aa011edc0fd5 中文😀\r"
+    ]
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7hrl9o77 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7hrl9o77/e5e7e34cfd8245ff9e1961aa42f6d20e.log"
+  },
+  "retained_sentinel_name": "文档114"
+}

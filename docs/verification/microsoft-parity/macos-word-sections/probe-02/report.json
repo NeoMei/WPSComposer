@@ -1,0 +1,106 @@
+{
+  "passed": true,
+  "mode": "probe",
+  "checks": {
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "native_reopen_source_preserved": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_sections.py": "4dded2daeef51251f690c45a7b4d2b6ca3e41ae002b12729a7cc2a4b16d36c0f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "4ad2483cf3d1f47f6e4b71ec3afa8a6204938645fbdb3f4c99af1007211d9bbb"
+  },
+  "inventory_before": [
+    [
+      "文档116",
+      "文档116",
+      false,
+      "Section sentinel e868f0055d3645ea897c2045bfdaa94b 中文😀\r"
+    ],
+    [
+      "文档114",
+      "文档114",
+      false,
+      "Section sentinel 4d43efabfbcb410b8528aa011edc0fd5 中文😀\r"
+    ]
+  ],
+  "native_rows": [
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "role",
+      "正文😀"
+    ],
+    [
+      "title",
+      "标题😀"
+    ],
+    [
+      "author",
+      "作者😀"
+    ],
+    [
+      "footer",
+      "Retain footer  \r"
+    ],
+    [
+      "number",
+      "page number style lowercase roman",
+      true,
+      3
+    ],
+    [
+      "field",
+      "field page",
+      " PAGE  \\* MERGEFORMAT "
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档116",
+      "文档116",
+      false,
+      "Section sentinel e868f0055d3645ea897c2045bfdaa94b 中文😀\r"
+    ],
+    [
+      "文档114",
+      "文档114",
+      false,
+      "Section sentinel 4d43efabfbcb410b8528aa011edc0fd5 中文😀\r"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "role",
+      "正文😀"
+    ],
+    [
+      "title",
+      "标题😀"
+    ],
+    [
+      "author",
+      "作者😀"
+    ],
+    [
+      "footer",
+      "Retain footer  \r"
+    ],
+    [
+      "number",
+      "page number style lowercase roman",
+      true,
+      3
+    ],
+    [
+      "field",
+      "field page",
+      " PAGE  \\* MERGEFORMAT "
+    ]
+  ]
+}

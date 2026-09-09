@@ -1,0 +1,214 @@
+{
+  "passed": true,
+  "mode": "acceptance",
+  "checks": {
+    "configure_three_sections_and_pending_fourth": true,
+    "none_preserves_plain_text_and_numpages": true,
+    "intervening_content_invalidates_pending_without_section_change": true,
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "native_reopen_metadata_roles_numbering_dimensions": true,
+    "saved_footer_true_PAGE_and_NUMPAGES": true,
+    "pending_heading_and_table_same_landscape_section": true,
+    "four_page_pdf_orientation_and_text": true,
+    "native_reopen_source_preserved": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_sections.py": "824c2b13cd2afd7294e0c7a92349fb9f0d48b1e7489532cf7e64ae3c0307b998",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "cda34d11851b4bbbb5f796975e89d4e7e1f0ade435a4f7f9f6bc1e4885efd935"
+  },
+  "inventory_before": [
+    [
+      "文档124",
+      "文档124",
+      false,
+      "Section sentinel dc7a48c236804ae7b2152e9ae9d86697 中文😀\r"
+    ],
+    [
+      "文档122",
+      "文档122",
+      false,
+      "Section sentinel c9bac9c115f64755896a14c888dd3ce3 中文😀\r"
+    ],
+    [
+      "文档120",
+      "文档120",
+      false,
+      "Section sentinel 6e6eba4812374c8a916f0067014d74f0 中文😀\r"
+    ],
+    [
+      "文档114",
+      "文档114",
+      false,
+      "Section sentinel 4d43efabfbcb410b8528aa011edc0fd5 中文😀\r"
+    ]
+  ],
+  "none_readback": [
+    [
+      "Keep footer 3 PAGE NUMPAGES PAGEREF 1\r",
+      1,
+      "field num pages"
+    ]
+  ],
+  "pending_native_position": [
+    126,
+    133,
+    2
+  ],
+  "method_checks": {
+    "configure_section": [
+      "first call has one section",
+      "two later calls each add one next-page section",
+      "a4/letter dimensions and portrait-landscape-portrait geometry",
+      "margins and detached header/footer"
+    ],
+    "set_page_numbering": [
+      "roman lower/upper/arabic",
+      "restart true with 3/5/7 start",
+      "none retains NUMPAGES and plain PAGE text",
+      "repeated calls maintain one PAGE"
+    ],
+    "set_page_role": [
+      "create/update document-local section variables",
+      "Chinese emoji after reopen"
+    ],
+    "set_document_metadata": [
+      "Title Author Chinese emoji after reopen"
+    ],
+    "add_landscape_section_before_pending_heading": [
+      "native UTF16 start",
+      "duplicate heading second occurrence only",
+      "intervening-content negative"
+    ]
+  },
+  "inventory_after": [
+    [
+      "文档124",
+      "文档124",
+      false,
+      "Section sentinel dc7a48c236804ae7b2152e9ae9d86697 中文😀\r"
+    ],
+    [
+      "文档122",
+      "文档122",
+      false,
+      "Section sentinel c9bac9c115f64755896a14c888dd3ce3 中文😀\r"
+    ],
+    [
+      "文档120",
+      "文档120",
+      false,
+      "Section sentinel 6e6eba4812374c8a916f0067014d74f0 中文😀\r"
+    ],
+    [
+      "文档114",
+      "文档114",
+      false,
+      "Section sentinel 4d43efabfbcb410b8528aa011edc0fd5 中文😀\r"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "role",
+      "正文😀"
+    ],
+    [
+      "title",
+      "标题😀"
+    ],
+    [
+      "author",
+      "作者😀"
+    ],
+    [
+      "footer",
+      "Keep footer 1  \r"
+    ],
+    [
+      "number",
+      "page number style lowercase roman",
+      true,
+      3
+    ],
+    [
+      "field",
+      "field page",
+      " PAGE  \\* MERGEFORMAT "
+    ]
+  ],
+  "section_reopen_rows": [
+    [
+      1,
+      "orient portrait",
+      595.2999877929688,
+      841.9000244140625,
+      60,
+      60,
+      66,
+      66,
+      false,
+      false,
+      "page number style lowercase roman",
+      true,
+      3,
+      "正文😀"
+    ],
+    [
+      2,
+      "orient landscape",
+      792,
+      612,
+      54,
+      54,
+      60,
+      60,
+      false,
+      false,
+      "page number style uppercase roman",
+      true,
+      5,
+      "landscape😀"
+    ],
+    [
+      3,
+      "orient portrait",
+      595.2999877929688,
+      841.9000244140625,
+      60,
+      60,
+      54,
+      54,
+      false,
+      false,
+      "page number style arabic",
+      true,
+      7,
+      "body😀"
+    ],
+    [
+      4,
+      "orient landscape",
+      841.9000244140625,
+      595.2999877929688,
+      54,
+      54,
+      60,
+      60,
+      true,
+      true,
+      "page number style arabic",
+      true,
+      7,
+      "media😀"
+    ]
+  ],
+  "pdf_text": [
+    "Section One \nKeep footer 1 iii \n重复标题😀 \nFirst duplicate remains portrait 中⽂😀 \n",
+    "Section Two \nKeep footer 2 V \n \nLandscape configured section 中⽂😀 \n",
+    "Section Three \nKeep footer 3 PAGE NUMPAGES PAGEREF 47 \n \nThird portrait before pending heading 中⽂😀 \n",
+    "Section Three \nKeep footer 3 PAGE NUMPAGES PAGEREF 47 \n重复标题😀 \nLandscape object 中文😀 \nValue \nTail \n42 \n \nInvalidated pending 😀 \nIntervening body invalidates pending 中⽂😀 \n \n"
+  ]
+}

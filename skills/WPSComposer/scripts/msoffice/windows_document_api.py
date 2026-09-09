@@ -7,6 +7,7 @@ Native acceptance is separate from these adapters' platform-independent tests.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import math
 import ntpath
@@ -778,18 +779,59 @@ class _WindowsSession:
             return value
         def bound(*args, **kwargs):
             try:
-                read = name.startswith(('inspect', 'snapshot', 'get_', 'pagination'))
+                signature = inspect.signature(value)
+                call = signature.bind(*args, **kwargs)
+                read = (
+                    name.startswith(('inspect', 'snapshot', 'get_'))
+                    or name in {
+                        'degradation_checkpoint',
+                        'pagination_fragment_for_bookmark',
+                    }
+                )
                 self._verify(mutation=not read, selection=not read)
-                self._screen_values((args, kwargs))
+                self._screen_values((call.args, call.kwargs))
                 if name in {'add_image', 'add_image_block'}:
-                    kwargs = dict(kwargs)
-                    if 'path' in kwargs:
-                        kwargs['path'] = self._stage_resource(kwargs['path'])
+                    image_args, image_kwargs = list(args), dict(kwargs)
+                    if 'path' in image_kwargs:
+                        image_kwargs['path'] = self._stage_resource(
+                            image_kwargs['path']
+                        )
                     else:
-                        args = list(args)
                         index = 1 if self.kind == 'slide' else 0
-                        args[index] = self._stage_resource(args[index])
-                return value(*args, **kwargs)
+                        image_args[index] = self._stage_resource(image_args[index])
+                    call = signature.bind(*image_args, **image_kwargs)
+                if name in {
+                    'add_captioned_figure_native',
+                    'add_captioned_figure_fallback',
+                }:
+                    locators = call.arguments.get('resource_locators')
+                    if locators is not None:
+                        if (not isinstance(locators, dict) or
+                                any(type(key) is not str for key in locators) or
+                                any(not isinstance(path, (str, os.PathLike)) for path in locators.values())):
+                            raise ValueError('Invalid resource locator contract')
+                        resolved = []
+                        for key, path in locators.items():
+                            source = Path(path).expanduser().resolve()
+                            if not source.is_file():
+                                raise ValueError('Native image resource must be a local file')
+                            resolved.append((key, source))
+                        call.arguments['resource_locators'] = {
+                            key: self._stage_resource(path)
+                            for key, path in resolved
+                        }
+                if name in {
+                    'add_equation_native',
+                    'add_equation_native_fallback',
+                }:
+                    locator = call.arguments.get('fallback_resource_locator')
+                    if locator is not None:
+                        if not isinstance(locator, (str, os.PathLike)):
+                            raise ValueError('Invalid fallback resource locator contract')
+                        call.arguments['fallback_resource_locator'] = (
+                            self._stage_resource(locator)
+                        )
+                return value(*call.args, **call.kwargs)
             except BaseException as exc:
                 self._retain_error(exc)
                 raise

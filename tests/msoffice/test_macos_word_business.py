@@ -9,7 +9,11 @@ METHODS=['add_paragraph','add_heading','add_heading2','add_heading_level','add_c
 @pytest.fixture
 def session(monkeypatch):
     s=MacWordSession();calls=[]
-    monkeypatch.setattr(s,'_execute',lambda lines,**kwargs:calls.append(lines) or [['ok']])
+    def execute(lines,**kwargs):
+        calls.append(lines)
+        heading = next((line for line in lines if 'set nativeRows to {{"heading",' in line), None)
+        return [['heading',0,10,int(heading.rsplit(', ',1)[1].split('}')[0])]] if heading else [['ok']]
+    monkeypatch.setattr(s,'_execute',execute)
     return s,calls
 
 @pytest.mark.parametrize('name',METHODS)

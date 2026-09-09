@@ -518,6 +518,115 @@ def test_structural_image_uses_private_resource_copy(api, monkeypatch, tmp_path,
     session.close()
 
 
+def test_business_resource_locators_are_fully_validated_and_staged_before_callback(
+    api, monkeypatch, tmp_path
+):
+    session, composer, source = owned(api, monkeypatch, tmp_path, 'writer')
+    first = tmp_path / 'first.png'
+    second = tmp_path / 'second.png'
+    first.write_bytes(b'first image')
+    second.write_bytes(b'second image')
+    calls = []
+
+    def add_captioned_figure_native(*, resource_locators, children):
+        calls.append((resource_locators, children))
+        return {'issues': []}
+
+    composer.add_captioned_figure_native = add_captioned_figure_native
+    before = set(session.staging_root.iterdir())
+    with pytest.raises(ValueError, match='resource locator'):
+        session.add_captioned_figure_native(
+            resource_locators={'first': str(first), 'bad': 3}, children=[]
+        )
+    after = set(session.staging_root.iterdir())
+    assert not [path for path in after - before if path.name.startswith('resource-')]
+    assert calls == []
+
+    result = session.add_captioned_figure_native(
+        resource_locators={'first': first, 'second': str(second)}, children=[]
+    )
+    assert result == {'issues': []} and len(calls) == 1
+    staged = calls[0][0]
+    assert set(staged) == {'first', 'second'}
+    assert all(Path(path).parent == session.staging_root for path in staged.values())
+    assert Path(staged['first']).read_bytes() == b'first image'
+    assert Path(staged['second']).read_bytes() == b'second image'
+    assert first.read_bytes() == b'first image' and second.read_bytes() == b'second image'
+    session.close()
+
+
+def test_business_fallback_resource_is_private_before_equation_callback(
+    api, monkeypatch, tmp_path
+):
+    session, composer, source = owned(api, monkeypatch, tmp_path, 'writer')
+    image = tmp_path / 'formula.png'
+    image.write_bytes(b'formula image')
+    received = []
+
+    def add_equation_native_fallback(*, fallback_resource_locator, fallbackText):
+        received.append((fallback_resource_locator, fallbackText))
+        return {'issues': []}
+
+    composer.add_equation_native_fallback = add_equation_native_fallback
+    session.add_equation_native_fallback(
+        fallback_resource_locator=image, fallbackText='x + y'
+    )
+    private, fallback = received[0]
+    assert Path(private).parent == session.staging_root
+    assert Path(private).read_bytes() == image.read_bytes() and fallback == 'x + y'
+    session.close()
+
+
+def test_read_only_business_guards_distinguish_safe_snapshot_from_repagination(
+    api, monkeypatch, tmp_path
+):
+    session, composer, source = owned(
+        api, monkeypatch, tmp_path, 'writer', read_only=True
+    )
+    calls = []
+    composer.degradation_checkpoint = lambda: calls.append('checkpoint') or 4
+    composer.pagination_fragment_for_bookmark = (
+        lambda node_id, bookmark_name: calls.append('fragment') or {'nodeId': node_id}
+    )
+    composer.pagination_map_for_ranges = (
+        lambda ranges: calls.append('repaginate') or {'nodes': []}
+    )
+    composer.reset = lambda: calls.append('reset')
+
+    assert session.degradation_checkpoint() == 4
+    assert session.pagination_fragment_for_bookmark('node:1', 'bookmark_1') == {
+        'nodeId': 'node:1'
+    }
+    with pytest.raises(PermissionError):
+        session.pagination_map_for_ranges(())
+    with pytest.raises(PermissionError):
+        session.reset()
+    assert calls == ['checkpoint', 'fragment']
+    session.close()
+
+
+def test_powerpoint_layout_cannot_follow_a_foreign_active_window(
+    api, monkeypatch, tmp_path
+):
+    session, composer, source = owned(api, monkeypatch, tmp_path, 'slide')
+    calls = []
+    composer.apply_layout_template = lambda layout, preset=None: calls.append(layout)
+    other = Doc(composer._app, 'slide', 'other user presentation')
+    composer._app.documents.values.append(other)
+    # The top-level active presentation still points at our binding.  The
+    # layout implementation reads ActiveWindow.Selection, so the window must
+    # independently prove that it belongs to the same presentation.
+    composer._app.ActivePresentation = composer._doc
+    composer._app.ActiveWindow = other.Windows.Item(1)
+
+    with pytest.raises(api.DocumentIdentityError):
+        session.apply_layout_template(object())
+    assert calls == []
+    composer._app.ActivePresentation = composer._doc
+    composer._app.ActiveWindow = composer._doc.Windows.Item(1)
+    session.close()
+
+
 def test_workbook_snapshot_does_not_read_foreign_active_window_freeze_state(api, monkeypatch, tmp_path):
     session, composer, source = owned(api, monkeypatch, tmp_path, 'sheet')
     composer._doc.Windows.Item(1).FreezePanes = False

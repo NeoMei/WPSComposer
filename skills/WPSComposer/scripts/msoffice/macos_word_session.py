@@ -19,7 +19,7 @@ import tempfile
 import time
 from uuid import uuid4
 
-from ..artifact_transport import copy_file_before_deadline, copy_stream_before_deadline, publish_artifact, validate_office_package, validate_pdf, validate_before_deadline, ValidatorSpec
+from ..artifact_transport import snapshot_artifact_state, copy_file_before_deadline, copy_stream_before_deadline, publish_artifact, validate_office_package, validate_pdf, validate_before_deadline, ValidatorSpec
 from .errors import NativeWordCapabilityError, NativeWordError, NativeWordTimeoutError
 from .input_validation import validate_native_input
 from .macos_runtime import WordJobLock, remaining
@@ -150,6 +150,8 @@ class MacWordSession:
         self._bound_name = None
         self._source_path = None
         self._source_digest = None
+        self._logical_path = None
+        self._logical_state = None
         self._private_path = None
         self._owns_doc = False
         self._read_only = False
@@ -157,6 +159,8 @@ class MacWordSession:
         self._quarantined = False
         self._structural_changed = False
         self._retain_evidence = False
+        self._first_section_configured = False
+        self._pending_heading = None
 
     def _prepare(self):
         if sys.platform != 'darwin' or not WORD_APP.is_dir() or not _temporary_root().is_dir():
@@ -181,12 +185,14 @@ class MacWordSession:
         self._private_path = target
         activation_attempted = False
         try:
-            self._source_digest = self._digest(source)
+            self._logical_path = source
+            self._logical_state = snapshot_artifact_state(source, deadline=self._deadline)
+            self._source_digest = self._logical_state.sha256
             copy_file_before_deadline(source, target, deadline=self._deadline)
             validate_native_input(target, 'writer', deadline=self._deadline)
             if self._digest(target) != self._source_digest:
                 raise ValueError('Source changed while preparing private document')
-            self._check_source_unchanged()
+            self._check_logical_unchanged()
             activation_attempted = True
             rows = self._execute([
                 '-- WPSC_BIND_OPEN',
@@ -322,12 +328,18 @@ class MacWordSession:
             cls = NativeWordTimeoutError if isinstance(exc, subprocess.TimeoutExpired) else NativeWordError
             kw = dict(staging_path=self.staging_root, diagnostic_path=log, quarantine_path=self.lock.quarantine_path)
             raise (cls(**kw) if cls is NativeWordTimeoutError else cls('NATIVE_WORD_QUARANTINED', **kw)) from None
+        except BaseException as exc:
+            self._retain('Native AppleEvent completion uncertain')
+            log.write_text(type(exc).__name__ + '\n', encoding='utf-8')
+            raise
         log.write_text(result.stderr + '\n' + result.stdout, encoding='utf-8')
         if result.returncode:
             self._retain_evidence = True
             if '-1712' in result.stderr:
                 self._retain('Native AppleEvent completion uncertain')
                 raise NativeWordTimeoutError(staging_path=self.staging_root, diagnostic_path=log, quarantine_path=self.lock.quarantine_path)
+            if 'WPSC_FIELD_IDENTITY_STALE (-2700)' in result.stderr:
+                raise NativeWordError('NATIVE_WORD_FIELD_IDENTITY_STALE', staging_path=self.staging_root, diagnostic_path=log)
             raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
         try:
             envelope = json.loads(result.stdout)
@@ -435,6 +447,7 @@ class MacWordSession:
         else:
             resolve = self._range(target)
         if mutations:
+            self._pending_heading = None
             # Range/selection/cell replacement may remove old paragraph marks even
             # when the replacement contains none. Do not reuse on-disk identities.
             if text is not None and (any(mark in text for mark in ('\r', '\n', '\u2029')) or target == 'selection' or target.startswith(('range:', 'table:'))):
@@ -540,6 +553,7 @@ class MacWordSession:
                 lines = [f'set targetObject to {native} {int(object_match[2])} of boundDoc']
                 if verb != 'remove':
                     raise NativeWordCapabilityError('Mac Word object move/clone is not implemented')
+                self._pending_heading = None
                 self._execute(lines + ['delete targetObject', 'set nativeRows to {{"ok"}}'])
                 self._structural_changed = True
                 return {'path': None, 'reinspect_required': True}
@@ -558,6 +572,7 @@ class MacWordSession:
                     lines += ['if insertionPoint < sourceStart then', 'set sourceRange to create range boundDoc start (sourceStart + sourceEnd - sourceStart) end (sourceEnd + sourceEnd - sourceStart)', 'end if', 'delete sourceRange']
         else:
             raise ValueError('Unsupported structural operation')
+        self._pending_heading = None
         self._execute(lines + ['set nativeRows to {{"ok"}}'])
         self._structural_changed = True
         return {'path': None, 'reinspect_required': True}
@@ -650,7 +665,7 @@ class MacWordSession:
         if output is not None and Path(output).exists() and not overwrite:
             raise FileExistsError('Output already exists')
         if self._owns_doc and output is None:
-            self._check_source_unchanged()
+            self._check_logical_unchanged()
         if not self._owns_doc:
             if output is not None:
                 raise NativeWordCapabilityError('Attached Word document has no verified non-rebinding copy primitive')
@@ -672,30 +687,48 @@ class MacWordSession:
             raise NativeWordCapabilityError('Attached Word document cannot be rebound; use save_current')
         return self._save_to(destination, replace_source=False)
 
-    def _save_to(self, destination, *, replace_source):
-        self._execute(['save boundDoc', 'set nativeRows to {{"ok"}}'])
-        validator = ValidatorSpec.from_callable(validate_office_package, 'docx')
-        def validate(path):
-            validate_before_deadline(validator, path, self._deadline)
-            # publish_artifact validates the staged copy, then the local temporary
-            # file immediately before replacement, and finally the published file.
-            if replace_source and Path(path) != destination:
-                self._check_source_unchanged()
+    def _check_logical_unchanged(self):
+        if self._logical_path is None:
+            raise ValueError('New Word document requires an explicit save destination')
         try:
-            new_digest = self._digest(self._bound_path) if replace_source else None
-            publish_artifact(Path(self._bound_path), destination, overwrite=replace_source, validator=validate, deadline=self._deadline)
+            current = snapshot_artifact_state(self._logical_path, deadline=self._deadline)
+        except (OSError, ValueError):
+            self._retain_evidence = True
+            raise ValueError('Logical Word destination changed during session') from None
         except BaseException:
             self._retain_evidence = True
             raise
-        if replace_source:
-            self._source_digest = new_digest
+        if current != self._logical_state:
+            self._retain_evidence = True
+            raise ValueError('Logical Word destination changed during session')
+
+    def _save_to(self, destination, *, replace_source):
+        self._execute(['save boundDoc', 'set nativeRows to {{"ok"}}'])
+        validator = ValidatorSpec.from_callable(validate_office_package, 'docx')
+        try:
+            if replace_source:
+                self._check_logical_unchanged()
+            published_state = snapshot_artifact_state(Path(self._bound_path), deadline=self._deadline)
+            publish_artifact(
+                Path(self._bound_path), destination, overwrite=replace_source,
+                validator=lambda p: validate_before_deadline(validator, p, self._deadline),
+                deadline=self._deadline,
+                expected_destination=self._logical_state if replace_source else None,
+            )
+            current_state = snapshot_artifact_state(destination, deadline=self._deadline)
+            if current_state.sha256 != published_state.sha256:
+                raise RuntimeError('Logical Word destination changed after publication')
+        except BaseException:
+            self._retain_evidence = True
+            raise
+        self._logical_path, self._logical_state = destination, current_state
         return str(destination)
 
     def save_current(self):
         self._writable()
         if self._owns_doc:
-            self._check_source_unchanged()
-            return self._save_to(self._source_path, replace_source=True)
+            self._check_logical_unchanged()
+            return self._save_to(self._logical_path, replace_source=True)
         self.preflight_save()
         self._execute(['if read only of boundDoc then error "WPSC_READ_ONLY"', 'save boundDoc', 'set nativeRows to {{"ok"}}'])
         self._source_digest = self._digest(self._source_path)
@@ -704,7 +737,11 @@ class MacWordSession:
     def save_copy(self, path, fmt=None):
         if not self._owns_doc:
             raise NativeWordCapabilityError('Attached Word document has no verified non-rebinding copy primitive')
-        return self.save(path, fmt)
+        logical, state = self._logical_path, self._logical_state
+        try:
+            return self.save(path, fmt)
+        finally:
+            self._logical_path, self._logical_state = logical, state
 
     def supports_attached_save_copy(self):
         return False
@@ -845,13 +882,14 @@ class MacWordSession:
                   'reset font object of trailingRange', 'reset paragraph format of trailingRange']
         return lines
 
-    def _business_commit(self, lines, *, structural=False):
+    def _business_commit(self, lines, *, structural=False, readback=None):
         self._writable()
         if not lines:
             return
         if structural:
             self._structural_changed = True
-        self._execute(list(lines) + ['set nativeRows to {{"ok"}}'])
+            self._pending_heading = None
+        return self._execute(list(lines) + (readback or ['set nativeRows to {{"ok"}}']))
 
     def add_paragraph(self, text, size=None, bold=None, italic=None,
                       color=None, align=None, indent_first=None,
@@ -870,9 +908,19 @@ class MacWordSession:
         defaults['size'] = defaults.pop('font_size')
         overrides = dict(size=size, color=color, line_spacing=line_spacing,
                          space_after=space_after, line_spacing_rule=line_spacing_rule, bold=bold)
-        self._business_commit(self._business_paragraph(text, f'Heading {level}', overrides,
+        self._writable()
+        rows = self._business_commit(self._business_paragraph(text, f'Heading {level}', overrides,
                               style_props=defaults,
-                              suffix=[f'set outline level of paragraph format of semanticRange to outline level{level}']), structural=True)
+                              suffix=[f'set outline level of paragraph format of semanticRange to outline level{level}',
+                                      'set pendingHeadingStart to start of content of semanticRange',
+                                      'set pendingHeadingEnd to end of content of semanticRange']), structural=True,
+                              readback=[f'set nativeRows to {{{{"heading", pendingHeadingStart, pendingHeadingEnd, {level}}}}}'])
+        if (len(rows) != 1 or not isinstance(rows[0], list) or len(rows[0]) != 4 or
+                rows[0][0] != 'heading' or any(type(value) is not int for value in rows[0][1:]) or
+                not 0 <= rows[0][1] < rows[0][2] or rows[0][3] != level):
+            self._retain('Pending heading acknowledgement invalid')
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root)
+        self._pending_heading = tuple(rows[0][1:])
 
     def add_heading(self, text, size=None, bold=True, color=None):
         return self.add_heading_level(text, level=1, size=size, bold=bold, color=color)
@@ -1081,6 +1129,7 @@ class MacWordSession:
         # Once the native batch starts, failure can mean that Word applied a
         # prefix of the commands. Invalidate positional targets conservatively.
         self._structural_changed = True
+        self._pending_heading = None
         try:
             return self._execute(lines)
         except BaseException:
@@ -1679,6 +1728,222 @@ class MacWordSession:
                          'set orientation of page setup of semanticSection to orient ' + ('landscape' if orientation == 'true' else 'portrait')]
         self._business_commit(commands, structural=True)
 
+    def _section_commit(self, lines, *, structural=False):
+        rows = self._business_commit(lines, structural=structural)
+        if rows != [['ok']]:
+            self._retain('Section operation acknowledgement invalid')
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root)
+
+    @staticmethod
+    def _section_role_commands(role):
+        if role is not None and not isinstance(role, (str, int, float, bool)):
+            raise ValueError('Section role must be a scalar value')
+        if isinstance(role, float) and not math.isfinite(role):
+            raise ValueError('Section role must be finite')
+        value = apple_string(str(role))
+        return ['set roleName to "WpsComposerSectionRole_" & ((count sections of boundDoc) as text)',
+                'set roleMatches to {}', 'repeat with roleIndex from 1 to (count variables of boundDoc)',
+                'set candidateRole to variable roleIndex of boundDoc',
+                'if (name of candidateRole as text) is roleName then set end of roleMatches to candidateRole',
+                'end repeat', 'if (count roleMatches) > 1 then error "WPSC_ROLE_AMBIGUOUS"',
+                'if (count roleMatches) is 0 then',
+                f'make new variable at boundDoc with properties {{name:roleName, variable value:{value}}}',
+                'end if', 'set ownRole to variable roleName of boundDoc',
+                f'set variable value of ownRole to {value}',
+                f'if (variable value of ownRole as text) is not {value} then error "WPSC_ROLE_READBACK_FAILED"']
+
+    def set_page_role(self, role):
+        self._writable()
+        self._section_commit(self._section_role_commands(role))
+
+    def set_document_metadata(self, *, title, author):
+        self._writable()
+        values = []
+        for value in (title, author):
+            # Preserve WriterComposer's exact truth/coercion semantics. Finish
+            # conversion and native quoting for both values before any write.
+            values.append(apple_string(str(value or '')))
+        # Resolve both properties before setting either one. These properties
+        # belong to this document, never the Word application or Normal.
+        lines = ['set titleProperty to document property "Title" of boundDoc',
+                 'set authorProperty to document property "Author" of boundDoc',
+                 'get value of titleProperty', 'get value of authorProperty']
+        for name, value in zip(('titleProperty', 'authorProperty'), values):
+            lines += [f'set value of {name} to {value}',
+                      f'if (value of {name} as text) is not {value} then error "WPSC_METADATA_READBACK_FAILED"']
+        self._section_commit(lines)
+
+    @staticmethod
+    def _page_numbering_commands(format, start=None, restart=None):
+        styles = {'none': None, 'roman': 'lowercase roman', 'roman-lower': 'lowercase roman',
+                  'roman-upper': 'uppercase roman', 'lowerRoman': 'lowercase roman',
+                  'upperRoman': 'uppercase roman', 'arabic': 'arabic', 'continue': 'arabic'}
+        if not isinstance(format, str) or format not in styles:
+            raise ValueError('Unsupported page number format')
+        if start is not None and (type(start) is not int or not 1 <= start <= 32767):
+            raise ValueError('Page number start must be an integer between 1 and 32767')
+        if restart is not None and type(restart) is not bool:
+            raise ValueError('Page number restart must be boolean')
+        lines = ['set ownFooter to get footer ownSection index header footer primary',
+                 # Materialize for enumeration; Word rejects nested collection
+                 # count (-1708). Insertion must retain the direct footer story.
+                 'set footerRange to text object of ownFooter',
+                 'set pageCount to 0',
+                 'repeat with fieldIndex from 1 to (count fields of footerRange)',
+                 'set ownField to field fieldIndex of footerRange',
+                 'if field type of ownField is field page then set pageCount to pageCount + 1',
+                 'end repeat',
+                 'repeat with fieldIndex from (count fields of footerRange) to 1 by -1',
+                 'set ownField to field fieldIndex of footerRange',
+                 'if field type of ownField is field page then']
+        if format == 'none':
+            lines += ['delete ownField', 'set pageCount to pageCount - 1']
+        else:
+            lines += ['if pageCount > 1 then', 'delete ownField', 'set pageCount to pageCount - 1', 'end if']
+        lines += ['end if', 'end repeat']
+        if format != 'none':
+            lines += ['if pageCount is 0 then',
+                      'set footerRange to text object of ownFooter',
+                      'set lastCharacter to count characters of footerRange',
+                      'create new field text range (character lastCharacter of text object of ownFooter) field type field page preserve formatting true',
+                      'end if',
+                      'set alignment of paragraph format of text object of ownFooter to align paragraph center']
+            settings = [('number style', 'page number style ' + styles[format])]
+            if restart is not None:
+                settings.append(('restart numbering at section', str(restart).lower()))
+            if start is not None:
+                settings.append(('starting number', str(start)))
+            for name, value in settings:
+                lines.append(f'set {name} of page number options of ownFooter to {value}')
+            for name, value in settings:
+                # Word intentionally ignores a starting number in continuing
+                # sections, matching WriterComposer's native readback contract.
+                if name == 'starting number' and restart is False:
+                    continue
+                lines.append(f'if {name} of page number options of ownFooter is not {value} then error "WPSC_NUMBERING_READBACK_FAILED"')
+        lines += ['set footerRange to text object of ownFooter', 'set pageCount to 0',
+                  'repeat with fieldIndex from 1 to (count fields of footerRange)',
+                  'set ownField to field fieldIndex of footerRange',
+                  'if field type of ownField is field page then',
+                  'if (word 1 of (content of field code of ownField as text) as text) is not "PAGE" then error "WPSC_PAGE_COMMAND_INVALID"',
+                  'set pageCount to pageCount + 1', 'end if', 'end repeat',
+                  f'if pageCount is not {0 if format == "none" else 1} then error "WPSC_PAGE_COUNT_FAILED"']
+        return lines
+
+    def set_page_numbering(self, format, start=None, restart=None):
+        self._writable()
+        lines = self._page_numbering_commands(format, start, restart)
+        self._section_commit(['set ownSection to section (count sections of boundDoc) of boundDoc'] + lines, structural=True)
+
+    def configure_section(self, *, role=None, landscape=None, page_size=None,
+                          margins=None, restart_page_numbering=None,
+                          page_number_format=None, start_page_number=None,
+                          header_text=None, footer_text=None,
+                          link_to_previous_header=None, link_to_previous_footer=None):
+        self._writable()
+        # Compile every supplied value before changing Word or session state.
+        settings = []
+        if page_size is not None:
+            sizes = {'a4': (595.28, 841.89), 'letter': (612, 792),
+                     'legal': (612, 1008), 'a3': (841.89, 1190.55)}
+            if not isinstance(page_size, str) or page_size.lower() not in sizes:
+                raise ValueError('Unsupported section page size')
+            width, height = sizes[page_size.lower()]
+            settings += [('page width', str(width)), ('page height', str(height))]
+        if landscape is not None:
+            if type(landscape) is not bool:
+                raise ValueError('Section landscape must be boolean')
+            settings.append(('orientation', 'orient landscape' if landscape else 'orient portrait'))
+        if margins is not None:
+            if not isinstance(margins, dict) or set(margins) - {'top', 'bottom', 'left', 'right'}:
+                raise ValueError('Invalid section margins')
+            for name, default in [('top', 72), ('bottom', 72), ('left', 90), ('right', 90)]:
+                settings.append((name + ' margin', _value(name + '_margin', margins.get(name, default))))
+        role_lines = self._section_role_commands(role or 'body')
+        numbering = self._page_numbering_commands('continue' if page_number_format is None else page_number_format, start_page_number, restart_page_numbering)
+        parts = []
+        for part, link in [('Header', link_to_previous_header), ('Footer', link_to_previous_footer)]:
+            parts.append(f'set own{part} to get {part.lower()} ownSection index header footer primary')
+            if link is not None:
+                if type(link) is not bool:
+                    raise ValueError('Section header/footer link must be boolean')
+                value = str(link).lower()
+                parts += ['if (count sections of boundDoc) > 1 then',
+                          f'set link to previous of own{part} to {value}',
+                          f'if link to previous of own{part} is not {value} then error "WPSC_HEADER_LINK_FAILED"', 'end if']
+        for part, text in [('Header', header_text), ('Footer', footer_text)]:
+            if text is not None:
+                value = _value('text', text)
+                parts += [f'set content of text object of own{part} to {value}',
+                          f'if (content of text object of own{part} as text) is not {value} & return then error "WPSC_HEADER_TEXT_FAILED"']
+                if part == 'Header':
+                    parts += ['set alignment of paragraph format of text object of ownHeader to align paragraph center',
+                              'set pageBorder to get border (paragraph format of text object of ownHeader) which border border bottom',
+                              'set line style of pageBorder to line style single',
+                              'set line width of pageBorder to line width75 point',
+                              'set color of pageBorder to {0, 0, 0}']
+        first = not self._first_section_configured
+        lines = ['set previousSectionCount to count sections of boundDoc']
+        if not first:
+            lines += self._position('end') + ['set insertionRange to create range boundDoc start insertionPoint end insertionPoint',
+                                             'insert break at insertionRange break type section break next page']
+        lines += [f'if (count sections of boundDoc) is not previousSectionCount + {0 if first else 1} then error "WPSC_SECTION_COUNT_FAILED"',
+                  'set ownSection to section (count sections of boundDoc) of boundDoc']
+        if page_size is not None:
+            # Width/height setters inherit the prior orientation. Normalize
+            # first, otherwise a landscape-to-portrait call swaps A4 twice.
+            lines += ['set inheritedOrientation to orientation of page setup of ownSection',
+                      'set orientation of page setup of ownSection to orient portrait']
+        for name, value in settings:
+            if not name.endswith(' margin'):
+                lines.append(f'set {name} of page setup of ownSection to {value}')
+        if page_size is not None and landscape is None:
+            lines.append('set orientation of page setup of ownSection to inheritedOrientation')
+        for name, value in settings:
+            if name.endswith(' margin'):
+                lines.append(f'set {name} of page setup of ownSection to {value}')
+        for name, value in settings:
+            if name == 'orientation':
+                lines.append(f'if orientation of page setup of ownSection is not {value} then error "WPSC_SECTION_READBACK_FAILED"')
+            else:
+                # Orientation swaps dimensions. Compare the effective shape.
+                expected = value
+                if landscape is True and page_size is not None and name in ('page width', 'page height'):
+                    expected = str(height if name == 'page width' else width)
+                if page_size is not None and landscape is None and name in ('page width', 'page height'):
+                    other = height if name == 'page width' else width
+                    lines += [f'set expectedDimension to {expected}',
+                              f'if inheritedOrientation is orient landscape then set expectedDimension to {other}']
+                    expected = 'expectedDimension'
+                lines += [f'set sectionDifference to ({name} of page setup of ownSection) - ({expected})',
+                          'if sectionDifference > 0.1 or sectionDifference < -0.1 then error "WPSC_SECTION_READBACK_FAILED"']
+        self._section_commit(lines + role_lines + parts + numbering, structural=True)
+        self._first_section_configured = True
+
+    def add_landscape_section_before_pending_heading(self):
+        self._writable()
+        pending = self._pending_heading
+        if pending is None:
+            raise ValueError('pending heading is unavailable')
+        start, end, level = pending
+        lines = [f'set headingRange to create range boundDoc start {start} end {start}',
+                 'set pendingParagraph to paragraph 1 of headingRange',
+                 f'if (start of content of text object of pendingParagraph) is not {start} then error "WPSC_PENDING_HEADING_STALE"',
+                 f'if (end of content of text object of pendingParagraph) is not {end} then error "WPSC_PENDING_HEADING_STALE"',
+                 f'if (name local of style of text object of pendingParagraph as text) is not (name local of Word style (style heading{level}) of boundDoc as text) then error "WPSC_PENDING_HEADING_STALE"',
+                 'set previousSectionCount to count sections of boundDoc',
+                 'insert break at headingRange break type section break next page',
+                 'if (count sections of boundDoc) is not previousSectionCount + 1 then error "WPSC_SECTION_COUNT_FAILED"',
+                 'set ownSection to section (count sections of boundDoc) of boundDoc',
+                 'set orientation of page setup of ownSection to orient landscape',
+                 'if orientation of page setup of ownSection is not orient landscape then error "WPSC_SECTION_READBACK_FAILED"',
+                 'set ownFooter to get footer ownSection index header footer primary',
+                 'set link to previous of ownFooter to true',
+                 'if link to previous of ownFooter is not true then error "WPSC_HEADER_LINK_FAILED"',
+                 'set restart numbering at section of page number options of ownFooter to false',
+                 'if restart numbering at section of page number options of ownFooter is not false then error "WPSC_NUMBERING_READBACK_FAILED"']
+        self._section_commit(lines, structural=True)
+
     def set_page_number_in_footer(self):
         self._business_commit(['set pagePart to get footer (section 1 of boundDoc) index header footer primary',
             'set content of text object of pagePart to ""',
@@ -1747,3 +2012,65 @@ class MacWordSession:
         return (FieldSnapshot(stable_key=('doc:finalize', 'PAGE', 0), field_category='page',
                 result_hash=f'{pages}-{toc_count}', toc_page_count=toc_count,
                 figure_index_page_count=0, table_index_page_count=0, total_pages=pages),)
+
+    def insert_toc(self, title="Table of Contents"):
+        from .macos_word_fields import insert_index
+        return insert_index(self, title)
+
+    def insert_toc_with_styles(self, title, density):
+        from .macos_word_fields import insert_index
+        insert_index(self, title, density=density)
+
+    def insert_caption_index_native(self, *, title, sequence_id, title_style_id, owner_node_id=None):
+        from .macos_word_fields import insert_index
+        return insert_index(self, title, kind='TOF_FIG' if sequence_id == 'WPSC_FIG' else 'TOF_TAB', sequence_id=sequence_id, title_style_id=title_style_id, owner_node_id=owner_node_id)
+
+    def insert_figure_index(self, title=None):
+        from .macos_word_fields import placeholder
+        placeholder(self, title, 'Figure')
+
+    def insert_table_index(self, title=None):
+        from .macos_word_fields import placeholder
+        placeholder(self, title, 'Table')
+
+    def refresh_bookmarks_and_references(self):
+        from .macos_word_fields import refresh
+        refresh(self, 'references')
+
+    def repaginate_and_update_numbering(self):
+        from .macos_word_fields import refresh
+        refresh(self, 'numbering')
+
+    def repaginate_and_update_page_fields(self):
+        from .macos_word_fields import refresh
+        refresh(self, 'page')
+
+    def snapshot_fields(self):
+        from .macos_word_fields import snapshot
+        return snapshot(self)
+
+
+    def add_bibliography_native(self, *, schemaVersion=1, entries, style,
+                                hangingIndentPt, leftIndentPt, spaceAfterPt,
+                                owner_node_id=None, controller_owned=False):
+        from .macos_word_references import bibliography
+        return bibliography(self, entries, geometry=(hangingIndentPt, leftIndentPt, spaceAfterPt), schema=schemaVersion, style=style)
+
+    def add_bibliography_legacy(self, *, entries, style="numbered", owner_node_id=None):
+        from .macos_word_references import bibliography
+        return bibliography(self, entries)
+
+    def add_cross_reference_paragraph(self, *, runs, owner_node_id=None,
+                                      listFormatting=None, controller_owned=False):
+        from .macos_word_references import paragraph
+        return paragraph(self, runs, owner_node_id, listFormatting, controller_owned)
+
+    def add_citation_paragraph(self, *, runs, owner_node_id=None,
+                               listFormatting=None, controller_owned=False):
+        from .macos_word_references import paragraph
+        return paragraph(self, runs, owner_node_id, listFormatting, controller_owned)
+
+    def add_cross_reference_fallback(self, *, runs, owner_node_id=None,
+                                     listFormatting=None, failure_code="CROSS_REFERENCE_FAILED"):
+        from .macos_word_references import paragraph
+        return paragraph(self, runs, owner_node_id, listFormatting, static=True)

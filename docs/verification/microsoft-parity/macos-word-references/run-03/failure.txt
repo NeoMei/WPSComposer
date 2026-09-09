@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_references.py", line 203, in run
+    report['native_styles']=inspect_native_styles(session,report['native_rows'])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_references.py", line 140, in inspect_native_styles
+    assert observed==expected
+AssertionError

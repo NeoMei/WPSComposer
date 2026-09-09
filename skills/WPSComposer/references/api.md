@@ -6,17 +6,23 @@
 
 `generate(..., engine="wps")` and `convert_to_pdf(..., engine="wps")` accept
 keyword-only `engine="wps" | "msoffice" | "auto"`. The default is WPS.
-`msoffice` uses installed desktop Microsoft Word for DOCX/PDF generation and
-DOC/DOCX-to-PDF conversion on Windows and macOS. Excel, PowerPoint and
-conversational document editing retain their existing WPS interfaces.
+Released 0.9.0 `msoffice` support uses desktop Microsoft Word for DOCX/PDF
+generation and DOC/DOCX-to-PDF conversion. This development candidate also
+implements native Excel/XLSX and PowerPoint/PPTX generation, modern
+XLSX/PPTX-to-PDF conversion, and engine-bound document inspection/editing.
+Representative macOS flows have native evidence; Windows candidate native
+acceptance, remaining methods, arguments and legacy formats are incomplete.
+The candidate session API below describes implementation scope, not full
+Microsoft/WPS parity or release approval.
 The deprecated `layout_engine: legacy` route is not available with MS Office.
 
 `auto` detects installed applications without starting them, prefers WPS,
-then selects Word for writer documents. It pins that choice for the entire
+then selects the corresponding Microsoft application where the request's
+capability preflight permits it. It pins that choice for the entire
 task. An execution or content error never triggers a switch to another engine.
 Unsupported native operations fail explicitly; no alternate OOXML renderer is used.
-Windows requires `pywin32`; macOS requires desktop Word and macOS Automation
-permission for the launching terminal/application to control Microsoft Word.
+Windows requires `pywin32`; macOS requires the corresponding desktop Office
+application and macOS Automation permission for the launching terminal/app.
 DOCX results with `open_result=True` open in the selected WPS/Word application.
 On macOS, install WPS at `/Applications/wpsoffice.app` or Word at
 `/Applications/Microsoft Word.app`; automatic detection matches these runtime

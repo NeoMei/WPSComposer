@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "source": "docs/verification/microsoft-parity/macos-word-fields/run-10/fields.docx",
+  "source_sha256": "92b0d43ee11dff918b244a42a47aa694cc689d2b78f0fbbfdf020dbf9c5f15d9",
+  "ui_copy": "build/parity-ui-fields-20260909/fields-ui.docx",
+  "ui_copy_sha256": "92b0d43ee11dff918b244a42a47aa694cc689d2b78f0fbbfdf020dbf9c5f15d9",
+  "checks": {
+    "actual_heading_character_replacement_observed": true,
+    "undo_restored_character": true,
+    "explicit_save_observed": true,
+    "ui_close_reopen_original_heading_observed": true,
+    "final_ui_close": true,
+    "saved_text_and_field_codes_equal": true,
+    "source_unchanged": true
+  },
+  "scope": "Word native editability of run10 output; no Windows or untested field story certification",
+  "notes": [
+    "CUA typeText dropped Chinese path; setValue used exact full path. No original modified.",
+    "Initial close AX returned noWindowsAvailable; subsequent UI reopen and second close verified."
+  ]
+}

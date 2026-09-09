@@ -1,0 +1,704 @@
+{
+  "passed": true,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_references.py": "6b429c1caf7be8305706a054d9312fbfc241311794c04f1d925c459ffa63a1b0",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "39129d22315eb5701dde8f1f5cfe305de404d07ce538d10d44b2fa1f562d502a",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "c390342553fa4f9c30f77dc751da99e97ffd0abc1ff0e20822f9c5c974fa776d",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/artifact_transport.py": "4a5740a2943eae5ccb875da6eae31ddeeddb3b5d9f9b815b1e68250215329ef7",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "fixtures/microsoft_parity/macos_word_sections.py": "93aedc946c725bafc1b15cf9ee48ad4f91a4a38dcf09d94af7fd5a959d1b2551"
+  },
+  "checks": {
+    "native_operation_local_partial_rollback": true,
+    "invalid_input_document_unchanged": true,
+    "true_ref_refresh_and_exact_paragraph_geometry": true,
+    "unsaved_sentinel_and_unrelated_preserved": true,
+    "owned_document_native_closed": true,
+    "owned_reopen_native_closed": true,
+    "native_reopen_source_immutable": true,
+    "pdf_text_read": true
+  },
+  "dependencies": {
+    "real_controller_checkpoint_recovery": "NOT_RUN: checkpoint/rollback methods outside this five-method slice"
+  },
+  "starting_inventory": [],
+  "inventory_before": [
+    [
+      "文档180",
+      "文档180",
+      false,
+      "4a15818c8420e8167a4c383bed1aaaaa9327beaa64cecdc857791b6b7f8cab27  -"
+    ]
+  ],
+  "word_version": "16.112.3",
+  "occurrence_issues": [
+    {
+      "code": "MISS",
+      "message": "Reference target is unresolved",
+      "placement": "inline",
+      "fallback": "inline",
+      "nodeId": "missing:1"
+    },
+    {
+      "code": "MISS",
+      "message": "Reference target is unresolved",
+      "placement": "inline",
+      "fallback": "inline",
+      "nodeId": "missing:2"
+    }
+  ],
+  "snapshot_before_target_edit": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_EQ",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "3fdba35f04dc8c462986c992bcf875546257113072a909c162f7e470e581e278",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "references:mixed",
+        "REF",
+        0
+      ],
+      "field_category": "reference",
+      "result_hash": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "references:mixed",
+        "REF",
+        1
+      ],
+      "field_category": "reference",
+      "result_hash": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "references:mixed",
+        "REF",
+        2
+      ],
+      "field_category": "reference",
+      "result_hash": "3fdba35f04dc8c462986c992bcf875546257113072a909c162f7e470e581e278",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "references:bullet",
+        "REF",
+        0
+      ],
+      "field_category": "reference",
+      "result_hash": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    }
+  ],
+  "native_rows": [
+    [
+      "paragraph",
+      1,
+      "References direct native acceptance\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      0,
+      36
+    ],
+    [
+      "paragraph",
+      2,
+      "8\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      36,
+      60
+    ],
+    [
+      "paragraph",
+      3,
+      "11\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      60,
+      101
+    ],
+    [
+      "paragraph",
+      4,
+      "13\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      101,
+      141
+    ],
+    [
+      "paragraph",
+      5,
+      "[3] 中文😀 已引\r",
+      21.5,
+      -12.25,
+      0,
+      4.5,
+      true,
+      141,
+      153
+    ],
+    [
+      "paragraph",
+      6,
+      "[9] 未引\r",
+      21.5,
+      -12.25,
+      0,
+      4.5,
+      true,
+      153,
+      160
+    ],
+    [
+      "paragraph",
+      7,
+      "[8] 原样条目\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      160,
+      169
+    ],
+    [
+      "paragraph",
+      8,
+      "7\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      169,
+      171
+    ],
+    [
+      "paragraph",
+      9,
+      "False\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      171,
+      177
+    ],
+    [
+      "paragraph",
+      10,
+      "None\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      177,
+      182
+    ],
+    [
+      "paragraph",
+      11,
+      "前中文😀见8尾；11；(13)后\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      182,
+      382
+    ],
+    [
+      "paragraph",
+      12,
+      "•\t8\r",
+      24,
+      -24,
+      0,
+      3,
+      false,
+      382,
+      447
+    ],
+    [
+      "paragraph",
+      13,
+      "1.\t[3][MISS 缺失][MISS 缺失]\r",
+      31.5,
+      -31.5,
+      0,
+      3,
+      false,
+      447,
+      472
+    ],
+    [
+      "paragraph",
+      14,
+      "Static (FALLBACK-ONLY)\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      472,
+      495
+    ],
+    [
+      "paragraph",
+      15,
+      "Local LOCAL-FALLBACK\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      495,
+      516
+    ],
+    [
+      "paragraph",
+      16,
+      "\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      516,
+      517
+    ],
+    [
+      "reference",
+      " REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT ",
+      "8"
+    ],
+    [
+      "reference",
+      " REF wpsc_tab_bbbbbbbbbbbbbbbbbbbbbbbb \\h \\* MERGEFORMAT ",
+      "11"
+    ],
+    [
+      "reference",
+      " REF wpsc_eq_cccccccccccccccccccccccc \\h \\* MERGEFORMAT ",
+      "13"
+    ],
+    [
+      "reference",
+      " REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT ",
+      "8"
+    ]
+  ],
+  "native_styles": [
+    [
+      "list",
+      24,
+      -24,
+      true,
+      0,
+      3,
+      true
+    ],
+    [
+      "list",
+      31.5,
+      -31.5,
+      true,
+      0,
+      3,
+      true
+    ],
+    [
+      "degradation",
+      453,
+      462,
+      "[MISS 缺失]",
+      true,
+      true,
+      true
+    ],
+    [
+      "degradation",
+      462,
+      471,
+      "[MISS 缺失]",
+      true,
+      true,
+      true
+    ],
+    [
+      "static-style",
+      false,
+      false,
+      false
+    ],
+    [
+      "static-style",
+      true,
+      true,
+      true
+    ],
+    [
+      "static-style",
+      false,
+      false,
+      false
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档180",
+      "文档180",
+      false,
+      "4a15818c8420e8167a4c383bed1aaaaa9327beaa64cecdc857791b6b7f8cab27  -"
+    ]
+  ],
+  "after_owned_close": [],
+  "reopen_rows": [
+    [
+      "paragraph",
+      1,
+      "References direct native acceptance\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      0,
+      36
+    ],
+    [
+      "paragraph",
+      2,
+      "8\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      36,
+      60
+    ],
+    [
+      "paragraph",
+      3,
+      "11\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      60,
+      101
+    ],
+    [
+      "paragraph",
+      4,
+      "13\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      101,
+      141
+    ],
+    [
+      "paragraph",
+      5,
+      "[3] 中文😀 已引\r",
+      21.5,
+      -12.25,
+      0,
+      4.5,
+      true,
+      141,
+      153
+    ],
+    [
+      "paragraph",
+      6,
+      "[9] 未引\r",
+      21.5,
+      -12.25,
+      0,
+      4.5,
+      true,
+      153,
+      160
+    ],
+    [
+      "paragraph",
+      7,
+      "[8] 原样条目\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      160,
+      169
+    ],
+    [
+      "paragraph",
+      8,
+      "7\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      169,
+      171
+    ],
+    [
+      "paragraph",
+      9,
+      "False\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      171,
+      177
+    ],
+    [
+      "paragraph",
+      10,
+      "None\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      177,
+      182
+    ],
+    [
+      "paragraph",
+      11,
+      "前中文😀见8尾；11；(13)后\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      182,
+      382
+    ],
+    [
+      "paragraph",
+      12,
+      "•\t8\r",
+      24,
+      -24,
+      0,
+      3,
+      false,
+      382,
+      447
+    ],
+    [
+      "paragraph",
+      13,
+      "1.\t[3][MISS 缺失][MISS 缺失]\r",
+      31.5,
+      -31.5,
+      0,
+      3,
+      false,
+      447,
+      472
+    ],
+    [
+      "paragraph",
+      14,
+      "Static (FALLBACK-ONLY)\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      472,
+      495
+    ],
+    [
+      "paragraph",
+      15,
+      "Local LOCAL-FALLBACK\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      495,
+      516
+    ],
+    [
+      "paragraph",
+      16,
+      "\r",
+      0,
+      0,
+      0,
+      8,
+      false,
+      516,
+      517
+    ],
+    [
+      "reference",
+      " REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT ",
+      "8"
+    ],
+    [
+      "reference",
+      " REF wpsc_tab_bbbbbbbbbbbbbbbbbbbbbbbb \\h \\* MERGEFORMAT ",
+      "11"
+    ],
+    [
+      "reference",
+      " REF wpsc_eq_cccccccccccccccccccccccc \\h \\* MERGEFORMAT ",
+      "13"
+    ],
+    [
+      "reference",
+      " REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT ",
+      "8"
+    ]
+  ],
+  "reopen_styles": [
+    [
+      "list",
+      24,
+      -24,
+      true,
+      0,
+      3,
+      true
+    ],
+    [
+      "list",
+      31.5,
+      -31.5,
+      true,
+      0,
+      3,
+      true
+    ],
+    [
+      "degradation",
+      453,
+      462,
+      "[MISS 缺失]",
+      true,
+      true,
+      true
+    ],
+    [
+      "degradation",
+      462,
+      471,
+      "[MISS 缺失]",
+      true,
+      true,
+      true
+    ],
+    [
+      "static-style",
+      false,
+      false,
+      false
+    ],
+    [
+      "static-style",
+      true,
+      true,
+      true
+    ],
+    [
+      "static-style",
+      false,
+      false,
+      false
+    ]
+  ],
+  "after_reopen_close": [],
+  "pdf_text": "References direct native acceptance\n8\n11\n13\n[3] 中⽂😀 已引\n[9] 未引\n[8] 原样条⽬\n7\nFalse\nNone\n前中⽂😀⻅8尾；11；(13)后\n• 8\n1. [3][MISS 缺失][MISS 缺失]\nStatic (FALLBACK-ONLY)\nLocal LOCAL-FALLBACK",
+  "artifact_hashes": {
+    "references.docx": "2ae124e28bd81c0ec4b453e77630052efc29270ac514df235d804f5c483c25d9",
+    "references.pdf": "f40e2be8bcf50aeafa72f3b7f38ccd71e6d17b840316e67cee6f8d33ff774aa2"
+  }
+}

@@ -31,6 +31,7 @@ class FakeRuntime:
     def __init__(self, staging_dir: Path):
         self.staging_dir = staging_dir.resolve()
         self.staging_dir.mkdir(parents=True)
+        self.activations = []
 
     def prepare_profiles(self):
         pass
@@ -39,7 +40,7 @@ class FakeRuntime:
         pass
 
     def activate_component(self, component, *, deadline, isolated=False):
-        pass
+        self.activations.append((component, isolated))
 
 
 class FakeBridge:
@@ -119,6 +120,46 @@ def _run(
         overwrite=overwrite,
     )
     return result, source, output, fake_bridge
+
+
+def test_run_inspection_activates_an_owned_isolated_presentation(tmp_path: Path):
+    source = _write_pptx(tmp_path / "source.pptx")
+    runtime = FakeRuntime(tmp_path / "container" / "session")
+
+    class Bridge(FakeBridge):
+        def wait_result(self, command_id, timeout):
+            return ProbeResult(command_id, True, {"slides": []}, None)
+
+    value = inspection._run_inspection(
+        source,
+        "presentation",
+        "inspect_presentation",
+        Bridge(),
+        runtime,
+        inspection.time.monotonic() + 10,
+    )
+
+    assert value["slides"] == []
+    assert runtime.activations == [("presentation", True)]
+
+
+def test_run_edit_activates_an_owned_isolated_presentation(tmp_path: Path):
+    source = _write_pptx(tmp_path / "source.pptx")
+    output = tmp_path / "output.pptx"
+    runtime = FakeRuntime(tmp_path / "container" / "session")
+    result = _run_edit(
+        source,
+        output,
+        "presentation",
+        "edit_presentation",
+        [{"target": "slide:1", "name": "Updated"}],
+        FakeBridge(),
+        runtime,
+        inspection.time.monotonic() + 10,
+    )
+
+    assert result["saved"] is True
+    assert runtime.activations == [("presentation", True)]
 
 
 @pytest.mark.parametrize("suffix", ["ppt", "pptm", "pps", "ppsx", "ppsm"])
@@ -269,6 +310,102 @@ def test_run_edit_overwrite_failure_preserves_original_destination(
 
     assert output.read_bytes() == original
     monkeypatch.setattr(inspection, "publish_artifact", original_publish)
+
+
+def test_public_macos_edit_preserves_source_changed_while_wps_edits_staging(
+    tmp_path: Path,
+):
+    source = _write_pptx(tmp_path / "source.pptx", "source")
+    concurrent = _write_pptx(tmp_path / "concurrent.pptx", "concurrent").read_bytes()
+
+    class Runtime(FakeRuntime):
+        registration_restored = True
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    runtime = Runtime(tmp_path / "container" / "session")
+    runtime.runtime_dir = tmp_path / "runtime"
+
+    class Bridge(FakeBridge):
+        url = "http://127.0.0.1:1"
+        token = "test-token"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def wait_result(self, command_id, timeout):
+            source.write_bytes(concurrent)
+            return super().wait_result(command_id, timeout)
+
+    with pytest.raises(InspectionError) as caught:
+        edit_macos(
+            str(source),
+            [{"target": "slide:1", "name": "Updated"}],
+            bridge_factory=lambda _origins: Bridge(),
+            runtime_factory=lambda *_args, **_kwargs: runtime,
+            timeout=10,
+        )
+
+    assert caught.value.code == "ARTIFACT_DESTINATION_CHANGED"
+    assert source.read_bytes() == concurrent
+
+
+def test_public_macos_edit_rejects_source_symlink_retargeted_during_edit(
+    tmp_path: Path,
+):
+    original = _write_pptx(tmp_path / "original.pptx", "original")
+    replacement = _write_pptx(tmp_path / "replacement.pptx", "replacement")
+    replacement_bytes = replacement.read_bytes()
+    logical = tmp_path / "logical.pptx"
+    logical.symlink_to(original)
+
+    class Runtime(FakeRuntime):
+        registration_restored = True
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    runtime = Runtime(tmp_path / "container" / "session")
+    runtime.runtime_dir = tmp_path / "runtime"
+
+    class Bridge(FakeBridge):
+        url = "http://127.0.0.1:1"
+        token = "test-token"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def wait_result(self, command_id, timeout):
+            logical.unlink()
+            logical.symlink_to(replacement)
+            return super().wait_result(command_id, timeout)
+
+    with pytest.raises(InspectionError) as caught:
+        edit_macos(
+            str(logical),
+            [{"target": "slide:1", "name": "Updated"}],
+            bridge_factory=lambda _origins: Bridge(),
+            runtime_factory=lambda *_args, **_kwargs: runtime,
+            timeout=10,
+        )
+
+    assert caught.value.code == "ARTIFACT_DESTINATION_CHANGED"
+    assert logical.is_symlink()
+    assert logical.resolve() == replacement.resolve()
+    assert replacement.read_bytes() == replacement_bytes
 
 
 def test_presentation_atomic_failure_guard_precedes_save_as():

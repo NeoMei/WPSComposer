@@ -1,0 +1,58 @@
+{
+  "verified": true,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/business-04/business.xlsx",
+  "source_sha256_before": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "logical_source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/review-fixwave-03/logical-source.xlsx",
+  "logical_source_sha256_before": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "session_source_sha256": "bfe1ebd6a5bb4f2ed807e5f72a19950d752247f82e2d5cad65f58031f1739957",
+  "transport_source_sha256": "a7d3352e2d54fa90829acb0a32da42c0db619a58eb4ad5ffeeaefbd1953f655e",
+  "fixture_sha256": "6296b3d3105c4594d46345bb967b4b6880002bee161254e96dce9bd787d3c7de",
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-mvwt0_jb",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-g5f87ylz",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-mmesb9jw",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-888x361y",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-_u1b2lp1",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-xptmj7uz"
+  ],
+  "owned_native_names": [
+    "owned-b319189c73784bc98b19f119a3c2bc4b.xlsx",
+    "owned-5967883de88e46b48b4920872e9edaec.xlsx",
+    "owned-c3f40c6dde864913b66764c0312f6f36.xlsx",
+    "owned-79f6593e7bf9477f8cb1b2ee0b37458d.xlsx",
+    "owned-7987bb85a1934fad9679460ae5b66a53.xlsx",
+    "owned-9e4646829c0246d0b7961e5137af7491.xlsx"
+  ],
+  "public_session_type": "MacExcelSession",
+  "omitted_clone": {
+    "type": "sheet",
+    "cloned": true,
+    "from": "sheet:2",
+    "path": "sheet:3"
+  },
+  "explicit_end_clone": {
+    "type": "sheet",
+    "cloned": true,
+    "from": "sheet:2",
+    "path": "sheet:5"
+  },
+  "names_after": [
+    "Data",
+    "Results",
+    "Results (2)",
+    "Business report",
+    "Results (3)"
+  ],
+  "direct_save_current_verified": true,
+  "save_save_copy_current_binding_verified": true,
+  "unsaved_sentinel": {
+    "name": "工作簿19",
+    "marker": "wpscomposer-unsaved-sentinel-dde12ea594d34f0ea8cfe0fc35abd8af",
+    "preserved": true
+  },
+  "source_sha256_after": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "logical_source_sha256_after": "0b08b8a1c8184e86cca72ddd8a7a9461709d4c72704a43003de3fc453c2c5f92",
+  "bound_output_sha256": "0fdf6e067dd91a677ea98a0a37bc39cd41a33f97d8b2c00da3325bc86d7dc1b1",
+  "copy_output_sha256": "0aaf88e4cea551c71bca38e10e011265f8171c7a8c6a5ec8d772e704e1aa5f87",
+  "inventory_restored": true
+}

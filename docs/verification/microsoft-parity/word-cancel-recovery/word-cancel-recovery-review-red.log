@@ -1,0 +1,90 @@
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_bound_cancel_quarantines_and_context_exit_sends_no_close_event[KeyboardInterrupt] _
+
+word_host = (<module 'skills.WPSComposer.scripts.msoffice.macos_word_session' from '/Users/neomei/项目/codexprojects/WpsComposer/.wo...test_bound_cancel_quarantines_0/container/wpscomposer-session-d8jjtpmr/0b2032e501704623927cbd5e105b22c3.applescript')])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10884eca0>
+cancel_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize("cancel_type", [KeyboardInterrupt, SystemExit])
+    def test_bound_cancel_quarantines_and_context_exit_sends_no_close_event(
+        word_host, monkeypatch, cancel_type
+    ):
+        module, root, source, calls = word_host
+        session = module.MacWordSession.open_document(source)
+        stage = session.staging_root
+        prior_calls = len(calls)
+    
+        def cancel(command, **kwargs):
+            calls.append(tuple(command))
+            raise cancel_type("cancelled native checkpoint")
+    
+        monkeypatch.setattr(module.subprocess, "run", cancel)
+        with pytest.raises(cancel_type, match="cancelled native checkpoint"):
+            with session:
+                session._execute_structural(["set nativeRows to {{\"unreachable\"}}"])
+    
+        assert len(calls) == prior_calls + 1
+        assert session._quarantined
+        assert session._retain_evidence
+        assert session.lock.file is None
+        assert stage.is_dir()
+        quarantine = session.lock.quarantine_path
+        assert quarantine.is_file()
+        detail = json.loads(quarantine.read_text())
+        assert detail["stagingRoot"] == str(stage)
+        assert detail["documentPath"] == session._bound_path
+        logs = list(stage.glob("*.log"))
+        assert logs
+        diagnostic = logs[-1].read_text()
+>       assert cancel_type.__name__ in diagnostic
+E       assert 'KeyboardInterrupt' in '\n["WPSCOMPOSER_WORD_SESSION_OK", [["binding", 901, "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-...t_bound_cancel_quarantines_0/container/wpscomposer-session-d8jjtpmr/document-8fd66cad001847f5a11d07ef33315f2c.docx"]]]'
+E        +  where 'KeyboardInterrupt' = <class 'KeyboardInterrupt'>.__name__
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-cancel-recovery-review-repros.py:81: AssertionError
+_ test_bound_cancel_quarantines_and_context_exit_sends_no_close_event[SystemExit] _
+
+word_host = (<module 'skills.WPSComposer.scripts.msoffice.macos_word_session' from '/Users/neomei/项目/codexprojects/WpsComposer/.wo...test_bound_cancel_quarantines_1/container/wpscomposer-session-19a_179u/fdd6d0cc15224219819ad25dd7e6b398.applescript')])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109ff9910>
+cancel_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize("cancel_type", [KeyboardInterrupt, SystemExit])
+    def test_bound_cancel_quarantines_and_context_exit_sends_no_close_event(
+        word_host, monkeypatch, cancel_type
+    ):
+        module, root, source, calls = word_host
+        session = module.MacWordSession.open_document(source)
+        stage = session.staging_root
+        prior_calls = len(calls)
+    
+        def cancel(command, **kwargs):
+            calls.append(tuple(command))
+            raise cancel_type("cancelled native checkpoint")
+    
+        monkeypatch.setattr(module.subprocess, "run", cancel)
+        with pytest.raises(cancel_type, match="cancelled native checkpoint"):
+            with session:
+                session._execute_structural(["set nativeRows to {{\"unreachable\"}}"])
+    
+        assert len(calls) == prior_calls + 1
+        assert session._quarantined
+        assert session._retain_evidence
+        assert session.lock.file is None
+        assert stage.is_dir()
+        quarantine = session.lock.quarantine_path
+        assert quarantine.is_file()
+        detail = json.loads(quarantine.read_text())
+        assert detail["stagingRoot"] == str(stage)
+        assert detail["documentPath"] == session._bound_path
+        logs = list(stage.glob("*.log"))
+        assert logs
+        diagnostic = logs[-1].read_text()
+>       assert cancel_type.__name__ in diagnostic
+E       assert 'SystemExit' in '\n["WPSCOMPOSER_WORD_SESSION_OK", [["binding", 901, "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-...t_bound_cancel_quarantines_1/container/wpscomposer-session-19a_179u/document-e8cec3d810524fcba889f95562e76f6c.docx"]]]'
+E        +  where 'SystemExit' = <class 'SystemExit'>.__name__
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-cancel-recovery-review-repros.py:81: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/word-cancel-recovery-review-repros.py::test_bound_cancel_quarantines_and_context_exit_sends_no_close_event[KeyboardInterrupt]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/word-cancel-recovery-review-repros.py::test_bound_cancel_quarantines_and_context_exit_sends_no_close_event[SystemExit]
+2 failed, 2 passed in 0.26s

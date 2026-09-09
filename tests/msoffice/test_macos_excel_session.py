@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 from pathlib import Path
 import subprocess
 import time
+import zipfile
 
 import pytest
 
@@ -26,7 +28,55 @@ def session(tmp_path, read_only=False):
     obj._counter = 0
     obj._lock = None
     obj._execute = subprocess.run
+    obj._logical = obj._source
+    obj._logical_state = None
     return obj
+
+
+def package(path: Path, marker: str) -> Path:
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('[Content_Types].xml', '<Types />')
+        archive.writestr('xl/workbook.xml', f'<workbook><marker>{marker}</marker></workbook>')
+    return path
+
+
+@pytest.mark.parametrize("method_name", ["save", "save_copy", "export_pdf"])
+def test_public_output_methods_accept_the_shared_path_keyword(method_name, tmp_path):
+    method = getattr(module().MacExcelSession, method_name)
+
+    bound = inspect.signature(method).bind(object(), path=tmp_path / "output")
+
+    assert bound.arguments["path"] == tmp_path / "output"
+    with pytest.raises(TypeError):
+        inspect.signature(method).bind(
+            object(), path=tmp_path / "output", fmt="unreviewed"
+        )
+
+
+@pytest.mark.parametrize("method_name", ["save", "save_copy", "export_pdf"])
+def test_public_output_methods_keep_the_existing_destination_keyword_alias(
+    method_name, tmp_path
+):
+    method = getattr(module().MacExcelSession, method_name)
+
+    bound = inspect.signature(method).bind(
+        object(), destination=tmp_path / "output"
+    )
+
+    assert bound.arguments["destination"] == tmp_path / "output"
+
+
+@pytest.mark.parametrize("method_name", ["save", "save_copy", "export_pdf"])
+def test_public_output_methods_reject_ambiguous_path_and_destination_keywords(
+    method_name, tmp_path
+):
+    obj = session(tmp_path)
+
+    with pytest.raises(TypeError, match="path.*destination"):
+        getattr(obj, method_name)(
+            path=tmp_path / "path-output",
+            destination=tmp_path / "destination-output",
+        )
 
 
 def test_target_parser_validates_excel_bounds_and_stable_shape_names():
@@ -91,6 +141,19 @@ def test_sheet_move_clone_rebinds_after_structural_change(tmp_path):
     assert 'beforeSheetCount' in scripts[1]
 
 
+def test_sheet_clone_omitted_destination_stays_after_source_but_end_uses_last_sheet(tmp_path):
+    obj=session(tmp_path);scripts=[]
+    obj._run=lambda source,**k:scripts.append(source) or {'path':'sheet:2'}
+
+    obj.apply_structural_op({'op':'clone','target':'sheet:2'})
+    obj.apply_structural_op({'op':'clone','target':'sheet:2','to':'end'})
+
+    assert 'copy worksheet obj after worksheet 2 of ownedBook' in scripts[0]
+    assert 'set destinationSheetIndex to count of worksheets of ownedBook' in scripts[1]
+    assert 'copy worksheet obj after worksheet destinationSheetIndex of ownedBook' in scripts[1]
+    assert 'name of worksheet (destinationSheetIndex + 1) of ownedBook' in scripts[1]
+
+
 def test_inspection_limit_is_enforced_without_native_calls(tmp_path):
     obj = session(tmp_path)
     obj._run = lambda *a, **k: pytest.fail('must validate options')
@@ -144,6 +207,24 @@ def test_close_failed_session_does_not_send_another_event(tmp_path):
     assert obj._closed is True
 
 
+def test_close_save_conflict_keeps_owned_session_locked_until_discard(tmp_path):
+    obj=session(tmp_path);calls=[]
+    class Lock:
+        closed=False
+        def close(self):self.closed=True
+    obj._lock=Lock()
+    obj.save_current=lambda:(_ for _ in ()).throw(ValueError('conflict'))
+    obj._run=lambda body,**kwargs:calls.append(body) or {}
+
+    with pytest.raises(ValueError,match='conflict'):
+        obj.close(save_changes=True)
+
+    assert not obj._closed and not obj._lock.closed and calls==[]
+    obj.close(save_changes=False)
+    assert obj._closed and obj._lock.closed
+    assert calls==['close ownedBook saving no\nreturn "{}"']
+
+
 def test_save_never_overwrites_source_or_existing_destination(tmp_path):
     obj=session(tmp_path)
     obj._source.write_bytes(b'keep source')
@@ -151,6 +232,174 @@ def test_save_never_overwrites_source_or_existing_destination(tmp_path):
     with pytest.raises(ValueError): obj.save(obj._source)
     destination=tmp_path/'existing.xlsx';destination.write_bytes(b'keep destination')
     with pytest.raises(FileExistsError): obj.save(destination)
+
+
+def test_save_current_publishes_private_workbook_to_logical_source(tmp_path, monkeypatch):
+    mod=module();obj=session(tmp_path)
+    package(obj._source, 'original');package(obj._native, 'edited')
+    obj._logical=obj._source
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+
+    result=obj.save_current()
+
+    assert result == str(obj._source)
+    assert b'edited' in obj._source.read_bytes()
+
+
+def test_save_retargets_later_save_current_to_explicit_output(tmp_path, monkeypatch):
+    mod=module();obj=session(tmp_path)
+    package(obj._source, 'source');package(obj._native, 'first')
+    obj._logical=obj._source
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+    output=tmp_path/'output.xlsx'
+
+    assert obj.save(output) == str(output)
+    package(obj._native, 'second')
+    assert obj.save_current() == str(output)
+    assert b'second' in output.read_bytes()
+    assert b'source' in obj._source.read_bytes()
+
+
+def test_save_copy_preserves_logical_target_for_later_save_current(tmp_path, monkeypatch):
+    mod=module();obj=session(tmp_path)
+    package(obj._source, 'source');package(obj._native, 'first')
+    obj._logical=obj._source
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+    first_output=tmp_path/'first-output.xlsx'
+    copy_output=tmp_path/'copy-output.xlsx'
+
+    assert obj.save(first_output) == str(first_output)
+    package(obj._native, 'copy')
+    assert obj.save_copy(copy_output) == str(copy_output)
+    package(obj._native, 'later-current')
+    assert obj.save_current() == str(first_output)
+
+    assert b'later-current' in first_output.read_bytes()
+    assert b'copy' in copy_output.read_bytes()
+    assert b'source' in obj._source.read_bytes()
+
+
+def test_save_current_preserves_concurrently_changed_logical_output(tmp_path, monkeypatch):
+    mod=module();obj=session(tmp_path)
+    package(obj._source, 'original');package(obj._native, 'edited')
+    obj._logical=obj._source
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    package(obj._source, 'concurrent')
+    concurrent=obj._source.read_bytes()
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+
+    with pytest.raises(RuntimeError, match='changed'):
+        obj.save_current()
+
+    assert obj._source.read_bytes() == concurrent
+
+
+def test_open_rejects_source_changed_during_private_copy_before_native_open(
+    tmp_path, monkeypatch,
+):
+    mod=module();source=package(tmp_path/'source.xlsx','original')
+    root=tmp_path/'container'
+    class Lock:
+        def __init__(self, _root): pass
+        def acquire(self, _deadline): pass
+        def close(self): pass
+    def copy_then_change(incoming, outgoing, *, deadline):
+        outgoing.write_bytes(incoming.read_bytes())
+        package(incoming, 'concurrent')
+        return outgoing
+    monkeypatch.setattr(mod,'_container_root',lambda _component:root)
+    monkeypatch.setattr(mod,'OfficeJobLock',Lock)
+    monkeypatch.setattr(mod,'validate_native_input',lambda *a,**k:None)
+    monkeypatch.setattr(mod,'copy_file_before_deadline',copy_then_change)
+    monkeypatch.setattr(mod.MacExcelSession,'_run',lambda *a,**k:pytest.fail('changed source must not reach native open'))
+
+    with pytest.raises(ValueError, match='changed'):
+        mod.MacExcelSession.open_document(source)
+
+
+def test_open_releases_lock_when_initial_source_fingerprint_fails(
+    tmp_path, monkeypatch,
+):
+    mod=module();source=package(tmp_path/'source.xlsx','original');closed=[]
+    class Lock:
+        def __init__(self, _root): pass
+        def acquire(self, _deadline): pass
+        def close(self): closed.append(True)
+    monkeypatch.setattr(mod,'_container_root',lambda _component:tmp_path/'container')
+    monkeypatch.setattr(mod,'OfficeJobLock',Lock)
+    monkeypatch.setattr(mod,'validate_native_input',lambda *a,**k:None)
+    monkeypatch.setattr(mod,'snapshot_artifact_state',lambda *a,**k:(_ for _ in ()).throw(OSError('source access changed')))
+
+    with pytest.raises(OSError, match='source access changed'):
+        mod.MacExcelSession.open_document(source)
+
+    assert closed == [True]
+
+
+def test_save_current_never_adopts_concurrent_bytes_after_publish(
+    tmp_path, monkeypatch,
+):
+    mod=module();obj=session(tmp_path)
+    package(obj._source,'original');package(obj._native,'first')
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+    real_publish=mod.publish_artifact
+
+    def publish_then_user_save(*args,**kwargs):
+        result=real_publish(*args,**kwargs)
+        package(obj._source,'USER-NEW-VERSION')
+        return result
+
+    monkeypatch.setattr(mod,'publish_artifact',publish_then_user_save)
+    with pytest.raises(RuntimeError, match='changed'):
+        obj.save_current()
+    monkeypatch.setattr(mod,'publish_artifact',real_publish)
+    package(obj._native,'second')
+
+    with pytest.raises(RuntimeError, match='changed'):
+        obj.save_current()
+
+    assert b'USER-NEW-VERSION' in obj._source.read_bytes()
+
+
+def test_save_never_retargets_to_concurrent_bytes_after_publish(
+    tmp_path, monkeypatch,
+):
+    mod=module();obj=session(tmp_path)
+    package(obj._source,'original');package(obj._native,'first')
+    obj._logical_state=mod.snapshot_artifact_state(obj._source)
+    obj._run=lambda *a,**k:{}
+    monkeypatch.setattr(mod,'validate_before_deadline',lambda *a,**k:None)
+    destination=tmp_path/'destination.xlsx'
+    real_publish=mod.publish_artifact
+
+    def publish_then_user_save(*args,**kwargs):
+        result=real_publish(*args,**kwargs)
+        package(destination,'USER-NEW-VERSION')
+        return result
+
+    monkeypatch.setattr(mod,'publish_artifact',publish_then_user_save)
+    with pytest.raises(RuntimeError, match='changed'):
+        obj.save(destination)
+
+    assert obj._logical == obj._source
+    assert b'USER-NEW-VERSION' in destination.read_bytes()
+
+
+def test_new_session_save_current_requires_explicit_destination_before_native_save(tmp_path):
+    obj=session(tmp_path)
+    obj._logical=None;obj._logical_state=None
+    obj._run=lambda *a,**k:pytest.fail('native save must wait for destination')
+    with pytest.raises(ValueError, match='explicit'):
+        obj.save_current()
 
 
 def test_inspection_cell_references_keep_worksheet_parent(tmp_path):

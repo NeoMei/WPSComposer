@@ -1,0 +1,150 @@
+{
+  "passed": true,
+  "engine": "msoffice",
+  "platform": "darwin",
+  "component": "writer",
+  "mode": "variants",
+  "checks": {
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "exact_owned_document_close": true,
+    "native_legal_a3_inherited_orientation_margins_links": true,
+    "native_continue_ignores_start_and_renders_9_10_11_12": true,
+    "native_reopen_source_preserved": true,
+    "exact_owned_reopen_close": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_sections.py": "93aedc946c725bafc1b15cf9ee48ad4f91a4a38dcf09d94af7fd5a959d1b2551",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "55d3f4275fe3644151b09a534413e6eee3bf8517e877fada08af43d8df050fbe"
+  },
+  "inventory_before": [
+    [
+      "文档139",
+      "文档139",
+      false,
+      "9c737129249994115384e68259b54458eef0d247b0730925d056930255c71b18  -"
+    ]
+  ],
+  "method_checks": {
+    "configure_section": [
+      "legal/A3 native sizes",
+      "inherited landscape with explicit margins",
+      "linked header/footer true"
+    ],
+    "set_page_numbering": [
+      "continue with restart false and supplied start ignored natively",
+      "Arabic rendered 9/10/11/12"
+    ]
+  },
+  "inventory_after": [
+    [
+      "文档139",
+      "文档139",
+      false,
+      "9c737129249994115384e68259b54458eef0d247b0730925d056930255c71b18  -"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "role",
+      "正文😀"
+    ],
+    [
+      "title",
+      "标题😀"
+    ],
+    [
+      "author",
+      "作者😀"
+    ],
+    [
+      "footer",
+      "Variant 0\r"
+    ],
+    [
+      "number",
+      "page number style arabic",
+      true,
+      9
+    ],
+    [
+      "field",
+      "field page",
+      " PAGE  \\* MERGEFORMAT "
+    ]
+  ],
+  "section_reopen_rows": [
+    [
+      612,
+      1008,
+      "orient portrait",
+      40,
+      42,
+      50,
+      52,
+      false,
+      false,
+      true,
+      9
+    ],
+    [
+      1190.550048828125,
+      841.9000244140625,
+      "orient landscape",
+      52,
+      50,
+      40,
+      42,
+      true,
+      true,
+      false,
+      0
+    ],
+    [
+      1008,
+      612,
+      "orient landscape",
+      50,
+      52,
+      70,
+      72,
+      true,
+      true,
+      false,
+      0
+    ],
+    [
+      841.9000244140625,
+      1190.550048828125,
+      "orient portrait",
+      70,
+      72,
+      52,
+      50,
+      true,
+      true,
+      false,
+      0
+    ]
+  ],
+  "pdf_text": [
+    "Continuation Header \nVariant 9 \nLegal portrait start 9 中⽂😀 \n",
+    "Continuation Header \nVariant 10 \n \nA3 landscape continues 10 中⽂😀 \n",
+    "Continuation Header \nVariant 11 \n \nLegal inherits landscape and continues 11 中⽂😀 \n",
+    "Continuation Header \nVariant 12 \n \nA3 portrait continues 12 中⽂😀 \n \n"
+  ],
+  "source_docx_sha256_before_reopen": "ecb862434b888b4a3eaff577d610a69cfc7463b465c1245005b8428de0ce21bf",
+  "source_docx_sha256_after_reopen": "ecb862434b888b4a3eaff577d610a69cfc7463b465c1245005b8428de0ce21bf",
+  "artifact_hashes": {
+    "sections.docx": "ecb862434b888b4a3eaff577d610a69cfc7463b465c1245005b8428de0ce21bf",
+    "sections.pdf": "7827631c4e67e68f4503ff4482d05cdfaafaddaf3467d291305bd545e012bb13"
+  },
+  "limitations": [
+    "Representative checks are listed per mode; separate acceptance and variants reports are required for the complete exercised branch set.",
+    "No attached session or user UI edit/Undo acceptance is claimed.",
+    "Runtime timeout/quarantine checks are separate unit tests; this fixture does not deliberately cause uncertain native completion."
+  ]
+}

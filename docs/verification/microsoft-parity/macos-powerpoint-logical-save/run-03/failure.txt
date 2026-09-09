@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_powerpoint_logical_save.py", line 138, in run
+    report['artifact_hashes']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob('*.pptx')}
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_powerpoint_logical_save.py", line 138, in <dictcomp>
+    report['artifact_hashes']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob('*.pptx')}
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1249, in read_bytes
+    with self.open(mode='rb') as f:
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1242, in open
+    return io.open(self, mode, buffering, encoding, errors, newline,
+IsADirectoryError: [Errno 21] Is a directory: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-logical-save/run-03/reopen-C.pptx'

@@ -440,11 +440,12 @@ def test_close_save_conflict_keeps_owned_session_available_for_discard(monkeypat
     assert s._entered
 
 
-def test_semantic_creation_selects_its_owned_new_slide_for_layout(monkeypatch):
+def test_semantic_creation_does_not_require_changing_native_view(monkeypatch):
     s=api().MacPowerPointSession();calls=[]
     monkeypatch.setattr(s,'_run',lambda body,**k:(calls.append(body) or '1'))
     s.add_blank_slide()
-    assert 'set slide of view of document window 1 of ownedDoc to currentSlide' in calls[0]
+    assert 'make new slide at end of ownedDoc' in calls[0]
+    assert 'set slide of view' not in calls[0]
 
 
 def test_truncated_snapshot_duplicate_name_uses_positional_target():

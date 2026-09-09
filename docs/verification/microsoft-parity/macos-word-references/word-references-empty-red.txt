@@ -1,0 +1,22 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_empty_literal_ack_accepts_native_missing_value_without_writing ______
+
+    def test_empty_literal_ack_accepts_native_missing_value_without_writing():
+        from skills.WPSComposer.scripts.msoffice.macos_word_references import _literal
+        code='\n'.join(_literal('',3))
+>       assert 'set content of literalRange' not in code
+E       assert 'set content...literalRange' not in 'set literal...nge as text}'
+E         
+E         'set content of literalRange' is contained here:
+E           tionPoint
+E           set content of literalRange to ""
+E           set insertionPoint to insertionPoint + 0
+E           set literalRange to create range boundDoc start literalStart end insertionPoint
+E           if (content of literalRange as text) is not "" then error "WPSC_REFERENCE_TEXT_UNVERIFIED"
+E           set end of nativeRows to {"literal",3,literalStart,insertionPoint,content of literalRange as text}
+
+tests/msoffice/test_macos_word_references.py:259: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_word_references.py::test_empty_literal_ack_accepts_native_missing_value_without_writing
+1 failed in 0.23s

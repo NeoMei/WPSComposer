@@ -21,8 +21,10 @@ import time
 from .errors import NativeWordError, NativeWordTimeoutError, NATIVE_WORD_ERROR_CODES
 from .office_errors import NativeOfficeError, NATIVE_OFFICE_ERROR_CODES
 from .windows_office_runtime import OfficeJobLock, _component_root
+from .input_validation import validate_native_input
 from .windows_session_worker import (PROTOCOL, MAX_FRAME_BYTES, COMMON_METHODS,
     BUSINESS_METHODS, GETTERS, UNSUPPORTED_BUSINESS, HANDLE_TYPES, encode_frame, decode_frame)
+from .windows_business_protocol import DTO_TAG, decode_value, encode_value
 
 _PACKAGE_ROOT = Path(__file__).resolve().parents[4]
 _MODULE = 'skills.WPSComposer.scripts.msoffice.windows_session_worker'
@@ -44,11 +46,16 @@ def _arguments(value, owner):
         return {'__wpscomposer_handle__': {'id': value.id, 'type': value.type}}
     if isinstance(value, PurePath):
         return str(value)
-    if isinstance(value, (tuple, list)):
+    if isinstance(value, tuple):
+        return {DTO_TAG: {
+            'type': 'tuple',
+            'value': [_arguments(item, owner) for item in value],
+        }}
+    if isinstance(value, list):
         return [_arguments(item, owner) for item in value]
     if isinstance(value, dict):
         return {key: _arguments(item, owner) for key, item in value.items()}
-    return value
+    return encode_value(value)
 
 
 def _result(value, owner):
@@ -64,8 +71,10 @@ def _result(value, owner):
         if set(value) == {'__wpscomposer_tuple__'}:
             if not isinstance(value['__wpscomposer_tuple__'], list): raise ValueError('Invalid native tuple response')
             return tuple(_result(item, owner) for item in value['__wpscomposer_tuple__'])
+        if set(value) == {DTO_TAG}:
+            return decode_value(value)
         return {key: _result(item, owner) for key,item in value.items()}
-    return value
+    return decode_value(value)
 
 
 def _spawn_worker(job):
@@ -114,6 +123,10 @@ class _SessionProxy:
         self._stop = threading.Event()
         self._reader_error = None
         self._reader = self._writer = None
+        if method == 'open_document':
+            validate_native_input(
+                Path(args[0]), _COMPONENT[cls.kind], deadline=self._deadline
+            )
         root = _component_root(_COMPONENT[cls.kind])
         if root.is_symlink():
             raise ValueError('Office staging root must not be a symlink')
@@ -251,7 +264,8 @@ class _SessionProxy:
         if method not in COMMON_METHODS | BUSINESS_METHODS[self.kind] | {'open_document', 'attach_active', 'new_document', 'get_property'}:
             raise NotImplementedError('Native method has no value-only session contract')
         # Validate arguments before a request number or native operation exists.
-        args, kwargs = _arguments(args, self), _arguments(kwargs, self)
+        args = [_arguments(item, self) for item in args]
+        kwargs = _arguments(kwargs, self)
         encode_frame({'args': args, 'kwargs': kwargs})
         acquired = False
         try:
@@ -284,8 +298,17 @@ class _SessionProxy:
                 self._identity = result['identity']
             self._remaining()
             if result['status'] == 'error':
+                if method == 'close' and kwargs == {'save_changes': True}:
+                    if result.get('session_state') != 'open':
+                        raise ValueError(
+                            'Saving close error did not acknowledge an open session'
+                        )
+                elif 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
                 error = self._remote_error(result.get('error'))
             else:
+                if 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
                 if 'value' not in result: raise ValueError('Missing session response value')
                 return _result(result['value'], self)
         except (TimeoutError, queue.Empty):
@@ -326,7 +349,9 @@ class _SessionProxy:
             return lambda *args, **kwargs: self._call(name, *args, **kwargs)
         if name in UNSUPPORTED_BUSINESS:
             def unsupported(*args, **kwargs):
-                raise NotImplementedError('This business method returns native objects; use apply_structural_op or apply_format_patch')
+                raise NotImplementedError(
+                    'This business method is unavailable for this document component'
+                )
             return unsupported
         raise AttributeError(name)
 
@@ -337,6 +362,16 @@ class _SessionProxy:
             raise self._error('QUARANTINED')
         try:
             result = self._call('close', save_changes=save_changes)
+        except BaseException:
+            # _call leaves a verified remote error non-uncertain. In the saving
+            # close path the worker remains alive with the session lock held,
+            # so the caller can retry, save elsewhere, or explicitly discard.
+            if save_changes and not self._uncertain:
+                raise
+            if not self._uncertain:
+                self._abort('Native session close was not verified')
+            raise self._error('QUARANTINED') from None
+        try:
             if result != {'closed': True}:
                 raise ValueError('Worker did not acknowledge native close')
             self._child.stdin.close()
@@ -348,8 +383,7 @@ class _SessionProxy:
         except BaseException:
             self._abort('Native session close was not verified')
             raise self._error('QUARANTINED') from None
-        finally:
-            self._lock.close()
+        self._lock.close()
 
 
 class ProxyWordSession(_SessionProxy):

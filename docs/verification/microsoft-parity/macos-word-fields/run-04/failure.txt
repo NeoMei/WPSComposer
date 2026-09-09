@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_fields.py", line 61, in run
+    report['snapshot']=[asdict(x) for x in session.snapshot_fields()]
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 2018, in snapshot_fields
+    return snapshot(self)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_fields.py", line 203, in snapshot
+    rows=session._execute(snapshot_commands(session))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 333, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-slctmwwj diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-slctmwwj/87ae06af2fc44b6a8267094d5a07e1a9.log

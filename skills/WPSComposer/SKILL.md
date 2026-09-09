@@ -1,21 +1,24 @@
 ---
 name: WPSComposer
-description: 'Use when users need rich document layout, pagination, TOC, fields or PDF editing/conversion, including WPS, Microsoft Word, "WPS 排版", "Word 排版" and "Office 排版" requests. Use for WPS DOCX/PPTX/XLSX generation on Windows/macOS and platform-supported inspection/editing, standalone PDF editing, or Microsoft Word DOCX/PDF generation and DOC/DOCX-to-PDF conversion. The public Microsoft backend excludes Excel, PowerPoint, cloud Office and active-document editing.'
+description: 'Use for rich document layout, pagination, TOC, fields, spreadsheet and presentation generation, native document editing, or PDF conversion/editing with desktop WPS Office or Microsoft Office. Includes WPS 排版, Word 排版 and Office 排版 requests. This development candidate adds Microsoft Excel/PowerPoint and document-session APIs; full parity and Windows native acceptance remain incomplete. Cloud Office is outside scope.'
 ---
 
 # WPS Composer
 
-Use real desktop WPS Office or Microsoft Word to compute document layout,
-pagination and field results on Windows and macOS. WPS supports DOCX, PPTX,
-XLSX and PDF workflows; Microsoft Word supports DOCX/PDF generation and
-DOC/DOCX-to-PDF conversion. Public APIs default to WPS.
+Use real desktop WPS Office or Microsoft Word, Excel and PowerPoint to compute
+document layout, pagination and field results. Public APIs default to WPS.
+This is the Microsoft parity development candidate, not a new release.
+Released 0.9.0 Microsoft support covers Word generation/conversion; this
+candidate also implements Excel/XLSX and PowerPoint/PPTX generation/conversion and engine-bound
+document sessions. Representative macOS flows have native evidence; Windows
+candidate native acceptance and full method/argument parity remain incomplete.
 
 Windows uses COM for both engines. macOS uses the JSAPI loopback bridge for
-WPS and AppleScript for Word. Public file inspection uses WPS on both platforms.
-Public file editing on macOS currently supports PPTX formatting patches;
-structural editing and active-document attachment require Windows COM.
-The public Microsoft backend does not provide inspection/editing yet.
-Advanced layout capabilities vary by engine; check
+WPS and AppleScript for Microsoft Office. The macOS WPS edit route supports
+PPTX formatting patches; Microsoft sessions have separate, limited native
+inspection, formatting and structural operations. Active attachment and
+save-copy support vary by application and platform; unsupported operations
+raise explicit errors. Advanced layout capabilities vary by engine; check
 [the native Word capability limits](references/native-word.md) before choosing it.
 
 ## Candidate document-session API
@@ -35,9 +38,12 @@ For native Microsoft Word on Windows/macOS, use public `generate(...,
 engine="msoffice")` for DOCX/PDF and `convert_to_pdf(..., engine="msoffice")`
 for DOC/DOCX conversion. The default `engine="wps"` keeps WPS selected;
 `engine="auto"` selects an installed engine once, preferring WPS, and never
-switches after a native task begins. MS Excel/PowerPoint and MS conversational
-editing are not supported by this interface. Word requires `pywin32` on Windows
-or macOS Automation permission to control desktop Microsoft Word.
+switches after a native task begins. In this candidate, `generate(...,
+format="xlsx" | "pptx", engine="msoffice")` selects Excel or PowerPoint;
+their PDF conversion currently accepts modern `.xlsx`/`.pptx` inputs.
+Microsoft Office requires `pywin32` on Windows or macOS Automation permission
+to control the corresponding desktop application. Candidate methods and
+parameter restrictions must not be presented as full cross-platform parity.
 See [API reference](references/api.md#native-engine-selection) for scope and
 failure behavior, and [native Word setup and recovery](references/native-word.md).
 Do not bypass an unsupported-operation error with a custom
@@ -121,8 +127,11 @@ the output must remain in the source document family. File-backed results are
 validated and atomically published. In attach-active atomic mode, only one
 `set` operation containing at most one leaf property is accepted; composite
 patches and structural operations are rejected before mutation because the
-live host has no reliable rollback boundary. macOS editing currently supports
-verified `.pptx` input/output only.
+live host has no reliable rollback boundary. The macOS WPS editing route
+supports `.pptx` formatting patches. Candidate Microsoft sessions support
+separate native DOCX/XLSX/PPTX operations with the restrictions documented in
+`references/api.md`; method availability does not imply every target or argument
+is supported.
 
 For **structural editing** (insert/remove/move/clone), pass `ops=` instead of
 (or alongside) `patches`. Each op carries a verb: `set` (formatting, == a
@@ -138,9 +147,10 @@ edit("deck.pptx", output="deck2.pptx", ops=[
 ])
 ```
 
-The COM-coupled parts of this work (real `inspect`/`edit`/structural ops
-against a live WPS host, native stable IDs) are written but need Windows
-verification — tracked in `docs/windows-verification.md`.
+The original WPS Windows COM inspection and structural-edit acceptance is
+recorded in `docs/windows-verification.md`. The Microsoft parity candidate
+requires separate current Windows native acceptance, tracked in
+`docs/verification/microsoft-parity/status.md`.
 
 ## When to use
 

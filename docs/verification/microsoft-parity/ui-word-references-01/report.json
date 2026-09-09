@@ -1,0 +1,26 @@
+{
+  "checks": {
+    "original_unchanged": true,
+    "saved_text_equal": true,
+    "complex_field_codes_equal": true,
+    "simple_field_codes_equal": true,
+    "original_title_restored": true,
+    "edited_title_absent": true
+  },
+  "source_sha256": "2ae124e28bd81c0ec4b453e77630052efc29270ac514df235d804f5c483c25d9",
+  "saved_ui_sha256": "2ae124e28bd81c0ec4b453e77630052efc29270ac514df235d804f5c483c25d9",
+  "ui_actions": [
+    "Opened exact disposable copy in Microsoft Word",
+    "Selected first title line and replaced with References UI edit verification; visual change observed",
+    "Undo restored original title; explicit Cmd+S showed saved to Mac",
+    "Cmd+W returned to Word file stage",
+    "Native file dialog secondary action did not reopen on this follow-up; canceled and opened exact recent document from Word recent-file list",
+    "UI document URL matched disposable copy; original title, Chinese/emoji and reference values 8/11/13 visually observed",
+    "Closed reopened document; returned to Word file stage without save prompt"
+  ],
+  "counts": {
+    "simple_fields": 3,
+    "complex_instruction_nodes": 8
+  },
+  "scope": "Word references representative editable output; no full method/parameter/platform parity claim"
+}

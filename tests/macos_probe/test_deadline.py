@@ -312,8 +312,9 @@ def test_public_inspection_paths_create_deadline_before_bridge(
     class Runtime:
         registration_restored = True
 
-        def __init__(self, *_args, deadline):
+        def __init__(self, *_args, deadline, components):
             seen["runtime_deadline"] = deadline
+            seen["runtime_components"] = components
 
         def __enter__(self):
             return self
@@ -351,7 +352,11 @@ def test_public_inspection_paths_create_deadline_before_bridge(
         )
 
     assert result == 101.0
-    assert seen == {"runtime_deadline": 101.0, "run_deadline": 101.0}
+    assert seen == {
+        "runtime_deadline": 101.0,
+        "runtime_components": {"presentation"},
+        "run_deadline": 101.0,
+    }
 
 
 def test_pdf_generation_and_final_validators_reuse_public_deadline(

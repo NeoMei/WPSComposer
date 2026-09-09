@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_sections.py", line 70, in run
+    exercise(session,report)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_sections.py", line 98, in exercise
+    session.configure_section(role='封面😀', landscape=False, page_size='a4', margins={'top':60,'bottom':60,'left':66,'right':66},
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1863, in configure_section
+    self._business_commit(lines + role_lines + parts + numbering, structural=True)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 857, in _business_commit
+    return self._execute(list(lines) + (readback or ['set nativeRows to {{"ok"}}']))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 333, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g8_t_pap diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g8_t_pap/81cabe49bb4e409dab2ce3ecc1cf2e87.log

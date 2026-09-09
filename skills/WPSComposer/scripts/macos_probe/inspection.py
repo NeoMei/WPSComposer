@@ -22,6 +22,7 @@ from ..artifact_transport import (
     ValidatorSpec,
     copy_file_before_deadline,
     publish_artifact,
+    snapshot_artifact_state,
     validate_before_deadline,
     validate_office_package,
 )
@@ -106,7 +107,9 @@ def _wait_for_registration(
             if attempt == 3 or remaining(deadline) <= 0:
                 bridge.wait_registered({component}, 0)
                 raise
-            runtime.activate_component(component, deadline=deadline)
+            runtime.activate_component(
+                component, deadline=deadline, isolated=True
+            )
 
 
 def _redact_staging(message: str, staging_dir: Path) -> str:
@@ -133,7 +136,7 @@ def _run_inspection(
     runtime.prepare_profiles()
     require_remaining(deadline)
     runtime.start_servers(deadline=deadline)
-    runtime.activate_component(component, deadline=deadline)
+    runtime.activate_component(component, deadline=deadline, isolated=True)
     try:
         _wait_for_registration(bridge, runtime, component, deadline)
     except TimeoutError as exc:
@@ -245,6 +248,7 @@ def inspect_macos(
                 bridge.url,
                 bridge.token,
                 deadline=deadline,
+                components={component},
             )
             try:
                 with runtime:
@@ -304,7 +308,8 @@ def edit_macos(
     deadline = time.monotonic() + timeout
     if not patches:
         raise ValueError("at least one patch is required")
-    source_path = Path(source).expanduser().resolve()
+    logical_source_path = Path(source).expanduser().absolute()
+    source_path = logical_source_path.resolve()
     if not source_path.is_file():
         raise FileNotFoundError(f"Source file not found: {source_path}")
     suffix = source_path.suffix.lower()
@@ -317,13 +322,14 @@ def edit_macos(
             f"Supported: {supported}."
         ) from exc
     output_path = (
-        Path(output).expanduser().resolve() if output else source_path
+        Path(output).expanduser().absolute() if output else logical_source_path
     )
     if output_path.suffix.lower() != ".pptx":
         raise ValueError("macOS edit output must use '.pptx'")
-    in_place = output_path == source_path
+    in_place = output_path.resolve(strict=False) == source_path
     if output_path.exists() and not in_place and not overwrite:
         raise FileExistsError(f"Output already exists: {output_path}")
+    expected_output = snapshot_artifact_state(output_path, deadline=deadline)
 
     repository_root = Path(__file__).resolve().parents[4]
     probe_root = repository_root / "macos/wps-jsapi-probe"
@@ -340,6 +346,7 @@ def edit_macos(
                 bridge.url,
                 bridge.token,
                 deadline=deadline,
+                components={component},
             )
             try:
                 with runtime:
@@ -349,6 +356,7 @@ def edit_macos(
                         atomic=atomic,
                         raise_on_error=raise_on_error,
                         overwrite=overwrite or in_place,
+                        expected_output=expected_output,
                     )
             except InspectionError:
                 raise
@@ -388,6 +396,7 @@ def _run_edit(
     atomic: bool = True,
     raise_on_error: bool = False,
     overwrite: bool = False,
+    expected_output=None,
 ) -> dict[str, Any]:
     if runtime.staging_dir is None:
         raise _error(str(source), component, "STAGING_UNAVAILABLE",
@@ -396,7 +405,7 @@ def _run_edit(
     runtime.prepare_profiles()
     require_remaining(deadline)
     runtime.start_servers(deadline=deadline)
-    runtime.activate_component(component, deadline=deadline)
+    runtime.activate_component(component, deadline=deadline, isolated=True)
     try:
         _wait_for_registration(bridge, runtime, component, deadline)
     except TimeoutError as exc:
@@ -497,6 +506,7 @@ def _run_edit(
             overwrite=overwrite,
             validator=validator,
             deadline=deadline,
+            expected_destination=expected_output,
         )
     except FileExistsError:
         raise

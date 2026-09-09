@@ -1,8 +1,10 @@
 # WPSComposer
 
-**Native WPS Office and Microsoft Word composition for AI agents**
+**Native WPS Office and Microsoft Office composition for AI agents**
 
 WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支持 DOCX、PDF、XLSX、PPTX；Microsoft Word 支持 DOCX/PDF 生成和 DOC/DOCX 转 PDF。
+
+当前为 Microsoft 能力对齐开发候选：已增加 Excel、PowerPoint 和文档会话实现，正在补齐方法、参数与跨平台验收。以下发布记录和 0.9.0 表格描述已发布版本；候选版的实现及实测范围见 [验收状态](docs/verification/microsoft-parity/status.md)。
 
 > cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 released（2026-08-24）。
 

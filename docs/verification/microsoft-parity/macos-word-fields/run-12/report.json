@@ -1,0 +1,517 @@
+{
+  "passed": true,
+  "mode": "probe",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "15912a38e5475b89f54aff9857517997a822765567d80d944a499cd24b5e5d87",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "9b84521faa0524583f05bb81402052c168151a7e280db09ce356de8c20d72146",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b"
+  },
+  "checks": {
+    "repeat_snapshot_stable": true,
+    "exact_sequence_filtered_native_indexes_and_field_kinds": true,
+    "native_toc_title_exclusion": true,
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "deleted_owned_index_identity_rejected": true,
+    "exact_owned_close": true,
+    "native_reopen_source_preserved": true,
+    "exact_owned_reopen_close": true,
+    "independent_docx_and_pdf_read": true,
+    "tracked_toc_growth_preserves_following_ref_identity": true,
+    "growth_exact_owned_close": true
+  },
+  "inventory_before": [
+    [
+      "文档165",
+      "文档165",
+      false,
+      "d3bc54c2655c9fc277351714a004de50f8913e963806726ae32b5272f3d51acd  -"
+    ]
+  ],
+  "snapshot": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "REF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "564cdfe9127e8cfa0aa04d1a4b1807928fa405c571b7fc735bb6ccfa428ab8c9",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "STYLEREF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "fedafb5add14696873167ad7b65636f99304fd3452d2a44834c3ef27de130f96",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "0ef0f8417176c07171f5fd09d231636d73bc0c661feda96a7e01072e4b7d552c",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        1
+      ],
+      "field_category": "index",
+      "result_hash": "0ef0f8417176c07171f5fd09d231636d73bc0c661feda96a7e01072e4b7d552c",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "figures",
+        "TOF_FIG",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "5fece9b07dfa08e74481bcd30e921ca50c45e8d64785e9027e55b1eb9152fddc",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "tables",
+        "TOF_TAB",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "a16e1d3b5473189ebe2a471a4b82bb736ed4d09a16ed7c2f5017ad1294a53f85",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "PAGE",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "NUMPAGES",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    }
+  ],
+  "native_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " STYLEREF 1 \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841487\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841487 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841488\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841488 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841489\" ",
+      "1 Figure Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841489 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239841490\" ",
+      "1 Table Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841490 \\h ",
+      "1"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 13\r"
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档165",
+      "文档165",
+      false,
+      "d3bc54c2655c9fc277351714a004de50f8913e963806726ae32b5272f3d51acd  -"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " STYLEREF 1 \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841487\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841487 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841488\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841488 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841489\"",
+      "1 Figure Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841489 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239841490\"",
+      "1 Table Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239841490 \\h ",
+      "1"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 13\r"
+    ]
+  ],
+  "reopen_snapshot": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "REF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "564cdfe9127e8cfa0aa04d1a4b1807928fa405c571b7fc735bb6ccfa428ab8c9",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "STYLEREF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "fedafb5add14696873167ad7b65636f99304fd3452d2a44834c3ef27de130f96",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "PAGE",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "NUMPAGES",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 3
+    }
+  ],
+  "docx_sha256_before_reopen": "80acdce20abd0a85c97908c5a8dc26d6feb24dd82a2cf8418d7f671b9ac4250d",
+  "docx_sha256_after_reopen": "80acdce20abd0a85c97908c5a8dc26d6feb24dd82a2cf8418d7f671b9ac4250d",
+  "docx_field_codes": [
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841487 \\h ",
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841488 \\h ",
+    " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841489 \\h ",
+    " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239841490 \\h ",
+    " SEQ WPSC_FIG \\* MERGEFORMAT ",
+    " SEQ WPSC_TAB \\* MERGEFORMAT ",
+    " REF WPSC_RefProbe \\* MERGEFORMAT ",
+    " STYLEREF 1 \\* MERGEFORMAT "
+  ],
+  "pdf_pages": 3,
+  "pdf_text": "Heading 😀 Duplicate\nProbe body preserves existing text.\nFigure 😀\n1 Figure Caption 😀\nTable 😀\n1 Table Caption 😀\nHeading\nHeading 😀 Duplicate\n⽬录😀\nHeading 😀 Duplicate .............................................................................................................................. 1\nRetain PAGE NUMPAGES PAGEREF 13\n\nStyled Contents\nHeading 😀 Duplicate .............................................................................................................................. 1\nRetain PAGE NUMPAGES PAGEREF 23\n\nFigures😀\n1 Figure Caption 😀 ......................................................................................................................... 1\nTables😀\n1 Table Caption 😀 .......................................................................................................................... 1\nLiteral figures\n[Figure index placeholder]\nLiteral tables\n[Table index placeholder]\nRetain PAGE NUMPAGES PAGEREF 33",
+  "growth_snapshots": {
+    "before": [
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "52dd9513e48f6f2bb1c5faa8337a8d47911ac03ab3518010ebcb6a57a1bcdf6e",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "1f397413e4399207fceaff181219f7e0f890e5652e3eb1b9cdb1f45b9699abf4",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ],
+    "after": [
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "12c8bc9a117b698de45768483e330a68764f637d1b79d22513bb3ce4e195b0f6",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "1f397413e4399207fceaff181219f7e0f890e5652e3eb1b9cdb1f45b9699abf4",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ]
+  },
+  "artifact_hashes": {
+    "fields.docx": "80acdce20abd0a85c97908c5a8dc26d6feb24dd82a2cf8418d7f671b9ac4250d",
+    "fields.pdf": "6cdb7132bc07454df6d98972d3df77f8ad436ad8cc9c9dc422a3334019807d49",
+    "growth.docx": "af05d5264306087b8e634353451d59f463b666f7c1fe742f47a22c04b88fe1dd",
+    "growth.pdf": "33da85ac2bbd7ec539ac43e97d579fa26d5c86032e99fed42b38563967ef47f4"
+  }
+}

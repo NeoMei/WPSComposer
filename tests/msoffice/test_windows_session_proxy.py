@@ -13,6 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
+
 TEST_DEADLINE = time.monotonic() + 500
 
 
@@ -39,6 +40,7 @@ def transport(monkeypatch, tmp_path):
     m, _ = modules()
     monkeypatch.setattr(m, '_component_root', lambda component: tmp_path / component)
     monkeypatch.setattr(m, 'OfficeJobLock', Lock)
+    monkeypatch.setattr(m, 'validate_native_input', lambda *args, **kwargs: None)
     children = []
     def launch(job, *, bad=None, delay=None):
         code = '''import json,sys,time
@@ -50,6 +52,8 @@ for line in sys.stdin:
  result={'protocol':1,'id':r['id'],'status':'ok','value':value,'identity':{'office_pid':987,'staging_path':'private-doc'}}
  if BAD=='id' and r['method']!='open_document':result['id']+=1
  if BAD=='error' and r['method']=='apply_format_patch':result.update(status='error',error={'type':'PermissionError','message':'read only'})
+ if BAD=='close-error-no-state' and r['method']=='close':result.update(status='error',error={'type':'RuntimeError','message':'save failed'})
+ if BAD=='close-error-wrong-state' and r['method']=='close':result.update(status='error',session_state='closed',error={'type':'RuntimeError','message':'save failed'})
  if BAD=='close' and r['method']=='close':result['value']={}
  if BAD=='oversize' and r['method']!='open_document':sys.stdout.write('x'*2000+'\\n');sys.stdout.flush();continue
  print(json.dumps(result),flush=True)
@@ -63,6 +67,22 @@ for line in sys.stdin:
     for child in children:
         if child.poll() is None: child.kill()
         child.wait(timeout=2)
+
+
+def test_invalid_input_is_rejected_before_worker_lock_or_quarantine(monkeypatch, tmp_path):
+    m, _ = modules()
+    source = tmp_path / 'invalid.xlsx'
+    source.write_bytes(b'not an Office package')
+    spawned = []
+    locked = []
+    monkeypatch.setattr(m, '_spawn_worker', lambda job: spawned.append(job))
+    monkeypatch.setattr(m, 'OfficeJobLock', lambda root: locked.append(root))
+
+    with pytest.raises(ValueError, match='Unsupported or unsafe'):
+        m.ProxyExcelSession.open_document(source)
+
+    assert spawned == []
+    assert locked == []
 
 
 def test_persistent_proxy_roundtrip_and_verified_close(transport):
@@ -136,7 +156,7 @@ def test_closed_allowlist_rejects_raw_com_and_non_json_before_request(transport)
         count = session._sequence
         for name in ('doc', 'app', 'selection', 'open', '_native_eval'):
             with pytest.raises(AttributeError): getattr(session, name)
-        with pytest.raises(NotImplementedError): session.apply_design_preset(object())
+        with pytest.raises(AttributeError): session.apply_design_preset(object())
         with pytest.raises((TypeError, ValueError)): session.apply_format_patch('paragraph:1', text=object())
         assert session._sequence == count
 
@@ -149,6 +169,18 @@ def test_path_arguments_are_plain_json_paths(transport, tmp_path):
         assert request['args'] == [str(tmp_path/'copy.docx')]
 
 
+def test_public_tuple_argument_reaches_worker_as_tagged_tuple(transport):
+    m, _, _ = transport
+    with m.ProxyWordSession.open_document('/source.docx') as session:
+        session.add_bullet_list(("first", "second"))
+        request = json.loads((session.staging_root / 'last-request.json').read_text())
+        encoded = request['args'][0]
+        assert encoded[m.DTO_TAG] == {
+            'type': 'tuple',
+            'value': ['first', 'second'],
+        }
+
+
 def test_close_requires_explicit_ack_and_preserves_original_operation_error(transport, monkeypatch):
     m, launch, _ = transport
     monkeypatch.setattr(m, '_spawn_worker', lambda job: launch(job, bad='close'))
@@ -157,6 +189,92 @@ def test_close_requires_explicit_ack_and_preserves_original_operation_error(tran
             raise ValueError('original error')
     assert session._lock.quarantine_path.exists()
     assert session._uncertain
+
+
+def test_acknowledged_save_close_error_keeps_worker_and_lock_for_discard(
+    transport, monkeypatch,
+):
+    m, _, children = transport
+    code = '''import json,sys
+for line in sys.stdin:
+ request=json.loads(line)
+ response={'protocol':1,'id':request['id'],'identity':{'office_pid':987,'staging_path':'private-doc'}}
+ if request['method']=='open_document':
+  response.update(status='ok',value={'kind':'writer'})
+ elif request['method']=='close' and request['kwargs']=={'save_changes':True}:
+  response.update(status='error',session_state='open',error={'type':'RuntimeError','message':'Source changed since open','code':None})
+ elif request['method']=='close' and request['kwargs']=={'save_changes':False}:
+  response.update(status='ok',value={'closed':True})
+ else:
+  raise AssertionError(request)
+ print(json.dumps(response),flush=True)
+ if response.get('value')=={'closed':True}:break
+'''
+
+    def launch(job):
+        child = subprocess.Popen(
+            [sys.executable, '-u', '-c', code],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        children.append(child)
+        return child
+
+    monkeypatch.setattr(m, '_spawn_worker', launch)
+    session = m.ProxyWordSession.open_document('/source.docx')
+
+    with pytest.raises(RuntimeError, match='Source changed since open'):
+        session.close(save_changes=True)
+
+    assert not session._closed
+    assert not session._uncertain
+    assert not session._lock.closed
+    assert session._child.poll() is None
+    assert not session._lock.quarantine_path.exists()
+
+    session.close(save_changes=False)
+
+    assert session._closed
+    assert session._lock.closed
+    assert session._child.returncode == 0
+    assert not session._lock.quarantine_path.exists()
+
+
+def test_unacknowledged_close_timeout_still_quarantines_and_releases_lock(
+    transport, monkeypatch,
+):
+    m, launch, children = transport
+    monkeypatch.setattr(m, '_spawn_worker', lambda job: launch(job, delay='close'))
+    session = m.ProxyWordSession.open_document('/source.docx')
+    session._deadline = time.monotonic() + .1
+
+    with pytest.raises(m.NativeWordError) as caught:
+        session.close(save_changes=True)
+
+    assert caught.value.code == 'NATIVE_WORD_QUARANTINED'
+    assert session._uncertain
+    assert session._lock.closed
+    assert children[0].poll() is not None
+    assert session._lock.quarantine_path.exists()
+
+
+@pytest.mark.parametrize('bad', ['close-error-no-state', 'close-error-wrong-state'])
+def test_saving_close_requires_explicit_open_session_error_ack(
+    transport, monkeypatch, bad,
+):
+    m, launch, children = transport
+    monkeypatch.setattr(m, '_spawn_worker', lambda job: launch(job, bad=bad))
+    session = m.ProxyWordSession.open_document('/source.docx')
+
+    with pytest.raises(m.NativeWordError) as caught:
+        session.close(save_changes=True)
+
+    assert caught.value.code == 'NATIVE_WORD_QUARANTINED'
+    assert session._uncertain
+    assert session._lock.closed
+    assert children[0].poll() is not None
+    assert session._lock.quarantine_path.exists()
 
 
 def test_blocked_pipe_write_is_bounded_without_windows_select(transport, monkeypatch):
@@ -349,6 +467,164 @@ def test_real_worker_protocol_uses_one_injected_session_and_no_raw_objects(tmp_p
     assert calls == [('writer','open_document',['source.docx'],{}), ('close',False)]
 
 
+def test_worker_acknowledges_save_close_error_then_accepts_discard(tmp_path):
+    _, w = modules()
+    calls = []
+
+    class Session:
+        staging_root = tmp_path
+
+        def save_current(self):
+            calls.append(('save_current',))
+            raise RuntimeError('Source changed since open')
+
+        def close(self, save_changes=False):
+            calls.append(('close', save_changes))
+
+    frames = [
+        request(1, 'open_document', args=['source.docx']),
+        request(2, 'close', kwargs={'save_changes': True}),
+        request(3, 'close', kwargs={'save_changes': False}),
+    ]
+    output = io.BytesIO()
+
+    w.serve(
+        io.BytesIO(b''.join(json.dumps(item).encode() + b'\n' for item in frames)),
+        output,
+        tmp_path,
+        factory=lambda *args: Session(),
+    )
+
+    responses = [json.loads(line) for line in output.getvalue().splitlines()]
+    assert [(item['id'], item['status']) for item in responses] == [
+        (1, 'ok'), (2, 'error'), (3, 'ok'),
+    ]
+    assert responses[1]['error']['message'] == 'Source changed since open'
+    assert responses[2]['value'] == {'closed': True}
+    assert calls == [('save_current',), ('close', False)]
+
+
+def test_worker_never_splits_attached_close_into_a_save_request(tmp_path):
+    _, w = modules()
+    calls = []
+
+    class Session:
+        staging_root = tmp_path
+        _attached = True
+
+        def save_current(self):
+            raise AssertionError('attached close must not save')
+
+        def close(self, save_changes=False):
+            calls.append(('close', save_changes))
+
+    frames = [
+        request(1, 'attach_active'),
+        request(2, 'close', kwargs={'save_changes': True}),
+    ]
+    output = io.BytesIO()
+
+    w.serve(
+        io.BytesIO(b''.join(json.dumps(item).encode() + b'\n' for item in frames)),
+        output,
+        tmp_path,
+        factory=lambda *args: Session(),
+    )
+
+    responses = [json.loads(line) for line in output.getvalue().splitlines()]
+    assert responses[-1]['status'] == 'ok'
+    assert calls == [('close', True)]
+
+
+@pytest.mark.parametrize('binding_live', [True, False])
+def test_real_windows_session_requires_reverified_binding_for_open_close_ack(
+    tmp_path, binding_live,
+):
+    _, w = modules()
+    from skills.WPSComposer.scripts.msoffice import windows_document_api as api
+
+    class Composer:
+        def close(self, save_changes=False):
+            return None
+
+    session = api.WindowsWordSession.__new__(api.WindowsWordSession)
+    session.staging_root = tmp_path / 'real-session'
+    session.staging_root.mkdir()
+    session._attached = False
+    session._closed = session._failed = False
+    session._composer = Composer()
+    session._source = session._logical_path = tmp_path / 'source.docx'
+    session._source_digest = session._logical_digest = 'before'
+    session._deadline = TEST_DEADLINE
+
+    def verify(**kwargs):
+        if not binding_live:
+            raise api.DocumentIdentityError('native binding changed')
+
+    session._verify = verify
+    session._check_current_unchanged = lambda: (_ for _ in ()).throw(
+        RuntimeError('Source changed since open')
+    )
+    frames = [
+        request(1, 'new_document'),
+        request(2, 'close', kwargs={'save_changes': True}),
+    ]
+    if binding_live:
+        frames.append(request(3, 'close', kwargs={'save_changes': False}))
+    output = io.BytesIO()
+
+    w.serve(
+        io.BytesIO(b''.join(json.dumps(item).encode() + b'\n' for item in frames)),
+        output,
+        tmp_path,
+        factory=lambda *args: session,
+    )
+
+    responses = [json.loads(line) for line in output.getvalue().splitlines()]
+    assert responses[1]['status'] == 'error'
+    if binding_live:
+        assert responses[1]['session_state'] == 'open'
+        assert responses[2]['status'] == 'ok'
+    else:
+        assert 'session_state' not in responses[1]
+
+
+def test_worker_reverification_cannot_ack_open_after_request_deadline(
+    tmp_path, monkeypatch,
+):
+    _, w = modules()
+    expired = False
+
+    class Session:
+        staging_root = tmp_path
+
+        def save_current(self):
+            raise RuntimeError('save failed')
+
+        def _verify(self):
+            nonlocal expired
+            expired = True
+
+        def close(self, save_changes=False):
+            return None
+
+    monkeypatch.setattr(w.time, 'monotonic', lambda: 1000 if expired else 100)
+    output = io.BytesIO()
+    w.serve(
+        io.BytesIO(b''.join(json.dumps(item).encode() + b'\n' for item in [
+            request(1, 'new_document'),
+            request(2, 'close', kwargs={'save_changes': True}),
+        ])),
+        output,
+        tmp_path,
+        factory=lambda *args: Session(),
+    )
+
+    responses = [json.loads(line) for line in output.getvalue().splitlines()]
+    assert responses[1]['status'] == 'error'
+    assert 'session_state' not in responses[1]
+
+
 def test_worker_rejects_attribute_escape_and_extended_deadline(tmp_path):
     _, w = modules()
     calls=[]
@@ -394,6 +670,102 @@ serve(sys.stdin.buffer,sys.stdout.buffer,job,factory=factory)
         assert error.value.clipboard_changed is True
     assert json.loads((session.staging_root/'native-close.json').read_text())=={'save_changes':False}
     assert not session._reader.is_alive()
+
+
+def test_acknowledged_save_close_error_preserves_existing_worker_handles(
+    transport, monkeypatch,
+):
+    m, _, children = transport
+    code = '''import json,sys
+from pathlib import Path
+from types import SimpleNamespace
+from skills.WPSComposer.scripts.msoffice.windows_session_worker import serve
+job=Path(sys.argv[1])
+class Collection:
+ def __init__(self,values):self.values=list(values)
+ @property
+ def Count(self):return len(self.values)
+ def Item(self,index):return self.values[index-1]
+class Session:
+ def __init__(self):
+  self.staging_root=job
+  self.table=SimpleNamespace(token='owned-table')
+  self._composer=SimpleNamespace(_doc=SimpleNamespace(Tables=Collection([self.table]),Shapes=Collection([]),InlineShapes=Collection([])),_deps=SimpleNamespace(identity=lambda value:value.token))
+ def _verify(self):pass
+ def add_table(self,*args,**kwargs):return self.table
+ def apply_format_patch(self,target,**patch):
+  (job/'handle-after-save-error.json').write_text(json.dumps({'target':target,'patch':patch}))
+  return {'target':target}
+ def save_current(self):raise RuntimeError('Source changed since open')
+ def close(self,save_changes=False):
+  pass
+serve(sys.stdin.buffer,sys.stdout.buffer,job,factory=lambda *args:Session())
+'''
+
+    def launch(job):
+        child = subprocess.Popen(
+            [sys.executable, '-u', '-c', code, str(job)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        children.append(child)
+        return child
+
+    monkeypatch.setattr(m, '_spawn_worker', launch)
+    session = m.ProxyWordSession.open_document('/source.docx')
+    table = session.add_table(1, 1, [['value']])
+
+    with pytest.raises(RuntimeError, match='Source changed since open'):
+        session.close(save_changes=True)
+
+    assert session.apply_format_patch(table, text='still live') == {
+        'target': 'table:1'
+    }
+    recorded = json.loads(
+        (session.staging_root / 'handle-after-save-error.json').read_text()
+    )
+    assert recorded == {'target': 'table:1', 'patch': {'text': 'still live'}}
+    session.close(save_changes=False)
+
+
+def test_native_close_error_after_acknowledged_save_is_quarantined(
+    transport, monkeypatch,
+):
+    m, _, children = transport
+    code = '''import sys
+from pathlib import Path
+from skills.WPSComposer.scripts.msoffice.windows_session_worker import serve
+job=Path(sys.argv[1])
+class Session:
+ def __init__(self):self.staging_root=job
+ def save_current(self):(job/'save-finished').write_text('yes')
+ def close(self,save_changes=False):raise RuntimeError('native close failed')
+serve(sys.stdin.buffer,sys.stdout.buffer,job,factory=lambda *args:Session())
+'''
+
+    def launch(job):
+        child = subprocess.Popen(
+            [sys.executable, '-u', '-c', code, str(job)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        children.append(child)
+        return child
+
+    monkeypatch.setattr(m, '_spawn_worker', launch)
+    session = m.ProxyWordSession.open_document('/source.docx')
+
+    with pytest.raises(m.NativeWordError) as caught:
+        session.close(save_changes=True)
+
+    assert caught.value.code == 'NATIVE_WORD_QUARANTINED'
+    assert (session.staging_root / 'save-finished').read_text() == 'yes'
+    assert session._uncertain
+    assert session._lock.closed
+    assert session._child.poll() is not None
+    assert session._lock.quarantine_path.exists()
 
 
 def test_default_worker_factory_hands_exact_deadline_to_native_session(monkeypatch):
