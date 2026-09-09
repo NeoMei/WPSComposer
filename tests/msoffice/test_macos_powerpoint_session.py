@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import pytest
 
 
@@ -108,14 +109,43 @@ def test_picture_geometry_binding_does_not_require_text_frame():
     assert 'text range of text frame' not in source
 
 
-def test_publication_uses_session_deadline(monkeypatch,tmp_path):
-    s=api().MacPowerPointSession();s._deadline=123;s._path=str(tmp_path/'native.pptx')
-    monkeypatch.setattr(s,'_run',lambda *a,**k:'SAVED')
-    monkeypatch.setattr(api(),'validate_before_deadline',lambda *a,**k:None)
-    calls=[]
-    monkeypatch.setattr(api(),'publish_artifact',lambda a,b,**k:(calls.append(k) or b))
-    s.save(tmp_path/'result.pptx')
-    assert calls[0]['deadline']==123
+def save_with_controlled_deadline(monkeypatch, tmp_path):
+    from skills.WPSComposer.scripts import artifact_transport
+    m = api()
+    monkeypatch.setattr(artifact_transport.time, 'monotonic', lambda: 1_000_000_000.0)
+    s = m.MacPowerPointSession(); s._deadline = artifact_transport.time.monotonic() + 60
+    source = tmp_path/'native.pptx'; target = tmp_path/'result.pptx'
+    payload = b'controlled saved presentation bytes'
+    source.write_bytes(payload); s._path = str(source)
+    monkeypatch.setattr(s, '_run', lambda *a, **k: 'SAVED')
+    events = []
+    def validate(spec, path, deadline):
+        events.append(('validate', deadline))
+        assert Path(path).read_bytes() == payload
+    original_snapshot = m.snapshot_artifact_state
+    def snapshot(path, *, deadline):
+        events.append(('snapshot', deadline))
+        return original_snapshot(path, deadline=deadline)
+    def publish(source, target, *, overwrite, validator, deadline):
+        events.append(('publish', deadline))
+        assert not overwrite and not target.exists()
+        target.write_bytes(source.read_bytes())
+        validator(target)
+        return target
+    monkeypatch.setattr(m, 'validate_before_deadline', validate)
+    monkeypatch.setattr(m, 'snapshot_artifact_state', snapshot)
+    monkeypatch.setattr(m, 'publish_artifact', publish)
+    assert s.save(target) == str(target)
+    assert s._deadline == 1_000_000_060.0
+    assert target.read_bytes() == payload
+    assert s._logical_state.sha256 == hashlib.sha256(payload).hexdigest()
+    return s, events
+
+
+def test_publication_uses_session_deadline(monkeypatch, tmp_path):
+    s, events = save_with_controlled_deadline(monkeypatch, tmp_path)
+    assert [kind for kind, _ in events] == ['validate', 'snapshot', 'publish', 'validate', 'snapshot']
+    assert all(deadline == s._deadline for _, deadline in events)
 
 
 def test_dependent_native_properties_emit_before_final_colors_and_geometry():
@@ -254,14 +284,10 @@ def test_mixed_unsupported_patch_is_rejected_before_any_mutation(monkeypatch):
     assert not calls
 
 
-def test_office_artifact_validation_uses_same_deadline(monkeypatch,tmp_path):
-    s=api().MacPowerPointSession();s._deadline=123;s._path=str(tmp_path/'native.pptx')
-    monkeypatch.setattr(s,'_run',lambda *a,**k:'SAVED')
-    calls=[]
-    monkeypatch.setattr(api(),'validate_before_deadline',lambda spec,path,deadline:calls.append(deadline),raising=False)
-    monkeypatch.setattr(api(),'publish_artifact',lambda a,b,**k:b)
-    s.save(tmp_path/'out.pptx')
-    assert calls==[123]
+def test_office_artifact_validation_uses_same_deadline(monkeypatch, tmp_path):
+    s, events = save_with_controlled_deadline(monkeypatch, tmp_path)
+    assert [deadline for kind, deadline in events if kind == 'validate'] == [s._deadline, s._deadline]
+    assert all(deadline == s._deadline for _, deadline in events)
 
 
 def test_text_selection_snapshot_contains_font_and_paragraph(monkeypatch):

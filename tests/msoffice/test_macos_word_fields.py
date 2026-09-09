@@ -1,5 +1,6 @@
 """Direct native field API contracts; transport fakes do not certify Word."""
 import inspect
+from copy import deepcopy
 import subprocess
 import sys
 import pytest
@@ -218,3 +219,142 @@ def test_malformed_snapshot_retains_native_evidence(session,monkeypatch):
     s,calls=session;monkeypatch.setattr(s,'_execute',lambda _lines:[['stats',2],['field','main',1,'PAGE',' PAGE ',1,'1',1,1,1]])
     with pytest.raises(NativeWordError) as error:s.snapshot_fields()
     assert error.value.code=='NATIVE_WORD_EXECUTION_FAILED' and s._retain_evidence
+
+
+def test_owned_reference_insertion_rebases_field_topology(session, monkeypatch):
+    s, calls = session
+    bookmark = 'wpsc_fig_' + 'a' * 24
+    rows = [['stats', 3], ['field', 'main', 1, 'REF', ' REF existing ', 1, '1', 0, 0, 1]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    original = s.snapshot_fields()
+
+    def insert(lines):
+        identity = next(line for line in lines if 'make new bookmark' in line).split('name:"', 1)[1].split('"', 1)[0]
+        return [['literal', 0, 20, 24, '见😀('],
+                ['reference', 0, 1, 2, 25, 66, 67, f' REF {bookmark} \\h ', identity],
+                ['literal', 0, 68, 70, ')尾'], ['literal', 1, 70, 71, '\r'],
+                ['complete', 1, 2, 20, 71]]
+
+    monkeypatch.setattr(s, '_execute', insert)
+    s.add_cross_reference_paragraph(runs=[{
+        'type': 'reference', 'bookmarkName': bookmark, 'prefix': '见😀(',
+        'suffix': ')尾', 'fallbackText': '静态',
+    }], owner_node_id='owner:new')
+    handle, code = s._tracked_references[0]
+    rows += [['identity', handle.bookmark, 25],
+             ['field', 'main', 2, 'REF', code, 25, '2', 0, 0, 1]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+
+    current = s.snapshot_fields()
+    assert [item.stable_key for item in current] == [original[0].stable_key, ('owner:new', 'REF', 0)]
+
+
+def test_owned_toc_and_structural_insert_rebase_field_topology(session, monkeypatch):
+    s, calls = session
+    rows = [['stats', 3], ['field', 'main', 1, 'REF', ' REF existing ', 12, '1', 0, 0, 1]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    original = s.snapshot_fields()
+    monkeypatch.setattr(s, '_execute', lambda _lines: [['index', 30, 60, ' TOC \\o "1-3" \\h \\z \\* MERGEFORMAT ']])
+    handle = s.insert_toc()
+    code = s._tracked_indexes[0][1]
+    rows += [['identity', handle.bookmark, 30],
+             ['field', 'main', 2, 'INDEX', code, 30, 'Heading\t1', 1, 1, 20]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    after_toc = s.snapshot_fields()
+    assert [item.stable_key for item in after_toc] == [original[0].stable_key, ('doc:toc', 'TOC', 0)]
+
+    monkeypatch.setattr(s, '_execute', lambda _lines: [['ok']])
+    s.apply_structural_op({'op': 'insert', 'type': 'paragraph', 'position': 'start', 'props': {'text': 'prefix'}})
+    rows[1][5] += 7
+    rows[2][2] += 7
+    rows[3][5] += 7
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    assert [item.stable_key for item in s.snapshot_fields()] == [item.stable_key for item in after_toc]
+
+
+def test_same_paragraph_text_replacement_rebases_later_field_position(session, monkeypatch):
+    s, calls = session
+    rows = [['stats', 1], ['field', 'main', 1, 'REF', ' REF later ', 20, '1', 0, 0, 1]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    original = s.snapshot_fields()
+    monkeypatch.setattr(s, '_execute', lambda _lines: [['ok']])
+    assert s.apply_format_patch('paragraph:1', text='longer text')['rejected'] == []
+    rows[1][5] = 27
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(rows))
+    assert s.snapshot_fields()[0].stable_key == original[0].stable_key
+
+
+def test_field_refresh_keeps_drift_guard_for_position_and_code(session, monkeypatch):
+    s, calls = session
+    baseline = [['stats', 1], ['field', 'main', 1, 'REF', ' REF target ', 20, '1', 0, 0, 1]]
+    monkeypatch.setattr(s, '_execute', lambda _lines: deepcopy(baseline))
+    s.snapshot_fields()
+    monkeypatch.setattr(s, '_execute', lambda _lines: [['ok']])
+    s.refresh_bookmarks_and_references()
+
+    for changed in ('position', 'code'):
+        rows = deepcopy(baseline)
+        if changed == 'position':
+            rows[1][5] += 1
+        else:
+            rows[1][4] = ' REF replacement '
+        monkeypatch.setattr(s, '_execute', lambda _lines, rows=rows: rows)
+        with pytest.raises(NativeWordError) as caught:
+            s.snapshot_fields()
+        assert caught.value.code == 'NATIVE_WORD_FIELD_IDENTITY_STALE'
+
+
+def test_header_field_topology_change_preserves_pending_body_heading(session):
+    s, calls = session
+    s._observed_field_topology = (('main', 0, 'REF', 'digest', 1, 1),)
+    s._pending_heading = (10, 20, 2)
+    s.set_header('header')
+    assert not hasattr(s, '_observed_field_topology')
+    assert s._pending_heading == (10, 20, 2)
+    assert not s._structural_changed
+
+
+def test_header_link_change_invalidates_field_topology(session):
+    s, calls = session
+    s._observed_field_topology = (('header', 0, 'PAGE', 'digest', 1, 1),)
+    s.set_header_footer(link_to_previous_header=True)
+    assert not hasattr(s, '_observed_field_topology')
+
+
+@pytest.mark.parametrize('operation', ['structural', 'business', 'format'])
+def test_local_preflight_failure_keeps_field_topology(session, monkeypatch, operation):
+    s, calls = session
+    baseline = (('main', 0, 'REF', 'digest', 1, 1),)
+    s._observed_field_topology = baseline
+    monkeypatch.setattr(s, '_remaining', lambda: (_ for _ in ()).throw(RuntimeError('preflight')))
+    with pytest.raises(RuntimeError, match='preflight'):
+        if operation == 'structural':
+            s._execute_structural(['set nativeRows to {{"ok"}}'])
+        elif operation == 'business':
+            s._business_commit(['set content of text object of boundDoc to "x"'], structural=True)
+        else:
+            s.apply_format_patch('paragraph:1', text='longer')
+    assert s._observed_field_topology == baseline
+
+
+def test_transport_pre_submission_failure_keeps_field_topology(session, monkeypatch, tmp_path):
+    import types
+    s, calls = session
+    baseline = (('main', 0, 'REF', 'digest', 1, 1),)
+    s._observed_field_topology = baseline
+    s._retain_evidence = True
+    s.staging_root = tmp_path
+    s._owns_doc = True
+    s._bound_path = str(tmp_path / 'bound.docx')
+    s._execute = types.MethodType(MacWordSession._execute, s)
+    remaining_calls = 0
+    def remaining():
+        nonlocal remaining_calls
+        remaining_calls += 1
+        if remaining_calls == 3:
+            raise RuntimeError('before subprocess')
+        return 30
+    monkeypatch.setattr(s, '_remaining', remaining)
+    with pytest.raises(RuntimeError, match='before subprocess'):
+        s._execute_topology_mutation(['set nativeRows to {{"ok"}}'])
+    assert s._observed_field_topology == baseline

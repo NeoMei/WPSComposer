@@ -174,7 +174,7 @@ def refresh(session,phase):
     conditions={'numbering':'field type of ownField is field style ref or field type of ownField is field sequence', 'references':'field type of ownField is field ref', 'page':'field type of ownField is field page or field type of ownField is field num pages'}
     lines=['set bookmarkHealth to count bookmarks of boundDoc'] if phase=='references' else ['repaginate boundDoc']
     lines+=_story_loop([f'if {conditions[phase]} then','if (update field ownField) is false then error "WPSC_FIELD_UPDATE_FAILED"','end if'])
-    _ack(session,session._execute_structural(lines+['set nativeRows to {{"ok"}}']),[['ok']])
+    _ack(session,session._execute_structural(lines+['set nativeRows to {{"ok"}}'], field_topology_change=False),[['ok']])
 
 
 def snapshot_commands(session):

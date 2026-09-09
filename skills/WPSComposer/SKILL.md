@@ -32,6 +32,12 @@ operations explicitly; active attachment requires `kind`. Full parity/native
 acceptance is in progress, so do not treat these candidate APIs as a completed
 cross-platform capability claim. See the [API reference](references/api.md).
 
+Mac Word candidate sessions also expose append-only degradation recovery,
+inline/block notices, paragraph rules and pagination snapshots. Check the
+[direct-method contracts](references/api.md#mac-word-candidate-recovery-and-layout-methods)
+before using them: changed drawing objects cannot be rolled back, notice ranges
+are snapshots, and a paragraph rule changes the current paragraph's formatting.
+
 ## Quick start -- Markdown to document
 
 For native Microsoft Word on Windows/macOS, use public `generate(...,

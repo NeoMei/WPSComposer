@@ -99,6 +99,41 @@ def test_installer_skips_virtualenvs_and_build_metadata(tmp_path):
     assert (result.destination / ".codex-plugin" / "plugin.json").is_file()
 
 
+@pytest.mark.parametrize("scratch_name", [".superpowers", ".worktrees"])
+def test_installer_excludes_local_work_directories_but_retains_plugin_assets(
+    tmp_path, scratch_name
+):
+    source = tmp_path / "source"
+    retained_files = {
+        ".codex-plugin/plugin.json": '{"name": "wps-composer"}',
+        "skills/WPSComposer/SKILL.md": "public skill",
+        "skills/WPSComposer/references/api.md": "public API",
+        "skills/WPSComposer/scripts/wps_engine.py": "# public facade\n",
+        "docs/windows-verification.md": "Windows operator guide",
+        "docs/longform-markdown.md": "long-form operator guide",
+        "docs/macos-longform-m5-verification.md": "macOS operator guide",
+        "assets/.superpowers-example/template.txt": "template asset",
+        "assets/.worktrees-example/template.txt": "template asset",
+    }
+    scratch_files = {
+        f"{scratch_name}/task/private-evidence.txt": "local task evidence",
+        f"skills/WPSComposer/{scratch_name}/task/private-evidence.txt": "nested work",
+    }
+    for relative, content in {**retained_files, **scratch_files}.items():
+        path = source / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    result = install_plugin(source, tmp_path / "home", tmp_path)
+
+    for relative, content in retained_files.items():
+        assert (result.destination / relative).read_text(encoding="utf-8") == content
+    assert not (result.destination / scratch_name).exists()
+    assert not (result.destination / "skills/WPSComposer" / scratch_name).exists()
+    for relative, content in scratch_files.items():
+        assert (source / relative).read_text(encoding="utf-8") == content
+
+
 def test_installer_refuses_existing_destination_without_force(tmp_path):
     codex_home = tmp_path / ".codex"
     destination = codex_home / "plugins" / "wps-composer"

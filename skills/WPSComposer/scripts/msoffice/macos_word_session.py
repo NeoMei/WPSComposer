@@ -161,6 +161,7 @@ class MacWordSession:
         self._retain_evidence = False
         self._first_section_configured = False
         self._pending_heading = None
+        self._degradation_checkpoints = {}
 
     def _prepare(self):
         if sys.platform != 'darwin' or not WORD_APP.is_dir() or not _temporary_root().is_dir():
@@ -318,8 +319,12 @@ class MacWordSession:
         script.write_text(source, encoding='utf-8')
         os.chmod(script, 0o600)
         log = script.with_suffix('.log')
+        subprocess_timeout = self._remaining()
+        if getattr(self, '_field_topology_mutation_pending', False):
+            self._invalidate_field_topology()
+            self._field_topology_mutation_pending = False
         try:
-            result = subprocess.run(['/usr/bin/osascript', str(script)], capture_output=True, text=True, timeout=self._remaining())
+            result = subprocess.run(['/usr/bin/osascript', str(script)], capture_output=True, text=True, timeout=subprocess_timeout)
         except (subprocess.TimeoutExpired, OSError) as exc:
             self._retain('Native AppleEvent completion uncertain')
             def partial(value):
@@ -338,6 +343,12 @@ class MacWordSession:
             if '-1712' in result.stderr:
                 self._retain('Native AppleEvent completion uncertain')
                 raise NativeWordTimeoutError(staging_path=self.staging_root, diagnostic_path=log, quarantine_path=self.lock.quarantine_path)
+            if re.search(r'\(-609\)\s*$', result.stderr):
+                self._retain('Native AppleEvent connection invalid')
+                raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root, diagnostic_path=log, quarantine_path=self.lock.quarantine_path if self.lock else None)
+            if 'WPSC_STALE_DOCUMENT (-2700)' in result.stderr:
+                self._retain('Native document binding stale')
+                raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root, diagnostic_path=log, quarantine_path=self.lock.quarantine_path if self.lock else None)
             if 'WPSC_FIELD_IDENTITY_STALE (-2700)' in result.stderr:
                 raise NativeWordError('NATIVE_WORD_FIELD_IDENTITY_STALE', staging_path=self.staging_root, diagnostic_path=log)
             raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
@@ -405,6 +416,33 @@ class MacWordSession:
         if self._closed:
             raise ValueError('Session is closed')
 
+    def _invalidate_field_topology(self):
+        """Forget positions observed before a session-owned content mutation."""
+        self.__dict__.pop('_observed_field_topology', None)
+
+    def _mutation_preflight(self):
+        """Run local transport gates before invalidating observed native state."""
+        self._writable()
+        if self._quarantined:
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root)
+        self._remaining()
+
+    def _execute_topology_mutation(self, lines):
+        """Invalidate observations only after success or uncertain submission."""
+        self._mutation_preflight()
+        self._field_topology_mutation_pending = True
+        try:
+            rows = self._execute(lines)
+        except BaseException:
+            raise
+        else:
+            # Test transports do not cross the native submission boundary.
+            if self._field_topology_mutation_pending:
+                self._invalidate_field_topology()
+            return rows
+        finally:
+            self._field_topology_mutation_pending = False
+
     def _range(self, target):
         if target == 'selection':
             return ['set targetRange to text object of selection of boundWindow']
@@ -452,7 +490,8 @@ class MacWordSession:
             # when the replacement contains none. Do not reuse on-disk identities.
             if text is not None and (any(mark in text for mark in ('\r', '\n', '\u2029')) or target == 'selection' or target.startswith(('range:', 'table:'))):
                 self._structural_changed = True
-            self._execute(resolve + mutations + ['set nativeRows to {{"ok"}}'])
+            execute = self._execute_topology_mutation if text is not None else self._execute
+            execute(resolve + mutations + ['set nativeRows to {{"ok"}}'])
         return {'accepted': accepted, 'rejected': []}
 
     def _position(self, position):
@@ -554,7 +593,7 @@ class MacWordSession:
                 if verb != 'remove':
                     raise NativeWordCapabilityError('Mac Word object move/clone is not implemented')
                 self._pending_heading = None
-                self._execute(lines + ['delete targetObject', 'set nativeRows to {{"ok"}}'])
+                self._execute_topology_mutation(lines + ['delete targetObject', 'set nativeRows to {{"ok"}}'])
                 self._structural_changed = True
                 return {'path': None, 'reinspect_required': True}
             if not (target.startswith('paragraph:') or target.startswith('range:')):
@@ -573,7 +612,7 @@ class MacWordSession:
         else:
             raise ValueError('Unsupported structural operation')
         self._pending_heading = None
-        self._execute(lines + ['set nativeRows to {{"ok"}}'])
+        self._execute_topology_mutation(lines + ['set nativeRows to {{"ok"}}'])
         self._structural_changed = True
         return {'path': None, 'reinspect_required': True}
 
@@ -882,14 +921,16 @@ class MacWordSession:
                   'reset font object of trailingRange', 'reset paragraph format of trailingRange']
         return lines
 
-    def _business_commit(self, lines, *, structural=False, readback=None):
+    def _business_commit(self, lines, *, structural=False,
+                         field_topology_change=False, readback=None):
         self._writable()
         if not lines:
             return
         if structural:
             self._structural_changed = True
             self._pending_heading = None
-        return self._execute(list(lines) + (readback or ['set nativeRows to {{"ok"}}']))
+        execute = self._execute_topology_mutation if structural or field_topology_change else self._execute
+        return execute(list(lines) + (readback or ['set nativeRows to {{"ok"}}']))
 
     def add_paragraph(self, text, size=None, bold=None, italic=None,
                       color=None, align=None, indent_first=None,
@@ -998,6 +1039,10 @@ class MacWordSession:
 
     def add_numbered_list(self, items, indent=24):
         self._business_list(items, '', indent, ordered=True)
+
+    def add_paragraph_horizontal_line(self):
+        from .macos_word_rules import add_paragraph_horizontal_line
+        return add_paragraph_horizontal_line(self)
 
     def add_page_break(self):
         self._business_commit(self._position('end') + [
@@ -1125,13 +1170,14 @@ class MacWordSession:
                   f'set nativeRows to {{{{"created", "table", tableIndex, previousTableCount, number of rows of insertedTable, number of columns of insertedTable, allow auto fit of insertedTable}}}}']
         return lines
 
-    def _execute_structural(self, lines):
+    def _execute_structural(self, lines, *, field_topology_change=True):
         # Once the native batch starts, failure can mean that Word applied a
         # prefix of the commands. Invalidate positional targets conservatively.
         self._structural_changed = True
         self._pending_heading = None
         try:
-            return self._execute(lines)
+            execute = self._execute_topology_mutation if field_topology_change else self._execute
+            return execute(lines)
         except BaseException:
             self._retain_evidence = True
             raise
@@ -1523,12 +1569,12 @@ class MacWordSession:
     def set_header(self, text):
         rendered = _value('text', text)
         self._business_commit(['set pagePart to get header (section 1 of boundDoc) index header footer primary',
-                               f'set content of text object of pagePart to {rendered}'])
+                               f'set content of text object of pagePart to {rendered}'], field_topology_change=True)
 
     def set_footer(self, text):
         rendered = _value('text', text)
         self._business_commit(['set pagePart to get footer (section 1 of boundDoc) index header footer primary',
-                               f'set content of text object of pagePart to {rendered}'])
+                               f'set content of text object of pagePart to {rendered}'], field_topology_change=True)
 
     def set_header_footer(self, header=None, footer=None, link_to_previous_header=None,
                           link_to_previous_footer=None):
@@ -1550,7 +1596,8 @@ class MacWordSession:
                               'set line style of pageBorder to line style single',
                               'set line width of pageBorder to line width75 point',
                               'set color of pageBorder to {0, 0, 0}']
-        self._business_commit(lines)
+        self._business_commit(lines, field_topology_change=any(value is not None for value in (
+            header, footer, link_to_previous_header, link_to_previous_footer)))
 
     def save_docx(self, path):
         return self.save(path, 12)
@@ -1950,7 +1997,7 @@ class MacWordSession:
             # A range returned by collapse range loses its footer story on
             # Word 16.112.3. Pass the native footer specifier directly.
             'create new field text range (text object of pagePart) field type field page preserve formatting true',
-            'insert text "Page " at beginning of text object of pagePart'])
+            'insert text "Page " at beginning of text object of pagePart'], field_topology_change=True)
 
     def compact_terminal_paragraph(self):
         # Match Python str.strip used by the frozen implementation, plus the
@@ -2044,6 +2091,30 @@ class MacWordSession:
     def repaginate_and_update_page_fields(self):
         from .macos_word_fields import refresh
         refresh(self, 'page')
+
+    def degradation_checkpoint(self):
+        from .macos_word_recovery import checkpoint
+        return checkpoint(self)
+
+    def rollback_degradation_checkpoint(self, checkpoint):
+        from .macos_word_recovery import rollback
+        return rollback(self, checkpoint)
+
+    def add_inline_degradation(self, code, message, fallback_text):
+        from .macos_word_degradation import add_inline_degradation
+        return add_inline_degradation(self, code, message, fallback_text)
+
+    def add_degradation_notice(self, code, message, fallback_text, placement="block"):
+        from .macos_word_degradation import add_degradation_notice
+        return add_degradation_notice(self, code, message, fallback_text, placement)
+
+    def pagination_fragment_for_bookmark(self, node_id, bookmark_name):
+        from .macos_word_pagination import pagination_fragment_for_bookmark
+        return pagination_fragment_for_bookmark(self, node_id, bookmark_name)
+
+    def pagination_map_for_ranges(self, tracked_ranges):
+        from .macos_word_pagination import pagination_map_for_ranges
+        return pagination_map_for_ranges(self, tracked_ranges)
 
     def snapshot_fields(self):
         from .macos_word_fields import snapshot

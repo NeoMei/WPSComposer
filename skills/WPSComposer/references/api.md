@@ -368,6 +368,30 @@ Each patch report is structured for agent consumption:
 Error codes: `missing_target`, `invalid_target`, `invalid_value`,
 `apply_failed`, `unsupported_kind`.
 
+### Mac Word candidate recovery and layout methods
+
+These methods are exposed by the candidate Microsoft Word session on macOS.
+Their presence does not certify all frozen Microsoft/WPS parity requirements.
+
+| Method | Contract |
+|---|---|
+| `degradation_checkpoint()` | Capture an append boundary and native state; return an integer native Word coordinate. Retain it within the same session. |
+| `rollback_degradation_checkpoint(checkpoint)` | Restore a captured append-only text/table/field boundary and verify the original prefix and tracked field/index state. Repeating an unchanged rollback is allowed. Added or changed drawing objects are rejected before deletion; this is not general document Undo or figure/equation recovery. |
+| `add_inline_degradation(code, message, fallback_text)` | Append the frozen code/fallback display with red italic text and a light-red background; return a range snapshot with `Start`, `End`, and `Text`. `message` does not replace the frozen display text. |
+| `add_degradation_notice(code, message, fallback_text, placement="block")` | With `placement="inline"`, use the inline method. Otherwise append a one-cell notice and return a box with `.Range`; an acknowledged table failure must finish verified rollback before one paragraph fallback. Uncertain execution does not trigger fallback. |
+| `add_paragraph_horizontal_line()` | Center the current paragraph, apply its 0.75-point silver bottom border, append a space and paragraph break, then clear the following paragraph's bottom border. Existing text in the current paragraph is preserved; that paragraph's formatting changes and the following paragraph inherits center alignment. |
+| `pagination_fragment_for_bookmark(node_id, bookmark_name)` | Read the bookmark's first paragraph, active-end page and available point bounds. Does not repaginate. |
+| `pagination_map_for_ranges(tracked_ranges)` | Repaginate and return page geometry for ranges exposing `Start`/`End`. Sample points are clamped to the document end while original offsets remain in the result. Read-only sessions are supported. |
+
+Notice range and box objects are immutable snapshots, not raw COM objects or
+live editing handles; positions can become stale after later edits. Pagination
+checks ownership for the defined notice range type but cannot prove the origin
+of arbitrary duck-typed ranges. Invalid native pagination results raise the
+privacy-safe `PAGINATION_SNAPSHOT_FAILED` error. These direct methods do not
+establish integration of the Windows long-form executor's COM range factory on
+macOS. Native acceptance status is tracked separately in the repository's
+`docs/verification/microsoft-parity/status.md`.
+
 ### Atomicity and the attach-active caveat
 
 `edit()` is **atomic by default** (`atomic=True`): if any patch fails, the
