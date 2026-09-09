@@ -1,0 +1,22 @@
+{
+  "certificate_sha256": "3F47F0E7036D8974F3708E90E15A07E65D5F1447FEF3C1D364EBF6865034C872",
+  "trust_authorized": true,
+  "trust_scope": "login keychain, ssl, localhost",
+  "manifest": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/Documents/wef/wpscomposer-word-probe-8abccf20.xml",
+  "manifest_sha256": "2682cf7e82d7262f17ce8e4affb900b6dbb5bd0d26418f05475ef3c28a777003",
+  "wef_preexisting_files": {},
+  "verification": {
+    "localhost_ssl": {
+      "returncode": 0,
+      "output": "...certificate verification successful.\n---\nNo extended validation result found\nCertificate Transparency (CT) status: \u001b[31mnot verified\u001b[0m\nUnable to find at least 2 signed certificate timestamps (SCTs) from approved logs\n"
+    },
+    "otherhost_ssl": {
+      "returncode": 1,
+      "output": "Cert Verify Result: CSSMERR_TP_NOT_TRUSTED\n---\nNo extended validation result found\nCertificate Transparency (CT) status: \u001b[31mnot verified\u001b[0m\nUnable to find at least 2 signed certificate timestamps (SCTs) from approved logs\n"
+    },
+    "basic_policy": {
+      "returncode": 1,
+      "output": "Cert Verify Result: CSSMERR_TP_NOT_TRUSTED\n"
+    }
+  }
+}

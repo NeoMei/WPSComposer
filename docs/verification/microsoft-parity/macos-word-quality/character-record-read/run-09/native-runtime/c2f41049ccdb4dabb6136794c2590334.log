@@ -1,0 +1,115 @@
+record-vs-legacy-190-200:0: set probeFirst to 190
+record-vs-legacy-190-200:1: set probeLast to 199
+record-vs-legacy-190-200:2: repeat with probePosition from probeFirst to probeLast
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+record-vs-legacy-190-200:3: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+record-vs-legacy-190-200:4: set probeFontReference to font object of probeRange
+record-vs-legacy-190-200:5: set probeLegacyRow to {name of probeFontReference as text,font size of probeFontReference,bold of probeFontReference,italic of probeFontRefe
+record-vs-legacy-190-200:6: set probeFontRecord to (get properties of font object of probeRange) as record
+record-vs-legacy-190-200:7: set probeShadingRecord to (get properties of shading of probeRange) as record
+record-vs-legacy-190-200:8: set probeRecordRow to {name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,italic of probeFontRecord,underl
+record-vs-legacy-190-200:9: set probeLegacyJson to my jsonRows({probeLegacyRow})
+record-vs-legacy-190-200:10: set probeRecordJson to my jsonRows({probeRecordRow})
+record-vs-legacy-190-200:11: set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson
+record-vs-legacy-190-200:12: if not (probeEqual as boolean) then error "RECORD_VALUE_MISMATCH"
+record-vs-legacy-190-200:13: set end of probeRows to {"same-coordinate",probePosition as integer,probeEqual as boolean}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["same-coordinate",190,true],["same-coordinate",191,true],["same-coordinate",192,true],["same-coordinate",193,true],["same-coordinate",194,true],["same-coordinate",195,true],["same-coordinate",196,true],["same-coordinate",197,true],["same-coordinate",198,true],["same-coordinate",199,true]]]]]

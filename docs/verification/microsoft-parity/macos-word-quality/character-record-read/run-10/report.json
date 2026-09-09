@@ -1,0 +1,20 @@
+{
+  "status": "FAIL",
+  "scope": "one fresh read-only owned copy; no body writes/save/export; ordinary errors are observations",
+  "steps": [],
+  "source_hashes": {
+    "build/word-quality-record-read-10/probe.py": "ea28bbb1bc2e5e4bd8dca7bb95c31c0fe8ef525eb09c0347b58d75246e010e51",
+    "build/word-quality-record-read-10/format-variants.docx": "ab6070ba763281b446738ce829d2bfa3a8c3f75c6a859e2f9dfaf4c86bcd6db1",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "ba0eda21dcb0e4f7314912ab14bcf5a38f5e42a0478bac7ce3aaebc5869edff1",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "checks": {},
+  "inventory_before": [],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tis3b7km diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tis3b7km/4afff948e4fb4022b06029111637eea6.log"
+  }
+}

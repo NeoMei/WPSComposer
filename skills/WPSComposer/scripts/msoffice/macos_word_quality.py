@@ -292,9 +292,12 @@ def _snapshot_commands():
         'list type of list format of qr as text,list level number of list format of qr,list value of list format of qr,list string of list format of qr as text}}',
         'repeat with qc from qa to qz - 1',
         'set qcr to create range boundDoc start qc end (qc + 1)',
-        'set qcf to font object of qcr',
+        # Resolve each property record once; subsequent projections are local.
+        # Native evidence compares all seven values at every UTF-16 coordinate.
+        'set qcf to (get properties of font object of qcr) as record',
+        'set qcs to (get properties of shading of qcr) as record',
         'set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,'
-        'color of qcf,background pattern color of shading of qcr}',
+        'color of qcf,background pattern color of qcs}',
         'end repeat',
         *hash_commands('my jsonRows(qualityFormats)', 'qualityFormatHash'),
         'if qa >= qualityPoint + qualityDelta then set qa to qa - qualityDelta',

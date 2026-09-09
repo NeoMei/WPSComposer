@@ -2,3 +2,7 @@
 /docs/verification/windows-word-spike/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /docs/verification/msoffice-production/windows/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /docs/verification/msoffice-production/windows/**/*.log -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Keep scoped native character-read evidence byte-identical on Windows.
+/docs/verification/microsoft-parity/macos-word-quality/character-record-read/** -text
+/docs/verification/microsoft-parity/macos-word-quality/character-record-read/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol

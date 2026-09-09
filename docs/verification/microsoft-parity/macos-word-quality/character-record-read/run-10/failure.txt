@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-quality-record-read-10/probe.py", line 59, in <module>
+    s=MacWordSession.open_document(SOURCE,read_only=True,visible=False);s._retain_evidence=True
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 198, in open_document
+    rows = self._execute([
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 397, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=diagnostic)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tis3b7km diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-tis3b7km/4afff948e4fb4022b06029111637eea6.log

@@ -1,0 +1,16 @@
+{
+  "status": "PASS_SCOPED_CHARACTER_READ",
+  "original_native_status": "FAIL",
+  "original_report_sha256": "ab44d4a52930877905b3151cd0ac1d1025ac7cfaa3a4cfc1faccb6f6e6cf1738",
+  "correction": "Expected RGB channels must use native 16-bit values, not 8-bit. Production values unchanged.",
+  "exact_coordinate_count": 220,
+  "strict_typed_equality": true,
+  "saved_body_and_measured_counts_preserved": true,
+  "full_character_read_seconds": [
+    4.415,
+    4.191
+  ],
+  "owned_closed": true,
+  "inventory_empty": true,
+  "full_quality_snapshot_accepted": false
+}

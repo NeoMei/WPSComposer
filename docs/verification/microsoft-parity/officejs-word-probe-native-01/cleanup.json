@@ -1,0 +1,23 @@
+{
+  "timestamp_utc": "2026-09-09T16:22:13.344690+00:00",
+  "certificate_sha256": "3F47F0E7036D8974F3708E90E15A07E65D5F1447FEF3C1D364EBF6865034C872",
+  "port_3443_closed": true,
+  "remove_user_trust": {
+    "returncode": 0,
+    "output": ""
+  },
+  "delete_exact_certificate": {
+    "returncode": 0,
+    "output": ""
+  },
+  "localhost_ssl_after_removal": {
+    "returncode": 1,
+    "output": "---\nNo extended validation result found\nCertificate Transparency (CT) status: \u001b[31mnot verified\u001b[0m\nUnable to find at least 2 signed certificate timestamps (SCTs) from approved logs\nCert Verify Result: CSSMERR_TP_NOT_TRUSTED\n"
+  },
+  "fingerprint_absent_from_login_keychain": true,
+  "source_manifest_removed": true,
+  "office_cache_cleared": false,
+  "private_key_deleted": true,
+  "fixture_sha256_after": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d",
+  "fixture_unchanged": true
+}

@@ -1,5 +1,7 @@
 # Office.js Word bootstrap preparation — native pending
 
+Historical preparation checkpoint. For the subsequently authorized native attempt and verified certificate removal, see [native attempt](../officejs-word-probe-native-01/README.md). The private key mentioned below was deleted during that cleanup.
+
 The user approved enabling the reviewed Word capability probe. There was no standard Office development certificate directory, existing Word Wef directory or matching localhost/Office Add-in certificate in the login keychain. A new task-only certificate was generated locally: localhost DNS only, serverAuth, CA:false, valid seven days. Its public certificate/details are retained; its private key is excluded and remains permission0600 inside the ignored task TLS directory.
 
 A separate explicit approval request for current-user SSL/localhost-only certificate trust and later removal is pending. No trust setting, manifest installation, Office add-in activation or native document mutation occurred. Ordinary macOS verification returns CSSMERR_TP_NOT_TRUSTED. Providing the same public certificate explicitly as the verification anchor succeeds without changing system trust.

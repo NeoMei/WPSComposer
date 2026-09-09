@@ -1,0 +1,883 @@
+full-format-records-0:0: repeat with probePosition from 0 to 219
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+full-format-records-0:1: set probeRange to create range boundDoc start probePosition end (probePosition+1)
+full-format-records-0:2: set probeFontRecord to (get properties of font object of probeRange) as record
+full-format-records-0:3: set probeShadingRecord to (get properties of shading of probeRange) as record
+full-format-records-0:4: set end of probeRows to {probePosition as integer,name of probeFontRecord as text,font size of probeFontRecord,bold of probeFontRecord,itali
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[[0,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[1,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[2,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[3,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[4,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[5,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[6,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[7,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[8,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[9,"Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],[10,"Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],[11,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[12,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[13,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[14,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[15,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[16,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[17,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[18,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[19,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[20,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[21,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[22,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[23,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[24,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[25,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[26,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[27,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[28,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[29,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[30,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[31,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[32,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[33,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[34,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[35,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[36,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[37,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[38,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[39,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[40,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[41,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[42,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[43,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[44,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[45,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[46,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[47,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[48,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[49,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[50,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[51,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[52,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[53,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[54,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[55,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[56,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[57,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[58,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[59,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[60,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[61,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[62,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[63,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[64,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[65,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[66,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[67,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[68,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[69,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[70,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[71,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[72,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[73,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[74,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[75,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[76,"DengXian",11,false,false,"underline none",[0,0,0],null],[77,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[78,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[79,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[80,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[81,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[82,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[83,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[84,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[85,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[86,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[87,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[88,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[89,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[90,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[91,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[92,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[93,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[94,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[95,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[96,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[97,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[98,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[99,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[100,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[101,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[102,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[103,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[104,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[105,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[106,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[107,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[108,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[109,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[110,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[111,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[112,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[113,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[114,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[115,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[116,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[117,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[118,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[119,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[120,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[121,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[122,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[123,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[124,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[125,"DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],[126,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[127,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[128,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[129,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[130,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[131,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[132,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[133,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[134,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[135,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[136,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[137,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[138,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[139,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[140,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[141,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[142,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[143,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[144,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[145,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[146,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[147,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[148,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[149,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[150,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[151,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[152,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[153,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[154,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[155,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[156,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[157,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[158,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[159,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[160,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[161,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[162,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[163,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[164,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[165,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[166,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[167,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[168,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[169,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[170,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[171,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[172,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[173,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[174,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[175,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[176,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[177,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[178,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[179,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[180,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[181,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[182,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[183,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[184,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[185,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[186,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[187,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[188,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[189,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[190,"DengXian",11,false,false,"underline none",[0,0,0],null],[191,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[192,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[193,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[194,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[195,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[196,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[197,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[198,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[199,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[200,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[201,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[202,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[203,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[204,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[205,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[206,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[207,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[208,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[209,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[210,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[211,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[212,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[213,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[214,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[215,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[216,"Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],[217,"Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],[218,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],[219,"DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]]]]]]

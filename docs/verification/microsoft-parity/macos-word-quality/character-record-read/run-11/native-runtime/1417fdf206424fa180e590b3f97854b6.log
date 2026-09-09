@@ -1,0 +1,887 @@
+production-first-format-1:0: set qa to 0
+production-first-format-1:1: set qz to 220
+production-first-format-1:2: set qualityFormats to {}
+production-first-format-1:3: repeat with qc from qa to qz - 1
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:4: set qcr to create range boundDoc start qc end (qc + 1)
+production-first-format-1:5: set qcf to (get properties of font object of qcr) as record
+production-first-format-1:6: set qcs to (get properties of shading of qcr) as record
+production-first-format-1:7: set end of qualityFormats to {name of qcf as text,font size of qcf,bold of qcf,italic of qcf,underline of qcf as text,color of qcf,backgroun
+production-first-format-1:9: set probeRows to qualityFormats
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Arial",17,true,true,"underline single",[4369,8738,13107],[61166,59624,43690]],["Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],["Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],null],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",14,false,true,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],null],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],["Apple Color Emoji",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]],["DengXian",11,false,false,"underline none",[0,0,0],[0,0,0]]]]]]
