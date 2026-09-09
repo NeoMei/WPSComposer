@@ -1,0 +1,211 @@
+use framework "Foundation"
+use scripting additions
+on jsonRows(rows)
+  set dataValue to current application's NSJSONSerialization's dataWithJSONObject:rows options:0 |error|:(missing value)
+  return (current application's NSString's alloc()'s initWithData:dataValue encoding:4) as text
+end jsonRows
+on enumIndex(v, choices)
+  repeat with i from 1 to count choices
+    if v is item i of choices then return i - 1
+  end repeat
+  return -1
+end enumIndex
+with timeout of 60 seconds
+tell application "/Applications/Microsoft Word.app"
+set nativeRows to {}
+set boundDoc to document "document-63205a82ebfe4a0ba802d043d884acda.docx"
+set boundWindow to active window of boundDoc
+if (posix full name of boundDoc as text) is not "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-3cqg8niw/document-63205a82ebfe4a0ba802d043d884acda.docx" then error "WPSC_STALE_DOCUMENT"
+set recoveryEnd to end of content of text object of boundDoc
+set recoveryBound to recoveryEnd - 1
+set recoveryTarget to 244
+if recoveryTarget < 0 or recoveryTarget > recoveryBound then error "WPSC_CHECKPOINT_BOUND_FAILED"
+set recoveryPrefix to create range boundDoc start 0 end recoveryTarget
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryPrefix as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryPrefixHash to text 1 thru 64 of recoveryDigestText
+set recoveryGuardStart to recoveryTarget - 512
+if recoveryGuardStart < 0 then set recoveryGuardStart to 0
+set recoveryGuard to create range boundDoc start recoveryGuardStart end recoveryTarget
+set recoveryParagraph to text object of paragraph (count paragraphs of boundDoc) of boundDoc
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryParagraph as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryParagraphHash to text 1 thru 64 of recoveryDigestText
+set nativeRows to {{"checkpoint-state",1,recoveryBound,recoveryEnd,count paragraphs of boundDoc,start of content of recoveryParagraph,end of content of recoveryParagraph,recoveryPrefixHash,recoveryGuardStart,recoveryTarget,content of recoveryGuard as text,recoveryParagraphHash}}
+repeat with recoveryOrdinal from 1 to count tables of boundDoc
+set recoveryObject to table recoveryOrdinal of boundDoc
+set end of nativeRows to {"table",recoveryOrdinal as integer,start of content of text object of recoveryObject,end of content of text object of recoveryObject,count rows of recoveryObject,count columns of recoveryObject}
+end repeat
+repeat with recoveryOrdinal from 1 to count fields of boundDoc
+set recoveryObject to field recoveryOrdinal of boundDoc
+set end of nativeRows to {"field","main",recoveryOrdinal as integer,field type of recoveryObject as text,content of field code of recoveryObject as text,start of content of field code of recoveryObject,end of content of field code of recoveryObject,start of content of result range of recoveryObject,end of content of result range of recoveryObject}
+end repeat
+repeat with recoveryOrdinal from 1 to count bookmarks of boundDoc
+set recoveryBookmark to bookmark recoveryOrdinal of boundDoc
+set recoveryBookmarkName to name of recoveryBookmark as text
+if {} does not contain recoveryBookmarkName then
+set recoveryIdentity to text object of recoveryBookmark
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryIdentity as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryBookmarkHash to text 1 thru 64 of recoveryDigestText
+set end of nativeRows to {"bookmark-hash",recoveryBookmarkName,start of content of recoveryIdentity,end of content of recoveryIdentity,recoveryBookmarkHash}
+end if
+end repeat
+set end of nativeRows to {"checkpoint-end"}
+if nativeRows is not {{("checkpoint-state"),1,256,257,10,256,257,("914227745b353131b3d059030170b61dd39f662c912ed43d49ef554cca26a2f9"),0,244,("Recovery prefix 中文😀" & return & "Chapter" & return & "Contents" & return & "Chapter" & tab & "1" & return & "" & return & "" & (character id 12) & "" & return & "Existing Recovery" & return & "FALLBACK-ONCE" & return & ""),("9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4")},{("field"),("main"),1,("field toc"),(" TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT "),39,74,75,147},{("field"),("main"),2,("field hyperlink"),("HYPERLINK \\l \"_Toc239852596\""),76,105,106,145},{("field"),("main"),3,("field page ref"),(" PAGEREF _Toc239852596 \\h "),115,142,143,144},{("field"),("main"),4,("field ref"),(" REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT "),161,219,220,228},{("bookmark-hash"),("WPSC_F_c9915e64c8164eb69195a2abe8755d"),39,74,("6fa0a993e820abbbc86c4e74a47185335f27d7409896e1e76ef0ed022967a9f3")},{("bookmark-hash"),("wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa"),0,8,("48f6a8d5688b0cf59fb8109b7903507ed9d2e1580be2ad7ae169df659e1ddeea")},{("bookmark-hash"),("WPSC_R_998397f2f0db4ee2bdea1b75faeb4b"),161,218,("2d0403e4dce3fa0cf4cb7f96667dec6c067a4ab0e7e254a02fa26b82ebaf637f")},{("checkpoint-end")}} then error "WPSC_CHECKPOINT_PREFLIGHT_CHANGED"
+set recoveryDeletedFields to {}
+set recoveryDeletedTables to {}
+set recoveryLiveTables to {}
+set nativeRows to {}
+repeat with recoveryOrdinal from 1 to count fields of boundDoc
+set recoveryObject to field recoveryOrdinal of boundDoc
+set end of nativeRows to {"field","main",recoveryOrdinal as integer,field type of recoveryObject as text,content of field code of recoveryObject as text,start of content of field code of recoveryObject,end of content of field code of recoveryObject,start of content of result range of recoveryObject,end of content of result range of recoveryObject}
+end repeat
+if nativeRows is not {{("field"),("main"),1,("field toc"),(" TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT "),39,74,75,147},{("field"),("main"),2,("field hyperlink"),("HYPERLINK \\l \"_Toc239852596\""),76,105,106,145},{("field"),("main"),3,("field page ref"),(" PAGEREF _Toc239852596 \\h "),115,142,143,144},{("field"),("main"),4,("field ref"),(" REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT "),161,219,220,228}} then error "WPSC_CHECKPOINT_UNPLANNED_FIELD_REMOVAL"
+set recoveryActualTables to {}
+repeat with recoveryOrdinal from 1 to count tables of boundDoc
+set recoveryTable to table recoveryOrdinal of boundDoc
+set end of recoveryActualTables to {"table",recoveryOrdinal as integer,start of content of text object of recoveryTable,end of content of text object of recoveryTable,count rows of recoveryTable,count columns of recoveryTable}
+end repeat
+if recoveryActualTables is not recoveryLiveTables then error "WPSC_CHECKPOINT_TABLE_CHANGED"
+set recoveryBound to (end of content of text object of boundDoc) - 1
+if recoveryBound < 244 then error "WPSC_CHECKPOINT_BOUND_FAILED"
+set rollbackRange to create range boundDoc start 244 end recoveryBound
+set content of rollbackRange to ""
+set recoveryEnd to end of content of text object of boundDoc
+set recoveryBound to recoveryEnd - 1
+set recoveryTarget to 244
+if recoveryTarget < 0 or recoveryTarget > recoveryBound then error "WPSC_CHECKPOINT_BOUND_FAILED"
+set recoveryPrefix to create range boundDoc start 0 end recoveryTarget
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryPrefix as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryPrefixHash to text 1 thru 64 of recoveryDigestText
+set recoveryGuardStart to recoveryTarget - 512
+if recoveryGuardStart < 0 then set recoveryGuardStart to 0
+set recoveryGuard to create range boundDoc start recoveryGuardStart end recoveryTarget
+set recoveryParagraph to text object of paragraph (count paragraphs of boundDoc) of boundDoc
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryParagraph as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryParagraphHash to text 1 thru 64 of recoveryDigestText
+set nativeRows to {{"checkpoint-state",1,recoveryBound,recoveryEnd,count paragraphs of boundDoc,start of content of recoveryParagraph,end of content of recoveryParagraph,recoveryPrefixHash,recoveryGuardStart,recoveryTarget,content of recoveryGuard as text,recoveryParagraphHash}}
+repeat with recoveryOrdinal from 1 to count tables of boundDoc
+set recoveryObject to table recoveryOrdinal of boundDoc
+set end of nativeRows to {"table",recoveryOrdinal as integer,start of content of text object of recoveryObject,end of content of text object of recoveryObject,count rows of recoveryObject,count columns of recoveryObject}
+end repeat
+repeat with recoveryOrdinal from 1 to count fields of boundDoc
+set recoveryObject to field recoveryOrdinal of boundDoc
+set end of nativeRows to {"field","main",recoveryOrdinal as integer,field type of recoveryObject as text,content of field code of recoveryObject as text,start of content of field code of recoveryObject,end of content of field code of recoveryObject,start of content of result range of recoveryObject,end of content of result range of recoveryObject}
+end repeat
+repeat with recoveryOrdinal from 1 to count bookmarks of boundDoc
+set recoveryBookmark to bookmark recoveryOrdinal of boundDoc
+set recoveryBookmarkName to name of recoveryBookmark as text
+if {} does not contain recoveryBookmarkName then
+set recoveryIdentity to text object of recoveryBookmark
+set recoveryTask to current application's NSTask's alloc()'s init()
+recoveryTask's setLaunchPath:"/usr/bin/shasum"
+recoveryTask's setArguments:{"-a", "256"}
+set recoveryInput to current application's NSPipe's pipe()
+set recoveryOutput to current application's NSPipe's pipe()
+recoveryTask's setStandardInput:recoveryInput
+recoveryTask's setStandardOutput:recoveryOutput
+recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+set recoveryData to (current application's NSString's stringWithString:(content of recoveryIdentity as text))'s dataUsingEncoding:4
+recoveryTask's |launch|()
+(recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+(recoveryInput's fileHandleForWriting())'s closeFile()
+set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+recoveryTask's waitUntilExit()
+if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+set recoveryBookmarkHash to text 1 thru 64 of recoveryDigestText
+set end of nativeRows to {"bookmark-hash",recoveryBookmarkName,start of content of recoveryIdentity,end of content of recoveryIdentity,recoveryBookmarkHash}
+end if
+end repeat
+set end of nativeRows to {"checkpoint-end"}
+if nativeRows is not {{("checkpoint-state"),1,244,245,9,244,245,("914227745b353131b3d059030170b61dd39f662c912ed43d49ef554cca26a2f9"),0,244,("Recovery prefix 中文😀" & return & "Chapter" & return & "Contents" & return & "Chapter" & tab & "1" & return & "" & return & "" & (character id 12) & "" & return & "Existing Recovery" & return & "FALLBACK-ONCE" & return & ""),("9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4")},{("field"),("main"),1,("field toc"),(" TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT "),39,74,75,147},{("field"),("main"),2,("field hyperlink"),("HYPERLINK \\l \"_Toc239852596\""),76,105,106,145},{("field"),("main"),3,("field page ref"),(" PAGEREF _Toc239852596 \\h "),115,142,143,144},{("field"),("main"),4,("field ref"),(" REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT "),161,219,220,228},{("bookmark-hash"),("WPSC_F_c9915e64c8164eb69195a2abe8755d"),39,74,("6fa0a993e820abbbc86c4e74a47185335f27d7409896e1e76ef0ed022967a9f3")},{("bookmark-hash"),("wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa"),0,8,("48f6a8d5688b0cf59fb8109b7903507ed9d2e1580be2ad7ae169df659e1ddeea")},{("bookmark-hash"),("WPSC_R_998397f2f0db4ee2bdea1b75faeb4b"),161,218,("2d0403e4dce3fa0cf4cb7f96667dec6c067a4ab0e7e254a02fa26b82ebaf637f")},{("checkpoint-end")}} then error "WPSC_CHECKPOINT_POSTCONDITION_FAILED"
+set nativeRows to {{"rollback-ack",recoveryDeletedFields,recoveryDeletedTables}} & nativeRows
+end tell
+end timeout
+return my jsonRows({"WPSCOMPOSER_WORD_SESSION_OK", nativeRows})

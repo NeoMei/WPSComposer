@@ -1,0 +1,43 @@
+[
+  {
+    "log": "d07b19396c91478981a73312782fce33.log",
+    "mtime": 1788932707.1470883,
+    "commands": [
+      "save as boundDoc file name \"/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu/document-210ca8985c0942949d66360c6de56031.docx\" file format format document default add to recent files false"
+    ],
+    "response": "\n[\"WPSCOMPOSER_WORD_SESSION_OK\",[[\"binding\",null,\"\\/Users\\/neomei\\/Library\\/Containers\\/com.microsoft.Word\\/Data\\/tmp\\/wpscomposer-session-zqca0bbu\\/document-210ca8985c0942949d66360c6de56031.docx\"]]]\n"
+  },
+  {
+    "log": "98e8c3ca242843f59122c766a129ebd6.log",
+    "mtime": 1788932745.9021487,
+    "commands": [
+      "save boundDoc"
+    ],
+    "response": "\n[\"WPSCOMPOSER_WORD_SESSION_OK\",[[\"ok\"]]]\n"
+  },
+  {
+    "log": "230bde5a337342468051c3f26874001a.log",
+    "mtime": 1788932747.097601,
+    "commands": [
+      "save as boundDoc file name \"/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu/9734fa1334fd4c5e865258e37ff3b9a6.pdf\" file format format PDF add to recent files false"
+    ],
+    "response": "\n[\"WPSCOMPOSER_WORD_SESSION_OK\",[[\"ok\"]]]\n"
+  },
+  {
+    "log": "c5af12335d3b49fdb57d8b29af2e86c6.log",
+    "mtime": 1788932748.5410652,
+    "commands": [
+      "set d to document \"文档2\"",
+      "close d saving no"
+    ],
+    "response": "\n[\"WPSCOMPOSER_WORD_SESSION_OK\",[[\"closed\"]]]\n"
+  },
+  {
+    "log": "886baffb122a4c0c8665d541be9f0801.log",
+    "mtime": 1788932748.7366424,
+    "commands": [
+      "close boundDoc saving no"
+    ],
+    "response": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu/886baffb122a4c0c8665d541be9f0801.applescript:644:657: execution error: 不能获得“active window of missing value”。 (-1728)\n\n"
+  }
+]

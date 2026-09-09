@@ -1,0 +1,145 @@
+{
+  "passed": true,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "20721fb271df8aa7baed94036251cef1787ec96ae1372439cb95239602b7b756",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148"
+  },
+  "steps": [
+    {
+      "label": "starting-inventory",
+      "rows": []
+    },
+    {
+      "label": "sentinel-created",
+      "rows": [
+        [
+          "文档49"
+        ]
+      ]
+    },
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "seed-target",
+      "rows": [
+        [
+          "seed-ack"
+        ]
+      ]
+    },
+    {
+      "label": "partial-native-ack",
+      "rows": [
+        [
+          "partial-native-ack",
+          7,
+          1
+        ]
+      ]
+    },
+    {
+      "label": "body",
+      "rows": [
+        [
+          "Recovery prefix 中文😀\rChapter\rContents\rChapter\t1\r\r\f\rExisting Recovery\rFALLBACK-ONCE\r\r",
+          0
+        ]
+      ]
+    },
+    {
+      "label": "after-owned-close",
+      "rows": [
+        [
+          "文档49",
+          "文档49",
+          false,
+          "64b3f6f6ec27d50211d160f02bd79c92d7c094d2bd9c9ed187ab8f8a9cec0c47"
+        ]
+      ]
+    },
+    {
+      "label": "sentinel-close",
+      "rows": [
+        [
+          "sentinel-closed",
+          "文档49"
+        ]
+      ]
+    },
+    {
+      "label": "after-sentinel-close",
+      "rows": []
+    },
+    {
+      "label": "shape-guard-after-rejection",
+      "rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "label": "after-shape-guard-discard",
+      "rows": []
+    },
+    {
+      "label": "reopen-body",
+      "rows": [
+        [
+          "Recovery prefix 中文😀\rChapter\rContents\rChapter\t1\r\r\f\rExisting Recovery\rFALLBACK-ONCE\r\r",
+          0
+        ]
+      ]
+    },
+    {
+      "label": "after-reopen-close",
+      "rows": []
+    }
+  ],
+  "checks": {
+    "empty_and_repeated_noop": true,
+    "actual_controller_checkpoint_partial_native_rollback_fallback_once_issue_once": true,
+    "original_ref_index_handle_instances_preserved": true,
+    "field_snapshot_after_rollback_and_fallback": true,
+    "invalid_bounds_no_mutation_and_repeat": true,
+    "native_docx_save_and_pdf_export": true,
+    "unsaved_sentinel_exact_hash_unchanged": true,
+    "owned_context_closed_with_unsaved_sentinel_preserved": true,
+    "unchanged_preexisting_textbox_and_inline_picture_exact_noop": true,
+    "new_textbox_blocks_rollback_before_deletion": true,
+    "native_reopen_edit_and_actual_rollback": true,
+    "source_unchanged_and_owned_documents_closed": true,
+    "pdf_content_verified": true
+  },
+  "sentinel_before": [
+    "文档49",
+    "文档49",
+    false,
+    "64b3f6f6ec27d50211d160f02bd79c92d7c094d2bd9c9ed187ab8f8a9cec0c47"
+  ],
+  "issues": [
+    {
+      "code": "CROSS_REFERENCE_FAILED",
+      "message": "writer.add_cross_reference used its declared native fallback",
+      "placement": "inline",
+      "node_id": "recovery-partial",
+      "stage": "native",
+      "fallback": "inline-fallback",
+      "recoverable": true
+    }
+  ],
+  "pdf_text": "Recovery prefix 中⽂😀\nChapter\nContents\nChapter ......................................................................................................................................................... 1\nExisting Recovery\nFALLBACK-ONCE"
+}

@@ -1,0 +1,19 @@
+{
+  "checks_passed": 57,
+  "source_current_and_retained_hashes_equal": 15,
+  "artifacts": {
+    "inline-empty/notices.docx": "4a1fe22d3257344c652bfa8662ec8a7b53698b453b1b5946738a36d84946a03b",
+    "inline-empty/notices.pdf": "a76bf5ed477feca4885a05ee9c4a98474c61f277927818cd4f0d75a3f5c3e44b",
+    "inline-nonempty/notices.docx": "150d66fa31592f6167bdbe4bfbf93556667cad05b0842feec34dc4f26670680d",
+    "inline-nonempty/notices.pdf": "4a8669038dfe0ce78d00d0ad88ee59bec487f279ffcec0c5dfdfe60b7e50390e",
+    "block-empty/notices.docx": "cc4cf9c61d3b15219e134ab1d94717a55eeb61e2fc01fbde706921d9c91fa2e5",
+    "block-empty/notices.pdf": "7c34f19379306827cdec41a591436d58241f65b7159afa39b6c00e054a405fd6",
+    "block-nonempty/notices.docx": "58e68641d490d3b4495f746b0c5ca7ea2a8f990f3294066ace627eb7db4ac1bc",
+    "block-nonempty/notices.pdf": "8caa2744972447a5bdb17a9656225ded8a389d42ff49dba7fbb0c54ce777ab62",
+    "table-failure-empty/notices.docx": "500117505ac690ea89e6beba4bc034fc1b85c94712aec980a26c2ef2f65cb39a",
+    "table-failure-empty/notices.pdf": "5a589b0ef189c69a3a6677e41fa644f92207eb224f70d0f4b53a6ea4af3a8497",
+    "table-failure-nonempty/notices.docx": "fb4d5839f3f56d9c4244ee88476359a5bb2294e17a574624c2edbef6928cbb22",
+    "table-failure-nonempty/notices.pdf": "6982670da647826253c87c5327cc9c806d4e6eb2c6763b35579e6834ff64fe91"
+  },
+  "pdf_pages": 6
+}

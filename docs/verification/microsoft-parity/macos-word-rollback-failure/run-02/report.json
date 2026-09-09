@@ -1,0 +1,169 @@
+{
+  "status": "PASS_QUARANTINED_RETAINED",
+  "checks": {
+    "sentinel_initial_identity": true,
+    "one_field_and_one_table_appended": true,
+    "field_cache_observed_before_rollback": true,
+    "preflight_native_counts_and_prefix": true,
+    "single_injection_and_two_real_rollback_submissions": true,
+    "typed_public_error_and_quarantine": true,
+    "observed_cache_invalidated_tracking_not_committed": true,
+    "raw_ordinary_native_error_retained": true,
+    "later_write_and_context_close_emit_no_native_script": true,
+    "field_deleted_table_retained_prefix_unchanged": true,
+    "unsaved_sentinel_exact_state_preserved": true,
+    "owned_retained_and_unrelated_inventory_preserved": true,
+    "source_hashes_unchanged": true,
+    "full_source_digest_unchanged": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_rollback_failure.py": "80af0630d881199dbf89fbf136bb50cac63906cbffb93df3b9f7a7abd8303a44",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/evidence_gate.py": "cece4c98a79e2a6bc05b0b4e5c5f2593b2fc25ceeb0ceec8a46daf6a1ab599e0",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "20721fb271df8aa7baed94036251cef1787ec96ae1372439cb95239602b7b756",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "source_digest_before": "e3161f3ce0b894d1b1d00edfac84d63199fd8f74e85bfc1ae4532b1c3eb69361",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "scope": "Injected ordinary error after real field deletion; manual UI discard and guarded recovery required",
+  "inventory_before": [],
+  "owned_binding": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/document-76505feb58e345f9977cb574e22da61d.docx",
+    "window_id": null,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj",
+    "quarantine_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine",
+    "native_identity": {
+      "document_name": "document-76505feb58e345f9977cb574e22da61d.docx",
+      "windows": [
+        [
+          "document-76505feb58e345f9977cb574e22da61d",
+          null
+        ]
+      ]
+    }
+  },
+  "sentinel_token": "Rollback failure sentinel 中文😀 9d9c04805b534d17a5005c7a6c574f0b",
+  "sentinel_name": "文档68",
+  "sentinel_before": [
+    "文档68",
+    "文档68",
+    false,
+    "19f68849c036ec4886e64f790373976d0beab54ab59aae2b583f07c66222b550"
+  ],
+  "checkpoint": 30,
+  "checkpoint_prefix_sha256": "d4fcc7f16249392bbd72bc79723ded8a2dbf2b0bbdc4ed02dd8f0ba3ad68550c",
+  "append_ack": [
+    [
+      "appended",
+      1,
+      1
+    ]
+  ],
+  "owned_before_failure": [
+    [
+      "owned",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/document-76505feb58e345f9977cb574e22da61d.docx",
+      "document-76505feb58e345f9977cb574e22da61d.docx",
+      false,
+      1,
+      1,
+      "36d5240e4aeb7e397aedf985b5bf1d33fe6321b709017a7171ff1133fd07912d",
+      "d4fcc7f16249392bbd72bc79723ded8a2dbf2b0bbdc4ed02dd8f0ba3ad68550c",
+      [
+        [
+          "document-76505feb58e345f9977cb574e22da61d",
+          null
+        ]
+      ]
+    ],
+    [
+      "table",
+      1,
+      30,
+      119,
+      "82808d25f47bc398e2ad53e52d1393e380984361673ba9ba6ce25b973796a350",
+      true
+    ]
+  ],
+  "public_rollback_error": {
+    "type": "NativeWriterObjectError",
+    "code": "LOCAL_MUTATION_ROLLBACK_FAILED",
+    "message": "rollback failed"
+  },
+  "injection": [
+    {
+      "original_sha256": "249903b1c8250e9a1d0bcb2be8c81e554524d9432a459523bca12c36d2a3cdd8",
+      "injected_sha256": "77308340f937887adb2806718b47614d278a2e78473acadb94764592ffd62015",
+      "injection_index": 141,
+      "injection_count": 1
+    }
+  ],
+  "native_script_counts": {
+    "before_rollback": 7,
+    "after_rollback": 9,
+    "after_blocked_write_and_close": 9
+  },
+  "ordinary_error_logs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/0552bc86050748f29212cbecf6a76db8.log"
+  ],
+  "blocked_operations": [
+    {
+      "operation": "write",
+      "code": "NATIVE_WORD_QUARANTINED"
+    },
+    {
+      "operation": "context_close",
+      "code": "NATIVE_WORD_QUARANTINED"
+    }
+  ],
+  "owned_after_quarantine": [
+    [
+      "owned",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/document-76505feb58e345f9977cb574e22da61d.docx",
+      "document-76505feb58e345f9977cb574e22da61d.docx",
+      false,
+      0,
+      1,
+      "424a02617f9d0c1298d269d8c31ca89b725253b63a7e17af263b00c940de6464",
+      "d4fcc7f16249392bbd72bc79723ded8a2dbf2b0bbdc4ed02dd8f0ba3ad68550c",
+      [
+        [
+          "document-76505feb58e345f9977cb574e22da61d",
+          null
+        ]
+      ]
+    ],
+    [
+      "table",
+      1,
+      30,
+      61,
+      "b4aea7fe993cf62c49e6ad9b6fcb6b69ebba39a662ed956147c93a31d1eee0e5",
+      true
+    ]
+  ],
+  "inventory_after_quarantine": [
+    [
+      "document-76505feb58e345f9977cb574e22da61d.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/document-76505feb58e345f9977cb574e22da61d.docx",
+      false,
+      "424a02617f9d0c1298d269d8c31ca89b725253b63a7e17af263b00c940de6464"
+    ],
+    [
+      "文档68",
+      "文档68",
+      false,
+      "19f68849c036ec4886e64f790373976d0beab54ab59aae2b583f07c66222b550"
+    ]
+  ],
+  "source_digest_after": "e3161f3ce0b894d1b1d00edfac84d63199fd8f74e85bfc1ae4532b1c3eb69361",
+  "quarantined": true,
+  "closed": false,
+  "quarantine_marker_sha256": "c9ebc9a0fb3a52731af275f6bcc816ada3d9a61691a800655ca09edb30fa90ed"
+}

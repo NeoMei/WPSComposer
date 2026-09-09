@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "current_source_hashes_verified": {
+    "fixtures/microsoft_parity/macos_word_recovery.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": true,
+    "skills/WPSComposer/scripts/writer.py": true,
+    "skills/WPSComposer/scripts/longform/windows_executor.py": true
+  },
+  "native_checks": 13,
+  "artifact_hashes": {
+    "recovery.docx": "fc49c92ada1e9a2f12406974d0c7bf2959dc0b157abfd802b28cbc5d0170af69",
+    "recovery.pdf": "f2421c59537a39593d76666b850391985904fd73f3309f3053607743313173cd"
+  },
+  "pages": 2,
+  "final_inventory": {
+    "label": "after-reopen-close",
+    "rows": []
+  },
+  "retained_source_copies_verified": 9,
+  "visual_review": "Both PDF pages inspected; original REF/TOC present, partial content absent, FALLBACK-ONCE visible exactly once."
+}

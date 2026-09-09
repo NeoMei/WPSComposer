@@ -1,0 +1,11 @@
+{
+  "source_and_retained_source_hashes_verified": 9,
+  "native_checks": 13,
+  "docx_fallback_once_no_partial_no_tables": true,
+  "pdf_pages": 2,
+  "pdf_visual_review": "Both rendered pages inspected; heading/TOC and existing REF plus single FALLBACK-ONCE present, no partial content or clipping.",
+  "artifact_hashes": {
+    "recovery.docx": "9970d98fbc3a786a98f61b54acd8c64254a7b947eff59fcd19de06ceeed1908e",
+    "recovery.pdf": "2d09eac4342c5f1f6a7d5a17eb5391572b0f231158c014dc4206aafad3904882"
+  }
+}

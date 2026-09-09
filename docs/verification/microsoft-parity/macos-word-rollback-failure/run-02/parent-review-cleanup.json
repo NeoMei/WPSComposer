@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "native_checks": 14,
+  "source_files_verified": 10,
+  "ui_target_url": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-q7a_hmoj/document-76505feb58e345f9977cb574e22da61d.docx",
+  "ui_observation": "Original prefix and one table visible, REF no longer present",
+  "ui_cleanup": "Exact document Close then explicit Do Not Save",
+  "after_owned_ui_discard": [
+    [
+      "\u6587\u686368",
+      "\u6587\u686368",
+      false,
+      "19f68849c036ec4886e64f790373976d0beab54ab59aae2b583f07c66222b550"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "\u6587\u686368"
+    ]
+  ],
+  "after_sentinel_close": [],
+  "guarded_recovery": true,
+  "final_inventory": [],
+  "cleanup_is_manual_not_automatic_rollback": true
+}

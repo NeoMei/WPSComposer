@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "owned_document_absent": true,
+  "unchanged_sentinel_verified": true,
+  "before": [
+    [
+      "文档26",
+      "文档26",
+      false,
+      "e40461df5fe94eaf1773adc9d4649049fd50bf4036ee96cd967b72b0fffeef86"
+    ]
+  ],
+  "close": [
+    [
+      "sentinel-closed",
+      "文档26"
+    ]
+  ],
+  "after": []
+}

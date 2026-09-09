@@ -1,0 +1,40 @@
+{
+  "all_installed_copied_bytes_unchanged": true,
+  "copied_source_count": 199,
+  "live_source_changed_since_install": [],
+  "native": {
+    "writer": {
+      "passed": true,
+      "checks": {
+        "create_session_close_completed": true,
+        "public_native_created": true,
+        "public_native_edit_saved": true,
+        "source_preserved": true,
+        "edited_value_after_native_reopen": true,
+        "native_pdf_contents": true
+      }
+    },
+    "sheet": {
+      "passed": true,
+      "checks": {
+        "create_session_close_completed": true,
+        "public_native_created": true,
+        "public_native_edit_saved": true,
+        "source_preserved": true,
+        "edited_value_after_native_reopen": true,
+        "native_pdf_contents": true
+      }
+    },
+    "slide": {
+      "passed": true,
+      "checks": {
+        "create_session_close_completed": true,
+        "public_native_created": true,
+        "public_native_edit_saved": true,
+        "source_preserved": true,
+        "edited_value_after_native_reopen": true,
+        "native_pdf_contents": true
+      }
+    }
+  }
+}

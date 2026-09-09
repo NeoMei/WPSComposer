@@ -1,0 +1,14 @@
+{
+  "install_exit_code": 0,
+  "plugin": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit08-fncmbup9/codex/plugins/wps-composer",
+  "native_smoke_executed": false,
+  "first_verifier_error": "Verifier incorrectly expected generated macos/wps-jsapi-probe/runtime.json to have a source counterpart; installer generates this Node path intentionally.",
+  "independent_packaging_bug": {
+    "development_directory": ".superpowers",
+    "files_copied": 536,
+    "bytes_copied": 5462394,
+    "also_missing_exclusion": ".worktrees",
+    "repair_pending": true
+  },
+  "status": "intermediate installation, not final acceptance"
+}

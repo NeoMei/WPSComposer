@@ -1,0 +1,247 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_degradation.py": "1e6174293f660138ea0c6e0042922934cd7e379c3ce5e601fe03c581d81cb5c1",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/__init__.py": "10600b03b8a45c32c16091075f2c6482935f9e9d088bb6ecb30078d9c0674ba8",
+    "skills/WPSComposer/scripts/msoffice/macos_word_degradation.py": "be11e3347d3d02a7aa167a8923da82a1646e38eab5616b4f14243cc34f2e7a54",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "a6f39d1191a7df557a7c911904e598bb5fa538430314a84afc9aeef711e0d534",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b",
+    "skills/WPSComposer/scripts/artifact_transport.py": "4a5740a2943eae5ccb875da6eae31ddeeddb3b5d9f9b815b1e68250215329ef7",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/longform/privacy.py": "c27c111fa58b3380cc7ec41d38c5a445a33e3fff707d95c8086656611cddf9ee"
+  },
+  "checks": {
+    "inline-empty/native_notice_utf16_format_and_semantic_handle": true,
+    "inline-empty/following_normal_text_has_no_notice_style": true,
+    "inline-empty/native_save_pdf_and_persisted_ooxml_style": true,
+    "inline-empty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "inline-empty/owned_create_context_closed_before_sentinel": true,
+    "inline-empty/reopen_native_style_real_edit_and_rollback": true,
+    "inline-empty/source_unchanged_and_reopen_context_closed": true,
+    "inline-empty/independent_exact_sentinel_close_and_original_inventory": true,
+    "inline-empty/pdf_visible_notice_once_and_normal_tail": true,
+    "inline-nonempty/native_notice_utf16_format_and_semantic_handle": true,
+    "inline-nonempty/following_normal_text_has_no_notice_style": true,
+    "inline-nonempty/native_save_pdf_and_persisted_ooxml_style": true,
+    "inline-nonempty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "inline-nonempty/owned_create_context_closed_before_sentinel": true,
+    "inline-nonempty/reopen_native_style_real_edit_and_rollback": true,
+    "inline-nonempty/source_unchanged_and_reopen_context_closed": true,
+    "inline-nonempty/independent_exact_sentinel_close_and_original_inventory": true,
+    "inline-nonempty/pdf_visible_notice_once_and_normal_tail": true
+  },
+  "cases": {
+    "inline-empty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档8",
+        "文档8",
+        false,
+        "c474870d54267b417fd86afd5171f23ca3539d6793e102268b0e6c91a57656d5"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "\r",
+          1,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "session_id": "f70697422b0846e79c92884062309517",
+        "Start": 0,
+        "End": 27,
+        "Text": "[NOTICE_INLINE_EMPTY: 中文😀]"
+      },
+      "after_notice": [
+        [
+          "[NOTICE_INLINE_EMPTY: 中文😀]\r",
+          28,
+          1,
+          0
+        ]
+      ],
+      "native_notice_format": [
+        [
+          0,
+          27,
+          "[NOTICE_INLINE_EMPTY: 中文😀]",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "[NOTICE_INLINE_EMPTY: 中文😀]\rFOLLOWING-NORMAL-inline-empty\r\r",
+          59,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          28,
+          57,
+          "FOLLOWING-NORMAL-inline-empty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 26,
+        "normal_tail": "FOLLOWING-NORMAL-inline-empty",
+        "block_paragraph_verified": false
+      },
+      "docx_sha256": "20f773380c76f797fd6396f584a757ebe184a4fce8f02cb2d9be7d58f43aec46",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档8"
+        ]
+      ],
+      "pdf_text": "[NOTICE_INLINE_EMPTY: 中⽂ ]\n😀\nFOLLOWING-NORMAL-inline-empty"
+    },
+    "inline-nonempty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档10",
+        "文档10",
+        false,
+        "ae6dead4fc893d720103f86b09241d20d08ea1158ec80f01919e46934e7fb1ac"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "PREFIX 中文😀\r",
+          12,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "session_id": "69b9dfb5ab794a18b267956b63851a64",
+        "Start": 11,
+        "End": 41,
+        "Text": "[NOTICE_INLINE_NONEMPTY: 中文😀]"
+      },
+      "after_notice": [
+        [
+          "PREFIX 中文😀[NOTICE_INLINE_NONEMPTY: 中文😀]\r",
+          42,
+          1,
+          0
+        ]
+      ],
+      "native_notice_format": [
+        [
+          11,
+          41,
+          "[NOTICE_INLINE_NONEMPTY: 中文😀]",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "PREFIX 中文😀[NOTICE_INLINE_NONEMPTY: 中文😀]\rFOLLOWING-NORMAL-inline-nonempty\r\r",
+          76,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          42,
+          74,
+          "FOLLOWING-NORMAL-inline-nonempty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 29,
+        "normal_tail": "FOLLOWING-NORMAL-inline-nonempty",
+        "block_paragraph_verified": false
+      },
+      "docx_sha256": "2d410d8c3b8887b8c740659d9a3bc27303219159a64ed9fa4ccf926c53d4af34",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档10"
+        ]
+      ],
+      "pdf_text": "PREFIX 中⽂😀[NOTICE_INLINE_NONEMPTY: 中⽂ ]\n😀\nFOLLOWING-NORMAL-inline-nonempty"
+    },
+    "block-empty": {
+      "passed": false,
+      "sentinel_before": [
+        "文档12",
+        "文档12",
+        false,
+        "c69be2a57c731771585846f89ce03f322308a53523dc56dc11dc035447fc8d23"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "\r",
+          1,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "Range": {
+          "session_id": "479557efda48401280f9ecd1c035f8eb",
+          "Start": 0,
+          "End": 25,
+          "Text": "[NOTICE_BLOCK_EMPTY] 中文😀"
+        },
+        "table_index": null
+      },
+      "after_notice": [
+        [
+          "[NOTICE_BLOCK_EMPTY] 中文😀\r",
+          26,
+          1,
+          0
+        ]
+      ],
+      "error": {
+        "type": "AssertionError",
+        "message": "",
+        "quarantined": false
+      },
+      "retained_sentinel": "文档12"
+    }
+  },
+  "error": {
+    "type": "AssertionError",
+    "message": ""
+  }
+}

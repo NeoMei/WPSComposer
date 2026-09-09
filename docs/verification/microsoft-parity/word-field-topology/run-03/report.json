@@ -1,0 +1,146 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "a96f96f99667e04ec64ed3eb018ba45de308db9a308d37b3df9c98bf2537bc6c",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb"
+  },
+  "checks": {
+    "old_keys_preserved": true,
+    "new_ref_count": true,
+    "new_toc_count": true,
+    "structural_shift_rebased": true
+  },
+  "snapshots": {
+    "initial": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      }
+    ],
+    "after_ref": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      }
+    ],
+    "after_toc": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "23ecb57f8a635ede73a81d046d93e20e5230174ed1827716e00d8c905cb77ec8",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ],
+    "after_shift": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "23ecb57f8a635ede73a81d046d93e20e5230174ed1827716e00d8c905cb77ec8",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ]
+  },
+  "error": {
+    "type": "RuntimeError",
+    "message": "Artifact validator worker exited without a result"
+  },
+  "retained_sentinel_name": "文档205",
+  "final_inventory": "session-closed-or-quarantined"
+}

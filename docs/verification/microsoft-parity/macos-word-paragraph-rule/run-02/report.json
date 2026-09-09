@@ -1,0 +1,109 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "native_readback": true,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true,
+    "reopen_native_readback": true,
+    "reopen_owned_closed_inventory_preserved": true,
+    "source_unchanged_after_reopen": true,
+    "preimage_file_unchanged": true,
+    "native_border_xml": true,
+    "prefix_text_preserved": true,
+    "following_style_spacing_xml": true,
+    "pdf_text_visible": true,
+    "pdf_rule_drawn": false
+  },
+  "scope": "public method native/artifact acceptance; UI edit/undo remains separate",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "0c85598233d98d3521ccf9807eb363dd8fe9a5d9475424935c23794d486146f9",
+    "skills/WPSComposer/scripts/msoffice/macos_word_rules.py": "0a7fdfbe3130e748b64a84c18e24552ca09c607e053c315abbcea5140e827006",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "sentinel_name": "文档47",
+  "sentinel_before": [
+    "文档47",
+    "文档47",
+    false,
+    "001b3dcdf762ff3a6b311133032a9937f92f60f56dbd16b36179a259154cc672"
+  ],
+  "word_version": "16.112.3",
+  "preimage_sha256": "4bbbe1d59e97c91d7be5d7ccdd33e8f70712a319945385e6e6e5a746086be5fc",
+  "public_result": null,
+  "native_rows": [
+    [
+      "public-paragraph-rule",
+      "PARAGRAPH RULE 中文😀 — unrelated existing body \r",
+      "FOLLOWING\r",
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      6,
+      9,
+      12,
+      18
+    ]
+  ],
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档47",
+      "文档47",
+      false,
+      "001b3dcdf762ff3a6b311133032a9937f92f60f56dbd16b36179a259154cc672"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档47"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "reopened_rows": [
+    [
+      "public-paragraph-rule",
+      "PARAGRAPH RULE 中文😀 — unrelated existing body \r",
+      "FOLLOWING\r",
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      6,
+      9,
+      12,
+      18
+    ]
+  ],
+  "inventory_after_reopen_close": [],
+  "artifact_hashes": {
+    "document.xml": "ea1840296816015f32cd9fb41cb3bb5b1649e4bc433cbbaf3e8b9911f466348c",
+    "preimage.docx": "4bbbe1d59e97c91d7be5d7ccdd33e8f70712a319945385e6e6e5a746086be5fc",
+    "paragraph-rule.pdf": "4e06c33150af61fdd3d4d1b4f84bc81e7a1c2a3fe2916b163c44b55c736efd27",
+    "page-1.png": "ed016a50a85099299cc314dd08e666917c8df43791c1d16affbf4e527cf00021",
+    "paragraph-rule.docx": "8356e9d3fed2bb88293e7a1dc40a984adfbe316c16c07b5aa150de0711b6108d",
+    "styles.xml": "b7cdc253351e9832c51d676b7bfe297ce13716e924dffe883c11fe77dd9aba7c"
+  },
+  "quarantined": false,
+  "recovery_targets": {
+    "sentinel_name": null,
+    "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-9un2oy6f/document-df6c41a14f93447f9567a909b45c6add.docx",
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-9un2oy6f"
+  }
+}

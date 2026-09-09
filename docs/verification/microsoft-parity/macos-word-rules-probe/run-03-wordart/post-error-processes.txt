@@ -1,0 +1,2 @@
+36380 Wed Sep  9 13:25:31 2026     /Applications/Microsoft Word.app/Contents/SharedSupport/Microsoft Error Reporting.app/Contents/MacOS/Microsoft Error Reporting
+36393 Wed Sep  9 13:25:32 2026     /Applications/Microsoft Word.app/Contents/MacOS/Microsoft Word

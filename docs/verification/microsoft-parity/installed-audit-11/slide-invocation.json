@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/wps-task-session-startup/.venv/bin/python",
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/installed_public.py",
+    "--plugin",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit11-aq8ntos_/codex/plugins/wps-composer",
+    "--kind",
+    "slide",
+    "--output-dir",
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/installed-audit-11/slide"
+  ],
+  "cwd": "/tmp",
+  "PYTHONPATH": "/tmp/wps-spike-validator-audit-deps"
+}

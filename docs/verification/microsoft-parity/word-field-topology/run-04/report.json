@@ -1,0 +1,171 @@
+{
+  "passed": true,
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "a96f96f99667e04ec64ed3eb018ba45de308db9a308d37b3df9c98bf2537bc6c",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb"
+  },
+  "checks": {
+    "old_keys_preserved": true,
+    "new_ref_count": true,
+    "new_toc_count": true,
+    "structural_shift_rebased": true,
+    "unrelated_preserved": true,
+    "save_reopen_source": true,
+    "pdf_read": true
+  },
+  "snapshots": {
+    "initial": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      }
+    ],
+    "after_ref": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 0,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 1
+      }
+    ],
+    "after_toc": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "23ecb57f8a635ede73a81d046d93e20e5230174ed1827716e00d8c905cb77ec8",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ],
+    "after_shift": [
+      {
+        "stable_key": [
+          "story:main text/chain:1",
+          "REF",
+          0
+        ],
+        "field_category": "field",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "owner:native",
+          "REF",
+          0
+        ],
+        "field_category": "reference",
+        "result_hash": "ce0355be54178f1ad812ad754141679b770cf9a82903c7725af3b4af5294e9f3",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      },
+      {
+        "stable_key": [
+          "doc:toc",
+          "TOC",
+          0
+        ],
+        "field_category": "index",
+        "result_hash": "23ecb57f8a635ede73a81d046d93e20e5230174ed1827716e00d8c905cb77ec8",
+        "toc_page_count": 1,
+        "figure_index_page_count": 0,
+        "table_index_page_count": 0,
+        "total_pages": 2
+      }
+    ]
+  },
+  "inventory_before": [
+    [
+      "文档207",
+      "文档207",
+      false,
+      "e280280149cfbef3924ca1ef336e1e46cd2db98c0aa39d9c8aedac2aef6772de  -"
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档207",
+      "文档207",
+      false,
+      "e280280149cfbef3924ca1ef336e1e46cd2db98c0aa39d9c8aedac2aef6772de  -"
+    ]
+  ],
+  "after_owned_close": true,
+  "reopen": [
+    5,
+    1,
+    "Prefix\rTopology acceptance heading\rTarget paragraph for native reference.\rTopology\rOwned Topology end\rNative Contents\rTopology acceptance heading\t1\r\r\f\r\r"
+  ],
+  "pdf_pages": 2,
+  "artifact_hashes": {
+    "topology.docx": "155632ba4e4a1acb9a7e059a2ce39de97641a75d02682dd4702b2864f34654db",
+    "topology.pdf": "9a429892bf08478611ea7bdca3b7378f3b7f980683bdf2efc7773c6c90bd1d37"
+  },
+  "final_inventory": "session-closed-or-quarantined"
+}

@@ -1,0 +1,7 @@
+# Word field topology repair evidence
+
+These are immutable bounded reports for the frozen topology repair, not full Word parity. Run04 native session/source hashes match a96f96f9 and446e8c9f. The parent independently checked both source hashes and both output hashes before subsequent recovery edits, extracted and viewed both PDF pages. Page1 contains the seeded heading, shifted references and native TOC; page2 is empty after insert_toc's trailing page break. This fixture does not establish general longform layout or UI acceptance.
+
+Historical report clarifications: run01 and02 already seeded a heading/paragraph/REF before the invalid-bookmark call was rejected; only that rejected call was preflight-only. Run03's four semantic snapshot checks passed but its top-level runner failed multiprocessing validation. Run04 used the existing production spawn bootstrap via a nonfile __main__ setting; the exact runner snapshot is retained, and a reusable guarded fixture remains separate work. The check named save_reopen_source establishes save and native reopen content/counts, not a separately recorded before/after input source hash. Report final_inventory placeholders do not prove cleanup; the owner separately read the actual live inventory and reported zero documents. No missing check is inferred from the passed flag.
+
+Original failures and report wording remain available alongside this clarification. Full current-source regression follows the ongoing recovery integration.

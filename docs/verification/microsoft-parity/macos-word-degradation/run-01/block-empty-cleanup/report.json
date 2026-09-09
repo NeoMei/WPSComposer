@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "owned_document_absent": true,
+  "unchanged_sentinel_verified": true,
+  "before": [
+    [
+      "文档12",
+      "文档12",
+      false,
+      "c69be2a57c731771585846f89ce03f322308a53523dc56dc11dc035447fc8d23"
+    ]
+  ],
+  "close": [
+    [
+      "sentinel-closed",
+      "文档12"
+    ]
+  ],
+  "after": []
+}

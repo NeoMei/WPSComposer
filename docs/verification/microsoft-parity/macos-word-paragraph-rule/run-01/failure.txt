@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_paragraph_rule.py", line 175, in run
+    raise AssertionError('Public paragraph rule or inherited following format not verified')
+AssertionError: Public paragraph rule or inherited following format not verified

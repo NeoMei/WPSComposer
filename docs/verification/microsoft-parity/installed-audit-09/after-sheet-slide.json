@@ -1,0 +1,17 @@
+{
+  "verified": {
+    "sheet": {
+      "checks": 6,
+      "artifact_hashes": 4,
+      "native_passed": true
+    },
+    "slide": {
+      "checks": 6,
+      "artifact_hashes": 4,
+      "native_passed": true
+    }
+  },
+  "source_equality": true,
+  "copied_files": 193,
+  "writer": "pending"
+}

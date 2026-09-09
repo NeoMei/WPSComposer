@@ -1,0 +1,34 @@
+[
+  {
+    "page": 1,
+    "drawings": [
+      {
+        "items": [
+          [
+            "re",
+            "Rect(88.55999755859375, 96.9599609375, 506.6400146484375, 97.67999267578125)",
+            -1
+          ]
+        ],
+        "type": "f",
+        "even_odd": false,
+        "fill_opacity": 1.0,
+        "fill": [
+          0.7529411911964417,
+          0.7529411911964417,
+          0.7529411911964417
+        ],
+        "rect": "Rect(88.55999755859375, 96.9599609375, 506.6400146484375, 97.67999267578125)",
+        "seqno": 10,
+        "layer": "",
+        "closePath": null,
+        "color": null,
+        "width": null,
+        "lineCap": null,
+        "lineJoin": null,
+        "dashes": null,
+        "stroke_opacity": null
+      }
+    ]
+  }
+]

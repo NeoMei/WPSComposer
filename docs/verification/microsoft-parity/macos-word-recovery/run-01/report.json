@@ -1,0 +1,58 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_recovery.py": "cb5525396dfb74097491a5b5c544dfb8da02040e507bf27b36f9d8fcc121a10b",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "97097019dde177b0f7beec505c9bdc44bedee492a24c743286e6486db0e7a6a0",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "14a2f0d8c96289c4f687034607b2e030fd8cd05fa3de311a20d11767d365890f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148"
+  },
+  "steps": [
+    {
+      "label": "starting-inventory",
+      "rows": []
+    },
+    {
+      "label": "sentinel-created",
+      "rows": [
+        [
+          "文档209"
+        ]
+      ]
+    },
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "sentinel-close",
+      "rows": [
+        [
+          "closed"
+        ]
+      ]
+    }
+  ],
+  "checks": {
+    "empty_and_repeated_noop": true
+  },
+  "sentinel_before": [
+    "文档209",
+    "文档209",
+    false,
+    "180315f5806aa104564efaae174303cfa994d8526c7311be6e88a85dfefb0741"
+  ],
+  "error": {
+    "type": "TypeError",
+    "message": "add_heading() got an unexpected keyword argument 'level'",
+    "quarantined": false
+  }
+}

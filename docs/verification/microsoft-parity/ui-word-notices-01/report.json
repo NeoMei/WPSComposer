@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "source_sha256": "58e68641d490d3b4495f746b0c5ca7ea2a8f990f3294066ace627eb7db4ac1bc",
+  "saved_ui_copy_sha256": "58e68641d490d3b4495f746b0c5ca7ea2a8f990f3294066ace627eb7db4ac1bc",
+  "identical_document_xml": true,
+  "identical_bytes": true,
+  "ui_steps": [
+    "Opened exact local test copy through Word open dialog",
+    "Selected existing NOTICE_BLOCK_NONEMPTY in the native table cell",
+    "Typed UI_NOTICE_EDIT_20260909 and observed actual replacement in AX",
+    "Cmd+Z restored original notice",
+    "Cmd+S explicit save; AX saved to Mac",
+    "Cmd+W returned DocStage",
+    "Full-path reopen dialog remained disabled; cancelled without altering document",
+    "Exact recent-file entry matching test path double-clicked",
+    "AX reopened exact path with original notice, one-cell table and normal following text",
+    "Cmd+W then independent native inventory empty"
+  ],
+  "inventory_after": [],
+  "scope": "Actual table-cell text editability, undo, save and reopen; not all direct-method argument coverage."
+}

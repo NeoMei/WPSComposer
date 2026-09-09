@@ -1,0 +1,22 @@
+{
+  "source_hashes_verified_before_recovery_edits": true,
+  "artifacts": {
+    "topology.docx": true,
+    "topology.pdf": true
+  },
+  "visual_pages_reviewed": [
+    1,
+    2
+  ],
+  "page_2_empty_after_toc_break": true,
+  "native_report_checks": {
+    "old_keys_preserved": true,
+    "new_ref_count": true,
+    "new_toc_count": true,
+    "structural_shift_rebased": true,
+    "unrelated_preserved": true,
+    "save_reopen_source": true,
+    "pdf_read": true
+  },
+  "complete_parity": false
+}

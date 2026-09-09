@@ -1,0 +1,11 @@
+{
+  "after-following.styles.xml": [
+    "<ns0:style xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns0:type=\"paragraph\" ns0:styleId=\"ae\"><ns0:name ns0:val=\"Body Text\" /><ns0:basedOn ns0:val=\"a\" /><ns0:link ns0:val=\"af\" /><ns0:uiPriority ns0:val=\"99\" /><ns0:unhideWhenUsed /><ns0:rsid ns0:val=\"00C92AC5\" /><ns0:pPr><ns0:spacing ns0:after=\"120\" /></ns0:pPr></ns0:style>"
+  ],
+  "after-rule.styles.xml": [
+    "<ns0:style xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns0:type=\"paragraph\" ns0:styleId=\"ae\"><ns0:name ns0:val=\"Body Text\" /><ns0:basedOn ns0:val=\"a\" /><ns0:link ns0:val=\"af\" /><ns0:uiPriority ns0:val=\"99\" /><ns0:unhideWhenUsed /><ns0:rsid ns0:val=\"00C92AC5\" /><ns0:pPr><ns0:spacing ns0:after=\"120\" /></ns0:pPr></ns0:style>"
+  ],
+  "setup.styles.xml": [
+    "<ns0:style xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns0:type=\"paragraph\" ns0:styleId=\"ae\"><ns0:name ns0:val=\"Body Text\" /><ns0:basedOn ns0:val=\"a\" /><ns0:link ns0:val=\"af\" /><ns0:uiPriority ns0:val=\"99\" /><ns0:unhideWhenUsed /><ns0:rsid ns0:val=\"00C92AC5\" /><ns0:pPr><ns0:spacing ns0:after=\"120\" /></ns0:pPr></ns0:style>"
+  ]
+}

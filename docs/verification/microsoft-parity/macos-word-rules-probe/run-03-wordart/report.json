@@ -1,0 +1,36 @@
+[
+  {
+    "case": "wordart",
+    "status": "FAIL",
+    "checks": {
+      "unrelated_inventory_preserved": true
+    },
+    "source_hashes": {
+      "fixtures/microsoft_parity/macos_word_rules_probe.py": "58ddd65df4406bf0652fbbc9beb0e0194c20864f7674f083cab3aa671fdae381",
+      "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+      "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "14a2f0d8c96289c4f687034607b2e030fd8cd05fa3de311a20d11767d365890f",
+      "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+      "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+      "fixtures/microsoft_parity/macos_word_references.py": "6b429c1caf7be8305706a054d9312fbfc241311794c04f1d925c459ffa63a1b0"
+    },
+    "dictionary_hash": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+    "scope": "probe only; public method and UI acceptance pending",
+    "inventory_before": [],
+    "sentinel_identity": {
+      "name": "文档219",
+      "text_hash": "b7998bb05ab16d86d5d747453cad9a9d1efc56127c78c7eaaa66d1931e6e9efb"
+    },
+    "word_version": "16.112.3",
+    "error": {
+      "type": "NativeWordError",
+      "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7ht6kz6c diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7ht6kz6c/4d0662c892d74a31b1ebf4e40b44261f.log"
+    },
+    "quarantined": false,
+    "recovery_targets": {
+      "sentinel_name": "文档219",
+      "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7ht6kz6c/document-b969b5e05de94fcdb02f77b174ce8740.docx",
+      "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7ht6kz6c"
+    },
+    "inventory_after": []
+  }
+]

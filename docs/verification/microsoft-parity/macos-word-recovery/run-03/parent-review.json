@@ -1,0 +1,29 @@
+{
+  "native_report_passed": true,
+  "source_snapshots_verified": {
+    "fixtures/microsoft_parity/macos_word_recovery.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": true,
+    "skills/WPSComposer/scripts/writer.py": true,
+    "skills/WPSComposer/scripts/longform/windows_executor.py": true
+  },
+  "artifact_hashes": {
+    "recovery.docx": "1e4778cdaac9892e52d156c6388b2b0a6d8fe9e7c03256b82abcdd166881d9d8",
+    "recovery.pdf": "7de5e6fd9c389f7f3877b7fc02974d4360eb8033e599c221c1d312fafc189f0b"
+  },
+  "body_fallback_count": 1,
+  "partial_markers_absent": true,
+  "tables_after_rollback": 0,
+  "original_TOC_and_REF_in_docx": true,
+  "visual_pages_reviewed": [
+    1,
+    2
+  ],
+  "final_inventories_empty": true,
+  "final_current_source": false,
+  "note": "Subsequent exact-comparison, shape guard and connection quarantine fixes require a new native run."
+}

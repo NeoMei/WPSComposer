@@ -1,0 +1,61 @@
+{
+  "status": "FAIL",
+  "mode": "font-properties",
+  "checks": {
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "scope": "native feasibility only; full direct method and UI parity unproven",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "0ca4e1d30a0dfbcee93b577553adfdeb37976a36817da3e381f7bc492e6c1137",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "bba6b63e97ae85faa1a71b7c54d5f39452069bffbfb53a91be0f66def908d6c0",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "20721fb271df8aa7baed94036251cef1787ec96ae1372439cb95239602b7b756",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "list_name": "WPSCHeading_f4549a3a6f3c4e17a79d4d98c9d29d70",
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "sentinel_name": "文档66",
+  "sentinel_before": [
+    "文档66",
+    "文档66",
+    false,
+    "71b0edc9b9f5afa75f4c66cf6c8c04252e7f4fcba017cce6d86e94082397846b"
+  ],
+  "word_version": [
+    [
+      "16.112.3"
+    ]
+  ],
+  "phase_rows": [],
+  "current_phase": 0,
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-l_12zgap diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-l_12zgap/57fedfb45d9b47b492f5d0def6215ff1.log"
+  },
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档66",
+      "文档66",
+      false,
+      "71b0edc9b9f5afa75f4c66cf6c8c04252e7f4fcba017cce6d86e94082397846b"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档66"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "remaining_sentinel": null,
+  "artifact_hashes": {}
+}

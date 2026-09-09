@@ -1,0 +1,10 @@
+{
+  "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "20721fb271df8aa7baed94036251cef1787ec96ae1372439cb95239602b7b756",
+  "tests/msoffice/test_macos_word_recovery.py": "0fd2a13b4f3ad57a7d4933162a0cfb9f6444e0891f6019c4630f518a9cacb346",
+  "tests/msoffice/test_macos_powerpoint_session.py": "a9a6c35f914598b2953dad5eabd7395409d4c39064c9b813d4a01afc96a1ae24",
+  "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+  "tests/msoffice/test_macos_word_rules.py": "ea757ec867b69be649d6722df8a63646a54b95f70b251579a9be50f10705c0b9",
+  "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+  "skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py": "adb8fc126b08a61eb000248555f1fed78a23497787ee663c52e203dddee75c56",
+  "skills/WPSComposer/scripts/msoffice/macos_word_rules.py": "0a7fdfbe3130e748b64a84c18e24552ca09c607e053c315abbcea5140e827006"
+}

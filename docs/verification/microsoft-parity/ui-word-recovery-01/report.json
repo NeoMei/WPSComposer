@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "source_docx": "docs/verification/microsoft-parity/macos-word-recovery/run-05/recovery.docx",
+  "source_sha256": "9970d98fbc3a786a98f61b54acd8c64254a7b947eff59fcd19de06ceeed1908e",
+  "saved_ui_copy_sha256": "9970d98fbc3a786a98f61b54acd8c64254a7b947eff59fcd19de06ceeed1908e",
+  "semantic_facts_equal": true,
+  "facts": {
+    "text": [
+      "Recovery",
+      " prefix 中文",
+      "😀",
+      "Chapter",
+      "Contents",
+      "Chapter",
+      "1",
+      "Existing ",
+      "Recovery",
+      "FALLBACK-ONCE"
+    ],
+    "field_codes": [
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      " PAGEREF _Toc239854507 \\h ",
+      " REF wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa \\h \\* MERGEFORMAT "
+    ],
+    "simple_codes": []
+  },
+  "ui_actions": [
+    "Word Cmd+O, Go To exact file path, Open",
+    "Select existing Recovery prefix, type UI_RECOVERY_EDIT_20260909; AX confirms replacement",
+    "Cmd+Z restores Recovery prefix; Cmd+S shows 已保存到我的 Mac",
+    "Cmd+W closes; first state read noWindowsAvailable, subsequent open panel confirms closure",
+    "Cmd+O, Go To same exact file path, Open; AX confirms original text, TOC and REF",
+    "Cmd+W ends at DocStage, native inventory []"
+  ],
+  "limits": "Visible main-story edit/Undo/save/reopen of recovery output; not all argument/shape/UI capabilities."
+}

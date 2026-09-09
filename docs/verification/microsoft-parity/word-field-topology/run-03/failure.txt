@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/tmp/wps_word_topology_native.py", line 42, in <module>
+    session.save_docx(OUT/'topology.docx'); session.export_pdf(OUT/'topology.pdf')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1592, in save_docx
+    return self.save(path, 12)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 720, in save
+    return self._save_to(destination, replace_source=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 744, in _save_to
+    publish_artifact(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 532, in publish_artifact
+    validator(source)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 746, in <lambda>
+    validator=lambda p: validate_before_deadline(validator, p, self._deadline),
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 390, in validate_before_deadline
+    raise RuntimeError("Artifact validator worker exited without a result") from None
+RuntimeError: Artifact validator worker exited without a result

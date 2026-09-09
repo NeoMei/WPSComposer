@@ -1,0 +1,8 @@
+{
+  "native_xml_reopen_checks_passed": 11,
+  "source_current_retained_equal": 9,
+  "artifact_hashes_equal": 6,
+  "pdf_visual": "One thin silver rule below centered original paragraph, following text centered with no second rule",
+  "original_status": "FAIL",
+  "remaining": "PDF checker ignores native filled rectangle; offline correction required"
+}

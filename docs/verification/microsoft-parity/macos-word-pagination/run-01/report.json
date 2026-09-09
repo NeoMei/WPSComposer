@@ -1,0 +1,417 @@
+{
+  "passed": true,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_pagination.py": "ba831a654a7aec6ac3a2e45365f4251cf4a310be21a7fb80d2121b78ee25d237",
+    "skills/WPSComposer/__init__.py": "10600b03b8a45c32c16091075f2c6482935f9e9d088bb6ecb30078d9c0674ba8",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_pagination.py": "69f9a34e6a8b52d53f3367c6467b903a0260bba75055f716ccd85ee874c677d9",
+    "skills/WPSComposer/scripts/msoffice/macos_word_degradation.py": "8594af7ba2c3f78bf126f17a984a52ce19374491646a43f289595ac037b6fcb7",
+    "skills/WPSComposer/scripts/longform/privacy.py": "c27c111fa58b3380cc7ec41d38c5a445a33e3fff707d95c8086656611cddf9ee",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f"
+  },
+  "checks": {
+    "native_read_only_pagination_no_text_or_saved_state_mutation": true,
+    "native_unicode_multpage_dedup_clamping_privacy": true,
+    "missing_native_bookmark_typed_without_mutation": true,
+    "public_native_save_and_pdf": true,
+    "unrelated_unsaved_documents_preserved": true,
+    "owned_context_closed_with_unsaved_sentinel_preserved": true,
+    "read_only_native_reopen_same_pagination": true,
+    "source_bytes_preserved_after_read_only_reopen": true,
+    "reopen_context_closed_with_unsaved_sentinel_preserved": true,
+    "independent_sentinel_close_restores_starting_inventory": true,
+    "independent_pdf_three_page_text_placement": true
+  },
+  "starting_inventory": [],
+  "inventory_before": [
+    [
+      "文档40",
+      "文档40",
+      false,
+      "331862eaf1bf120098280b72af0c8b65ab51f6aa4f5109bc62b9f6809729113d"
+    ]
+  ],
+  "sentinel_before": [
+    "文档40",
+    "文档40",
+    false,
+    "331862eaf1bf120098280b72af0c8b65ab51f6aa4f5109bc62b9f6809729113d"
+  ],
+  "snapshot": {
+    "map": {
+      "version": "M5-v1",
+      "nodes": [
+        {
+          "nodeId": "whole😀",
+          "story": "main",
+          "sections": [
+            "正文"
+          ],
+          "pageStart": 1,
+          "pageEnd": 3,
+          "range": "0:93",
+          "fragments": [
+            {
+              "page": 1,
+              "bounds": [
+                90.0,
+                93.0,
+                505.29998779296875,
+                769.9000244140625
+              ]
+            },
+            {
+              "page": 2,
+              "bounds": [
+                90.0,
+                72.0,
+                505.29998779296875,
+                769.9000244140625
+              ]
+            },
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                72.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "emoji😀",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 1,
+          "pageEnd": 1,
+          "range": "0:2",
+          "fragments": [
+            {
+              "page": 1
+            }
+          ]
+        },
+        {
+          "nodeId": "end",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 3,
+          "pageEnd": 3,
+          "range": "92:92",
+          "fragments": [
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                100.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "past-end",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 3,
+          "pageEnd": 3,
+          "range": "98:102",
+          "fragments": [
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                100.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "<redacted>",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 1,
+          "pageEnd": 1,
+          "range": "0:0",
+          "fragments": [
+            {
+              "page": 1
+            }
+          ]
+        }
+      ]
+    },
+    "bookmark": {
+      "nodeId": "first😀",
+      "story": "main",
+      "sections": [
+        "body"
+      ],
+      "pageStart": 1,
+      "pageEnd": 1,
+      "range": "0:17",
+      "fragments": [
+        {
+          "page": 1,
+          "bounds": [
+            90.0,
+            93.0,
+            91.0,
+            105.0
+          ]
+        }
+      ]
+    },
+    "ordinal": {
+      "nodeId": "first😀",
+      "story": "main",
+      "sections": [
+        "body"
+      ],
+      "pageStart": 1,
+      "pageEnd": 1,
+      "range": "0:17",
+      "fragments": [
+        {
+          "page": 1,
+          "bounds": [
+            90.0,
+            93.0,
+            91.0,
+            105.0
+          ]
+        }
+      ]
+    }
+  },
+  "native_state_before": [
+    [
+      "state",
+      "828cce8445628b5ca73372891e383ac1270ba8235e802f0f645f178b98829688  -",
+      93,
+      7,
+      0,
+      1,
+      0,
+      false
+    ]
+  ],
+  "native_state_after": [
+    [
+      "state",
+      "828cce8445628b5ca73372891e383ac1270ba8235e802f0f645f178b98829688  -",
+      93,
+      7,
+      0,
+      1,
+      0,
+      false
+    ]
+  ],
+  "inventory_after_owned_close": [
+    [
+      "文档40",
+      "文档40",
+      false,
+      "331862eaf1bf120098280b72af0c8b65ab51f6aa4f5109bc62b9f6809729113d"
+    ]
+  ],
+  "reopen_snapshot": {
+    "map": {
+      "version": "M5-v1",
+      "nodes": [
+        {
+          "nodeId": "whole😀",
+          "story": "main",
+          "sections": [
+            "正文"
+          ],
+          "pageStart": 1,
+          "pageEnd": 3,
+          "range": "0:93",
+          "fragments": [
+            {
+              "page": 1,
+              "bounds": [
+                90.0,
+                93.0,
+                505.29998779296875,
+                769.9000244140625
+              ]
+            },
+            {
+              "page": 2,
+              "bounds": [
+                90.0,
+                72.0,
+                505.29998779296875,
+                769.9000244140625
+              ]
+            },
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                72.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "emoji😀",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 1,
+          "pageEnd": 1,
+          "range": "0:2",
+          "fragments": [
+            {
+              "page": 1
+            }
+          ]
+        },
+        {
+          "nodeId": "end",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 3,
+          "pageEnd": 3,
+          "range": "92:92",
+          "fragments": [
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                100.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "past-end",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 3,
+          "pageEnd": 3,
+          "range": "98:102",
+          "fragments": [
+            {
+              "page": 3,
+              "bounds": [
+                90.0,
+                100.0,
+                505.29998779296875,
+                112.0
+              ]
+            }
+          ]
+        },
+        {
+          "nodeId": "<redacted>",
+          "story": "main",
+          "sections": [
+            "body"
+          ],
+          "pageStart": 1,
+          "pageEnd": 1,
+          "range": "0:0",
+          "fragments": [
+            {
+              "page": 1
+            }
+          ]
+        }
+      ]
+    },
+    "bookmark": {
+      "nodeId": "first😀",
+      "story": "main",
+      "sections": [
+        "body"
+      ],
+      "pageStart": 1,
+      "pageEnd": 1,
+      "range": "0:17",
+      "fragments": [
+        {
+          "page": 1,
+          "bounds": [
+            90.0,
+            93.0,
+            91.0,
+            105.0
+          ]
+        }
+      ]
+    },
+    "ordinal": {
+      "nodeId": "first😀",
+      "story": "main",
+      "sections": [
+        "body"
+      ],
+      "pageStart": 1,
+      "pageEnd": 1,
+      "range": "0:17",
+      "fragments": [
+        {
+          "page": 1,
+          "bounds": [
+            90.0,
+            93.0,
+            91.0,
+            105.0
+          ]
+        }
+      ]
+    }
+  },
+  "inventory_after_reopen_close": [
+    [
+      "文档40",
+      "文档40",
+      false,
+      "331862eaf1bf120098280b72af0c8b65ab51f6aa4f5109bc62b9f6809729113d"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档40"
+    ]
+  ],
+  "final_inventory": [],
+  "source_sha256_before_reopen": "e5adcf592e50f27c2058e071213bb09f6ca6ac8d81569b97d4d68777002b5449",
+  "source_sha256_after_reopen": "e5adcf592e50f27c2058e071213bb09f6ca6ac8d81569b97d4d68777002b5449",
+  "pdf_page_count": 3,
+  "artifact_hashes": {
+    "pagination.docx": "e5adcf592e50f27c2058e071213bb09f6ca6ac8d81569b97d4d68777002b5449",
+    "pagination.pdf": "963060f282f4434d581732c2046387c7144fedb6a379288b94a718aa8be50841"
+  }
+}

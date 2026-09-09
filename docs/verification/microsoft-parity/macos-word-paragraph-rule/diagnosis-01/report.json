@@ -1,0 +1,341 @@
+{
+  "status": "DIAGNOSIS_COMPLETE",
+  "checks": {
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "source_hashes": {
+    "docs/verification/microsoft-parity/macos-word-paragraph-rule/diagnosis-01/diagnose_style.py": "da1de6c1af5d4990720b0ce5d65e6034dd1941befebf3631e063fa4cb7fcc40f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_rules.py": "0a7fdfbe3130e748b64a84c18e24552ca09c607e053c315abbcea5140e827006",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "768c43c0d97e333f0026d32ff9cd50a8afce2de6e97e34def73f42f4a5ad7eb8",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f"
+  },
+  "stages": {
+    "before_setup": [
+      [
+        "stage",
+        "before_setup"
+      ],
+      [
+        1,
+        "content",
+        "\r"
+      ],
+      [
+        1,
+        "style_equals_object",
+        false
+      ],
+      [
+        1,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文\" of paragraph 1 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "style_name_local",
+        "正文"
+      ],
+      [
+        1,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "centered",
+        false
+      ]
+    ],
+    "after_setup": [
+      [
+        "stage",
+        "after_setup"
+      ],
+      [
+        1,
+        "content",
+        "PARAGRAPH RULE 中文😀 — unrelated existing body\r"
+      ],
+      [
+        1,
+        "style_equals_object",
+        false
+      ],
+      [
+        1,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of paragraph 1 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "style_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "centered",
+        false
+      ]
+    ],
+    "after_public_rule": [
+      [
+        "stage",
+        "after_public_rule"
+      ],
+      [
+        1,
+        "content",
+        "PARAGRAPH RULE 中文😀 — unrelated existing body \r"
+      ],
+      [
+        1,
+        "style_equals_object",
+        false
+      ],
+      [
+        1,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of paragraph 1 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "style_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "centered",
+        true
+      ],
+      [
+        2,
+        "content",
+        "\r"
+      ],
+      [
+        2,
+        "style_equals_object",
+        false
+      ],
+      [
+        2,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of paragraph 2 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        2,
+        "style_name_local",
+        "正文文本"
+      ],
+      [
+        2,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        2,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        2,
+        "centered",
+        true
+      ]
+    ],
+    "after_following_text": [
+      [
+        "stage",
+        "after_following_text"
+      ],
+      [
+        1,
+        "content",
+        "PARAGRAPH RULE 中文😀 — unrelated existing body \r"
+      ],
+      [
+        1,
+        "style_equals_object",
+        false
+      ],
+      [
+        1,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of paragraph 1 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "style_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        1,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        1,
+        "centered",
+        true
+      ],
+      [
+        2,
+        "content",
+        "FOLLOWING\r"
+      ],
+      [
+        2,
+        "style_equals_object",
+        false
+      ],
+      [
+        2,
+        "style_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of paragraph 2 of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        2,
+        "style_name_local",
+        "正文文本"
+      ],
+      [
+        2,
+        "bodytext_name_local",
+        "正文文本"
+      ],
+      [
+        2,
+        "bodytext_as_text",
+        "ERROR",
+        -1700,
+        "不能将“«class w173» \"正文文本\" of document \"document-9c5718eabc104877b1efb05645d14d8e.docx\" of application \"Microsoft Word\"”转换为“text”类型。"
+      ],
+      [
+        2,
+        "centered",
+        true
+      ]
+    ]
+  },
+  "inventory_before": [],
+  "sentinel_before": [
+    "文档44",
+    "文档44",
+    false,
+    "041ed7e450bc2bea288df0458c92710e9d63197279b2c938bbc7afec7f5af6c7"
+  ],
+  "word_version": "16.112.3",
+  "public_result": null,
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档44",
+      "文档44",
+      false,
+      "041ed7e450bc2bea288df0458c92710e9d63197279b2c938bbc7afec7f5af6c7"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档44"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "artifacts": {
+    "setup.docx": {
+      "sha256": "e4c2dca7612f4161919a5eb88307caa3899970da6d20eb2ac6840a2efe10f197",
+      "paragraphs": [
+        {
+          "text": "PARAGRAPH RULE 中文😀 — unrelated existing body",
+          "pPr": "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"ae\" /><ns0:spacing ns0:before=\"120\" ns0:after=\"180\" ns0:line=\"360\" ns0:lineRule=\"exact\" /><ns0:ind ns0:firstLine=\"240\" /></ns0:pPr>"
+        }
+      ]
+    },
+    "after-rule.docx": {
+      "sha256": "81ad81455371c360c4f459b98d0902f2b8362f28f0e23e907bd8deffaba67629",
+      "paragraphs": [
+        {
+          "text": "PARAGRAPH RULE 中文😀 — unrelated existing body ",
+          "pPr": "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"ae\" /><ns0:pBdr><ns0:bottom ns0:val=\"single\" ns0:sz=\"6\" ns0:space=\"1\" ns0:color=\"C0C0C0\" /></ns0:pBdr><ns0:spacing ns0:before=\"120\" ns0:after=\"180\" ns0:line=\"360\" ns0:lineRule=\"exact\" /><ns0:ind ns0:firstLine=\"240\" /><ns0:jc ns0:val=\"center\" /></ns0:pPr>"
+        },
+        {
+          "text": "",
+          "pPr": "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"ae\" /><ns0:spacing ns0:before=\"120\" ns0:after=\"180\" ns0:line=\"360\" ns0:lineRule=\"exact\" /><ns0:ind ns0:firstLine=\"240\" /><ns0:jc ns0:val=\"center\" /></ns0:pPr>"
+        }
+      ]
+    },
+    "after-following.docx": {
+      "sha256": "12c14fc398d1dbb1f5277114bf6c72826a99a648ff28ef13313d6096e93fcc6d",
+      "paragraphs": [
+        {
+          "text": "PARAGRAPH RULE 中文😀 — unrelated existing body ",
+          "pPr": "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"ae\" /><ns0:pBdr><ns0:bottom ns0:val=\"single\" ns0:sz=\"6\" ns0:space=\"1\" ns0:color=\"C0C0C0\" /></ns0:pBdr><ns0:spacing ns0:before=\"120\" ns0:after=\"180\" ns0:line=\"360\" ns0:lineRule=\"exact\" /><ns0:ind ns0:firstLine=\"240\" /><ns0:jc ns0:val=\"center\" /></ns0:pPr>"
+        },
+        {
+          "text": "FOLLOWING",
+          "pPr": "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"ae\" /><ns0:spacing ns0:before=\"120\" ns0:after=\"180\" ns0:line=\"360\" ns0:lineRule=\"exact\" /><ns0:ind ns0:firstLine=\"240\" /><ns0:jc ns0:val=\"center\" /></ns0:pPr>"
+        }
+      ]
+    }
+  },
+  "quarantined": false,
+  "retained_sentinel": null
+}
