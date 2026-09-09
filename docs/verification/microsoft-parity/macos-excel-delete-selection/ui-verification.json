@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "path": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/build/excel-delete-selection/ui-delete-selection.xlsx",
+  "source_artifact": "run-01/before-selected.xlsx",
+  "initial_sha256": "0e23ff07340cf71eda0d7009abe296cab6a975d299e09c62971c771e24edd4c4",
+  "saved_sha256": "3f0d48c4fd411aeb06db395bf018662c36c996b81bac93611a6bb6e9996a4c0e",
+  "sheet": "DeleteProbeB",
+  "cell": "A1",
+  "initial_value": "AFTER DELETE before-selected",
+  "typed_value": "UI-DELETE-CHECK",
+  "undo_restored_original": true,
+  "explicit_save": true,
+  "closed_and_exact_path_reopened": true,
+  "reopened_sheet_and_value_verified": true,
+  "owned_ui_file_closed": true,
+  "original_native_artifact_unchanged": true,
+  "original_inventory_restored_after_UI": true
+}

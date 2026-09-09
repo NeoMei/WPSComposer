@@ -1,0 +1,43 @@
+{
+  "run_id": 34395516226,
+  "head_sha": "5622a1615e6fd22676a3aa410a393503dab57f91",
+  "scope": "portable automated suite only; native Office/WPS and UI gates remain open",
+  "jobs": [
+    {
+      "job": "pytest-ubuntu-24.04-python-3.12",
+      "tests": 5052,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 44,
+      "passed": 5008,
+      "seconds": 234.128
+    },
+    {
+      "job": "pytest-ubuntu-24.04-python-3.9",
+      "tests": 5052,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 44,
+      "passed": 5008,
+      "seconds": 238.72
+    },
+    {
+      "job": "pytest-windows-2022-python-3.12",
+      "tests": 5052,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75,
+      "passed": 4977,
+      "seconds": 673.303
+    },
+    {
+      "job": "pytest-windows-2022-python-3.9",
+      "tests": 5052,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75,
+      "passed": 4977,
+      "seconds": 652.037
+    }
+  ]
+}

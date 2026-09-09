@@ -1,0 +1,15 @@
+{
+  "source_manifest_removed": true,
+  "runtime_logging_preference_absent": true,
+  "runtime_log_created": false,
+  "fixture_sha256_after": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d",
+  "fixture_unchanged": true,
+  "port3443_closed": true,
+  "new_certificate_or_trust_changes": false,
+  "owned_saved_doc_closed_via_ui": true,
+  "owned_blank_doc_closed_via_ui": true,
+  "word_returned_to_DocStage": true,
+  "cached_registration_removal_verified": false,
+  "word_restarted_after_preference_removal": true,
+  "post_restart_ui": "DocStage; no document window"
+}

@@ -529,6 +529,36 @@ def test_existing_worksheet_delete_rejects_before_any_native_mutation(tmp_path):
     with pytest.raises(NotImplementedError):obj.apply_structural_op({'op':'remove','target':'sheet:2'})
 
 
+@pytest.mark.parametrize('selected,removed,expected', [(3, 2, 2), (3, 3, 2), (1, 3, 1)])
+def test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet(
+    tmp_path, selected, removed, expected
+):
+    obj = session(tmp_path)
+    obj._sheet_index = selected
+    obj._fresh_empty_sheets = {2, 3}
+    scripts = []
+    obj._run = lambda body, **kw: scripts.append(body) or {'removed': f'sheet:{removed}'}
+
+    obj.apply_structural_op({'op': 'remove', 'target': f'sheet:{removed}'})
+    obj.write_cell(1, 1, 'AFTER DELETE')
+
+    assert f'set ws to worksheet {expected} of ownedBook' in scripts[-1]
+
+
+def test_failed_empty_sheet_removal_keeps_logical_selection(tmp_path):
+    obj = session(tmp_path)
+    obj._sheet_index = 3
+    obj._fresh_empty_sheets = {2}
+
+    def fail(*args, **kwargs):
+        raise TimeoutError('native outcome uncertain')
+
+    obj._run = fail
+    with pytest.raises(TimeoutError):
+        obj.apply_structural_op({'op': 'remove', 'target': 'sheet:2'})
+    assert obj._sheet_index == 3
+
+
 def test_direct_business_colors_accept_bgr_integer_contract():
     assert module()._color(0x563412)=='{18, 52, 86}'
     with pytest.raises(ValueError):module()._color(True)

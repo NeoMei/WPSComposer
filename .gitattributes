@@ -6,3 +6,9 @@
 # Keep scoped native character-read evidence byte-identical on Windows.
 /docs/verification/microsoft-parity/macos-word-quality/character-record-read/** -text
 /docs/verification/microsoft-parity/macos-word-quality/character-record-read/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Preserve the new Excel native and hosted-CI evidence hashes on Windows.
+/docs/verification/microsoft-parity/macos-excel-delete-selection/** -text
+/docs/verification/microsoft-parity/macos-excel-delete-selection/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/portable-ci/run-08/** -text
+/docs/verification/microsoft-parity/portable-ci/run-08/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
