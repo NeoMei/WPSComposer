@@ -9,6 +9,8 @@ Runtime checkpoint `9e09bbe0` remains **not release ready**; PR9 is draft. Hoste
 
 [Heading v5](macos-word-heading-import/README.md) records 96 passing native operation/style-independence checks, final DOCX/PDF and reopen, but **visual Arabic FAIL** in both Word canvas and PDF. The installed Arial Bold Italic faces lack the fixture glyphs and the PDF contains 21 painted `.notdef` glyphs. The reviewed missing-glyph guard rejects this artifact. A distinct26-check italic-state continuation confirms source glyphs appear when italic is off and disappear after exact restoration; this diagnoses the face dependency without enabling a fallback. The exact saved UI copy retains original DOCX bytes and closes with empty final native inventory. A separate fresh `ui-05/fresh-ui-report.json` now establishes the complete UI edit/Undo/Save/close/same-path reopen/close sequence, unchanged bytes and empty final inventory; the earlier close-only report is retained. Preserve these distinct results; no full heading acceptance or new public capability is claimed.
 
+Current installed Word at a6bd0140 passes six public smoke checks with216 installed/source hashes equal and empty native inventories. The separate heading style install/refresh probe fails before import: requesting Normal as the exact named parent base leaves Heading1. Both setup failures and successful scoped cleanup are retained; no new heading capability is enabled.
+
 Nine absent direct methods, full quality snapshots/capability rows, current Windows Office/WPS native/UI/installed execution and final whole-branch certification still block release. See [the current release checklist](release-readiness-20260911.md). Earlier dated checkpoints below remain historical evidence, not current claims.
 
 

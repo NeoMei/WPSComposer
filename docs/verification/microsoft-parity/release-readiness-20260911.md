@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Source regression | [Full48](full-round48/README.md): 5,281 passed / 12 skipped on immutable c454ac8d; all402 before/after/live hashes equal | Run affected checks after implementation changes; do not transfer results to changed sources |
 | Hosted portability | [CI14](portable-ci/run-14/README.md) passed four jobs atce322b29: Linux each5,221 passed/44 skipped; Windows each5,167 passed/98 skipped | Hosted tests do not execute opt-in native Office scenarios |
-| Mac installed public paths | Isolated installer: 214 identical source files; Word/Excel/PowerPoint each six representative public checks | Complete argument, format, lifecycle and capability matrix |
+| Mac installed public paths | Current Word isolated install at a6bd0140:216 identical source files and six public checks. Earlier Excel/PowerPoint installed smoke retained separately | Complete argument, format, lifecycle and capability matrix; current all-app installation |
 | Mac Word direct API | 71/80 declared method names; declaration is not native certification | Nine absent methods below; complete native acceptance for implemented methods |
 | Word full-quality snapshot | Defined-style and page-story diagnostics preserve state on bounded cases | Complete linked story, character/style/layout coverage and repeated full snapshots without read side effects |
 | Windows desktop | Remote continuation accepted; latest refresh exposes old interrupted turn and notLoaded state | Fresh candidate Office/WPS native, UI and isolated-installed execution |
@@ -23,3 +23,5 @@ The first italic-only trial saved native false by removing exactly two source/li
 The horizontal-line document-container variant had already failed with a floating rectangle instead of the required inline object. Its stale compile-only plan has been corrected to the existing native evidence; the same constructor will not be repeated as a new test.
 
 Temporary localhost certificate trust, test private key and listener were removed after the earlier Office.js activation attempt. No functional Office.js path was accepted. No merge, parity tag/release or personal-plugin installation has been performed during this continuation.
+
+The production-shaped heading-style setup now has two preserved native failures before import. The second run uses exact named style resolution and real typed readbacks; the custom parent still bases on Heading1 after requesting Normal. No style-refresh or custom-parent capability follows from these runs. A separate supported style-copy mechanism must be verified; no further setter normalization is assumed. [Current installed Word](installed-word-caption-checkpoint/README.md) passes six public checks with216 exact installed/source hashes and empty before/after document inventories.

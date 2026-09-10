@@ -1,0 +1,3 @@
+# Native setup chain failure
+
+Run01 stops before importing a style. The literal setup acknowledgement passes but saved Heading1 still bases on Normal while WPSC Install Parent bases on Heading1. Thus the intended source-to-parent-to-Normal chain was not established. The source DOCX,23 retained source copies, one native setup artifact and exact unsaved sentinel are preserved; root confirms final Word inventory empty. Do not infer any style-import result from this run. The next diagnostic replaces ambiguous returned references with exact names and verifies actual typed identities/base-style results before any import.
