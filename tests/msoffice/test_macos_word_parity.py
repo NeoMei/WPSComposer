@@ -131,11 +131,6 @@ def test_spans_have_independent_native_ranges_and_formats(tmp_path):
     assert 'strike through of font object of spanRange to true' in source
 
 
-def test_unverified_custom_bullet_rejected_before_word(tmp_path):
-    with pytest.raises(MacWordCapabilityError, match='custom bullet'):
-        compile_changed(tmp_path,'# Report\n\n- one\n- two','writer.add_list',glyph='■')
-
-
 def m4_equation_plan(content):
     build = build_longform_generation('# Report\n\n$$\nx+y\n$$')
     operations = []

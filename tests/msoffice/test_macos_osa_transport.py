@@ -266,8 +266,13 @@ def test_native_process_lookup_rejects_reuse_during_identity_read():
     assert caught.value.code == "OSA_PROCESS_IDENTITY_CHANGED"
 
 
-def test_native_process_lookup_uses_supplied_retained_application_handle():
+@pytest.mark.parametrize("host_paths", ["native", "windows"])
+def test_native_process_lookup_uses_supplied_retained_application_handle(monkeypatch, host_paths):
     mod = api()
+    if host_paths == "windows":
+        import ntpath
+        from types import SimpleNamespace
+        monkeypatch.setattr(mod, "os", SimpleNamespace(path=ntpath))
 
     class Runtime:
         def __init__(self):

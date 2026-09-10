@@ -26,3 +26,8 @@ docs/verification/microsoft-parity/portable-ci/run-10/** -text whitespace=-blank
 
 # Retain exact native private-session failure and acceptance evidence.
 docs/verification/microsoft-parity/macos-excel-private-public/** -text
+
+# Preserve watchdog native and hosted Windows failure evidence unchanged.
+/docs/verification/microsoft-parity/macos-excel-bounded-launcher/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-11/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round43/** -text whitespace=-blank-at-eof,-trailing-space

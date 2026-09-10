@@ -1,0 +1,12 @@
+{
+  "operation": "inventory",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kisnvreg/owner/inventory-a62792d45c9944b3985bf66cca61862d/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kisnvreg/owner/inventory-a62792d45c9944b3985bf66cca61862d/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kisnvreg/owner/inventory-a62792d45c9944b3985bf66cca61862d/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kisnvreg/owner/inventory-a62792d45c9944b3985bf66cca61862d/diagnostic.json",
+  "stdout": "{\"nonce\":\"a62792d45c9944b3985bf66cca61862d\",\"version\":\"16.112.3\",\"workbooks\":[]}\n",
+  "stderr": "",
+  "returncode": 0,
+  "error": null,
+  "diagnostic_errors": []
+}

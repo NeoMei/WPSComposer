@@ -1,0 +1,120 @@
+Ignoring wrong pointing object 6 0 (offset 0)
+Ignoring wrong pointing object 8 0 (offset 0)
+Ignoring wrong pointing object 10 0 (offset 0)
+Ignoring wrong pointing object 12 0 (offset 0)
+Ignoring wrong pointing object 14 0 (offset 0)
+Ignoring wrong pointing object 16 0 (offset 0)
+Ignoring wrong pointing object 18 0 (offset 0)
+{
+  "passed": true,
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kisnvreg",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y"
+  ],
+  "owners": [
+    {
+      "pid": 50696,
+      "start_seconds": 1789051637,
+      "start_microseconds": 211183,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    },
+    {
+      "pid": 50999,
+      "start_seconds": 1789051654,
+      "start_microseconds": 202214,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  ],
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "866eec03162aea46fbe229416b59167e800c9b25e38a5841034126ba485eece5",
+    "skills/WPSComposer/scripts/msoffice/macos_excel_process.py": "cdcf3b22dd10497f645fceb3dbcc4d7ade784c485390aaab7e7e2277353010d2",
+    "skills/WPSComposer/scripts/msoffice/macos_osa_transport.py": "889f5b24566a643a46fe25022bb125302ca85b72c8a2a499c853087c2a19c63c",
+    "skills/WPSComposer/scripts/msoffice/macos_office_runtime.py": "c94b276f143de237a5b93893cbf654a62fa851baa4a871f41f32a6db102248b6",
+    "skills/WPSComposer/scripts/msoffice/macos_excel_launcher.py": "d7ec4084df1b06876a25bf6661b95e411372af85c88562b898a168c2c978cc38"
+  },
+  "runner_sha256": "9ffd10449d2dfcdfb630e988cdc6d487a848b80fc556ebf9151ff5a5af571969",
+  "original_before": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "helpers": [
+    {
+      "pid": 50695,
+      "class": "BoundedExcelLauncher",
+      "exitcode": 0
+    },
+    {
+      "pid": 50998,
+      "class": "BoundedExcelLauncher",
+      "exitcode": 0
+    }
+  ],
+  "delete": {
+    "removed": "sheet:3",
+    "deleted": true
+  },
+  "pdf_pages": 5,
+  "reopen": {
+    "names": [
+      "Data",
+      "Results"
+    ],
+    "marker": "PRIVATE-PUBLIC-SESSION",
+    "alerts": true,
+    "saved": true
+  },
+  "original_after": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "final_original_state": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "original_preserved": true,
+  "source_preserved": true,
+  "runner_preserved": true,
+  "code_preserved": true
+}

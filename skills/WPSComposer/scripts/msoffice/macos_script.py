@@ -14,6 +14,7 @@ from typing import Mapping
 
 from ..generation_plan import GenerationPlan, validate_generation_plan
 from ..longform.executor import ExecutionOutcome, ExecutionIssue, PaginationMap, PaginationNode, PaginationFragment
+from ..reference_styles import BODY_FONT, LATIN_FONT
 from .errors import NativeWordCapabilityError
 
 
@@ -346,7 +347,7 @@ _ALLOWED_ARGS = {
  'finalize_fields': {'maxRounds','compactTerminalParagraph'},
  'add_inline_degradation': {'code','fallbackText','message','text','placement','stage','fallback','recoverable'},
  'add_degradation_notice': {'code','fallbackText','message','text','placement','stage','fallback','recoverable'},
- 'add_list': {'items','ordered','glyph'},
+ 'add_list': {'items','ordered','glyph','indent'},
  'add_semantic_table': {'includePreviousHeading','continuousExit','cellCitations','cellDegradations','caption','numbering','indexable','referenceable','headers','rows','alignments','style','orientation','borderSpec','merges','repeatHeader','allowRowSplit','cellIndentPt','plannedDegradation','keepCaptionWithFirstRow','bookmarkName','m5Relayout'},
  'add_captioned_figure': {'columns','includePreviousHeading','continuousExit','caption','numbering','indexable','referenceable','widthMode','orientation','kind','children','layout','keepWithCaption','bookmarkName','explicitWidthPt'},
  'insert_figure_index': {'title','sequenceId','titleStyleId'},
@@ -368,8 +369,6 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             raise MacWordCapabilityError('Mac native Word unsupported ' + op + ' attributes: ' + ', '.join(sorted(extra)))
         if operation.node_id and any(c in operation.node_id for c in '\t\n\r'):
             raise MacWordCapabilityError('Mac native Word node identity contains a record separator')
-        if op == 'add_list' and operation.args.get('glyph','•') != '•':
-            raise MacWordCapabilityError('Mac native Word unsupported custom bullet glyph')
         if op == 'ensure_styles':
             for style in operation.args['styles']:
                 if style.get('type', 'paragraph') != 'paragraph':
@@ -526,10 +525,34 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             if op == 'add_heading' and numbered and not a.get('numbering'):
                 lines.append('remove numbers (list format of r)')
         elif op == 'add_list':
-            items = a['items']
-            text = '\r'.join(items) + '\r'
-            lines += [f'set r to my appendText(ownedDoc, {apple_string(text)})', 'set style of r to style body text', 'set first line indent of paragraph format of r to 0']
-            lines.append(('apply number default' if a.get('ordered') else 'apply bullet default') + ' (list format of r)')
+            indent = a.get('indent', 24)
+            list_format = {
+                'fontName': BODY_FONT,
+                'fontNameAscii': LATIN_FONT,
+                'fontSize': 12,
+                'bold': False,
+                'color': '#000000',
+                'leftIndent': indent,
+                'indentFirst': -indent,
+                'lineSpacingRule': 'one_and_half',
+                'spaceBefore': 0,
+                'spaceAfter': 3,
+            }
+            for index, item in enumerate(a['items'], 1):
+                prefix = f'{index}.' if a.get('ordered') else a.get('glyph', '•')
+                lines += [
+                    f'set r to my appendText(ownedDoc, {apple_string(prefix + chr(9) + item)} & return)',
+                    'set style of r to style list paragraph',
+                    'reset font object of r',
+                    'reset paragraph format of r',
+                    *_format('r', list_format),
+                    f'make new tab stop at paragraph 1 of r with properties {{tab stop position:{_num(indent)}}}',
+                    'set trailingPoint to (end of content of text object of ownedDoc) - 1',
+                    'set trailingRange to create range ownedDoc start trailingPoint end trailingPoint',
+                    'set style of trailingRange to style normal',
+                    'reset font object of trailingRange',
+                    'reset paragraph format of trailingRange',
+                ]
         elif op == 'add_semantic_table':
             # Citation descriptors have already rendered their resolved text in
             # the validated grid. M5 relayout is carried by merges/allowRowSplit.

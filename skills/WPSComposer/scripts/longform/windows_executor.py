@@ -1062,10 +1062,15 @@ class WindowsLongformExecutor(LongformExecutor):
 
         if name == "writer.add_list":
             items = args.get("items", [])
+            indent = args.get("indent", 24)
             if args.get("ordered"):
-                composer.add_numbered_list(items)
+                composer.add_numbered_list(items=items, indent=indent)
             else:
-                composer.add_bullet_list(items, glyph=args.get("glyph", "•"))
+                composer.add_bullet_list(
+                    items=items,
+                    glyph=args.get("glyph", "•"),
+                    indent=indent,
+                )
             return
 
         if name == "writer.add_inline_degradation":

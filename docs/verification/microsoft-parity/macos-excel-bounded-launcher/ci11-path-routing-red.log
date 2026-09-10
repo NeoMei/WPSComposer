@@ -1,0 +1,25 @@
+.....F                                                                   [100%]
+=================================== FAILURES ===================================
+_____________ test_darwin_router_rejects_windows_backslash_aliases _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1086a1ac0>
+
+    def test_darwin_router_rejects_windows_backslash_aliases(monkeypatch):
+        import ntpath
+        from types import SimpleNamespace
+        from dataclasses import replace
+        monkeypatch.setattr(osa, 'os', SimpleNamespace(path=ntpath))
+        monkeypatch.setattr(osa, 'Path', PureWindowsPath)
+        expected = osa.ExcelProcessIdentity(42, 10, 20,
+            '/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel', 'com.microsoft.Excel')
+        osa.require_same_process(expected, replace(expected))
+        # Backslash is a literal Darwin filename character, not a separator.
+        altered = replace(expected, executable='/Applications/Microsoft Excel.app/Contents/MacOS\\Microsoft Excel')
+        with pytest.raises(osa.OSATransportError, match='EXECUTABLE_CHANGED'):
+>           osa.require_same_process(expected, altered)
+E           Failed: DID NOT RAISE <class 'skills.WPSComposer.scripts.msoffice.macos_osa_transport.OSATransportError'>
+
+tests/msoffice/test_macos_process_path_contract.py:38: Failed
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_process_path_contract.py::test_darwin_router_rejects_windows_backslash_aliases
+1 failed, 5 passed in 0.04s

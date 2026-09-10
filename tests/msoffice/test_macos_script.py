@@ -43,13 +43,16 @@ def test_native_pagination_parser_rejects_missing_duplicate_invalid_records(tmp_
             parse_result(raw, expected, tmp_path/'x.docx', 3)
 
 
-def test_tables_and_lists_compile_native_objects(tmp_path):
+def test_tables_and_literal_lists_compile_native_word_commands(tmp_path):
     from skills.WPSComposer.scripts.msoffice.macos_script import compile_plan
     b=build_longform_generation('# Report\n\n## Chapter\n\n- Alpha\n- Beta\n\n| A | B |\n|---|---|\n| one | two |')
     c=compile_plan(b.plan, {}, tmp_path/'x.docx', timeout=30)
     assert 'make new table' in c.source
     assert 'heading format of row 1' in c.source
-    assert 'apply bullet default' in c.source
+    assert 'my appendText(ownedDoc, "•" & tab & "Alpha" & return)' in c.source
+    assert 'set style of r to style list paragraph' in c.source
+    assert 'tab stop position:24' in c.source
+    assert 'apply bullet default' not in c.source
 
 
 def test_figure_compiles_only_bound_normalized_image(tmp_path):

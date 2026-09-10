@@ -2,13 +2,40 @@ from __future__ import annotations
 
 from dataclasses import replace
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
+import os
+from types import SimpleNamespace
 
 import pytest
 
 from skills.WPSComposer.scripts.msoffice.macos_osa_transport import ExcelProcessIdentity, OSATransportError
+
+
+@pytest.fixture(autouse=True)
+def prohibit_native_side_effects(monkeypatch, tmp_path):
+    from skills.WPSComposer.scripts.msoffice import macos_excel_process, macos_osa_transport, macos_office_runtime
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Native access prohibited by test isolation guard')
+    monkeypatch.setattr(macos_excel_process.AppKitExcelLauncher, '__init__', forbidden)
+    monkeypatch.setattr(macos_osa_transport._DarwinRuntime, '__init__', forbidden)
+    monkeypatch.setattr(macos_osa_transport.BoundOSAKitTransport, '__init__', forbidden)
+    monkeypatch.setattr(macos_osa_transport.BoundOSAKitTransport, 'run', forbidden)
+    monkeypatch.setattr(macos_office_runtime, '_container_root', forbidden)
+    global _STAGING_ROOT
+    _STAGING_ROOT = tmp_path
+    # Cocoa reports POSIX paths on every test host. Normalize only this injected
+    # owner's native boundary, leaving host staging paths and stdlib untouched.
+    realpath = os.path.realpath
+    def cocoa_realpath(value):
+        text = str(value).replace('\\', '/')
+        marker = text.find('/Applications/')
+        if marker >= 0:
+            return str(PurePosixPath(text[marker:]))
+        return realpath(value)
+    monkeypatch.setattr(macos_excel_process, 'os', SimpleNamespace(
+        path=SimpleNamespace(realpath=cocoa_realpath)))
 
 
 def api():
@@ -63,8 +90,13 @@ class Launcher:
         self.clock.now = deadline
 
 
-def book(path='/tmp/owned.xlsx', *, pristine=False):
-    return dict(name=Path(path).name, path=str(Path(path).parent), full_name=path,
+def staged(name='owned.xlsx'):
+    return _STAGING_ROOT / name
+
+
+def book(path=None, *, pristine=False):
+    path = staged() if path is None else Path(path)
+    return dict(name=path.name, path=str(path.parent), full_name=str(path),
                 saved=True, pristine=pristine)
 
 
@@ -159,9 +191,10 @@ def test_identity_drift_before_readiness_never_sends(change):
     assert owner.state == 'quarantined'
 
 
-@pytest.mark.parametrize('books', [[book()], [book('/tmp/a.xlsx'), book('/tmp/b.xlsx')],
-    [dict(name='Book1', path='', full_name='Book1', saved=False, pristine=True)]])
-def test_foreign_or_unproven_bootstrap_inventory_is_not_closed(books):
+@pytest.mark.parametrize('scenario', ['one_foreign', 'two_foreign', 'unsaved_bootstrap'])
+def test_foreign_or_unproven_bootstrap_inventory_is_not_closed(scenario):
+    books = {'one_foreign': [book()], 'two_foreign': [book(staged('a.xlsx')), book(staged('b.xlsx'))],
+             'unsaved_bootstrap': [dict(name='Book1', path='', full_name='Book1', saved=False, pristine=True)]}[scenario]
     owner, _, transport, _ = setup_owner(books=books)
     with pytest.raises(api().ExcelProcessError, match='EXCEL_FOREIGN_WORKBOOKS'):
         owner.start(deadline=5)
@@ -190,8 +223,8 @@ def test_close_exact_owned_path_then_quit_and_acknowledge_birth_disappearance():
     owner, launcher, transport, _ = setup_owner()
     owner.start(deadline=5)
     transport.books = [book()]
-    owner.reserve_workbook(Path('/tmp/owned.xlsx'))
-    owner.claim_workbook(Path('/tmp/owned.xlsx'), deadline=5)
+    owner.reserve_workbook(staged())
+    owner.claim_workbook(staged(), deadline=5)
     owner.close(deadline=5)
     assert transport.events == ['inventory', 'inventory', 'close', 'inventory', 'quit']
     assert launcher.exited
@@ -204,13 +237,13 @@ def test_foreign_book_after_close_blocks_quit_and_keeps_recovery_path():
     owner, _, transport, _ = setup_owner()
     owner.start(deadline=5)
     transport.books = [book()]
-    owner.reserve_workbook(Path('/tmp/owned.xlsx'))
-    owner.claim_workbook(Path('/tmp/owned.xlsx'), deadline=5)
-    transport.after_close = [book('/tmp/user.xlsx')]
+    owner.reserve_workbook(staged())
+    owner.claim_workbook(staged(), deadline=5)
+    transport.after_close = [book(staged('user.xlsx'))]
     with pytest.raises(api().ExcelProcessError, match='EXCEL_BAD_ACK'):
         owner.close(deadline=5)
     assert 'quit' not in transport.events
-    assert owner.recovery['owned_path'] == '/tmp/owned.xlsx'
+    assert owner.recovery['owned_path'] == str(staged())
 
 
 def test_quit_timeout_quarantines_and_does_not_kill_or_retry():
@@ -247,14 +280,14 @@ def test_uncertain_transport_error_retains_owned_path_and_prevents_further_comma
     owner, _, transport, _ = setup_owner()
     owner.start(deadline=5)
     transport.books = [book()]
-    owner.reserve_workbook(Path('/tmp/owned.xlsx'))
-    owner.claim_workbook(Path('/tmp/owned.xlsx'), deadline=5)
+    owner.reserve_workbook(staged())
+    owner.claim_workbook(staged(), deadline=5)
     script = tmp_path / 'mutation.applescript'
     script.write_text('-- owner operation: mutate')
     transport.failure = OSATransportError('OSA_TIMEOUT', outcome_uncertain=True)
     with pytest.raises(OSATransportError):
         owner.run(script, deadline=5)
-    assert owner.recovery['owned_path'] == '/tmp/owned.xlsx'
+    assert owner.recovery['owned_path'] == str(staged())
     assert owner.recovery['outcome_uncertain'] is True
     with pytest.raises(api().ExcelProcessError, match='EXCEL_OWNER_UNAVAILABLE'):
         owner.run(script, deadline=5)
@@ -264,13 +297,13 @@ def test_uncertain_transport_error_retains_owned_path_and_prevents_further_comma
 def test_reserved_path_survives_failure_before_workbook_claim(tmp_path):
     owner, _, transport, _ = setup_owner()
     owner.start(deadline=5)
-    owner.reserve_workbook(Path('/tmp/planned.xlsx'))
+    owner.reserve_workbook(staged('planned.xlsx'))
     script = tmp_path / 'open.applescript'
     script.write_text('-- owner operation: open')
     transport.failure = OSATransportError('OSA_TIMEOUT', outcome_uncertain=True)
     with pytest.raises(OSATransportError):
         owner.run(script, deadline=5)
-    assert owner.recovery['owned_path'] == '/tmp/planned.xlsx'
+    assert owner.recovery['owned_path'] == str(staged('planned.xlsx'))
 
 
 @pytest.mark.parametrize('date', [None, float('nan')])
@@ -303,7 +336,7 @@ def test_identity_replaced_after_successful_event_quarantines_session(tmp_path):
     owner, launcher, transport, _ = setup_owner()
     owner.start(deadline=5)
     script = tmp_path / 'mutate.applescript'
-    owner.reserve_workbook(Path('/tmp/planned.xlsx'))
+    owner.reserve_workbook(staged('planned.xlsx'))
     script.write_text('mutation source')
     def run(*args):
         launcher.current = replace(identity(), start_seconds=200)
@@ -356,7 +389,7 @@ class CocoaRuntime:
             'retain': receiver, 'release': None, 'drain': None,
             'isFinishedLaunching': True, 'isTerminated': False}
         if selector == 'fileURLWithPath:':
-            assert args == ('/Applications/Microsoft Excel.app',)
+            assert args == (str(Path('/Applications/Microsoft Excel.app')),)
             return 'app-url'
         if selector == 'launchApplicationAtURL:options:configuration:error:':
             assert receiver == 'workspace'
@@ -376,6 +409,7 @@ def native_launcher(runtime):
     launcher._clock = lambda: 1.0
     launcher._retained = []
     launcher._applications = {}
+    launcher._observer = None
     launcher.recovery_candidate = None
     return launcher
 
@@ -420,7 +454,7 @@ def test_nonzero_helper_reply_quarantines_even_when_it_contains_json(tmp_path):
     owner, _, transport, _ = setup_owner()
     owner.start(deadline=5)
     script = tmp_path / 'mutation.applescript'
-    owner.reserve_workbook(Path('/tmp/planned.xlsx'))
+    owner.reserve_workbook(staged('planned.xlsx'))
     script.write_text('mutation source')
     transport.run = lambda *args: subprocess.CompletedProcess([], 1, '{}', 'helper error')
     with pytest.raises(OSATransportError, match='EXCEL_COMMAND_FAILED'):
@@ -460,7 +494,7 @@ def test_claim_without_reservation_cannot_adopt_existing_workbook():
     owner.start(deadline=5)
     transport.books = [book()]
     with pytest.raises(ValueError):
-        owner.claim_workbook(Path('/tmp/owned.xlsx'), deadline=5)
+        owner.claim_workbook(staged(), deadline=5)
     assert transport.events == ['inventory']
     assert owner.owned_path is None
 
@@ -478,12 +512,12 @@ def test_ready_run_without_reservation_never_dispatches(tmp_path):
 def test_claim_requires_saved_workbook_after_reservation():
     owner, _, transport, _ = setup_owner()
     owner.start(deadline=5)
-    owner.reserve_workbook(Path('/tmp/owned.xlsx'))
+    owner.reserve_workbook(staged())
     transport.books = [dict(book(), saved=False)]
     with pytest.raises(api().ExcelProcessError, match='EXCEL_WORKBOOK_NOT_SAVED'):
-        owner.claim_workbook(Path('/tmp/owned.xlsx'), deadline=5)
+        owner.claim_workbook(staged(), deadline=5)
     assert owner.state == 'quarantined'
-    assert owner.recovery['owned_path'] == '/tmp/owned.xlsx'
+    assert owner.recovery['owned_path'] == str(staged())
 
 
 def test_native_command_failure_retains_evidence_in_requested_directory(tmp_path):
@@ -692,3 +726,64 @@ def test_launcher_retained_handle_never_bypasses_birth_identity_revalidation():
     launcher._lookup = Lookup()
     with pytest.raises(OSATransportError, match='OSA_PROCESS_IDENTITY_CHANGED'):
         launcher.snapshot(4242)
+
+
+def test_default_owner_uses_bounded_launcher_and_propagates_operation_deadlines(tmp_path, monkeypatch):
+    from skills.WPSComposer.scripts.msoffice import macos_excel_launcher
+    clock = Clock()
+    launched = []
+    class Bounded(Launcher):
+        def __init__(self, *, evidence_dir, deadline, clock):
+            super().__init__(clock)
+            self.deadlines=[deadline]
+            self.evidence_dir=evidence_dir
+            launched.append(self)
+        def set_deadline(self, deadline):self.deadlines.append(deadline)
+        def abort(self):self.aborted=True
+        def release(self):self.released=True
+    monkeypatch.setattr(macos_excel_launcher,'BoundedExcelLauncher',Bounded)
+    def forbidden_native(**kwargs):raise AssertionError('Native AppKit must never execute in parent tests')
+    monkeypatch.setattr(api(),'AppKitExcelLauncher',forbidden_native)
+    transports=[]
+    def factory(identity):
+        transport=Transport(launched[0]);transports.append(transport);return transport
+    owner=api().PrivateExcelProcessOwner(clock=clock,transport_factory=factory,evidence_dir=tmp_path/'owner')
+    owner.start(deadline=5)
+    owner.close(deadline=4)
+    assert launched[0].evidence_dir == tmp_path/'owner'/'launcher'
+    assert 4 in launched[0].deadlines
+    assert launched[0].released
+
+
+def test_quarantine_stops_bounded_helper_before_capturing_recovery(tmp_path):
+    owner, launcher, transport, _ = setup_owner(evidence_dir=tmp_path/'owner')
+    def abort():launcher.recovery_candidate={'pid':4242,'helper_stopped':True}
+    launcher.abort=abort
+    transport.failure=OSATransportError('OSA_TIMEOUT',outcome_uncertain=True)
+    with pytest.raises(OSATransportError):owner.start(deadline=5)
+    assert owner.recovery['launch_candidate']['helper_stopped']
+
+
+def test_appkit_reports_candidate_before_full_identity_lookup_can_block():
+    runtime=CocoaRuntime()
+    launcher=native_launcher(runtime)
+    reported=[]
+    launcher._observer=lambda phase,candidate:reported.append((phase,dict(candidate)))
+    class Lookup:
+        def snapshot(self,pid,*,application=None):
+            assert reported and reported[0][1]['pid']==4242
+            raise OSError('native lookup blocked or failed')
+    launcher._lookup=Lookup()
+    with pytest.raises(OSError):launcher.launch(Path('/Applications/Microsoft Excel.app'),5)
+    assert reported[0][0]=='candidate'
+
+
+def test_native_isolation_guard_blocks_all_native_entrypoints():
+    from skills.WPSComposer.scripts.msoffice import macos_osa_transport, macos_office_runtime
+    operations = [lambda: api().AppKitExcelLauncher(),
+                  lambda: macos_osa_transport._DarwinRuntime(),
+                  lambda: macos_osa_transport.BoundOSAKitTransport(identity()),
+                  lambda: macos_office_runtime._container_root('excel')]
+    for operation in operations:
+        with pytest.raises(AssertionError, match='Native access prohibited'):
+            operation()

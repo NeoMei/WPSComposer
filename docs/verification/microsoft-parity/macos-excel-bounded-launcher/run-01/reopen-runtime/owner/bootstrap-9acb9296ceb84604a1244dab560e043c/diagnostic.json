@@ -1,0 +1,12 @@
+{
+  "operation": "bootstrap",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/bootstrap-9acb9296ceb84604a1244dab560e043c/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/bootstrap-9acb9296ceb84604a1244dab560e043c/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/bootstrap-9acb9296ceb84604a1244dab560e043c/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/bootstrap-9acb9296ceb84604a1244dab560e043c/diagnostic.json",
+  "stdout": "{\"nonce\":\"9acb9296ceb84604a1244dab560e043c\",\"empty\":true}\n",
+  "stderr": "",
+  "returncode": 0,
+  "error": null,
+  "diagnostic_errors": []
+}

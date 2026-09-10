@@ -12,7 +12,8 @@ from dataclasses import dataclass
 import json
 import math
 import os
-from pathlib import Path
+import posixpath
+from pathlib import Path, PurePosixPath
 import subprocess
 import sys
 import time
@@ -85,7 +86,7 @@ class ExcelProcessIdentity:
         micros = _strict_int(self.start_microseconds, "process start microseconds")
         if micros >= 1_000_000:
             raise ValueError("Invalid process start microseconds")
-        if not isinstance(self.executable, str) or not Path(self.executable).is_absolute():
+        if not isinstance(self.executable, str) or not PurePosixPath(self.executable).is_absolute():
             raise ValueError("Process executable must be absolute")
         if not isinstance(self.bundle_id, str) or not self.bundle_id:
             raise ValueError("Process bundle identifier is required")
@@ -150,7 +151,7 @@ class HelperRequest:
 def require_excel_process(identity: ExcelProcessIdentity) -> None:
     if (
         identity.bundle_id != _EXCEL_BUNDLE_ID
-        or Path(identity.executable).name != "Microsoft Excel"
+        or PurePosixPath(identity.executable).name != "Microsoft Excel"
     ):
         raise OSATransportError("OSA_NOT_EXCEL_PROCESS", pid=identity.pid)
 
@@ -165,7 +166,7 @@ def require_same_process(
         current.start_microseconds,
     ) != (expected.start_seconds, expected.start_microseconds):
         raise OSATransportError("OSA_PROCESS_IDENTITY_CHANGED", pid=expected.pid)
-    if os.path.realpath(current.executable) != os.path.realpath(expected.executable):
+    if posixpath.realpath(current.executable) != posixpath.realpath(expected.executable):
         raise OSATransportError("OSA_PROCESS_EXECUTABLE_CHANGED", pid=expected.pid)
     if current.bundle_id != expected.bundle_id:
         raise OSATransportError("OSA_PROCESS_BUNDLE_CHANGED", pid=expected.pid)
@@ -230,10 +231,10 @@ class BoundSendRouter:
         if target.kind == "bundle":
             return target.value == self.identity.bundle_id == _EXCEL_BUNDLE_ID
         if target.kind == "path":
-            target_path = os.path.realpath(str(target.value))
-            executable = os.path.realpath(self.identity.executable)
-            app = str(Path(executable).parents[2])
-            return target_path in (executable, os.path.realpath(app))
+            target_path = posixpath.realpath(str(target.value))
+            executable = posixpath.realpath(self.identity.executable)
+            app = str(PurePosixPath(executable).parents[2])
+            return target_path in (executable, posixpath.realpath(app))
         if target.kind == "pid":
             if target.value == self.helper_pid:
                 return False
@@ -241,8 +242,8 @@ class BoundSendRouter:
             return (
                 addressed is not None
                 and addressed.bundle_id == _EXCEL_BUNDLE_ID
-                and os.path.realpath(addressed.executable)
-                == os.path.realpath(self.identity.executable)
+                and posixpath.realpath(addressed.executable)
+                == posixpath.realpath(self.identity.executable)
             )
         return False
 
@@ -666,7 +667,7 @@ class _DarwinProcessLookup:
         length = self.runtime.proc_pidpath(pid, buffer, len(buffer))
         if length <= 0:
             return None
-        executable = os.path.realpath(buffer.value.decode("utf-8"))
+        executable = posixpath.realpath(buffer.value.decode("utf-8"))
         app = application
         if app is None:
             app = self.runtime.message(
@@ -688,7 +689,7 @@ class _DarwinProcessLookup:
         cocoa_path = self.runtime.object_text(
             self.runtime.message(executable_url, "path")
         )
-        if os.path.realpath(cocoa_path) != executable:
+        if posixpath.realpath(cocoa_path) != executable:
             raise OSATransportError("OSA_PROCESS_EXECUTABLE_CHANGED", pid=pid)
         final_info = _ProcBSDInfo()
         final_size = self.runtime.proc_pidinfo(

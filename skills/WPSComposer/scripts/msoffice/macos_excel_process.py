@@ -77,6 +77,9 @@ class PrivateExcelProcessOwner:
             raise ValueError('A finite absolute deadline is required')
         if self._clock() >= deadline:
             raise ExcelProcessError('EXCEL_DEADLINE')
+        setter = getattr(self._launcher, 'set_deadline', None)
+        if setter is not None:
+            setter(deadline)
 
     def _available(self) -> None:
         if not self.is_private_owned:
@@ -86,7 +89,15 @@ class PrivateExcelProcessOwner:
         """Retain identity and path; never send cleanup after uncertain failure."""
         if self.state == 'quarantined':
             return
+        cleanup_error = None
+        abort = getattr(self._launcher, 'abort', None)
+        if abort is not None:
+            try:
+                abort()
+            except BaseException as failed_abort:
+                cleanup_error = str(failed_abort)
         self.recovery = {
+            'helper_cleanup_error': cleanup_error,
             'state': self.state,
             'code': getattr(error, 'code', type(error).__name__),
             'identity': asdict(self.identity) if self.identity else None,
@@ -110,7 +121,9 @@ class PrivateExcelProcessOwner:
         self.state = 'starting'
         try:
             if self._launcher is None:
-                self._launcher = AppKitExcelLauncher(clock=self._clock)
+                from .macos_excel_launcher import BoundedExcelLauncher
+                self._launcher = BoundedExcelLauncher(clock=self._clock, deadline=deadline,
+                    evidence_dir=self.evidence_dir / 'launcher')
             previous = self._launcher.existing_pids()
             self._deadline(deadline)
             self._launch = self._launcher.launch(self._app_path, deadline)
@@ -296,6 +309,9 @@ class PrivateExcelProcessOwner:
                 current = self._launcher.snapshot(self.identity.pid)
                 same_birth = current is not None and (current.start_seconds, current.start_microseconds) == (self.identity.start_seconds, self.identity.start_microseconds)
                 if self._launcher.has_terminated(self._launch) and not same_birth:
+                    release = getattr(self._launcher, 'release', None)
+                    if release is not None:
+                        release()
                     self.state = 'closed'
                     return
                 self._launcher.wait_until(min(deadline, self._clock() + interval))
@@ -373,13 +389,15 @@ return "{\\"nonce\\":" & my j(ownerNonce) & ",\\"version\\":" & my j(version as 
 class AppKitExcelLauncher:
     """Retain NSWorkspace's returned instance, never identify it by PID difference."""
 
-    def __init__(self, *, clock: Callable[[], float] = time.monotonic) -> None:
+    def __init__(self, *, clock: Callable[[], float] = time.monotonic,
+                 observer: Optional[Callable[[str, dict[str, Any]], None]] = None) -> None:
         from .macos_osa_transport import _DarwinRuntime, _DarwinProcessLookup
         self.runtime = _DarwinRuntime()
         self._lookup = _DarwinProcessLookup(self.runtime)
         self._clock = clock
         self._retained: list[Any] = []
         self._applications: dict[int, Any] = {}
+        self._observer = observer
         self.recovery_candidate: Optional[dict[str, Any]] = None
 
     def existing_pids(self) -> set[int]:
@@ -415,6 +433,8 @@ class AppKitExcelLauncher:
             self._retained.append(app)
             pid = r.message(app, 'processIdentifier', result=C.c_int32)
             self.recovery_candidate = {'pid': pid, 'verified': False}
+            if self._observer is not None:
+                self._observer('candidate', dict(self.recovery_candidate))
             if pid <= 0:
                 raise ExcelProcessError('EXCEL_LAUNCH_IDENTITY_UNAVAILABLE')
             self._applications[pid] = app
@@ -427,6 +447,8 @@ class AppKitExcelLauncher:
                 executable=os.path.realpath(r.object_text(r.message(executable, 'path'))) if executable else None,
                 launch_date=launch_date,
             )
+            if self._observer is not None:
+                self._observer('candidate', dict(self.recovery_candidate))
             identity = self.snapshot(pid)
             if identity is None or not bundle or not executable:
                 raise ExcelProcessError('EXCEL_LAUNCH_IDENTITY_UNAVAILABLE')
