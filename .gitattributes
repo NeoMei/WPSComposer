@@ -31,3 +31,12 @@ docs/verification/microsoft-parity/macos-excel-private-public/** -text
 /docs/verification/microsoft-parity/macos-excel-bounded-launcher/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/portable-ci/run-11/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/full-round43/** -text whitespace=-blank-at-eof,-trailing-space
+
+# Preserve checkpoint native/install/CI records and their source hashes.
+/docs/verification/microsoft-parity/installed-excel-checkpoint433/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/installed-word-powerpoint-checkpoint433/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-list-arguments/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-heading-import/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-12/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round44/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round45/** -text whitespace=-blank-at-eof,-trailing-space

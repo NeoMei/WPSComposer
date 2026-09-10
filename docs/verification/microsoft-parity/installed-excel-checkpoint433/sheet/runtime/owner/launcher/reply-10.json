@@ -1,0 +1,1 @@
+{"version": 1, "nonce": "5b28fb9401934f12833ca99a5c167efd", "id": 10, "helper_pid": 58471, "status": "ok", "data": {"identity": {"pid": 58472, "start_seconds": 1789052519, "start_microseconds": 490921, "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel", "bundle_id": "com.microsoft.Excel"}, "finished": false, "terminated": false}}

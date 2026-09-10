@@ -1,0 +1,172 @@
+{
+  "status": "PASS",
+  "scope": "Collapsed DOCX import/delete feasibility only",
+  "source_hashes": {
+    "build/word-heading-import-20260910/docx-collapsed-control.py": "ad61b720bd62a53e4ac5260ed1d1eeb6c7a13eee1f4fd1079b2871911eccaffe",
+    "build/word-heading-import-20260910/test_docx_collapsed_control.py": "a4ff7c6c74c264f4c85c0475719ba35a07a14b2cf86e4f91cb9ca72662269225",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "checks": {
+    "known_word_saved_donor": true,
+    "known_donor_text": true,
+    "sentinel_ack": true,
+    "seed_ack": true,
+    "copied_donor_identical": true,
+    "preimage_shape": true,
+    "exact_collapsed_insert": true,
+    "insert_inventory_preserved": true,
+    "insert_styles_preserved": true,
+    "exact_clear": true,
+    "clear_inventory_preserved": true,
+    "clear_styles_preserved": true,
+    "native_donor_preserved": true,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true,
+    "original_donor_preserved": true,
+    "source_snapshot_preserved": true,
+    "final_inventory_preserved": true,
+    "sources_unchanged": true
+  },
+  "raw_rows": {
+    "sentinel": [
+      [
+        "文档11"
+      ]
+    ],
+    "version": [
+      [
+        "16.112.3"
+      ]
+    ],
+    "seed": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "native_preimage": [
+      [
+        "preimage",
+        "SOURCE APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        32,
+        40
+      ]
+    ],
+    "single_collapsed_import": [
+      [
+        "insert",
+        32,
+        32,
+        "SOURCE APPEARANCE 中文 العربية 😀\rDOCX CONTROL 中文😀\rREPLACE\rSUFFIX\r\r"
+      ]
+    ],
+    "clear_shifted_original": [
+      [
+        "clear",
+        50,
+        58,
+        "SOURCE APPEARANCE 中文 العربية 😀\rDOCX CONTROL 中文😀\rSUFFIX\r\r"
+      ]
+    ]
+  },
+  "donor_sha256": "d7298013c60a9b0166cd6c1efce2d8a829e590fd92633443f5e9787274cd1cb8",
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "current_phase": "clear_shifted_original",
+  "sentinel_name": "文档11",
+  "sentinel_before": [
+    "文档11",
+    "文档11",
+    false,
+    "9f72e55ba0885a7b4ea197c5b274f7387c142d916f6ec23f3478717a6d400b1b"
+  ],
+  "word_version": [
+    [
+      "16.112.3"
+    ]
+  ],
+  "preimage_sha256": "0cf973db8100c1310135427eba80573e5d4467dc23e0b688ee11bc2ca4b9f9ba",
+  "expected": {
+    "inserted": "SOURCE APPEARANCE 中文 العربية 😀\rDOCX CONTROL 中文😀\rREPLACE\rSUFFIX\r\r",
+    "final": "SOURCE APPEARANCE 中文 العربية 😀\rDOCX CONTROL 中文😀\rSUFFIX\r\r",
+    "shifted_start": 50,
+    "shifted_end": 58
+  },
+  "inventory_before_insert": [
+    [
+      "document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4oxtwoy5/document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      true,
+      "5ca17486b93f5dd63d55bdc09cc15dd65b474d0db370fccc97df2e06a5a3f84e"
+    ],
+    [
+      "文档11",
+      "文档11",
+      false,
+      "9f72e55ba0885a7b4ea197c5b274f7387c142d916f6ec23f3478717a6d400b1b"
+    ]
+  ],
+  "inventory_after_insert": [
+    [
+      "document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4oxtwoy5/document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      false,
+      "8156aaf93194ef3785d54bdca87442596d0c3224e6efc96e511790a0813f34b4"
+    ],
+    [
+      "文档11",
+      "文档11",
+      false,
+      "9f72e55ba0885a7b4ea197c5b274f7387c142d916f6ec23f3478717a6d400b1b"
+    ]
+  ],
+  "inventory_after_clear": [
+    [
+      "document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4oxtwoy5/document-c156f5a8ccc946f29ff35be79077ecec.docx",
+      false,
+      "e497fa0ec20b7770fb0fc28450a1166f89ab3b51e5e2a9829610f36bc3051d0b"
+    ],
+    [
+      "文档11",
+      "文档11",
+      false,
+      "9f72e55ba0885a7b4ea197c5b274f7387c142d916f6ec23f3478717a6d400b1b"
+    ]
+  ],
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档11",
+      "文档11",
+      false,
+      "9f72e55ba0885a7b4ea197c5b274f7387c142d916f6ec23f3478717a6d400b1b"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档11"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "inventory_final": [],
+  "remaining_sentinel": null,
+  "artifact_hashes": {
+    "after-insert.docx": "6a6b4ce54f2897ae9f459d525ab5b429b0457b6d67aa199014c2f422c25cfacd",
+    "recipient-preimage.docx": "0cf973db8100c1310135427eba80573e5d4467dc23e0b688ee11bc2ca4b9f9ba",
+    "recipient-after.docx": "be85183b0362ed683feb9ff77ddd2b4c7671a1e621dec327d3e6221532e038c0"
+  }
+}

@@ -1,0 +1,1 @@
+{"version": 1, "nonce": "5b28fb9401934f12833ca99a5c167efd", "id": 16, "operation": "PROBE", "deadline": 602370.604061542, "data": {"token": "94103566098b440eaa0c856f4373a717", "identity": {"pid": 58472, "start_seconds": 1789052519, "start_microseconds": 490921, "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel", "bundle_id": "com.microsoft.Excel"}}}

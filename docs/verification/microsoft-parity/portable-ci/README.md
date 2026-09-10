@@ -1,5 +1,7 @@
 # Portable CI repair checkpoint — 2026-09-09
 
+Current: [run-12](run-12/README.md) succeeds at `433a199` on all four jobs: Ubuntu Python3.9/3.12 each 5,196 passed /44 skipped; Windows each 5,142 passed /98 skipped. Earlier runs below retain their historical failure/pass results. Hosted tests do not certify native Office/WPS or UI.
+
 Initial hosted run [34332171915](https://github.com/NeoMei/WPSComposer/actions/runs/34332171915) tests commit `34a0658e38c6d5a73a7066df7f49f73b53aceb39`. Both Windows jobs failed checkout because four historical PNG names contained colons. Both Ubuntu jobs reached pytest and reported 10 failures, 4,396 passes and 32 skips. Raw failures remain unchanged in `run-01/`.
 
 The four PNGs were renamed without changing bytes. The relocation map preserves original paths and exact Git blob hashes; all 240 original files in the affected evidence directory remain byte-identical. Thirty new tests audit shipped Git paths and relocation integrity. The four test-file repairs pin the intended mocked Mac backend, mock the installed WPS version lookup, and restrict only native AppleScript compilation cases to macOS. Independent reviews are retained here. Neither production platform support nor native assertions were weakened.

@@ -1,0 +1,114 @@
+{
+  "status": "PASS",
+  "checks": {
+    "exact_literal_prefixes": true,
+    "indent_a3ff4789": true,
+    "indent_9b10d456": true,
+    "indent_5fce5d07": true,
+    "indent_3d757643": true,
+    "body_reset_base_body": true,
+    "body_reset_body_after_default": true,
+    "body_reset_body_after_ordered": true,
+    "page_setup_preserved": true,
+    "pdf_is_readable": true,
+    "pdf_list_and_body_text": true,
+    "no_native_issues": true,
+    "native_readback_list_and_body_formats": true,
+    "read_only_reopen_exact_close": true,
+    "read_only_reopen_preserves_bytes": true,
+    "reopen_exact_literal_prefixes": true,
+    "reopen_indent_a3ff4789": true,
+    "reopen_indent_9b10d456": true,
+    "reopen_indent_5fce5d07": true,
+    "reopen_indent_3d757643": true,
+    "reopen_body_reset_base_body": true,
+    "reopen_body_reset_body_after_default": true,
+    "reopen_body_reset_body_after_ordered": true,
+    "reopen_page_setup_preserved": true,
+    "document_inventory_preserved": true,
+    "source_freeze_still_matches": true
+  },
+  "source_hashes": {
+    "build/word-list-argument-20260910/source/macos_word_list_arguments_native.py": "b6bc9839661a47fc794e485178a67e45e4c7cf62d6508f3c22acb9ee0ba3179d",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "6d2ca0ea1cd27d62c0d8ab57aa172cc67032d83d319167ff7e8d3903868b6c54",
+    "tests/msoffice/test_word_list_argument_parity.py": "28182167cad74ecc9f6708ee53a4c9a491c7f5b27905daaa4d02bac9dc926614"
+  },
+  "inventory_before": [],
+  "issues": [],
+  "reopen_rows": [
+    [
+      "builtin-styles",
+      "正文文本",
+      "列表段落"
+    ],
+    [
+      1,
+      "LIST ARGUMENT NATIVE ACCEPTANCE\r",
+      "标题",
+      0,
+      0
+    ],
+    [
+      2,
+      "BASE BODY\r",
+      "正文文本",
+      0,
+      24
+    ],
+    [
+      3,
+      "•\tDEFAULT ITEM\r",
+      "列表段落",
+      24,
+      -24
+    ],
+    [
+      4,
+      "BODY AFTER DEFAULT\r",
+      "正文文本",
+      0,
+      24
+    ],
+    [
+      5,
+      "→\tCUSTOM ITEM\r",
+      "列表段落",
+      30,
+      -30
+    ],
+    [
+      6,
+      "\tEMPTY GLYPH ITEM\r",
+      "列表段落",
+      27.5,
+      -27.5
+    ],
+    [
+      7,
+      "1.\tORDERED ITEM\r",
+      "列表段落",
+      33,
+      -33
+    ],
+    [
+      8,
+      "BODY AFTER ORDERED\r",
+      "正文文本",
+      0,
+      24
+    ],
+    [
+      9,
+      "\r",
+      "正文",
+      0,
+      0
+    ]
+  ],
+  "inventory_after": [],
+  "artifact_hashes": {
+    "list-arguments.docx": "50fc1f235e66b4e26443d69fe61c536ab667a1dda6659f273a143c77dff1729e",
+    "list-arguments.pdf": "27db507e2b980d81131cdc00548c8d3ff97219dc0e34bc1e3ca616e4de7aba6e"
+  }
+}

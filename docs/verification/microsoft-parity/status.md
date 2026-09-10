@@ -2,7 +2,17 @@
 
 This is an implementation checkpoint, not a release approval. The frozen baseline is `baseline.json` (628 required capability rows at v0.9.0, commit 6dd3a00). Raw COM access is recorded separately and is not a semantic parity requirement. No baseline row has been removed to make the candidate appear complete.
 
-## Current continuation checkpoint — September 10
+## Current continuation checkpoint — September 10, candidate 433a199
+
+[Hosted CI12](portable-ci/run-12/README.md) succeeds on all four jobs: Linux Python 3.9/3.12 each **5,196 passed / 44 skipped**, Windows each **5,142 passed / 98 skipped**. This closes CI11's Darwin path parsing failures. The reviewed bounded Excel lifecycle passes separate native acceptance. [Word list run02](macos-word-list-arguments/README.md) passes 26 native checks and actual UI list edit/Undo/save/close/exact-path reopen; the initial locale-checker failure remains retained.
+
+The isolated installed bundle now passes six public checks for each Mac app: [Excel](installed-excel-checkpoint433/README.md), [Word and PowerPoint](installed-word-powerpoint-checkpoint433/README.md). All 214 copied source files match the repository and installation. Original Excel workbooks and all 20 preexisting PowerPoint presentation inventory records are preserved. This is representative installed smoke, not the complete argument/format or Windows native matrix.
+
+[Full45](full-round45/README.md) passes **5,253 tests / 12 skips**, with 401 unchanged source/configuration hashes, including the corrected opt-in heading-import feasibility fixture without enabling production capability. Full44 remains an earlier preserved snapshot. Native import returns -1708 before replacement; exact owned cleanup and quarantine recovery are separately verified. [Import feasibility](macos-word-heading-import/README.md) retains the raw failure and successful guarded cleanup. The corrected oracle preserves actual terminal CRs. A Word-saved DOCX control executes but inserts after the target instead of replacing it; strict semantic acceptance fails. A subsequent collapsed-range control passes19 native checks for exact insert/guarded deletion and named-style/sentinel preservation. Complete heading style materialization remains unverified and the public capability stays disabled.
+
+**Release remains blocked.** Nine Word direct methods, complete quality snapshots and capability/argument/format rows, current Windows Office/WPS native and UI/installed acceptance, formal per-row certification and final whole-branch review remain incomplete. The remote Windows continuation has been dispatched for 433a199, but the last observed task state contains no fresh candidate command evidence. No merge, parity release or personal installation has been performed.
+
+## Earlier checkpoints (historical, in reverse order)
 
 [Full43](full-round43/README.md) passes **5,228 tests / 12 skips** from immutable `333437cfccd9f4d6df63915230df681391c46b55`, with all 399 source/configuration hashes unchanged and matching live. It includes the reviewed Excel watchdog/path/isolation repairs and Word list glyph/indent forwarding plus list/body formatting resets. Native Excel acceptance passes separately; Word list native typography and hosted Windows CI12 remain pending. The nine remaining Word direct methods, full quality/capability rows, Windows native/UI and final installed acceptance still block release.
 

@@ -1,0 +1,43 @@
+WPSC_OP:writer.reset
+WPSC_OP:writer.configure_page
+WPSC_OP:writer.ensure_styles
+WPSC_OP:writer.configure_front_matter
+WPSC_OP:writer.configure_toc_styles
+WPSC_OP:writer.reserve_document_quality_anchor
+WPSC_OP:writer.configure_section
+WPSC_OP:writer.add_paragraph
+WPSC_OP:writer.add_paragraph
+WPSC_OP:writer.add_list
+WPSC_OP:writer.add_paragraph
+WPSC_OP:writer.add_list
+WPSC_OP:writer.add_list
+WPSC_OP:writer.add_list
+WPSC_OP:writer.add_paragraph
+WPSC_OP:writer.finalize_fields
+WPSC_SECTION_COMMAND:0
+WPSC_SECTION_COMMAND:1
+WPSC_SECTION_COMMAND:2
+WPSC_SECTION_COMMAND:3
+WPSC_SECTION_COMMAND:4
+WPSC_SECTION_COMMAND:5
+WPSC_SECTION_COMMAND:6
+WPSC_SECTION_COMMAND:7
+WPSC_SECTION_COMMAND:8
+WPSC_SECTION_COMMAND:9
+WPSC_SECTION_COMMAND:10
+WPSC_SECTION_COMMAND:11
+WPSC_SECTION_COMMAND:12
+WPSC_SECTION_COMMAND:13
+WPSC_NODE	doc:front-matter	1	1	0	0
+WPSC_NODE	doc:quality	1	1	0	0
+WPSC_NODE	doc:title-display	1	1	0	32
+WPSC_NODE	__wpsc_para:1:1	1	1	32	42
+WPSC_NODE	list-case:1	1	1	42	57
+WPSC_NODE	body-after-default	1	1	57	76
+WPSC_NODE	list-case:2	1	1	76	90
+WPSC_NODE	list-case:3	1	1	90	108
+WPSC_NODE	list-case:4	1	1	108	124
+WPSC_NODE	body-after-ordered	1	1	124	143
+WPSC_CLEAN
+
+WPSC_OK	0

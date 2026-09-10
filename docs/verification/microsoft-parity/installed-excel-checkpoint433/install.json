@@ -1,0 +1,13 @@
+{
+  "returncode": 0,
+  "base": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-checkpoint433-1yoor36n",
+  "plugin": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-checkpoint433-1yoor36n/codex/plugins/wps-composer",
+  "command": [
+    "python3",
+    "install.py",
+    "--codex-home",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-checkpoint433-1yoor36n/codex",
+    "--marketplace-root",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-checkpoint433-1yoor36n"
+  ]
+}

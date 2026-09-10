@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "source_hashes": {
+    "build/word-list-argument-20260910/source/macos_word_list_arguments_native.py": "3f907180f91f5aff7b301f7147260cd2d4be1cd75373d3e5dfd61275df217433",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "6d2ca0ea1cd27d62c0d8ab57aa172cc67032d83d319167ff7e8d3903868b6c54",
+    "tests/msoffice/test_word_list_argument_parity.py": "28182167cad74ecc9f6708ee53a4c9a491c7f5b27905daaa4d02bac9dc926614"
+  },
+  "fixture_test_sha256": "e3622d21706644aa7af69c661648f829a182ad42c9c29bb19b840f53a220008c"
+}

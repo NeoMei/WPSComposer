@@ -1,0 +1,13 @@
+# Word native import feasibility — not accepted
+
+The new Flat OPC input carries complete Word-saved source style properties for a detached style, including complex-script size. It is an input fixture, not a document output generator. The public heading method remains absent.
+
+Run-01 fails at native `insert file` with -1708, before any import acknowledgement. The following native close also returns -1708. This does not prove Flat OPC itself is unsupported. Source-preimage content/hash and saved state match the unchanged four-paragraph document. The exact owned URL and synthetic sentinel were subsequently closed through Word UI; independent inventories are empty and guarded quarantine recovery succeeds. Original FAIL, runtime, failed cleanup attempt and separate successful parent-cleanup report remain unchanged.
+
+That run also exposed a latent runner assumption: Word retains an additional terminal CR. The corrected source-only oracle snapshots full actual native text, validates exact target and UTF-16 boundaries, then computes a splice preserving all outside text. Its 25 focused tests pass. This fixture-only repair is not a native success.
+
+The separately reviewed DOCX-control-01 uses one donor saved by Word, the same insert command/range/flags and a fresh recipient. The call succeeds but inserts the donor after REPLACE rather than replacing REPLACE. The strict replacement check correctly fails. Both donor and recipient owned-close, unsaved-sentinel preservation and sentinel cleanup checks pass. This establishes a native DOCX insertion primitive only; neither native style cloning nor the public heading contract is certified. No automatic retry/fallback or production capability was added.
+
+Compile-01/02 and raw source-bound reports are retained. Build-only scripts retain original paths; reproduce them under build/word-heading-import-20260910 and use new output directories. Full44/45 portable results remain separate from these native failures. The next design must separate format recognition, exact insertion coordinates and source-independent style materialization.
+
+The subsequent collapsed-DOCX control passes 19 native checks: insert at exact original start, confirm full text/native bounds and named-style/inventory preservation, clear only the shifted REPLACE paragraph, save and exact cleanup. Parent independently verifies final DOCX body equals the expected UTF-16 splice. Source and donor bytes, original styles and unsaved sentinel are preserved. This proves a disposable owned-document text/range primitive; outside direct formatting, complete detached-style materialization and attached rollback remain unverified.
