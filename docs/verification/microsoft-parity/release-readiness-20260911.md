@@ -1,6 +1,6 @@
 # Release readiness — September 11, 2026
 
-**Not ready for a Microsoft/WPS parity release.** Candidate `ce322b29cef43df68551e387dcc4e6e94bab5495`, PR9 remains draft. The frozen 628 capability rows and 1,256 platform gates are unchanged. This continuation adds a private caption primitive and a shared Writer caption-range bug fix, plus native diagnostics and evidence reconciliation. It does not enable a complete new public method family.
+**Not ready for a Microsoft/WPS parity release.** Runtime checkpoint `9e09bbe0` (parent `ce322b29`), PR9 remains draft. The frozen 628 capability rows and 1,256 platform gates are unchanged. This continuation adds a private caption primitive and a shared Writer caption-range bug fix, plus native diagnostics and evidence reconciliation. It does not enable a complete new public method family.
 
 | Gate | Current evidence | Remaining work |
 | --- | --- | --- |
