@@ -1,0 +1,10 @@
+{
+  "scope": "Exact owned saved UI copy inspection/close and byte preservation; edit/Undo/reopen sequence not independently evidenced in this continuation",
+  "source_preserved": true,
+  "copy_equals_source": true,
+  "final_inventory": [],
+  "observed_ui": "Word showed exact heading-ui.docx path, saved status, Arial 17 bold italic; root closed it once",
+  "artifact_sha256": "1655223f01b9e500790c2f8dc3fcba0960628e46185da0a9e57f27ec4bd23071",
+  "ui_editability_gate": "NOT CERTIFIED by this close-only report",
+  "prior_visual_observation": "Word missing-glyph boxes reported in preceding probe; PDF .notdef independently diagnosed"
+}

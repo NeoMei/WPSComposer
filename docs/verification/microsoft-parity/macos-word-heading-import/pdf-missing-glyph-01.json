@@ -1,0 +1,196 @@
+{
+  "scope": "Missing-glyph negative evidence only; never full render acceptance",
+  "pdf_sha256": "7e962c1265d61b78e2b5051faebfe4554f5c87a742aa75ddb62974ab0ffc420b",
+  "installed_fonts": [
+    {
+      "path": "/System/Library/Fonts/Supplemental/Arial Bold Italic.ttf",
+      "sha256": "374b0190a9844343110d8f8ed1818117a4591803d022bbb2bd189d63a681e731",
+      "postscript_name": "Arial-BoldItalicMT",
+      "num_glyphs": 2516,
+      "arabic_cmap": {
+        "ا": null,
+        "ل": null,
+        "ع": null,
+        "ر": null,
+        "ب": null,
+        "ي": null,
+        "ة": null
+      }
+    },
+    {
+      "path": "/Applications/Microsoft Word.app/Contents/Resources/DFonts/arialbi.ttf",
+      "sha256": "399f00fe9cca7136639df72e976914c3713cbb321374e52def9ab5a10815904e",
+      "postscript_name": "Arial-BoldItalicMT",
+      "num_glyphs": 2953,
+      "arabic_cmap": {
+        "ا": null,
+        "ل": null,
+        "ع": null,
+        "ر": null,
+        "ب": null,
+        "ي": null,
+        "ة": null
+      }
+    }
+  ],
+  "embedded_arial": [
+    {
+      "xref": 6,
+      "name": "AAAAAB+Arial-BoldItalicMT",
+      "pdf_object": "<<\n  /Type /Font\n  /Subtype /TrueType\n  /BaseFont /AAAAAB+Arial-BoldItalicMT\n  /FontDescriptor 23 0 R\n  /Encoding /MacRomanEncoding\n  /FirstChar 0\n  /LastChar 0\n  /Widths [ 750 ]\n>>",
+      "glyph_order": [
+        ".notdef"
+      ],
+      "cmaps": [
+        {
+          "platform": 1,
+          "encoding": 0,
+          "format": 6,
+          "mapping": {}
+        }
+      ]
+    },
+    {
+      "xref": 7,
+      "name": "AAAAAC+Arial-BoldItalicMT",
+      "pdf_object": "<<\n  /Type /Font\n  /Subtype /TrueType\n  /BaseFont /AAAAAC+Arial-BoldItalicMT\n  /FontDescriptor 25 0 R\n  /ToUnicode 26 0 R\n  /FirstChar 33\n  /LastChar 49\n  /Widths [ 611 722 667 667 722 278 611 667 611 278 833 667 778\n      722 722 722 722 ]\n>>",
+      "glyph_order": [
+        ".notdef",
+        "glyph00001",
+        "glyph00002",
+        "glyph00003",
+        "glyph00004",
+        "glyph00005",
+        "glyph00006",
+        "glyph00007",
+        "glyph00008",
+        "glyph00009",
+        "glyph00010",
+        "glyph00011",
+        "glyph00012",
+        "glyph00013",
+        "glyph00014",
+        "glyph00015",
+        "glyph00016",
+        "glyph00017"
+      ],
+      "cmaps": [
+        {
+          "platform": 1,
+          "encoding": 0,
+          "format": 6,
+          "mapping": {
+            "33": "glyph00006",
+            "34": "glyph00014",
+            "35": "glyph00005",
+            "36": "glyph00015",
+            "37": "glyph00007",
+            "38": "glyph00001",
+            "39": "glyph00016",
+            "40": "glyph00017",
+            "41": "glyph00009",
+            "42": "glyph00008",
+            "43": "glyph00010",
+            "44": "glyph00013",
+            "45": "glyph00012",
+            "46": "glyph00004",
+            "47": "glyph00002",
+            "48": "glyph00011",
+            "49": "glyph00003"
+          }
+        }
+      ]
+    }
+  ],
+  "nul_count": 21,
+  "replacement_count": 0,
+  "glyph_zero_count": 21,
+  "bad_trace_pairs": [
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ],
+    [
+      65533,
+      0
+    ]
+  ],
+  "missing_glyph_gate": false,
+  "pdf_preserved": true
+}

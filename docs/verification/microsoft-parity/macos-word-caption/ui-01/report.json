@@ -1,0 +1,17 @@
+{
+  "scope": "Owned UI-copy existing body and caption text editability, Undo, explicit Save, close/same-path reopen/close",
+  "steps": [
+    "TAIL replaced with CAPTION-UI-CHECK, visually confirmed",
+    "Undo restored TAIL, explicit Save confirmed",
+    "Caption True replaced with EDITED-CAPTION, visibly centered next to unchanged1-1 field result",
+    "Undo restored True, explicit Save confirmed",
+    "Close; Open/GoTo exact same caption-ui.docx path; reopen shows both captions,1-1,True andTAIL",
+    "Final Cmd+W; AX reports noWindowsAvailable; independent native inventory verifies close"
+  ],
+  "source_sha256": "699604034e25df45548d9a0fc89e22c6dca594abd6619c1dff7252e6a9221134",
+  "copy_sha256": "699604034e25df45548d9a0fc89e22c6dca594abd6619c1dff7252e6a9221134",
+  "source_preserved": true,
+  "copy_equals_source": true,
+  "final_inventory": [],
+  "screenshots": "Inline CUA evidence in root task; no saved UI PNG artifact"
+}

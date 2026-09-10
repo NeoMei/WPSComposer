@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/italic-face-diagnostic.py", line 145, in run
+    check(label+'_style_tree',v5.complete_styles_equal(styles,current) if value else italic_off_valid(styles,current))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/italic-face-diagnostic.py", line 123, in check
+    if not value:raise AssertionError(name)
+AssertionError: italic-off_style_tree

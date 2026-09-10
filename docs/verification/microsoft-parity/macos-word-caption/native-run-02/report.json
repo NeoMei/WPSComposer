@@ -1,0 +1,47 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "sources_unchanged": true,
+    "inventory_preserved": true
+  },
+  "scope": "private bound native caption primitive only; no public figure/equation declaration or arbitrary rollback claim",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_caption.py": "3c026dad064b34ce1a06a819342518c12546939eb1a6c9befd7492f030480d7c",
+    "tests/msoffice/test_macos_word_numbering.py": "f0e1c04c9f5eaee90a89c296bbe2995ddd0dda2d3b5773843fcaaf273d3a574b",
+    "skills/WPSComposer/scripts/msoffice/macos_word_numbering.py": "9321b6a763dd327f4d9fb4cd985689de2c77f158203fe8a020df409cb8ba5180",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/writer.py": "3e9265751c5f062816d0ff5abe138dd12062f4f545b16127c4de1534cbb965cd",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "inventory_before": [],
+  "current_step": "global-caption-noncollapsed-middle",
+  "seed": [
+    [
+      "seed",
+      "1"
+    ]
+  ],
+  "sentinel_create_rows": [
+    [
+      "文档27"
+    ]
+  ],
+  "sentinel_name": "文档27",
+  "sentinel_before": [
+    "文档27",
+    "文档27",
+    false,
+    "9ff51f974abce0ff4d2315a9c0a95a33e1ceac7a5b3242ae5d43310c747d4435"
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4djbbora diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4djbbora/c715c2dab1e942caba699c6f95d20e95.log"
+  },
+  "sentinel_closed": true,
+  "remaining_sentinel": null,
+  "inventory_final": [],
+  "artifact_hashes": {}
+}

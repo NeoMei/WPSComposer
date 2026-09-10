@@ -1,0 +1,5092 @@
+{
+  "status": "FAIL",
+  "scope": "Owned same-text control acceptance; native fallback must match exactly; unused-style tabs and public heading parity remain unproved",
+  "checks": {
+    "pinned_word_saved_donor": true,
+    "pinned_original_source": true,
+    "complete_pinned_donor": true,
+    "pinned_donor_theme": true,
+    "empty_inventory_precondition": true,
+    "seed_ack": true,
+    "two_empty_carriers_xml": true,
+    "exact_empty_body": true,
+    "source_constructor_ack": true,
+    "source_constructor_styles_preserved": true,
+    "fresh_source_complete_match": true,
+    "fresh_source_theme_match": true,
+    "private_donor_identical": true,
+    "source_font_preimage_valid": true,
+    "replacement_preimage_shape": true,
+    "exact_collapsed_insert": true,
+    "insert_inventory_preserved": true,
+    "only_complete_clone_added": true,
+    "imported_style_only_before_delete": true,
+    "theme_preserved_before_delete": true,
+    "all_deletion_prerequisites": true,
+    "exact_guarded_replacement": true,
+    "clear_inventory_preserved": true,
+    "all_existing_styles_preserved": true,
+    "inserted_styles_survive_clear": true,
+    "imported_style_only_after_clear": true,
+    "complete_imported_style_xml": true,
+    "clone_carrier_still_empty": true,
+    "clone_constructor_ack": true,
+    "exact_control_body": true,
+    "all_source_styles_and_complete_clone": true,
+    "baseline_theme": true,
+    "same_text_run_rPr_exact_equal": true,
+    "before_challenge_source_properties_preserved": true,
+    "before_challenge_complete_font_appearance_equal": true,
+    "before_challenge_all_style_scalars": true,
+    "before_challenge_font65_typed": true,
+    "before_challenge_font65_exact_equal": true,
+    "before_challenge_anchors_typed": true,
+    "before_challenge_anchors_nonempty": true,
+    "before_challenge_anchors_exact_equal": true,
+    "before_challenge_effective_tabs_equal": true,
+    "before_challenge_size_spacing_typed": true,
+    "challenge_ack": true,
+    "challenged_font65_typed": true,
+    "challenged_anchors_typed": true,
+    "challenged_anchors_nonempty": true,
+    "challenged_effective_tabs_equal": true,
+    "challenged_size_spacing_typed": true,
+    "source_control_size_and_spacing_changed": true,
+    "clone_control_native_stable": true,
+    "only_exact_source_linked_pair_challenge": true,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/native-donor-heading-import-v4.py": "cc06f245f1b9d2faea59951e9e6130bca7cbea9b07e04526aedb7b7086b401a4",
+    "build/word-heading-import-20260910/test_native_donor_heading_import_v4.py": "dc0080f59bbfb7c9f5d8ec54451657889676dd18dde9ea9a4bbd2dfa707ede19",
+    "build/word-heading-import-20260910/native-donor-heading-import-v2.py": "720dab72434e4f1f53e70217d5db811a95e993eeed809d864852786f592c191d",
+    "build/word-heading-import-20260910/fresh-order-diagnostic.py": "9d0f0ad38b9b8a032de9ff272fdcf60dddd5dcd6afd2660067434a3f3cda7fa1",
+    "build/word-heading-import-20260910/font-anchor-read-diagnostic.py": "8a5824e7ecf47c5e9c16e3b96decdeb9ef093b84efad7b787c869c50f57d558a",
+    "build/word-heading-import-20260910/tab-list-read-diagnostic.py": "d53d0047105991059472c3144c542935be8c89f24d145eda270377889461a4f8",
+    "build/word-heading-import-20260910/docx-collapsed-control.py": "ad61b720bd62a53e4ac5260ed1d1eeb6c7a13eee1f4fd1079b2871911eccaffe",
+    "build/word-heading-import-20260910/flatopc-open-control.py": "8af7458f1b73edf1490df28a433319fb5592b5bd87ad4ef1e304b0ce898cc2bd",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "donor_sha256": "fa7d6dd3060e67e6dedc61d37515ace3bd854624382378192e7cd59d8819ed7c",
+  "theme_sha256": "7017cbe8b7512b56e04e6b3e3579aa862a35b6f9f31e0bf48328f6e5c074ebbd",
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "current_phase": "challenged_effective_size_spacing",
+  "raw_rows": {
+    "sentinel": [
+      [
+        "文档19"
+      ]
+    ],
+    "version": [
+      [
+        "16.112.3"
+      ]
+    ],
+    "seed": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "empty_body": [
+      [
+        "body",
+        "\rREPLACE\rSUFFIX\r\r",
+        true,
+        4,
+        0,
+        0
+      ]
+    ],
+    "construct_source_control": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "source_font_preimage": [
+      [
+        "font:all caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:animation",
+        [
+          "native-enum",
+          "animation none"
+        ],
+        [
+          "native-enum",
+          "animation none"
+        ],
+        true
+      ],
+      [
+        "font:ascii name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:bold",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:bold bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:color",
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        true
+      ],
+      [
+        "font:color index",
+        [
+          "native-enum",
+          "violet"
+        ],
+        [
+          "native-enum",
+          "violet"
+        ],
+        true
+      ],
+      [
+        "font:color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font:complex script name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:disable character space grid",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:double strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:east asian name",
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        true
+      ],
+      [
+        "font:emboss",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:emphasis mark",
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        true
+      ],
+      [
+        "font:engrave",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:font position",
+        [
+          "number",
+          0
+        ],
+        [
+          "number",
+          0
+        ],
+        true
+      ],
+      [
+        "font:font size",
+        [
+          "number",
+          17
+        ],
+        [
+          "number",
+          17
+        ],
+        true
+      ],
+      [
+        "font:hidden",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:italic",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:italic bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:kerning",
+        [
+          "number",
+          12
+        ],
+        [
+          "number",
+          12
+        ],
+        true
+      ],
+      [
+        "font:name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:other name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:outline",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:scaling",
+        [
+          "number",
+          110
+        ],
+        [
+          "number",
+          110
+        ],
+        true
+      ],
+      [
+        "font:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:small caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:spacing",
+        [
+          "number",
+          1.25
+        ],
+        [
+          "number",
+          1.25
+        ],
+        true
+      ],
+      [
+        "font:strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:subscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:superscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:underline",
+        [
+          "native-enum",
+          "underline none"
+        ],
+        [
+          "native-enum",
+          "underline none"
+        ],
+        true
+      ],
+      [
+        "font:underline color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font:underline color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        [
+          "native-enum",
+          "red"
+        ],
+        [
+          "native-enum",
+          "red"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:texture",
+        [
+          "native-enum",
+          "texture none"
+        ],
+        [
+          "native-enum",
+          "texture none"
+        ],
+        true
+      ],
+      [
+        "font-borders:always in front",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from",
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color",
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:join borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround header",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "clone-base-normal",
+        [
+          "text",
+          "正文"
+        ],
+        [
+          "text",
+          "正文"
+        ],
+        true
+      ]
+    ],
+    "replacement_preimage": [
+      [
+        "preimage",
+        "FRESH STYLE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        26,
+        34
+      ]
+    ],
+    "native_collapsed_import": [
+      [
+        "insert",
+        26,
+        26,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r"
+      ]
+    ],
+    "clear_shifted_original": [
+      [
+        "clear",
+        60,
+        68,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\r\r"
+      ]
+    ],
+    "construct_clone_control": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "control_body": [
+      [
+        "body",
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        true,
+        4,
+        0,
+        0
+      ]
+    ],
+    "before_challenge_style_fonts": [
+      [
+        "font:all caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:animation",
+        [
+          "native-enum",
+          "animation none"
+        ],
+        [
+          "native-enum",
+          "animation none"
+        ],
+        true
+      ],
+      [
+        "font:ascii name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:bold",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:bold bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:color",
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        true
+      ],
+      [
+        "font:color index",
+        [
+          "native-enum",
+          "violet"
+        ],
+        [
+          "native-enum",
+          "violet"
+        ],
+        true
+      ],
+      [
+        "font:color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font:complex script name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:disable character space grid",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:double strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:east asian name",
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        true
+      ],
+      [
+        "font:emboss",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:emphasis mark",
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        true
+      ],
+      [
+        "font:engrave",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:font position",
+        [
+          "number",
+          0
+        ],
+        [
+          "number",
+          0
+        ],
+        true
+      ],
+      [
+        "font:font size",
+        [
+          "number",
+          17
+        ],
+        [
+          "number",
+          17
+        ],
+        true
+      ],
+      [
+        "font:hidden",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:italic",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:italic bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:kerning",
+        [
+          "number",
+          12
+        ],
+        [
+          "number",
+          12
+        ],
+        true
+      ],
+      [
+        "font:name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:other name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:outline",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:scaling",
+        [
+          "number",
+          110
+        ],
+        [
+          "number",
+          110
+        ],
+        true
+      ],
+      [
+        "font:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:small caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:spacing",
+        [
+          "number",
+          1.25
+        ],
+        [
+          "number",
+          1.25
+        ],
+        true
+      ],
+      [
+        "font:strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:subscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:superscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:underline",
+        [
+          "native-enum",
+          "underline none"
+        ],
+        [
+          "native-enum",
+          "underline none"
+        ],
+        true
+      ],
+      [
+        "font:underline color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font:underline color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        [
+          "native-enum",
+          "red"
+        ],
+        [
+          "native-enum",
+          "red"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:texture",
+        [
+          "native-enum",
+          "texture none"
+        ],
+        [
+          "native-enum",
+          "texture none"
+        ],
+        true
+      ],
+      [
+        "font-borders:always in front",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from",
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color",
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:join borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround header",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "clone-base-normal",
+        [
+          "text",
+          "正文"
+        ],
+        [
+          "text",
+          "正文"
+        ],
+        true
+      ]
+    ],
+    "before_challenge_style_scalars": [
+      [
+        "font:all caps",
+        true
+      ],
+      [
+        "font:animation",
+        true
+      ],
+      [
+        "font:ascii name",
+        true
+      ],
+      [
+        "font:bold",
+        true
+      ],
+      [
+        "font:bold bi",
+        true
+      ],
+      [
+        "font:color",
+        true
+      ],
+      [
+        "font:color index",
+        true
+      ],
+      [
+        "font:color theme index",
+        true
+      ],
+      [
+        "font:complex script name",
+        true
+      ],
+      [
+        "font:disable character space grid",
+        true
+      ],
+      [
+        "font:double strike through",
+        true
+      ],
+      [
+        "font:east asian name",
+        true
+      ],
+      [
+        "font:emboss",
+        true
+      ],
+      [
+        "font:emphasis mark",
+        true
+      ],
+      [
+        "font:engrave",
+        true
+      ],
+      [
+        "font:font position",
+        true
+      ],
+      [
+        "font:font size",
+        true
+      ],
+      [
+        "font:hidden",
+        true
+      ],
+      [
+        "font:italic",
+        true
+      ],
+      [
+        "font:italic bi",
+        true
+      ],
+      [
+        "font:kerning",
+        true
+      ],
+      [
+        "font:name",
+        true
+      ],
+      [
+        "font:other name",
+        true
+      ],
+      [
+        "font:outline",
+        true
+      ],
+      [
+        "font:scaling",
+        true
+      ],
+      [
+        "font:shadow",
+        true
+      ],
+      [
+        "font:small caps",
+        true
+      ],
+      [
+        "font:spacing",
+        true
+      ],
+      [
+        "font:strike through",
+        true
+      ],
+      [
+        "font:subscript",
+        true
+      ],
+      [
+        "font:superscript",
+        true
+      ],
+      [
+        "font:underline",
+        true
+      ],
+      [
+        "font:underline color",
+        true
+      ],
+      [
+        "font:underline color theme index",
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        true
+      ],
+      [
+        "font-shading:texture",
+        true
+      ],
+      [
+        "font-borders:always in front",
+        true
+      ],
+      [
+        "font-borders:distance from",
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        true
+      ],
+      [
+        "font-borders:inside color",
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        true
+      ],
+      [
+        "font-borders:join borders",
+        true
+      ],
+      [
+        "font-borders:outside color",
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        true
+      ],
+      [
+        "font-borders:shadow",
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        true
+      ],
+      [
+        "font-borders:surround header",
+        true
+      ],
+      [
+        "paragraph:add space between east asian and alpha",
+        true
+      ],
+      [
+        "paragraph:add space between east asian and digit",
+        true
+      ],
+      [
+        "paragraph:alignment",
+        true
+      ],
+      [
+        "paragraph:auto adjust right indent",
+        true
+      ],
+      [
+        "paragraph:base line alignment",
+        true
+      ],
+      [
+        "paragraph:character unit first line indent",
+        true
+      ],
+      [
+        "paragraph:character unit left indent",
+        true
+      ],
+      [
+        "paragraph:character unit right indent",
+        true
+      ],
+      [
+        "paragraph:disable line height grid",
+        true
+      ],
+      [
+        "paragraph:east asian line break control",
+        true
+      ],
+      [
+        "paragraph:first line indent",
+        true
+      ],
+      [
+        "paragraph:half width punctuation on top of line",
+        true
+      ],
+      [
+        "paragraph:hanging punctuation",
+        true
+      ],
+      [
+        "paragraph:hyphenation",
+        true
+      ],
+      [
+        "paragraph:keep together",
+        true
+      ],
+      [
+        "paragraph:keep with next",
+        true
+      ],
+      [
+        "paragraph:line spacing",
+        true
+      ],
+      [
+        "paragraph:line spacing rule",
+        true
+      ],
+      [
+        "paragraph:line unit after",
+        true
+      ],
+      [
+        "paragraph:line unit before",
+        true
+      ],
+      [
+        "paragraph:no line number",
+        true
+      ],
+      [
+        "paragraph:outline level",
+        true
+      ],
+      [
+        "paragraph:page break before",
+        true
+      ],
+      [
+        "paragraph:paragraph format left indent",
+        true
+      ],
+      [
+        "paragraph:paragraph format right indent",
+        true
+      ],
+      [
+        "paragraph:space after",
+        true
+      ],
+      [
+        "paragraph:space after auto",
+        true
+      ],
+      [
+        "paragraph:space before",
+        true
+      ],
+      [
+        "paragraph:space before auto",
+        true
+      ],
+      [
+        "paragraph:widow control",
+        true
+      ],
+      [
+        "paragraph:word wrap",
+        true
+      ],
+      [
+        "paragraph-shading:background pattern color",
+        true
+      ],
+      [
+        "paragraph-shading:background pattern color index",
+        true
+      ],
+      [
+        "paragraph-shading:background pattern color theme index",
+        true
+      ],
+      [
+        "paragraph-shading:foreground pattern color",
+        true
+      ],
+      [
+        "paragraph-shading:foreground pattern color index",
+        true
+      ],
+      [
+        "paragraph-shading:foreground pattern color theme index",
+        true
+      ],
+      [
+        "paragraph-shading:texture",
+        true
+      ],
+      [
+        "paragraph-borders:always in front",
+        true
+      ],
+      [
+        "paragraph-borders:distance from",
+        true
+      ],
+      [
+        "paragraph-borders:distance from bottom",
+        true
+      ],
+      [
+        "paragraph-borders:distance from left",
+        true
+      ],
+      [
+        "paragraph-borders:distance from right",
+        true
+      ],
+      [
+        "paragraph-borders:distance from top",
+        true
+      ],
+      [
+        "paragraph-borders:enable borders",
+        true
+      ],
+      [
+        "paragraph-borders:enable first page in section",
+        true
+      ],
+      [
+        "paragraph-borders:enable other pages in section",
+        true
+      ],
+      [
+        "paragraph-borders:inside color",
+        true
+      ],
+      [
+        "paragraph-borders:inside color index",
+        true
+      ],
+      [
+        "paragraph-borders:inside color theme index",
+        true
+      ],
+      [
+        "paragraph-borders:inside line style",
+        true
+      ],
+      [
+        "paragraph-borders:inside line width",
+        true
+      ],
+      [
+        "paragraph-borders:join borders",
+        true
+      ],
+      [
+        "paragraph-borders:outside color",
+        true
+      ],
+      [
+        "paragraph-borders:outside color index",
+        true
+      ],
+      [
+        "paragraph-borders:outside color theme index",
+        true
+      ],
+      [
+        "paragraph-borders:outside line style",
+        true
+      ],
+      [
+        "paragraph-borders:outside line width",
+        true
+      ],
+      [
+        "paragraph-borders:shadow",
+        true
+      ],
+      [
+        "paragraph-borders:surround footer",
+        true
+      ],
+      [
+        "paragraph-borders:surround header",
+        true
+      ],
+      [
+        "clone-base-normal",
+        true
+      ]
+    ],
+    "before_challenge_font65": [
+      [
+        "font:all caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:animation",
+        [
+          "native-enum",
+          "animation none"
+        ],
+        [
+          "native-enum",
+          "animation none"
+        ],
+        true
+      ],
+      [
+        "font:ascii name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:bold",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:bold bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:color",
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        true
+      ],
+      [
+        "font:color index",
+        [
+          "native-enum",
+          "violet"
+        ],
+        [
+          "native-enum",
+          "violet"
+        ],
+        true
+      ],
+      [
+        "font:color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font:complex script name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:disable character space grid",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:double strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:east asian name",
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        true
+      ],
+      [
+        "font:emboss",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:emphasis mark",
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        true
+      ],
+      [
+        "font:engrave",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:font position",
+        [
+          "number",
+          0
+        ],
+        [
+          "number",
+          0
+        ],
+        true
+      ],
+      [
+        "font:font size",
+        [
+          "number",
+          17
+        ],
+        [
+          "number",
+          17
+        ],
+        true
+      ],
+      [
+        "font:hidden",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:italic",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:italic bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:kerning",
+        [
+          "number",
+          12
+        ],
+        [
+          "number",
+          12
+        ],
+        true
+      ],
+      [
+        "font:name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:other name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:outline",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:scaling",
+        [
+          "number",
+          110
+        ],
+        [
+          "number",
+          110
+        ],
+        true
+      ],
+      [
+        "font:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:small caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:spacing",
+        [
+          "number",
+          1.25
+        ],
+        [
+          "number",
+          1.25
+        ],
+        true
+      ],
+      [
+        "font:strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:subscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:superscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:underline",
+        [
+          "native-enum",
+          "underline none"
+        ],
+        [
+          "native-enum",
+          "underline none"
+        ],
+        true
+      ],
+      [
+        "font:underline color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font:underline color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        [
+          "native-enum",
+          "red"
+        ],
+        [
+          "native-enum",
+          "red"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:texture",
+        [
+          "native-enum",
+          "texture none"
+        ],
+        [
+          "native-enum",
+          "texture none"
+        ],
+        true
+      ],
+      [
+        "font-borders:always in front",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from",
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color",
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:join borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround header",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "clone-base-normal",
+        [
+          "text",
+          "正文"
+        ],
+        [
+          "text",
+          "正文"
+        ],
+        true
+      ]
+    ],
+    "before_challenge_font_anchors": [
+      [
+        "styles",
+        "标题 1",
+        "WPSC Heading Clone"
+      ],
+      [
+        "font",
+        "source",
+        "style",
+        "",
+        -1,
+        -1,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "paragraph",
+        "FRESH STYLE 中文 العربية 😀\r",
+        0,
+        26,
+        "标题 1",
+        "",
+        "",
+        "",
+        "",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "latin",
+        "E",
+        2,
+        3,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "cjk",
+        "中",
+        12,
+        13,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "arabic",
+        "ا",
+        15,
+        16,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "emoji",
+        "😀",
+        23,
+        25,
+        "标题 1",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "style",
+        "",
+        -1,
+        -1,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "paragraph",
+        "FRESH STYLE 中文 العربية 😀\r",
+        67,
+        93,
+        "WPSC Heading Clone",
+        "",
+        "",
+        "",
+        "",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "latin",
+        "E",
+        69,
+        70,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "cjk",
+        "中",
+        79,
+        80,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "arabic",
+        "ا",
+        82,
+        83,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "emoji",
+        "😀",
+        90,
+        92,
+        "WPSC Heading Clone",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "+中文标题 ()"
+      ]
+    ],
+    "before_challenge_effective_tabs": [
+      [
+        "tabs",
+        "paragraph",
+        "标题 1",
+        "WPSC Heading Clone",
+        19,
+        19
+      ],
+      [
+        "source",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ]
+    ],
+    "before_challenge_effective_size_spacing": [
+      [
+        "challenge",
+        17,
+        24,
+        17,
+        24,
+        17,
+        24,
+        17,
+        24
+      ]
+    ],
+    "source_challenge": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "challenged_font65": [
+      [
+        "font:all caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:animation",
+        [
+          "native-enum",
+          "animation none"
+        ],
+        [
+          "native-enum",
+          "animation none"
+        ],
+        true
+      ],
+      [
+        "font:ascii name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:bold",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:bold bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:color",
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        true
+      ],
+      [
+        "font:color index",
+        [
+          "native-enum",
+          "violet"
+        ],
+        [
+          "native-enum",
+          "violet"
+        ],
+        true
+      ],
+      [
+        "font:color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font:complex script name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:disable character space grid",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:double strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:east asian name",
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        true
+      ],
+      [
+        "font:emboss",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:emphasis mark",
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        true
+      ],
+      [
+        "font:engrave",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:font position",
+        [
+          "number",
+          0
+        ],
+        [
+          "number",
+          0
+        ],
+        true
+      ],
+      [
+        "font:font size",
+        [
+          "number",
+          28
+        ],
+        [
+          "number",
+          17
+        ],
+        false
+      ],
+      [
+        "font:hidden",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:italic",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:italic bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:kerning",
+        [
+          "number",
+          12
+        ],
+        [
+          "number",
+          12
+        ],
+        true
+      ],
+      [
+        "font:name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:other name",
+        [
+          "text",
+          ""
+        ],
+        [
+          "text",
+          ""
+        ],
+        true
+      ],
+      [
+        "font:outline",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:scaling",
+        [
+          "number",
+          110
+        ],
+        [
+          "number",
+          110
+        ],
+        true
+      ],
+      [
+        "font:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:small caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:spacing",
+        [
+          "number",
+          1.25
+        ],
+        [
+          "number",
+          1.25
+        ],
+        true
+      ],
+      [
+        "font:strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:subscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:superscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:underline",
+        [
+          "native-enum",
+          "underline none"
+        ],
+        [
+          "native-enum",
+          "underline none"
+        ],
+        true
+      ],
+      [
+        "font:underline color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font:underline color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        [
+          "native-enum",
+          "red"
+        ],
+        [
+          "native-enum",
+          "red"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:texture",
+        [
+          "native-enum",
+          "texture none"
+        ],
+        [
+          "native-enum",
+          "texture none"
+        ],
+        true
+      ],
+      [
+        "font-borders:always in front",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from",
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color",
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:join borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround header",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "clone-base-normal",
+        [
+          "text",
+          "正文"
+        ],
+        [
+          "text",
+          "正文"
+        ],
+        true
+      ]
+    ],
+    "challenged_font_anchors": [
+      [
+        "styles",
+        "标题 1",
+        "WPSC Heading Clone"
+      ],
+      [
+        "font",
+        "source",
+        "style",
+        "",
+        -1,
+        -1,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "paragraph",
+        "FRESH STYLE 中文 العربية 😀\r",
+        0,
+        26,
+        "标题 1",
+        "",
+        "",
+        "",
+        "",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "latin",
+        "E",
+        2,
+        3,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "cjk",
+        "中",
+        12,
+        13,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "arabic",
+        "ا",
+        15,
+        16,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "emoji",
+        "😀",
+        23,
+        25,
+        "标题 1",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "style",
+        "",
+        -1,
+        -1,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "paragraph",
+        "FRESH STYLE 中文 العربية 😀\r",
+        67,
+        93,
+        "WPSC Heading Clone",
+        "",
+        "",
+        "",
+        "",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "latin",
+        "E",
+        69,
+        70,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "cjk",
+        "中",
+        79,
+        80,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "arabic",
+        "ا",
+        82,
+        83,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "emoji",
+        "😀",
+        90,
+        92,
+        "WPSC Heading Clone",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "+中文标题 ()"
+      ]
+    ],
+    "challenged_effective_tabs": [
+      [
+        "tabs",
+        "paragraph",
+        "标题 1",
+        "WPSC Heading Clone",
+        19,
+        19
+      ],
+      [
+        "source",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ]
+    ],
+    "challenged_effective_size_spacing": [
+      [
+        "challenge",
+        28,
+        31,
+        28,
+        31,
+        17,
+        24,
+        17,
+        24
+      ]
+    ]
+  },
+  "sentinel_name": "文档19",
+  "sentinel_before": [
+    "文档19",
+    "文档19",
+    false,
+    "091e7630f148dd696ba5c1724e6c16924c68a14f5896d2f5bf60460b88dae106"
+  ],
+  "word_version": [
+    [
+      "16.112.3"
+    ]
+  ],
+  "expected": {
+    "original": "FRESH STYLE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+    "inserted": "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+    "final": "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\r\r",
+    "start": 26,
+    "end": 34,
+    "shifted_start": 60,
+    "shifted_end": 68
+  },
+  "inventory_before_insert": [
+    [
+      "document-167d00e35a4246e098efd41109f7fc0a.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-s2ag5496/document-167d00e35a4246e098efd41109f7fc0a.docx",
+      true,
+      "4e4158278010d02ca565b66125d26108b9ad7c380f243c352c7ab031196322eb"
+    ],
+    [
+      "文档19",
+      "文档19",
+      false,
+      "091e7630f148dd696ba5c1724e6c16924c68a14f5896d2f5bf60460b88dae106"
+    ]
+  ],
+  "inventory_after_insert": [
+    [
+      "document-167d00e35a4246e098efd41109f7fc0a.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-s2ag5496/document-167d00e35a4246e098efd41109f7fc0a.docx",
+      false,
+      "c266d586f2e2b64cb6ef86f8af0dc90163631ae0fb183c5b1108fb1a6aaf0055"
+    ],
+    [
+      "文档19",
+      "文档19",
+      false,
+      "091e7630f148dd696ba5c1724e6c16924c68a14f5896d2f5bf60460b88dae106"
+    ]
+  ],
+  "inventory_after_clear": [
+    [
+      "document-167d00e35a4246e098efd41109f7fc0a.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-s2ag5496/document-167d00e35a4246e098efd41109f7fc0a.docx",
+      false,
+      "67315843f2d2a96904190273e31c1b9a1a2264dfdef1101397b375f660d79a3a"
+    ],
+    [
+      "文档19",
+      "文档19",
+      false,
+      "091e7630f148dd696ba5c1724e6c16924c68a14f5896d2f5bf60460b88dae106"
+    ]
+  ],
+  "error": {
+    "type": "ValueError",
+    "message": "Unsupported control content"
+  },
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档19",
+      "文档19",
+      false,
+      "091e7630f148dd696ba5c1724e6c16924c68a14f5896d2f5bf60460b88dae106"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档19"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "remaining_sentinel": null,
+  "artifact_hashes": {
+    "empty-carriers.docx": "552c8ad4251ff2c0e50601b78e152fff61c853d981c3fe7bf180696accf175fb",
+    "before-delete.docx": "ed72f8c3e555357407560ffdd323d1955b2b6494157d190a96c5c3b469db1f51",
+    "source-styles.xml": "c61eb08da0ba08e81c0ad33218b7b0dae7b1c9ba88ddcda691bdab6be87d2116",
+    "source-challenged.docx": "b8c9125ed658b136f25dd605f7d07ea2bf3cef685ad982f452fc1f4508f2f3e6",
+    "source-control.docx": "3e15007643a805875a418496e84324940bd1f398b95fdd66b32593ed932aaf10",
+    "after-import.docx": "50abb065a6ffa802846b470acc66b9498ac1d6aff2276d5c37f3ff25811de6f6",
+    "source-preimage.docx": "3e15007643a805875a418496e84324940bd1f398b95fdd66b32593ed932aaf10",
+    "before-challenge.docx": "45a66749f1309ac37689c825b4f893cea0b92bce1d07438a0bce1d3a1316d1d9"
+  }
+}

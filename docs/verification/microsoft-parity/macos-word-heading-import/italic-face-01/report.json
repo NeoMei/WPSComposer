@@ -1,0 +1,106 @@
+{
+  "status": "FAIL",
+  "scope": "Italic face diagnosis only; visual results are observations, not parity",
+  "checks": {
+    "pinned_input": true,
+    "empty_inventory": true,
+    "private_input_exact": true,
+    "exact_opened_inventory": true,
+    "baseline_state": true,
+    "italic-off_ack": true,
+    "italic-off_style_tree": false,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/italic-face-diagnostic.py": "06d508dac6cf9795de596006ca97a7e1472ab6ec7ded5c56f8ba88fb4d19f509",
+    "build/word-heading-import-20260910/test_italic_face_diagnostic.py": "989aa301f5df95147fa23d74c47ad567a2ce27f0125eddf41bc8637991a6ffe8",
+    "build/word-heading-import-20260910/native-donor-heading-import-v5.py": "953fab0ab25f9dce20e321eb67e154ae2cf2be6bb471d42970f668bfd1f30fd5",
+    "build/word-heading-import-20260910/test_native_donor_heading_import_v5.py": "9aec04b13d47394ae4ff7b96e5e0d62150220e5ea44b0ed890fa208ba1a6c934",
+    "build/word-heading-import-20260910/native-donor-heading-import-v2.py": "720dab72434e4f1f53e70217d5db811a95e993eeed809d864852786f592c191d",
+    "build/word-heading-import-20260910/fresh-order-diagnostic.py": "9d0f0ad38b9b8a032de9ff272fdcf60dddd5dcd6afd2660067434a3f3cda7fa1",
+    "build/word-heading-import-20260910/font-anchor-read-diagnostic.py": "8a5824e7ecf47c5e9c16e3b96decdeb9ef093b84efad7b787c869c50f57d558a",
+    "build/word-heading-import-20260910/tab-list-read-diagnostic.py": "d53d0047105991059472c3144c542935be8c89f24d145eda270377889461a4f8",
+    "build/word-heading-import-20260910/docx-collapsed-control.py": "ad61b720bd62a53e4ac5260ed1d1eeb6c7a13eee1f4fd1079b2871911eccaffe",
+    "build/word-heading-import-20260910/flatopc-open-control.py": "8af7458f1b73edf1490df28a433319fb5592b5bd87ad4ef1e304b0ce898cc2bd",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "expected_body": "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+  "inventory_before": [],
+  "open_journal": {
+    "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-import-05/heading.docx",
+    "status": "acknowledged",
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4eu218i9/document-116aa0096b974a52bc4027d270fa3b7b.docx"
+  },
+  "current_phase": "italic-off",
+  "raw_rows": {
+    "sentinel": [
+      [
+        "文档22"
+      ]
+    ],
+    "baseline": [
+      [
+        "state",
+        true,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        4,
+        0,
+        0,
+        true,
+        true,
+        true
+      ]
+    ],
+    "italic-off": [
+      [
+        "italic",
+        false,
+        false
+      ]
+    ]
+  },
+  "sentinel_before": [
+    "文档22",
+    "文档22",
+    false,
+    "97121d8618effac5362532fef500e368fb4a75f066385fdf55c27f8326342d39"
+  ],
+  "sentinel_name": "文档22",
+  "error": {
+    "type": "AssertionError",
+    "message": "italic-off_style_tree"
+  },
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档22",
+      "文档22",
+      false,
+      "97121d8618effac5362532fef500e368fb4a75f066385fdf55c27f8326342d39"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档22"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "remaining_sentinel": null,
+  "artifact_hashes": {
+    "italic-off.docx": "94292aea7ee7471072a450a7de73a884f5989a582178f408f92cb74ce730371e"
+  }
+}

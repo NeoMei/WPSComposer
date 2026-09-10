@@ -1,0 +1,14 @@
+{
+  "scope": "Independent source/artifact hashes, style restoration and cleanup; PDF visual inspection separate",
+  "final_inventory": [],
+  "quarantine_absent": true,
+  "source_hashes_match": true,
+  "artifact_hashes_match": true,
+  "full_styles_restored": true,
+  "donor_preserved": true,
+  "source_preserved": true,
+  "native_checks": 96,
+  "native_all_passed": true,
+  "remaining_sentinel": null,
+  "cleanup_verified": true
+}

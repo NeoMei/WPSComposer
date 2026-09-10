@@ -1,0 +1,1022 @@
+{
+  "status": "DIAGNOSTIC_COMPLETE",
+  "scope": "Italic face diagnosis only; visual results are observations, not parity",
+  "checks": {
+    "pinned_input": true,
+    "pinned_baseline": true,
+    "exact_off_deletions": true,
+    "off_document_preserved": true,
+    "empty_inventory": true,
+    "private_input_exact": true,
+    "exact_opened_inventory": true,
+    "off_state": true,
+    "off_after_pdf_state": true,
+    "restored_ack": true,
+    "restored_style_tree": true,
+    "restored_document_semantics": true,
+    "restored_theme": true,
+    "restored_state": true,
+    "restored_after_pdf_state": true,
+    "owned_closed": true,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true,
+    "reopen_state": true,
+    "reopen_styles": true,
+    "reopen_document": true,
+    "reopen_closed": true,
+    "restored_bytes": true,
+    "original_input_preserved": true,
+    "final_empty": true,
+    "sources_unchanged": true
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/italic-face-continuation.py": "0f8eb536e2fba5292e3e418ea7e8d48b698372a250247104aa14842c33707abb",
+    "build/word-heading-import-20260910/test_italic_face_continuation.py": "997543693baedff5908cb27c39f257f8703821e575b593450f4d08fca9a6f3a8",
+    "build/word-heading-import-20260910/native-donor-heading-import-v5.py": "953fab0ab25f9dce20e321eb67e154ae2cf2be6bb471d42970f668bfd1f30fd5",
+    "build/word-heading-import-20260910/test_native_donor_heading_import_v5.py": "9aec04b13d47394ae4ff7b96e5e0d62150220e5ea44b0ed890fa208ba1a6c934",
+    "build/word-heading-import-20260910/native-donor-heading-import-v2.py": "720dab72434e4f1f53e70217d5db811a95e993eeed809d864852786f592c191d",
+    "build/word-heading-import-20260910/fresh-order-diagnostic.py": "9d0f0ad38b9b8a032de9ff272fdcf60dddd5dcd6afd2660067434a3f3cda7fa1",
+    "build/word-heading-import-20260910/font-anchor-read-diagnostic.py": "8a5824e7ecf47c5e9c16e3b96decdeb9ef093b84efad7b787c869c50f57d558a",
+    "build/word-heading-import-20260910/tab-list-read-diagnostic.py": "d53d0047105991059472c3144c542935be8c89f24d145eda270377889461a4f8",
+    "build/word-heading-import-20260910/docx-collapsed-control.py": "ad61b720bd62a53e4ac5260ed1d1eeb6c7a13eee1f4fd1079b2871911eccaffe",
+    "build/word-heading-import-20260910/flatopc-open-control.py": "8af7458f1b73edf1490df28a433319fb5592b5bd87ad4ef1e304b0ce898cc2bd",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "3e9265751c5f062816d0ff5abe138dd12062f4f545b16127c4de1534cbb965cd"
+  },
+  "expected_body": "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+  "inventory_before": [],
+  "open_journal": {
+    "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/italic-face-01/italic-off.docx",
+    "status": "acknowledged",
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-txw2p1e4/document-bbcdd06a9c974e52bb2b0d3f0da20bbb.docx"
+  },
+  "current_phase": "restored_after_pdf",
+  "raw_rows": {
+    "sentinel": [
+      [
+        "文档23"
+      ]
+    ],
+    "off_state": [
+      [
+        "state",
+        true,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        4,
+        0,
+        0,
+        false,
+        false,
+        true
+      ]
+    ],
+    "off_after_pdf": [
+      [
+        "state",
+        true,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        4,
+        0,
+        0,
+        false,
+        false,
+        true
+      ]
+    ],
+    "restored": [
+      [
+        "italic",
+        true,
+        true
+      ]
+    ],
+    "restored_state": [
+      [
+        "state",
+        true,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        4,
+        0,
+        0,
+        true,
+        true,
+        true
+      ]
+    ],
+    "restored_after_pdf": [
+      [
+        "state",
+        true,
+        "FRESH STYLE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r",
+        4,
+        0,
+        0,
+        true,
+        true,
+        true
+      ]
+    ]
+  },
+  "sentinel_before": [
+    "文档23",
+    "文档23",
+    false,
+    "5b0096bb47a9e0fb33508f7e2073d4dd7d4c2c5f55c0ca1c756eff9d3cc6d38c"
+  ],
+  "sentinel_name": "文档23",
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档23",
+      "文档23",
+      false,
+      "5b0096bb47a9e0fb33508f7e2073d4dd7d4c2c5f55c0ca1c756eff9d3cc6d38c"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档23"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "pdf_observations": {
+    "italic-off": {
+      "source": {
+        "characters": 28,
+        "glyph_zero_count": 0,
+        "unicode_error_count": 0,
+        "arabic_scalars": 2,
+        "raw_scalar_glyph_pairs": [
+          [
+            70,
+            3
+          ],
+          [
+            82,
+            6
+          ],
+          [
+            69,
+            2
+          ],
+          [
+            83,
+            7
+          ],
+          [
+            72,
+            4
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            83,
+            7
+          ],
+          [
+            84,
+            8
+          ],
+          [
+            89,
+            9
+          ],
+          [
+            76,
+            5
+          ],
+          [
+            69,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            1575,
+            10
+          ],
+          [
+            65247,
+            15
+          ],
+          [
+            65228,
+            14
+          ],
+          [
+            1585,
+            13
+          ],
+          [
+            65169,
+            11
+          ],
+          [
+            64510,
+            16
+          ],
+          [
+            65172,
+            12
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      },
+      "imported": {
+        "characters": 36,
+        "glyph_zero_count": 7,
+        "unicode_error_count": 7,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            73,
+            8
+          ],
+          [
+            77,
+            10
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            79,
+            12
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            84,
+            16
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            68,
+            4
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            78,
+            11
+          ],
+          [
+            67,
+            3
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      },
+      "suffix": {
+        "characters": 9,
+        "glyph_zero_count": 0,
+        "unicode_error_count": 0,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            83,
+            4
+          ],
+          [
+            85,
+            5
+          ],
+          [
+            70,
+            2
+          ],
+          [
+            70,
+            2
+          ],
+          [
+            73,
+            3
+          ],
+          [
+            88,
+            6
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ]
+        ]
+      },
+      "clone": {
+        "characters": 26,
+        "glyph_zero_count": 7,
+        "unicode_error_count": 7,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            70,
+            6
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            72,
+            7
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            84,
+            16
+          ],
+          [
+            89,
+            17
+          ],
+          [
+            76,
+            9
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      }
+    },
+    "restored": {
+      "source": {
+        "characters": 28,
+        "glyph_zero_count": 7,
+        "unicode_error_count": 7,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            70,
+            6
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            72,
+            7
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            84,
+            16
+          ],
+          [
+            89,
+            17
+          ],
+          [
+            76,
+            9
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      },
+      "imported": {
+        "characters": 36,
+        "glyph_zero_count": 7,
+        "unicode_error_count": 7,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            73,
+            8
+          ],
+          [
+            77,
+            10
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            79,
+            12
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            84,
+            16
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            68,
+            4
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            80,
+            13
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            65,
+            2
+          ],
+          [
+            78,
+            11
+          ],
+          [
+            67,
+            3
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      },
+      "suffix": {
+        "characters": 9,
+        "glyph_zero_count": 0,
+        "unicode_error_count": 0,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            83,
+            4
+          ],
+          [
+            85,
+            5
+          ],
+          [
+            70,
+            2
+          ],
+          [
+            70,
+            2
+          ],
+          [
+            73,
+            3
+          ],
+          [
+            88,
+            6
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            128512,
+            1
+          ],
+          [
+            128512,
+            1
+          ]
+        ]
+      },
+      "clone": {
+        "characters": 26,
+        "glyph_zero_count": 7,
+        "unicode_error_count": 7,
+        "arabic_scalars": 0,
+        "raw_scalar_glyph_pairs": [
+          [
+            70,
+            6
+          ],
+          [
+            82,
+            14
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            72,
+            7
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            83,
+            15
+          ],
+          [
+            84,
+            16
+          ],
+          [
+            89,
+            17
+          ],
+          [
+            76,
+            9
+          ],
+          [
+            69,
+            5
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            20013,
+            1
+          ],
+          [
+            12098,
+            2
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            65533,
+            0
+          ],
+          [
+            32,
+            1
+          ],
+          [
+            32,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  "remaining_sentinel": null,
+  "artifact_hashes": {
+    "restored.pdf": "92f73276de370261b4a65e0b1c44bd56b69e877e4446d4e8424049933ca3f073",
+    "restored.docx": "c3df197fcfd7e5cb438436df7849162b0741cf803521a6d9bbc9dc4f7ee45702",
+    "italic-off.pdf": "0e53acae9e80f27248e05a30eba99f9b4285573c05f72524d6d96671ee191fe9"
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "status": "PASS",
+  "checks": {
+    "long_selection_replaced_from_start_with_suffix_preserved": true,
+    "bound_middle_caption_fields_bookmarks_ranges_and_format": true,
+    "field_owner_category_and_ordinals": true,
+    "exact_unsaved_sentinel_preserved": true,
+    "native_reopen_source_preserved": true,
+    "editable_native_fields_without_object_side_effects": true,
+    "pdf_preserves_caption_text_unicode_affixes_and_suffix": true,
+    "sources_unchanged": true,
+    "inventory_preserved": true
+  },
+  "scope": "private bound native caption primitive only; no public figure/equation declaration or arbitrary rollback claim",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_caption.py": "0abef388fe1d5df802073bf13b5141641cc911886e62dd9b6e2f71214cea5c16",
+    "tests/msoffice/test_macos_word_numbering.py": "fc11be19a87765e7347ed255c9de36df89b15c291b5abf05a879dc95557025e4",
+    "skills/WPSComposer/scripts/msoffice/macos_word_numbering.py": "9321b6a763dd327f4d9fb4cd985689de2c77f158203fe8a020df409cb8ba5180",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/writer.py": "3e9265751c5f062816d0ff5abe138dd12062f4f545b16127c4de1534cbb965cd",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "inventory_before": [],
+  "current_step": "owned-reopen",
+  "seed": [
+    [
+      "seed",
+      "1"
+    ]
+  ],
+  "sentinel_create_rows": [
+    [
+      "文档25"
+    ]
+  ],
+  "sentinel_name": "文档25",
+  "sentinel_before": [
+    "文档25",
+    "文档25",
+    false,
+    "428f77d24bb78c0a22c6daa3a7994e5b427b252ed8837a2ebdfe8e776a8d29d2"
+  ],
+  "native_rows": [
+    [
+      "body",
+      "Chapter\rleft 图😀(1)尾 说明😀\r 表😀[1-1]尾 True\r\r\rTAIL\r\r"
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* ARABIC \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " STYLEREF \"标题 1\" \\s \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* ARABIC \\s 1 \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "bookmark",
+      "wpsc_fig_cccccccccccccccccccccccc",
+      17,
+      60,
+      "1"
+    ],
+    [
+      "bookmark",
+      "wpsc_tab_dddddddddddddddddddddddd",
+      73,
+      161,
+      "1-1"
+    ],
+    [
+      "paragraph",
+      8,
+      68,
+      "left 图😀(1)尾 说明😀\r",
+      true,
+      true,
+      false
+    ],
+    [
+      "paragraph",
+      68,
+      169,
+      " 表😀[1-1]尾 True\r",
+      true,
+      true,
+      true
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0
+    ]
+  ],
+  "field_snapshots": [
+    {
+      "stable_key": [
+        "fig:caption",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "numbering",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "tab:caption",
+        "STYLEREF",
+        0
+      ],
+      "field_category": "numbering",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    },
+    {
+      "stable_key": [
+        "tab:caption",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "numbering",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 0,
+      "figure_index_page_count": 0,
+      "table_index_page_count": 0,
+      "total_pages": 1
+    }
+  ],
+  "sentinel_after": [
+    "文档25",
+    "文档25",
+    false,
+    "428f77d24bb78c0a22c6daa3a7994e5b427b252ed8837a2ebdfe8e776a8d29d2"
+  ],
+  "sentinel_closed": true,
+  "reopen_rows": [
+    [
+      "body",
+      "Chapter\rleft 图😀(1)尾 说明😀\r 表😀[1-1]尾 True\r\r\rTAIL\r\r"
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* ARABIC \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " STYLEREF \"标题 1\" \\s \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* ARABIC \\s 1 \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "bookmark",
+      "wpsc_fig_cccccccccccccccccccccccc",
+      17,
+      60,
+      "1"
+    ],
+    [
+      "bookmark",
+      "wpsc_tab_dddddddddddddddddddddddd",
+      73,
+      161,
+      "1-1"
+    ],
+    [
+      "paragraph",
+      8,
+      68,
+      "left 图😀(1)尾 说明😀\r",
+      true,
+      true,
+      false
+    ],
+    [
+      "paragraph",
+      68,
+      169,
+      " 表😀[1-1]尾 True\r",
+      true,
+      true,
+      true
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0
+    ]
+  ],
+  "pdf_text": "1 Chapter\nleft 图😀(1)尾 说明😀\n表😀[1-1]尾 True\nTAIL",
+  "remaining_sentinel": null,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "document.xml": "edc58ceae2008d98da0697f3c333105c69860399e1007520717990336fae0043",
+    "caption.docx": "699604034e25df45548d9a0fc89e22c6dca594abd6619c1dff7252e6a9221134",
+    "caption.pdf": "86674c950a4a50baddacec6df4282974638afbb5cee18bfd6e1d332ff4881662"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "native_operation_result": "Raw report PASS, 96 checks. Preserved unchanged.",
+  "rendered_artifact_gate": "FAIL",
+  "pdf_observation": "Arabic words are seven boxes each in all three paragraphs",
+  "native_word_canvas_observation": "Same missing glyph boxes reproduced in exact UI copy",
+  "missing_glyph_gate": false,
+  "glyph_zero_count": 21,
+  "nul_count": 21,
+  "pdf_preserved": true,
+  "root_cause_evidence": "Installed Arial Bold Italic faces lack Arabic cmap entries; embedded font contains only .notdef. This does not establish a production font fallback policy.",
+  "ui_report": "../ui-05/report.json"
+}

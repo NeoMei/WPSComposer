@@ -1,0 +1,21 @@
+{
+  "scope": "Fresh root CUA edit/Undo/Save/close/same-path reopen/close on exact owned copy; Arabic visual FAIL remains",
+  "ui_actions": [
+    "Exact native Open dialog file path verified",
+    "Fourth paragraph existing FRESH selected and replaced with UI-CHECK ",
+    "Screenshot visibly shows UI-CHECK STYLE in fourth paragraph",
+    "Cmd+Z visibly restores FRESH STYLE",
+    "Cmd+S saved status visible",
+    "Cmd+W closes; Cmd+O/GoTo selects same exact path",
+    "Reopened Word canvas shows original FRESH STYLE and saved status",
+    "Cmd+W closes; independent inventory follows"
+  ],
+  "source_sha256": "1655223f01b9e500790c2f8dc3fcba0960628e46185da0a9e57f27ec4bd23071",
+  "copy_sha256": "1655223f01b9e500790c2f8dc3fcba0960628e46185da0a9e57f27ec4bd23071",
+  "source_preserved": true,
+  "copy_equals_source": true,
+  "final_inventory": [],
+  "visual_arabic_gate": "FAIL: three seven-box Arabic words visible on canvas before edit and after reopen",
+  "screenshot_evidence": "Inline CUA screenshots in current root continuation; no saved PNG artifact",
+  "prior_report": "report.json retained as earlier close-only evidence"
+}

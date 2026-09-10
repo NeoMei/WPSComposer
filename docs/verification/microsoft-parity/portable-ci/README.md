@@ -1,3 +1,7 @@
+# Current hosted checkpoint
+
+[Run14](run-14/README.md) passes all four hosted jobs at `ce322b29`; native Office/WPS and release gates remain separate.
+
 # Portable CI repair checkpoint — 2026-09-09
 
 Current: [run-13](run-13/README.md) succeeds at `73a00e1` on all four jobs: Ubuntu Python3.9/3.12 each 5,221 passed /44 skipped; Windows each 5,167 passed /98 skipped. Earlier runs below retain their historical failure/pass results. Hosted tests do not certify native Office/WPS or UI.

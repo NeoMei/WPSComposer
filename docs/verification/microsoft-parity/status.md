@@ -1,5 +1,17 @@
 # Microsoft parity candidate status
 
+## Current continuation — September 11, 2026
+
+The private caption slice now passes final native run04 (11 checks), independent scoped review and real UI04 edit/Undo/Save/close/same-path reopen/close. Root verifies native and PDF output, nine source hashes, untouched unsaved sentinel, byte-identical UI copy and empty final Word inventory. The final validator fixes ignored-build dependencies and exact caption/trailing-range checks; raw03 PDF extraction FAIL remains preserved. [Full48](full-round48/README.md) passes **5,281/12** on immutable c454ac8d with all402 before/after/live hashes equal. This closes the bounded private primitive; complete public figure/equation/table families remain open.
+
+
+Candidate `ce322b29cef43df68551e387dcc4e6e94bab5495` remains **not release ready**; PR9 is draft. Hosted [CI14](portable-ci/run-14/README.md) passes all four jobs: Linux each 5,221 passed/44 skipped; Windows each 5,167 passed/98 skipped. [Full46](full-round46/README.md) retains 5,253 passed/12 skipped at73a00e1 with all401 hashes unchanged. Caption source changes are covered by full48; CI14 remains the earlier ce322b29 hosted checkpoint.
+
+[Heading v5](macos-word-heading-import/README.md) records 96 passing native operation/style-independence checks, final DOCX/PDF and reopen, but **visual Arabic FAIL** in both Word canvas and PDF. The installed Arial Bold Italic faces lack the fixture glyphs and the PDF contains 21 painted `.notdef` glyphs. The reviewed missing-glyph guard rejects this artifact. A distinct26-check italic-state continuation confirms source glyphs appear when italic is off and disappear after exact restoration; this diagnoses the face dependency without enabling a fallback. The exact saved UI copy retains original DOCX bytes and closes with empty final native inventory. A separate fresh `ui-05/fresh-ui-report.json` now establishes the complete UI edit/Undo/Save/close/same-path reopen/close sequence, unchanged bytes and empty final inventory; the earlier close-only report is retained. Preserve these distinct results; no full heading acceptance or new public capability is claimed.
+
+Nine absent direct methods, full quality snapshots/capability rows, current Windows Office/WPS native/UI/installed execution and final whole-branch certification still block release. See [the current release checklist](release-readiness-20260911.md). Earlier dated checkpoints below remain historical evidence, not current claims.
+
+
 This is an implementation checkpoint, not a release approval. The frozen baseline is `baseline.json` (628 required capability rows at v0.9.0, commit 6dd3a00). Raw COM access is recorded separately and is not a semantic parity requirement. No baseline row has been removed to make the candidate appear complete.
 
 ## Current continuation checkpoint — September 11, candidate 73a00e1

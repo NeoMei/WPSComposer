@@ -1,0 +1,15 @@
+{
+  "executed": false,
+  "source_sha256": "98a34b4714cebd533a6f5282ac8f1ede08c5f300b8775b5d042bced4279c3140",
+  "exit_codes": {
+    "seed": 0,
+    "source-constructor": 0,
+    "clone-constructor": 0,
+    "font65": 0,
+    "tabs": 0,
+    "anchors": 0,
+    "body": 0,
+    "challenge-read": 0,
+    "style-scalars": 0
+  }
+}
