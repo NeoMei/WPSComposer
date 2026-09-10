@@ -12,3 +12,17 @@
 /docs/verification/microsoft-parity/macos-excel-delete-selection/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
 /docs/verification/microsoft-parity/portable-ci/run-08/** -text
 /docs/verification/microsoft-parity/portable-ci/run-08/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Keep native acknowledgement and process/style diagnostics byte-identical.
+/docs/verification/microsoft-parity/macos-excel-save-ack/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/macos-excel-existing-delete-diagnosis/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/macos-word-quality/defined-style-read/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/full-round41/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Preserve source-bound release diagnostics byte-for-byte on Windows.
+docs/verification/microsoft-parity/macos-excel-private-transport/** -text whitespace=-blank-at-eof,-trailing-space
+docs/verification/microsoft-parity/macos-word-quality/page-story-matrix-01/** -text whitespace=-blank-at-eof,-trailing-space
+docs/verification/microsoft-parity/portable-ci/run-10/** -text whitespace=-blank-at-eof,-trailing-space
+
+# Retain exact native private-session failure and acceptance evidence.
+docs/verification/microsoft-parity/macos-excel-private-public/** -text

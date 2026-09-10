@@ -1,0 +1,13 @@
+{
+  "generator": {
+    "file": "generate_word_style_matrix.py",
+    "sha256": "02515bdbd7135be41da94343f2179415fb964d67b2deb347e11a185608bcb358"
+  },
+  "outputs": {
+    "empty.docx": "a681e6dac3a210a2ad9181429a5f38042910e446303c7d63bea5d9a6b8982bf5",
+    "multisection.docx": "64b7d460363e4f088eefe4cb93ca71f4bc51a6a323cc2c9103c58a80b174a556",
+    "nonempty.docx": "fa89f93d95f2407fbced631573e0f5bcca635778333b262bdbdb6f341352647a",
+    "preflight.json": "6584445c97eec0b84cfd2a52d58f01a958ac8fcbeeb011a6fc9ec1ee99c5afbd"
+  },
+  "schema": "wpscomposer-word-style-matrix-hashes-v1"
+}

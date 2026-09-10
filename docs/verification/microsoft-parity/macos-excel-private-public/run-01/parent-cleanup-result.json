@@ -1,0 +1,8 @@
+{
+  "owned_pid": 30659,
+  "owned_pid_gone": true,
+  "cleanup": "exact pristine bootstrap close/quit",
+  "source": "original-quarantine.json",
+  "remaining_original_pid": 9212,
+  "quarantine_retained_for_guarded_recovery": true
+}

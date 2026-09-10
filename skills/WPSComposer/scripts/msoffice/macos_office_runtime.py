@@ -289,6 +289,90 @@ def convert(request, timeout=600):
     return _execute(component, request.output, overwrite=request.overwrite, deadline=deadline, prepare=prepare)
 
 
+def _process_exists(pid, *, _signal=os.kill):
+    """Return a tri-state kernel existence check using signal zero only."""
+    try:
+        _signal(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return None
+    except OSError as exc:
+        if exc.errno == errno.ESRCH:
+            return False
+        if exc.errno == errno.EPERM:
+            return None
+        return None
+    return True
+
+
+def _read_excel_process_identity(pid):
+    """Read one PID's birth/executable/bundle identity without Apple events."""
+    from .macos_osa_transport import _DarwinProcessLookup, _DarwinRuntime
+    runtime = _DarwinRuntime()
+    pool = runtime.message(runtime.objc_class('NSAutoreleasePool'), 'new')
+    try:
+        return _DarwinProcessLookup(runtime).snapshot(pid)
+    finally:
+        if pool:
+            runtime.message(pool, 'drain')
+
+
+def _private_excel_identity(private_process, stage):
+    from .macos_osa_transport import ExcelProcessIdentity, require_excel_process
+    if not isinstance(private_process, dict):
+        raise ValueError('Quarantine private process identity is invalid')
+    raw = private_process.get('identity')
+    required = {'pid', 'start_seconds', 'start_microseconds', 'executable', 'bundle_id'}
+    if not isinstance(raw, dict) or set(raw) != required:
+        raise ValueError('Quarantine private process identity is invalid')
+    try:
+        identity = ExcelProcessIdentity(**raw)
+        require_excel_process(identity)
+    except (TypeError, ValueError, RuntimeError):
+        raise ValueError('Quarantine private process identity is invalid') from None
+    expected = Path('/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel')
+    if os.path.realpath(identity.executable) != os.path.realpath(expected):
+        raise ValueError('Quarantine private process identity is invalid')
+    private_owned = private_process.get('owned_path')
+    if private_owned is not None and Path(private_owned).resolve().parent != stage:
+        raise ValueError('Quarantine private process staging identity is invalid')
+    evidence_dir = private_process.get('evidence_dir')
+    if evidence_dir is not None and Path(evidence_dir).resolve().parent != stage:
+        raise ValueError('Quarantine private process staging identity is invalid')
+    return identity
+
+
+def _private_excel_process_gone(identity):
+    """Prove an exact quarantined Excel birth is gone; never signal or address it."""
+    exists = _process_exists(identity.pid)
+    if exists is False:
+        return True
+    if exists is not True:
+        raise RuntimeError('Private Excel process identity is not verified; recovery refused')
+    try:
+        current = _read_excel_process_identity(identity.pid)
+    except Exception:
+        raise RuntimeError('Private Excel process identity is not verified; recovery refused') from None
+    if current is None:
+        # Distinguish a race-to-exit from an inaccessible or incomplete lookup.
+        if _process_exists(identity.pid) is False:
+            return True
+        raise RuntimeError('Private Excel process identity is not verified; recovery refused')
+    if current.pid != identity.pid:
+        raise RuntimeError('Private Excel process identity is not verified; recovery refused')
+    expected_birth = (identity.start_seconds, identity.start_microseconds)
+    current_birth = (current.start_seconds, current.start_microseconds)
+    if current_birth != expected_birth:
+        # The PID now belongs to another process. The recorded birth is gone;
+        # do not inspect further, send an event, or act on the replacement.
+        return True
+    if (os.path.realpath(current.executable) != os.path.realpath(identity.executable)
+            or current.bundle_id != identity.bundle_id):
+        raise RuntimeError('Private Excel process identity is not verified; recovery refused')
+    raise RuntimeError('Quarantined private Excel process is still running; recovery refused')
+
+
 def recover_quarantine(component, *, timeout=30):
     """Clear a component quarantine after read-only cleanup verification.
 
@@ -318,10 +402,19 @@ def recover_quarantine(component, *, timeout=30):
         bound = data.get('bound_path', data.get('owned_path'))
         if bound is not None and Path(bound).resolve().parent != stage:
             raise RuntimeError('Attached document completion requires manual verification; recovery refused')
+        private_identity = (_private_excel_identity(data.get('private_process'), stage)
+                            if component == 'spreadsheet' and 'private_process' in data else None)
         process = subprocess.run(['/bin/ps', '-axo', 'command'], capture_output=True,
                                  text=True, check=True, timeout=_remaining(deadline))
-        if any('osascript' in line and str(stage) in line for line in process.stdout.splitlines()):
+        if any(str(stage) in line and ('osascript' in line or 'macos_osa_transport' in line)
+               for line in process.stdout.splitlines()):
             raise RuntimeError('Previous native script is still running; recovery refused')
+        if private_identity is not None:
+            if not _private_excel_process_gone(private_identity):
+                raise RuntimeError('Private Excel process identity is not verified; recovery refused')
+            _remaining(deadline)
+            lock.quarantine_path.unlink()
+            return True
         app = 'Microsoft ' + _APPS[component][0]
         if '/' + app + '.app/Contents/MacOS/' in process.stdout:
             collection = 'workbooks' if component == 'spreadsheet' else 'presentations'

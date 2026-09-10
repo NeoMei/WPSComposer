@@ -1,0 +1,14 @@
+{
+  "operation": "inventory",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gv17mbwe/owner/inventory-abea3662317b4404a92b8618a39889ec/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gv17mbwe/owner/inventory-abea3662317b4404a92b8618a39889ec/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gv17mbwe/owner/inventory-abea3662317b4404a92b8618a39889ec/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gv17mbwe/owner/inventory-abea3662317b4404a92b8618a39889ec/diagnostic.json",
+  "stdout": "",
+  "stderr": "{\"code\":\"OSA_EXECUTION_FAILED\",\"pid\":30659,\"outcome_uncertain\":true,\"detail\":\"{\\n    NSLocalizedDescription = \\\"Microsoft Excel got an error: Parameter error.\\\";\\n    NSLocalizedFailureReason = \\\"Parameter error.\\\";\\n    OSAScriptErrorAppAddressKey = \\\"<NSAppleEventDescriptor: [0x0,12e7de6b \\\\\\\"Microsoft Excel\\\\\\\"]>\\\";\\n    OSAScriptErrorAppNameKey = \\\"Microsoft Excel\\\";\\n    OSAScriptErrorBriefMessageKey = \\\"Parameter error.\\\";\\n    OSAScriptErrorMessageKey = \\\"Microsoft Excel got an error: Parameter error.\\\";\\n    OSAScriptErrorNumberKey = \\\"-50\\\";\\n    OSAScriptErrorRangeKey = \\\"NSRange: {1555, 314}\\\";\\n}\"}\n",
+  "returncode": null,
+  "error": {
+    "code": "EXCEL_COMMAND_FAILED",
+    "detail": "EXCEL_COMMAND_FAILED"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "sheets": [
+    "Data",
+    "Results"
+  ],
+  "artifact_sha256": "e6a6475987896651dc31e5c81f77f6ae8ad901569c4ea91bd7a8ddd1dac1ccc1",
+  "source_transport_unchanged": true,
+  "original_inventory_equal": true,
+  "private_process_gone": true
+}

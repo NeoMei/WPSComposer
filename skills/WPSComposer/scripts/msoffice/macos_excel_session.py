@@ -131,6 +131,9 @@ def _normalize(value):
     return value
 
 
+from .macos_excel_process import PrivateExcelProcessOwner
+
+
 class MacExcelSession:
     kind='sheet'
     engine='msoffice'
@@ -156,12 +159,16 @@ class MacExcelSession:
                 raise ValueError('Source file changed during Excel staging')
             if snapshot_artifact_state(self._native,deadline=self._deadline).sha256 != self._logical_state.sha256:
                 raise ValueError('Source file changed during Excel staging')
+            self._start_private_process()
             self._run(f'''if {_quote(self._native.name)} is in (name of every workbook) then error "Owned name collision"
 set ownedBook to open workbook workbook file name {_quote(str(self._native))} with editable
 if full name of ownedBook is not {_quote(str(self._native))} then error "Owned open identity mismatch"
 return "{{}}"''',bind=False)
+            self._process_owner.claim_workbook(self._native,deadline=self._deadline)
             return self
         except BaseException:
+            if getattr(self,'_process_owner',None) is not None and not self._failed:
+                self._quarantine({'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_START_FAILED'})
             self._lock.close()
             raise
 
@@ -177,10 +184,20 @@ return "{{}}"''',bind=False)
         self._closed=False;self._failed=False;self._attached=False;self._counter=0
         self._read_only=False;self._execute=subprocess.run;self._sheet_index=1
         try:
-            self._run('set ownedBook to make new workbook\nlog "WPSCOMPOSER_CREATED_WORKBOOK:" & (name of ownedBook)\nsave workbook as ownedBook filename '+_quote(str(self._native))+' file format Excel XML file format\nset ownedBook to workbook '+_quote(self._native.name)+'\nif full name of ownedBook is not '+_quote(str(self._native))+' then error "Owned new workbook identity mismatch"\nreturn "{}"',bind=False)
+            self._start_private_process()
+            self._run('set ownedBook to make new workbook\nlog "WPSCOMPOSER_CREATED_WORKBOOK:" & (name of ownedBook)\nsave workbook as ownedBook filename '+_quote(str(self._native))+' file format Excel XML file format\nset ownedBook to workbook '+_quote(self._native.name)+'\nif full name of ownedBook is not '+_quote(str(self._native))+' then error "Owned new workbook identity mismatch"\nreturn '+_object({'created':'saved of ownedBook'}),bind=False,acknowledge='created')
+            validate_native_input(self._native,'spreadsheet',deadline=self._deadline)
+            self._process_owner.claim_workbook(self._native,deadline=self._deadline)
             return self
         except BaseException:
+            if getattr(self,'_process_owner',None) is not None and not self._failed:
+                self._quarantine({'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_START_FAILED'})
             self._lock.close();raise
+
+    def _start_private_process(self):
+        self._process_owner=PrivateExcelProcessOwner(evidence_dir=self._job/'owner')
+        self._process_owner.start(deadline=self._deadline)
+        self._process_owner.reserve_workbook(self._native)
 
     @classmethod
     def attach_active(cls):
@@ -238,6 +255,10 @@ return "{{}}"''',bind=False)
     def _quarantine(self,detail):
         # Fail closed in memory before attempting fallible recovery evidence.
         self._failed=True
+        owner=getattr(self,'_process_owner',None)
+        if owner is not None:
+            self._persist_diagnostic('owner_quarantine',lambda:owner.quarantine(RuntimeError(detail.get('code','Native Excel uncertainty'))))
+            detail=dict(detail,private_process=getattr(owner,'recovery',None))
         self._recovery_written=self._persist_diagnostic('recovery',lambda:
             (self._job/'recovery.json').write_text(json.dumps(detail)+'\n')) is None
         if self._lock is not None:
@@ -253,7 +274,9 @@ return "{{}}"''',bind=False)
 
     def _run(self,body,*,bind=True,acknowledge=None):
         self._assert_live()
-        remaining=min(60,self._deadline-time.monotonic())
+        step_started=time.monotonic()
+        step_deadline=min(self._deadline,step_started+60)
+        remaining=step_deadline-step_started
         if remaining<=0:
             detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_TIMEOUT'}
             self._quarantine(detail)
@@ -269,15 +292,22 @@ if full name of ownedBook is not {_quote(str(self._native))} then error "Owned w
         stem.with_suffix('.applescript').write_text(script)
         stdout=stderr=''
         try:
-            result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
+            remaining=step_deadline-time.monotonic()
+            if remaining<=0:raise subprocess.TimeoutExpired('Excel script preparation',0)
+            owner=getattr(self,'_process_owner',None)
+            if owner is not None and not self._attached:
+                result=owner.run(stem.with_suffix('.applescript'),step_deadline)
+            else:
+                result=self._execute(['/usr/bin/osascript',str(stem.with_suffix('.applescript'))],capture_output=True,text=True,timeout=remaining)
             stdout,stderr=result.stdout,result.stderr
             if result.returncode: raise RuntimeError('Native Excel session operation failed')
             output=_normalize(json.loads(stdout))
             if acknowledge is not None and (not isinstance(output,dict) or output.get(acknowledge) is not True):
                 raise RuntimeError("Native Excel operation did not acknowledge " + acknowledge)
         except BaseException as exc:
-            if isinstance(exc,subprocess.TimeoutExpired): stdout,stderr=exc.stdout or '',exc.stderr or ''
-            detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'step':self._counter,'closed':False,'code':'NATIVE_OFFICE_TIMEOUT' if isinstance(exc,subprocess.TimeoutExpired) else 'NATIVE_OFFICE_EXECUTION_FAILED'}
+            if isinstance(exc,subprocess.TimeoutExpired) or hasattr(exc,'stdout'):
+                stdout,stderr=getattr(exc,'stdout','') or '',getattr(exc,'stderr','') or ''
+            detail={'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'step':self._counter,'closed':False,'code':'NATIVE_OFFICE_TIMEOUT' if isinstance(exc,subprocess.TimeoutExpired) or getattr(exc,'code',None) in ('OSA_TIMEOUT','EXCEL_DEADLINE') else 'NATIVE_OFFICE_EXECUTION_FAILED'}
             if getattr(self,'_clipboard_operation',False):detail.update(clipboard_changed=True,clipboard_may_have_changed=True)
             self._quarantine(detail)
             self._write_logs(stem,stdout,stderr)
@@ -518,9 +548,31 @@ return {_object({'type':'"sheet"','path':'"sheet:" & (count of worksheets of own
             sheet,kind,ref=parse_target(target)
             prefix,_=self._target_script(target)
             if kind=='sheet':
-                if parse_target(target)[0] not in getattr(self,'_fresh_empty_sheets',set()):raise NotImplementedError('Deleting an existing Excel worksheet requires an unverified confirmation-free native primitive')
+                owner=getattr(self,'_process_owner',None)
+                private=(not self._attached and owner is not None and owner.is_private_owned
+                         and owner.state=='owned' and owner.owned_path==self._native)
+                if not private and sheet not in getattr(self,'_fresh_empty_sheets',set()):raise NotImplementedError('Deleting an existing Excel worksheet requires a verified private process')
                 self._fresh_empty_sheets=set()
                 command='if (count of worksheets of ownedBook) <= 1 then error "Cannot remove last worksheet"\ndelete obj'
+                if private:
+                    command='''if (count of workbooks) is not 1 then error "Foreign workbook in private process"
+if (count of worksheets of ownedBook) <= 1 then error "Cannot remove last worksheet"
+set removedSheetName to name of obj
+set beforeSheetCount to count worksheets of ownedBook
+set previousAlerts to display alerts
+try
+ set display alerts to false
+ if display alerts is not false then error "Alerts not suppressed"
+ delete obj
+ set display alerts to previousAlerts
+on error deletionMessage number deletionNumber
+ set display alerts to previousAlerts
+ error deletionMessage number deletionNumber
+end try
+if display alerts is not previousAlerts then error "Alerts not restored"
+if (count worksheets of ownedBook) is not (beforeSheetCount - 1) then error "Deletion count mismatch"
+if removedSheetName is in (name of every worksheet of ownedBook) then error "Deleted worksheet still present"'''
+
             elif kind in ('cell','range'):
                 axis=op.get('axis','row')
                 if axis not in ('row','column'): raise ValueError('Invalid Excel removal axis')
@@ -528,11 +580,14 @@ return {_object({'type':'"sheet"','path':'"sheet:" & (count of worksheets of own
                 command='delete range (entire '+axis+' of obj)'
             elif kind in ('shape','shape_name','chart'): command='delete obj'
             else: raise ValueError('Unsupported Excel removal target')
-            result = self._run(prefix+'\n'+command+'\nreturn '+_object({'removed':_quote(target)}))
+            private_delete=kind=='sheet' and private
+            fields={'removed':_quote(target)}
+            if private_delete:fields['deleted']='true'
+            result = self._run(prefix+'\n'+command+'\nreturn '+_object(fields),**({'acknowledge':'deleted'} if private_delete else {}))
             if kind == 'sheet':
                 # Worksheet indices shift after deletion. Keep a surviving
                 # logical selection, or select the predecessor of a removed
-                # current sheet (new empty sheets are appended, never first).
+                # current sheet, keeping index 1 when the first sheet is removed.
                 selected = getattr(self, '_sheet_index', 1)
                 if selected >= sheet:
                     self._sheet_index = max(1, selected - 1)
@@ -748,7 +803,14 @@ return {_object({'type':'"sheet"','path':'"sheet:" & (count of worksheets of own
             self.save_current()
         try:
             if not self._failed and not self._attached:
-                self._run('close ownedBook saving no\nreturn '+_object({'closed':'not (exists workbook '+_quote(self._native.name)+')'}),acknowledge='closed')
+                owner=getattr(self,'_process_owner',None)
+                if owner is not None:
+                    owner.close(deadline=self._deadline)
+                else:
+                    self._run('close ownedBook saving no\nreturn '+_object({'closed':'not (exists workbook '+_quote(self._native.name)+')'}),acknowledge='closed')
+        except BaseException:
+            self._quarantine({'component':'spreadsheet','staging_path':str(self._job),'owned_path':str(self._native),'closed':False,'code':'NATIVE_OFFICE_CLOSE_FAILED'})
+            raise
         finally:
             self._closed=True
             if self._lock is not None: self._lock.close()

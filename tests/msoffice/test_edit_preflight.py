@@ -65,11 +65,10 @@ def test_word_unknown_empty_property_is_rejected_before_native(mac_ms,value):
             {'op':'set','target':'paragraph:1','unknown':value}])
 
 
-def test_excel_existing_sheet_deletion_is_known_unsupported_without_inserting_sheet(mac_ms):
-    with pytest.raises(engines.EngineUnavailableError):
-        api._document_engine('/source.xlsx',None,'auto',action='edit',operations=[
-            {'op':'set','target':'sheet:1/cell:A1','value':42},
-            {'op':'remove','target':'sheet:2'}])
+def test_excel_existing_sheet_deletion_can_use_private_file_session(mac_ms):
+    assert api._document_engine('/source.xlsx',None,'auto',action='edit',operations=[
+        {'op':'set','target':'sheet:1/cell:A1','value':42},
+        {'op':'remove','target':'sheet:2'}]) == 'msoffice'
 
 
 def test_wps_preference_is_preserved_for_supported_request(mac_ms,monkeypatch):
@@ -135,10 +134,8 @@ def test_fresh_sheet_possible_does_not_prove_an_arbitrary_target_exists(mac_ms):
     operations=[{'op':'insert','type':'sheet','props':{'name':'New'}},
                 {'op':'remove','target':'sheet:999'}]
     assert api._document_engine('/source.xlsx',None,'auto',action='edit',operations=operations)=='msoffice'
-    # Native deletion clears its fresh-sheet tracking; a second positional
-    # deletion cannot borrow an earlier insertion as a support guarantee.
-    with pytest.raises(engines.EngineUnavailableError):
-        api._document_engine('/source.xlsx',None,'auto',action='edit',operations=operations+[{'op':'remove','target':'sheet:1'}])
+    # Exact existence and last-sheet checks still run in the owned native session.
+    assert api._document_engine('/source.xlsx',None,'auto',action='edit',operations=operations+[{'op':'remove','target':'sheet:1'}]) == 'msoffice'
 
 
 @pytest.mark.parametrize('family,target,extra',[
@@ -423,3 +420,10 @@ def test_windows_pure_validation_does_not_resolve_live_ids_or_launch_native(monk
         'op':'set','target':'sheet:999/shape:@id=999','line':{'dash_style':99}}) == 'supported'
     assert pure.classify_windows_set_op('slide', {
         'op':'set','target':'selection','geometry':{'width':200}}) == 'supported'
+
+
+def test_active_excel_existing_sheet_deletion_is_not_advertised(mac_ms):
+    with pytest.raises(engines.EngineUnavailableError):
+        api._document_engine(None,'sheet','auto',action='edit',operations=[
+            {'op':'set','target':'sheet:1/cell:A1','value':42},
+            {'op':'remove','target':'sheet:2'}])

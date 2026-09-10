@@ -1,0 +1,1863 @@
+{
+  "status": "STORY_MATRIX_DIAGNOSED",
+  "scope": "story-range diagnostic only; no full-quality or parity claim",
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-story-matrix/inactive-first-even.docx",
+  "source_sha256": "cdf622ba4bf4b10714fb86264c260f26a43fde6402eb81664ddd953e16a9d098",
+  "probe_source_hashes": {
+    ".superpowers/sdd/2026-09-08-microsoft-wps-parity/word-story-matrix/word_story_matrix_probe.py": "a74c6da170c4ddee03a9e9df162a3110303fa0dbddfbbeef76d79bde5520d3f7",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "ba0eda21dcb0e4f7314912ab14bcf5a38f5e42a0478bac7ce3aaebc5869edff1",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "fixture_contract": {
+    "story_kinds": [
+      "primary-header",
+      "first-header",
+      "even-header",
+      "primary-footer",
+      "first-footer",
+      "even-footer"
+    ],
+    "fixtures": {
+      "absent": "no header/footer parts, relationships, or section references",
+      "primary": "ordinary and hidden text plus locked PAGE field in primary header/footer",
+      "inactive-first-even": "stored first/even header/footer while titlePg and evenAndOddHeaders are disabled",
+      "linked-multisection": "three sections; all six explicit in section 1, inherited in section 2, all six replaced in section 3"
+    },
+    "per_story": [
+      "root and each next-story node observed with explicit typed success/error/unresolved rows",
+      "class, story type, native Start/End, exact content, field count",
+      "field type, code content/Start/End, result content/Start/End, locked flag",
+      "no missing/undefined value may be coerced to empty text or count zero"
+    ],
+    "preservation": [
+      "saved/read-only/body End/body hash/list-template/paragraph/field/table/bookmark/section counts stable around every story block",
+      "two complete story snapshots have byte-identical typed JSON",
+      "private DOCX bytes equal source before close",
+      "close exact URL-bound owned copy with saving no only after all stable ACKs",
+      "independent final inventory is []"
+    ]
+  },
+  "steps": [
+    {
+      "snapshot": 1,
+      "story": "primary-header",
+      "seconds": 0.437,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-header"
+        ],
+        [
+          "unresolved-property",
+          "primary-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "ceceb6ec06d02666bfee378676d2ea03ee4665d5e3d35c3cc06079e1c832524b"
+    },
+    {
+      "snapshot": 1,
+      "story": "first-header",
+      "seconds": 0.768,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-header"
+        ],
+        [
+          "story-node",
+          "first-header",
+          1
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "story-type",
+          "constant",
+          "first page header story"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "end",
+          "integer",
+          60
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "content",
+          "text",
+          "INACTIVE HEADER FIRST1\r"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "first-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "first-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "first-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          50
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          57
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "first-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "60a426f0e488e5a0711516b9d12608eeee704987a1b6a7582c39f3e2561680fa"
+    },
+    {
+      "snapshot": 1,
+      "story": "even-header",
+      "seconds": 0.755,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-header"
+        ],
+        [
+          "story-node",
+          "even-header",
+          1
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "story-type",
+          "constant",
+          "even pages header story"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "end",
+          "integer",
+          58
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "content",
+          "text",
+          "INACTIVE HEADER EVEN1\r"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "even-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "even-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "even-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          48
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          54
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          55
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "even-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "4863c881ea8cef0db7e779ad1fef5fd047adb3790eb774a095c9397a5e4e9051"
+    },
+    {
+      "snapshot": 1,
+      "story": "primary-footer",
+      "seconds": 0.46,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-footer"
+        ],
+        [
+          "unresolved-property",
+          "primary-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "efd9a9ca93dc0821f96d205ea3e2d5ece26a34f074d3f91665d3d38a84c8084e"
+    },
+    {
+      "snapshot": 1,
+      "story": "first-footer",
+      "seconds": 0.76,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-footer"
+        ],
+        [
+          "story-node",
+          "first-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "story-type",
+          "constant",
+          "first page footer story"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "end",
+          "integer",
+          60
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "content",
+          "text",
+          "INACTIVE FOOTER FIRST1\r"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "first-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "first-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "first-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          50
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          57
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "first-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "f06f5c2bbdb53d9b37849adff072cd89c45e54b59c7c7a2c2659ae273df50847"
+    },
+    {
+      "snapshot": 1,
+      "story": "even-footer",
+      "seconds": 0.741,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-footer"
+        ],
+        [
+          "story-node",
+          "even-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "story-type",
+          "constant",
+          "even pages footer story"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "end",
+          "integer",
+          58
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "content",
+          "text",
+          "INACTIVE FOOTER EVEN1\r"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "even-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "even-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "even-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          48
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          54
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          55
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "even-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "1477d44eff47efd797e8a0ee9e17a28c2755a652222b388cbf1c30ecca233717"
+    },
+    {
+      "snapshot": 2,
+      "story": "primary-header",
+      "seconds": 0.449,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-header"
+        ],
+        [
+          "unresolved-property",
+          "primary-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "ceceb6ec06d02666bfee378676d2ea03ee4665d5e3d35c3cc06079e1c832524b"
+    },
+    {
+      "snapshot": 2,
+      "story": "first-header",
+      "seconds": 0.746,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-header"
+        ],
+        [
+          "story-node",
+          "first-header",
+          1
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "story-type",
+          "constant",
+          "first page header story"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "end",
+          "integer",
+          60
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "content",
+          "text",
+          "INACTIVE HEADER FIRST1\r"
+        ],
+        [
+          "property-ok",
+          "first-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "first-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "first-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "first-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          50
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          57
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "first-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "first-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "60a426f0e488e5a0711516b9d12608eeee704987a1b6a7582c39f3e2561680fa"
+    },
+    {
+      "snapshot": 2,
+      "story": "even-header",
+      "seconds": 0.736,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-header"
+        ],
+        [
+          "story-node",
+          "even-header",
+          1
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "story-type",
+          "constant",
+          "even pages header story"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "end",
+          "integer",
+          58
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "content",
+          "text",
+          "INACTIVE HEADER EVEN1\r"
+        ],
+        [
+          "property-ok",
+          "even-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "even-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "even-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "even-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          48
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          54
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          55
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "even-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "even-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "4863c881ea8cef0db7e779ad1fef5fd047adb3790eb774a095c9397a5e4e9051"
+    },
+    {
+      "snapshot": 2,
+      "story": "primary-footer",
+      "seconds": 0.463,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-footer"
+        ],
+        [
+          "unresolved-property",
+          "primary-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "efd9a9ca93dc0821f96d205ea3e2d5ece26a34f074d3f91665d3d38a84c8084e"
+    },
+    {
+      "snapshot": 2,
+      "story": "first-footer",
+      "seconds": 0.801,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-footer"
+        ],
+        [
+          "story-node",
+          "first-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "story-type",
+          "constant",
+          "first page footer story"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "end",
+          "integer",
+          60
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "content",
+          "text",
+          "INACTIVE FOOTER FIRST1\r"
+        ],
+        [
+          "property-ok",
+          "first-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "first-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "first-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "first-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          50
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          57
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "first-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "first-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "f06f5c2bbdb53d9b37849adff072cd89c45e54b59c7c7a2c2659ae273df50847"
+    },
+    {
+      "snapshot": 2,
+      "story": "even-footer",
+      "seconds": 0.767,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-footer"
+        ],
+        [
+          "story-node",
+          "even-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "story-type",
+          "constant",
+          "even pages footer story"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "end",
+          "integer",
+          58
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "content",
+          "text",
+          "INACTIVE FOOTER EVEN1\r"
+        ],
+        [
+          "property-ok",
+          "even-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "even-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "even-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "even-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          48
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          54
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          55
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          56
+        ],
+        [
+          "field-property-ok",
+          "even-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "even-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "1477d44eff47efd797e8a0ee9e17a28c2755a652222b388cbf1c30ecca233717"
+    }
+  ],
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-yowbp9gy/document-3dfe98ece0f640aea8c00da82bed0bb5.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-yowbp9gy",
+  "baseline": [
+    "state",
+    true,
+    true,
+    15,
+    "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+    true,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1
+  ],
+  "checks": {
+    "repeat_typed_rows_equal": true,
+    "private_bytes_equal_source": true,
+    "baseline_still_exact": true,
+    "probe_sources_unchanged": true,
+    "inventory_empty": true
+  },
+  "owned_closed": true,
+  "inventory_final": []
+}

@@ -795,7 +795,7 @@ def validate_powerpoint_structural(op):
         if type(destination) is not int or destination<1: raise ValueError('Invalid destination slide')
 
 
-def supports_edit_ops(family, operations, *, platform, engine='msoffice'):
+def supports_edit_ops(family, operations, *, platform, engine='msoffice', file_owned=False):
     from ..document_api import validate_op
     try:
         may_have_fresh_sheet = False
@@ -826,7 +826,9 @@ def supports_edit_ops(family, operations, *, platform, engine='msoffice'):
                         _,result=compile_patch('slide:1/shape:1',**patch)
                 if result['rejected']: return False
             else:
-                if family=='sheet':
+                # File-owned Excel sessions isolate alerts in a private process.
+                # Target existence and the last-sheet guard remain native checks.
+                if family=='sheet' and not file_owned:
                     if op.get('op')=='remove' and re.fullmatch(r'sheet:[1-9]\d*',op.get('target','')) and not may_have_fresh_sheet:
                         return False
                     if op.get('op')=='insert' and op.get('type')=='sheet':

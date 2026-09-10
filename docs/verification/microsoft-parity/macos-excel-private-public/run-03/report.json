@@ -1,0 +1,55 @@
+{
+  "passed": false,
+  "jobs": [],
+  "owners": [],
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "866eec03162aea46fbe229416b59167e800c9b25e38a5841034126ba485eece5",
+    "skills/WPSComposer/scripts/msoffice/macos_excel_process.py": "73979b36029ed4f69018ba5f9bda99e528e42c01d201a5fb172bbbe193813933",
+    "skills/WPSComposer/scripts/msoffice/macos_osa_transport.py": "5fb9ce37865317677cf8b2f5b2526be27210ee2adc50d860a1b15406ec4cee43",
+    "skills/WPSComposer/scripts/msoffice/macos_office_runtime.py": "c94b276f143de237a5b93893cbf654a62fa851baa4a871f41f32a6db102248b6"
+  },
+  "runner_sha256": "a333fa5cee6137fe78ff25eadb2ef24fa5bcffda82569161eedd46b3cee061c5",
+  "original_before": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "error": {
+    "type": "OSATransportError",
+    "message": "OSA_PROCESS_NOT_FOUND"
+  },
+  "final_original_state": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "original_preserved": true,
+  "source_preserved": true,
+  "runner_preserved": true,
+  "code_preserved": true
+}

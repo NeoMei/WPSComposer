@@ -653,7 +653,7 @@ def _document_engine(path, kind, engine, *, action="open_document", operations=(
             from .msoffice.edit_preflight import supports_edit_ops
             if not supports_edit_ops(
                     family, operations, platform=office_engines.sys.platform,
-                    engine=candidate):
+                    engine=candidate, file_owned=path is not None):
                 continue
         return candidate
     raise office_engines.EngineUnavailableError("No installed native engine supports this document action")

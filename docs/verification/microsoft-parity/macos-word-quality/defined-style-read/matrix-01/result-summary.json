@@ -1,0 +1,479 @@
+{
+  "scope": "defined native style subset; not full style/quality parity",
+  "fixtures": {
+    "empty": {
+      "status": "STYLE_SUBSET_DIAGNOSED",
+      "source_sha256": "a681e6dac3a210a2ad9181429a5f38042910e446303c7d63bea5d9a6b8982bf5",
+      "baseline": [
+        "state",
+        true,
+        true,
+        1,
+        "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "steps": [
+        {
+          "ordinal": 1,
+          "seconds": 29.376,
+          "before": [
+            "state",
+            true,
+            true,
+            1,
+            "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+            true,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            1,
+            "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+            true,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 373,
+            "definitions": 4
+          },
+          "typed_json_sha256": "0c3e1944bc8e268e6bdaa25262d40c5aeff5b31b418b9cff681b9e4759639bd9"
+        },
+        {
+          "ordinal": 2,
+          "seconds": 30.513,
+          "before": [
+            "state",
+            true,
+            true,
+            1,
+            "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+            true,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            1,
+            "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+            true,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 373,
+            "definitions": 4
+          },
+          "typed_json_sha256": "0c3e1944bc8e268e6bdaa25262d40c5aeff5b31b418b9cff681b9e4759639bd9"
+        }
+      ],
+      "checks": {
+        "repeat_typed_rows_equal": true,
+        "private_bytes_equal_source": true,
+        "baseline_still_exact": true,
+        "probe_sources_unchanged": true,
+        "inventory_empty": true
+      },
+      "native_style_states": [
+        [
+          "style-state",
+          26,
+          "标题 2",
+          false,
+          true
+        ],
+        [
+          "style-state",
+          27,
+          "标题 3",
+          false,
+          true
+        ]
+      ],
+      "native_style_definitions": []
+    },
+    "nonempty": {
+      "status": "STYLE_SUBSET_DIAGNOSED",
+      "source_sha256": "fa89f93d95f2407fbced631573e0f5bcca635778333b262bdbdb6f341352647a",
+      "baseline": [
+        "state",
+        true,
+        true,
+        111,
+        "d683e6511b058aa0e6ab84ec667bc99d739560b0f8d4a6db8f4d76c6698ea61b",
+        true,
+        1,
+        4,
+        0,
+        0,
+        0,
+        1
+      ],
+      "steps": [
+        {
+          "ordinal": 1,
+          "seconds": 9.803,
+          "before": [
+            "state",
+            true,
+            true,
+            111,
+            "d683e6511b058aa0e6ab84ec667bc99d739560b0f8d4a6db8f4d76c6698ea61b",
+            true,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            111,
+            "d683e6511b058aa0e6ab84ec667bc99d739560b0f8d4a6db8f4d76c6698ea61b",
+            true,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 376,
+            "definitions": 9
+          },
+          "typed_json_sha256": "f2642232f85df143572038b0720aa85a7c6fb99043976c5f9dbcc0a5f4a2f7ea"
+        },
+        {
+          "ordinal": 2,
+          "seconds": 9.847,
+          "before": [
+            "state",
+            true,
+            true,
+            111,
+            "d683e6511b058aa0e6ab84ec667bc99d739560b0f8d4a6db8f4d76c6698ea61b",
+            true,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            111,
+            "d683e6511b058aa0e6ab84ec667bc99d739560b0f8d4a6db8f4d76c6698ea61b",
+            true,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 376,
+            "definitions": 9
+          },
+          "typed_json_sha256": "f2642232f85df143572038b0720aa85a7c6fb99043976c5f9dbcc0a5f4a2f7ea"
+        }
+      ],
+      "checks": {
+        "repeat_typed_rows_equal": true,
+        "private_bytes_equal_source": true,
+        "baseline_still_exact": true,
+        "probe_sources_unchanged": true,
+        "inventory_empty": true
+      },
+      "native_style_states": [
+        [
+          "style-state",
+          24,
+          "WPSC Custom Paragraph",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          25,
+          "WPSC Numbered Style",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          26,
+          "WPSC Unused Custom",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          29,
+          "标题 2",
+          true,
+          true
+        ],
+        [
+          "style-state",
+          30,
+          "标题 3",
+          true,
+          true
+        ]
+      ],
+      "native_style_definitions": [
+        [
+          "style-definition",
+          24,
+          "WPSC Custom Paragraph",
+          "字体颜色: 自定义颜色(RGB(54,95,145)), 段落间距\r    段后: 9 磅, 样式: 链接, 在样式库中显示\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          25,
+          "WPSC Numbered Style",
+          "缩进:\r    左侧:  0.63 厘米\r    悬挂缩进: 3.6 字符\r    制表位:  3.27 字符, 列表制表位, 编号 + 级别: 1 + 编号样式: 1, 2, 3, … + 起始编号: 1 + 对齐方式: 左侧 + 对齐位置:  0.63 厘米 + 制表符后于:  1.27 厘米 + 缩进位置:  1.27 厘米, 样式: 在样式库中显示\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          26,
+          "WPSC Unused Custom",
+          "字体: 倾斜, 字体颜色: 绿色\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          29,
+          "标题 2",
+          "字体: 四号, 加粗, 字体颜色: 自定义颜色(RGB(31,78,121)), 与下段同页, 2 级, 样式: 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          30,
+          "标题 3",
+          "字体: 小四, 倾斜, 字体颜色: 紫色, 与下段同页, 3 级, 样式: 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文",
+          false
+        ]
+      ]
+    },
+    "multisection": {
+      "status": "STYLE_SUBSET_DIAGNOSED",
+      "source_sha256": "64b7d460363e4f088eefe4cb93ca71f4bc51a6a323cc2c9103c58a80b174a556",
+      "baseline": [
+        "state",
+        true,
+        true,
+        202,
+        "7eb64ca5bebd7f1f70403a0cdd5618d2b1f41bdb8bd0d0c9863ef40d7535736d",
+        true,
+        1,
+        8,
+        1,
+        1,
+        0,
+        3
+      ],
+      "steps": [
+        {
+          "ordinal": 1,
+          "seconds": 38.166,
+          "before": [
+            "state",
+            true,
+            true,
+            202,
+            "7eb64ca5bebd7f1f70403a0cdd5618d2b1f41bdb8bd0d0c9863ef40d7535736d",
+            true,
+            1,
+            8,
+            1,
+            1,
+            0,
+            3
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            202,
+            "7eb64ca5bebd7f1f70403a0cdd5618d2b1f41bdb8bd0d0c9863ef40d7535736d",
+            true,
+            1,
+            8,
+            1,
+            1,
+            0,
+            3
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 376,
+            "definitions": 9
+          },
+          "typed_json_sha256": "f2642232f85df143572038b0720aa85a7c6fb99043976c5f9dbcc0a5f4a2f7ea"
+        },
+        {
+          "ordinal": 2,
+          "seconds": 35.049,
+          "before": [
+            "state",
+            true,
+            true,
+            202,
+            "7eb64ca5bebd7f1f70403a0cdd5618d2b1f41bdb8bd0d0c9863ef40d7535736d",
+            true,
+            1,
+            8,
+            1,
+            1,
+            0,
+            3
+          ],
+          "after": [
+            "state",
+            true,
+            true,
+            202,
+            "7eb64ca5bebd7f1f70403a0cdd5618d2b1f41bdb8bd0d0c9863ef40d7535736d",
+            true,
+            1,
+            8,
+            1,
+            1,
+            0,
+            3
+          ],
+          "stable": true,
+          "counts": {
+            "catalog": 376,
+            "definitions": 9
+          },
+          "typed_json_sha256": "f2642232f85df143572038b0720aa85a7c6fb99043976c5f9dbcc0a5f4a2f7ea"
+        }
+      ],
+      "checks": {
+        "repeat_typed_rows_equal": true,
+        "private_bytes_equal_source": true,
+        "baseline_still_exact": true,
+        "probe_sources_unchanged": true,
+        "inventory_empty": true
+      },
+      "native_style_states": [
+        [
+          "style-state",
+          24,
+          "WPSC Custom Paragraph",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          25,
+          "WPSC Numbered Style",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          26,
+          "WPSC Unused Custom",
+          true,
+          false
+        ],
+        [
+          "style-state",
+          29,
+          "标题 2",
+          true,
+          true
+        ],
+        [
+          "style-state",
+          30,
+          "标题 3",
+          true,
+          true
+        ]
+      ],
+      "native_style_definitions": [
+        [
+          "style-definition",
+          24,
+          "WPSC Custom Paragraph",
+          "字体颜色: 自定义颜色(RGB(54,95,145)), 段落间距\r    段后: 9 磅, 样式: 链接, 在样式库中显示\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          25,
+          "WPSC Numbered Style",
+          "缩进:\r    左侧:  0.63 厘米\r    悬挂缩进: 3.6 字符\r    制表位:  3.27 字符, 列表制表位, 编号 + 级别: 1 + 编号样式: 1, 2, 3, … + 起始编号: 1 + 对齐方式: 左侧 + 对齐位置:  0.63 厘米 + 制表符后于:  1.27 厘米 + 缩进位置:  1.27 厘米, 样式: 在样式库中显示\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          26,
+          "WPSC Unused Custom",
+          "字体: 倾斜, 字体颜色: 绿色\r    基于: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          29,
+          "标题 2",
+          "字体: 四号, 加粗, 字体颜色: 自定义颜色(RGB(31,78,121)), 与下段同页, 2 级, 样式: 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文",
+          false
+        ],
+        [
+          "style-definition",
+          30,
+          "标题 3",
+          "字体: 小四, 倾斜, 字体颜色: 紫色, 与下段同页, 3 级, 样式: 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文",
+          false
+        ]
+      ]
+    }
+  }
+}

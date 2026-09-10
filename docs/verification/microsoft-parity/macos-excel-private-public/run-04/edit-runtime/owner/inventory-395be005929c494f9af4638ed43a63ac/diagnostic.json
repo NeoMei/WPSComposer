@@ -1,0 +1,12 @@
+{
+  "operation": "inventory",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-bhvepely/owner/inventory-395be005929c494f9af4638ed43a63ac/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-bhvepely/owner/inventory-395be005929c494f9af4638ed43a63ac/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-bhvepely/owner/inventory-395be005929c494f9af4638ed43a63ac/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-bhvepely/owner/inventory-395be005929c494f9af4638ed43a63ac/diagnostic.json",
+  "stdout": "{\"nonce\":\"395be005929c494f9af4638ed43a63ac\",\"version\":\"16.112.3\",\"workbooks\":[{\"name\":\"owned-ca0eb89ecc5245b191d1f049383475ef.xlsx\",\"path\":\"\\/Users\\/neomei\\/Library\\/Containers\\/com.microsoft.Excel\\/Data\\/tmp\\/wpscomposer\\/session-bhvepely\",\"full_name\":\"\\/Users\\/neomei\\/Library\\/Containers\\/com.microsoft.Excel\\/Data\\/tmp\\/wpscomposer\\/session-bhvepely\\/owned-ca0eb89ecc5245b191d1f049383475ef.xlsx\",\"saved\":true,\"pristine\":false}]}\n",
+  "stderr": "",
+  "returncode": 0,
+  "error": null,
+  "diagnostic_errors": []
+}

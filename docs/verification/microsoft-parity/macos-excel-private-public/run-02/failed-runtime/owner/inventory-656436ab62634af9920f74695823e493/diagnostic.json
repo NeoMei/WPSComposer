@@ -1,0 +1,15 @@
+{
+  "operation": "inventory",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-u8ews5bn/owner/inventory-656436ab62634af9920f74695823e493/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-u8ews5bn/owner/inventory-656436ab62634af9920f74695823e493/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-u8ews5bn/owner/inventory-656436ab62634af9920f74695823e493/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-u8ews5bn/owner/inventory-656436ab62634af9920f74695823e493/diagnostic.json",
+  "stdout": "",
+  "stderr": "",
+  "returncode": 0,
+  "error": {
+    "code": "OSA_PROCESS_NOT_FOUND",
+    "detail": "OSA_PROCESS_NOT_FOUND"
+  },
+  "diagnostic_errors": []
+}

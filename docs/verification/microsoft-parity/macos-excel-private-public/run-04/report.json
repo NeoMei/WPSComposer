@@ -1,0 +1,99 @@
+{
+  "passed": true,
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-bhvepely",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gy717vms"
+  ],
+  "owners": [
+    {
+      "pid": 35423,
+      "start_seconds": 1789049143,
+      "start_microseconds": 711800,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    },
+    {
+      "pid": 35554,
+      "start_seconds": 1789049155,
+      "start_microseconds": 490658,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  ],
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "866eec03162aea46fbe229416b59167e800c9b25e38a5841034126ba485eece5",
+    "skills/WPSComposer/scripts/msoffice/macos_excel_process.py": "607fabfa34cbc6aa926b3bc888610011368275840a0f5a25276f7c12e91c3b79",
+    "skills/WPSComposer/scripts/msoffice/macos_osa_transport.py": "346239b33606b26d9a5bd815dc161c1414303c2542e56b472855cba5109b3da9",
+    "skills/WPSComposer/scripts/msoffice/macos_office_runtime.py": "c94b276f143de237a5b93893cbf654a62fa851baa4a871f41f32a6db102248b6"
+  },
+  "runner_sha256": "18ae2498e9a9ccf1fca0a0abbebf538cf8d82551c9aee2628ed1b7ccbf891a4e",
+  "original_before": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "delete": {
+    "removed": "sheet:3",
+    "deleted": true
+  },
+  "reopen": {
+    "names": [
+      "Data",
+      "Results"
+    ],
+    "marker": "PRIVATE-PUBLIC-SESSION",
+    "alerts": true,
+    "saved": true
+  },
+  "original_after": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "final_original_state": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "original_preserved": true,
+  "source_preserved": true,
+  "runner_preserved": true,
+  "code_preserved": true
+}

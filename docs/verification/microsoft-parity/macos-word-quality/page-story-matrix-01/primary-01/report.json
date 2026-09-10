@@ -1,0 +1,1291 @@
+{
+  "status": "STORY_MATRIX_DIAGNOSED",
+  "scope": "story-range diagnostic only; no full-quality or parity claim",
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-story-matrix/primary.docx",
+  "source_sha256": "99c74b0896bda48a2a8efe024ddb13b2c351d60e3f99d5e0a020ee441950bd6b",
+  "probe_source_hashes": {
+    ".superpowers/sdd/2026-09-08-microsoft-wps-parity/word-story-matrix/word_story_matrix_probe.py": "a74c6da170c4ddee03a9e9df162a3110303fa0dbddfbbeef76d79bde5520d3f7",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "ba0eda21dcb0e4f7314912ab14bcf5a38f5e42a0478bac7ce3aaebc5869edff1",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "fixture_contract": {
+    "story_kinds": [
+      "primary-header",
+      "first-header",
+      "even-header",
+      "primary-footer",
+      "first-footer",
+      "even-footer"
+    ],
+    "fixtures": {
+      "absent": "no header/footer parts, relationships, or section references",
+      "primary": "ordinary and hidden text plus locked PAGE field in primary header/footer",
+      "inactive-first-even": "stored first/even header/footer while titlePg and evenAndOddHeaders are disabled",
+      "linked-multisection": "three sections; all six explicit in section 1, inherited in section 2, all six replaced in section 3"
+    },
+    "per_story": [
+      "root and each next-story node observed with explicit typed success/error/unresolved rows",
+      "class, story type, native Start/End, exact content, field count",
+      "field type, code content/Start/End, result content/Start/End, locked flag",
+      "no missing/undefined value may be coerced to empty text or count zero"
+    ],
+    "preservation": [
+      "saved/read-only/body End/body hash/list-template/paragraph/field/table/bookmark/section counts stable around every story block",
+      "two complete story snapshots have byte-identical typed JSON",
+      "private DOCX bytes equal source before close",
+      "close exact URL-bound owned copy with saving no only after all stable ACKs",
+      "independent final inventory is []"
+    ]
+  },
+  "steps": [
+    {
+      "snapshot": 1,
+      "story": "primary-header",
+      "seconds": 0.76,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-header"
+        ],
+        [
+          "story-node",
+          "primary-header",
+          1
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "story-type",
+          "constant",
+          "primary header story"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "end",
+          "integer",
+          62
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "content",
+          "text",
+          "PRIMARY HEADER DEFAULT1\r"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "primary-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "primary-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "primary-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          52
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          59
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          60
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "primary-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "80bdc2d34c905055d32ad813a84ad94f13525b78de812716c6d6c00ec3d29775"
+    },
+    {
+      "snapshot": 1,
+      "story": "first-header",
+      "seconds": 0.446,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-header"
+        ],
+        [
+          "unresolved-property",
+          "first-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "6c903784bc546c978be2bc1b414794596045f7c4fb39acca006998e1a30a0fdc"
+    },
+    {
+      "snapshot": 1,
+      "story": "even-header",
+      "seconds": 0.443,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-header"
+        ],
+        [
+          "unresolved-property",
+          "even-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "b97856f99f3c2e0d07158139acfaafd19b7a7b599f17a174cb5b1cd70304058d"
+    },
+    {
+      "snapshot": 1,
+      "story": "primary-footer",
+      "seconds": 0.774,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-footer"
+        ],
+        [
+          "story-node",
+          "primary-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "story-type",
+          "constant",
+          "primary footer story"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "end",
+          "integer",
+          62
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "content",
+          "text",
+          "PRIMARY FOOTER DEFAULT1\r"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "primary-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "primary-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "primary-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          52
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          59
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          60
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "primary-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "83005425cea6b367ecb01017c975b8941987f688da0057e599103dc5ae8b7456"
+    },
+    {
+      "snapshot": 1,
+      "story": "first-footer",
+      "seconds": 0.443,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-footer"
+        ],
+        [
+          "unresolved-property",
+          "first-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "c3756a432ffff58b2e951e1c4345835832fac3e134618667b240cb9c9ecdabd3"
+    },
+    {
+      "snapshot": 1,
+      "story": "even-footer",
+      "seconds": 0.507,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-footer"
+        ],
+        [
+          "unresolved-property",
+          "even-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "a3208298284cf7e64a0657c6bd88609bb6a0a739925df5973011e015020aa96c"
+    },
+    {
+      "snapshot": 2,
+      "story": "primary-header",
+      "seconds": 0.753,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-header"
+        ],
+        [
+          "story-node",
+          "primary-header",
+          1
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "story-type",
+          "constant",
+          "primary header story"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "end",
+          "integer",
+          62
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "content",
+          "text",
+          "PRIMARY HEADER DEFAULT1\r"
+        ],
+        [
+          "property-ok",
+          "primary-header",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "primary-header",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "primary-header",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "primary-header",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          52
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          59
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          60
+        ],
+        [
+          "field-property-ok",
+          "primary-header",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "primary-header",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "80bdc2d34c905055d32ad813a84ad94f13525b78de812716c6d6c00ec3d29775"
+    },
+    {
+      "snapshot": 2,
+      "story": "first-header",
+      "seconds": 0.459,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-header"
+        ],
+        [
+          "unresolved-property",
+          "first-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "6c903784bc546c978be2bc1b414794596045f7c4fb39acca006998e1a30a0fdc"
+    },
+    {
+      "snapshot": 2,
+      "story": "even-header",
+      "seconds": 0.446,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-header"
+        ],
+        [
+          "unresolved-property",
+          "even-header",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "b97856f99f3c2e0d07158139acfaafd19b7a7b599f17a174cb5b1cd70304058d"
+    },
+    {
+      "snapshot": 2,
+      "story": "primary-footer",
+      "seconds": 0.774,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 1,
+        "fields": 1,
+        "observations": 17,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "primary-footer"
+        ],
+        [
+          "story-node",
+          "primary-footer",
+          1
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "class",
+          "text",
+          "story range"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "story-type",
+          "constant",
+          "primary footer story"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "start",
+          "integer",
+          0
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "end",
+          "integer",
+          62
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "content",
+          "text",
+          "PRIMARY FOOTER DEFAULT1\r"
+        ],
+        [
+          "property-ok",
+          "primary-footer",
+          1,
+          "section-count",
+          "integer",
+          1
+        ],
+        [
+          "unresolved-property",
+          "primary-footer",
+          1,
+          "section-first-index",
+          "native-missing"
+        ],
+        [
+          "field-count",
+          "primary-footer",
+          1,
+          1
+        ],
+        [
+          "field-node",
+          "primary-footer",
+          1,
+          1
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-type",
+          "constant",
+          "field page"
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-content",
+          "text",
+          " PAGE "
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-start",
+          "integer",
+          52
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-code-end",
+          "integer",
+          58
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-content",
+          "text",
+          "1"
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-start",
+          "integer",
+          59
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-result-end",
+          "integer",
+          60
+        ],
+        [
+          "field-property-ok",
+          "primary-footer",
+          1,
+          1,
+          "field-locked",
+          "boolean",
+          true
+        ],
+        [
+          "chain-end",
+          "primary-footer",
+          1,
+          "missing-value"
+        ]
+      ],
+      "typed_json_sha256": "83005425cea6b367ecb01017c975b8941987f688da0057e599103dc5ae8b7456"
+    },
+    {
+      "snapshot": 2,
+      "story": "first-footer",
+      "seconds": 0.436,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "first-footer"
+        ],
+        [
+          "unresolved-property",
+          "first-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "c3756a432ffff58b2e951e1c4345835832fac3e134618667b240cb9c9ecdabd3"
+    },
+    {
+      "snapshot": 2,
+      "story": "even-footer",
+      "seconds": 0.444,
+      "before": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        15,
+        "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "summary": {
+        "nodes": 0,
+        "fields": 0,
+        "observations": 1,
+        "ordinary_errors": 0
+      },
+      "rows": [
+        [
+          "story-block",
+          "even-footer"
+        ],
+        [
+          "unresolved-property",
+          "even-footer",
+          0,
+          "root",
+          "empty-class"
+        ]
+      ],
+      "typed_json_sha256": "a3208298284cf7e64a0657c6bd88609bb6a0a739925df5973011e015020aa96c"
+    }
+  ],
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4z9jj164/document-a3e727932a2b4c3cb80e46e89efec9e2.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-4z9jj164",
+  "baseline": [
+    "state",
+    true,
+    true,
+    15,
+    "1bb9ab097461d01124d71746cf740897cd8644b9269452b1958a536bfa09c73d",
+    true,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1
+  ],
+  "checks": {
+    "repeat_typed_rows_equal": true,
+    "private_bytes_equal_source": true,
+    "baseline_still_exact": true,
+    "probe_sources_unchanged": true,
+    "inventory_empty": true
+  },
+  "owned_closed": true,
+  "inventory_final": []
+}

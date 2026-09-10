@@ -1,0 +1,638 @@
+{
+  "fixtures": {
+    "absent": {
+      "even_and_odd_headers": false,
+      "file": "absent.docx",
+      "inherited_story_slots": [],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/settings.xml",
+        "word/styles.xml"
+      ],
+      "section_count": 1,
+      "section_story_references": [],
+      "sections": [
+        {
+          "section": 1,
+          "title_page": false
+        }
+      ],
+      "sha256": "432658690c743533d5176e41d2226e0357a886413ded5bf687eab36a54870def",
+      "story_parts": []
+    },
+    "inactive-first-even": {
+      "even_and_odd_headers": false,
+      "file": "inactive-first-even.docx",
+      "inherited_story_slots": [],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/footer1.xml",
+        "word/footer2.xml",
+        "word/header1.xml",
+        "word/header2.xml",
+        "word/settings.xml",
+        "word/styles.xml"
+      ],
+      "section_count": 1,
+      "section_story_references": [
+        {
+          "active": false,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header1.xml",
+          "rid": "rIdStory1",
+          "section": 1,
+          "type": "first"
+        },
+        {
+          "active": false,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header2.xml",
+          "rid": "rIdStory2",
+          "section": 1,
+          "type": "even"
+        },
+        {
+          "active": false,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer1.xml",
+          "rid": "rIdStory3",
+          "section": 1,
+          "type": "first"
+        },
+        {
+          "active": false,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer2.xml",
+          "rid": "rIdStory4",
+          "section": 1,
+          "type": "even"
+        }
+      ],
+      "sections": [
+        {
+          "section": 1,
+          "title_page": false
+        }
+      ],
+      "sha256": "cdf622ba4bf4b10714fb86264c260f26a43fde6402eb81664ddd953e16a9d098",
+      "story_parts": [
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-INACTIVE-footer-first ",
+          "kind": "footer",
+          "ordinary_text": "INACTIVE FOOTER FIRST ",
+          "part": "footer1.xml",
+          "type": "first",
+          "xml_sha256": "690eb6a794ed1dbf5aa1ae64f5167df1452ec5d67cb537397154f5e3aeeaa38c"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-INACTIVE-footer-even ",
+          "kind": "footer",
+          "ordinary_text": "INACTIVE FOOTER EVEN ",
+          "part": "footer2.xml",
+          "type": "even",
+          "xml_sha256": "1228d453f1d2a7385d27e94f63c50defe7408f5b0d6f5b2ffb6cc9f695cdd49a"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-INACTIVE-header-first ",
+          "kind": "header",
+          "ordinary_text": "INACTIVE HEADER FIRST ",
+          "part": "header1.xml",
+          "type": "first",
+          "xml_sha256": "4240661d41cfe9f76da8a0b0c6c60bdc8ef0942ee36c5c733188bc12979df168"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-INACTIVE-header-even ",
+          "kind": "header",
+          "ordinary_text": "INACTIVE HEADER EVEN ",
+          "part": "header2.xml",
+          "type": "even",
+          "xml_sha256": "5b24135458affc9c444bb3dc1fa51b7c708dcb7791f91b4bf6a669247ee50280"
+        }
+      ]
+    },
+    "linked-multisection": {
+      "even_and_odd_headers": true,
+      "file": "linked-multisection.docx",
+      "inherited_story_slots": [
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "even"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "first"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "even"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": true,
+          "section": 2,
+          "source_section": 1,
+          "type": "first"
+        }
+      ],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/footer1.xml",
+        "word/footer2.xml",
+        "word/footer3.xml",
+        "word/footer4.xml",
+        "word/footer5.xml",
+        "word/footer6.xml",
+        "word/header1.xml",
+        "word/header2.xml",
+        "word/header3.xml",
+        "word/header4.xml",
+        "word/header5.xml",
+        "word/header6.xml",
+        "word/settings.xml",
+        "word/styles.xml"
+      ],
+      "section_count": 3,
+      "section_story_references": [
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header1.xml",
+          "rid": "rIdStory1",
+          "section": 1,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header2.xml",
+          "rid": "rIdStory2",
+          "section": 1,
+          "type": "first"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header3.xml",
+          "rid": "rIdStory3",
+          "section": 1,
+          "type": "even"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer1.xml",
+          "rid": "rIdStory4",
+          "section": 1,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer2.xml",
+          "rid": "rIdStory5",
+          "section": 1,
+          "type": "first"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer3.xml",
+          "rid": "rIdStory6",
+          "section": 1,
+          "type": "even"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header4.xml",
+          "rid": "rIdStory7",
+          "section": 3,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header5.xml",
+          "rid": "rIdStory8",
+          "section": 3,
+          "type": "first"
+        },
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header6.xml",
+          "rid": "rIdStory9",
+          "section": 3,
+          "type": "even"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer4.xml",
+          "rid": "rIdStory10",
+          "section": 3,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer5.xml",
+          "rid": "rIdStory11",
+          "section": 3,
+          "type": "first"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer6.xml",
+          "rid": "rIdStory12",
+          "section": 3,
+          "type": "even"
+        }
+      ],
+      "sections": [
+        {
+          "section": 1,
+          "title_page": true
+        },
+        {
+          "section": 2,
+          "title_page": true
+        },
+        {
+          "section": 3,
+          "title_page": true
+        }
+      ],
+      "sha256": "c432c82d60b16ecbb7d310277de8e3e063050bb1f581016a606bba533d21473c",
+      "story_parts": [
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-footer-default ",
+          "kind": "footer",
+          "ordinary_text": "SECTION1 FOOTER DEFAULT ",
+          "part": "footer1.xml",
+          "type": "default",
+          "xml_sha256": "bdc5a83f24c418d2d7e514d249db8020e71d0c9a992492d998bb1c314df1f7ce"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-footer-first ",
+          "kind": "footer",
+          "ordinary_text": "SECTION1 FOOTER FIRST ",
+          "part": "footer2.xml",
+          "type": "first",
+          "xml_sha256": "dfd358f11dc454f90e1aa0f10af3b55ece371eefd86eb0282c72bf9def1fc051"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-footer-even ",
+          "kind": "footer",
+          "ordinary_text": "SECTION1 FOOTER EVEN ",
+          "part": "footer3.xml",
+          "type": "even",
+          "xml_sha256": "e98482aea495d14ac1b0219c0649ba71b48e64fa47b98f30fbb52e07300c2cc3"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-footer-default ",
+          "kind": "footer",
+          "ordinary_text": "SECTION3 FOOTER DEFAULT ",
+          "part": "footer4.xml",
+          "type": "default",
+          "xml_sha256": "f3eb2a61953872a86fa4581075233c319b820aacea64793f90f617ade751fd4f"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-footer-first ",
+          "kind": "footer",
+          "ordinary_text": "SECTION3 FOOTER FIRST ",
+          "part": "footer5.xml",
+          "type": "first",
+          "xml_sha256": "416cf3d1e20f5830d16d75c110c9f6d8042233353fd8f80664d1b13dfa109ebb"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-footer-even ",
+          "kind": "footer",
+          "ordinary_text": "SECTION3 FOOTER EVEN ",
+          "part": "footer6.xml",
+          "type": "even",
+          "xml_sha256": "48f0fbab3246991100229eee92e66861103876055cf747c4a53a7c4ef00df61d"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-header-default ",
+          "kind": "header",
+          "ordinary_text": "SECTION1 HEADER DEFAULT ",
+          "part": "header1.xml",
+          "type": "default",
+          "xml_sha256": "6727b03ba92d31faa2d6be7c5e410c05dfc0f499033d848274b1ae6edf463117"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-header-first ",
+          "kind": "header",
+          "ordinary_text": "SECTION1 HEADER FIRST ",
+          "part": "header2.xml",
+          "type": "first",
+          "xml_sha256": "0d0c40dac9f9bf16d898364c9a2761cad2b31ec1dbe18d6e66dcbd04afd60319"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION1-header-even ",
+          "kind": "header",
+          "ordinary_text": "SECTION1 HEADER EVEN ",
+          "part": "header3.xml",
+          "type": "even",
+          "xml_sha256": "d9fc44ef6a6084d30a209c9ef2820018406832789afe4017e9f908af851920e2"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-header-default ",
+          "kind": "header",
+          "ordinary_text": "SECTION3 HEADER DEFAULT ",
+          "part": "header4.xml",
+          "type": "default",
+          "xml_sha256": "11dc5a7f1118181b82c44012caf06dd2cdb7d6416592de1cb270938da6e24c38"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-header-first ",
+          "kind": "header",
+          "ordinary_text": "SECTION3 HEADER FIRST ",
+          "part": "header5.xml",
+          "type": "first",
+          "xml_sha256": "9749b4bccca3a1632401eea2a9c14d141325ca7132f4bdf1ccdc027cea27078b"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-SECTION3-header-even ",
+          "kind": "header",
+          "ordinary_text": "SECTION3 HEADER EVEN ",
+          "part": "header6.xml",
+          "type": "even",
+          "xml_sha256": "17a98dff8bb1298d00ee0abb007e8f231741a588cadea16ae1898798a0f7a9ed"
+        }
+      ]
+    },
+    "primary": {
+      "even_and_odd_headers": false,
+      "file": "primary.docx",
+      "inherited_story_slots": [],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/footer1.xml",
+        "word/header1.xml",
+        "word/settings.xml",
+        "word/styles.xml"
+      ],
+      "section_count": 1,
+      "section_story_references": [
+        {
+          "active": true,
+          "kind": "header",
+          "linked_to_previous": false,
+          "part": "header1.xml",
+          "rid": "rIdStory1",
+          "section": 1,
+          "type": "default"
+        },
+        {
+          "active": true,
+          "kind": "footer",
+          "linked_to_previous": false,
+          "part": "footer1.xml",
+          "rid": "rIdStory2",
+          "section": 1,
+          "type": "default"
+        }
+      ],
+      "sections": [
+        {
+          "section": 1,
+          "title_page": false
+        }
+      ],
+      "sha256": "99c74b0896bda48a2a8efe024ddb13b2c351d60e3f99d5e0a020ee441950bd6b",
+      "story_parts": [
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-PRIMARY-footer-default ",
+          "kind": "footer",
+          "ordinary_text": "PRIMARY FOOTER DEFAULT ",
+          "part": "footer1.xml",
+          "type": "default",
+          "xml_sha256": "d8ac0d45e539ecd573291e7ae25fad016c5988f6a47fa1dbb52f2bc64e3570ca"
+        },
+        {
+          "fields": [
+            {
+              "instruction": " PAGE ",
+              "locked": true,
+              "result": "7",
+              "type": "PAGE"
+            }
+          ],
+          "hidden_text": "HIDDEN-PRIMARY-header-default ",
+          "kind": "header",
+          "ordinary_text": "PRIMARY HEADER DEFAULT ",
+          "part": "header1.xml",
+          "type": "default",
+          "xml_sha256": "9df9d0ada2a9545249b911bed077a80859198ba81ed735a846a5780c3a5a5364"
+        }
+      ]
+    }
+  },
+  "generated_utc": "2026-09-10T00:00:00Z",
+  "purpose": "source-bound native story-range diagnostic; no Office acceptance claim",
+  "schema": "wpscomposer-word-story-matrix-v1"
+}

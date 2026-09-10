@@ -1,0 +1,40 @@
+{
+  "run_id": 34477834677,
+  "head_sha": "6653e14e9b45ff8c753c457adecbd3d77857f707",
+  "conclusion": "success",
+  "scope": "portable automated suite only; not native/UI or release",
+  "jobs": [
+    {
+      "tests": 5071,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 44,
+      "passed": 5027,
+      "job": "pytest-ubuntu-24.04-python-3.12"
+    },
+    {
+      "tests": 5071,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 44,
+      "passed": 5027,
+      "job": "pytest-ubuntu-24.04-python-3.9"
+    },
+    {
+      "tests": 5071,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75,
+      "passed": 4996,
+      "job": "pytest-windows-2022-python-3.12"
+    },
+    {
+      "tests": 5071,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 75,
+      "passed": 4996,
+      "job": "pytest-windows-2022-python-3.9"
+    }
+  ]
+}

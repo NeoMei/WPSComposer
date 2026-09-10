@@ -1,0 +1,154 @@
+{
+  "status": "STYLE_SUBSET_DIAGNOSED",
+  "scope": "defined Word style subset only; no page-part/full-quality claim",
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-style-defined-20260910/matrix-source/empty.docx",
+  "source_sha256": "a681e6dac3a210a2ad9181429a5f38042910e446303c7d63bea5d9a6b8982bf5",
+  "probe_source_hashes": {
+    ".superpowers/sdd/2026-09-08-microsoft-wps-parity/word-snapshot-defined-style-probe.py": "ab93844c8ee31d4232f4910edc0a81ce69f8236f7de4c0b802de85029fd973d7",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "ba0eda21dcb0e4f7314912ab14bcf5a38f5e42a0478bac7ce3aaebc5869edff1",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "fixture_contract": {
+    "all_runs": [
+      "fresh task-owned DOCX copy opened read-only and hidden",
+      "saved=true before the first style read and after every block",
+      "body UTF-8 SHA-256 and native End unchanged after every block",
+      "paragraph/field/table/bookmark/section counts unchanged",
+      "list-template count unchanged; zero must remain zero",
+      "private DOCX bytes equal source bytes before close",
+      "exact URL-bound close with saving no and independent final inventory []",
+      "two complete style snapshots have byte-identical typed JSON"
+    ],
+    "empty": [
+      "minimal body and no custom style",
+      "no materialized list template",
+      "catalog still returns typed name/in-use/built-in vectors"
+    ],
+    "nonempty": [
+      "applied paragraph and character styles",
+      "one modified built-in style, one custom paragraph style, one custom character style",
+      "one style linked to numbering and one deliberately unused custom style",
+      "OOXML preflight records exact w:styleId/type/name/custom/autoRedefine and numbering relationships"
+    ],
+    "multisection": [
+      "at least three sections",
+      "style usage in first and last sections, including a table cell and field result",
+      "same style catalog and definition rows repeat exactly without reading any page story"
+    ],
+    "independent_page_story_matrix_required": [
+      "no header/footer parts or references",
+      "nonempty primary header and footer with fields",
+      "stored but inactive first/even page parts",
+      "three sections covering linked-to-previous and unlinked page parts",
+      "hidden text and field-code/result ranges",
+      "exact story type, section ownership, native bounds, content hash, field identity, saved/body/topology/list-template preservation"
+    ]
+  },
+  "steps": [
+    {
+      "ordinal": 1,
+      "seconds": 29.376,
+      "before": [
+        "state",
+        true,
+        true,
+        1,
+        "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        1,
+        "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "counts": {
+        "catalog": 373,
+        "definitions": 4
+      },
+      "typed_json_sha256": "0c3e1944bc8e268e6bdaa25262d40c5aeff5b31b418b9cff681b9e4759639bd9"
+    },
+    {
+      "ordinal": 2,
+      "seconds": 30.513,
+      "before": [
+        "state",
+        true,
+        true,
+        1,
+        "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "after": [
+        "state",
+        true,
+        true,
+        1,
+        "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+        true,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "stable": true,
+      "counts": {
+        "catalog": 373,
+        "definitions": 4
+      },
+      "typed_json_sha256": "0c3e1944bc8e268e6bdaa25262d40c5aeff5b31b418b9cff681b9e4759639bd9"
+    }
+  ],
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-73awpma5/document-7541bf135f1f4e6c991b79e3a8253d71.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-73awpma5",
+  "baseline": [
+    "state",
+    true,
+    true,
+    1,
+    "9d1e0e2d9459d06523ad13e28a4093c2316baafe7aec5b25f30eba2e113599c4",
+    true,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1
+  ],
+  "checks": {
+    "repeat_typed_rows_equal": true,
+    "private_bytes_equal_source": true,
+    "baseline_still_exact": true,
+    "probe_sources_unchanged": true,
+    "inventory_empty": true
+  },
+  "owned_closed": true,
+  "inventory_final": []
+}

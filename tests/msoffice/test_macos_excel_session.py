@@ -625,6 +625,8 @@ def test_new_document_creates_native_workbook_in_private_locked_job(tmp_path,mon
         def close(self):pass
     monkeypatch.setattr(mod,'OfficeJobLock',Lock)
     monkeypatch.setattr(mod,'_container_root',lambda component:tmp_path)
+    monkeypatch.setattr(mod,'PrivateExcelProcessOwner',lambda **kw:type('Owner',(),{'start':lambda self,**kw:None,'reserve_workbook':lambda self,path:None,'claim_workbook':lambda self,path,**kw:None})())
+    monkeypatch.setattr(mod,'validate_native_input',lambda *a,**kw:None)
     monkeypatch.setattr(mod.MacExcelSession,'_run',lambda self,body,**kw:scripts.append((body,kw)) or {})
     obj=mod.MacExcelSession.new_document(visible=False)
     assert 'make new workbook' in scripts[0][0]
@@ -650,6 +652,8 @@ def test_new_document_rebinds_native_name_after_save_as(tmp_path,monkeypatch):
         def acquire(self,deadline):pass
         def close(self):pass
     monkeypatch.setattr(mod,'OfficeJobLock',Lock);monkeypatch.setattr(mod,'_container_root',lambda c:tmp_path)
+    monkeypatch.setattr(mod,'PrivateExcelProcessOwner',lambda **kw:type('Owner',(),{'start':lambda self,**kw:None,'reserve_workbook':lambda self,path:None,'claim_workbook':lambda self,path,**kw:None})())
+    monkeypatch.setattr(mod,'validate_native_input',lambda *a,**kw:None)
     monkeypatch.setattr(mod.MacExcelSession,'_run',lambda self,body,**kw:scripts.append(body) or {})
     obj=mod.MacExcelSession.new_document()
     assert 'set ownedBook to workbook '+mod._quote(obj._native.name) in scripts[0]
