@@ -2,6 +2,8 @@
 
 ## Current continuation — September 11, 2026
 
+Latest hosted CI15 at a6bd0140 passes all four jobs: Linux Python3.9/3.12 each5,248/45 and Windows each5,194/99. Installed Word public smoke passes6 with216 source-equal files. The new figure rollback fixture remains FAIL because native suffix-bookmark gravity changes the proposed deletion boundary; no public capability is enabled. Independent review execution is currently unavailable due to the account quota; the fallback provider cannot decrypt the routed agent task. Current remote Windows native evidence remains unavailable. See the updated release checklist for the exact next steps.
+
 The private caption slice now passes final native run04 (11 checks), independent scoped review and real UI04 edit/Undo/Save/close/same-path reopen/close. Root verifies native and PDF output, nine source hashes, untouched unsaved sentinel, byte-identical UI copy and empty final Word inventory. The final validator fixes ignored-build dependencies and exact caption/trailing-range checks; raw03 PDF extraction FAIL remains preserved. [Full48](full-round48/README.md) passes **5,281/12** on immutable c454ac8d with all402 before/after/live hashes equal. This closes the bounded private primitive; complete public figure/equation/table families remain open.
 
 

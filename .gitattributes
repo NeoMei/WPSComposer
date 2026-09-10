@@ -47,3 +47,5 @@ docs/verification/microsoft-parity/macos-excel-private-public/** -text
 /docs/verification/microsoft-parity/macos-word-caption/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/full-round48/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/installed-word-caption-checkpoint/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-15/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-figure-rollback/** -text whitespace=-blank-at-eof,-trailing-space

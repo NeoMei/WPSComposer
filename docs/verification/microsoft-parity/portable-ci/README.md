@@ -53,3 +53,5 @@ Hosted run06 (`34352720870`) at `0b4f86e35baf09e58c3b817cde4e41a8b991f597` passe
 ## Run07 actual result
 
 Hosted CI07 run34355506749 at237691e1e016a3b1fc75febb5b383867f0d4a435 passes all four jobs: Linux Python3.9/3.12 each5,008passed44skipped; Windows Python3.9/3.12 each4,977passed75skipped. Raw four-job logs/JUnit and metadata are retained in portable-ci/run-07. This certifies the portable candidate sources, not installed Office/WPS native/UI acceptance.
+
+Latest [CI15](run-15/README.md) at a6bd0140 passes all four jobs: Linux each5,248/45 and Windows each5,194/99. These are hosted portable tests; fresh Windows desktop acceptance remains open.

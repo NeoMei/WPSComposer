@@ -1,0 +1,30 @@
+[
+  {
+    "job": "pytest-ubuntu-24.04-python-3.12",
+    "passed": 5248,
+    "failures": "0",
+    "errors": "0",
+    "skipped": "45"
+  },
+  {
+    "job": "pytest-ubuntu-24.04-python-3.9",
+    "passed": 5248,
+    "failures": "0",
+    "errors": "0",
+    "skipped": "45"
+  },
+  {
+    "job": "pytest-windows-2022-python-3.12",
+    "passed": 5194,
+    "failures": "0",
+    "errors": "0",
+    "skipped": "99"
+  },
+  {
+    "job": "pytest-windows-2022-python-3.9",
+    "passed": 5194,
+    "failures": "0",
+    "errors": "0",
+    "skipped": "99"
+  }
+]

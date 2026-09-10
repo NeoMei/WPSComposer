@@ -1,0 +1,11 @@
+{
+  "source_hashes": {
+    "test_macos_word_figure_rollback_probe.py": "c0767888eac96432853f8315790235d2736b7f06093ce7459b2031f25ba9028c",
+    "macos_word_figure_rollback_probe.py": "992e431b8a2409b2a0839e46e64c59cd39af3ebb16a84dbf14447a0b2d5b4248"
+  },
+  "pure_tests": 14,
+  "compiler_families": 4,
+  "independent_review": "UNAVAILABLE: preceding agents exhausted account quota; fallback provider rejected encrypted task",
+  "scope": "Root-reviewed owned fixture only; no production capability enabled",
+  "repair": "Nonfinite geometry previously passed abs(NaN)>1 checks; two RED cases now rejected"
+}
