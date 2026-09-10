@@ -38,5 +38,7 @@ docs/verification/microsoft-parity/macos-excel-private-public/** -text
 /docs/verification/microsoft-parity/macos-word-list-arguments/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/macos-word-heading-import/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/portable-ci/run-12/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-13/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/full-round44/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/full-round45/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round46/** -text whitespace=-blank-at-eof,-trailing-space

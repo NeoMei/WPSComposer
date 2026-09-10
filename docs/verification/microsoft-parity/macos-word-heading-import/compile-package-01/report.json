@@ -1,0 +1,9 @@
+{
+  "exit_codes": {
+    "read": 0,
+    "force-save": 0,
+    "saved": 0
+  },
+  "executed": false,
+  "source_sha256": "d2cc81211c0c87f39eeb1345016ae463c9926fabdd272ad4f30ca58adb078362"
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/tab-list-read-diagnostic.py", line 111, in run
+    rows=execute(mode+'_tabs',tab_commands(mode))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/tab-list-read-diagnostic.py", line 94, in execute
+    report['current_phase']=label;flush();rows=owner._execute(commands)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 397, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=diagnostic)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma/ef4d3a37d4774552809dc8e3e71b4442.log

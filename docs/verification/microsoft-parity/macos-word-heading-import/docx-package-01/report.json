@@ -1,0 +1,151 @@
+{
+  "status": "PASS",
+  "scope": "Complete named rPr/pPr and style-only body materialization only; theme appearance and product parity unproved",
+  "checks": {
+    "immutable_inputs": true,
+    "complete_four_part_input": true,
+    "complete_input_named_style": true,
+    "empty_inventory": true,
+    "after_open_exact_private": true,
+    "native_open_materialized": true,
+    "owned_unsaved_ack": true,
+    "native_saved_ack": true,
+    "actual_native_serialization": true,
+    "complete_word_saved_style_body": true,
+    "native_after_save": true,
+    "after_save_exact_private": true,
+    "closed": true,
+    "empty_after_close": true,
+    "after_reopen_exact_private": true,
+    "reopened_native": true,
+    "complete_reopened_private_package": true,
+    "reopen_closed": true,
+    "native_output_preserved": true,
+    "packaged_input_preserved": true,
+    "original_inputs_preserved": true,
+    "empty_final": true,
+    "sources_unchanged": true
+  },
+  "journal": [
+    {
+      "operation": "open_document_private_copy",
+      "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-package-01/packaged-input-66e70ac36ded423fb0eab3062876790f.docx",
+      "status": "acknowledged"
+    },
+    {
+      "operation": "save_docx",
+      "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-package-01/native-materialized.docx",
+      "status": "acknowledged"
+    },
+    {
+      "operation": "close_owned",
+      "source": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-btc22a9r/document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+      "status": "acknowledged"
+    },
+    {
+      "operation": "reopen_document_private_copy",
+      "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-package-01/native-materialized.docx",
+      "status": "acknowledged"
+    },
+    {
+      "operation": "close_reopened_owned",
+      "source": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ehnniy_7/document-329cf580bd5b458ca445eb32d52855c7.docx",
+      "status": "acknowledged"
+    }
+  ],
+  "raw_rows": {
+    "open_readback": [
+      [
+        "materialized",
+        "IMPORTED APPEARANCE 中文 العربية 😀\r",
+        "WPSC Heading Clone",
+        "WPSC Heading Clone",
+        "正文",
+        "正文"
+      ]
+    ],
+    "mark_owned_unsaved": [
+      [
+        "saved",
+        false
+      ]
+    ],
+    "saved_readback": [
+      [
+        "saved",
+        true
+      ]
+    ],
+    "after_save_readback": [
+      [
+        "materialized",
+        "IMPORTED APPEARANCE 中文 العربية 😀\r",
+        "WPSC Heading Clone",
+        "WPSC Heading Clone",
+        "正文",
+        "正文"
+      ]
+    ],
+    "reopen_readback": [
+      [
+        "materialized",
+        "IMPORTED APPEARANCE 中文 العربية 😀\r",
+        "WPSC Heading Clone",
+        "WPSC Heading Clone",
+        "正文",
+        "正文"
+      ]
+    ]
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/docx-package-materialization.py": "d2cc81211c0c87f39eeb1345016ae463c9926fabdd272ad4f30ca58adb078362",
+    "build/word-heading-import-20260910/test_docx_package_materialization.py": "5b8e4581308de7cf55db09783074e7b78ae43583bd650dc1b63189fde48bf656",
+    "build/word-heading-import-20260910/flatopc-open-control.py": "8af7458f1b73edf1490df28a433319fb5592b5bd87ad4ef1e304b0ce898cc2bd",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "input_path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-package-01/packaged-input-66e70ac36ded423fb0eab3062876790f.docx",
+  "input_sha256": "d35e57a7f4b9d28e0be8f6e34f076e64f74b6398fd53d3d7f433ac0d486f3a5f",
+  "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-btc22a9r/document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+  "after_open": [
+    [
+      "document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-btc22a9r/document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+      true,
+      "cffc58225a0e4e3ea8d7b86170ea00cc48c9d992afc04e2c3d28b547d2fbde45"
+    ]
+  ],
+  "current_phase": "reopen_readback",
+  "after_save": [
+    [
+      "document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-btc22a9r/document-a48ac2dd83c44c20a1613e633d5e07de.docx",
+      true,
+      "cffc58225a0e4e3ea8d7b86170ea00cc48c9d992afc04e2c3d28b547d2fbde45"
+    ]
+  ],
+  "reopen_private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ehnniy_7/document-329cf580bd5b458ca445eb32d52855c7.docx",
+  "after_reopen": [
+    [
+      "document-329cf580bd5b458ca445eb32d52855c7.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ehnniy_7/document-329cf580bd5b458ca445eb32d52855c7.docx",
+      true,
+      "cffc58225a0e4e3ea8d7b86170ea00cc48c9d992afc04e2c3d28b547d2fbde45"
+    ]
+  ],
+  "artifact_hashes": {
+    "native-styles.xml": "c9c32645251fa921889f6d8cca01d17b232f734bbc822501735b479dd0052b4d",
+    "packaged-input-66e70ac36ded423fb0eab3062876790f.docx": "d35e57a7f4b9d28e0be8f6e34f076e64f74b6398fd53d3d7f433ac0d486f3a5f",
+    "native-materialized.docx": "fa7d6dd3060e67e6dedc61d37515ace3bd854624382378192e7cd59d8819ed7c"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "scope": "Independent empty-carrier artifact and cleanup verification; no complete heading acceptance",
+  "final_inventory": [],
+  "input_sha256": "52d724bb135c5f1cf7e4d4d41472341010a8e6e8b91cca4a17d13a4c75e63c39",
+  "output_sha256": "687bbff494edd5a2a93236cbadbad78bb40eb0f80cba9e3f6dab45de8d4ea439",
+  "changed_style_ids": [],
+  "added_style_ids": [],
+  "removed_style_ids": [],
+  "input_preserved": true,
+  "quarantine_absent": true,
+  "checks_passed": 23,
+  "fresh_style_only_xml": false,
+  "fresh_vs_imported": {
+    "style": {
+      "equal": true,
+      "differences": {}
+    },
+    "paragraph": {
+      "equal": false,
+      "differences": {
+        "ascii name": {
+          "style": "Arial",
+          "range": ""
+        },
+        "complex script name": {
+          "style": "Arial",
+          "range": ""
+        },
+        "other name": {
+          "style": "Arial",
+          "range": ""
+        }
+      }
+    },
+    "latin": {
+      "equal": true,
+      "differences": {}
+    },
+    "cjk": {
+      "equal": true,
+      "differences": {}
+    },
+    "arabic": {
+      "equal": true,
+      "differences": {}
+    },
+    "emoji": {
+      "equal": false,
+      "differences": {
+        "ascii name": {
+          "style": "Arial",
+          "range": "Apple Color Emoji"
+        },
+        "complex script name": {
+          "style": "Arial",
+          "range": "Apple Color Emoji"
+        },
+        "name": {
+          "style": "Arial",
+          "range": "Apple Color Emoji"
+        },
+        "other name": {
+          "style": "Arial",
+          "range": "Apple Color Emoji"
+        }
+      }
+    }
+  },
+  "cleanup_verified": true
+}

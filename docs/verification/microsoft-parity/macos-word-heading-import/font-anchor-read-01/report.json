@@ -1,0 +1,436 @@
+{
+  "status": "DIAGNOSTIC_COMPLETE",
+  "scope": "Read-only font aggregation observations; no appearance acceptance or fresh-paragraph proof",
+  "checks": {
+    "pinned_input": true,
+    "empty_inventory": true,
+    "exact_private_inventory": true,
+    "valid_saved_preimage": true,
+    "private_preimage_bytes": true,
+    "typed_complete_readback": true,
+    "saved_text_ranges_topology_unchanged": true,
+    "inventory_saved_hash_unchanged": true,
+    "private_bytes_unchanged": true,
+    "owned_closed": true,
+    "final_inventory_empty": true,
+    "original_input_unchanged": true,
+    "sources_unchanged": true
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/font-anchor-read-diagnostic.py": "8a5824e7ecf47c5e9c16e3b96decdeb9ef093b84efad7b787c869c50f57d558a",
+    "build/word-heading-import-20260910/test_font_anchor_read_diagnostic.py": "d65f9d5cdf1e6cb48b79dd7d54c7b538d2ebb0b932098c40448d908e5560aca1",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "open_journal": {
+    "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-import-02/after-import.docx",
+    "status": "acknowledged",
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-dcpakpyb/document-b5b14934a1a84579a7d098bfcd74a6e7.docx"
+  },
+  "inventory_after_open": [
+    [
+      "document-b5b14934a1a84579a7d098bfcd74a6e7.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-dcpakpyb/document-b5b14934a1a84579a7d098bfcd74a6e7.docx",
+      true,
+      "cf09a92a100e728215645171fd8a55ac23abbe897523bbb2b3c70c373c1b3e37"
+    ]
+  ],
+  "current_phase": "after_state",
+  "raw_rows": {
+    "before_state": [
+      [
+        "state",
+        true,
+        "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\r\r",
+        0,
+        32,
+        32,
+        66,
+        4,
+        0,
+        0
+      ]
+    ],
+    "font_ranges": [
+      [
+        "styles",
+        "标题 1",
+        "WPSC Heading Clone"
+      ],
+      [
+        "font",
+        "source",
+        "style",
+        "",
+        -1,
+        -1,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "paragraph",
+        "SOURCE APPEARANCE 中文 العربية 😀\r",
+        0,
+        32,
+        "标题 1",
+        "",
+        "",
+        "",
+        "",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "latin",
+        "A",
+        7,
+        8,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "cjk",
+        "中",
+        18,
+        19,
+        "标题 1",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "arabic",
+        "ا",
+        21,
+        22,
+        "标题 1",
+        "Times New Roman",
+        "Times New Roman",
+        "Times New Roman",
+        "Times New Roman",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "source",
+        "emoji",
+        "😀",
+        29,
+        31,
+        "标题 1",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "Apple Color Emoji",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "style",
+        "",
+        -1,
+        -1,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "paragraph",
+        "IMPORTED APPEARANCE 中文 العربية 😀\r",
+        32,
+        66,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "latin",
+        "A",
+        41,
+        42,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "cjk",
+        "中",
+        52,
+        53,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "等线 Light",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "arabic",
+        "ا",
+        55,
+        56,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ],
+      [
+        "font",
+        "clone",
+        "emoji",
+        "😀",
+        63,
+        65,
+        "WPSC Heading Clone",
+        "Arial",
+        "Arial",
+        "Arial",
+        "Arial",
+        "+中文标题 ()"
+      ]
+    ],
+    "after_state": [
+      [
+        "state",
+        true,
+        "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\r\r",
+        0,
+        32,
+        32,
+        66,
+        4,
+        0,
+        0
+      ]
+    ]
+  },
+  "anchors": {
+    "source": [
+      {
+        "script": "paragraph",
+        "scalar": "SOURCE APPEARANCE 中文 العربية 😀\r",
+        "start": 0,
+        "end": 32
+      },
+      {
+        "script": "latin",
+        "scalar": "A",
+        "start": 7,
+        "end": 8
+      },
+      {
+        "script": "cjk",
+        "scalar": "中",
+        "start": 18,
+        "end": 19
+      },
+      {
+        "script": "arabic",
+        "scalar": "ا",
+        "start": 21,
+        "end": 22
+      },
+      {
+        "script": "emoji",
+        "scalar": "😀",
+        "start": 29,
+        "end": 31
+      }
+    ],
+    "clone": [
+      {
+        "script": "paragraph",
+        "scalar": "IMPORTED APPEARANCE 中文 العربية 😀\r",
+        "start": 32,
+        "end": 66
+      },
+      {
+        "script": "latin",
+        "scalar": "A",
+        "start": 41,
+        "end": 42
+      },
+      {
+        "script": "cjk",
+        "scalar": "中",
+        "start": 52,
+        "end": 53
+      },
+      {
+        "script": "arabic",
+        "scalar": "ا",
+        "start": 55,
+        "end": 56
+      },
+      {
+        "script": "emoji",
+        "scalar": "😀",
+        "start": 63,
+        "end": 65
+      }
+    ]
+  },
+  "observations": {
+    "source": {
+      "paragraph": {
+        "equal": false,
+        "differences": {
+          "ascii name": {
+            "style": "Arial",
+            "range": ""
+          },
+          "complex script name": {
+            "style": "Arial",
+            "range": ""
+          },
+          "name": {
+            "style": "Arial",
+            "range": ""
+          },
+          "other name": {
+            "style": "Arial",
+            "range": ""
+          }
+        }
+      },
+      "latin": {
+        "equal": true,
+        "differences": {}
+      },
+      "cjk": {
+        "equal": false,
+        "differences": {
+          "name": {
+            "style": "Arial",
+            "range": "等线 Light"
+          }
+        }
+      },
+      "arabic": {
+        "equal": false,
+        "differences": {
+          "ascii name": {
+            "style": "Arial",
+            "range": "Times New Roman"
+          },
+          "complex script name": {
+            "style": "Arial",
+            "range": "Times New Roman"
+          },
+          "name": {
+            "style": "Arial",
+            "range": "Times New Roman"
+          },
+          "other name": {
+            "style": "Arial",
+            "range": "Times New Roman"
+          }
+        }
+      },
+      "emoji": {
+        "equal": false,
+        "differences": {
+          "ascii name": {
+            "style": "Arial",
+            "range": "Apple Color Emoji"
+          },
+          "complex script name": {
+            "style": "Arial",
+            "range": "Apple Color Emoji"
+          },
+          "name": {
+            "style": "Arial",
+            "range": "Apple Color Emoji"
+          },
+          "other name": {
+            "style": "Arial",
+            "range": "Apple Color Emoji"
+          }
+        }
+      }
+    },
+    "clone": {
+      "paragraph": {
+        "equal": false,
+        "differences": {
+          "name": {
+            "style": "Arial",
+            "range": ""
+          }
+        }
+      },
+      "latin": {
+        "equal": true,
+        "differences": {}
+      },
+      "cjk": {
+        "equal": false,
+        "differences": {
+          "name": {
+            "style": "Arial",
+            "range": "等线 Light"
+          }
+        }
+      },
+      "arabic": {
+        "equal": true,
+        "differences": {}
+      },
+      "emoji": {
+        "equal": true,
+        "differences": {}
+      }
+    }
+  },
+  "close_journal": {
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-dcpakpyb/document-b5b14934a1a84579a7d098bfcd74a6e7.docx",
+    "status": "acknowledged"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "exit_codes": {
+    "seed": 0,
+    "font": 0,
+    "paragraph": 0,
+    "insert": 0,
+    "clear": 0,
+    "challenge": 0
+  },
+  "executed": false,
+  "source_sha256": "1e5d7be69faf505ff64f333320a891eeb5d675296f099f9b51fc5aefbcbd4eb5"
+}

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/fresh-order-diagnostic.py", line 136, in run
+    check(mode+'_all_style_definitions_preserved',existing_styles_preserved(source_styles,styles) and existing_styles_preserved(styles,source_styles))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/fresh-order-diagnostic.py", line 103, in check
+    if not value:raise AssertionError('Fresh-order diagnostic failed: '+label)
+AssertionError: Fresh-order diagnostic failed: A_all_style_definitions_preserved

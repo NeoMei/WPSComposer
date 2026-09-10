@@ -1,0 +1,10 @@
+{
+  "conclusion": "cancelled",
+  "createdAt": "2026-09-10T15:53:22Z",
+  "databaseId": 34498579108,
+  "event": "push",
+  "headSha": "73a00e1f0a79d038d8dcf3402057700ada5f27e9",
+  "status": "completed",
+  "updatedAt": "2026-09-10T15:54:58Z",
+  "url": "https://github.com/NeoMei/WPSComposer/actions/runs/34498579108"
+}
