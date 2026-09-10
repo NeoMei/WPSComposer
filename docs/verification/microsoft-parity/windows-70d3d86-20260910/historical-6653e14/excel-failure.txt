@@ -1,0 +1,39 @@
+Traceback (most recent call last):
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 384, in observe_sessions
+    yield sessions
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 443, in standard_case
+    populate(session, kind)
+    ~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 419, in populate
+    session.apply_structural_op({'op':'move', 'target':other, 'to':{'after':first}})
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 391, in <lambda>
+    return lambda *args, **kwargs: self._call(name, *args, **kwargs)
+                                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 373, in _call
+    raise error
+RuntimeError: Native worksheet move changed the workbook collection
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 585, in native_case
+    report['checks'].update(standard_case(api, output, kind, time.monotonic() + timeout - 20))
+                            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 441, in standard_case
+    with observe_sessions(output, deadline) as sessions:
+         ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 392, in observe_sessions
+    if job.is_dir(): shutil.copytree(job, copied)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Python314\Lib\shutil.py", line 654, in copytree
+    return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+                     ignore=ignore, copy_function=copy_function,
+                     ignore_dangling_symlinks=ignore_dangling_symlinks,
+                     dirs_exist_ok=dirs_exist_ok)
+  File "C:\Python314\Lib\shutil.py", line 608, in _copytree
+    raise Error(errors)
+shutil.Error: [('C:\\Users\\1\\AppData\\Local\\WPSComposer\\native-office\\spreadsheet\\session-4pvjdkig\\Diagnostics\\EXCEL\\Primary1789045867233774200_648190F1-51AB-420F-9C25-5E47B8A7B126.log', 'D:\\wpsc665-recovery-20260910-2107\\native-excel-01\\sheet\\runtime\\1\\Diagnostics\\EXCEL\\Primary1789045867233774200_648190F1-51AB-420F-9C25-5E47B8A7B126.log', '[WinError 32] 另一个程序正在使用此文件，进程无法访问。'), ('C:\\Users\\1\\AppData\\Local\\WPSComposer\\native-office\\spreadsheet\\session-4pvjdkig\\Diagnostics\\EXCEL\\Primary1789045867236288700_648190F1-51AB-420F-9C25-5E47B8A7B126.log', 'D:\\wpsc665-recovery-20260910-2107\\native-excel-01\\sheet\\runtime\\1\\Diagnostics\\EXCEL\\Primary1789045867236288700_648190F1-51AB-420F-9C25-5E47B8A7B126.log', '[WinError 32] 另一个程序正在使用此文件，进程无法访问。')]

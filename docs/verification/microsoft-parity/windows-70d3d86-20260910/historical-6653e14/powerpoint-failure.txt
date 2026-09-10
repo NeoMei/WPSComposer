@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 581, in native_case
+    sentinels.start()
+    ~~~~~~~~~~~~~~~^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 275, in start
+    else windows_office_host.create_composer(COMPONENT[self.kind], root))
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_office_host.py", line 294, in create_composer
+    pid = _application_pid(app, component, deps)
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_office_host.py", line 129, in _application_pid
+    raise OfficeIdentityError('PowerPoint native window cannot bind exactly one application process')
+skills.WPSComposer.scripts.msoffice.windows_office_host.OfficeIdentityError: PowerPoint native window cannot bind exactly one application process
