@@ -1,0 +1,72 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py", line 268, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py", line 97, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/private-json-roundtrip-02.py", line 6, in <module>
+    out=root/'build/excel-command-boundary-20260910/private-json-roundtrip-02';out.mkdir(exist_ok=False)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1313, in mkdir
+    self._accessor.mkdir(self, mode)
+FileExistsError: [Errno 17] File exists: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/private-json-roundtrip-02'
+{
+  "passed": false,
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "helper_sha256": "b9d2beace9b9f267d5a38998e3b31a848447ae7d44620353fa09d20c774bf4ad",
+  "steps": [
+    {
+      "names": [
+        "Data",
+        "Results",
+        "Business report"
+      ]
+    },
+    {
+      "deleted": true
+    }
+  ],
+  "original_before": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "pid": 937,
+  "process_identity": "Thu Sep 10 20:34:06 2026     /Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+  "private_before": {
+    "books": [
+      [
+        "工作簿1",
+        "工作簿1",
+        true,
+        ""
+      ]
+    ],
+    "alerts": true
+  },
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-cvcue6ha/owned-ec3f072bb4ed4252924818c9e68dfbf4.xlsx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-cvcue6ha",
+  "error": "Artifact validator worker exited without a result",
+  "remaining_owned_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-cvcue6ha/owned-ec3f072bb4ed4252924818c9e68dfbf4.xlsx"
+}

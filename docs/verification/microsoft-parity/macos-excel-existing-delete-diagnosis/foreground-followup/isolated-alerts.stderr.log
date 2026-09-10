@@ -1,0 +1,3 @@
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'setd'{ 'data':'fals'("false"), '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1238', 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1238', 'from':null() }, &'csig':65536 }>

@@ -1,0 +1,12 @@
+{
+  "before": [
+    "9212"
+  ],
+  "after": [
+    "9212",
+    "78330"
+  ],
+  "new_pid": "78330",
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/excel-command-boundary-20260910/isolated-launch.xlsx",
+  "returncode": 0
+}

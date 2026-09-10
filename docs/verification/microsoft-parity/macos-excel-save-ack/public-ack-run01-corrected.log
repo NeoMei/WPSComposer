@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "checks": {
+    "before-selected-write-save-reopen": true,
+    "selected-write-save-reopen": true,
+    "after-selected-write-save-reopen": true,
+    "owned-workbooks-closed": true,
+    "source-bytes-preserved": true,
+    "source-hashes-unchanged": true,
+    "unsaved-sentinel-preserved": true
+  },
+  "inventory_restored": true
+}

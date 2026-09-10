@@ -1,0 +1,3 @@
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'smXL'\'1169'{ 'WbFN':'utxt'("/Users/neomei/œÓƒø/codexprojects/WpsComposer/.worktrees/office-description/build/excel-existing-delete-diagnosis/existing-owned.xlsx"), 'XoEd':'true'("true"), &'subj':null(), &'csig':65536 }>
+OSA error -1753

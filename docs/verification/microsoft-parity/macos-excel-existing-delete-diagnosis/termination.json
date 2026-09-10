@@ -1,0 +1,27 @@
+{
+  "pid": 99513,
+  "launch_time": "Thu Sep 10 12:03:54 2026",
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/excel-existing-delete-diagnosis/existing-owned.xlsx",
+  "action": "SIGTERM",
+  "reason": "Native close returned without closing; only the disposable owned copy was present",
+  "original_pid": 9212,
+  "original_inventory": {
+    "alerts": true,
+    "bundle": "com.microsoft.Excel",
+    "name": "Microsoft Excel",
+    "pid": 9212,
+    "running": true,
+    "workbooks": [
+      {
+        "name": "工作簿5",
+        "path": "工作簿5",
+        "saved": false
+      },
+      {
+        "name": "工作簿7",
+        "path": "工作簿7",
+        "saved": false
+      }
+    ]
+  }
+}

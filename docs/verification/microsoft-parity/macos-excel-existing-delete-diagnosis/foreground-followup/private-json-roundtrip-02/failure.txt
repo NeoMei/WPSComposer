@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/private-json-roundtrip-02.py", line 63, in <module>
+    session.save(out/'result.xlsx');session.close();shutil.copytree(session._job,out/'first-runtime');session=None
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 703, in save
+    validate_before_deadline(ValidatorSpec.from_callable(validate_office_package,'xlsx'),self._native,self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 390, in validate_before_deadline
+    raise RuntimeError("Artifact validator worker exited without a result") from None
+RuntimeError: Artifact validator worker exited without a result

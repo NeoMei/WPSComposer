@@ -1,0 +1,9 @@
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'smXL'\'1169'{ 'WbFN':'utxt'("/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/excel-command-boundary-20260910/foreground-open.xlsx"), 'XoEd':'true'("true"), &'subj':null(), &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1773', 'from':'obj '{ 'form':'name', 'want':'X141', 'seld':'utxt'("foreground-open.xlsx"), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'setd'{ 'data':'utxt'("FOREGROUND-OPEN-CHECK"), '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'DPVu', 'from':'obj '{ 'form':'name', 'want':'X117', 'seld':'utxt'("Z40"), 'from':'obj '{ 'form':'indx', 'want':'XwSH', 'seld':1, 'from':'obj '{ 'form':'name', 'want':'X141', 'seld':'utxt'("foreground-open.xlsx"), 'from':null() } } } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'save'{ '----':'obj '{ 'form':'name', 'want':'X141', 'seld':'utxt'("foreground-open.xlsx"), 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1842', 'from':'obj '{ 'form':'name', 'want':'X141', 'seld':'utxt'("foreground-open.xlsx"), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'clos'{ 'savo':'no  ', '----':'obj '{ 'form':'name', 'want':'X141', 'seld':'utxt'("foreground-open.xlsx"), 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() } }, &'csig':65536 }>
+OSA error -1753

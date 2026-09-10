@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_delete_selection.py", line 13, in <module>
+    from fixtures.microsoft_parity.macos_excel_integration_round2 import (
+ModuleNotFoundError: No module named 'fixtures'

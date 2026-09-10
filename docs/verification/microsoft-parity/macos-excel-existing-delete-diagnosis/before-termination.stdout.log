@@ -1,0 +1,28 @@
+{
+  "after" : [
+    {
+      "name" : "existing-owned.xlsx",
+      "path" : "\/Users\/neomei\/Library\/Containers\/com.microsoft.Excel\/Data\/tmp\/wpscomposer\/excel-existing-delete-diagnosis\/existing-owned.xlsx",
+      "saved" : false,
+      "sheets" : [
+        "Data",
+        "Results",
+        "Business report"
+      ]
+    }
+  ],
+  "alerts" : true,
+  "before" : [
+    {
+      "name" : "existing-owned.xlsx",
+      "path" : "\/Users\/neomei\/Library\/Containers\/com.microsoft.Excel\/Data\/tmp\/wpscomposer\/excel-existing-delete-diagnosis\/existing-owned.xlsx",
+      "saved" : false,
+      "sheets" : [
+        "Data",
+        "Results",
+        "Business report"
+      ]
+    }
+  ],
+  "pid" : 99513
+}

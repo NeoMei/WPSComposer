@@ -1,0 +1,32 @@
+......................F................................................. [ 88%]
+.........                                                                [100%]
+=================================== FAILURES ===================================
+______ test_close_save_conflict_keeps_owned_session_locked_until_discard _______
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1376/test_close_save_conflict_keeps0')
+
+    def test_close_save_conflict_keeps_owned_session_locked_until_discard(tmp_path):
+        obj=session(tmp_path);calls=[]
+        class Lock:
+            closed=False
+            def close(self):self.closed=True
+        obj._lock=Lock()
+        obj.save_current=lambda:(_ for _ in ()).throw(ValueError('conflict'))
+        obj._run=lambda body,**kwargs:calls.append(body) or {}
+    
+        with pytest.raises(ValueError,match='conflict'):
+            obj.close(save_changes=True)
+    
+        assert not obj._closed and not obj._lock.closed and calls==[]
+        obj.close(save_changes=False)
+        assert obj._closed and obj._lock.closed
+>       assert calls==['close ownedBook saving no\nreturn "{}"']
+E       assert ['close owned...lsx")) & "}"'] == ['close owned...nreturn "{}"']
+E         
+E         At index 0 diff: 'close ownedBook saving no\nreturn "{" & "\\"closed\\":" & my j(not (exists workbook "owned.xlsx")) & "}"' != 'close ownedBook saving no\nreturn "{}"'
+E         Use -v to get more diff
+
+tests/msoffice/test_macos_excel_session.py:225: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_excel_session.py::test_close_save_conflict_keeps_owned_session_locked_until_discard
+1 failed, 80 passed in 0.21s
