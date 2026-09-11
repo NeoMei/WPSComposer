@@ -1,0 +1,92 @@
+{
+  "operations": [
+    {
+      "op": {
+        "op": "clone",
+        "target": "slide:1",
+        "to": "start"
+      },
+      "result": {
+        "type": "slide",
+        "cloned": true,
+        "from": "slide:1",
+        "path": "slide:3",
+        "clipboard_changed": true
+      }
+    },
+    {
+      "op": {
+        "op": "clone",
+        "target": "slide:2/shape:@name=parity-title",
+        "to": {
+          "slide": 3
+        }
+      },
+      "result": {
+        "type": "shape",
+        "cloned": true,
+        "from": "slide:2/shape:@name=parity-title",
+        "to_slide": 3,
+        "path": "slide:3/shape:2",
+        "clipboard_changed": true
+      }
+    },
+    {
+      "op": {
+        "op": "move",
+        "target": "slide:2/shape:@name=parity-image",
+        "to": {
+          "slide": 3
+        }
+      },
+      "result": {
+        "type": "shape",
+        "moved": true,
+        "from": "slide:2/shape:@name=parity-image",
+        "to_slide": 3,
+        "path": "slide:3/shape:3",
+        "clipboard_changed": true
+      }
+    },
+    {
+      "op": {
+        "op": "move",
+        "target": "slide:1",
+        "to": {
+          "index": 3
+        }
+      },
+      "result": {
+        "type": "slide",
+        "moved": true,
+        "from": "slide:1",
+        "clipboard_changed": false
+      }
+    },
+    {
+      "op": {
+        "op": "insert",
+        "type": "slide",
+        "position": {
+          "index": 4
+        }
+      },
+      "result": {
+        "type": "slide",
+        "path": "slide:4"
+      }
+    },
+    {
+      "op": {
+        "op": "remove",
+        "target": "slide:4"
+      },
+      "result": {
+        "removed": "slide:4"
+      }
+    }
+  ],
+  "status": "PASS",
+  "source_unchanged": true,
+  "preexisting_documents_unchanged": true
+}

@@ -1,0 +1,37 @@
+{
+  "checks": {
+    "four_slides": true,
+    "page_960x540": true,
+    "native_image": true,
+    "native_table": true,
+    "titles_bullets_table_content": false,
+    "pdf_four_pages": true,
+    "pdf_content": true
+  },
+  "passed": false,
+  "texts": [
+    "Compiler native title|Chinese |中文 |subtitle",
+    "Section title",
+    "Native bullets|Alpha|Beta |中文",
+    "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}|Name|Value|Native|42"
+  ],
+  "pdf_text": [
+    "Compiler native title\nChinese 中⽂ subtitle\n",
+    "Section title\n",
+    "Native bullets\n• Alpha\n• Beta 中⽂\n",
+    "Name\nValue\nNative\n42\n"
+  ],
+  "sha256": {
+    "stdout.txt": "9e06ea32142a5b4c62e8223f20fb321fdec02109da39dc8763c4e0b80129ef1c",
+    "report.json": "758d3ca599c6916cc9c3ad91924aa1754672b2042b051dc67e5b43616c4a1084",
+    "compiler-9c9f0a7a799042b79933e295c139f550.pptx": "944c7f731da9d911509709ff04026dcd12d57b71ad85dd81521f5d1be5345ac9",
+    "native.pdf": "c27205ec1c662f9a632f8609e0df9637e5624a825724afbbcf2904bf14367db3",
+    "page-1.png": "95aab5ff05bf5c1010396dd729999ca74cbadfac464d0d1363439de3c8ca08e5",
+    "page-3.png": "8ff2ecdc75a6cc9aeb64cf91cd2e5f8ec7f6a749956ae99e868defb7dbac61d3",
+    "page-2.png": "ea3d95dcb17bc28fc9df4e20e3333f4fc691610ff7490001f1cf378968945d10",
+    "native.applescript": "6275c9927c7700db4c4d2b4f430419bf148adbc55e03804351a90afe1bdfd08a",
+    "page-4.png": "f47f9c32cfe1b9d0955ab50cdde96711c8b022d2a2e61889e217d0c233ed0ca1",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image.png": "192f47cdf863d62d0e68055101a3dc469d6e69f9fe7315390e8a352d3fb83b92"
+  }
+}

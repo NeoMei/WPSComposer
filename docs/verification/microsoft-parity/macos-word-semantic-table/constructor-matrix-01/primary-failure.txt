@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout/fixtures/microsoft_parity/macos_word_semantic_table_matrix.py", line 120, in run
+    native=observe_native(session,output,report,label+'-one-constructor',commands(session._bound_path,report['sentinel_name'],report['sentinel_token'],nrows,ncols,end,active),
+  File "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout/fixtures/microsoft_parity/macos_word_semantic_table.py", line 217, in observe_native
+    rows=(owner._execute_structural if mutate else owner._execute)(bound_guard(owner._bound_path)+commands)
+  File "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1230, in _execute_structural
+    return execute(lines)
+  File "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 485, in _execute_topology_mutation
+    rows = self._execute(lines)
+  File "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 397, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=diagnostic)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf/15bd5ecf406c4b3983b7dae1f938abc3.log

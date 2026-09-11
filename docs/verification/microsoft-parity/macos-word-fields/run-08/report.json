@@ -1,0 +1,343 @@
+{
+  "passed": true,
+  "mode": "probe",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_fields.py": "8d4461252a5841829a62b3022c299f13e4f366f10268dddfb26aafdd386d1678",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "a92c43ffd78aa5895163056bd5bfb7dc82a2758464a652c003cad021abd4b997",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "c24b4549fe0a3aa33a0f920e16f9842863811829458caa814e9850c5f111a75f"
+  },
+  "checks": {
+    "repeat_snapshot_stable": true,
+    "exact_sequence_filtered_native_indexes_and_field_kinds": true,
+    "native_toc_title_exclusion": true,
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "exact_owned_close": true,
+    "native_reopen_source_preserved": true,
+    "exact_owned_reopen_close": true,
+    "independent_docx_and_pdf_read": true
+  },
+  "inventory_before": [
+    [
+      "文档155",
+      "文档155",
+      false,
+      "520aac06337db7be55f2db77d8d6f7d556539844d86780879aca0b3e9736e591  -"
+    ]
+  ],
+  "snapshot": [
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_FIG",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "SEQ_TAB",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:main text/chain:1",
+        "REF",
+        0
+      ],
+      "field_category": "field",
+      "result_hash": "564cdfe9127e8cfa0aa04d1a4b1807928fa405c571b7fc735bb6ccfa428ab8c9",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "0ef0f8417176c07171f5fd09d231636d73bc0c661feda96a7e01072e4b7d552c",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "doc:toc",
+        "TOC",
+        1
+      ],
+      "field_category": "index",
+      "result_hash": "0ef0f8417176c07171f5fd09d231636d73bc0c661feda96a7e01072e4b7d552c",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "figures",
+        "TOF_FIG",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "5fece9b07dfa08e74481bcd30e921ca50c45e8d64785e9027e55b1eb9152fddc",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "tables",
+        "TOF_TAB",
+        0
+      ],
+      "field_category": "index",
+      "result_hash": "a16e1d3b5473189ebe2a471a4b82bb736ed4d09a16ed7c2f5017ad1294a53f85",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "PAGE",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    },
+    {
+      "stable_key": [
+        "story:primary footer/chain:1",
+        "NUMPAGES",
+        0
+      ],
+      "field_category": "page",
+      "result_hash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+      "toc_page_count": 2,
+      "figure_index_page_count": 1,
+      "table_index_page_count": 1,
+      "total_pages": 3
+    }
+  ],
+  "native_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239839089\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839089 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239839090\" ",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839090 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239839091\" ",
+      "1 Figure Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839091 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      " HYPERLINK \\l \"_Toc239839092\" ",
+      "1 Table Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839092 \\h ",
+      "1"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 13\r"
+    ]
+  ],
+  "inventory_after": [
+    [
+      "文档155",
+      "文档155",
+      false,
+      "520aac06337db7be55f2db77d8d6f7d556539844d86780879aca0b3e9736e591  -"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "counts",
+      2,
+      2,
+      5
+    ],
+    [
+      "field",
+      " SEQ WPSC_FIG \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " SEQ WPSC_TAB \\* MERGEFORMAT ",
+      "1"
+    ],
+    [
+      "field",
+      " REF WPSC_RefProbe \\* MERGEFORMAT ",
+      "Heading "
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239839089\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839089 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+      "Heading 😀 Duplicate\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239839090\"",
+      "Heading 😀 Duplicate\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839090 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+      "1 Figure Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239839091\"",
+      "1 Figure Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839091 \\h ",
+      "1"
+    ],
+    [
+      "field",
+      " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+      "1 Table Caption 😀\t1\r"
+    ],
+    [
+      "field",
+      "HYPERLINK \\l \"_Toc239839092\"",
+      "1 Table Caption 😀\t1"
+    ],
+    [
+      "field",
+      " PAGEREF _Toc239839092 \\h ",
+      "1"
+    ],
+    [
+      "footer",
+      "Retain PAGE NUMPAGES PAGEREF 13\r"
+    ]
+  ],
+  "docx_field_codes": [
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239839089 \\h ",
+    " TOC \\o \"1-3\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239839090 \\h ",
+    " TOC \\c \"WPSC_FIG\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239839091 \\h ",
+    " TOC \\c \"WPSC_TAB\" \\h \\z \\* MERGEFORMAT ",
+    " PAGEREF _Toc239839092 \\h ",
+    " SEQ WPSC_FIG \\* MERGEFORMAT ",
+    " SEQ WPSC_TAB \\* MERGEFORMAT ",
+    " REF WPSC_RefProbe \\* MERGEFORMAT "
+  ],
+  "pdf_pages": 3,
+  "pdf_text": "Heading 😀 Duplicate\nProbe body preserves existing text.\nFigure 😀\n1 Figure Caption 😀\nTable 😀\n1 Table Caption 😀\nHeading\n⽬录😀\nHeading 😀 Duplicate .............................................................................................................................. 1\nRetain PAGE NUMPAGES PAGEREF 13\n\nStyled Contents\nHeading 😀 Duplicate .............................................................................................................................. 1\nRetain PAGE NUMPAGES PAGEREF 23\n\nFigures😀\n1 Figure Caption 😀 ......................................................................................................................... 1\nTables😀\n1 Table Caption 😀 .......................................................................................................................... 1\nLiteral figures\n[Figure index placeholder]\nLiteral tables\n[Table index placeholder]\nRetain PAGE NUMPAGES PAGEREF 33"
+}

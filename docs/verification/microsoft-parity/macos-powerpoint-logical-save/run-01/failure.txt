@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_powerpoint_logical_save.py", line 73, in run
+    _,slide=session.add_blank_slide();target=session.add_textbox(slide,'NEW INITIAL',30,30,400,50)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 748, in add_blank_slide
+    index=self._semantic_slide(12,[])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 719, in _semantic_slide
+    index=int(self._run(body,mutation=True));self._current_slide=index
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 454, in _run
+    if result.returncode:raise NativeOfficeError('NATIVE_OFFICE_EXECUTION_FAILED',staging_path=self._job,diagnostic_path=path.with_suffix('.stderr'))
+skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError: Native Office did not produce a verified artifact; private diagnostics are retained.

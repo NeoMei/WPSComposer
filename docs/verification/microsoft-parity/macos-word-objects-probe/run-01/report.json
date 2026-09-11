@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "probe": "A",
+  "status": "FAIL",
+  "checks": {},
+  "limitations": [],
+  "source_hashes": {
+    "fixture": "27104257163c3eafa7c884ececa91734fb9b1f8fa11c60c87830a09d81de18d0",
+    "macos_word_session": "7cf9bfd705e49987c154ae7f9adfdbf818ae721ca09ed66a1996ccc281e40641",
+    "probe_image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-sw_iddow diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-sw_iddow/bc474225fc26441e90388989c42cf8ac.log"
+  }
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "artifact": "pytest-ubuntu-24.04-python-3.12",
+    "tests": 5265,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 44,
+    "passed": 5221
+  },
+  {
+    "artifact": "pytest-ubuntu-24.04-python-3.9",
+    "tests": 5265,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 44,
+    "passed": 5221
+  },
+  {
+    "artifact": "pytest-windows-2022-python-3.12",
+    "tests": 5265,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 98,
+    "passed": 5167
+  },
+  {
+    "artifact": "pytest-windows-2022-python-3.9",
+    "tests": 5265,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 98,
+    "passed": 5167
+  }
+]

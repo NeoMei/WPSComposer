@@ -1,0 +1,62 @@
+defined-description:0: set qstyle to Word style "标题" of boundDoc
+defined-description:1: set probeValue to description of qstyle as text
+defined-description:2: set end of probeRows to {"description","标题",probeValue}
+defined-description:3: set qstyle to Word style "标题 1" of boundDoc
+defined-description:4: set probeValue to description of qstyle as text
+defined-description:5: set end of probeRows to {"description","标题 1",probeValue}
+defined-description:6: set qstyle to Word style "标题 2" of boundDoc
+defined-description:7: set probeValue to description of qstyle as text
+defined-description:8: set end of probeRows to {"description","标题 2",probeValue}
+defined-description:9: set qstyle to Word style "标题 3" of boundDoc
+defined-description:10: set probeValue to description of qstyle as text
+defined-description:11: set end of probeRows to {"description","标题 3",probeValue}
+defined-description:12: set qstyle to Word style "标题 4" of boundDoc
+defined-description:13: set probeValue to description of qstyle as text
+defined-description:14: set end of probeRows to {"description","标题 4",probeValue}
+defined-description:15: set qstyle to Word style "标题 5" of boundDoc
+defined-description:16: set probeValue to description of qstyle as text
+defined-description:17: set end of probeRows to {"description","标题 5",probeValue}
+defined-description:18: set qstyle to Word style "标题 6" of boundDoc
+defined-description:19: set probeValue to description of qstyle as text
+defined-description:20: set end of probeRows to {"description","标题 6",probeValue}
+defined-description:21: set qstyle to Word style "标题 7" of boundDoc
+defined-description:22: set probeValue to description of qstyle as text
+defined-description:23: set end of probeRows to {"description","标题 7",probeValue}
+defined-description:24: set qstyle to Word style "标题 8" of boundDoc
+defined-description:25: set probeValue to description of qstyle as text
+defined-description:26: set end of probeRows to {"description","标题 8",probeValue}
+defined-description:27: set qstyle to Word style "标题 9" of boundDoc
+defined-description:28: set probeValue to description of qstyle as text
+defined-description:29: set end of probeRows to {"description","标题 9",probeValue}
+defined-description:30: set qstyle to Word style "副标题" of boundDoc
+defined-description:31: set probeValue to description of qstyle as text
+defined-description:32: set end of probeRows to {"description","副标题",probeValue}
+defined-description:33: set qstyle to Word style "列表段落" of boundDoc
+defined-description:34: set probeValue to description of qstyle as text
+defined-description:35: set end of probeRows to {"description","列表段落",probeValue}
+defined-description:36: set qstyle to Word style "明显参考" of boundDoc
+defined-description:37: set probeValue to description of qstyle as text
+defined-description:38: set end of probeRows to {"description","明显参考",probeValue}
+defined-description:39: set qstyle to Word style "明显强调" of boundDoc
+defined-description:40: set probeValue to description of qstyle as text
+defined-description:41: set end of probeRows to {"description","明显强调",probeValue}
+defined-description:42: set qstyle to Word style "明显引用" of boundDoc
+defined-description:43: set probeValue to description of qstyle as text
+defined-description:44: set end of probeRows to {"description","明显引用",probeValue}
+defined-description:45: set qstyle to Word style "默认段落字体" of boundDoc
+defined-description:46: set probeValue to description of qstyle as text
+defined-description:47: set end of probeRows to {"description","默认段落字体",probeValue}
+defined-description:48: set qstyle to Word style "普通表格" of boundDoc
+defined-description:49: set probeValue to description of qstyle as text
+defined-description:50: set end of probeRows to {"description","普通表格",probeValue}
+defined-description:51: set qstyle to Word style "无列表" of boundDoc
+defined-description:52: set probeValue to description of qstyle as text
+defined-description:53: set end of probeRows to {"description","无列表",probeValue}
+defined-description:54: set qstyle to Word style "引用" of boundDoc
+defined-description:55: set probeValue to description of qstyle as text
+defined-description:56: set end of probeRows to {"description","引用",probeValue}
+defined-description:57: set qstyle to Word style "正文" of boundDoc
+defined-description:58: set probeValue to description of qstyle as text
+defined-description:59: set end of probeRows to {"description","正文",probeValue}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["description","标题","字体: (中文) +中文标题 (等线 Light), (默认) +西文标题 (等线 Light), 28 磅, 紧缩量  0.5 磅, 字距调整四号, 居中\r    行距: 单倍行距, 段落间距\r    段后: 4 磅, 不要在相同样式的段落间增加间距, 样式: 链接, 在样式库中显示, 优先级: 11\r    基于: 正文\r    后续样式: 正文"],["description","标题 1","字体: (中文) +中文标题 (等线 Light), (默认) +西文标题 (等线 Light), 小一, 字体颜色: 着色 1, 段落间距\r    段前: 24 磅\r    段后: 4 磅, 与下段同页, 段中不分页, 1 级, 样式: 链接, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 2","字体: (中文) +中文标题 (等线 Light), (默认) +西文标题 (等线 Light), 20 磅, 字体颜色: 着色 1, 段落间距\r    段前: 8 磅\r    段后: 4 磅, 与下段同页, 段中不分页, 2 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 3","字体: (中文) +中文标题 (等线 Light), (默认) +西文标题 (等线 Light), 三号, 字体颜色: 着色 1, 段落间距\r    段前: 8 磅\r    段后: 4 磅, 与下段同页, 段中不分页, 3 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 4","字体: 四号, 字体颜色: 着色 1, 段落间距\r    段前: 4 磅\r    段后: 2 磅, 与下段同页, 段中不分页, 4 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 5","字体: 小四, 字体颜色: 着色 1, 段落间距\r    段前: 4 磅\r    段后: 2 磅, 与下段同页, 段中不分页, 5 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 6","字体: 加粗, 字体颜色: 着色 1, 段落间距\r    段前: 2 磅\r    段后: 0 磅, 与下段同页, 段中不分页, 6 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 7","字体: 加粗, 字体颜色: 文字 1, 段落间距\r    段前: 2 磅\r    段后: 0 磅, 与下段同页, 段中不分页, 7 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 8","字体颜色: 文字 1, 段落间距\r    段后: 0 磅, 与下段同页, 段中不分页, 8 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","标题 9","字体: (中文) +中文标题 (等线 Light), 字体颜色: 文字 1, 段落间距\r    段后: 0 磅, 与下段同页, 段中不分页, 9 级, 样式: 链接, 使用前隐藏, 在样式库中显示, 优先级: 10\r    基于: 正文\r    后续样式: 正文"],["description","副标题","字体: (中文) +中文标题 (等线 Light), (默认) +西文标题 (等线 Light), 四号, 字体颜色: 文字 1, 加宽量  0.75 磅, 居中, 样式: 链接, 在样式库中显示, 优先级: 12\r    基于: 正文\r    后续样式: 正文"],["description","列表段落","缩进:\r    左侧:  1.27 厘米, 不要在相同样式的段落间增加间距, 样式: 在样式库中显示, 优先级: 35\r    基于: 正文"],["description","明显参考","字体: 加粗, 字体颜色: 着色 1, 小型大写字母, 加宽量  0.25 磅, 样式: 在样式库中显示, 优先级: 33\r    基于: 默认段落字体"],["description","明显强调","字体: 倾斜, 字体颜色: 着色 1, 样式: 在样式库中显示, 优先级: 22\r    基于: 默认段落字体"],["description","明显引用","字体: 倾斜, 字体颜色: 着色 1, 缩进:\r    左侧:  1.52 厘米\r    右侧:  1.52 厘米, 居中, 段落间距\r    段前: 18 磅\r    段后: 18 磅, 边框:\r    顶端: (单实线, 着色 1,  0.5 磅 行宽, 距正文:  10 磅 边框间距: )\r    底端: (单实线, 着色 1,  0.5 磅 行宽, 距正文:  10 磅 边框间距: ), 样式: 链接, 在样式库中显示, 优先级: 31\r    基于: 正文\r    后续样式: 正文"],["description","默认段落字体","样式: 使用前隐藏, 优先级: 2"],["description","普通表格","字体: (中文) +中文正文 (DengXian), (默认) +西文正文 (DengXian), 左\r    行距: 多倍行距 1.16 字行, 段落间距\r    段后: 8 磅, 孤行控制"],["description","无列表",""],["description","引用","字体: 倾斜, 字体颜色: 文字 1, 居中, 段落间距\r    段前: 8 磅, 样式: 链接, 在样式库中显示, 优先级: 30\r    基于: 正文\r    后续样式: 正文"],["description","正文","字体: (中文) +中文正文 (DengXian), (默认) +西文正文 (DengXian), 左\r    行距: 多倍行距 1.16 字行, 段落间距\r    段后: 8 磅, 样式: 在样式库中显示"]]]]]

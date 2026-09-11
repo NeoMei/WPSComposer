@@ -1,0 +1,4 @@
+{
+  "result": "explicit owned cleanup plus both independently marked baseline sentinels verified; automatic fail-closed refusal retained",
+  "sentinels": "工作簿5|sentinel-58d9ceb7df8e|false\n工作簿7|sentinel-e9a7d3dce1ad|false\n\n"
+}

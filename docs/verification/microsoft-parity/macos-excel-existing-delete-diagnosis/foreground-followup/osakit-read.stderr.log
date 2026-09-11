@@ -1,0 +1,1 @@
+build/excel-command-boundary-20260910/osakit-pid.js: execution error: Error: Error: exception raised by object: error=-1716: cannot set default target of scripting component 0x810002 to <NSAppleEventDescriptor: 'kpid'[pid=9212 "Microsoft Excel"]> (-2700)

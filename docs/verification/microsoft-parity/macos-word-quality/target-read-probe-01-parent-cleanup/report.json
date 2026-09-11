@@ -1,0 +1,14 @@
+{
+  "before": [
+    [
+      "document-2b532297486e4b5789d4a83f9e6f8ad4.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-jeypd1s4/document-2b532297486e4b5789d4a83f9e6f8ad4.docx",
+      true,
+      "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b"
+    ]
+  ],
+  "close": "exact-path-and-saved-guard",
+  "after": [],
+  "quarantine_recovered": true,
+  "original_probe_outcome_unchanged": "FAIL"
+}

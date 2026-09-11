@@ -1,0 +1,269 @@
+{
+  "artifact_modifications": false,
+  "variants": [
+    {
+      "variant": "variant-01",
+      "pptx": [
+        {
+          "name": "00-baseline.pptx",
+          "sha256": "75719b65c83fce7441ac9f5d021e224b11950880f009cc92f41755ad267f419a",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 720 x 405",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"381000\" y=\"381000\" /><ns0:ext cx=\"3302000\" cy=\"369332\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 30.0,
+                    "y": 30.0,
+                    "cx": 260.0,
+                    "cy": 29.081259842519685
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "01-opposite-orientation.pptx",
+          "sha256": "3487e20a280db82ecc189615e9539e15493ec18a84bd9c292badbbfe7659960d",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 720 x 405",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"214313\" y=\"4381500\" /><ns0:ext cx=\"1857375\" cy=\"248209\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 16.87503937007874,
+                    "y": 345.0,
+                    "cx": 146.25,
+                    "cy": 19.544015748031494
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "02-width-as-height.pptx",
+          "sha256": "927046eb1ffe9670ed2aaaa170026548a04d4f8fe64970dd52b0d72194a9d983",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 720 x 405",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"160735\" y=\"4810125\" /><ns0:ext cx=\"1393031\" cy=\"209288\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 12.656299212598425,
+                    "y": 378.75,
+                    "cx": 109.68748031496062,
+                    "cy": 16.479370078740157
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "03-desired-orientation.pptx",
+          "sha256": "26e4eab724b825ff013e4dbcfda3d0c627837fe447a4b1326bfb7f1fef5bed75",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 720 x 405",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"381003\" y=\"-476250\" /><ns0:ext cx=\"3301999\" cy=\"369653\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 30.00023622047244,
+                    "y": -37.5,
+                    "cx": 259.9999212598425,
+                    "cy": 29.106535433070867
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "04-final-width.pptx",
+          "sha256": "5cefdbc5a61f29656a18280eb61ff3cc61c5ac0e1697dacabbabb4b326686838",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 720 x 405",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"285753\" y=\"-357187\" /><ns0:ext cx=\"2476499\" cy=\"300403\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 22.50023622047244,
+                    "y": -28.12496062992126,
+                    "cx": 194.99992125984252,
+                    "cy": 23.653779527559056
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "all_step_shape_text_and_geometry_preserved": false,
+      "fitz_pages": [
+        {
+          "width": 720.0,
+          "height": 405.0,
+          "text": ""
+        }
+      ],
+      "all_step_text_preserved": true
+    },
+    {
+      "variant": "variant-02",
+      "pptx": [
+        {
+          "name": "00-baseline.pptx",
+          "sha256": "40c38ee2b2da469203081777dc07656c05031d67323a22996208d5543bc55e06",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 405 x 720",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"381000\" y=\"381000\" /><ns0:ext cx=\"3302000\" cy=\"369332\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 30.0,
+                    "y": 30.0,
+                    "cx": 260.0,
+                    "cy": 29.081259842519685
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "01-opposite-orientation.pptx",
+          "sha256": "40c38ee2b2da469203081777dc07656c05031d67323a22996208d5543bc55e06",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 405 x 720",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"381000\" y=\"381000\" /><ns0:ext cx=\"3302000\" cy=\"369332\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 30.0,
+                    "y": 30.0,
+                    "cx": 260.0,
+                    "cy": 29.081259842519685
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "02-width-as-height.pptx",
+          "sha256": "74a59e8d20ecde72f36d97a6f1583e883a6644940212ace45a56ba575b20f995",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 405 x 720",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"285750\" y=\"1143000\" /><ns0:ext cx=\"2476500\" cy=\"300082\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 22.5,
+                    "y": 90.0,
+                    "cx": 195.0,
+                    "cy": 23.628503937007874
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "03-desired-orientation.pptx",
+          "sha256": "4121c53dc1393815ca281cd5a4b7f9d6ca6884e6e3712a458ea7db300699c5b3",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 405 x 720",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"214313\" y=\"2857500\" /><ns0:ext cx=\"1857375\" cy=\"248209\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 16.87503937007874,
+                    "y": 225.0,
+                    "cx": 146.25,
+                    "cy": 19.544015748031494
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "04-final-width.pptx",
+          "sha256": "994257abdc000251866e44d2d8fa35b8ef5ee7d72f92989a0d858fda13fcec6b",
+          "slides": [
+            {
+              "path": "ppt/slides/slide1.xml",
+              "shapes": [
+                {
+                  "text": "Size probe 405 x 720",
+                  "geometry": "<ns0:xfrm xmlns:ns0=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:off x=\"160735\" y=\"3286125\" /><ns0:ext cx=\"1393031\" cy=\"209288\" /></ns0:xfrm>",
+                  "geometry_pt": {
+                    "x": 12.656299212598425,
+                    "y": 258.75,
+                    "cx": 109.68748031496062,
+                    "cy": 16.479370078740157
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "all_step_shape_text_and_geometry_preserved": false,
+      "fitz_pages": [
+        {
+          "width": 405.0,
+          "height": 720.0,
+          "text": "Size probe 405 x 720\n"
+        }
+      ],
+      "all_step_text_preserved": true
+    }
+  ],
+  "source_digest_after": "f95d3893d026cb43c4ed73413779605e27f4fcc64f30770e3b09fadebde3cd65",
+  "pdf_parser_warning_observed": "Ignoring wrong pointing object 7 0 (offset 0) (pypdf, one warning per PDF)",
+  "same_source_digest_through_run": true,
+  "preexisting_documents_count": 24,
+  "sentinel_before": [
+    [
+      "演示文稿33",
+      "演示文稿33",
+      false,
+      1,
+      {
+        "sha256": "d1125c56c81222ca0d6aebddbb1397da62709f83b1762eb85b7374e789555d73",
+        "has_text": true
+      },
+      960,
+      "horizontal orientation"
+    ]
+  ],
+  "all_owned_jobs_have_close_marker": true,
+  "quarantine_exists": false,
+  "powerpoint_version": "16.112.3",
+  "layout_preservation_verified": false,
+  "production_resize_enabled": false,
+  "current_fixture_sha256": "7c5c4a506dddab7b47381afc0166328038e87d0d3f2b92ec422eeba85ae8114d",
+  "current_session_sha256": "f1fa0675b537dea9c30c50123662e3b60d4ba8c0b8dd76df034f6c655b8fb66c",
+  "session_source_unchanged_since_run": true
+}

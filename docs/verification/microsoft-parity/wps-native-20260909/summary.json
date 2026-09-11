@@ -1,0 +1,119 @@
+{
+  "passed": true,
+  "scope": "Mac WPS M5 native regression, not final source-bound Microsoft parity",
+  "head": "3a172e8fb04bf7c2a59cd0133032609423f49ebc",
+  "source_dirty": true,
+  "source_note": "Concurrent Microsoft-only adapters/preflight changed while existing WPS M5 run executed. No WPS layout source changed during run.",
+  "evidence_path": "build/microsoft-parity-wps-native-20260909-02/test_real_macos_m5_six_fixture0/evidence",
+  "environment": {
+    "machine": "arm64",
+    "protocolVersion": 2,
+    "semanticVersion": "longform-1",
+    "system": "Darwin",
+    "wpsVersion": "12.1.28492"
+  },
+  "artifacts_hash_verified": true,
+  "fixtures": [
+    {
+      "name": "academic",
+      "pages": 4,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 30.881
+    },
+    {
+      "name": "toc_dense",
+      "pages": 4,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 40.7208
+    },
+    {
+      "name": "wide_objects",
+      "pages": 5,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 30.8747
+    },
+    {
+      "name": "degradation",
+      "pages": 3,
+      "issues": [
+        "FORMULA_FALLBACK_IMAGE_UNAVAILABLE",
+        "FORMULA_MALFORMED"
+      ],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 23.0529
+    },
+    {
+      "name": "unicode",
+      "pages": 2,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 19.341
+    },
+    {
+      "name": "plain_short",
+      "pages": 1,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 13.3916
+    },
+    {
+      "name": "performance-60",
+      "pages": 63,
+      "issues": [],
+      "counts": {
+        "analysis": 1,
+        "export": 1,
+        "generation": 1,
+        "patch": 0
+      },
+      "seconds": 139.3994
+    }
+  ],
+  "representative_visuals_reviewed": [
+    "academic-2",
+    "wide_objects-3",
+    "degradation-2",
+    "unicode-2",
+    "performance-60-32",
+    "wide_objects-4",
+    "wide_objects-5",
+    "academic-3",
+    "degradation-3",
+    "plain_short-1"
+  ],
+  "visual_note": "Reviewed native PDF renders: TOC leaders/fields, figure, declared degradation context, Unicode/code, and performance middle page. WPS missing emoji glyph remains a documented pre-existing limitation.",
+  "portable_evidence_path": "docs/verification/microsoft-parity/wps-native-20260909/artifacts"
+}

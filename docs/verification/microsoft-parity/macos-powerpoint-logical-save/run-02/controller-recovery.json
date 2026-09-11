@@ -1,0 +1,10 @@
+{
+  "verified": true,
+  "owned_close": "CUA exact UUID document, clean close",
+  "sentinel_close": "CUA exact unique marker unchanged then explicit Discard",
+  "native_inventory_restored": true,
+  "preserved_documents": 24,
+  "task_script_not_running": true,
+  "quarantine_cleared_after_manual_verification": true,
+  "retained_artifacts_preserved": true
+}

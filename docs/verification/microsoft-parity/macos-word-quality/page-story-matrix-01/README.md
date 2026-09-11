@@ -1,0 +1,7 @@
+# Word page-story native matrix
+
+Four explicit synthetic fixtures complete two exact repeated typed reads with all saved/read-only/body/list-template/count state preserved around each story block. Each private copy closes, original bytes stay unchanged, and final Word inventory is empty. These are source-bound diagnostic results, not full-quality or parity acceptance.
+
+Absent, primary, and stored-but-inactive first/even page stories are observed separately without reading a header/footer text object. The linked three-section fixture reports only two nodes and one field per story kind, with one ordinary native property error for each kind. Required source-to-native coverage is under review; diagnostic success must not hide unresolved fields or inheritance. Raw typed observations and fixture source/preflight are retained.
+
+The separate section-index correction changes the diagnostic's incorrect `index` property to the actual Word dictionary property `section index`. It now reads native section 1 exactly, with unchanged document state and final empty inventory. The next-story result is still a missing-value object, incorrectly appearing as node 2; no section 3 replacement content is reached. The six ordinary errors come from reading section 1 of that missing sentinel, not from six different concrete stories. This corrects diagnostic attribution without fixing the native traversal gap. Source-part hidden text is absent from default native content; PAGE field results recalculate in memory. These remain separate fidelity requirements.

@@ -1,0 +1,10 @@
+{
+  "verified": false,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-y645z5k7"
+  ],
+  "session_source_sha256": "477bc4ebeaf53c60ab2c9b5ae076d1d862e31636b2dca592a07b164547a76819",
+  "error": "Native Excel session failed; owned recovery files retained"
+}

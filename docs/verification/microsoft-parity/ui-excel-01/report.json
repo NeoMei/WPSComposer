@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "date": "2026-09-09",
+  "engine": "msoffice",
+  "platform": "darwin",
+  "component": "spreadsheet",
+  "scope": "UI editability and formula/cache preservation; not full capability certification",
+  "checks": {
+    "existing_A4_typed_marker_visible": true,
+    "native_chart_category_updated_with_cell": true,
+    "undo_restored_A4_New": true,
+    "explicit_keyboard_save": true,
+    "close_UI_reopen_exact_file": true,
+    "reopened_A4_New": true,
+    "reopened_B5_formula_B4_times_2_and_value_24": true,
+    "frozen_pane_preserved": true,
+    "saved_marker_absent_cells_and_chart": true,
+    "exact_test_copy_closed": true
+  },
+  "sha256": "9e31ccd6006a047bb5674fbf9e74fff4739707de5e7012778797d9b362cf630b",
+  "evidence": "Current task CUA history: typed marker in A4, Enter, Undo, Cmd+S, close, full-path UI reopen, select B5 showing =B4*2 and 24, close. Read-only OPC checks verify persisted values.",
+  "notes": [
+    "Original synthetic workbook 工作簿7 remained open with sentinel text.",
+    "Uses a previously generated native candidate artifact; not a new generation proof against current source.",
+    "Initial artifact assertion expected pane state frozen; actual native Excel state frozenSplit retains freezing. Corrected assertion accepts both frozen native states."
+  ]
+}

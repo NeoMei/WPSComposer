@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "scope": "offline validator correction only; native-run-01 artifacts and raw report are unchanged",
+  "source_report": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-caption-20260911/native-run-01/report.json",
+  "source_report_sha256": "21bf10530fbb02e307b5dad4b796b8f245cca7487d47739dfc2e2aff24b0bf8f",
+  "checks": {
+    "actual_native_rows": true,
+    "appended_body_rejected": true,
+    "foreign_field_rejected": true,
+    "negative_bookmark_rejected": true
+  }
+}

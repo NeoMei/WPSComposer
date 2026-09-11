@@ -1,0 +1,183 @@
+{
+  "status": "TESTED_SIZES_CONFIRMED",
+  "hypothesis_only": true,
+  "engine": "msoffice",
+  "platform": "darwin",
+  "variants": [
+    {
+      "requested": {
+        "width_pt": 720,
+        "height_pt": 405
+      },
+      "steps": [
+        {
+          "name": "opposite-orientation",
+          "command": "set slide orientation of page setup of ownedDoc to vertical orientation",
+          "native": [
+            540,
+            "vertical orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-01/01-opposite-orientation.pptx",
+          "sha256": "3487e20a280db82ecc189615e9539e15493ec18a84bd9c292badbbfe7659960d",
+          "ooxml": {
+            "width_pt": 540.0,
+            "height_pt": 960.0
+          }
+        },
+        {
+          "name": "width-as-height",
+          "command": "set slide width of page setup of ownedDoc to 405",
+          "native": [
+            405,
+            "vertical orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-01/02-width-as-height.pptx",
+          "sha256": "927046eb1ffe9670ed2aaaa170026548a04d4f8fe64970dd52b0d72194a9d983",
+          "ooxml": {
+            "width_pt": 405.0,
+            "height_pt": 960.0
+          }
+        },
+        {
+          "name": "desired-orientation",
+          "command": "set slide orientation of page setup of ownedDoc to horizontal orientation",
+          "native": [
+            960,
+            "horizontal orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-01/03-desired-orientation.pptx",
+          "sha256": "26e4eab724b825ff013e4dbcfda3d0c627837fe447a4b1326bfb7f1fef5bed75",
+          "ooxml": {
+            "width_pt": 960.0,
+            "height_pt": 405.0
+          }
+        },
+        {
+          "name": "final-width",
+          "command": "set slide width of page setup of ownedDoc to 720",
+          "native": [
+            720,
+            "horizontal orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-01/04-final-width.pptx",
+          "sha256": "5cefdbc5a61f29656a18280eb61ff3cc61c5ac0e1697dacabbabb4b326686838",
+          "ooxml": {
+            "width_pt": 720.0,
+            "height_pt": 405.0
+          }
+        }
+      ],
+      "reopened_native": [
+        720,
+        "horizontal orientation"
+      ],
+      "reopened_ooxml": {
+        "width_pt": 720.0,
+        "height_pt": 405.0
+      },
+      "reopen_source_preserved": true,
+      "pdf_pages": [
+        [
+          720.0,
+          405.0
+        ]
+      ],
+      "size_confirmed": true,
+      "preexisting_documents_unchanged": true
+    },
+    {
+      "requested": {
+        "width_pt": 405,
+        "height_pt": 720
+      },
+      "steps": [
+        {
+          "name": "opposite-orientation",
+          "command": "set slide orientation of page setup of ownedDoc to horizontal orientation",
+          "native": [
+            960,
+            "horizontal orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-02/01-opposite-orientation.pptx",
+          "sha256": "40c38ee2b2da469203081777dc07656c05031d67323a22996208d5543bc55e06",
+          "ooxml": {
+            "width_pt": 960.0,
+            "height_pt": 540.0
+          }
+        },
+        {
+          "name": "width-as-height",
+          "command": "set slide width of page setup of ownedDoc to 720",
+          "native": [
+            720,
+            "horizontal orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-02/02-width-as-height.pptx",
+          "sha256": "74a59e8d20ecde72f36d97a6f1583e883a6644940212ace45a56ba575b20f995",
+          "ooxml": {
+            "width_pt": 720.0,
+            "height_pt": 540.0
+          }
+        },
+        {
+          "name": "desired-orientation",
+          "command": "set slide orientation of page setup of ownedDoc to vertical orientation",
+          "native": [
+            540,
+            "vertical orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-02/03-desired-orientation.pptx",
+          "sha256": "4121c53dc1393815ca281cd5a4b7f9d6ca6884e6e3712a458ea7db300699c5b3",
+          "ooxml": {
+            "width_pt": 540.0,
+            "height_pt": 720.0
+          }
+        },
+        {
+          "name": "final-width",
+          "command": "set slide width of page setup of ownedDoc to 405",
+          "native": [
+            405,
+            "vertical orientation"
+          ],
+          "artifact": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint-size/run-01/variant-02/04-final-width.pptx",
+          "sha256": "994257abdc000251866e44d2d8fa35b8ef5ee7d72f92989a0d858fda13fcec6b",
+          "ooxml": {
+            "width_pt": 405.0,
+            "height_pt": 720.0
+          }
+        }
+      ],
+      "reopened_native": [
+        405,
+        "vertical orientation"
+      ],
+      "reopened_ooxml": {
+        "width_pt": 405.0,
+        "height_pt": 720.0
+      },
+      "reopen_source_preserved": true,
+      "pdf_pages": [
+        [
+          405.0,
+          720.0
+        ]
+      ],
+      "size_confirmed": true,
+      "preexisting_documents_unchanged": true
+    }
+  ],
+  "native_jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-5rjly57g",
+    "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-do4c_9jz",
+    "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-h9q91li8",
+    "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-porlsxzk"
+  ],
+  "fixture_sha256": "71930ab6b0e8503e58e3d1422843fc321a3ecd4a9dd9fba35b4ace7a8fd2be66",
+  "session_sha256": "f1fa0675b537dea9c30c50123662e3b60d4ba8c0b8dd76df034f6c655b8fb66c",
+  "source_digest": "f95d3893d026cb43c4ed73413779605e27f4fcc64f30770e3b09fadebde3cd65",
+  "sentinel_names": [
+    "演示文稿33"
+  ],
+  "dictionary_sha256": "db0fa15f433e44667f075c2b7249a1687b8d0642961dd800ce65a4d78c60ee7b"
+}

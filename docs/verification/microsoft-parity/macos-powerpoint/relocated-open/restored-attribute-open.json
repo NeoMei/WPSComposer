@@ -1,0 +1,9 @@
+{
+  "original_quarantine": "0086;6aa00f80;Microsoft PowerPoint;",
+  "copied_quarantine_before_open": "0086;6aa00f80;Microsoft PowerPoint;",
+  "equal_before_open": true,
+  "same_bytes": true,
+  "returncode": 0,
+  "stdout": "1\n",
+  "stderr": ""
+}

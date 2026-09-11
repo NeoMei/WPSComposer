@@ -1,0 +1,20 @@
+{
+  "owned_ui_url": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_n9p8z7k/document-df9f2ab3e7e6463aa2d49220e7c31d91.docx",
+  "ui_action": "Close button then explicit Do Not Save on exact target dialog",
+  "after_owned_ui_discard": [
+    [
+      "\u6587\u686364",
+      "\u6587\u686364",
+      false,
+      "6b579804f213ee6449cacf9d6517a115fac35d369da475f781c4525c02aaa3aa"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "\u6587\u686364"
+    ]
+  ],
+  "after_sentinel_close": [],
+  "manual_cleanup": true
+}

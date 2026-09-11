@@ -1,0 +1,16 @@
+{
+  "tree": "3b58f66dc5651cd4a09350ead3e4561ef55bbffd",
+  "source_commit": "78dbcfff44db1832b3e242b5e1dac02120e52f7e",
+  "scope": "Git-exported reviewed checkpoint plus staged native artifacts; later worktree changes excluded",
+  "exported_checkout": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout",
+  "command": [
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/wps-task-session-startup/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-v"
+  ],
+  "cwd": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/checkout",
+  "archive_sha256": "2df801aca17f03d57adfa1de8c8f6d8d74a53f73c05756f7550d5f340b689739",
+  "exit_code": 1,
+  "elapsed_seconds": 70.01
+}

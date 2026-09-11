@@ -1,0 +1,63 @@
+{
+  "case": "paragraph",
+  "status": "PASS",
+  "checks": {
+    "native_readback": true,
+    "sentinel_unchanged": true,
+    "owned_closed": true,
+    "reopen_native_readback": true,
+    "source_preserved_after_reopen": true,
+    "persisted_native_xml": true,
+    "pdf_anchor_visible": true,
+    "pdf_object_visible": true,
+    "pdf_wordart_text": true,
+    "unrelated_inventory_preserved": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_rules_probe.py": "58ddd65df4406bf0652fbbc9beb0e0194c20864f7674f083cab3aa671fdae381",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "14a2f0d8c96289c4f687034607b2e030fd8cd05fa3de311a20d11767d365890f",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "fixtures/microsoft_parity/macos_word_references.py": "6b429c1caf7be8305706a054d9312fbfc241311794c04f1d925c459ffa63a1b0"
+  },
+  "dictionary_hash": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "scope": "probe only; public method and UI acceptance pending",
+  "inventory_before": [],
+  "sentinel_identity": {
+    "name": "文档217",
+    "text_hash": "9a54a293ae15a1524c555567e3bf53d296550ef7e69b30fb2e87be5d841c6bb3"
+  },
+  "word_version": "16.112.3",
+  "native_rows": [
+    [
+      "paragraph",
+      " \r",
+      true,
+      true,
+      true,
+      true,
+      "FOLLOWING\r",
+      true
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "paragraph",
+      " \r",
+      true,
+      true,
+      true,
+      true,
+      "FOLLOWING\r",
+      true
+    ]
+  ],
+  "artifact_hashes": {
+    "paragraph.pdf": "279980d1f99a01f09e408516e1bfab7c542dfb85af51d1663deb0844ad29cbc7",
+    "document.xml": "fe651ba390a30f4f74334b341af4b93b58c8a32c77059f6d8d333745eebe2e55",
+    "page-1.png": "aad07545fbf4209e7af607eed5c187e6f55dfa45e4f13c9a79a41655c65bfeb8",
+    "paragraph.docx": "efc4d0896b86053d9f3c09a6196e5b9674e947a3638a1cc9152c2b3e135566d4"
+  },
+  "inventory_after": []
+}

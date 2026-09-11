@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-private-public-probe.py", line 40, in main
+    session=open_document(path,engine='msoffice',read_only=phase=='reopen')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py", line 126, in open_document
+    return open_session(path, kind=_document_family(path, kind), read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_sessions.py", line 36, in open_session
+    return _session_class(kind).open_document(path, read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 162, in open_document
+    self._start_private_process()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 199, in _start_private_process
+    self._process_owner.start(deadline=self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 140, in start
+    books = self._read_inventory(deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 250, in _read_inventory
+    value = self._command('inventory', deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 220, in _command
+    result = self._run(script_path, deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 198, in _run
+    raise OSATransportError('EXCEL_COMMAND_FAILED', pid=self.identity.pid,
+skills.WPSComposer.scripts.msoffice.macos_osa_transport.OSATransportError: EXCEL_COMMAND_FAILED

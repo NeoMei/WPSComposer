@@ -1,0 +1,14 @@
+{
+  "passed": false,
+  "checks": {},
+  "limitations": [
+    "Attached non-rebinding save_copy and PDF export are unsupported.",
+    "Floating object move/clone is unsupported."
+  ],
+  "source_sha256": "721d2ce69a73ecc32e63729c498c2040086762eee686cd4c0abec1f8154dae1c",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-m18pihz8 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-m18pihz8/373aaecbff4944e1981cddbe9aed411f.log"
+  },
+  "cleanup_error": "Native Word cleanup is unverified; task files are retained and recovery is required. quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine"
+}

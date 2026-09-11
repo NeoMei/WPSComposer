@@ -1,0 +1,17 @@
+# Matrix04 explicit-range conversion — acknowledged placement, wrong requested row count
+
+The single authorized fresh-copy diagnostic completed with a typed native ACK. It used `create range boundDoc start 12 end 19` and exactly one `convert to table diagRange number of rows 4 number of columns 3` call. No additional variants or retries ran.
+
+The returned table matched document table ordinal 1 by exact bounds, dimensions and text. Its bounds were 12:23 and its actual dimensions were **1×3**, not requested 4×3. REPLACE was inside its cell text and absent from the surrounding body. Prefix/suffix and the original-table bookmark text matched their exact preimages. The original 1×1 table was now at 46:65. All surrounding identity/content checks passed; this is not a full typography-preservation check.
+
+Saved DOCX/XML independently confirm body order: prefix paragraph, new 1×3 table containing REPLACE, empty paragraph, suffix paragraph, original 1×1 table, preserved trailing paragraph nodes and final section properties. `xml-body-order.json` retains every body node including empty paragraphs. The diagnostic reports `starts_at_requested_range=true`, `marker_in_new_table=true`, `marker_outside_new_table=false`, `returned_dimensions=[1,3]`, `requested_dimensions_observed=false`, and `document_table_ordinal=1`.
+
+This comparison supports using an explicit document text range instead of the selection-derived range representation for this conversion/returned-object ACK. It does not prove the mechanism behind Matrix03's -1708. Matrix03 remains an original failed invocation with a separately reconciled native mutation; Matrix04 does not replace its evidence or justify running its unexecuted B case.
+
+Native constructor row cardinality remains unresolved: Word produced one row although four were requested. This conversion is therefore not an accepted semantic 4×3 constructor or a production fix. No public entry point, frozen primitive, session, styling/border/merge logic, or support gate changed. Full semantic formatting, terminal-CR contract, PDF, readonly reopen and UI acceptance remain separate outstanding work.
+
+Execution used Word 16.112.3 and isolated checkout `/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix04-g601dut3/checkout`, baseline 415c9d04f38e5d4a744baadce75a39bf76dc8cca plus retained overlays. The generated script was byte-identical to the approved script f56aa57e55ad2cb65886501b2b449359818590268a6e34685bfb4ab451eac74a. Frozen probe 6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2 and runner e3449b8f2998055a7e291b5149cfe377ca664e61311d1ff976b41aa36a351864 are retained.
+
+Validation: osacompile exit 0 and 74 offline tests passed, with 5 existing PyMuPDF/SWIG warnings. Initial inventory []; explicit sentinel-created and conversion ACKs received. The private task output was saved and exactly closed; sentinel 文档95 was preserved through owned close, then verified and closed. Final inventory []; no unknown/quarantine occurred. Source seed, complete retained source closure and dictionary hashes stayed unchanged. Lease was returned immediately on completion. No native calls followed while preparing this report.
+
+Raw source/scripts/logs, saved DOCX/XML, SDEF, report.json, isolation/preflight/test/runner logs, body-order evidence and retention-manifest.json are retained. The original preparation and execution preparation are separate sibling directories. No production/index changes were made.

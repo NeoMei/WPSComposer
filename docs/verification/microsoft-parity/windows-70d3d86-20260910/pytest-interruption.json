@@ -1,0 +1,11 @@
+{
+  "collected": 5182,
+  "observedPassed": 2105,
+  "observedFailed": 18,
+  "observedSkipped": 18,
+  "completed": false,
+  "interruption": "Ctrl+C sent to owned exec session 90031 after captured server_close/socket-read hang",
+  "execSessionExitCode": 1,
+  "pytestFinalSummaryAvailable": false,
+  "recordedTestPidsAbsent": true
+}

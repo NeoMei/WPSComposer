@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_degradation.py", line 234, in _case
+    assert after[0][3] == int(mode == 'block')
+AssertionError

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -9,6 +10,7 @@ from skills.WPSComposer.scripts.longform.quality import GenerationOutcome
 
 
 def test_docx_defaults_to_longform_private_outcome(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     calls = []
 
     def fake(build, format_name, output, timeout, overwrite):
@@ -27,6 +29,7 @@ def test_docx_defaults_to_longform_private_outcome(monkeypatch, tmp_path):
 
 
 def test_pdf_defaults_to_longform_and_returns_only_requested_artifact(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     def fake(build, format_name, output, timeout, overwrite):
         assert format_name == "pdf"
         Path(output).write_bytes(b"%PDF-1.4" + b"x" * 300)
@@ -67,6 +70,7 @@ def test_explicit_legacy_uses_old_writer_route(monkeypatch, tmp_path):
 
 
 def test_public_preset_override_reaches_longform_plan(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     captured = []
 
     def fake(build, format_name, output, timeout, overwrite):

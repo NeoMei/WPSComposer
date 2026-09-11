@@ -1,0 +1,35 @@
+{
+  "run_id": 34492410734,
+  "head_sha": "433a199dd604ffbf42e827fb85e9a807a6626eed",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "job": "pytest-ubuntu-24.04-python-3.12",
+      "tests": 5240,
+      "failed": 0,
+      "skipped": 44,
+      "passed": 5196
+    },
+    {
+      "job": "pytest-ubuntu-24.04-python-3.9",
+      "tests": 5240,
+      "failed": 0,
+      "skipped": 44,
+      "passed": 5196
+    },
+    {
+      "job": "pytest-windows-2022-python-3.12",
+      "tests": 5240,
+      "failed": 0,
+      "skipped": 98,
+      "passed": 5142
+    },
+    {
+      "job": "pytest-windows-2022-python-3.9",
+      "tests": 5240,
+      "failed": 0,
+      "skipped": 98,
+      "passed": 5142
+    }
+  ]
+}

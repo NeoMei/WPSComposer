@@ -1,0 +1,22 @@
+{
+  "verdict": "PASS_SCOPED_PRIMITIVE",
+  "report_sha256": "8239a407372b2f824118e758b9f0e157c7b67032a81384748744d9422e9765e1",
+  "current_source_hashes_verified": 124,
+  "artifact_hashes_verified": 7,
+  "checks": {
+    "observed_middle": true,
+    "restored": true,
+    "delete_error_number": 0,
+    "seed_has_objects_both_sides": true,
+    "sentinel_unchanged": true,
+    "document_xml_exact": true,
+    "styles_xml_exact": true,
+    "reopen_matches_after_delete": true,
+    "reopen_source_unchanged": true,
+    "sources_unchanged": true,
+    "dictionary_unchanged": true,
+    "inventory_preserved": true
+  },
+  "inventory_final": [],
+  "scope": "Single new table inserted at the tested middle paragraph boundary, ordinary injected error then exact-table delete; no generalized rollback or four public methods claim."
+}

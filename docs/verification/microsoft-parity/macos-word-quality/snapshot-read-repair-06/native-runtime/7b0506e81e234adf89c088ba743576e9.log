@@ -1,0 +1,9 @@
+primary-header-evaluated-end:0: set probeStoryRange to missing value
+primary-header-evaluated-end:1: set probeStoryRange to get story range boundDoc story type primary header story
+primary-header-evaluated-end:2: set probeStoryRange to get probeStoryRange
+primary-header-evaluated-end:3: set probeValue to "unresolved-sentinel"
+primary-header-evaluated-end:4: set probeValue to get end of content of probeStoryRange
+primary-header-evaluated-end:5: set probeValueClass to (class of probeValue) as text
+primary-header-evaluated-end:5: set probeValueClass to (class of probeValue) as text, -2753
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","primary-header-evaluated-end:5: set probeValueClass to (class of probeValue) as text",-2753,"变量“probeValue”没有定义。"]]]

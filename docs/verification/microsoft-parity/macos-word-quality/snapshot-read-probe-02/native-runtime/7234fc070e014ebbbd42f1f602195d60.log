@@ -1,0 +1,5 @@
+table-2-bounds:0: set qt to table 2 of boundDoc
+table-2-bounds:1: set qr to text object of qt
+table-2-bounds:2: set probeRows to {{"bounds",start of content of qr,end of content of qr}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["bounds",173,191]]]]]

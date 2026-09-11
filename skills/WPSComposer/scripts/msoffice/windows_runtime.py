@@ -33,6 +33,8 @@ from ..longform.platform_runtime import _BaseAdapter, _apply_relayout
 from ..longform.quality import QualityFinding
 from ..longform.resources import ImageProfile, PreparedLongformResource
 from .errors import NativeWordError, NativeWordTimeoutError
+from .office_errors import NativeOfficeError
+from .windows_office_runtime import OfficeJobLock, _component_root
 
 
 _MODULE = 'skills.WPSComposer.scripts.msoffice.windows_runtime'
@@ -67,72 +69,179 @@ def _owned_path(root, value):
     return path
 
 
+def _record_io_failure(error, attribute, label, failure):
+    previous = getattr(error, attribute, ())
+    setattr(error, attribute, previous + ((label, type(failure).__name__),))
+
+
+def _evidenced_path(error, *paths):
+    for path in paths:
+        try:
+            if path.is_file():
+                return path
+        except BaseException as failure:
+            # The primary error already exists; even another cancellation
+            # during optional evidence lookup must not replace it.
+            _record_io_failure(error, 'diagnostic_io_failures', path.name + '.stat', failure)
+    return None
+
+
+def _persist_worker_diagnostic(error, path, value):
+    try:
+        if not path.exists():
+            _write_json(path, value)
+        return True
+    except BaseException as failure:
+        _record_io_failure(error, 'diagnostic_io_failures', 'diagnostics', failure)
+        return False
+
+
 def _worker_failure(operation):
     diagnostic = operation / 'diagnostics.json'
     code = 'NATIVE_WORD_EXECUTION_FAILED'
+    data = {}
     try:
-        data = json.loads(diagnostic.read_text(encoding='utf-8'))
+        decoded = json.loads(diagnostic.read_text(encoding='utf-8'))
+        data = decoded if isinstance(decoded, dict) else {}
         if data.get('public_code') in {'NATIVE_WORD_QUARANTINED', 'NATIVE_WORD_TIMEOUT', 'NATIVE_WORD_UNAVAILABLE'}:
             code = data['public_code']
     except (OSError, ValueError, AttributeError):
         pass
-    locations = dict(staging_path=operation,
-                     diagnostic_path=diagnostic if diagnostic.is_file() else operation / 'worker.log')
-    if code == 'NATIVE_WORD_TIMEOUT':
-        return NativeWordTimeoutError(**locations)
-    return NativeWordError(code, **locations)
+    error = NativeWordTimeoutError(staging_path=operation) if code == 'NATIVE_WORD_TIMEOUT' else NativeWordError(code, staging_path=operation)
+    evidence = _evidenced_path(error, diagnostic, operation / 'worker.log')
+    error.diagnostic_path = str(evidence) if evidence is not None else None
+    error.cleanup_verified = data.get('cleanup_verified') is True
+    return error
 
 
 def _run_worker(root, payload, deadline):
+    """Serialize Word jobs with interactive sessions and honor their quarantine."""
+    _require_deadline(deadline)
+    shared_root = _component_root('writer')
+    if shared_root.is_symlink():
+        raise ValueError('Office staging root must not be a symlink')
+    shared_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    lock = OfficeJobLock(shared_root)
+    primary_error = None
+    try:
+        try:
+            lock.acquire(deadline)
+        except NativeOfficeError as exc:
+            if exc.code == 'NATIVE_OFFICE_TIMEOUT':
+                raise NativeWordTimeoutError(staging_path=root) from None
+            raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=root,
+                                  quarantine_path=lock.quarantine_path) from None
+        try:
+            return _run_worker_unlocked(root, payload, deadline)
+        except BaseException as exc:
+            if not getattr(exc, 'cleanup_verified', False):
+                exc.quarantine_path = None
+                try:
+                    lock.quarantine({'component': 'writer', 'staging_path': str(root),
+                                     'cleanup_verified': False,
+                                     'word_termination_attempted': False,
+                                     'code': getattr(exc, 'code', 'NATIVE_WORD_EXECUTION_FAILED')})
+                except BaseException as failure:
+                    _record_io_failure(exc, 'diagnostic_io_failures', 'quarantine', failure)
+                else:
+                    evidence = _evidenced_path(exc, lock.quarantine_path)
+                    exc.quarantine_path = str(evidence) if evidence is not None else None
+            raise
+    except BaseException as exc:
+        primary_error = exc
+        raise
+    finally:
+        try:
+            lock.close()
+        except BaseException as failure:
+            if primary_error is None:
+                raise
+            _record_io_failure(primary_error, 'cleanup_io_failures', 'lock.close', failure)
+
+
+def _run_worker_unlocked(root, payload, deadline):
     """Run a single COM phase within the caller's remaining total budget."""
-    _require_deadline(deadline)
-    root = Path(root).resolve()
-    operation = root / ('operation-' + uuid4().hex)
-    operation.mkdir(mode=0o700)
-    request = operation / 'request.json'
-    response = operation / 'response.json'
-    diagnostic = operation / 'diagnostics.json'
-    _write_json(request, dict(payload, protocol=1, deadline=deadline))
-    _require_deadline(deadline)
-    env = os.environ.copy()
-    env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
-    command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
-    with (operation / 'worker.log').open('wb') as log:
-        os.chmod(operation / 'worker.log', 0o600)
+    child = log = None
+    primary_error = None
+    try:
+        _require_deadline(deadline)
+        root = Path(root).resolve()
+        operation = root / ('operation-' + uuid4().hex)
+        operation.mkdir(mode=0o700)
+        request = operation / 'request.json'
+        response = operation / 'response.json'
+        diagnostic = operation / 'diagnostics.json'
+        _write_json(request, dict(payload, protocol=1, deadline=deadline))
+        _require_deadline(deadline)
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
+        command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
+        log_path = operation / 'worker.log'
+        log = log_path.open('wb')
+        os.chmod(log_path, 0o600)
         try:
             child = subprocess.Popen(
                 command, cwd=str(_PACKAGE_ROOT), env=env,
                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
             )
         except BaseException as exc:
-            _write_json(diagnostic, {
+            error = exc if not isinstance(exc, Exception) else NativeWordError(
+                'NATIVE_WORD_EXECUTION_FAILED', staging_path=operation)
+            error.cleanup_verified = True
+            written = _persist_worker_diagnostic(error, diagnostic, {
                 'status': 'failed', 'error_type': type(exc).__name__,
-                'message': str(exc), 'word_termination_attempted': False,
+                'message': str(exc), 'word_termination_attempted': False, 'cleanup_verified': True,
             })
-            if not isinstance(exc, Exception):
-                raise
-            raise _worker_failure(operation) from None
+            evidence = _evidenced_path(error, *((diagnostic, log_path) if written else (log_path,)))
+            error.diagnostic_path = str(evidence) if evidence is not None else None
+            raise error from None
         try:
             child.wait(timeout=max(0.001, deadline - time.monotonic()))
-        except subprocess.TimeoutExpired:
-            # This is the child Python handle, never the Word PID and never a
-            # process-tree kill. Word and uncertain open files are left intact.
-            child.kill()
-            child.wait(timeout=5)
-            if not diagnostic.exists():
-                _write_json(diagnostic, {'status': 'timeout', 'python_pid': child.pid, 'word_termination_attempted': False})
-            raise NativeWordTimeoutError(staging_path=operation, diagnostic_path=diagnostic) from None
-    if child.returncode != 0 or not response.is_file():
-        raise _worker_failure(operation)
-    result = json.loads(response.read_text(encoding='utf-8'))
-    if not isinstance(result, dict) or result.get('status') != 'ok':
-        raise _worker_failure(operation)
-    try:
-        _require_deadline(deadline)
-    except NativeWordTimeoutError:
-        raise NativeWordTimeoutError(staging_path=operation,
-                                     diagnostic_path=diagnostic if diagnostic.exists() else operation / 'worker.log') from None
-    return result['value']
+        except BaseException as exc:
+            timed_out = isinstance(exc, subprocess.TimeoutExpired)
+            error = NativeWordTimeoutError(staging_path=operation) if timed_out else exc
+            # Stop only the exact Python child before any fallible evidence
+            # lookup or write. Word and uncertain open files remain untouched.
+            for label, cleanup in (('worker.kill', child.kill),
+                                   ('worker.wait', lambda: child.wait(timeout=1))):
+                try:
+                    cleanup()
+                except BaseException as failure:
+                    _record_io_failure(error, 'cleanup_io_failures', label, failure)
+            written = _persist_worker_diagnostic(error, diagnostic, {
+                'status': 'timeout' if timed_out else 'failed', 'python_pid': child.pid,
+                'word_termination_attempted': False, 'cleanup_verified': False,
+                'error_type': type(exc).__name__,
+            })
+            evidence = _evidenced_path(error, *((diagnostic, log_path) if written else (log_path,)))
+            error.diagnostic_path = str(evidence) if evidence is not None else None
+            raise error from None
+        if child.returncode != 0 or not response.is_file():
+            raise _worker_failure(operation)
+        result = json.loads(response.read_text(encoding='utf-8'))
+        if not isinstance(result, dict) or result.get('status') != 'ok':
+            raise _worker_failure(operation)
+        try:
+            _require_deadline(deadline)
+        except NativeWordTimeoutError as error:
+            evidence = _evidenced_path(error, diagnostic, log_path)
+            error.staging_path = str(operation)
+            error.diagnostic_path = str(evidence) if evidence is not None else None
+            raise
+        return result['value']
+    except BaseException as exc:
+        primary_error = exc
+        if child is None:
+            exc.cleanup_verified = True
+        raise
+    finally:
+        if log is not None:
+            try:
+                log.close()
+            except BaseException as failure:
+                if primary_error is None:
+                    raise
+                _record_io_failure(primary_error, 'cleanup_io_failures', 'worker.log.close', failure)
 
 
 def _resource_json(resource):

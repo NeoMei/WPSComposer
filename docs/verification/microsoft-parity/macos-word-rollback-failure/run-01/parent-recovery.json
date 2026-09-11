@@ -1,0 +1,6 @@
+{
+  "guarded_recovery": true,
+  "marker_removed": true,
+  "inventory": [],
+  "manual_cleanup_not_automatic_rollback": true
+}

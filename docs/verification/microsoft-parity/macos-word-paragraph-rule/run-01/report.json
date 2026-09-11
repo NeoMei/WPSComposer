@@ -1,0 +1,78 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "native_readback": false,
+    "owned_closed_with_sentinel_preserved": true,
+    "inventory_after_sentinel_close_preserved": true
+  },
+  "scope": "public method native/artifact acceptance; UI edit/undo remains separate",
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "768c43c0d97e333f0026d32ff9cd50a8afce2de6e97e34def73f42f4a5ad7eb8",
+    "skills/WPSComposer/scripts/msoffice/macos_word_rules.py": "0a7fdfbe3130e748b64a84c18e24552ca09c607e053c315abbcea5140e827006",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "sentinel_name": "文档42",
+  "sentinel_before": [
+    "文档42",
+    "文档42",
+    false,
+    "91c980886b777a0d584789657283e758aa0d971b2bed8d89139c3c015d849b74"
+  ],
+  "word_version": "16.112.3",
+  "preimage_sha256": "a9026498d86d7ff45c68780c8995d65c8d99bbc951de79865b42eb79655704dc",
+  "public_result": null,
+  "native_rows": [
+    [
+      "public-paragraph-rule",
+      "PARAGRAPH RULE 中文😀 — unrelated existing body \r",
+      "FOLLOWING\r",
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      6,
+      9,
+      12,
+      18
+    ]
+  ],
+  "primary_failure": "Traceback (most recent call last):\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_paragraph_rule.py\", line 175, in run\n    raise AssertionError('Public paragraph rule or inherited following format not verified')\nAssertionError: Public paragraph rule or inherited following format not verified\n",
+  "error": {
+    "type": "AssertionError",
+    "message": "Public paragraph rule or inherited following format not verified"
+  },
+  "sentinel_cleanup_attempted": true,
+  "inventory_after_owned_close": [
+    [
+      "文档42",
+      "文档42",
+      false,
+      "91c980886b777a0d584789657283e758aa0d971b2bed8d89139c3c015d849b74"
+    ]
+  ],
+  "sentinel_close": [
+    [
+      "sentinel-closed",
+      "文档42"
+    ]
+  ],
+  "sentinel_closed": true,
+  "inventory_after_sentinel_close": [],
+  "quarantined": false,
+  "recovery_targets": {
+    "sentinel_name": null,
+    "owned_document": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bxlqsg9d/document-e5491f34ff764c00b74f3460d1308aac.docx",
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-bxlqsg9d"
+  }
+}

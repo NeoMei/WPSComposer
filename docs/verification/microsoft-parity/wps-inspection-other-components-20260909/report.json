@@ -1,0 +1,19 @@
+{
+  "passed": false,
+  "components": {
+    "writer": {
+      "passed": true,
+      "source_sha256": "8f833cc22337bc7adbcc00a79c36cb6b77e94fa07d55330c51fa44c33ffa005a"
+    },
+    "sheet": {
+      "passed": false,
+      "error": "Timed out waiting for the WPS add-in to register"
+    }
+  },
+  "wps_pids_before": [
+    15087
+  ],
+  "wps_pids_after": [
+    15087
+  ]
+}

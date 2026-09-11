@@ -1,0 +1,32 @@
+{
+  "scope": "Exact-source OOXML readback explains source paragraph direct overrides; no fresh proof",
+  "source_sha256": "52d724bb135c5f1cf7e4d4d41472341010a8e6e8b91cca4a17d13a4c75e63c39",
+  "document_xml_sha256": "79192a05b6de8597c934ec76a684d0bd6d519787e7f3a8b2fd0b4039746cf86a",
+  "paragraphs": [
+    {
+      "paragraph": 1,
+      "run_font_overrides": [
+        {
+          "text": "العربية",
+          "fonts": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ascii": "Times New Roman",
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hAnsi": "Times New Roman",
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}cs": "Times New Roman"
+          }
+        },
+        {
+          "text": "😀",
+          "fonts": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ascii": "Apple Color Emoji",
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}hAnsi": "Apple Color Emoji",
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}cs": "Apple Color Emoji"
+          }
+        }
+      ]
+    },
+    {
+      "paragraph": 2,
+      "run_font_overrides": []
+    }
+  ]
+}

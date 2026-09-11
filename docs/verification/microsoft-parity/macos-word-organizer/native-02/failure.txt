@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py", line 90, in run
+    with open_document(input_path,engine='msoffice',visible=False) as donor:
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py", line 126, in open_document
+    return open_session(path, kind=_document_family(path, kind), read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_sessions.py", line 36, in open_session
+    return _session_class(kind).open_document(path, read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 184, in open_document
+    self._prepare()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 170, in _prepare
+    self.lock.acquire(self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_runtime.py", line 74, in acquire
+    raise NativeWordError('NATIVE_WORD_QUARANTINED', quarantine_path=self.quarantine_path)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word cleanup is unverified; task files are retained and recovery is required. quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine

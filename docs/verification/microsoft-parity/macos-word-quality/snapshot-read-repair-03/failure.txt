@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-03/probe.py", line 91, in <module>
+    story=read_block('story-availability-and-chain',story_lines+['set probeRows to qualityLayout'])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-03/probe.py", line 47, in read_block
+    started=time.monotonic();step['rows']=s._execute(commands);step['seconds']=round(time.monotonic()-started,3);flush()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-03/probe.py", line 61, in <lambda>
+    s._execute=lambda lines,**kw:original_execute(q._guard(s)+list(lines),**kw)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 397, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=diagnostic)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-i1xklyz6/57727e82e6014861b4f168a7ac028bd8.log

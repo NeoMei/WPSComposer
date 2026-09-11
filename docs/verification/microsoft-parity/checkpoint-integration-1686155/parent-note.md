@@ -1,0 +1,1 @@
+The reviewer phrase "Six Partial capabilities" denotes the six approved plan tasks, not six rows of the unchanged 628-row capability baseline. The scoped verdict excludes the separately known Word run-02 failure.

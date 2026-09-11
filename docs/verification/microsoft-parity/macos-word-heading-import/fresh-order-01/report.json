@@ -1,0 +1,128 @@
+{
+  "status": "FAIL",
+  "scope": "Controlled fresh-order A/B diagnostic; no fresh appearance or public parity acceptance",
+  "font_owner_roles": {
+    "source": "existing style-only imported paragraph 2",
+    "clone": "new fresh paragraph 4"
+  },
+  "checks": {
+    "pinned_input": true,
+    "complete_input_clone": true,
+    "A_empty_inventory_before": true,
+    "A_exact_private_inventory": true,
+    "A_preimage_shape": true,
+    "A_private_input_identical": true,
+    "A_mutation_ack": true,
+    "A_all_style_definitions_preserved": false
+  },
+  "trials": {
+    "A": {
+      "status": "FAIL",
+      "open_journal": {
+        "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-import-02/after-import.docx",
+        "status": "acknowledged",
+        "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-d7losx45/document-bee1d907e4a44cb9b3a685ab0199b46f.docx"
+      },
+      "inventory_after_open": [
+        [
+          "document-bee1d907e4a44cb9b3a685ab0199b46f.docx",
+          "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-d7losx45/document-bee1d907e4a44cb9b3a685ab0199b46f.docx",
+          true,
+          "cf09a92a100e728215645171fd8a55ac23abbe897523bbb2b3c70c373c1b3e37"
+        ]
+      ],
+      "raw_rows": {
+        "preimage": [
+          [
+            "state",
+            true,
+            "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\r\r",
+            32,
+            66,
+            73,
+            74,
+            4,
+            0,
+            0
+          ]
+        ],
+        "create_fresh": [
+          [
+            "stage",
+            true
+          ]
+        ]
+      },
+      "expected_text": "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rSUFFIX\rFRESH STYLE 中文 العربية 😀\r\r",
+      "native_saved_path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/fresh-order-01/A-fresh.docx",
+      "native_saved_sha256": "da2b9e295eb8c3126c881e77cfb1f1e5f34de51b98f76088ab96c860c59490ab",
+      "fresh_xml": {
+        "unique": true,
+        "pPr_xml": [
+          "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"WPSCHeadingClone\" /></ns0:pPr>"
+        ],
+        "runs": [
+          {
+            "text": "FRESH STYLE ",
+            "rPr_xml": ""
+          },
+          {
+            "text": "中文",
+            "rPr_xml": ""
+          },
+          {
+            "text": " العربية ",
+            "rPr_xml": ""
+          },
+          {
+            "text": "😀",
+            "rPr_xml": "<ns0:rPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:rFonts ns0:ascii=\"Apple Color Emoji\" ns0:hAnsi=\"Apple Color Emoji\" ns0:cs=\"Apple Color Emoji\" /></ns0:rPr>"
+          }
+        ]
+      },
+      "reference_imported_xml": {
+        "unique": true,
+        "pPr_xml": [
+          "<ns0:pPr xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><ns0:pStyle ns0:val=\"WPSCHeadingClone\" /></ns0:pPr>"
+        ],
+        "runs": [
+          {
+            "text": "IMPORTED APPEARANCE ",
+            "rPr_xml": ""
+          },
+          {
+            "text": "中文",
+            "rPr_xml": ""
+          },
+          {
+            "text": " العربية 😀",
+            "rPr_xml": ""
+          }
+        ]
+      },
+      "fresh_style_only_xml": false
+    }
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/fresh-order-diagnostic.py": "9d0f0ad38b9b8a032de9ff272fdcf60dddd5dcd6afd2660067434a3f3cda7fa1",
+    "build/word-heading-import-20260910/test_fresh_order_diagnostic.py": "b1c275de3135344ed0cf9a9032c31d374674b06189f8a3c7699256a6d7b0aa9d",
+    "build/word-heading-import-20260910/font-anchor-read-diagnostic.py": "8a5824e7ecf47c5e9c16e3b96decdeb9ef093b84efad7b787c869c50f57d558a",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "current_phase": "A_create_fresh",
+  "error": {
+    "type": "AssertionError",
+    "message": "Fresh-order diagnostic failed: A_all_style_definitions_preserved"
+  }
+}

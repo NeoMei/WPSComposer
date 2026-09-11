@@ -1,0 +1,14 @@
+[
+  {
+    "case": "A-convert-noncollapsed",
+    "exit_code": 0,
+    "sha256": "7891f3d33ca47e7cb9a5af4f5d3ac7e37d84792acd7a3557df2ada5d15a76426",
+    "identical_to_approved_preparation": true
+  },
+  {
+    "case": "B-convert-collapsed",
+    "exit_code": 0,
+    "sha256": "3b638478892a585e46c7ae056b317419d05cdf07dd758e9ca755155e1f34d246",
+    "identical_to_approved_preparation": true
+  }
+]

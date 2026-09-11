@@ -1,0 +1,33 @@
+--- source/word/document.xml
++++ restored/word/document.xml
+@@ -5,7 +5,7 @@
+         <w:t>HEAD</w:t>
+       </w:r>
+     </w:p>
+-    <w:p w14:paraId="4B35C9A4" w14:textId="77777777" w:rsidR="004573E4" w:rsidRDefault="004573E4" w:rsidP="004573E4">
++    <w:p w14:paraId="4B35C9A4" w14:textId="181A8598" w:rsidR="004573E4" w:rsidRDefault="004573E4" w:rsidP="007332F2">
+       <w:pPr>
+         <w:spacing w:before="220" w:after="140" w:line="420" w:lineRule="exact"/>
+         <w:ind w:left="60" w:right="100" w:firstLine="340"/>
+@@ -15,17 +15,19 @@
+         <w:t xml:space="preserve">left </w:t>
+       </w:r>
+       <w:bookmarkStart w:id="0" w:name="figure_probe_target"/>
+-      <w:r w:rsidRPr="004573E4">
++      <w:r w:rsidR="007332F2" w:rsidRPr="007332F2">
+         <w:rPr>
+           <w:i/>
++          <w:noProof/>
+           <w:sz w:val="28"/>
+         </w:rPr>
+         <w:t>REPLACE-长</w:t>
+       </w:r>
+-      <w:r w:rsidRPr="004573E4">
++      <w:r w:rsidR="007332F2" w:rsidRPr="007332F2">
+         <w:rPr>
+           <w:rFonts w:ascii="Apple Color Emoji" w:hAnsi="Apple Color Emoji" w:cs="Apple Color Emoji"/>
+           <w:i/>
++          <w:noProof/>
+           <w:sz w:val="28"/>
+         </w:rPr>
+         <w:t>😀</w:t>

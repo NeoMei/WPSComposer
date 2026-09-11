@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "date": "2026-09-09",
+  "engine": "msoffice",
+  "platform": "darwin",
+  "component": "presentation",
+  "scope": "UI editability of existing native title; not full capability certification",
+  "checks": {
+    "existing_title_replaced_by_typed_marker": true,
+    "undo_restored_title": true,
+    "explicit_keyboard_save": true,
+    "close_UI_reopen_exact_file": true,
+    "reopened_five_slides_original_title": true,
+    "saved_slide_texts_and_shape_counts_match_native_source": true,
+    "exact_test_copy_closed": true
+  },
+  "sha256": "0a2de8cf3f0d136522ae53eaa11588337d5128627fd32d346f6633773f575d67",
+  "source_sha256": "cdb6b88cb98ce2d419286032ed8cb1aa34b94b2be51e416695546cb45a874312",
+  "evidence": "Current task CUA history; native title text changed to UI_PARITY_EDIT_20260909 then Undo, Cmd+S, Cmd+W, local full-path UI reopen and close.",
+  "notes": [
+    "First AX-based double click created an extra textbox; both insertion and typing were fully undone before the successful existing-title test. Saved slide shape counts independently match original.",
+    "Original unsaved synthetic sentinel presentation was left open."
+  ]
+}

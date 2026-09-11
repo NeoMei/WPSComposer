@@ -327,3 +327,17 @@ class TestHeadingNumberingSchema:
         }
         with pytest.raises(OperationPlanError, match="unknown argument"):
             validate_generation_plan(raw, "writer")
+
+
+def test_section_margins_validate_nested_closed_schema():
+    margins = dict(top=36, bottom=42, left=48, right=48)
+    raw = _v2_plan({'op': 'writer.configure_section', 'nodeId': 'sec:body', 'args': {'margins': margins}})
+    assert dict(validate_generation_plan(raw, 'writer').operations[0].args['margins']) == margins
+
+
+@pytest.mark.parametrize('margins', [None, 5, {'top': 30},
+    dict(top=30, bottom=30, left=30, right=30, typo=3),
+    dict(top=True, bottom=30, left=30, right=30)])
+def test_section_margins_reject_invalid_nested_values(margins):
+    with pytest.raises(OperationPlanError):
+        validate_generation_plan(_v2_plan({'op': 'writer.configure_section', 'nodeId': 'sec:body', 'args': {'margins': margins}}), 'writer')

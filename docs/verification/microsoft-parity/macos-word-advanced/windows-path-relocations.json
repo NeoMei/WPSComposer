@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "reason": "Windows Git checkout rejects colon characters in retained runtime image filenames. Only stored evidence paths changed; bytes and historical scripts, logs, and reports remain unchanged.",
+  "original_git_commit": "34a0658e38c6d5a73a7066df7f49f73b53aceb39",
+  "paths_relative_to": "repository root",
+  "files": [
+    {
+      "original_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/wpsc-rsrc:K9qCW0iohe-tx8yQ.png",
+      "stored_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/wpsc-rsrc-K9qCW0iohe-tx8yQ.png",
+      "original_runtime_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-bbqgljv6/wpsc-rsrc:K9qCW0iohe-tx8yQ.png",
+      "sha256": "fafd85981d01cebf83bb414b164f31fe2fa7daddddbcf0c70d178afdd0c45452",
+      "size_bytes": 406,
+      "unchanged_historical_references": [
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/compiled.applescript",
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/operation-783fd3114fd94e4ea81d3e6a2f92cd47.applescript"
+      ]
+    },
+    {
+      "original_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/wpsc-rsrc:QNP5Ulby7mHPtP88.png",
+      "stored_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/wpsc-rsrc-QNP5Ulby7mHPtP88.png",
+      "original_runtime_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-bbqgljv6/wpsc-rsrc:QNP5Ulby7mHPtP88.png",
+      "sha256": "712da9de59a1cb8252556ae78d53e41250f8a4ac59b11a5133e6a0e6c8891217",
+      "size_bytes": 407,
+      "unchanged_historical_references": [
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/compiled.applescript",
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/operation-783fd3114fd94e4ea81d3e6a2f92cd47.applescript"
+      ]
+    },
+    {
+      "original_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/wpsc-rsrc:K9qCW0iohe-tx8yQ.png",
+      "stored_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/wpsc-rsrc-K9qCW0iohe-tx8yQ.png",
+      "original_runtime_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-aj4dmxvd/wpsc-rsrc:K9qCW0iohe-tx8yQ.png",
+      "sha256": "fafd85981d01cebf83bb414b164f31fe2fa7daddddbcf0c70d178afdd0c45452",
+      "size_bytes": 406,
+      "unchanged_historical_references": [
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/compiled.applescript",
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/operation-18fb61f97cd1477aaa6ecb12d329d803.applescript"
+      ]
+    },
+    {
+      "original_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/wpsc-rsrc:QNP5Ulby7mHPtP88.png",
+      "stored_repository_path": "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/wpsc-rsrc-QNP5Ulby7mHPtP88.png",
+      "original_runtime_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-aj4dmxvd/wpsc-rsrc:QNP5Ulby7mHPtP88.png",
+      "sha256": "712da9de59a1cb8252556ae78d53e41250f8a4ac59b11a5133e6a0e6c8891217",
+      "size_bytes": 407,
+      "unchanged_historical_references": [
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/compiled.applescript",
+        "docs/verification/microsoft-parity/macos-word-advanced/integrated-03/runtime/operation-18fb61f97cd1477aaa6ecb12d329d803.applescript"
+      ]
+    }
+  ]
+}

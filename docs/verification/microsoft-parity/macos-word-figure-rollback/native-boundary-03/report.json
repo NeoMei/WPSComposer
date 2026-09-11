@@ -1,0 +1,146 @@
+{
+  "status": "FAIL",
+  "checks": {
+    "sources_unchanged": true,
+    "inventory_preserved": true
+  },
+  "scope": "build-only inline-picture rollback probe; no production method or capability enablement",
+  "source_hashes": {
+    "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py": "992e431b8a2409b2a0839e46e64c59cd39af3ebb16a84dbf14447a0b2d5b4248",
+    "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py": "c0767888eac96432853f8315790235d2736b7f06093ce7459b2031f25ba9028c",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c",
+    "build/word-figure-rollback-20260911/diagnose-boundary.py": "a806209aa09eb05229c0915d1e316c780c36a17deab2a8b39a1b689af2db05a1"
+  },
+  "inventory_before": [],
+  "current_step": "one-image-success-then-exact-rollback",
+  "source_preimage_rows": [
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "position_rows": [
+    [
+      "positioned",
+      true
+    ]
+  ],
+  "preimage_rows": [
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "sentinel_create_rows": [
+    [
+      "文档39"
+    ]
+  ],
+  "sentinel_name": "文档39",
+  "sentinel_before": [
+    "文档39",
+    "文档39",
+    false,
+    "e1edca38eda8c21b7214d53a9b07a7827f697b3485d0c51130fd9043a96cb876"
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7tfd40uw diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-7tfd40uw/a34e6a98513842d897c1ef1613288040.log"
+  },
+  "sentinel_closed": true,
+  "remaining_sentinel": null,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "figure-rollback-source.docx": "4a4793d2a6dcf9094c5cbaa6cd7cc6ece3c4c4be47b77882601e7b68038dee22",
+    "probe.png": "0719a9872a654ef694527c5fd8df6428238c6ae5e186da0e2741f0bdc30dbc11"
+  }
+}

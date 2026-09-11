@@ -1,0 +1,4 @@
+{"version":"6.16.0","query":"a=1,2,3,4","options":{"comma":true,"arrayLimit":3},"result":{"a":{"0":"1","1":"2","2":"3","3":"4"}}}
+{"version":"6.16.0","query":"a[]=1,2,3,4","options":{"comma":true,"arrayLimit":3},"result":{"a":[["1","2","3","4"]]}}
+{"query":"a=1,2,3,4","options":{"comma":true,"arrayLimit":3,"throwOnLimitExceeded":true},"error":"RangeError","message":"Array limit exceeded. Only 3 elements allowed in an array."}
+{"query":"a[]=1,2,3,4","options":{"comma":true,"arrayLimit":3,"throwOnLimitExceeded":true},"error":"RangeError","message":"Array limit exceeded. Only 3 elements allowed in an array."}

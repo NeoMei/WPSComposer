@@ -1,0 +1,63 @@
+✔ pane identity is ephemeral, unique, and retired explicitly (1.16575ms)
+✔ no secure randomness fails closed (0.189375ms)
+✔ requirement false/missing/error is distinct and never fabricated (0.383833ms)
+✔ nine gaps remain unproven and snapshot is not executed (0.580208ms)
+✔ saved flag and optional coordinates are acknowledged reads only (0.786041ms)
+✔ non-desktop and wrong host never call Word.run (0.2635ms)
+✔ false baseline and missing Word.run fail closed (0.148708ms)
+✔ unsupported desktop coordinates do not access range (0.167292ms)
+✔ sync failure exposes code but not message/document data (0.237333ms)
+✔ mistyped native saved value is not accepted (0.217167ms)
+✔ pane retirement rejects late read result and stale reuse (0.176583ms)
+✔ timeout retires pane; late resolution cannot become an ACK (5.907375ms)
+✔ one pending read per pane (0.270667ms)
+✔ no Office context remains explicitly unavailable (0.153208ms)
+✔ non-boolean requirement result remains invalid rather than true (0.090667ms)
+✔ readOnly mode is reported without declaring protection semantics (0.118458ms)
+✔ invalid range scalar causes error rather than acceptance (0.161ms)
+✖ gap keys match the frozen nine-method contract exactly (0.934834ms)
+✔ initialization never auto-submits a document read (4.334625ms)
+✔ wrong host has no enabled document read (0.856833ms)
+✔ pagehide retires pane and rejects further read clicks (0.635916ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 62.334375
+
+✖ failing tests:
+
+test at tests/probe.test.cjs:70:1
+✖ gap keys match the frozen nine-method contract exactly (0.934834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'add_captioned_figure_fallback',
+      'add_captioned_figure_native',
+  +   'add_equation_fallback',
+      'add_equation_native',
+  -   'add_equation_native_fallback',
+      'add_heading_level_native',
+      'add_horizontal_line',
+      'add_semantic_table_fallback',
+      'add_semantic_table_native',
+      'add_wordart'
+  
+      at TestContext.<anonymous> (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/.superpowers/sdd/2026-09-08-microsoft-wps-parity/officejs-word-probe-prepared/tests/probe.test.cjs:71:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'add_captioned_figure_fallback', 'add_captioned_figure_native', 'add_equation_fallback', 'add_equation_native', 'add_heading_level_native', 'add_horizontal_line', 'add_semantic_table_fallback', 'add_semantic_table_native', 'add_wordart' ],
+    expected: [ 'add_captioned_figure_fallback', 'add_captioned_figure_native', 'add_equation_native', 'add_equation_native_fallback', 'add_heading_level_native', 'add_horizontal_line', 'add_semantic_table_fallback', 'add_semantic_table_native', 'add_wordart' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

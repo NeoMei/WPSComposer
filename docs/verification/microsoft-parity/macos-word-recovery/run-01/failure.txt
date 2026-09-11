@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_recovery.py", line 75, in main
+    session.add_heading('Chapter',level=1)
+TypeError: add_heading() got an unexpected keyword argument 'level'

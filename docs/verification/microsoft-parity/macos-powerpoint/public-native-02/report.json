@@ -1,0 +1,21 @@
+{
+  "source_sha256": "abc0b77f50b48d75524f1f40ab1a3250d01064528a7ae3df9f2fa5cd816bd5c1",
+  "calls": [
+    {
+      "generate": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/public-native-02/public.pptx"
+    },
+    {
+      "convert": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/public-native-02/public.pdf"
+    }
+  ],
+  "pptx_sha256_before_conversion": "5ae678e65346db625589f30d9b0e1eeff3880a25871825968a7a901e0681dfde",
+  "pptx_sha256_after_conversion": "5ae678e65346db625589f30d9b0e1eeff3880a25871825968a7a901e0681dfde",
+  "source_preserved": true,
+  "pdf_pages": 3,
+  "pdf_text": [
+    "Public PowerPoint parity\n",
+    "Native editable content\n• Alpha bullet\n• Beta 中⽂\n",
+    "Native table\nName\nValue\nNative\n42\n"
+  ],
+  "status": "PASS"
+}

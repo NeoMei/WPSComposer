@@ -1,0 +1,50 @@
+{
+  "baseline_rows": 628,
+  "platform_gates": 1256,
+  "scope": "Static directly declared method names only; no implementation, argument support or native-certification claim",
+  "components": {
+    "writer": {
+      "source": "skills/WPSComposer/scripts/msoffice/macos_word_session.py",
+      "sha256": "39129d22315eb5701dde8f1f5cfe305de404d07ce538d10d44b2fa1f562d502a",
+      "required": 80,
+      "declared": 59,
+      "not_directly_declared": [
+        "add_captioned_figure_fallback",
+        "add_captioned_figure_native",
+        "add_degradation_notice",
+        "add_document_quality_notice",
+        "add_equation_native",
+        "add_equation_native_fallback",
+        "add_equation_number_native",
+        "add_heading_level_native",
+        "add_horizontal_line",
+        "add_inline_degradation",
+        "add_paragraph_horizontal_line",
+        "add_quality_notice_at_bookmark",
+        "add_semantic_table_fallback",
+        "add_semantic_table_native",
+        "add_wordart",
+        "degradation_checkpoint",
+        "pagination_fragment_for_bookmark",
+        "pagination_map_for_ranges",
+        "reserve_document_quality_anchor",
+        "rollback_degradation_checkpoint",
+        "upsert_document_quality_notice"
+      ]
+    },
+    "spreadsheet": {
+      "source": "skills/WPSComposer/scripts/msoffice/macos_excel_session.py",
+      "sha256": "a052c08efd2fb68b1f1812edc91609fc89424a9570321b2b89e3f9aafa6c2b3b",
+      "required": 24,
+      "declared": 24,
+      "not_directly_declared": []
+    },
+    "presentation": {
+      "source": "skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py",
+      "sha256": "adb8fc126b08a61eb000248555f1fed78a23497787ee663c52e203dddee75c56",
+      "required": 21,
+      "declared": 21,
+      "not_directly_declared": []
+    }
+  }
+}

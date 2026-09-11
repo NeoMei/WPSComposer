@@ -1,0 +1,192 @@
+﻿2026-09-09T08:59:40.1412872Z Current runner version: '2.337.0'
+2026-09-09T08:59:40.1441213Z ##[group]Runner Image Provisioner
+2026-09-09T08:59:40.1442024Z Hosted Compute Agent
+2026-09-09T08:59:40.1442547Z Version: 20260828.587
+2026-09-09T08:59:40.1443149Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-09T08:59:40.1443826Z Build Date: 2026-08-28T16:44:25Z
+2026-09-09T08:59:40.1444463Z Worker ID: {ccf7735c-3463-4b8c-b89e-e95d3bd44593}
+2026-09-09T08:59:40.1445137Z Azure Region: eastus
+2026-09-09T08:59:40.1445655Z ##[endgroup]
+2026-09-09T08:59:40.1446982Z ##[group]Operating System
+2026-09-09T08:59:40.1447619Z Microsoft Windows Server 2022
+2026-09-09T08:59:40.1448173Z 10.0.20348
+2026-09-09T08:59:40.1448696Z Datacenter
+2026-09-09T08:59:40.1449183Z ##[endgroup]
+2026-09-09T08:59:40.1449672Z ##[group]Runner Image
+2026-09-09T08:59:40.1450200Z Image: windows-2022
+2026-09-09T08:59:40.1450704Z Version: 20260830.290.1
+2026-09-09T08:59:40.1452359Z Included Software: https://github.com/actions/runner-images/blob/win22/20260830.290/images/windows/Windows2022-Readme.md
+2026-09-09T08:59:40.1454299Z Image Release: https://github.com/actions/runner-images/releases/tag/win22%2F20260830.290
+2026-09-09T08:59:40.1455293Z ##[endgroup]
+2026-09-09T08:59:40.1456432Z ##[group]GITHUB_TOKEN Permissions
+2026-09-09T08:59:40.1458344Z Contents: read
+2026-09-09T08:59:40.1458965Z Metadata: read
+2026-09-09T08:59:40.1459519Z ##[endgroup]
+2026-09-09T08:59:40.1462086Z Secret source: Actions
+2026-09-09T08:59:40.1463403Z Prepare workflow directory
+2026-09-09T08:59:40.1875593Z Prepare all required actions
+2026-09-09T08:59:40.1921995Z Getting action download info
+2026-09-09T08:59:40.3947463Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-09-09T08:59:40.5203134Z Download action repository 'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97' (SHA:5fda3b95a4ea91299a34e894583c3862153e4b97)
+2026-09-09T08:59:40.7084613Z Download action repository 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' (SHA:820762786026740c76f36085b0efc47a31fe5020)
+2026-09-09T08:59:40.8733472Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-09-09T08:59:41.1501995Z Complete job name: windows-2022 / Python 3.12
+2026-09-09T08:59:41.3521046Z ##[group]Run git config --global core.autocrlf false
+2026-09-09T08:59:41.3522471Z [36;1mgit config --global core.autocrlf false[0m
+2026-09-09T08:59:41.3541931Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-09T08:59:41.3543588Z env:
+2026-09-09T08:59:41.3544264Z   PYTHONUTF8: 1
+2026-09-09T08:59:41.3545021Z   PYTHONIOENCODING: utf-8
+2026-09-09T08:59:41.3545825Z ##[endgroup]
+2026-09-09T08:59:42.4449981Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-09-09T08:59:42.4450692Z with:
+2026-09-09T08:59:42.4451065Z   fetch-depth: 0
+2026-09-09T08:59:42.4451477Z   persist-credentials: false
+2026-09-09T08:59:42.4451932Z   repository: NeoMei/WPSComposer
+2026-09-09T08:59:42.4454706Z   token: ***
+2026-09-09T08:59:42.4455081Z   ssh-strict: true
+2026-09-09T08:59:42.4455456Z   ssh-user: git
+2026-09-09T08:59:42.4455806Z   clean: true
+2026-09-09T08:59:42.4456176Z   sparse-checkout-cone-mode: true
+2026-09-09T08:59:42.4456589Z   fetch-tags: false
+2026-09-09T08:59:42.4456946Z   show-progress: true
+2026-09-09T08:59:42.4457310Z   lfs: false
+2026-09-09T08:59:42.4457646Z   submodules: false
+2026-09-09T08:59:42.4458016Z   set-safe-directory: true
+2026-09-09T08:59:42.4458418Z   allow-unsafe-pr-checkout: false
+2026-09-09T08:59:42.4458813Z env:
+2026-09-09T08:59:42.4459200Z   PYTHONUTF8: 1
+2026-09-09T08:59:42.4459559Z   PYTHONIOENCODING: utf-8
+2026-09-09T08:59:42.4459971Z ##[endgroup]
+2026-09-09T08:59:42.5768907Z Syncing repository: NeoMei/WPSComposer
+2026-09-09T08:59:42.5770523Z ##[group]Getting Git version info
+2026-09-09T08:59:42.5771188Z Working directory is 'D:\a\WPSComposer\WPSComposer'
+2026-09-09T08:59:42.6692326Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-09T08:59:42.6963890Z git version 2.55.0.windows.5
+2026-09-09T08:59:42.6998619Z ##[endgroup]
+2026-09-09T08:59:42.7007763Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\3b94d9e5-ef7c-438d-bdd6-5654be42a1b3\.gitconfig'
+2026-09-09T08:59:42.7026079Z Temporarily overriding HOME='D:\a\_temp\3b94d9e5-ef7c-438d-bdd6-5654be42a1b3' before making global git config changes
+2026-09-09T08:59:42.7027694Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T08:59:42.7036833Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\WPSComposer\WPSComposer
+2026-09-09T08:59:42.7249602Z Deleting the contents of 'D:\a\WPSComposer\WPSComposer'
+2026-09-09T08:59:42.7253474Z ##[group]Determining repository object format
+2026-09-09T08:59:42.7255686Z ##[endgroup]
+2026-09-09T08:59:42.7256882Z ##[group]Initializing the repository
+2026-09-09T08:59:42.7264826Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\WPSComposer\WPSComposer
+2026-09-09T08:59:42.8028195Z Initialized empty Git repository in D:/a/WPSComposer/WPSComposer/.git/
+2026-09-09T08:59:42.8060381Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/NeoMei/WPSComposer
+2026-09-09T08:59:42.8523458Z ##[endgroup]
+2026-09-09T08:59:42.8524590Z ##[group]Disabling automatic garbage collection
+2026-09-09T08:59:42.8536621Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-09T08:59:42.8813761Z ##[endgroup]
+2026-09-09T08:59:42.8814854Z ##[group]Setting up auth
+2026-09-09T08:59:42.8815652Z Removing SSH command configuration
+2026-09-09T08:59:42.8829872Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T08:59:42.9042937Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-09T08:59:44.1311255Z Removing HTTP extra header
+2026-09-09T08:59:44.1320984Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T08:59:44.1548693Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-09T08:59:44.5811367Z Removing includeIf entries pointing to credentials config files
+2026-09-09T08:59:44.5826821Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T08:59:44.6047428Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-09T08:59:45.0040593Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-09T08:59:45.0271469Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/WPSComposer/WPSComposer/.git.path D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:45.0488231Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/WPSComposer/WPSComposer/.git/worktrees/*.path D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:45.0769044Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:45.1013346Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:45.1241033Z ##[endgroup]
+2026-09-09T08:59:45.1241417Z ##[group]Fetching the repository
+2026-09-09T08:59:45.1252222Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +49f7291d7e189cae2ca01246959d4c1cbf4151a0:refs/remotes/pull/9/merge
+2026-09-09T08:59:47.2695143Z From https://github.com/NeoMei/WPSComposer
+2026-09-09T08:59:47.2696494Z  * [new branch]      agent/wpscomposer-comprehensive-hardening -> origin/agent/wpscomposer-comprehensive-hardening
+2026-09-09T08:59:47.2697722Z  * [new branch]      codex/longform-m0                        -> origin/codex/longform-m0
+2026-09-09T08:59:47.2698632Z  * [new branch]      codex/longform-m1                        -> origin/codex/longform-m1
+2026-09-09T08:59:47.2699494Z  * [new branch]      codex/longform-m3                        -> origin/codex/longform-m3
+2026-09-09T08:59:47.2700469Z  * [new branch]      codex/microsoft-parity                   -> origin/codex/microsoft-parity
+2026-09-09T08:59:47.2701890Z  * [new branch]      codex/msoffice-native-spike              -> origin/codex/msoffice-native-spike
+2026-09-09T08:59:47.2703101Z  * [new branch]      codex/msoffice-production                -> origin/codex/msoffice-production
+2026-09-09T08:59:47.2704302Z  * [new branch]      codex/windows-word-production-evidence   -> origin/codex/windows-word-production-evidence
+2026-09-09T08:59:47.2705545Z  * [new branch]      codex/windows-word-spike-evidence        -> origin/codex/windows-word-spike-evidence
+2026-09-09T08:59:47.2706810Z  * [new branch]      codex/windows-word-spike-review          -> origin/codex/windows-word-spike-review
+2026-09-09T08:59:47.2708048Z  * [new branch]      codex/wps-task-session-startup           -> origin/codex/wps-task-session-startup
+2026-09-09T08:59:47.2709151Z  * [new branch]      macos-jsapi-phase0                       -> origin/macos-jsapi-phase0
+2026-09-09T08:59:47.2710081Z  * [new branch]      master                                   -> origin/master
+2026-09-09T08:59:47.2710778Z  * [new tag]         v0.5.0                                   -> v0.5.0
+2026-09-09T08:59:47.2711450Z  * [new tag]         v0.8.0                                   -> v0.8.0
+2026-09-09T08:59:47.2712200Z  * [new tag]         v0.8.1                                   -> v0.8.1
+2026-09-09T08:59:47.2712851Z  * [new tag]         v0.9.0                                   -> v0.9.0
+2026-09-09T08:59:47.2713593Z  * [new ref]         49f7291d7e189cae2ca01246959d4c1cbf4151a0 -> pull/9/merge
+2026-09-09T08:59:47.2730235Z ##[endgroup]
+2026-09-09T08:59:47.2731170Z ##[group]Determining the checkout info
+2026-09-09T08:59:47.2732036Z ##[endgroup]
+2026-09-09T08:59:47.2741612Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-09T08:59:47.3162911Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-09T08:59:47.3388130Z ##[group]Checking out the ref
+2026-09-09T08:59:47.3395867Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/9/merge
+2026-09-09T08:59:47.3801076Z ##[error]error: invalid path 'docs/verification/microsoft-parity/macos-word-advanced/integrated-02/runtime/wpsc-rsrc:K9qCW0iohe-tx8yQ.png'
+2026-09-09T08:59:47.3808889Z ##[group]Removing auth
+2026-09-09T08:59:47.3809149Z Removing SSH command configuration
+2026-09-09T08:59:47.3814493Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T08:59:47.4037090Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-09T08:59:47.8063813Z Removing HTTP extra header
+2026-09-09T08:59:47.8072108Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T08:59:47.8305061Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-09T08:59:48.3192019Z Removing includeIf entries pointing to credentials config files
+2026-09-09T08:59:48.3200343Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T08:59:48.3399120Z includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git.path
+2026-09-09T08:59:48.3400595Z includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git/worktrees/*.path
+2026-09-09T08:59:48.3401784Z includeif.gitdir:/github/workspace/.git.path
+2026-09-09T08:59:48.3402523Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-09T08:59:48.3429744Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git.path
+2026-09-09T08:59:48.3631163Z D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:48.3661594Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git.path D\:\\a\\_temp\\git\-credentials\-17c54df1\-fa6f\-4465\-a233\-5b20d46fa184\.config
+2026-09-09T08:59:48.3879749Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git/worktrees/*.path
+2026-09-09T08:59:48.4068745Z D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:48.4096794Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/WPSComposer/WPSComposer/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-17c54df1\-fa6f\-4465\-a233\-5b20d46fa184\.config
+2026-09-09T08:59:48.4310877Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-09T08:59:48.4494358Z /github/runner_temp/git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:48.4521802Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-17c54df1\-fa6f\-4465\-a233\-5b20d46fa184\.config
+2026-09-09T08:59:48.4768033Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-09T08:59:48.4953756Z /github/runner_temp/git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config
+2026-09-09T08:59:48.4982773Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-17c54df1\-fa6f\-4465\-a233\-5b20d46fa184\.config
+2026-09-09T08:59:48.5206653Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-09T08:59:48.9415755Z Removing credentials config 'D:\a\_temp\git-credentials-17c54df1-fa6f-4465-a233-5b20d46fa184.config'
+2026-09-09T08:59:48.9426438Z ##[endgroup]
+2026-09-09T08:59:48.9449842Z ##[error]The process 'C:\Program Files\Git\bin\git.exe' failed with exit code 128
+2026-09-09T08:59:48.9770941Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-09-09T08:59:48.9771542Z with:
+2026-09-09T08:59:48.9771814Z   name: pytest-windows-2022-python-3.12
+2026-09-09T08:59:48.9772268Z   path: test-results/pytest.log
+test-results/pytest.xml
+
+2026-09-09T08:59:48.9772677Z   if-no-files-found: warn
+2026-09-09T08:59:48.9772945Z   retention-days: 14
+2026-09-09T08:59:48.9773196Z   compression-level: 6
+2026-09-09T08:59:48.9773452Z   overwrite: false
+2026-09-09T08:59:48.9773700Z   include-hidden-files: false
+2026-09-09T08:59:48.9773982Z   archive: true
+2026-09-09T08:59:48.9774197Z env:
+2026-09-09T08:59:48.9774393Z   PYTHONUTF8: 1
+2026-09-09T08:59:48.9774634Z   PYTHONIOENCODING: utf-8
+2026-09-09T08:59:48.9775129Z ##[endgroup]
+2026-09-09T08:59:49.1419974Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-09-09T08:59:49.1423407Z The least common ancestor is D:\a\WPSComposer\WPSComposer\test-results. This will be the root directory of the artifact
+2026-09-09T08:59:49.1427909Z ##[warning]No files were found with the provided path: test-results/pytest.log
+test-results/pytest.xml. No artifacts will be uploaded.
+2026-09-09T08:59:49.1711674Z Post job cleanup.
+2026-09-09T08:59:49.3565057Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-09T08:59:49.3777816Z git version 2.55.0.windows.5
+2026-09-09T08:59:49.3824855Z Copying 'C:\Users\runneradmin\.gitconfig' to 'D:\a\_temp\0099f0c2-f1de-4442-8f85-b99d5ba679c8\.gitconfig'
+2026-09-09T08:59:49.3843962Z Temporarily overriding HOME='D:\a\_temp\0099f0c2-f1de-4442-8f85-b99d5ba679c8' before making global git config changes
+2026-09-09T08:59:49.3845225Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-09T08:59:49.3855342Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\WPSComposer\WPSComposer
+2026-09-09T08:59:49.4073741Z Removing SSH command configuration
+2026-09-09T08:59:49.4083137Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-09T08:59:49.4300155Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-09T08:59:49.8708378Z Removing HTTP extra header
+2026-09-09T08:59:49.8722224Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-09T08:59:49.9004250Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-09T08:59:50.3829920Z Removing includeIf entries pointing to credentials config files
+2026-09-09T08:59:50.3840316Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-09T08:59:50.4056242Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-09T08:59:50.8546798Z Cleaning up orphan processes

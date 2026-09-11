@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "checks": {
+    "source_bytes_unchanged": true,
+    "ui_file_bytes_unchanged_after_save_close_reopen": true,
+    "word/document.xml_unchanged": true,
+    "word/styles.xml_unchanged": true,
+    "word/numbering.xml_unchanged": true,
+    "final_inventory_empty": true
+  },
+  "source_sha256": "916ec6b379b179a8a11cca9c9d5c0d5aec076b281259e21b46dd27130513c3f6",
+  "ui_target_sha256": "916ec6b379b179a8a11cca9c9d5c0d5aec076b281259e21b46dd27130513c3f6",
+  "ui_steps": [
+    "Opened separate numbering-ui.docx copy in Microsoft Word; AX URL confirmed exact path",
+    "Selected existing x=1 via AX and typed x=2; AX showed replacement and native SEQ/STYLEREF/REF preserved",
+    "Clicked Undo typing; AX restored x=1",
+    "Clicked explicit Save and close; Word returned to Recent documents",
+    "Selected numbering-ui exact build path in Recent then Open; AX URL and x=1/native field values verified",
+    "Clicked reopened document close; independent native inventory empty"
+  ],
+  "ui_field_results": [
+    "1",
+    "1-1",
+    "2"
+  ],
+  "inventory_final": [],
+  "scope": "Actual UI editing of formula text, Undo, save/close/exact-file reopen. No OMath editing or full parity claim."
+}

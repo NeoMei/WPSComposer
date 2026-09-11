@@ -1,0 +1,32 @@
+{
+  "clear.applescript": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "source_sha256": "a394f883ad8b687aadf09d8dba17aa4749861d06ef8229e176e17954cd2c3323"
+  },
+  "import.applescript": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "source_sha256": "1a273b1843bdbacfd84405992fb2af002ce04dbb0f89cfcc65f9f4b3a58d3a67"
+  },
+  "parent-setup.applescript": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "source_sha256": "c9da711f7916b0ec86bfb715dd6eb035147efc93f34e8a17b62372f8bffcc674"
+  },
+  "source-setup.applescript": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "source_sha256": "382200c6c0a5d293e497b7290b748ff0d9156261d4f285e1b1ec3b8a32c37e00"
+  },
+  "state.applescript": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "source_sha256": "40e07b02c89e051814d621a74f82b9d6aa640369268f7837cd1b570a0bcba223"
+  }
+}

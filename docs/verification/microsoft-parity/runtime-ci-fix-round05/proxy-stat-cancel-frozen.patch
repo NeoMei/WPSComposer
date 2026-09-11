@@ -1,0 +1,67 @@
+diff --git a/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py b/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py
+index 45f43df..f1b148e 100644
+--- a/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py
++++ b/skills/WPSComposer/scripts/msoffice/windows_session_proxy.py
+@@ -161,7 +161,9 @@ class _SessionProxy:
+         def evidenced(path, written):
+             try:
+                 return path if written and path.is_file() else None
+-            except OSError:
++            except BaseException:
++                # Optional evidence must not replace the primary failure, even
++                # when a second cancellation interrupts filesystem metadata.
+                 return None
+         locations = {'staging_path': self.staging_root,
+                      'diagnostic_path': evidenced(self.staging_root / 'recovery.json', self._recovery_written),
+diff --git a/tests/msoffice/test_windows_session_proxy_diagnostics.py b/tests/msoffice/test_windows_session_proxy_diagnostics.py
+index 513f0d6..85633dc 100644
+--- a/tests/msoffice/test_windows_session_proxy_diagnostics.py
++++ b/tests/msoffice/test_windows_session_proxy_diagnostics.py
+@@ -150,3 +150,47 @@ def test_cancel_during_close_is_not_replaced_with_quarantine_error(transport, mo
+     assert caught.value is primary
+     assert session._lock.quarantine_path.is_file()
+     assert session._lock.closed and children[0].poll() is not None
++
++
++@pytest.mark.parametrize('name,source,timeout_code', COMPONENTS)
++@pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
++@pytest.mark.parametrize('target', ['recovery', 'quarantine'])
++def test_timeout_survives_secondary_cancellation_in_evidence_lookup(
++    transport, monkeypatch, name, source, timeout_code, secondary_type, target,
++):
++    module, _, children = transport
++    session = getattr(module, name).open_document(source)
++    recovery = session.staging_root / 'recovery.json'
++    quarantine = session._lock.quarantine_path
++    failing_path = recovery if target == 'recovery' else quarantine
++    original_is_file = Path.is_file
++    secondary = secondary_type('secondary metadata cancellation')
++
++    def interrupted(path):
++        if path == failing_path:
++            raise secondary
++        return original_is_file(path)
++
++    def receive(*args, **kwargs):
++        raise queue.Empty()
++
++    monkeypatch.setattr(Path, 'is_file', interrupted)
++    monkeypatch.setattr(session._responses, 'get', receive)
++    with pytest.raises(BaseException) as caught:
++        session.inspect_document()
++    error = caught.value
++    assert isinstance(error, (module.NativeWordError, module.NativeOfficeError))
++    assert error.code == timeout_code
++    if name == 'ProxyWordSession':
++        assert isinstance(error, module.NativeWordTimeoutError)
++    assert error.diagnostic_path == (None if target == 'recovery' else str(recovery))
++    assert error.quarantine_path == (None if target == 'quarantine' else str(quarantine))
++    assert session._uncertain and session._lock.closed
++    assert children[0].poll() is not None
++    assert original_is_file(recovery) and original_is_file(quarantine)
++    with pytest.raises((module.NativeWordError, module.NativeOfficeError)) as later:
++        session.inspect_document()
++    assert later.value.code == timeout_code.replace('TIMEOUT', 'QUARANTINED')
++    with pytest.raises(RuntimeError, match='quarantined'):
++        getattr(module, name).open_document(source)
++    assert len(children) == 1

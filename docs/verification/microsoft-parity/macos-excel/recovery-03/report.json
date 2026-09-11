@@ -1,0 +1,7 @@
+{
+  "status": 0,
+  "elapsed": 1.128279458,
+  "native_sha256_before": "a5b845707aa95e52fd871f0f7e94ad7884451499b070bdfd5d47d8789002efcf",
+  "native_sha256_after": "a5b845707aa95e52fd871f0f7e94ad7884451499b070bdfd5d47d8789002efcf",
+  "permission_recovery": "Parent UI observed per-directory Grant File Access dialog for run-03; bounded folder selection; refreshed UI showed dialog gone; native XLSX now exists. Original run-03 report unchanged."
+}

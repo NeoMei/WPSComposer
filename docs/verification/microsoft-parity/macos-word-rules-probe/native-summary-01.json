@@ -1,0 +1,51 @@
+{
+  "native_lease_released": true,
+  "native_stopped_after_wordart_connection_failure": true,
+  "user_documents_at_start": 0,
+  "post_error_inventory": [],
+  "wordart_sentinel_preservation": false,
+  "nondefault_wordart_attempted": false,
+  "cases": {
+    "inline": {
+      "status": "FAIL",
+      "report": "docs/verification/microsoft-parity/macos-word-rules-probe/run-01-inline/inline/report.json",
+      "report_sha256": "02d6472e9a8a109216715db86e8655252b30917345416d15f121a77bf56859a4",
+      "initial_inventory": [],
+      "final_inventory": [],
+      "interpretation": "Native make-new returned without error, but required inline-shape count delta failed (-2700); no inline native-object success and no DOCX/PDF produced. Static dictionary declaration cannot distinguish silent no-op from wrong collection/insertion targeting. No further native attempt."
+    },
+    "paragraph": {
+      "status": "PASS",
+      "report": "docs/verification/microsoft-parity/macos-word-rules-probe/run-02-paragraph/paragraph/report.json",
+      "report_sha256": "41c797e050b822c71cf948811de60dd54ba820f2856daf0fd6a7bceed2af34fe",
+      "initial_inventory": [],
+      "final_inventory": [],
+      "interpretation": "Native single .75pt C0C0C0 paragraph border, centered space, clean following paragraph passed direct and reopened readback plus persisted XML/PDF. Rendered page visually inspected: one silver horizontal line between RULES PROBE and FOLLOWING; no second line.",
+      "not_applicable_checks": [
+        "pdf_wordart_text"
+      ],
+      "exercised_checks": [
+        "native_readback",
+        "sentinel_unchanged",
+        "owned_closed",
+        "reopen_native_readback",
+        "source_preserved_after_reopen",
+        "persisted_native_xml",
+        "pdf_anchor_visible",
+        "pdf_object_visible",
+        "unrelated_inventory_preserved"
+      ]
+    },
+    "wordart": {
+      "status": "FAIL",
+      "report": "docs/verification/microsoft-parity/macos-word-rules-probe/run-03-wordart/wordart/report.json",
+      "report_sha256": "d5d15d96ae6f54e89204f48086ae628a9cfa45677035fbd7ceb92220c0b55142",
+      "initial_inventory": [],
+      "final_inventory": [],
+      "interpretation": "Native make-new raised -609 connection invalid at creation. Subsequent sentinel cleanup raised -1728; original and cleanup errors retained in failure.txt and failed-runtime. Word Error Reporting process at 13:25:31 and Word process at 13:25:32 support a crash/restart inference. Empty final inventory is cleanup state, NOT sentinel preservation. Runtime did not quarantine -609; no retry or nondefault probe.",
+      "primary_diagnostic": "wordart/failed-runtime/2f7f0d86e3274909b0b21a9134cdbb0a.log",
+      "cleanup_diagnostic": "wordart/failed-runtime/4d0662c892d74a31b1ebf4e40b44261f.log",
+      "unrelated_inventory_preserved_scope": "Comparison of preexisting empty inventory only; does not include synthetic sentinel survival, which failed."
+    }
+  }
+}

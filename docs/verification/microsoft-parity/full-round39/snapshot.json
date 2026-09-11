@@ -1,0 +1,12 @@
+{
+  "commit": "ed0da48783daaa47eb9389bfd722b86fd5f2d0ae",
+  "tree": "33cc7fc30bfb2ed819563aee8cac3e49b5e064fb",
+  "parent": "5622a1615e6fd22676a3aa410a393503dab57f91",
+  "checkout": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-full39-0lfiqn_k/checkout",
+  "evidence": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/full-round39",
+  "returncode": 0,
+  "elapsed_seconds": 220.891406083,
+  "source_count": 385,
+  "snapshot_unchanged": true,
+  "live_equal": true
+}

@@ -1,0 +1,12 @@
+{
+  "scope": "Two narrow snapshot getter repairs only",
+  "helper_sha256": "f3211eae27998d19e123894e54f620a3755c790cdbd23e6df66227151f37ff48",
+  "test_sha256": "b3713bbfd0e108a8e5025e85329ec1bc9ff9dbb749db62e3879b30d3942d8954",
+  "verdict": "PASS_SCOPED",
+  "review": "Parent independently inspected count command grouping and ordinal row retrieval; count and row payload conditions unchanged. Snapshot probe01 demonstrates grouping difference; probe02 table bound/hash/dimension/ordinal flag rows pass with stable body and saved state. This does not certify style snapshot or complete quality insertion.",
+  "verification": {
+    "passed": 97,
+    "deselected": 4,
+    "native_calls": false
+  }
+}

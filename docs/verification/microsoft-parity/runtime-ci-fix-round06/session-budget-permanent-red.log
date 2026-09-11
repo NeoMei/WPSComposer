@@ -1,0 +1,505 @@
+FFFFF.                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_real_worker_roundtrip_at_floating_point_budget_boundary[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-1558.546] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10a3914c0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a37e0d0>
+tick = 1558.546
+scenario = <function test_actual_worker_serve_subprocess_preserves_error_metadata_and_close at 0x10a0c99d0>
+
+    @pytest.mark.parametrize('tick', [1558.546, 424.005])
+    @pytest.mark.parametrize('scenario', [
+        test_actual_worker_serve_subprocess_preserves_error_metadata_and_close,
+        test_handles_roundtrip_real_worker_with_com_object_return_doubles,
+    ])
+    def test_real_worker_roundtrip_at_floating_point_budget_boundary(
+        transport, monkeypatch, tick, scenario,
+    ):
+        module, _, _ = transport
+        assert (tick + 600) - tick > 600
+        # Replace only the proxy clock; the actual worker retains its own clock.
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+>       scenario(transport, monkeypatch)
+
+tests/msoffice/test_windows_session_proxy.py:845: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_windows_session_proxy.py:667: in test_actual_worker_serve_subprocess_preserves_error_metadata_and_close
+    with m.ProxyWordSession.open_document('/source.docx') as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.windows_session_proxy.ProxyWordSession object at 0x10a5b4490>
+method = 'open_document', args = ['/source.docx']
+kwargs = {'read_only': False, 'visible': False}, acquired = True
+request = {'args': ['/source.docx'], 'deadline': 2158.5460000000003, 'id': 1, 'kind': 'writer', ...}
+raw = b'{"protocol":1,"id":1,"kind":"writer","method":"open_document","args":["/source.docx"],"kwargs":{"read_only":false,"visible":false},"deadline":2158.5460000000003,"remaining_seconds":600.0000000000002}\n'
+done = <queue.Queue object at 0x10a5b4d00>, written = None
+response = b'{"protocol":1,"id":1,"status":"error","error":{"type":"ValueError","message":"Invalid remaining session budget","code":null}}\n'
+result = {'error': {'code': None, 'message': 'Invalid remaining session budget', 'type': 'ValueError'}, 'id': 1, 'protocol': 1, 'status': 'error'}
+error = ValueError('Invalid remaining session budget')
+
+    def _call(self, method, *args, **kwargs):
+        if self._uncertain:
+            raise self._error('QUARANTINED')
+        if self._closed:
+            raise ValueError('Microsoft session is closed')
+        if method not in COMMON_METHODS | BUSINESS_METHODS[self.kind] | {'open_document', 'attach_active', 'new_document', 'get_property'}:
+            raise NotImplementedError('Native method has no value-only session contract')
+        # Validate arguments before a request number or native operation exists.
+        args = [_arguments(item, self) for item in args]
+        kwargs = _arguments(kwargs, self)
+        encode_frame({'args': args, 'kwargs': kwargs})
+        acquired = False
+        try:
+            acquired = self._serial.acquire(timeout=self._remaining())
+            if not acquired:
+                raise TimeoutError('Session request queue deadline expired')
+            self._remaining()
+            self._sequence += 1
+            request = {'protocol': PROTOCOL, 'id': self._sequence, 'kind': self.kind,
+                       'method': method, 'args': list(args), 'kwargs': kwargs,
+                       'deadline': self._deadline, 'remaining_seconds': self._remaining()}
+            raw = encode_frame(request)
+            self._last_request = request
+            (self.staging_root / 'last-request.json').write_bytes(raw)
+            done = queue.Queue(maxsize=1)
+            self._writer = threading.Thread(target=self._write_request, args=(raw, done), daemon=True)
+            self._writer.start()
+            written = done.get(timeout=self._remaining())
+            if isinstance(written, BaseException): raise written
+            response = self._responses.get(timeout=self._remaining())
+            if self._reader_error is not None: raise self._reader_error
+            if isinstance(response, BaseException): raise response
+            result = decode_frame(response)
+            if (not isinstance(result, dict) or type(result.get('protocol')) is not int or result.get('protocol') != PROTOCOL or
+                    type(result.get('id')) is not int or result['id'] != self._sequence or
+                    result.get('status') not in {'ok', 'error'}):
+                raise ValueError('Invalid session response envelope or sequence')
+            if 'identity' in result:
+                if not isinstance(result['identity'], dict): raise ValueError('Invalid Office identity report')
+                self._identity = result['identity']
+            self._remaining()
+            if result['status'] == 'error':
+                if method == 'close' and kwargs == {'save_changes': True}:
+                    if result.get('session_state') != 'open':
+                        raise ValueError(
+                            'Saving close error did not acknowledge an open session'
+                        )
+                elif 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                error = self._remote_error(result.get('error'))
+            else:
+                if 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                if 'value' not in result: raise ValueError('Missing session response value')
+                return _result(result['value'], self)
+        except (TimeoutError, queue.Empty):
+            self._abort('Native session request exceeded the total deadline')
+            raise self._error('TIMEOUT') from None
+        except BaseException as exc:
+            self._abort('Worker response or request completion could not be verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
+            raise self._error('QUARANTINED') from None
+        finally:
+            if acquired:
+                self._serial.release()
+        # A valid, completed native error remains catchable as its original
+        # public category; close still gets a bounded cleanup opportunity.
+        if isinstance(error, TimeoutError) or str(getattr(error, 'code', '')).endswith('_TIMEOUT'):
+            self._abort('Worker reported an expired native operation')
+            raise self._error('TIMEOUT')
+        if str(getattr(error, 'code', '')).endswith('_QUARANTINED'):
+            self._abort('Worker reported uncertain native cleanup')
+            raise self._error('QUARANTINED')
+>       raise error
+E       ValueError: Invalid remaining session budget
+
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: ValueError
+_ test_real_worker_roundtrip_at_floating_point_budget_boundary[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-424.005] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10a2fa5e0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a4fcee0>
+tick = 424.005
+scenario = <function test_actual_worker_serve_subprocess_preserves_error_metadata_and_close at 0x10a0c99d0>
+
+    @pytest.mark.parametrize('tick', [1558.546, 424.005])
+    @pytest.mark.parametrize('scenario', [
+        test_actual_worker_serve_subprocess_preserves_error_metadata_and_close,
+        test_handles_roundtrip_real_worker_with_com_object_return_doubles,
+    ])
+    def test_real_worker_roundtrip_at_floating_point_budget_boundary(
+        transport, monkeypatch, tick, scenario,
+    ):
+        module, _, _ = transport
+        assert (tick + 600) - tick > 600
+        # Replace only the proxy clock; the actual worker retains its own clock.
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+>       scenario(transport, monkeypatch)
+
+tests/msoffice/test_windows_session_proxy.py:845: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_windows_session_proxy.py:667: in test_actual_worker_serve_subprocess_preserves_error_metadata_and_close
+    with m.ProxyWordSession.open_document('/source.docx') as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.windows_session_proxy.ProxyWordSession object at 0x10a4fc970>
+method = 'open_document', args = ['/source.docx']
+kwargs = {'read_only': False, 'visible': False}, acquired = True
+request = {'args': ['/source.docx'], 'deadline': 1024.005, 'id': 1, 'kind': 'writer', ...}
+raw = b'{"protocol":1,"id":1,"kind":"writer","method":"open_document","args":["/source.docx"],"kwargs":{"read_only":false,"visible":false},"deadline":1024.005,"remaining_seconds":600.0000000000001}\n'
+done = <queue.Queue object at 0x10a58a2b0>, written = None
+response = b'{"protocol":1,"id":1,"status":"error","error":{"type":"ValueError","message":"Invalid remaining session budget","code":null}}\n'
+result = {'error': {'code': None, 'message': 'Invalid remaining session budget', 'type': 'ValueError'}, 'id': 1, 'protocol': 1, 'status': 'error'}
+error = ValueError('Invalid remaining session budget')
+
+    def _call(self, method, *args, **kwargs):
+        if self._uncertain:
+            raise self._error('QUARANTINED')
+        if self._closed:
+            raise ValueError('Microsoft session is closed')
+        if method not in COMMON_METHODS | BUSINESS_METHODS[self.kind] | {'open_document', 'attach_active', 'new_document', 'get_property'}:
+            raise NotImplementedError('Native method has no value-only session contract')
+        # Validate arguments before a request number or native operation exists.
+        args = [_arguments(item, self) for item in args]
+        kwargs = _arguments(kwargs, self)
+        encode_frame({'args': args, 'kwargs': kwargs})
+        acquired = False
+        try:
+            acquired = self._serial.acquire(timeout=self._remaining())
+            if not acquired:
+                raise TimeoutError('Session request queue deadline expired')
+            self._remaining()
+            self._sequence += 1
+            request = {'protocol': PROTOCOL, 'id': self._sequence, 'kind': self.kind,
+                       'method': method, 'args': list(args), 'kwargs': kwargs,
+                       'deadline': self._deadline, 'remaining_seconds': self._remaining()}
+            raw = encode_frame(request)
+            self._last_request = request
+            (self.staging_root / 'last-request.json').write_bytes(raw)
+            done = queue.Queue(maxsize=1)
+            self._writer = threading.Thread(target=self._write_request, args=(raw, done), daemon=True)
+            self._writer.start()
+            written = done.get(timeout=self._remaining())
+            if isinstance(written, BaseException): raise written
+            response = self._responses.get(timeout=self._remaining())
+            if self._reader_error is not None: raise self._reader_error
+            if isinstance(response, BaseException): raise response
+            result = decode_frame(response)
+            if (not isinstance(result, dict) or type(result.get('protocol')) is not int or result.get('protocol') != PROTOCOL or
+                    type(result.get('id')) is not int or result['id'] != self._sequence or
+                    result.get('status') not in {'ok', 'error'}):
+                raise ValueError('Invalid session response envelope or sequence')
+            if 'identity' in result:
+                if not isinstance(result['identity'], dict): raise ValueError('Invalid Office identity report')
+                self._identity = result['identity']
+            self._remaining()
+            if result['status'] == 'error':
+                if method == 'close' and kwargs == {'save_changes': True}:
+                    if result.get('session_state') != 'open':
+                        raise ValueError(
+                            'Saving close error did not acknowledge an open session'
+                        )
+                elif 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                error = self._remote_error(result.get('error'))
+            else:
+                if 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                if 'value' not in result: raise ValueError('Missing session response value')
+                return _result(result['value'], self)
+        except (TimeoutError, queue.Empty):
+            self._abort('Native session request exceeded the total deadline')
+            raise self._error('TIMEOUT') from None
+        except BaseException as exc:
+            self._abort('Worker response or request completion could not be verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
+            raise self._error('QUARANTINED') from None
+        finally:
+            if acquired:
+                self._serial.release()
+        # A valid, completed native error remains catchable as its original
+        # public category; close still gets a bounded cleanup opportunity.
+        if isinstance(error, TimeoutError) or str(getattr(error, 'code', '')).endswith('_TIMEOUT'):
+            self._abort('Worker reported an expired native operation')
+            raise self._error('TIMEOUT')
+        if str(getattr(error, 'code', '')).endswith('_QUARANTINED'):
+            self._abort('Worker reported uncertain native cleanup')
+            raise self._error('QUARANTINED')
+>       raise error
+E       ValueError: Invalid remaining session budget
+
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: ValueError
+_ test_real_worker_roundtrip_at_floating_point_budget_boundary[test_handles_roundtrip_real_worker_with_com_object_return_doubles-1558.546] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10a4f85e0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae09c70>
+tick = 1558.546
+scenario = <function test_handles_roundtrip_real_worker_with_com_object_return_doubles at 0x10a0c9c10>
+
+    @pytest.mark.parametrize('tick', [1558.546, 424.005])
+    @pytest.mark.parametrize('scenario', [
+        test_actual_worker_serve_subprocess_preserves_error_metadata_and_close,
+        test_handles_roundtrip_real_worker_with_com_object_return_doubles,
+    ])
+    def test_real_worker_roundtrip_at_floating_point_budget_boundary(
+        transport, monkeypatch, tick, scenario,
+    ):
+        module, _, _ = transport
+        assert (tick + 600) - tick > 600
+        # Replace only the proxy clock; the actual worker retains its own clock.
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+>       scenario(transport, monkeypatch)
+
+tests/msoffice/test_windows_session_proxy.py:845: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_windows_session_proxy.py:813: in test_handles_roundtrip_real_worker_with_com_object_return_doubles
+    with m.ProxyExcelSession.new_document() as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:110: in new_document
+    return cls._start('new_document', [], {'visible': visible})
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.windows_session_proxy.ProxyExcelSession object at 0x10ae09e20>
+method = 'new_document', args = [], kwargs = {'visible': False}, acquired = True
+request = {'args': [], 'deadline': 2158.5460000000003, 'id': 1, 'kind': 'sheet', ...}
+raw = b'{"protocol":1,"id":1,"kind":"sheet","method":"new_document","args":[],"kwargs":{"visible":false},"deadline":2158.5460000000003,"remaining_seconds":600.0000000000002}\n'
+done = <queue.Queue object at 0x10a5a93a0>, written = None
+response = b'{"protocol":1,"id":1,"status":"error","error":{"type":"ValueError","message":"Invalid remaining session budget","code":null}}\n'
+result = {'error': {'code': None, 'message': 'Invalid remaining session budget', 'type': 'ValueError'}, 'id': 1, 'protocol': 1, 'status': 'error'}
+error = ValueError('Invalid remaining session budget')
+
+    def _call(self, method, *args, **kwargs):
+        if self._uncertain:
+            raise self._error('QUARANTINED')
+        if self._closed:
+            raise ValueError('Microsoft session is closed')
+        if method not in COMMON_METHODS | BUSINESS_METHODS[self.kind] | {'open_document', 'attach_active', 'new_document', 'get_property'}:
+            raise NotImplementedError('Native method has no value-only session contract')
+        # Validate arguments before a request number or native operation exists.
+        args = [_arguments(item, self) for item in args]
+        kwargs = _arguments(kwargs, self)
+        encode_frame({'args': args, 'kwargs': kwargs})
+        acquired = False
+        try:
+            acquired = self._serial.acquire(timeout=self._remaining())
+            if not acquired:
+                raise TimeoutError('Session request queue deadline expired')
+            self._remaining()
+            self._sequence += 1
+            request = {'protocol': PROTOCOL, 'id': self._sequence, 'kind': self.kind,
+                       'method': method, 'args': list(args), 'kwargs': kwargs,
+                       'deadline': self._deadline, 'remaining_seconds': self._remaining()}
+            raw = encode_frame(request)
+            self._last_request = request
+            (self.staging_root / 'last-request.json').write_bytes(raw)
+            done = queue.Queue(maxsize=1)
+            self._writer = threading.Thread(target=self._write_request, args=(raw, done), daemon=True)
+            self._writer.start()
+            written = done.get(timeout=self._remaining())
+            if isinstance(written, BaseException): raise written
+            response = self._responses.get(timeout=self._remaining())
+            if self._reader_error is not None: raise self._reader_error
+            if isinstance(response, BaseException): raise response
+            result = decode_frame(response)
+            if (not isinstance(result, dict) or type(result.get('protocol')) is not int or result.get('protocol') != PROTOCOL or
+                    type(result.get('id')) is not int or result['id'] != self._sequence or
+                    result.get('status') not in {'ok', 'error'}):
+                raise ValueError('Invalid session response envelope or sequence')
+            if 'identity' in result:
+                if not isinstance(result['identity'], dict): raise ValueError('Invalid Office identity report')
+                self._identity = result['identity']
+            self._remaining()
+            if result['status'] == 'error':
+                if method == 'close' and kwargs == {'save_changes': True}:
+                    if result.get('session_state') != 'open':
+                        raise ValueError(
+                            'Saving close error did not acknowledge an open session'
+                        )
+                elif 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                error = self._remote_error(result.get('error'))
+            else:
+                if 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                if 'value' not in result: raise ValueError('Missing session response value')
+                return _result(result['value'], self)
+        except (TimeoutError, queue.Empty):
+            self._abort('Native session request exceeded the total deadline')
+            raise self._error('TIMEOUT') from None
+        except BaseException as exc:
+            self._abort('Worker response or request completion could not be verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
+            raise self._error('QUARANTINED') from None
+        finally:
+            if acquired:
+                self._serial.release()
+        # A valid, completed native error remains catchable as its original
+        # public category; close still gets a bounded cleanup opportunity.
+        if isinstance(error, TimeoutError) or str(getattr(error, 'code', '')).endswith('_TIMEOUT'):
+            self._abort('Worker reported an expired native operation')
+            raise self._error('TIMEOUT')
+        if str(getattr(error, 'code', '')).endswith('_QUARANTINED'):
+            self._abort('Worker reported uncertain native cleanup')
+            raise self._error('QUARANTINED')
+>       raise error
+E       ValueError: Invalid remaining session budget
+
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: ValueError
+_ test_real_worker_roundtrip_at_floating_point_budget_boundary[test_handles_roundtrip_real_worker_with_com_object_return_doubles-424.005] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10ad6f0d0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a501700>
+tick = 424.005
+scenario = <function test_handles_roundtrip_real_worker_with_com_object_return_doubles at 0x10a0c9c10>
+
+    @pytest.mark.parametrize('tick', [1558.546, 424.005])
+    @pytest.mark.parametrize('scenario', [
+        test_actual_worker_serve_subprocess_preserves_error_metadata_and_close,
+        test_handles_roundtrip_real_worker_with_com_object_return_doubles,
+    ])
+    def test_real_worker_roundtrip_at_floating_point_budget_boundary(
+        transport, monkeypatch, tick, scenario,
+    ):
+        module, _, _ = transport
+        assert (tick + 600) - tick > 600
+        # Replace only the proxy clock; the actual worker retains its own clock.
+        monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+>       scenario(transport, monkeypatch)
+
+tests/msoffice/test_windows_session_proxy.py:845: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_windows_session_proxy.py:813: in test_handles_roundtrip_real_worker_with_com_object_return_doubles
+    with m.ProxyExcelSession.new_document() as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:110: in new_document
+    return cls._start('new_document', [], {'visible': visible})
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <skills.WPSComposer.scripts.msoffice.windows_session_proxy.ProxyExcelSession object at 0x10a501d90>
+method = 'new_document', args = [], kwargs = {'visible': False}, acquired = True
+request = {'args': [], 'deadline': 1024.005, 'id': 1, 'kind': 'sheet', ...}
+raw = b'{"protocol":1,"id":1,"kind":"sheet","method":"new_document","args":[],"kwargs":{"visible":false},"deadline":1024.005,"remaining_seconds":600.0000000000001}\n'
+done = <queue.Queue object at 0x10a501a60>, written = None
+response = b'{"protocol":1,"id":1,"status":"error","error":{"type":"ValueError","message":"Invalid remaining session budget","code":null}}\n'
+result = {'error': {'code': None, 'message': 'Invalid remaining session budget', 'type': 'ValueError'}, 'id': 1, 'protocol': 1, 'status': 'error'}
+error = ValueError('Invalid remaining session budget')
+
+    def _call(self, method, *args, **kwargs):
+        if self._uncertain:
+            raise self._error('QUARANTINED')
+        if self._closed:
+            raise ValueError('Microsoft session is closed')
+        if method not in COMMON_METHODS | BUSINESS_METHODS[self.kind] | {'open_document', 'attach_active', 'new_document', 'get_property'}:
+            raise NotImplementedError('Native method has no value-only session contract')
+        # Validate arguments before a request number or native operation exists.
+        args = [_arguments(item, self) for item in args]
+        kwargs = _arguments(kwargs, self)
+        encode_frame({'args': args, 'kwargs': kwargs})
+        acquired = False
+        try:
+            acquired = self._serial.acquire(timeout=self._remaining())
+            if not acquired:
+                raise TimeoutError('Session request queue deadline expired')
+            self._remaining()
+            self._sequence += 1
+            request = {'protocol': PROTOCOL, 'id': self._sequence, 'kind': self.kind,
+                       'method': method, 'args': list(args), 'kwargs': kwargs,
+                       'deadline': self._deadline, 'remaining_seconds': self._remaining()}
+            raw = encode_frame(request)
+            self._last_request = request
+            (self.staging_root / 'last-request.json').write_bytes(raw)
+            done = queue.Queue(maxsize=1)
+            self._writer = threading.Thread(target=self._write_request, args=(raw, done), daemon=True)
+            self._writer.start()
+            written = done.get(timeout=self._remaining())
+            if isinstance(written, BaseException): raise written
+            response = self._responses.get(timeout=self._remaining())
+            if self._reader_error is not None: raise self._reader_error
+            if isinstance(response, BaseException): raise response
+            result = decode_frame(response)
+            if (not isinstance(result, dict) or type(result.get('protocol')) is not int or result.get('protocol') != PROTOCOL or
+                    type(result.get('id')) is not int or result['id'] != self._sequence or
+                    result.get('status') not in {'ok', 'error'}):
+                raise ValueError('Invalid session response envelope or sequence')
+            if 'identity' in result:
+                if not isinstance(result['identity'], dict): raise ValueError('Invalid Office identity report')
+                self._identity = result['identity']
+            self._remaining()
+            if result['status'] == 'error':
+                if method == 'close' and kwargs == {'save_changes': True}:
+                    if result.get('session_state') != 'open':
+                        raise ValueError(
+                            'Saving close error did not acknowledge an open session'
+                        )
+                elif 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                error = self._remote_error(result.get('error'))
+            else:
+                if 'session_state' in result:
+                    raise ValueError('Unexpected session state acknowledgement')
+                if 'value' not in result: raise ValueError('Missing session response value')
+                return _result(result['value'], self)
+        except (TimeoutError, queue.Empty):
+            self._abort('Native session request exceeded the total deadline')
+            raise self._error('TIMEOUT') from None
+        except BaseException as exc:
+            self._abort('Worker response or request completion could not be verified')
+            if not isinstance(exc, Exception):
+                self._with_abort_failures(exc)
+                raise
+            raise self._error('QUARANTINED') from None
+        finally:
+            if acquired:
+                self._serial.release()
+        # A valid, completed native error remains catchable as its original
+        # public category; close still gets a bounded cleanup opportunity.
+        if isinstance(error, TimeoutError) or str(getattr(error, 'code', '')).endswith('_TIMEOUT'):
+            self._abort('Worker reported an expired native operation')
+            raise self._error('TIMEOUT')
+        if str(getattr(error, 'code', '')).endswith('_QUARANTINED'):
+            self._abort('Worker reported uncertain native cleanup')
+            raise self._error('QUARANTINED')
+>       raise error
+E       ValueError: Invalid remaining session budget
+
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: ValueError
+___________ test_remaining_budget_cap_preserves_deadline_and_expiry ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ad2b3a0>
+
+    def test_remaining_budget_cap_preserves_deadline_and_expiry(monkeypatch):
+        module, _ = modules()
+        session = object.__new__(module._SessionProxy)
+        deadline = 2158.5460000000003
+        session._deadline = deadline
+        for tick in [1558.546, 1558.547, 2000.0, 2158.545]:
+            monkeypatch.setattr(module, 'time', SimpleNamespace(monotonic=lambda: tick))
+            raw_remaining = deadline - tick
+            remaining = session._remaining()
+>           assert remaining == min(600, raw_remaining)
+E           assert 600.0000000000002 == 600
+E            +  where 600 = min(600, 600.0000000000002)
+
+tests/msoffice/test_windows_session_proxy.py:857: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_session_proxy.py::test_real_worker_roundtrip_at_floating_point_budget_boundary[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-1558.546]
+FAILED tests/msoffice/test_windows_session_proxy.py::test_real_worker_roundtrip_at_floating_point_budget_boundary[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-424.005]
+FAILED tests/msoffice/test_windows_session_proxy.py::test_real_worker_roundtrip_at_floating_point_budget_boundary[test_handles_roundtrip_real_worker_with_com_object_return_doubles-1558.546]
+FAILED tests/msoffice/test_windows_session_proxy.py::test_real_worker_roundtrip_at_floating_point_budget_boundary[test_handles_roundtrip_real_worker_with_com_object_return_doubles-424.005]
+FAILED tests/msoffice/test_windows_session_proxy.py::test_remaining_budget_cap_preserves_deadline_and_expiry
+5 failed, 1 passed, 43 deselected in 3.59s

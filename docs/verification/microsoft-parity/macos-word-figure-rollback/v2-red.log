@@ -1,0 +1,20 @@
+.....F........                                                           [100%]
+=================================== FAILURES ===================================
+_ test_probe_second_failure_is_after_first_ack_and_rollback_uses_suffix_bookmark _
+
+    def test_probe_second_failure_is_after_first_ack_and_rollback_uses_suffix_bookmark():
+        module = fixture()
+        lines = module.scenario_commands(
+            'second-failure', '/private/staged.png',
+            missing='/private/definitely-missing.png')
+        source = '\n'.join(lines)
+        first = source.index('set probePicture to make new inline picture')
+        acknowledged = source.index('set probePictureEnd to end of content')
+        second = source.index('make new inline picture at probeSecondInsertion')
+>       rollback_bound = source.index('set probeRollbackEnd to probeMutationEnd')
+E       ValueError: substring not found
+
+build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v2.py:101: ValueError
+=========================== short test summary info ============================
+FAILED build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v2.py::test_probe_second_failure_is_after_first_ack_and_rollback_uses_suffix_bookmark
+1 failed, 13 passed in 0.85s

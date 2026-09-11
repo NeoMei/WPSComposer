@@ -1,0 +1,107 @@
+{
+  "status": "FAIL",
+  "scope": "fresh owned read-only copy; expression comparison only; no quality insertion",
+  "checks": {},
+  "steps": [
+    {
+      "mode": "original",
+      "rows": [
+        [
+          "bounds",
+          111,
+          110,
+          112
+        ],
+        [
+          "expected-read-error",
+          "compound-comparison",
+          -2763
+        ]
+      ]
+    },
+    {
+      "mode": "atomic",
+      "rows": [
+        [
+          "bounds",
+          111,
+          110,
+          112
+        ],
+        [
+          "atomic",
+          1,
+          59,
+          77,
+          true,
+          false,
+          false
+        ],
+        [
+          "atomic",
+          2,
+          173,
+          191,
+          false,
+          true,
+          false
+        ],
+        [
+          "done"
+        ]
+      ]
+    },
+    {
+      "mode": "indexed-original",
+      "rows": [
+        [
+          "bounds",
+          111,
+          110,
+          112
+        ],
+        [
+          "compound",
+          1,
+          false
+        ],
+        [
+          "compound",
+          2,
+          false
+        ],
+        [
+          "done"
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "docs/verification/microsoft-parity/macos-word-quality/target-read-probe-01/probe.py": "967aa458a2ff6b53a01bebed8e5b24b8a7c42a0dc2dc96a88b3e644dada52cdc",
+    "docs/verification/microsoft-parity/macos-word-quality/run-01/before.docx": "1cbbe10a4d42a3804c1b2fe750e9d10621003ae1482764b50a455e0c41633b74",
+    "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "992cb4decbd99b63d62815fb5ba537d3838077203f56fbd037483b1fde6b0c2e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc"
+  },
+  "inventory_before": [],
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-jeypd1s4/document-2b532297486e4b5789d4a83f9e6f8ad4.docx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-jeypd1s4",
+  "before_body": [
+    [
+      "before",
+      220,
+      "9e47b6c699d1b28685dd568fac6d75cb875b18c85f53ba7e7b3b7f895168a15b",
+      true,
+      "16.112.3"
+    ]
+  ],
+  "current_phase": "indexed-original",
+  "error": {
+    "type": "RuntimeError",
+    "message": "Unexpected typed probe outcome; no further native calls"
+  },
+  "quarantined": true,
+  "remaining_owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-jeypd1s4/document-2b532297486e4b5789d4a83f9e6f8ad4.docx"
+}

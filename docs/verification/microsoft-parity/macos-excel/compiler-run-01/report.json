@@ -1,0 +1,17 @@
+{
+  "stage": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/Documents/wpscomposer-compiler-_oxf6dcq",
+  "compiler_sha256": "05c04b0e78522c9fd87bf4c5237133ce33663db8dba5ceda60db1393ca35c95b",
+  "returncode": 0,
+  "stdout": "WPSCOMPOSER_MS_OFFICE_OK:spreadsheet\n",
+  "stderr": "",
+  "elapsed": 2.43021075,
+  "checksums": {
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plan.json": "a7ca16acf9af610d6bcaf508ba317ffb2db3c88f01288e3bf21462b55f674539",
+    "generate.applescript": "feaaf58e1b82d81494262a0cda923f90e306a7e8e765210d5ba38dc262160c85",
+    "stdout.log": "e14832f72e5565d62867c82b0b40a0807da0a7172c9a50c731050928a9600e9a",
+    "generated.pdf": "e0c028cd9d2975b67649e51947fc7171570d9c643f7ccf3a96c5711cb6de458b",
+    "compiler-source.py": "05c04b0e78522c9fd87bf4c5237133ce33663db8dba5ceda60db1393ca35c95b",
+    "generated.xlsx": "c7e3ff39de305bdc57d69bc69e566c229ed6efba38b9973adcdec0e158ad53e5"
+  }
+}

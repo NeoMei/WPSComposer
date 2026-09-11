@@ -1,0 +1,76 @@
+{
+  "scope": "Independent challenge failure attribution and cleanup; no complete acceptance",
+  "final_inventory": [],
+  "quarantine_absent": true,
+  "donor_preserved": true,
+  "source_preserved": true,
+  "changes": [
+    {
+      "path": "styles/style[3]:1/pPr[6]/spacing[2]",
+      "before_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}before": "480",
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}after": "80"
+      },
+      "after_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}before": "620",
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}after": "80"
+      },
+      "before_text": null,
+      "after_text": null
+    },
+    {
+      "path": "styles/style[3]:1/rPr[7]/sz[7]",
+      "before_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val": "34"
+      },
+      "after_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val": "56"
+      },
+      "before_text": null,
+      "after_text": null
+    },
+    {
+      "path": "styles/style[15]:10/rPr[4]/sz[7]",
+      "before_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val": "34"
+      },
+      "after_attrs": {
+        "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val": "56"
+      },
+      "before_text": null,
+      "after_text": null
+    }
+  ],
+  "before_challenge_sha256": "bf04959e9fd609341b4b98163a6786ce72e52b67c0c41ce44ed866a139c17bc6",
+  "challenged_sha256": "ae7b6d6f98f7e1bd2f451c3041662bbe1cde665cd0c0cd09786affb76840ad94",
+  "source_challenge_observations": {
+    "before_challenge_effective_size_spacing": [
+      [
+        "challenge",
+        17,
+        24,
+        17,
+        24,
+        17,
+        24,
+        17,
+        24
+      ]
+    ],
+    "challenged_effective_size_spacing": [
+      [
+        "challenge",
+        28,
+        31,
+        28,
+        31,
+        17,
+        24,
+        17,
+        24
+      ]
+    ]
+  },
+  "remaining_sentinel": null,
+  "cleanup_verified": true
+}

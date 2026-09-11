@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "chart_cached_values": [
+    10.0,
+    20.0,
+    30.0
+  ],
+  "print_areas": [
+    {
+      "name": "_xlnm.Print_Area",
+      "localSheetId": "0",
+      "value": "Data!$A$1:$F$28"
+    },
+    {
+      "name": "_xlnm.Print_Area",
+      "localSheetId": "1",
+      "value": "Summary!$A$1:$D$4"
+    }
+  ],
+  "header_fill_rgb": "FFDCEBFA",
+  "visual_inspection": "Page 1 business labels, values and chart are legible; the fixture owner marker D20 is partially covered by chart, intentionally not a user data cell. Page 2 cross-sheet total is fully extracted."
+}

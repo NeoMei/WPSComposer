@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -55,6 +56,9 @@ if loaded:
 print("pure")
 """
     env = {"PYTHONPATH": str(project_root)}
+    # Windows Python needs SystemRoot to initialize OS randomness.
+    env.update({key: value for key, value in os.environ.items()
+                if key.upper() == "SYSTEMROOT"})
     result = subprocess.run(
         [sys.executable, "-c", script],
         capture_output=True,

@@ -1,0 +1,78 @@
+{
+  "kind": "slide_selection",
+  "count": 1,
+  "shapes": [
+    {
+      "id": "slide:2/shape:@name=parity-title",
+      "index": 2,
+      "shape_id": null,
+      "name": "parity-title",
+      "type": 17,
+      "native_type": "shape type text box",
+      "geometry": {
+        "left": 80,
+        "top": 40,
+        "width": 560,
+        "height": 36.3515739440918,
+        "rotation": 0,
+        "z_order": 2
+      },
+      "fill": {
+        "color": "#FFFFFF",
+        "visible": false,
+        "transparency": 1
+      },
+      "font": {
+        "name": "等线",
+        "size": 24,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "color": "#000000"
+      },
+      "paragraphs": [
+        {
+          "id": "slide:2/shape:@name=parity-title/paragraph:1",
+          "index": 1,
+          "runs": [
+            {
+              "id": "slide:2/shape:@name=parity-title/paragraph:1/run:1",
+              "index": 1,
+              "font": {
+                "name": "等线",
+                "size": 24,
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "color": "#000000",
+                "strikethrough": false
+              },
+              "text": "Selected native patch"
+            }
+          ],
+          "text": "Selected native patch"
+        }
+      ],
+      "text": "Selected native patch",
+      "line": {
+        "color": "#FFFFFF",
+        "weight": null,
+        "visible": null,
+        "transparency": null
+      },
+      "text_frame": {
+        "margin_left": 7.199999809265137,
+        "margin_right": 7.199999809265137,
+        "margin_top": 3.5999999046325684,
+        "margin_bottom": 3.5999999046325684,
+        "word_wrap": true
+      },
+      "paragraph": {
+        "alignment": 1,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "source_sha256": "8356e9d3fed2bb88293e7a1dc40a984adfbe316c16c07b5aa150de0711b6108d",
+  "ui_saved_sha256": "8356e9d3fed2bb88293e7a1dc40a984adfbe316c16c07b5aa150de0711b6108d",
+  "identical_bytes": true,
+  "identical_xml": {
+    "word/document.xml": true,
+    "word/styles.xml": true
+  },
+  "ui_steps": [
+    "Word exact-path open",
+    "Selected existing PARAGRAPH RULE",
+    "Typed UI_RULE_EDIT_20260909 and observed actual replacement",
+    "Undo restored original text",
+    "Explicit Save and saved-to-Mac AX",
+    "Closed target",
+    "Reopened same exact path through matching Recent entry",
+    "Observed original paragraph plus FOLLOWING",
+    "Closed target; independent native inventory empty"
+  ],
+  "scope": "Existing paragraph text editing/Undo/save/reopen with border/style package preservation; PDF detector correction remains separate",
+  "final_inventory": []
+}

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-heading-import-v2.py", line 234, in run
+    check('fresh_font_equal', all(scalar_copy_verdict(font_preimage, rows).values()))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-heading-import-v2.py", line 139, in check
+    raise AssertionError('Native import check failed: '+name)
+AssertionError: Native import check failed: fresh_font_equal

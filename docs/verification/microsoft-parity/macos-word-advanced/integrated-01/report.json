@@ -1,0 +1,11 @@
+{
+  "passed": false,
+  "checks": {
+    "unsaved_sentinel_preserved": true
+  },
+  "issues": [],
+  "runtime_staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-9kqvrfjs",
+  "error": "cannot import name '_build_executor_resources' from 'skills.WPSComposer.scripts.longform.platform_runtime' (/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/longform/platform_runtime.py)",
+  "source_sha256": "8da7771d684618c0da33b454ce74af14c547965fa349c53d7d3c62ac1154a30e",
+  "compiler_sha256": "f7f1d9301f04fa09d4cac9f5aace07495ee6c84a68d58d0d1be285e5df2aaa76"
+}

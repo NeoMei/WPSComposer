@@ -1,0 +1,161 @@
+{
+  "status": "FAIL",
+  "scope": "One Word-saved DOCX insert-file control only",
+  "source_hashes": {
+    "build/word-heading-import-20260910/docx-control.py": "5678d75dd0f071ae530a7121c0431c22f3fd21c8c903fdd81278bae501143340",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "checks": {
+    "donor_native_text": true,
+    "donor_cleanup_verified": true,
+    "inventory_after_donor": true,
+    "recipient_seed": true,
+    "donor_input_identical": true,
+    "preimage_shape": true,
+    "exact_docx_replacement": false
+  },
+  "raw_rows": {
+    "donor_sentinel": [
+      [
+        "文档7"
+      ]
+    ],
+    "donor_version": [
+      [
+        "16.112.3"
+      ]
+    ],
+    "donor_seed": [
+      [
+        "DOCX CONTROL 中文😀\r"
+      ]
+    ],
+    "recipient_sentinel": [
+      [
+        "文档9"
+      ]
+    ],
+    "recipient_version": [
+      [
+        "16.112.3"
+      ]
+    ],
+    "recipient_seed": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "recipient_preimage": [
+      [
+        "preimage",
+        "SOURCE APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        32,
+        40
+      ]
+    ],
+    "single_native_docx_import": [
+      [
+        "import",
+        32,
+        40,
+        "SOURCE APPEARANCE 中文 العربية 😀\rREPLACE\rDOCX CONTROL 中文😀\rSUFFIX\r\r"
+      ]
+    ]
+  },
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "donor": {
+    "checks": {
+      "owned_closed_with_sentinel_preserved": true,
+      "inventory_after_sentinel_close_preserved": true
+    },
+    "inventory_before": [],
+    "sentinel_name": "文档7",
+    "sentinel_before": [
+      "文档7",
+      "文档7",
+      false,
+      "8b967bb72db7beac6fa70afb1809caf0d50d91ff62187a116982cb884019becd"
+    ],
+    "sentinel_cleanup_attempted": true,
+    "inventory_after_owned_close": [
+      [
+        "文档7",
+        "文档7",
+        false,
+        "8b967bb72db7beac6fa70afb1809caf0d50d91ff62187a116982cb884019becd"
+      ]
+    ],
+    "sentinel_close": [
+      [
+        "sentinel-closed",
+        "文档7"
+      ]
+    ],
+    "sentinel_closed": true,
+    "inventory_after_sentinel_close": [],
+    "remaining_sentinel": null
+  },
+  "current_phase": "single_native_docx_import",
+  "word_version": [
+    [
+      "16.112.3"
+    ]
+  ],
+  "donor_text": "DOCX CONTROL 中文😀\r",
+  "donor_sha256": "d7298013c60a9b0166cd6c1efce2d8a829e590fd92633443f5e9787274cd1cb8",
+  "recipient": {
+    "checks": {
+      "owned_closed_with_sentinel_preserved": true,
+      "inventory_after_sentinel_close_preserved": true
+    },
+    "inventory_before": [],
+    "sentinel_name": "文档9",
+    "sentinel_before": [
+      "文档9",
+      "文档9",
+      false,
+      "0e48b9ef1bf41070eb14ef6a8197f32882b01836a58de486229bca9f0afe85af"
+    ],
+    "sentinel_cleanup_attempted": true,
+    "inventory_after_owned_close": [
+      [
+        "文档9",
+        "文档9",
+        false,
+        "0e48b9ef1bf41070eb14ef6a8197f32882b01836a58de486229bca9f0afe85af"
+      ]
+    ],
+    "sentinel_close": [
+      [
+        "sentinel-closed",
+        "文档9"
+      ]
+    ],
+    "sentinel_closed": true,
+    "inventory_after_sentinel_close": [],
+    "remaining_sentinel": null
+  },
+  "recipient_preimage_sha256": "0c5e2f72e9a3e86fb10f99adea67c0d2c6cff9189e4ae93e522056f3d593c1a5",
+  "expected_text": "SOURCE APPEARANCE 中文 العربية 😀\rDOCX CONTROL 中文😀\rSUFFIX\r\r",
+  "error": {
+    "type": "AssertionError",
+    "message": "DOCX control failed: exact_docx_replacement"
+  },
+  "artifact_hashes": {
+    "native-donor.docx": "d7298013c60a9b0166cd6c1efce2d8a829e590fd92633443f5e9787274cd1cb8",
+    "recipient-preimage.docx": "0c5e2f72e9a3e86fb10f99adea67c0d2c6cff9189e4ae93e522056f3d593c1a5"
+  }
+}

@@ -1,0 +1,65 @@
+--- a/skills/WPSComposer/scripts/msoffice/windows_runtime.py
++++ b/skills/WPSComposer/scripts/msoffice/windows_runtime.py
+@@ -79,7 +79,9 @@
+         try:
+             if path.is_file():
+                 return path
+-        except OSError as failure:
++        except BaseException as failure:
++            # The primary error already exists; even another cancellation
++            # during optional evidence lookup must not replace it.
+             _record_io_failure(error, 'diagnostic_io_failures', path.name + '.stat', failure)
+     return None
+ 
+--- a/tests/msoffice/test_windows_word_runtime_diagnostics.py
++++ b/tests/msoffice/test_windows_word_runtime_diagnostics.py
+@@ -286,3 +286,49 @@
+         assert caught.value.cleanup_io_failures == (('worker.log.close', 'OSError'),)
+     else:
+         assert caught.value is close_error
++
++
++@pytest.mark.parametrize('primary_kind', ['timeout', 'cancel'])
++@pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
++@pytest.mark.parametrize('target', ['diagnostics.json', 'native-office.quarantine.json'])
++def test_secondary_evidence_cancellation_preserves_primary(monkeypatch, tmp_path, isolated, primary_kind, secondary_type, target):
++    primary_cancel = KeyboardInterrupt('original wait cancellation')
++    secondary = secondary_type('secondary metadata cancellation')
++
++    class Child(TimedOutChild):
++        def wait(self, timeout):
++            if self.returncode is None and primary_kind == 'cancel':
++                raise primary_cancel
++            return super().wait(timeout)
++
++    child = Child()
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: child)
++    is_file = Path.is_file
++
++    def evidence(path):
++        if path.name == target:
++            raise secondary
++        return is_file(path)
++
++    monkeypatch.setattr(Path, 'is_file', evidence)
++    with pytest.raises(BaseException) as caught:
++        execute(tmp_path)
++    error = caught.value
++    if primary_kind == 'cancel':
++        assert error is primary_cancel
++    else:
++        assert isinstance(error, runtime.NativeWordTimeoutError)
++    assert error is not secondary
++    assert error.diagnostic_io_failures == ((target + '.stat', secondary_type.__name__),)
++    assert child.returncode == -9
++    assert isolated[1][0].closed
++    quarantine = isolated[0] / 'native-office.quarantine.json'
++    data = json.loads(quarantine.read_text())
++    assert data['code'] == ('NATIVE_WORD_TIMEOUT' if primary_kind == 'timeout' else 'NATIVE_WORD_EXECUTION_FAILED')
++    if target == 'native-office.quarantine.json':
++        assert error.quarantine_path is None
++    else:
++        assert error.diagnostic_path == str(next(tmp_path.glob('operation-*/worker.log')))
++    with pytest.raises(runtime.NativeWordError) as blocked:
++        execute(tmp_path)
++    assert blocked.value.code == 'NATIVE_WORD_QUARANTINED'

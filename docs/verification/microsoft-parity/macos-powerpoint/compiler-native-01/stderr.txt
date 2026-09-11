@@ -1,0 +1,2 @@
+WPSCOMPOSER_MS_OFFICE_ERROR:presentation	-2700	Unrelated presentation state changed
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/compiler-native-01/native.applescript:8398:8407: execution error: Unrelated presentation state changed (-2700)

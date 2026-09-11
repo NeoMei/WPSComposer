@@ -1,0 +1,7 @@
+{
+  "status": "FAIL_EXACT_FORMAT_RESTORATION",
+  "native_probe_status": "PASS",
+  "hash_checks": "12/12 PASS",
+  "finding": "Restored selection gains w:noProof on both text and emoji runs. This changes proofing behavior; scalar native formatting checks did not detect it. Outside-selection XML changes observed only paragraph textId/rsidP; styles and theme bytes identical. Do not enable generic rollback or claim full format preservation.",
+  "next": "Add a full run-property oracle and preserve proofing state; retain original native PASS as bounded evidence, then rerun native save/reopen."
+}

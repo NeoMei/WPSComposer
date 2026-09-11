@@ -2,3 +2,56 @@
 /docs/verification/windows-word-spike/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /docs/verification/msoffice-production/windows/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /docs/verification/msoffice-production/windows/**/*.log -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Keep scoped native character-read evidence byte-identical on Windows.
+/docs/verification/microsoft-parity/macos-word-quality/character-record-read/** -text
+/docs/verification/microsoft-parity/macos-word-quality/character-record-read/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Preserve the new Excel native and hosted-CI evidence hashes on Windows.
+/docs/verification/microsoft-parity/macos-excel-delete-selection/** -text
+/docs/verification/microsoft-parity/macos-excel-delete-selection/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/portable-ci/run-08/** -text
+/docs/verification/microsoft-parity/portable-ci/run-08/**/*.log whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Keep native acknowledgement and process/style diagnostics byte-identical.
+/docs/verification/microsoft-parity/macos-excel-save-ack/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/macos-excel-existing-delete-diagnosis/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/macos-word-quality/defined-style-read/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+/docs/verification/microsoft-parity/full-round41/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+
+# Preserve source-bound release diagnostics byte-for-byte on Windows.
+docs/verification/microsoft-parity/macos-excel-private-transport/** -text whitespace=-blank-at-eof,-trailing-space
+docs/verification/microsoft-parity/macos-word-quality/page-story-matrix-01/** -text whitespace=-blank-at-eof,-trailing-space
+docs/verification/microsoft-parity/portable-ci/run-10/** -text whitespace=-blank-at-eof,-trailing-space
+
+# Retain exact native private-session failure and acceptance evidence.
+docs/verification/microsoft-parity/macos-excel-private-public/** -text
+
+# Preserve watchdog native and hosted Windows failure evidence unchanged.
+/docs/verification/microsoft-parity/macos-excel-bounded-launcher/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-11/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round43/** -text whitespace=-blank-at-eof,-trailing-space
+
+# Preserve checkpoint native/install/CI records and their source hashes.
+/docs/verification/microsoft-parity/installed-excel-checkpoint433/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/installed-word-powerpoint-checkpoint433/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-list-arguments/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-heading-import/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-12/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-13/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round44/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round45/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round46/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-14/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round47/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-caption/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round48/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/installed-word-caption-checkpoint/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-15/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-figure-rollback/** -text whitespace=-blank-at-eof,-trailing-space
+
+# Preserve recovered Windows logs and the profile shutdown regression record.
+/docs/verification/microsoft-parity/windows-70d3d86-20260910/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/full-round49/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-organizer/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-16/** -text whitespace=-blank-at-eof,-trailing-space

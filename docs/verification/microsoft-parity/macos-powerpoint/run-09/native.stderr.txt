@@ -1,0 +1,15 @@
+PROBE|baseline|10
+PROBE|version|16.112.3
+PROBE|sentinel_name|演示文稿12
+PROBE|owned_name|演示文稿13
+PROBE|shape|PASS
+PROBE|fill|PASS
+PROBE|picture|BLOCKED_PRIOR_TIMEOUT
+PROBE|table_created|PASS
+PROBE|page_width|720.0
+PROBE|slide_clone_remove|FAIL|-50|“Microsoft PowerPoint”遇到一个错误：参数错误。
+PROBE|slide_move|PASS
+PROBE|shape_clone_remove|PASS
+PROBE|shape_geometry_edit|PASS
+PROBE|undo|FAIL|-1728|The object you are trying to access does not exist
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-09/native.applescript:4352:4435: execution error: “Microsoft PowerPoint”遇到一个错误：The object you are trying to access does not exist (-10006)

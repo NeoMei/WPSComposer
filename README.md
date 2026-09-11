@@ -1,14 +1,32 @@
 # WPSComposer
 
-**Native WPS Office and Microsoft Word composition for AI agents**
+**Native WPS Office and Microsoft Office composition for AI agents**
 
 WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支持 DOCX、PDF、XLSX、PPTX；Microsoft Word 支持 DOCX/PDF 生成和 DOC/DOCX 转 PDF。
+
+当前为 Microsoft 能力对齐开发候选：已增加 Excel、PowerPoint 和文档会话实现，正在补齐方法、参数与跨平台验收。以下发布记录和 0.9.0 表格描述已发布版本；候选版的实现及实测范围见 [验收状态](docs/verification/microsoft-parity/status.md)。
 
 > cross-platform acceptance: COMPLETED（2026-08-24）。DOCX/PDF 已默认迁移到 M5 长文档质量生命周期；macOS 与 Windows 的三轮原生 WPS、UI、Unicode 代码块和 63 页性能门均已通过。0.8.0 released（2026-08-24）。
 
 > **0.8.1（2026-09-07）**：macOS Word 改用原生空白任务文档启动，首次生成直接复用；只启动所需组件服务，完整回收连接和独立 WPS 宿主。`open_result=True` 可在成功清理后打开最终文件。详见 [0.8.1 验证记录](docs/releases/0.8.1.md)。
 
 > **0.9.0（2026-09-08）：Microsoft Word 原生支持**：新增 `engine="msoffice"` 的 DOCX/PDF 生成和 DOC/DOCX 转 PDF，默认仍为 WPS。Windows 和 macOS 原生验收均已通过。参见 [0.9.0 发布说明](docs/releases/0.9.0.md)、 [使用与恢复说明](skills/WPSComposer/references/native-word.md) 和 [验收记录](docs/verification/msoffice-production/README.md)。
+
+## 排版引擎与支持范围
+
+以下对照已发布 **0.9.0** 的公共能力。`codex/microsoft-parity` 开发分支正在增加 Microsoft Excel / PowerPoint 及三应用检查编辑支持；代表性 macOS 原生流程、三应用 UI 编辑/撤销/保存/重开、WPS M5 回归及隔离安装验证已通过；完整能力清单、Windows 原生验收和最终全分支验收尚未完成。开发状态及剩余限制见 [Microsoft 能力对齐验收状态](docs/verification/microsoft-parity/status.md)，不应把该候选分支视为全面对齐的已发布版本。
+
+| 能力 | WPS Office | Microsoft Word |
+|---|---|---|
+| Windows / macOS 原生排版 | 支持 | 支持 |
+| DOCX / PDF 生成 | 支持 | 支持 |
+| DOC / DOCX 转 PDF | 支持 | 支持 |
+| XLSX / PPTX 生成与转 PDF | 支持 | 不支持 Microsoft Excel / PowerPoint 后端 |
+| 已有文件检查 | Windows / macOS 支持三类文档 | 尚未接入公共 Microsoft 后端 |
+| 文件格式修改 | Windows 支持三类文档；macOS 公共入口目前支持 PPTX | 尚未接入公共 Microsoft 后端 |
+| 结构编辑、活动文档操作 | 当前要求 Windows COM | 尚未接入公共 Microsoft 后端 |
+
+`engine="wps"` 是默认值；`engine="msoffice"` 显式选择 Microsoft Word；`engine="auto"` 优先选择已安装的 WPS。自动选择在任务开始前完成，执行中不切换引擎。Microsoft 后端使用桌面 Word，不支持云端 Office；高级排版能力与 WPS 不完全相同，详见 [能力限制](skills/WPSComposer/references/native-word.md)。
 
 ## ✨ 核心特性
 
@@ -30,7 +48,7 @@ WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支�
 - **可扩展**：支持自定义插件，在 Markdown 解析前预处理内容
 
 ### 🌍 跨平台
-- **Windows**：通过 COM 接口驱动 WPS Office / MS Office
+- **Windows**：通过 COM 接口驱动 WPS Office 或 Microsoft Word
 - **macOS**：通过 JSAPI 容器驱动 WPS Office；可显式通过 AppleScript 驱动 Microsoft Word
 - **统一 API**：相同的 Python 接口，跨平台一致体验
 
@@ -71,6 +89,23 @@ generate("slides.md", format="pptx", preset="business", output="slides.pptx")
 
 # 生成 XLSX 电子表格
 generate("data.md", format="xlsx", output="data.xlsx")
+```
+
+使用 Microsoft Word 排版并导出 PDF：
+
+```python
+from skills.WPSComposer import generate, convert_to_pdf
+
+
+def main() -> None:
+    docx = generate(
+        "report.md", format="docx", output="word-report.docx", engine="msoffice"
+    )
+    convert_to_pdf(docx, output="word-report.pdf", engine="msoffice")
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 需要在交互式脚本中展示最终文件时，显式传入 `open_result=True`：
@@ -362,8 +397,9 @@ Composer 引擎（WriterComposer / SheetComposer / SlideComposer）
 ### 运行时要求
 
 - **Python**：3.9 或更高版本
-- **Windows**：WPS Office 或 MS Office，`pywin32`
-- **macOS**：WPS Office 12.1.26035 或更高版本，Node.js 20+（JSAPI 运行时）
+- **Windows 原生排版**：安装所选引擎对应的 WPS Office 或桌面 Microsoft Word，并安装 `pywin32`
+- **macOS WPS 排版**：WPS Office 12.1.26035 或更高版本，Node.js 20+（JSAPI 运行时）
+- **macOS Microsoft Word 排版**：桌面 Microsoft Word，并允许调用程序通过系统 Automation 权限控制 Word
 - **PDF 编辑**：`pypdf` + `pdfplumber`，文本水印额外需要 `reportlab`
 - **DOCX/PDF 长文档质量门**：`Pillow>=10`、`pypdf>=4`、`pdfplumber>=0.11`
 
@@ -383,10 +419,17 @@ pip install pywin32
 
 ## 🧪 测试
 
+请在具有完整 Git 历史的克隆中运行测试，保留能力基线提交 `6dd3a00dff226096ad963cc68a65088865541c25`；浅克隆和源码 ZIP 缺少基线测试所需的历史。
+
 ```bash
+# 确认能力基线历史可用
+git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
+
 # 创建开发环境并安装依赖
 python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e ".[dev]"
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
 
 # 运行完整测试
 .venv/bin/python -m pytest -q
@@ -396,7 +439,7 @@ python3 -m venv .venv
 .venv/bin/python -m pytest tests/test_writer_renderer.py
 ```
 
-完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。macOS JSAPI 固定模板测试还需要运行 `python3 install.py` 安装锁定的运行时资源。
+完整测试包含生成、转换、编辑、原子发布、macOS probe、Windows COM 生命周期、截止时间和语义验证回归。dev 依赖包含 PDF 绘图验证使用的 PyMuPDF；macOS JSAPI 固定模板资源由上述 `npm ci` 准备。运行测试不需要安装个人插件。
 
 ## 📝 更新日志
 
@@ -461,20 +504,27 @@ python3 -m venv .venv
 ### 开发环境设置
 
 ```bash
-# 克隆仓库
+# 完整克隆仓库，保留能力基线测试所需的历史（不要使用浅克隆或源码 ZIP）
 git clone https://github.com/NeoMei/WPSComposer.git
 cd WPSComposer
+git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
 
 # 创建虚拟环境
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 安装开发依赖
+# 安装开发依赖（先更新 pip，以支持 pyproject.toml 的可编辑安装）
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
 
 # 运行测试
 pytest
 ```
+
+开发测试需要完整 Git 历史（含上述基线提交）及锁定的 npm 资源，不需要安装个人插件。
+
+[便携测试工作流](.github/workflows/portable-tests.yml) 在 PR 和 `master`、`main`、`codex/microsoft-parity` 分支推送时，运行 Linux/Windows × Python 3.9/3.12 的完整 pytest 套件，并保留测试日志和 JUnit 报告 14 天。工作流使用完整 Git 历史、锁定的 npm 资源和开发依赖，不启用原生验收开关；通过 CI 代表便携测试通过，WPS/Microsoft Office 的实际生成、编辑、撤销和重开仍需单独验收。
 
 ## 📄 许可证
 

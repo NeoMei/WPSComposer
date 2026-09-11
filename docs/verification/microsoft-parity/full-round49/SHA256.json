@@ -1,0 +1,8 @@
+{
+  "result.json": "71ad6c90a560abeabfdbe23152e7f420090dd5bf74ed2ab02a7836dea968d1e7",
+  "source-before.json": "b7fdedd60aa6b98fee9d49391dc6c1db6b333529af0e37151c75556296f30684",
+  "source-after.json": "b7fdedd60aa6b98fee9d49391dc6c1db6b333529af0e37151c75556296f30684",
+  "full-pytest.log": "2fd815b26522be88988718766ae91128216101e7655d29e8f8fbc1da1dd8e018",
+  "README.md": "e78006e012e66d16a8b5c8a8cad04d794dfa1bd2f5bd525f707030c95d39bd74",
+  "junit.xml": "5eb9b433f6c9be05b68c353acfe59f9d72c6826f21ffd158e4039b89a1a5f1e6"
+}

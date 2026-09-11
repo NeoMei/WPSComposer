@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "counts": {
+    "copied_source_files": 201,
+    "npm_dependency_files": 6426,
+    "generated_files": 1
+  },
+  "public_native_checks": {
+    "writer": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    },
+    "sheet": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    },
+    "slide": {
+      "create_session_close_completed": true,
+      "public_native_created": true,
+      "public_native_edit_saved": true,
+      "source_preserved": true,
+      "edited_value_after_native_reopen": true,
+      "native_pdf_contents": true
+    }
+  },
+  "word_inventory": [],
+  "personal_installation_changed": false
+}

@@ -1,0 +1,23 @@
+{
+  "native_executed": false,
+  "source_root": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix01-tv1k9581/checkout",
+  "files": {
+    "fixtures/microsoft_parity/macos_word_semantic_table_grid_probe.py": "dd5df01002d60fc1d71a946f66b83e177b0368ad0a08d145c0dcb97c9e827250",
+    "tests/msoffice/test_semantic_table_grid_preparation.py": "77563fc9d5d82507fe1bd0c76a3f5eab4fc536ea5c19da657167a75b5bab500d",
+    "fixtures/microsoft_parity/macos_word_semantic_table_explicit_range_probe.py": "6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2",
+    "tests/msoffice/test_semantic_table_explicit_range_preparation.py": "fd84a8f3fb28a19631ecc444e4eeb913c35625e1aa55b556b279cc6a5b01395d",
+    "fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "dcb3d96039671729d0bd3f2a7071c984d695bf23b898084a43ce4f38de339a01",
+    "tests/msoffice/test_semantic_table_conversion_preparation.py": "9bf68bb936d0cfa3ae7809ae22388d0290968e41843e89e1587e78987cecd9b3",
+    "fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c",
+    "tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3"
+  },
+  "compile_exit_code": 0,
+  "script_sha256": "bfcf1d24ba8c0b9a7cdb29a564b0e9713464fa44471955dd44318793b4132ade",
+  "grid": "WPSC_R1C1\tWPSC_R1C2\tWPSC_R1C3\rWPSC_R2C1\tWPSC_R2C2\tWPSC_R2C3\rWPSC_R3C1\tWPSC_R3C2\tWPSC_R3C3\rWPSC_R4C1\tWPSC_R4C2\tWPSC_R4C3",
+  "grid_range": [
+    12,
+    131
+  ],
+  "grid_utf16_length": 119,
+  "sdef_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7"
+}

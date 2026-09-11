@@ -1,0 +1,508 @@
+--- a/skills/WPSComposer/scripts/msoffice/windows_runtime.py
++++ b/skills/WPSComposer/scripts/msoffice/windows_runtime.py
+@@ -69,19 +69,45 @@
+     return path
+ 
+ 
++def _record_io_failure(error, attribute, label, failure):
++    previous = getattr(error, attribute, ())
++    setattr(error, attribute, previous + ((label, type(failure).__name__),))
++
++
++def _evidenced_path(error, *paths):
++    for path in paths:
++        try:
++            if path.is_file():
++                return path
++        except OSError as failure:
++            _record_io_failure(error, 'diagnostic_io_failures', path.name + '.stat', failure)
++    return None
++
++
++def _persist_worker_diagnostic(error, path, value):
++    try:
++        if not path.exists():
++            _write_json(path, value)
++        return True
++    except BaseException as failure:
++        _record_io_failure(error, 'diagnostic_io_failures', 'diagnostics', failure)
++        return False
++
++
+ def _worker_failure(operation):
+     diagnostic = operation / 'diagnostics.json'
+     code = 'NATIVE_WORD_EXECUTION_FAILED'
+     data = {}
+     try:
+-        data = json.loads(diagnostic.read_text(encoding='utf-8'))
++        decoded = json.loads(diagnostic.read_text(encoding='utf-8'))
++        data = decoded if isinstance(decoded, dict) else {}
+         if data.get('public_code') in {'NATIVE_WORD_QUARANTINED', 'NATIVE_WORD_TIMEOUT', 'NATIVE_WORD_UNAVAILABLE'}:
+             code = data['public_code']
+     except (OSError, ValueError, AttributeError):
+         pass
+-    locations = dict(staging_path=operation,
+-                     diagnostic_path=diagnostic if diagnostic.is_file() else operation / 'worker.log')
+-    error = NativeWordTimeoutError(**locations) if code == 'NATIVE_WORD_TIMEOUT' else NativeWordError(code, **locations)
++    error = NativeWordTimeoutError(staging_path=operation) if code == 'NATIVE_WORD_TIMEOUT' else NativeWordError(code, staging_path=operation)
++    evidence = _evidenced_path(error, diagnostic, operation / 'worker.log')
++    error.diagnostic_path = str(evidence) if evidence is not None else None
+     error.cleanup_verified = data.get('cleanup_verified') is True
+     return error
+ 
+@@ -94,6 +120,7 @@
+         raise ValueError('Office staging root must not be a symlink')
+     shared_root.mkdir(parents=True, exist_ok=True, mode=0o700)
+     lock = OfficeJobLock(shared_root)
++    primary_error = None
+     try:
+         try:
+             lock.acquire(deadline)
+@@ -106,66 +133,113 @@
+             return _run_worker_unlocked(root, payload, deadline)
+         except BaseException as exc:
+             if not getattr(exc, 'cleanup_verified', False):
+-                lock.quarantine({'component': 'writer', 'staging_path': str(root),
+-                                 'cleanup_verified': False,
+-                                 'word_termination_attempted': False,
+-                                 'code': getattr(exc, 'code', 'NATIVE_WORD_EXECUTION_FAILED')})
++                exc.quarantine_path = None
++                try:
++                    lock.quarantine({'component': 'writer', 'staging_path': str(root),
++                                     'cleanup_verified': False,
++                                     'word_termination_attempted': False,
++                                     'code': getattr(exc, 'code', 'NATIVE_WORD_EXECUTION_FAILED')})
++                except BaseException as failure:
++                    _record_io_failure(exc, 'diagnostic_io_failures', 'quarantine', failure)
++                else:
++                    evidence = _evidenced_path(exc, lock.quarantine_path)
++                    exc.quarantine_path = str(evidence) if evidence is not None else None
+             raise
++    except BaseException as exc:
++        primary_error = exc
++        raise
+     finally:
+-        lock.close()
++        try:
++            lock.close()
++        except BaseException as failure:
++            if primary_error is None:
++                raise
++            _record_io_failure(primary_error, 'cleanup_io_failures', 'lock.close', failure)
+ 
+ 
+ def _run_worker_unlocked(root, payload, deadline):
+     """Run a single COM phase within the caller's remaining total budget."""
+-    _require_deadline(deadline)
+-    root = Path(root).resolve()
+-    operation = root / ('operation-' + uuid4().hex)
+-    operation.mkdir(mode=0o700)
+-    request = operation / 'request.json'
+-    response = operation / 'response.json'
+-    diagnostic = operation / 'diagnostics.json'
+-    _write_json(request, dict(payload, protocol=1, deadline=deadline))
+-    _require_deadline(deadline)
+-    env = os.environ.copy()
+-    env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
+-    command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
+-    with (operation / 'worker.log').open('wb') as log:
+-        os.chmod(operation / 'worker.log', 0o600)
++    child = log = None
++    primary_error = None
++    try:
++        _require_deadline(deadline)
++        root = Path(root).resolve()
++        operation = root / ('operation-' + uuid4().hex)
++        operation.mkdir(mode=0o700)
++        request = operation / 'request.json'
++        response = operation / 'response.json'
++        diagnostic = operation / 'diagnostics.json'
++        _write_json(request, dict(payload, protocol=1, deadline=deadline))
++        _require_deadline(deadline)
++        env = os.environ.copy()
++        env['PYTHONPATH'] = str(_PACKAGE_ROOT) + os.pathsep + env.get('PYTHONPATH', '')
++        command = [sys.executable, '-m', _MODULE, '--worker', str(request), str(response)]
++        log_path = operation / 'worker.log'
++        log = log_path.open('wb')
++        os.chmod(log_path, 0o600)
+         try:
+             child = subprocess.Popen(
+                 command, cwd=str(_PACKAGE_ROOT), env=env,
+                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+             )
+         except BaseException as exc:
+-            _write_json(diagnostic, {
++            error = exc if not isinstance(exc, Exception) else NativeWordError(
++                'NATIVE_WORD_EXECUTION_FAILED', staging_path=operation)
++            error.cleanup_verified = True
++            written = _persist_worker_diagnostic(error, diagnostic, {
+                 'status': 'failed', 'error_type': type(exc).__name__,
+                 'message': str(exc), 'word_termination_attempted': False, 'cleanup_verified': True,
+             })
+-            if not isinstance(exc, Exception):
+-                exc.cleanup_verified = True
+-                raise
+-            raise _worker_failure(operation) from None
++            evidence = _evidenced_path(error, *((diagnostic, log_path) if written else (log_path,)))
++            error.diagnostic_path = str(evidence) if evidence is not None else None
++            raise error from None
+         try:
+             child.wait(timeout=max(0.001, deadline - time.monotonic()))
+-        except subprocess.TimeoutExpired:
+-            # This is the child Python handle, never the Word PID and never a
+-            # process-tree kill. Word and uncertain open files are left intact.
+-            child.kill()
+-            child.wait(timeout=5)
+-            if not diagnostic.exists():
+-                _write_json(diagnostic, {'status': 'timeout', 'python_pid': child.pid, 'word_termination_attempted': False})
+-            raise NativeWordTimeoutError(staging_path=operation, diagnostic_path=diagnostic) from None
+-    if child.returncode != 0 or not response.is_file():
+-        raise _worker_failure(operation)
+-    result = json.loads(response.read_text(encoding='utf-8'))
+-    if not isinstance(result, dict) or result.get('status') != 'ok':
+-        raise _worker_failure(operation)
+-    try:
+-        _require_deadline(deadline)
+-    except NativeWordTimeoutError:
+-        raise NativeWordTimeoutError(staging_path=operation,
+-                                     diagnostic_path=diagnostic if diagnostic.exists() else operation / 'worker.log') from None
+-    return result['value']
++        except BaseException as exc:
++            timed_out = isinstance(exc, subprocess.TimeoutExpired)
++            error = NativeWordTimeoutError(staging_path=operation) if timed_out else exc
++            # Stop only the exact Python child before any fallible evidence
++            # lookup or write. Word and uncertain open files remain untouched.
++            for label, cleanup in (('worker.kill', child.kill),
++                                   ('worker.wait', lambda: child.wait(timeout=1))):
++                try:
++                    cleanup()
++                except BaseException as failure:
++                    _record_io_failure(error, 'cleanup_io_failures', label, failure)
++            written = _persist_worker_diagnostic(error, diagnostic, {
++                'status': 'timeout' if timed_out else 'failed', 'python_pid': child.pid,
++                'word_termination_attempted': False, 'cleanup_verified': False,
++                'error_type': type(exc).__name__,
++            })
++            evidence = _evidenced_path(error, *((diagnostic, log_path) if written else (log_path,)))
++            error.diagnostic_path = str(evidence) if evidence is not None else None
++            raise error from None
++        if child.returncode != 0 or not response.is_file():
++            raise _worker_failure(operation)
++        result = json.loads(response.read_text(encoding='utf-8'))
++        if not isinstance(result, dict) or result.get('status') != 'ok':
++            raise _worker_failure(operation)
++        try:
++            _require_deadline(deadline)
++        except NativeWordTimeoutError as error:
++            evidence = _evidenced_path(error, diagnostic, log_path)
++            error.staging_path = str(operation)
++            error.diagnostic_path = str(evidence) if evidence is not None else None
++            raise
++        return result['value']
++    except BaseException as exc:
++        primary_error = exc
++        if child is None:
++            exc.cleanup_verified = True
++        raise
++    finally:
++        if log is not None:
++            try:
++                log.close()
++            except BaseException as failure:
++                if primary_error is None:
++                    raise
++                _record_io_failure(primary_error, 'cleanup_io_failures', 'worker.log.close', failure)
+ 
+ 
+ def _resource_json(resource):
+--- /dev/null
++++ b/tests/msoffice/test_windows_word_runtime_diagnostics.py
+@@ -0,0 +1,288 @@
++"""Word one-shot worker evidence faults must not change primary outcomes."""
++from __future__ import annotations
++
++import errno
++import json
++from pathlib import Path
++import subprocess
++import sys
++import time
++
++import pytest
++
++from skills.WPSComposer.scripts.msoffice import windows_runtime as runtime
++
++
++@pytest.fixture
++def isolated(monkeypatch, tmp_path):
++    shared = tmp_path / 'writer'
++    locks = []
++
++    class Lock:
++        def __init__(self, root):
++            self.quarantine_path = root / 'native-office.quarantine.json'
++            self.closed = False
++            locks.append(self)
++
++        def acquire(self, deadline):
++            if self.quarantine_path.exists():
++                raise runtime.NativeOfficeError('NATIVE_OFFICE_QUARANTINED')
++
++        def quarantine(self, detail):
++            self.quarantine_path.write_text(json.dumps(detail))
++
++        def close(self):
++            self.closed = True
++
++    monkeypatch.setattr(runtime, '_component_root', lambda component: shared)
++    monkeypatch.setattr(runtime, 'OfficeJobLock', Lock)
++    return shared, locks, Lock
++
++
++def execute(tmp_path):
++    return runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 3)
++
++
++@pytest.mark.parametrize('primary', [runtime.NativeWordTimeoutError(), KeyboardInterrupt()])
++@pytest.mark.parametrize('fault', ['quarantine', 'close'])
++def test_shared_lock_fault_preserves_primary_identity(monkeypatch, tmp_path, isolated, primary, fault):
++    shared, locks, lock_type = isolated
++
++    def worker(*args):
++        raise primary
++
++    def fail(*args):
++        raise OSError(errno.EIO, 'controlled lock failure')
++
++    monkeypatch.setattr(runtime, '_run_worker_unlocked', worker)
++    monkeypatch.setattr(lock_type, fault, fail)
++    with pytest.raises(BaseException) as caught:
++        execute(tmp_path)
++    assert caught.value is primary
++    if fault == 'quarantine':
++        assert primary.diagnostic_io_failures == (('quarantine', 'OSError'),)
++        assert primary.quarantine_path is None
++        assert locks[0].closed
++    else:
++        assert primary.cleanup_io_failures == (('lock.close', 'OSError'),)
++        assert (shared / 'native-office.quarantine.json').is_file()
++
++
++class TimedOutChild:
++    pid = 723
++    returncode = None
++
++    def wait(self, timeout):
++        if self.returncode is None:
++            raise subprocess.TimeoutExpired('owned Python', timeout)
++
++    def kill(self):
++        self.returncode = -9
++
++
++def fail_diagnostic_writes(monkeypatch):
++    write_json = runtime._write_json
++
++    def write(path, value):
++        if path.name == 'diagnostics.json':
++            raise OSError(errno.ENOSPC, 'controlled diagnostic storage failure')
++        return write_json(path, value)
++
++    monkeypatch.setattr(runtime, '_write_json', write)
++
++
++def test_timeout_diagnostic_failure_keeps_timeout_and_shared_quarantine(monkeypatch, tmp_path, isolated):
++    child = TimedOutChild()
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: child)
++    fail_diagnostic_writes(monkeypatch)
++    with pytest.raises(runtime.NativeWordTimeoutError) as caught:
++        execute(tmp_path)
++    assert child.returncode == -9
++    assert caught.value.diagnostic_io_failures == (('diagnostics', 'OSError'),)
++    assert Path(caught.value.diagnostic_path).name == 'worker.log'
++    assert Path(caught.value.diagnostic_path).is_file()
++    assert Path(caught.value.quarantine_path).is_file()
++    with pytest.raises(runtime.NativeWordError) as blocked:
++        execute(tmp_path)
++    assert blocked.value.code == 'NATIVE_WORD_QUARANTINED'
++
++
++@pytest.mark.parametrize('primary', [OSError(errno.EACCES, 'Python unavailable'), KeyboardInterrupt(), SystemExit(7)])
++def test_launch_failure_is_known_clean_even_when_diagnostic_write_fails(monkeypatch, tmp_path, isolated, primary):
++    def launch(*args, **kwargs):
++        raise primary
++
++    monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
++    fail_diagnostic_writes(monkeypatch)
++    with pytest.raises(BaseException) as caught:
++        execute(tmp_path)
++    if isinstance(primary, Exception):
++        assert caught.value.code == 'NATIVE_WORD_EXECUTION_FAILED'
++    else:
++        assert caught.value is primary
++    assert caught.value.cleanup_verified is True
++    assert caught.value.diagnostic_io_failures == (('diagnostics', 'OSError'),)
++    assert not (isolated[0] / 'native-office.quarantine.json').exists()
++    assert isolated[1][0].closed
++
++
++def test_request_write_failure_before_launch_is_known_clean(monkeypatch, tmp_path, isolated):
++    primary = OSError(errno.ENOSPC, 'request storage failure')
++
++    def fail(*args):
++        raise primary
++
++    monkeypatch.setattr(runtime, '_write_json', fail)
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: pytest.fail('launched'))
++    with pytest.raises(OSError) as caught:
++        execute(tmp_path)
++    assert caught.value is primary
++    assert primary.cleanup_verified is True
++    assert not (isolated[0] / 'native-office.quarantine.json').exists()
++
++
++@pytest.mark.parametrize('primary', [KeyboardInterrupt(), SystemExit(8)])
++def test_wait_cancellation_stops_owned_python_and_preserves_identity(monkeypatch, tmp_path, isolated, primary):
++    class Child(TimedOutChild):
++        def wait(self, timeout):
++            if self.returncode is None:
++                raise primary
++
++    child = Child()
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: child)
++    with pytest.raises(BaseException) as caught:
++        execute(tmp_path)
++    assert caught.value is primary
++    assert child.returncode == -9
++    assert (isolated[0] / 'native-office.quarantine.json').is_file()
++
++
++def test_timeout_cleanup_errors_do_not_replace_timeout(monkeypatch, tmp_path, isolated):
++    class Child(TimedOutChild):
++        def kill(self):
++            raise OSError(errno.EACCES, 'owned Python signal refused')
++
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: Child())
++    with pytest.raises(runtime.NativeWordTimeoutError) as caught:
++        execute(tmp_path)
++    assert caught.value.cleanup_io_failures == (('worker.kill', 'PermissionError'),
++                                               ('worker.wait', 'TimeoutExpired'))
++    assert (isolated[0] / 'native-office.quarantine.json').is_file()
++
++
++def test_diagnostic_metadata_failure_cannot_skip_child_cleanup(monkeypatch, tmp_path, isolated):
++    child = TimedOutChild()
++    monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *args, **kwargs: child)
++    stat = Path.stat
++
++    def fail_stat(path, *args, **kwargs):
++        if path.name == 'diagnostics.json':
++            raise OSError(errno.EACCES, 'diagnostic stat refused')
++        return stat(path, *args, **kwargs)
++
++    monkeypatch.setattr(Path, 'stat', fail_stat)
++    with pytest.raises(runtime.NativeWordTimeoutError) as caught:
++        execute(tmp_path)
++    assert child.returncode == -9
++    assert caught.value.diagnostic_path is None or Path(caught.value.diagnostic_path).name == 'worker.log'
++    assert (isolated[0] / 'native-office.quarantine.json').is_file()
++
++
++@pytest.mark.parametrize('data', ['[]', 'null', 'false'])
++def test_non_object_diagnostics_fall_back_to_typed_failure(tmp_path, data):
++    (tmp_path / 'diagnostics.json').write_text(data)
++    error = runtime._worker_failure(tmp_path)
++    assert error.code == 'NATIVE_WORD_EXECUTION_FAILED'
++    assert error.cleanup_verified is False
++    assert Path(error.diagnostic_path).is_file()
++
++
++def test_worker_failure_never_advertises_absent_evidence(tmp_path):
++    error = runtime._worker_failure(tmp_path)
++    assert error.diagnostic_path is None
++
++
++def test_success_does_not_swallow_lock_close_failure(monkeypatch, tmp_path, isolated):
++    primary = OSError(errno.EIO, 'unlock failed')
++    monkeypatch.setattr(runtime, '_run_worker_unlocked', lambda *args: {'success': True})
++
++    def fail(lock):
++        raise primary
++
++    monkeypatch.setattr(isolated[2], 'close', fail)
++    with pytest.raises(OSError) as caught:
++        execute(tmp_path)
++    assert caught.value is primary
++
++
++def test_real_python_wait_cancellation_does_not_kill_unrelated_child(monkeypatch, tmp_path, isolated):
++    real_popen = subprocess.Popen
++    unrelated = real_popen([sys.executable, '-c', 'import time; time.sleep(30)'])
++    children = []
++    primary = KeyboardInterrupt('cancel owned worker')
++
++    def launch(command, **kwargs):
++        child = real_popen([sys.executable, '-c', 'import time; time.sleep(30)'], **kwargs)
++        children.append(child)
++        wait = child.wait
++
++        def cancelled_wait(timeout):
++            child.wait = wait
++            raise primary
++
++        child.wait = cancelled_wait
++        return child
++
++    monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
++    try:
++        with pytest.raises(KeyboardInterrupt) as caught:
++            execute(tmp_path)
++        assert caught.value is primary
++        assert children[0].poll() is not None
++        assert unrelated.poll() is None
++    finally:
++        for child in [unrelated] + children:
++            if child.poll() is None:
++                child.kill()
++            child.wait(timeout=2)
++
++
++@pytest.mark.parametrize('outcome', ['timeout', 'success'])
++def test_worker_log_close_preserves_primary_but_propagates_after_success(monkeypatch, tmp_path, isolated, outcome):
++    close_error = OSError(errno.EIO, 'controlled log close failure')
++    open_path = Path.open
++
++    class Log:
++        def __init__(self, stream):
++            self.stream = stream
++
++        def __enter__(self):
++            return self
++
++        def __exit__(self, *args):
++            self.close()
++
++        def close(self):
++            self.stream.close()
++            raise close_error
++
++    def open_log(path, *args, **kwargs):
++        stream = open_path(path, *args, **kwargs)
++        return Log(stream) if path.name == 'worker.log' else stream
++
++    def launch(command, **kwargs):
++        child = TimedOutChild()
++        if outcome == 'success':
++            child.returncode = 0
++            Path(command[-1]).write_text(json.dumps({'status': 'ok', 'value': {'native': 'success'}}))
++        return child
++
++    monkeypatch.setattr(Path, 'open', open_log)
++    monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
++    with pytest.raises(BaseException) as caught:
++        execute(tmp_path)
++    if outcome == 'timeout':
++        assert isinstance(caught.value, runtime.NativeWordTimeoutError)
++        assert caught.value.cleanup_io_failures == (('worker.log.close', 'OSError'),)
++    else:
++        assert caught.value is close_error

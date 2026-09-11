@@ -1,0 +1,16 @@
+{
+  "source_hashes_after_run": {
+    "skills/WPSComposer/scripts/macos_probe/inspection.py": "8e693084f3caf30e522b0cf4de8bf98e00363864e607cfdf5589d977a416d7f7",
+    "skills/WPSComposer/scripts/artifact_transport.py": "a7d3352e2d54fa90829acb0a32da42c0db619a58eb4ad5ffeeaefbd1953f655e",
+    "skills/WPSComposer/scripts/document_api.py": "d8b64d325cc8906776765bab61570099e9e977e482c82f8df1ecf20e03a39a05"
+  },
+  "artifact_hashes": {
+    "edited.pdf": "4754e92bd263760165aef2661ea711b7e5eeb3c1f74485fdba45a0237b95c83c",
+    "edited.pptx": "cab23d598f5da18fee720399b6c3fa38c95dd91af2c24fb233e2d61290a66406"
+  },
+  "original_wps_pid_preserved": true,
+  "after_wps_pids": [
+    15087
+  ],
+  "scope": "Public WPS inspect/edit/reinspect/convert; one PPTX text patch; no exhaustive format or final whole-source claim."
+}

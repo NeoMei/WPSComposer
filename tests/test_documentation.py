@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pytest supplies tomli on Python 3.9/3.10.
+    import tomli as tomllib
+
 
 ROOT = Path(__file__).resolve().parents[1]
 README = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -46,7 +51,8 @@ def test_docs_describe_current_install_and_output_contract():
 
 
 def test_dev_extra_includes_platform_independent_test_dependencies():
-    assert 'dev = ["pytest>=8", "reportlab>=4"]' in PYPROJECT
+    dev = tomllib.loads(PYPROJECT)["project"]["optional-dependencies"]["dev"]
+    assert {"pytest>=8", "reportlab>=4", "PyMuPDF>=1.24"}.issubset(dev)
 
 
 def test_public_status_docs_record_completed_cross_platform_gate():

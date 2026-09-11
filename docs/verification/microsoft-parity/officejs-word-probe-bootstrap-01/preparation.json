@@ -1,0 +1,12 @@
+{
+  "candidate": "4afb7d36f25118ff2487b455865b846d9edeffde",
+  "certificate": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/build/officejs-word-probe-native-01/tls/localhost.crt",
+  "certificate_file_sha256": "5fb8ccb412409fbf80345382e51680db7da4411db717392879cf20e6f52db016",
+  "key_recorded_in_evidence": false,
+  "certificate_trust_changed": false,
+  "manifest_installed": false,
+  "server_started": false,
+  "pretrust_returncode": 1,
+  "existing_wef_directory": false,
+  "standard_office_development_certificate_directory": false
+}

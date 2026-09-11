@@ -1,0 +1,1959 @@
+{
+  "kind": "slide",
+  "name": "source.pptx",
+  "path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/wps-shared-save-regression-20260909-fixed02/edited.pptx",
+  "saved": -1,
+  "slide_count": 5,
+  "shapes_truncated": false,
+  "slides": [
+    {
+      "id": "slide:1",
+      "index": 1,
+      "name": "WPS shared save verified",
+      "layout": 1,
+      "follow_master_background": -1,
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:1/shape:@id=4",
+          "index": 1,
+          "shape_id": 4,
+          "name": "标题 3",
+          "type": 14,
+          "placeholder_type": 3,
+          "geometry": {
+            "left": 120,
+            "top": 88.37503814697266,
+            "width": 720,
+            "height": 188,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "WPS shared save verified",
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线 Light",
+            "color": 6697728
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 4,
+            "text": "WPS shared save verified",
+            "font": {
+              "name": "Arial",
+              "size": 36,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线 Light",
+              "color": 6697728
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@id=4/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 36,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线 Light",
+                  "color": 6697728
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@id=4/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "WPS shared save verified"
+                  },
+                  {
+                    "id": "slide:1/shape:@id=4/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "Arial",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "WPS shared save verified\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:1/shape:@id=5",
+          "index": 2,
+          "shape_id": 5,
+          "name": "副标题 4",
+          "type": 14,
+          "placeholder_type": 4,
+          "geometry": {
+            "left": 120,
+            "top": 283.6250305175781,
+            "width": 720,
+            "height": 130.3749542236328,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Native subtitle",
+          "font": {
+            "name": "Arial",
+            "size": 20,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 5263440
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 1,
+            "text": "Native subtitle",
+            "font": {
+              "name": "Arial",
+              "size": 20,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 5263440
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 7.5,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@id=5/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 20,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 5263440
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 7.5,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@id=5/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 20,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5263440
+                    },
+                    "text": "Native subtitle"
+                  },
+                  {
+                    "id": "slide:1/shape:@id=5/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 20,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5263440
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Native subtitle\r"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "slide:2",
+      "index": 2,
+      "name": "Semantic section",
+      "layout": 11,
+      "follow_master_background": -1,
+      "shape_count": 1,
+      "shapes": [
+        {
+          "id": "slide:2/shape:@id=3",
+          "index": 1,
+          "shape_id": 3,
+          "name": "标题 2",
+          "type": 14,
+          "placeholder_type": 1,
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Semantic section",
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线 Light",
+            "color": 6697728
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 3,
+            "text": "Semantic section",
+            "font": {
+              "name": "Arial",
+              "size": 36,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线 Light",
+              "color": 6697728
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:2/shape:@id=3/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 36,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线 Light",
+                  "color": 6697728
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:2/shape:@id=3/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "Semantic section"
+                  },
+                  {
+                    "id": "slide:2/shape:@id=3/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线 Light",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Semantic section\r"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "slide:3",
+      "index": 3,
+      "name": "Semantic text",
+      "layout": 2,
+      "follow_master_background": -1,
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:3/shape:@id=4",
+          "index": 1,
+          "shape_id": 4,
+          "name": "标题 3",
+          "type": 14,
+          "placeholder_type": 1,
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Semantic text",
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线 Light",
+            "color": 6697728
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 3,
+            "text": "Semantic text",
+            "font": {
+              "name": "Arial",
+              "size": 36,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线 Light",
+              "color": 6697728
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:3/shape:@id=4/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 36,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线 Light",
+                  "color": 6697728
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:3/shape:@id=4/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "Semantic text"
+                  },
+                  {
+                    "id": "slide:3/shape:@id=4/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线 Light",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Semantic text\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:3/shape:@id=5",
+          "index": 2,
+          "shape_id": 5,
+          "name": "文本占位符 4",
+          "type": 14,
+          "placeholder_type": 2,
+          "geometry": {
+            "left": 66,
+            "top": 143.75,
+            "width": 828,
+            "height": 342.6250305175781,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Plain paragraph",
+          "font": {
+            "name": "Arial",
+            "size": 18,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 2171169
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 1,
+            "text": "Plain paragraph",
+            "font": {
+              "name": "Arial",
+              "size": 18,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 2171169
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 7.5,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:3/shape:@id=5/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 18,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 2171169
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 7.5,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:3/shape:@id=5/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "Plain paragraph"
+                  },
+                  {
+                    "id": "slide:3/shape:@id=5/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Plain paragraph\r"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "slide:4",
+      "index": 4,
+      "name": "Semantic bullets",
+      "layout": 2,
+      "follow_master_background": -1,
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:4/shape:@id=4",
+          "index": 1,
+          "shape_id": 4,
+          "name": "标题 3",
+          "type": 14,
+          "placeholder_type": 1,
+          "geometry": {
+            "left": 66,
+            "top": 28.750078201293945,
+            "width": 828,
+            "height": 104.37503814697266,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Semantic bullets",
+          "font": {
+            "name": "Arial",
+            "size": 36,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线 Light",
+            "color": 6697728
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 3,
+            "text": "Semantic bullets",
+            "font": {
+              "name": "Arial",
+              "size": 36,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线 Light",
+              "color": 6697728
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:4/shape:@id=4/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 36,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线 Light",
+                  "color": 6697728
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:4/shape:@id=4/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "Semantic bullets"
+                  },
+                  {
+                    "id": "slide:4/shape:@id=4/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线 Light",
+                      "size": 36,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线 Light",
+                      "color": 6697728
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Semantic bullets\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:4/shape:@id=5",
+          "index": 2,
+          "shape_id": 5,
+          "name": "文本占位符 4",
+          "type": 14,
+          "placeholder_type": 2,
+          "geometry": {
+            "left": 66,
+            "top": 143.75,
+            "width": 828,
+            "height": 342.6250305175781,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "First native bullet\rSecond native bullet",
+          "font": {
+            "name": "Arial",
+            "size": 18,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 2171169
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 2,
+            "vertical_anchor": 1,
+            "text": "First native bullet\rSecond native bullet",
+            "font": {
+              "name": "Arial",
+              "size": 18,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 2171169
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 7.5,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:4/shape:@id=5/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "Arial",
+                  "size": 18,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 2171169
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 7.5,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:4/shape:@id=5/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "First native bullet"
+                  },
+                  {
+                    "id": "slide:4/shape:@id=5/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "Arial",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "First native bullet\r"
+              },
+              {
+                "id": "slide:4/shape:@id=5/paragraph:2",
+                "index": 2,
+                "font": {
+                  "name": "Arial",
+                  "size": 18,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 2171169
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 7.5,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:4/shape:@id=5/paragraph:2/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "Arial",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "Second native bullet"
+                  },
+                  {
+                    "id": "slide:4/shape:@id=5/paragraph:2/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 2171169
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Second native bullet\r"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "slide:5",
+      "index": 5,
+      "name": "幻灯片 5",
+      "layout": 12,
+      "follow_master_background": 0,
+      "shape_count": 8,
+      "shapes": [
+        {
+          "id": "slide:5/shape:@id=2",
+          "index": 1,
+          "shape_id": 2,
+          "name": "wpscomposer-25627b1945164cd78b2777937a8f9150",
+          "type": 17,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 40,
+            "top": 30,
+            "width": 300,
+            "height": 36.3515739440918,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Native textbox",
+          "font": {
+            "name": "等线",
+            "size": 24,
+            "bold": -1,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 5649426
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 1,
+            "vertical_anchor": 1,
+            "text": "Native textbox",
+            "font": {
+              "name": "等线",
+              "size": 24,
+              "bold": -1,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 5649426
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:5/shape:@id=2/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "等线",
+                  "size": 24,
+                  "bold": -1,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 5649426
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:5/shape:@id=2/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 24,
+                      "bold": -1,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5649426
+                    },
+                    "text": "Native textbox"
+                  },
+                  {
+                    "id": "slide:5/shape:@id=2/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 24,
+                      "bold": -1,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5649426
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Native textbox\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=3",
+          "index": 2,
+          "shape_id": 3,
+          "name": "wpscomposer-650044a13ee941f8b960e7619189aa82",
+          "type": 1,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 40,
+            "top": 115,
+            "width": 180,
+            "height": 80,
+            "rotation": 0
+          },
+          "fill": {
+            "type": 1,
+            "visible": -1,
+            "fore_color_rgb": 10053154
+          },
+          "line": {
+            "visible": -1,
+            "weight": 1,
+            "fore_color_rgb": 43775
+          },
+          "text": "Rounded shape",
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 16777215
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 0,
+            "vertical_anchor": 3,
+            "text": "Rounded shape",
+            "font": {
+              "name": "等线",
+              "size": 18,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 16777215
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:5/shape:@id=3/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "等线",
+                  "size": 18,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 16777215
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:5/shape:@id=3/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "Rounded shape"
+                  },
+                  {
+                    "id": "slide:5/shape:@id=3/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 18,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Rounded shape\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=4",
+          "index": 3,
+          "shape_id": 4,
+          "name": "wpscomposer-c8b9657a86d64157b01b850db66b5504",
+          "type": 1,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 250,
+            "top": 115,
+            "width": 90,
+            "height": 80,
+            "rotation": 0
+          },
+          "fill": {
+            "type": 1,
+            "visible": -1,
+            "fore_color_rgb": 8956467
+          },
+          "line": {
+            "visible": -1,
+            "weight": 1,
+            "fore_color_rgb": 5319703
+          },
+          "text": "",
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 16777215
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 0,
+            "vertical_anchor": 3,
+            "text": "",
+            "font": {
+              "name": "等线",
+              "size": 18,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 16777215
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": []
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=6",
+          "index": 4,
+          "shape_id": 6,
+          "name": "wpscomposer-a23ec700dcfa437ca7df65f397ad0156",
+          "type": 13,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 380,
+            "top": 115,
+            "width": 120,
+            "height": 120,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text_frame": {
+            "margin_left": 9999999,
+            "margin_right": 9999999,
+            "margin_top": 9999999,
+            "margin_bottom": 9999999,
+            "word_wrap": -2,
+            "auto_size": -2,
+            "vertical_anchor": -2
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=7",
+          "index": 5,
+          "shape_id": 7,
+          "name": "wpscomposer-b20d3984a826454e873043d27fef27e5",
+          "type": 19,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 40,
+            "top": 260,
+            "width": 450,
+            "height": 130,
+            "rotation": 0
+          },
+          "fill": {
+            "type": 1,
+            "visible": -1,
+            "fore_color_rgb": 16777215
+          },
+          "line": {
+            "visible": null,
+            "weight": -2147483904,
+            "fore_color_rgb": null
+          },
+          "text": "Native",
+          "font": {
+            "name": "等线",
+            "size": 15,
+            "bold": -2,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 16777215
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 0,
+            "vertical_anchor": 1,
+            "text": "Native",
+            "font": {
+              "name": "等线",
+              "size": 15,
+              "bold": -2,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 16777215
+            },
+            "paragraph": {
+              "alignment": 1,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:5/shape:@id=7/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": -2,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 16777215
+                },
+                "paragraph": {
+                  "alignment": 1,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:5/shape:@id=7/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 15,
+                      "bold": -2,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "Native"
+                  },
+                  {
+                    "id": "slide:5/shape:@id=7/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 15,
+                      "bold": -2,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Native\r"
+              }
+            ]
+          },
+          "table": {
+            "rows": 2,
+            "columns": 2,
+            "cells": [
+              {
+                "id": "slide:5/shape:@id=7/table/cell:1,1",
+                "row": 1,
+                "column": 1,
+                "fill": {
+                  "type": 1,
+                  "visible": -1,
+                  "fore_color_rgb": 5588019
+                },
+                "text": "Native",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": -1,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 16777215
+                }
+              },
+              {
+                "id": "slide:5/shape:@id=7/table/cell:1,2",
+                "row": 1,
+                "column": 2,
+                "fill": {
+                  "type": 1,
+                  "visible": -1,
+                  "fore_color_rgb": 5588019
+                },
+                "text": "Table",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": -1,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 16777215
+                }
+              },
+              {
+                "id": "slide:5/shape:@id=7/table/cell:2,1",
+                "row": 2,
+                "column": 1,
+                "fill": {
+                  "type": 1,
+                  "visible": -1,
+                  "fore_color_rgb": 16777215
+                },
+                "text": "Value",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 0
+                }
+              },
+              {
+                "id": "slide:5/shape:@id=7/table/cell:2,2",
+                "row": 2,
+                "column": 2,
+                "fill": {
+                  "type": 1,
+                  "visible": -1,
+                  "fore_color_rgb": 16777215
+                },
+                "text": "42",
+                "font": {
+                  "name": "等线",
+                  "size": 15,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=8",
+          "index": 6,
+          "shape_id": 8,
+          "name": "wpscomposer-700545fbbd6a4f52b44bfa27c1147888",
+          "type": 9,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 40,
+            "top": 412,
+            "width": 450,
+            "height": 0,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": -1,
+            "weight": 4,
+            "fore_color_rgb": 2245802
+          },
+          "text_frame": {
+            "margin_left": 9999999,
+            "margin_right": 9999999,
+            "margin_top": 9999999,
+            "margin_bottom": 9999999,
+            "word_wrap": -2,
+            "auto_size": -2,
+            "vertical_anchor": -2
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=9",
+          "index": 7,
+          "shape_id": 9,
+          "name": "wpscomposer-28ae784558434ef9977d1eed1edc3549",
+          "type": 1,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 560,
+            "top": 80,
+            "width": 220,
+            "height": 120,
+            "rotation": 0
+          },
+          "fill": {
+            "type": 1,
+            "visible": -1,
+            "fore_color_rgb": 8965358
+          },
+          "line": {
+            "visible": -1,
+            "weight": 1,
+            "fore_color_rgb": 5319703
+          },
+          "text": "Native box",
+          "font": {
+            "name": "等线",
+            "size": 12,
+            "bold": 0,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 16777215
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 0,
+            "vertical_anchor": 3,
+            "text": "Native box",
+            "font": {
+              "name": "等线",
+              "size": 12,
+              "bold": 0,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 16777215
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:5/shape:@id=9/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "等线",
+                  "size": 12,
+                  "bold": 0,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 16777215
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:5/shape:@id=9/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 12,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "Native box"
+                  },
+                  {
+                    "id": "slide:5/shape:@id=9/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 12,
+                      "bold": 0,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 16777215
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Native box\r"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:5/shape:@id=10",
+          "index": 8,
+          "shape_id": 10,
+          "name": "wpscomposer-f32cfa581b5a42f58b0118e531d2f9c6",
+          "type": 17,
+          "placeholder_type": null,
+          "geometry": {
+            "left": 560,
+            "top": 240,
+            "width": 300,
+            "height": 33.9281120300293,
+            "rotation": 0
+          },
+          "fill": {
+            "type": -2,
+            "visible": 0,
+            "fore_color_rgb": 0
+          },
+          "line": {
+            "visible": 0,
+            "weight": -2147483904,
+            "fore_color_rgb": 16777215
+          },
+          "text": "Native layout text",
+          "font": {
+            "name": "等线",
+            "size": 22,
+            "bold": -1,
+            "italic": 0,
+            "underline": 0,
+            "strikethrough": null,
+            "subscript": 0,
+            "superscript": 0,
+            "name_far_east": "等线",
+            "color": 5649426
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": -1,
+            "auto_size": 1,
+            "vertical_anchor": 1,
+            "text": "Native layout text",
+            "font": {
+              "name": "等线",
+              "size": 22,
+              "bold": -1,
+              "italic": 0,
+              "underline": 0,
+              "strikethrough": null,
+              "subscript": 0,
+              "superscript": 0,
+              "name_far_east": "等线",
+              "color": 5649426
+            },
+            "paragraph": {
+              "alignment": 2,
+              "left_indent": null,
+              "first_line_indent": null,
+              "line_spacing": null,
+              "line_rule_within": -1,
+              "space_before": 0,
+              "space_after": 0
+            },
+            "paragraphs": [
+              {
+                "id": "slide:5/shape:@id=10/paragraph:1",
+                "index": 1,
+                "font": {
+                  "name": "等线",
+                  "size": 22,
+                  "bold": -1,
+                  "italic": 0,
+                  "underline": 0,
+                  "strikethrough": null,
+                  "subscript": 0,
+                  "superscript": 0,
+                  "name_far_east": "等线",
+                  "color": 5649426
+                },
+                "paragraph": {
+                  "alignment": 2,
+                  "left_indent": null,
+                  "first_line_indent": null,
+                  "line_spacing": null,
+                  "line_rule_within": -1,
+                  "space_before": 0,
+                  "space_after": 0
+                },
+                "runs": [
+                  {
+                    "id": "slide:5/shape:@id=10/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 22,
+                      "bold": -1,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5649426
+                    },
+                    "text": "Native layout text"
+                  },
+                  {
+                    "id": "slide:5/shape:@id=10/paragraph:1/run:2",
+                    "index": 2,
+                    "font": {
+                      "name": "等线",
+                      "size": 22,
+                      "bold": -1,
+                      "italic": 0,
+                      "underline": 0,
+                      "strikethrough": null,
+                      "subscript": 0,
+                      "superscript": 0,
+                      "name_far_east": "等线",
+                      "color": 5649426
+                    },
+                    "text": "\r"
+                  }
+                ],
+                "text": "Native layout text\r"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Semantic native notes"
+    }
+  ]
+}

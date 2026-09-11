@@ -1,0 +1,6 @@
+font-record-59:0: set probeRange to create range boundDoc start 59 end 60
+font-record-59:1: set probeFontRecord to get properties of font object of probeRange
+font-record-59:2: set probeRecordClass to class of probeFontRecord as text
+font-record-59:3: set probeRows to {{"font-record",probeRecordClass,name of probeFontRecord as text,font size of probeFontRecord as real,bold of probeFontReco
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["font-record","font","DengXian",11,false,false,"underline none"]]]]]

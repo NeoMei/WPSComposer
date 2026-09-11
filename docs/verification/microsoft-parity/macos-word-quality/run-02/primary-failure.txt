@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_quality.py", line 248, in run
+    if session.upsert_document_quality_notice(ISSUE.copy()) is not None:
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 2151, in upsert_document_quality_notice
+    return upsert_document_quality_notice(self, issue)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_quality.py", line 76, in upsert_document_quality_notice
+    _upsert_quality_notice_mapping(session, issue)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_quality.py", line 69, in _upsert_quality_notice_mapping
+    raise _error('quality notice upsert failed') from None
+skills.WPSComposer.scripts.writer.NativeWriterObjectError: quality notice upsert failed

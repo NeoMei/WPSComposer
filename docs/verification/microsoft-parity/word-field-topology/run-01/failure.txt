@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/tmp/wps_word_topology_native.py", line 30, in <module>
+    session.add_cross_reference_paragraph(runs=[{'type':'reference','bookmarkName':'WPSC_TopologyRef','prefix':'Owned ','suffix':' end','fallbackText':'fallback'}],owner_node_id='owner:native')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 2080, in add_cross_reference_paragraph
+    return paragraph(self, runs, owner_node_id, listFormatting, controller_owned)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_references.py", line 320, in paragraph
+    runs,indent=normalize_runs(runs,list_formatting)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_references.py", line 77, in normalize_runs
+    _reference_field_code(item['bookmarkName'])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/writer.py", line 89, in _reference_field_code
+    raise ValueError("invalid native bookmark")
+ValueError: invalid native bookmark

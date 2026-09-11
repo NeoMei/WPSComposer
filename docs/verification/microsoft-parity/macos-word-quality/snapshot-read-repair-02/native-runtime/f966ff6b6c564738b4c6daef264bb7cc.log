@@ -1,0 +1,4 @@
+story-count:0: set probeRows to {{"story-count",(count story ranges of boundDoc)}}
+story-count:0: set probeRows to {{"story-count",(count story ranges of boundDoc)}}, -1708
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","story-count:0: set probeRows to {{\"story-count\",(count story ranges of boundDoc)}}",-1708,"“Microsoft Word”遇到一个错误：“every story range of document \"document-ff5405fea4934a65abece05841f98af8.docx\"”不理解“count”信息。"]]]

@@ -1,0 +1,5 @@
+before_books=0
+sentinel_name=工作簿1
+owned_name=工作簿2
+stage=data
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/run-01/probe.applescript:1138:1223: execution error: “Microsoft Excel”遇到一个错误：参数错误。 (-50)

@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "helper_sha256": "b9d2beace9b9f267d5a38998e3b31a848447ae7d44620353fa09d20c774bf4ad",
+  "steps": [
+    {
+      "names": [
+        "Data",
+        "Results",
+        "Business report"
+      ]
+    },
+    {
+      "deleted": true
+    }
+  ],
+  "original_before": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "pid": 1409,
+  "process_identity": "Thu Sep 10 20:35:33 2026     /Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+  "private_before": {
+    "books": [
+      [
+        "工作簿1",
+        "工作簿1",
+        true,
+        ""
+      ]
+    ],
+    "alerts": true
+  },
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-j1ni1yqq/owned-ff9bede9b5544bf6bf4a9aff2e48251b.xlsx",
+  "runtime": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-j1ni1yqq",
+  "reopened": {
+    "names": [
+      "Data",
+      "Results"
+    ],
+    "marker": "PRIVATE-JSON-ROUNDTRIP",
+    "alerts": true
+  },
+  "private_final": {
+    "books": [],
+    "alerts": true
+  },
+  "quit": {
+    "quit": true
+  },
+  "original_after": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  }
+}

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 206, in run_business
+    pane=root.find('.//s:pane',ns);assert pane.get('state')=='frozen' and pane.get('xSplit')=='1' and pane.get('ySplit')=='1'
+AssertionError

@@ -1,0 +1,26 @@
+{
+  "status": "OFFLINE_PREPARED_ONLY",
+  "native_executed": false,
+  "file_count": 19,
+  "sha256": {
+    "taskpane.css": "c6ec516146a3e54e1b04104dde0091a986544c5fc2d62ec2d3b3ca64d5feadc2",
+    "configure.py": "fc41adc8e0c40ed894ef9f82f197e09689bea34260a273abcca2c1c16316d554",
+    "REPORT.md": "85817b2998706cbe85bc20aefd9164cf73e7d159477e207a067602f30477f215",
+    "taskpane.js": "45e32946e5d74b496a44908613a1154c42cdf19b015ee46c958278c69a5170a9",
+    "manifest.word.xml": "2682cf7e82d7262f17ce8e4affb900b6dbb5bd0d26418f05475ef3c28a777003",
+    "README.md": "3e496c0a26d89c821dde0cde14c01baa40702a7ec41d34f26956d1dd5a1b021f",
+    "manifest.word.xml.template": "ba522673f77c6377c57ce9997762cf23e4cf6632f7bef3182e671ba92a62b5ec",
+    "taskpane.html": "66d009da4426202fd357a10d6f9a9c6793ea703dd68c3f46f84541dbcd2458b4",
+    "probe.js": "8da68b4f4e2420e66262e3b56086a71db3251c3269d54d85ccd7fd8ebdf0f046",
+    "evidence/red-js.log": "fa810bf33bab9ef9961181041a40d87155882de08a0ee0576bc85276af014bb3",
+    "evidence/green-manifest.log": "e11bbb630c1a6ea91f4322ac92d7ce2a6c043ad84d3e41ecf0d0f5a73e9c9fd0",
+    "evidence/review-key-red-js.log": "41863f0dda5b897c379fd930b4c029d5c8077e1ad156779feeaf0b0de282f473",
+    "evidence/review-key-green-manifest.log": "1e43b905e11ca028139fe5078016515111aaf7cebf8d6a3e224b7d03b9cb6ac9",
+    "evidence/green-js.log": "df80bb29a72311609588e1255acbd94210f9f2604ca267fa2587bbe25ffa38cc",
+    "evidence/review-key-green-js.log": "bdb56b298de536db5535cd9eb389713b82def3d3e9683f86e252b1f486088a3c",
+    "evidence/red-manifest.log": "1e0f0f70158194bd6376434938a58d00d6abe90675f4253f840571ecdee07a22",
+    "tests/probe.test.cjs": "0a0c4063b4ea0c55435051124ac022fd78fddd4fe796f247f8fdbc999d0ef494",
+    "tests/test_manifest.py": "0dbb1e3d1eafa4341b8f80f425c024d8261a0254a3f283f7591b528a8d56af86",
+    "tests/taskpane.test.cjs": "3d9e9ec767f4e3ebcdc8d14bad89d8efd311e9ecb5d8daa84f9d1a16284b68d5"
+  }
+}

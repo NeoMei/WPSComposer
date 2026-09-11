@@ -1,0 +1,77 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_recovery_write_failure_preserves_primary_and_quarantines[primary0] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106435cd0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_recovery_write_failure_pr0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_recovery_write_failure_pr0/private'), ['recovery', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+primary = NativeOfficeError('Native Office timed out; uncertain task files are retained.')
+
+    @pytest.mark.parametrize('primary', [runtime.NativeOfficeError('NATIVE_OFFICE_TIMEOUT'), KeyboardInterrupt()])
+    def test_recovery_write_failure_preserves_primary_and_quarantines(monkeypatch, tmp_path, isolated, primary):
+        root, events, _ = isolated
+        def worker(*args):
+            raise primary
+        monkeypatch.setattr(runtime, '_run_worker', worker)
+        def fail_write(path, detail):
+            events.append('recovery')
+            raise OSError('disk full')
+        monkeypatch.setattr(runtime, '_write_json', fail_write)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+>       assert caught.value is primary
+E       AssertionError: assert OSError('disk full') is NativeOfficeError('Native Office timed out; uncertain task files are retained.')
+E        +  where OSError('disk full') = <ExceptionInfo OSError('disk full') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:56: AssertionError
+___ test_recovery_write_failure_preserves_primary_and_quarantines[primary1] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1064a1f40>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_recovery_write_failure_pr1')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_recovery_write_failure_pr1/private'), ['recovery', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+primary = KeyboardInterrupt()
+
+    @pytest.mark.parametrize('primary', [runtime.NativeOfficeError('NATIVE_OFFICE_TIMEOUT'), KeyboardInterrupt()])
+    def test_recovery_write_failure_preserves_primary_and_quarantines(monkeypatch, tmp_path, isolated, primary):
+        root, events, _ = isolated
+        def worker(*args):
+            raise primary
+        monkeypatch.setattr(runtime, '_run_worker', worker)
+        def fail_write(path, detail):
+            events.append('recovery')
+            raise OSError('disk full')
+        monkeypatch.setattr(runtime, '_write_json', fail_write)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+>       assert caught.value is primary
+E       AssertionError: assert OSError('disk full') is KeyboardInterrupt()
+E        +  where OSError('disk full') = <ExceptionInfo OSError('disk full') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:56: AssertionError
+_________________ test_lock_cleanup_failure_keeps_native_error _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1064a12b0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_lock_cleanup_failure_keep0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1304/test_lock_cleanup_failure_keep0/private'), ['quarantine'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+
+    def test_lock_cleanup_failure_keeps_native_error(monkeypatch, tmp_path, isolated):
+        _, _, lock = isolated
+        primary = runtime.NativeOfficeError('NATIVE_OFFICE_TIMEOUT')
+        def worker(*args):
+            raise primary
+        def close(self):
+            raise OSError('close failed')
+        monkeypatch.setattr(runtime, '_run_worker', worker)
+        monkeypatch.setattr(lock, 'close', close)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+>       assert caught.value is primary
+E       AssertionError: assert OSError('close failed') is NativeOfficeError('Native Office timed out; uncertain task files are retained.')
+E        +  where OSError('close failed') = <ExceptionInfo OSError('close failed') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:79: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_recovery_write_failure_preserves_primary_and_quarantines[primary0]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_recovery_write_failure_preserves_primary_and_quarantines[primary1]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_lock_cleanup_failure_keeps_native_error
+3 failed in 0.05s

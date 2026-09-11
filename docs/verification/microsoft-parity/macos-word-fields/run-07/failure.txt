@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_fields.py", line 84, in run
+    assert report['reopen_rows']==report['native_rows']
+AssertionError

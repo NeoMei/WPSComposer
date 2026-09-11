@@ -1,0 +1,4 @@
+# Native acceptance artifacts are deliberate evidence, not generated deliverables.
+!**/*.pptx
+!**/*.pdf
+!**/*.png

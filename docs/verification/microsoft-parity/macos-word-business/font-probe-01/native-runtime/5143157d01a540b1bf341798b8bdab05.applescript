@@ -1,0 +1,26 @@
+use framework "Foundation"
+use scripting additions
+on jsonRows(rows)
+  set dataValue to current application's NSJSONSerialization's dataWithJSONObject:rows options:0 |error|:(missing value)
+  return (current application's NSString's alloc()'s initWithData:dataValue encoding:4) as text
+end jsonRows
+on enumIndex(v, choices)
+  repeat with i from 1 to count choices
+    if v is item i of choices then return i - 1
+  end repeat
+  return -1
+end enumIndex
+with timeout of 60 seconds
+tell application "/Applications/Microsoft Word.app"
+set nativeRows to {}
+set boundDoc to document "document-1492bc22a90c41a3bdedef7976d51d9f.docx"
+set boundWindow to active window of boundDoc
+if (posix full name of boundDoc as text) is not "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-5fir20uz/document-1492bc22a90c41a3bdedef7976d51d9f.docx" then error "WPSC_STALE_DOCUMENT"
+save as boundDoc file name "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-5fir20uz/f931d6990eea483882b6f5091d29e05f.pdf" file format format PDF add to recent files false
+set boundDoc to document "document-1492bc22a90c41a3bdedef7976d51d9f.docx"
+set boundWindow to active window of boundDoc
+if (posix full name of boundDoc as text) is not "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-5fir20uz/document-1492bc22a90c41a3bdedef7976d51d9f.docx" then error "WPSC_STALE_DOCUMENT"
+set nativeRows to {{"ok"}}
+end tell
+end timeout
+return my jsonRows({"WPSCOMPOSER_WORD_SESSION_OK", nativeRows})

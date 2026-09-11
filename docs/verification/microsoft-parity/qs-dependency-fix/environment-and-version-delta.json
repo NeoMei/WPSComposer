@@ -1,0 +1,29 @@
+{
+  "node": "v24.18.0",
+  "npm": "11.16.0",
+  "package_versions": {
+    "express": {
+      "before": "4.22.2",
+      "after": "4.22.2"
+    },
+    "body-parser": {
+      "before": "1.20.6",
+      "after": "1.20.6"
+    },
+    "qs": {
+      "before": "6.15.3",
+      "after": "6.16.0"
+    },
+    "wpsjs": {
+      "before": "2.2.3",
+      "after": "2.2.3"
+    },
+    "wps-jsapi-declare": {
+      "before": "2.2.0",
+      "after": "2.2.0"
+    }
+  },
+  "changed_package_entries": [
+    "node_modules/qs"
+  ]
+}

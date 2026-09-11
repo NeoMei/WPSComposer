@@ -1,0 +1,84 @@
+{
+  "passed": true,
+  "modes": {
+    "inactive": {
+      "sentinel_before": [
+        "文档14",
+        "文档14",
+        false,
+        "d8d93ef200c933f33b9c0299219dd0fa5df2a83c914d4db77257fadfcc530372"
+      ],
+      "native": [
+        [
+          "before",
+          "\r",
+          1,
+          0
+        ],
+        [
+          "error",
+          -2710,
+          "“Microsoft Word”遇到一个错误：不能生成类“table”。"
+        ],
+        [
+          "after",
+          "\r",
+          1,
+          0
+        ]
+      ],
+      "owned_closed": true,
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档14"
+        ]
+      ],
+      "after": [],
+      "cleanup_verified": true
+    },
+    "active": {
+      "sentinel_before": [
+        "文档16",
+        "文档16",
+        false,
+        "a3f3aca6d195b9b05b7a3e0a1df468adc9bdbb4eb908d1e0470c0f98f22d0a65"
+      ],
+      "native": [
+        [
+          "before",
+          "\r",
+          1,
+          0
+        ],
+        [
+          "created",
+          0,
+          2,
+          1,
+          1
+        ],
+        [
+          "after",
+          "\r\u0007\r\u0007\r",
+          3,
+          1
+        ]
+      ],
+      "owned_closed": true,
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档16"
+        ]
+      ],
+      "after": [],
+      "cleanup_verified": true
+    }
+  },
+  "source_hashes": {
+    "macos_word_session.py": "a6f39d1191a7df557a7c911904e598bb5fa538430314a84afc9aeef711e0d534",
+    "macos_word_degradation.py": "be11e3347d3d02a7aa167a8923da82a1646e38eab5616b4f14243cc34f2e7a54",
+    "macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f"
+  }
+}

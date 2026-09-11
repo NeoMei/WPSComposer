@@ -1,0 +1,419 @@
+{
+  "status": "FAIL",
+  "scope": "Read-only tab diagnostics; empty-list result proves only this fixture; no full import or public parity",
+  "checks": {
+    "pinned_input": true,
+    "empty_inventory": true,
+    "exact_owned_inventory": true,
+    "initial_saved_state": true,
+    "initial_private_hash": true,
+    "style_saved_text_topology_unchanged": true,
+    "style_inventory_hash_unchanged": true,
+    "style_private_bytes_unchanged": true,
+    "style_input_bytes_unchanged": true,
+    "paragraph_saved_text_topology_unchanged": true,
+    "paragraph_inventory_hash_unchanged": true,
+    "paragraph_private_bytes_unchanged": true,
+    "paragraph_input_bytes_unchanged": true,
+    "owned_closed": true,
+    "final_inventory_empty": true,
+    "final_input_preserved": true,
+    "sources_unchanged": true
+  },
+  "blocks": {
+    "style": {
+      "status": "FAIL",
+      "error": {
+        "type": "NativeWordError",
+        "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma/ef4d3a37d4774552809dc8e3e71b4442.log"
+      }
+    },
+    "paragraph": {
+      "status": "PASS",
+      "valid": true,
+      "tab_count": 19
+    }
+  },
+  "source_hashes": {
+    "build/word-heading-import-20260910/tab-list-read-diagnostic.py": "d53d0047105991059472c3144c542935be8c89f24d145eda270377889461a4f8",
+    "build/word-heading-import-20260910/test_tab_list_read_diagnostic.py": "2efed2293bcdf8f722ad14afaf9204a9ac1bc51ec116fa44c4da083c760dd848",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "inventory_before": [],
+  "open_journal": {
+    "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-import-01/before-delete.docx",
+    "operation": "open_document_read_only_private_copy",
+    "status": "acknowledged",
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma/document-683a3a8c8def444d80aab9efafc05252.docx"
+  },
+  "inventory_after_open": [
+    [
+      "document-683a3a8c8def444d80aab9efafc05252.docx",
+      "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma/document-683a3a8c8def444d80aab9efafc05252.docx",
+      true,
+      "7125319c2ee8e03d0c35366007fd9a9e70f0465955abf578cc471626bffc440b"
+    ]
+  ],
+  "current_phase": "paragraph_after_state",
+  "raw_rows": {
+    "initial_state": [
+      [
+        "state",
+        true,
+        "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        5,
+        0,
+        0
+      ]
+    ],
+    "style_after_state": [
+      [
+        "state",
+        true,
+        "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        5,
+        0,
+        0
+      ]
+    ],
+    "paragraph_tabs": [
+      [
+        "tabs",
+        "paragraph",
+        "标题 1",
+        "WPSC Heading Clone",
+        19,
+        19
+      ],
+      [
+        "source",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "source",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        1,
+        21,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        2,
+        42,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        3,
+        63,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        4,
+        84,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        5,
+        105,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        6,
+        126,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        7,
+        147,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        8,
+        168,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        9,
+        189,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        10,
+        210,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        11,
+        231,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        12,
+        252,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        13,
+        273,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        14,
+        294,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        15,
+        315,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        16,
+        336,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        17,
+        357,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        18,
+        378,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ],
+      [
+        "clone",
+        19,
+        399,
+        "align tab left",
+        "tab leader spaces",
+        false
+      ]
+    ],
+    "paragraph_after_state": [
+      [
+        "state",
+        true,
+        "SOURCE APPEARANCE 中文 العربية 😀\rIMPORTED APPEARANCE 中文 العربية 😀\rREPLACE\rSUFFIX\r\r",
+        5,
+        0,
+        0
+      ]
+    ]
+  },
+  "close_journal": {
+    "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-8qqxsbma/document-683a3a8c8def444d80aab9efafc05252.docx",
+    "status": "acknowledged"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "scope": "Current nondefault-format caption fixture UI only",
+  "source": {
+    "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-caption-20260911/native-run-04/caption.docx",
+    "copy": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-caption-20260911/ui-04/caption-current-ui.docx",
+    "sha256": "bb1607ca5b49c87b1a57eb651730b198c3a0221f0b2661d8f44b3b51298a9527"
+  },
+  "source_unchanged": true,
+  "copy_byte_equal_to_source": true,
+  "steps": [
+    "Open exact ui-04/caption-current-ui.docx through Word file chooser",
+    "Find and select existing True",
+    "Replace with CAPTION-CURRENT-CHECK; visibly inspect italic centered text and unchanged 1-1 field",
+    "Undo to True, explicitly Save and observe saved title",
+    "Close document",
+    "Reopen exact path using file chooser matching URL item secondary Open action",
+    "Observe original global/chapter captions, True, TAIL, and saved title",
+    "Close document"
+  ],
+  "screenshots": "Inline CUA screenshots in root task; no saved UI PNG claimed",
+  "inventory_final": []
+}

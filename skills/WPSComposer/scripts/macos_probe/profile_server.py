@@ -60,6 +60,9 @@ class _LoopbackHTTPServer(ThreadingHTTPServer):
 
 class _ProfileRequestHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    # Socket shutdown does not always wake a blocked request reader on Windows.
+    # Keep real handler threads joinable, with a finite idle/read/write timeout.
+    timeout = 5.0
 
     def __init__(self, *args, profile_root: Path, **kwargs) -> None:
         self._profile_root = profile_root

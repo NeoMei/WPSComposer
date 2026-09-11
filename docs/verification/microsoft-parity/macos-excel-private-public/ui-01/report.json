@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "source_sha256": "c86f9ac65b503e5edab612e96fec10056fe7042e37727313fd7b4186c26dc174",
+  "ui_file_sha256": "78b8b204e83e68488c41db9345227078cc86ae6742d7a84fcc7477c43160ef3c",
+  "all_values_formulas_unchanged": true,
+  "original_preserved": true,
+  "original_final": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  },
+  "ui_actions": [
+    "Excel native open panel left Open disabled; cancelled",
+    "Finder exact file Open With Microsoft Excel",
+    "Results A1 Item -> PRIVATE-UI-EDIT",
+    "Undo -> Item",
+    "explicit Cmd+S, Cmd+W",
+    "Finder same file Open With Excel; Results A1 Item",
+    "Data Z40 PRIVATE-PUBLIC-SESSION",
+    "close copy; original sentinel window restored"
+  ],
+  "native_report": "../run-04/report.json",
+  "limitations": [
+    "UI pass is output editability, not private owner native failure coverage"
+  ]
+}

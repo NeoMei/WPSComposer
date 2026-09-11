@@ -1,0 +1,7 @@
+{"label": "primary-header-scalar-type", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.484, "list_templates": [0, 0]}
+{"label": "primary-header-scalar-start", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.484, "list_templates": [0, 0]}
+{"label": "primary-header-scalar-end", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.481, "list_templates": [0, 0]}
+{"label": "primary-header-scalar-content", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.502, "list_templates": [0, 0]}
+{"label": "primary-header-scalar-field-count", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.583, "list_templates": [0, 0]}
+{"label": "story-availability-and-chain", "row_kind": "read-ok", "saved": [true, true], "seconds": 2.716, "list_templates": [0, 0]}
+{"status": "FAIL", "checks": {}, "blocker": null, "error": {"type": "NativeWordTimeoutError", "message": "Native Word timed out; uncertain task files are retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-r14ji_fl diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-r14ji_fl/c6133140e64246338a6cd975fe0b4e8f.log quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine"}, "remaining_owned_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-r14ji_fl/document-25275478f9cd4ab8bba2e6f00bf5022e.docx"}

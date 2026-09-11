@@ -1,0 +1,379 @@
+{
+  "passed": true,
+  "kind": "slide",
+  "installed_plugin": "/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit11-aq8ntos_/codex/plugins/wps-composer",
+  "checks": {
+    "create_session_close_completed": true,
+    "public_native_created": true,
+    "public_native_edit_saved": true,
+    "source_preserved": true,
+    "edited_value_after_native_reopen": true,
+    "native_pdf_contents": true
+  },
+  "create_session_close_evidence": {
+    "method": "context_exit_returned",
+    "native_ack_log_available": false
+  },
+  "snapshot": {
+    "kind": "slide",
+    "engine": "msoffice",
+    "name": "bound-478a4796b0c84ca98ac56c285d959e3b.pptx",
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-oj1egd7w/bound-478a4796b0c84ca98ac56c285d959e3b.pptx",
+    "saved": true,
+    "slide_count": 1,
+    "page_setup": {
+      "slide_width": 960
+    },
+    "shapes_truncated": false,
+    "slides": [
+      {
+        "id": "slide:1",
+        "index": 1,
+        "native_slide_id": 256,
+        "name": null,
+        "layout": 1,
+        "native_layout": "slide layout title slide",
+        "notes": "",
+        "follow_master_background": true,
+        "background": {
+          "color": "#FFFFFF"
+        },
+        "shape_count": 2,
+        "shapes": [
+          {
+            "id": "slide:1/shape:@name=Title 3",
+            "index": 1,
+            "shape_id": null,
+            "name": "Title 3",
+            "type": 14,
+            "native_type": "shape type place holder",
+            "geometry": {
+              "left": 120,
+              "top": 88.37503814697266,
+              "width": 720,
+              "height": 188,
+              "rotation": 0,
+              "z_order": 1
+            },
+            "fill": {
+              "color": "#FFFFFF",
+              "visible": false,
+              "transparency": 1
+            },
+            "font": {
+              "name": "等线 Light",
+              "size": 40,
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "color": "#000000"
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@name=Title 3/paragraph:1",
+                "index": 1,
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@name=Title 3/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线 Light",
+                      "size": 40,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "color": "#000000",
+                      "strikethrough": false
+                    },
+                    "text": "Installed native PowerPoint"
+                  }
+                ],
+                "text": "Installed native PowerPoint"
+              }
+            ],
+            "text": "Installed native PowerPoint",
+            "line": {
+              "color": "#FFFFFF",
+              "weight": null,
+              "visible": null,
+              "transparency": null
+            },
+            "text_frame": {
+              "margin_left": 7.199999809265137,
+              "margin_right": 7.199999809265137,
+              "margin_top": 3.5999999046325684,
+              "margin_bottom": 3.5999999046325684,
+              "word_wrap": true
+            },
+            "paragraph": {
+              "alignment": 2,
+              "space_before": 0,
+              "space_after": 0,
+              "line_spacing": 0.8999999761581421
+            }
+          },
+          {
+            "id": "slide:1/shape:@name=Subtitle 4",
+            "index": 2,
+            "shape_id": null,
+            "name": "Subtitle 4",
+            "type": 14,
+            "native_type": "shape type place holder",
+            "geometry": {
+              "left": 120,
+              "top": 283.6250305175781,
+              "width": 720,
+              "height": 130.3749542236328,
+              "rotation": 0,
+              "z_order": 2
+            },
+            "fill": {
+              "color": "#FFFFFF",
+              "visible": false,
+              "transparency": 1
+            },
+            "font": {
+              "name": "等线",
+              "size": 20,
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "color": "#000000"
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@name=Subtitle 4/paragraph:1",
+                "index": 1,
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@name=Subtitle 4/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "color": "#000000",
+                      "strikethrough": false
+                    },
+                    "text": "Public plugin API"
+                  }
+                ],
+                "text": "Public plugin API"
+              }
+            ],
+            "text": "Public plugin API",
+            "line": {
+              "color": "#FFFFFF",
+              "weight": null,
+              "visible": null,
+              "transparency": null
+            },
+            "text_frame": {
+              "margin_left": 7.199999809265137,
+              "margin_right": 7.199999809265137,
+              "margin_top": 3.5999999046325684,
+              "margin_bottom": 3.5999999046325684,
+              "word_wrap": true
+            },
+            "paragraph": {
+              "alignment": 2,
+              "space_before": 10,
+              "space_after": 0,
+              "line_spacing": 0.8999999761581421
+            }
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Native numeric Shape.Id is not exposed by this adapter",
+      "Independent page height unavailable in native dictionary"
+    ]
+  },
+  "reopened": {
+    "kind": "slide",
+    "engine": "msoffice",
+    "name": "bound-bbc18d2018bc42a0b47a02d01f9a2bc3.pptx",
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-hp22bgfn/bound-bbc18d2018bc42a0b47a02d01f9a2bc3.pptx",
+    "saved": true,
+    "slide_count": 1,
+    "page_setup": {
+      "slide_width": 960
+    },
+    "shapes_truncated": false,
+    "slides": [
+      {
+        "id": "slide:1",
+        "index": 1,
+        "native_slide_id": 256,
+        "name": null,
+        "layout": 1,
+        "native_layout": "slide layout title slide",
+        "notes": "",
+        "follow_master_background": true,
+        "background": {
+          "color": "#FFFFFF"
+        },
+        "shape_count": 2,
+        "shapes": [
+          {
+            "id": "slide:1/shape:@name=Title 3",
+            "index": 1,
+            "shape_id": null,
+            "name": "Title 3",
+            "type": 14,
+            "native_type": "shape type place holder",
+            "geometry": {
+              "left": 120,
+              "top": 88.37503814697266,
+              "width": 720,
+              "height": 188,
+              "rotation": 0,
+              "z_order": 1
+            },
+            "fill": {
+              "color": "#FFFFFF",
+              "visible": false,
+              "transparency": 1
+            },
+            "font": {
+              "name": "等线 Light",
+              "size": 40,
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "color": "#000000"
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@name=Title 3/paragraph:1",
+                "index": 1,
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@name=Title 3/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线 Light",
+                      "size": 40,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "color": "#000000",
+                      "strikethrough": false
+                    },
+                    "text": "Installed PowerPoint edited"
+                  }
+                ],
+                "text": "Installed PowerPoint edited"
+              }
+            ],
+            "text": "Installed PowerPoint edited",
+            "line": {
+              "color": "#FFFFFF",
+              "weight": null,
+              "visible": null,
+              "transparency": null
+            },
+            "text_frame": {
+              "margin_left": 7.199999809265137,
+              "margin_right": 7.199999809265137,
+              "margin_top": 3.5999999046325684,
+              "margin_bottom": 3.5999999046325684,
+              "word_wrap": true
+            },
+            "paragraph": {
+              "alignment": 2,
+              "space_before": 0,
+              "space_after": 0,
+              "line_spacing": 0.8999999761581421
+            }
+          },
+          {
+            "id": "slide:1/shape:@name=Subtitle 4",
+            "index": 2,
+            "shape_id": null,
+            "name": "Subtitle 4",
+            "type": 14,
+            "native_type": "shape type place holder",
+            "geometry": {
+              "left": 120,
+              "top": 283.6250305175781,
+              "width": 720,
+              "height": 130.3749542236328,
+              "rotation": 0,
+              "z_order": 2
+            },
+            "fill": {
+              "color": "#FFFFFF",
+              "visible": false,
+              "transparency": 1
+            },
+            "font": {
+              "name": "等线",
+              "size": 20,
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "color": "#000000"
+            },
+            "paragraphs": [
+              {
+                "id": "slide:1/shape:@name=Subtitle 4/paragraph:1",
+                "index": 1,
+                "runs": [
+                  {
+                    "id": "slide:1/shape:@name=Subtitle 4/paragraph:1/run:1",
+                    "index": 1,
+                    "font": {
+                      "name": "等线",
+                      "size": 20,
+                      "bold": false,
+                      "italic": false,
+                      "underline": false,
+                      "color": "#000000",
+                      "strikethrough": false
+                    },
+                    "text": "Public plugin API"
+                  }
+                ],
+                "text": "Public plugin API"
+              }
+            ],
+            "text": "Public plugin API",
+            "line": {
+              "color": "#FFFFFF",
+              "weight": null,
+              "visible": null,
+              "transparency": null
+            },
+            "text_frame": {
+              "margin_left": 7.199999809265137,
+              "margin_right": 7.199999809265137,
+              "margin_top": 3.5999999046325684,
+              "margin_bottom": 3.5999999046325684,
+              "word_wrap": true
+            },
+            "paragraph": {
+              "alignment": 2,
+              "space_before": 10,
+              "space_after": 0,
+              "line_spacing": 0.8999999761581421
+            }
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "Native numeric Shape.Id is not exposed by this adapter",
+      "Independent page height unavailable in native dictionary"
+    ]
+  },
+  "hashes": {
+    "edited.pdf": "2b6db7a7f0f59d3f38d3464a67fa39cbae523fcd56d2305f98e200c745058c88",
+    "edited.pptx": "091fc01d74bd7fbe823c74000e6c8e8afe0dc81a09c66ff25e445c3e715c5f05",
+    "installed.pptx": "486edb5f64ad8417ceba9985ec74b9217e7d73f31a5c86d38106cecdcd296e92",
+    "installed.pdf": "0040af5e68a544f94ab9aebab5d1810fe572129253ddf950d06e0a43e98f544c"
+  }
+}

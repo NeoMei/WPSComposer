@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/tmp/wps-excel-business-probe.py", line 21, in <module>
+    report['steps']['clear-delete']=session._run('set ws to worksheet 2 of ownedBook\nactivate object ws\nclear range used range of ws\ndelete ws\nreturn '+_object({'remaining':'count of worksheets of ownedBook'}))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 235, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

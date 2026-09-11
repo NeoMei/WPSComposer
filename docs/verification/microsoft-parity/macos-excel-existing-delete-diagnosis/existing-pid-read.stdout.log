@@ -1,0 +1,7 @@
+{
+  "alerts" : true,
+  "bundle" : "com.microsoft.Excel",
+  "name" : "Microsoft Excel",
+  "pid" : 9212,
+  "running" : true
+}

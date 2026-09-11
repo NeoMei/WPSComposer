@@ -1,0 +1,85 @@
+FFFFFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+_ test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:40: in test_timeout_recovery_write_failure_still_quarantines_and_preserves_type
+    assert observed == (expected, True, True, True), observed
+E   AssertionError: (None, False, True, True)
+E   assert (None, False, True, True) == ('NATIVE_WORD...e, True, True)
+E     
+E     At index 0 diff: None != 'NATIVE_WORD_TIMEOUT'
+E     Use -v to get more diff
+_ test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:40: in test_timeout_recovery_write_failure_still_quarantines_and_preserves_type
+    assert observed == (expected, True, True, True), observed
+E   AssertionError: (None, False, True, True)
+E   assert (None, False, True, True) == ('NATIVE_OFFI...e, True, True)
+E     
+E     At index 0 diff: None != 'NATIVE_OFFICE_TIMEOUT'
+E     Use -v to get more diff
+_ test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:40: in test_timeout_recovery_write_failure_still_quarantines_and_preserves_type
+    assert observed == (expected, True, True, True), observed
+E   AssertionError: (None, False, True, True)
+E   assert (None, False, True, True) == ('NATIVE_OFFI...e, True, True)
+E     
+E     At index 0 diff: None != 'NATIVE_OFFICE_TIMEOUT'
+E     Use -v to get more diff
+______________ test_failed_abort_does_not_allow_new_excel_worker _______________
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:58: in test_failed_abort_does_not_allow_new_excel_worker
+    following.close()
+E   Failed: DID NOT RAISE <class 'RuntimeError'>
+_ test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyWordSession-/source.docx] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:84: in test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine
+    assert (caught.value is cancelled, session._lock.quarantine_path.exists(),
+E   assert (False, False, True, True) == (True, True, True, True)
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff
+_ test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyExcelSession-/source.xlsx] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:84: in test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine
+    assert (caught.value is cancelled, session._lock.quarantine_path.exists(),
+E   assert (False, False, True, True) == (True, True, True, True)
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff
+_ test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyPowerPointSession-/source.pptx] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:84: in test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine
+    assert (caught.value is cancelled, session._lock.quarantine_path.exists(),
+E   assert (False, False, True, True) == (True, True, True, True)
+E     
+E     At index 0 diff: False != True
+E     Use -v to get more diff
+_______ test_aborted_session_never_claims_missing_recovery_or_quarantine _______
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:103: in test_aborted_session_never_claims_missing_recovery_or_quarantine
+    assert all(Path(p).is_file() for p in claimed), claimed
+E   AssertionError: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1310/test_aborted_session_never_cla...w743mh0000gn/T/pytest-of-neomei/pytest-1310/test_aborted_session_never_cla0/spreadsheet/native-office.quarantine.json']
+E   assert False
+E    +  where False = all(<generator object test_aborted_session_never_claims_missing_recovery_or_quarantine.<locals>.<genexpr> at 0x1090730b0>)
+____________ test_start_failure_not_masked_by_abort_recovery_write _____________
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:143: in _start
+    raise ValueError('Worker did not acknowledge the requested document binding')
+E   ValueError: Worker did not acknowledge the requested document binding
+
+During handling of the above exception, another exception occurred:
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:116: in test_start_failure_not_masked_by_abort_recovery_write
+    module.ProxyExcelSession.open_document('/source.xlsx')
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:147: in _start
+    self._abort('Initial document binding failed')
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:221: in _abort
+    (self.staging_root / 'recovery.json').write_text(json.dumps(detail, ensure_ascii=False), encoding='utf-8')
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py:112: in write
+    raise OSError(errno.ENOSPC, 'injected recovery write failure')
+E   OSError: [Errno 28] injected recovery write failure
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_timeout_recovery_write_failure_still_quarantines_and_preserves_type[ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_failed_abort_does_not_allow_new_excel_worker
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyWordSession-/source.docx]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyExcelSession-/source.xlsx]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_cancel_with_recovery_failure_preserves_cancellation_and_quarantine[ProxyPowerPointSession-/source.pptx]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_aborted_session_never_claims_missing_recovery_or_quarantine
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_windows_proxy_abort_review.py::test_start_failure_not_masked_by_abort_recovery_write
+9 failed in 0.55s

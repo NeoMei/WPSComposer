@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_degradation_styling_is_deferred_until_suffix_and_final_cr_exist _____
+
+    def test_degradation_styling_is_deferred_until_suffix_and_final_cr_exist():
+        from skills.WPSComposer.scripts.msoffice.macos_word_references import normalize_runs,paragraph_commands
+        runs,indent=normalize_runs([REF],None)
+        code='\n'.join(paragraph_commands(MacWordSession(),runs,indent,False,True)[0])
+>       assert code.index('set italic of font object of styledRange') > code.index('set content of literalRange to ")尾"')
+E       ValueError: substring not found
+
+tests/msoffice/test_macos_word_references.py:276: ValueError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_word_references.py::test_degradation_styling_is_deferred_until_suffix_and_final_cr_exist
+1 failed in 0.22s

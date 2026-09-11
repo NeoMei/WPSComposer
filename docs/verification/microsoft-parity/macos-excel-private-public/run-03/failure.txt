@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-private-public-probe-trace.py", line 63, in main
+    session=open_document(path,engine='msoffice',read_only=phase=='reopen')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py", line 126, in open_document
+    return open_session(path, kind=_document_family(path, kind), read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_sessions.py", line 36, in open_session
+    return _session_class(kind).open_document(path, read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 162, in open_document
+    self._start_private_process()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 199, in _start_private_process
+    self._process_owner.start(deadline=self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 140, in start
+    books = self._read_inventory(deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 274, in _read_inventory
+    value = self._command('inventory', deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 225, in _command
+    self._same_process()
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_process.py", line 104, in _same_process
+    require_same_process(self.identity, self._launcher.snapshot(self.identity.pid))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_osa_transport.py", line 162, in require_same_process
+    raise OSATransportError("OSA_PROCESS_NOT_FOUND", pid=expected.pid)
+skills.WPSComposer.scripts.msoffice.macos_osa_transport.OSATransportError: OSA_PROCESS_NOT_FOUND

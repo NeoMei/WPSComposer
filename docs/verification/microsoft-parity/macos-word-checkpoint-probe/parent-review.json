@@ -1,0 +1,11 @@
+{
+  "table_object_first_exact_and_repeat": true,
+  "field_object_first_content_clear_exact_and_repeat": true,
+  "run12_current_sources_match": true,
+  "inventories_empty": true,
+  "scope": "Minimal native primitives only. Public checkpoint methods/controller chain/sentinel/reopen acceptance remain separate.",
+  "reports": {
+    "run-10/report.json": "aa07738ebdae20270dcbe7529992fcd5ff7215aea0708b6808feef3ca028f956",
+    "run-12/report.json": "9eafdc4c9a56a8e0804a38d9d5a40dff7822685e866f2667e88c2ade87520e49"
+  }
+}

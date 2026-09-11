@@ -1,0 +1,12 @@
+{
+  "probe_enablement_approved_by_user": "好的，继续 after request to enable reviewed Office.js probe",
+  "approved_manifest_id": "8abccf20-6807-4593-85f6-d7d039b9d68f",
+  "approved_origin": "https://localhost:3443",
+  "approved_permission": "ReadWriteDocument",
+  "certificate_trust_status": "awaiting explicit response",
+  "certificate_sha256_fingerprint": "3F47F0E7036D8974F3708E90E15A07E65D5F1447FEF3C1D364EBF6865034C872",
+  "proposed_trust_scope": "current user login keychain; SSL policy and hostname localhost only; exact certificate; remove after validation",
+  "system_keychain_changes_authorized": false,
+  "other_security_changes_authorized": false,
+  "whole_cache_deletion_authorized": false
+}

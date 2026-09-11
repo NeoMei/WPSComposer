@@ -1,0 +1,56 @@
+FFFF.                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_original_real_worker_contract_at_same_tick[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-1558.546] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py:22: in test_original_real_worker_contract_at_same_tick
+    scenario(transport, monkeypatch)
+tests/msoffice/test_windows_session_proxy.py:667: in test_actual_worker_serve_subprocess_preserves_error_metadata_and_close
+    with m.ProxyWordSession.open_document('/source.docx') as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: in _call
+    raise error
+E   ValueError: Invalid remaining session budget
+_ test_original_real_worker_contract_at_same_tick[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-424.005] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py:22: in test_original_real_worker_contract_at_same_tick
+    scenario(transport, monkeypatch)
+tests/msoffice/test_windows_session_proxy.py:667: in test_actual_worker_serve_subprocess_preserves_error_metadata_and_close
+    with m.ProxyWordSession.open_document('/source.docx') as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: in _call
+    raise error
+E   ValueError: Invalid remaining session budget
+_ test_original_real_worker_contract_at_same_tick[test_handles_roundtrip_real_worker_with_com_object_return_doubles-1558.546] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py:22: in test_original_real_worker_contract_at_same_tick
+    scenario(transport, monkeypatch)
+tests/msoffice/test_windows_session_proxy.py:813: in test_handles_roundtrip_real_worker_with_com_object_return_doubles
+    with m.ProxyExcelSession.new_document() as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:110: in new_document
+    return cls._start('new_document', [], {'visible': visible})
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: in _call
+    raise error
+E   ValueError: Invalid remaining session budget
+_ test_original_real_worker_contract_at_same_tick[test_handles_roundtrip_real_worker_with_com_object_return_doubles-424.005] _
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py:22: in test_original_real_worker_contract_at_same_tick
+    scenario(transport, monkeypatch)
+tests/msoffice/test_windows_session_proxy.py:813: in test_handles_roundtrip_real_worker_with_com_object_return_doubles
+    with m.ProxyExcelSession.new_document() as session:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:110: in new_document
+    return cls._start('new_document', [], {'visible': visible})
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:145: in _start
+    if self._call(method, *args, **kwargs) != {'kind': cls.kind}:
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: in _call
+    raise error
+E   ValueError: Invalid remaining session budget
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py::test_original_real_worker_contract_at_same_tick[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-1558.546]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py::test_original_real_worker_contract_at_same_tick[test_actual_worker_serve_subprocess_preserves_error_metadata_and_close-424.005]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py::test_original_real_worker_contract_at_same_tick[test_handles_roundtrip_real_worker_with_com_object_return_doubles-1558.546]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_session_budget_float_review.py::test_original_real_worker_contract_at_same_tick[test_handles_roundtrip_real_worker_with_com_object_return_doubles-424.005]
+4 failed, 1 passed in 7.13s

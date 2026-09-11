@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-heading-import-v4.py", line 341, in run
+    check('control_direct_format_unchanged_under_challenge',package_controls(output/'source-challenged.docx')==signatures_before)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-heading-import-v4.py", line 232, in package_controls
+    return control_signatures(xml,source.get(W+'styleId'),clone.get(W+'styleId'))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/native-donor-heading-import-v4.py", line 86, in control_signatures
+    if any(c.tag not in (W+'pPr',W+'r') for c in p) or any(x.tag not in (W+'rPr',W+'t') for r in p.findall(W+'r') for x in r):raise ValueError('Unsupported control content')
+ValueError: Unsupported control content

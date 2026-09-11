@@ -1,0 +1,540 @@
+{
+  "fixtures": {
+    "empty": {
+      "all_applied_style_locations": [
+        {
+          "kind": "paragraph",
+          "path": "body/p[1]",
+          "section": 1,
+          "style_id": "Normal",
+          "text": ""
+        }
+      ],
+      "custom_style_ids": [],
+      "file": "empty.docx",
+      "numbering": [],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/styles.xml"
+      ],
+      "relationships": {
+        "document": [
+          {
+            "id": "rId1",
+            "target": "styles.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
+          }
+        ],
+        "package": [
+          {
+            "id": "rId1",
+            "target": "word/document.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+          },
+          {
+            "id": "rId2",
+            "target": "docProps/core.xml",
+            "type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+          },
+          {
+            "id": "rId3",
+            "target": "docProps/app.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
+          }
+        ]
+      },
+      "section_count": 1,
+      "selected_styles": [],
+      "sha256": "a681e6dac3a210a2ad9181429a5f38042910e446303c7d63bea5d9a6b8982bf5"
+    },
+    "multisection": {
+      "all_applied_style_locations": [
+        {
+          "kind": "paragraph",
+          "path": "body/p[1]",
+          "section": 1,
+          "style_id": "WPSC_Custom_Paragraph",
+          "text": "MULTI SECTION 1 PARAGRAPH MULTI SECTION 1 CHARACTER"
+        },
+        {
+          "kind": "run",
+          "path": "body/p[1]/r[2]",
+          "section": 1,
+          "style_id": "WPSC_Custom_Character",
+          "text": "MULTI SECTION 1 CHARACTER"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[2]",
+          "section": 1,
+          "style_id": "Normal",
+          "text": "MULTI SECTION 1 END"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/tbl[1]/tr[1]/tc[1]/p[1]",
+          "section": 2,
+          "style_id": "WPSC_Custom_Paragraph",
+          "text": "MULTI SECTION 2 TABLE CELL"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[3]",
+          "section": 2,
+          "style_id": "WPSC_Numbered_Style",
+          "text": "MULTI SECTION 2 NUMBERED"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[4]",
+          "section": 2,
+          "style_id": "Normal",
+          "text": "MULTI SECTION 2 END"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[5]",
+          "section": 3,
+          "style_id": "Heading2",
+          "text": "MULTI SECTION 3 BUILTIN"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[6]",
+          "section": 3,
+          "style_id": "WPSC_Custom_Paragraph",
+          "text": "MULTI SECTION 3 FIELD 7"
+        },
+        {
+          "field_role": "result",
+          "kind": "run",
+          "path": "body/p[6]/r[5]",
+          "section": 3,
+          "style_id": "WPSC_Custom_Character",
+          "text": "7"
+        }
+      ],
+      "custom_style_ids": [
+        "WPSC_Custom_Character",
+        "WPSC_Custom_Paragraph",
+        "WPSC_Numbered_Style",
+        "WPSC_Unused_Custom"
+      ],
+      "file": "multisection.docx",
+      "numbering": [
+        {
+          "abstract_num_id": 4242,
+          "level": 0,
+          "level_text": "%1.",
+          "num_format": "decimal",
+          "num_id": 4242
+        }
+      ],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/numbering.xml",
+        "word/styles.xml"
+      ],
+      "relationships": {
+        "document": [
+          {
+            "id": "rId1",
+            "target": "styles.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
+          },
+          {
+            "id": "rId2",
+            "target": "numbering.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering"
+          }
+        ],
+        "package": [
+          {
+            "id": "rId1",
+            "target": "word/document.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+          },
+          {
+            "id": "rId2",
+            "target": "docProps/core.xml",
+            "type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+          },
+          {
+            "id": "rId3",
+            "target": "docProps/app.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
+          }
+        ]
+      },
+      "section_count": 3,
+      "selected_styles": [
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[5]",
+              "section": 3,
+              "style_id": "Heading2",
+              "text": "MULTI SECTION 3 BUILTIN"
+            }
+          ],
+          "auto_redefine": true,
+          "based_on": "Normal",
+          "custom": false,
+          "default": false,
+          "link": null,
+          "name": "heading 2",
+          "num_id": null,
+          "role": "applied-modified-builtin",
+          "style_id": "Heading2",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [],
+          "auto_redefine": true,
+          "based_on": "Normal",
+          "custom": false,
+          "default": false,
+          "link": null,
+          "name": "heading 3",
+          "num_id": null,
+          "role": "unused-modified-builtin",
+          "style_id": "Heading3",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[1]",
+              "section": 1,
+              "style_id": "WPSC_Custom_Paragraph",
+              "text": "MULTI SECTION 1 PARAGRAPH MULTI SECTION 1 CHARACTER"
+            },
+            {
+              "kind": "paragraph",
+              "path": "body/tbl[1]/tr[1]/tc[1]/p[1]",
+              "section": 2,
+              "style_id": "WPSC_Custom_Paragraph",
+              "text": "MULTI SECTION 2 TABLE CELL"
+            },
+            {
+              "kind": "paragraph",
+              "path": "body/p[6]",
+              "section": 3,
+              "style_id": "WPSC_Custom_Paragraph",
+              "text": "MULTI SECTION 3 FIELD 7"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": "WPSC_Custom_Character",
+          "name": "WPSC Custom Paragraph",
+          "num_id": null,
+          "role": "applied-custom-paragraph",
+          "style_id": "WPSC_Custom_Paragraph",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "run",
+              "path": "body/p[1]/r[2]",
+              "section": 1,
+              "style_id": "WPSC_Custom_Character",
+              "text": "MULTI SECTION 1 CHARACTER"
+            },
+            {
+              "field_role": "result",
+              "kind": "run",
+              "path": "body/p[6]/r[5]",
+              "section": 3,
+              "style_id": "WPSC_Custom_Character",
+              "text": "7"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "DefaultParagraphFont",
+          "custom": true,
+          "default": false,
+          "link": "WPSC_Custom_Paragraph",
+          "name": "WPSC Custom Character",
+          "num_id": null,
+          "role": "applied-custom-character",
+          "style_id": "WPSC_Custom_Character",
+          "style_type": "character"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[3]",
+              "section": 2,
+              "style_id": "WPSC_Numbered_Style",
+              "text": "MULTI SECTION 2 NUMBERED"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": null,
+          "name": "WPSC Numbered Style",
+          "num_id": 4242,
+          "numbering": {
+            "abstract_num_id": 4242,
+            "level": 0,
+            "num_id": 4242
+          },
+          "role": "applied-numbering-linked-custom",
+          "style_id": "WPSC_Numbered_Style",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": null,
+          "name": "WPSC Unused Custom",
+          "num_id": null,
+          "role": "unused-custom-paragraph",
+          "style_id": "WPSC_Unused_Custom",
+          "style_type": "paragraph"
+        }
+      ],
+      "sha256": "64b7d460363e4f088eefe4cb93ca71f4bc51a6a323cc2c9103c58a80b174a556"
+    },
+    "nonempty": {
+      "all_applied_style_locations": [
+        {
+          "kind": "paragraph",
+          "path": "body/p[1]",
+          "section": 1,
+          "style_id": "Normal",
+          "text": "NONEMPTY NORMAL"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[2]",
+          "section": 1,
+          "style_id": "Heading2",
+          "text": "NONEMPTY APPLIED BUILTIN"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[3]",
+          "section": 1,
+          "style_id": "WPSC_Custom_Paragraph",
+          "text": "NONEMPTY CUSTOM PARAGRAPH NONEMPTY CUSTOM CHARACTER"
+        },
+        {
+          "kind": "run",
+          "path": "body/p[3]/r[2]",
+          "section": 1,
+          "style_id": "WPSC_Custom_Character",
+          "text": "NONEMPTY CUSTOM CHARACTER"
+        },
+        {
+          "kind": "paragraph",
+          "path": "body/p[4]",
+          "section": 1,
+          "style_id": "WPSC_Numbered_Style",
+          "text": "NONEMPTY NUMBERED"
+        }
+      ],
+      "custom_style_ids": [
+        "WPSC_Custom_Character",
+        "WPSC_Custom_Paragraph",
+        "WPSC_Numbered_Style",
+        "WPSC_Unused_Custom"
+      ],
+      "file": "nonempty.docx",
+      "numbering": [
+        {
+          "abstract_num_id": 4242,
+          "level": 0,
+          "level_text": "%1.",
+          "num_format": "decimal",
+          "num_id": 4242
+        }
+      ],
+      "package_entries": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "docProps/app.xml",
+        "docProps/core.xml",
+        "word/_rels/document.xml.rels",
+        "word/document.xml",
+        "word/numbering.xml",
+        "word/styles.xml"
+      ],
+      "relationships": {
+        "document": [
+          {
+            "id": "rId1",
+            "target": "styles.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
+          },
+          {
+            "id": "rId2",
+            "target": "numbering.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering"
+          }
+        ],
+        "package": [
+          {
+            "id": "rId1",
+            "target": "word/document.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+          },
+          {
+            "id": "rId2",
+            "target": "docProps/core.xml",
+            "type": "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+          },
+          {
+            "id": "rId3",
+            "target": "docProps/app.xml",
+            "type": "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
+          }
+        ]
+      },
+      "section_count": 1,
+      "selected_styles": [
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[2]",
+              "section": 1,
+              "style_id": "Heading2",
+              "text": "NONEMPTY APPLIED BUILTIN"
+            }
+          ],
+          "auto_redefine": true,
+          "based_on": "Normal",
+          "custom": false,
+          "default": false,
+          "link": null,
+          "name": "heading 2",
+          "num_id": null,
+          "role": "applied-modified-builtin",
+          "style_id": "Heading2",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [],
+          "auto_redefine": true,
+          "based_on": "Normal",
+          "custom": false,
+          "default": false,
+          "link": null,
+          "name": "heading 3",
+          "num_id": null,
+          "role": "unused-modified-builtin",
+          "style_id": "Heading3",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[3]",
+              "section": 1,
+              "style_id": "WPSC_Custom_Paragraph",
+              "text": "NONEMPTY CUSTOM PARAGRAPH NONEMPTY CUSTOM CHARACTER"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": "WPSC_Custom_Character",
+          "name": "WPSC Custom Paragraph",
+          "num_id": null,
+          "role": "applied-custom-paragraph",
+          "style_id": "WPSC_Custom_Paragraph",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "run",
+              "path": "body/p[3]/r[2]",
+              "section": 1,
+              "style_id": "WPSC_Custom_Character",
+              "text": "NONEMPTY CUSTOM CHARACTER"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "DefaultParagraphFont",
+          "custom": true,
+          "default": false,
+          "link": "WPSC_Custom_Paragraph",
+          "name": "WPSC Custom Character",
+          "num_id": null,
+          "role": "applied-custom-character",
+          "style_id": "WPSC_Custom_Character",
+          "style_type": "character"
+        },
+        {
+          "applied_locations": [
+            {
+              "kind": "paragraph",
+              "path": "body/p[4]",
+              "section": 1,
+              "style_id": "WPSC_Numbered_Style",
+              "text": "NONEMPTY NUMBERED"
+            }
+          ],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": null,
+          "name": "WPSC Numbered Style",
+          "num_id": 4242,
+          "numbering": {
+            "abstract_num_id": 4242,
+            "level": 0,
+            "num_id": 4242
+          },
+          "role": "applied-numbering-linked-custom",
+          "style_id": "WPSC_Numbered_Style",
+          "style_type": "paragraph"
+        },
+        {
+          "applied_locations": [],
+          "auto_redefine": false,
+          "based_on": "Normal",
+          "custom": true,
+          "default": false,
+          "link": null,
+          "name": "WPSC Unused Custom",
+          "num_id": null,
+          "role": "unused-custom-paragraph",
+          "style_id": "WPSC_Unused_Custom",
+          "style_type": "paragraph"
+        }
+      ],
+      "sha256": "fa89f93d95f2407fbced631573e0f5bcca635778333b262bdbdb6f341352647a"
+    }
+  },
+  "generated_utc": "2026-09-10T00:00:00Z",
+  "purpose": "source-bound native style-classifier matrix; no Office acceptance claim",
+  "schema": "wpscomposer-word-style-matrix-v1"
+}

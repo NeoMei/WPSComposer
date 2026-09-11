@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 133, in run_active
+    with MacExcelSession.attach_active() as session:
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 188, in attach_active
+    identity=self._run('if (count of workbooks) is 0 then return "{\\\"active\\\":false}"\nset candidate to active workbook\nreturn '+_object({'active':'true','path':'full name of candidate','name':'name of candidate','read_only':'read only of candidate'}),bind=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 254, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

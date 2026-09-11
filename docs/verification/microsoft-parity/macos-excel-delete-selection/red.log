@@ -1,0 +1,50 @@
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet[3-2-2] __
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1368/test_remove_empty_sheet_keeps_0')
+selected = 3, removed = 2, expected = 2
+
+    @pytest.mark.parametrize('selected,removed,expected', [(3, 2, 2), (3, 3, 2), (1, 3, 1)])
+    def test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet(
+        tmp_path, selected, removed, expected
+    ):
+        obj = session(tmp_path)
+        obj._sheet_index = selected
+        obj._fresh_empty_sheets = {2, 3}
+        scripts = []
+        obj._run = lambda body, **kw: scripts.append(body) or {'removed': f'sheet:{removed}'}
+    
+        obj.apply_structural_op({'op': 'remove', 'target': f'sheet:{removed}'})
+        obj.write_cell(1, 1, 'AFTER DELETE')
+    
+>       assert f'set ws to worksheet {expected} of ownedBook' in scripts[-1]
+E       assert 'set ws to worksheet 2 of ownedBook' in 'set ws to worksheet 3 of ownedBook\nactivate object ws\nset obj to range "A1" of ws\nset acceptedKeys to {}\nset reje...e"\ncalculate obj\nreturn "{" & "\\"accepted\\":" & my j(acceptedKeys) & ",\\"rejected\\":" & my j(rejectedKeys) & "}"'
+
+tests/msoffice/test_macos_excel_session.py:545: AssertionError
+__ test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet[3-3-2] __
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1368/test_remove_empty_sheet_keeps_1')
+selected = 3, removed = 3, expected = 2
+
+    @pytest.mark.parametrize('selected,removed,expected', [(3, 2, 2), (3, 3, 2), (1, 3, 1)])
+    def test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet(
+        tmp_path, selected, removed, expected
+    ):
+        obj = session(tmp_path)
+        obj._sheet_index = selected
+        obj._fresh_empty_sheets = {2, 3}
+        scripts = []
+        obj._run = lambda body, **kw: scripts.append(body) or {'removed': f'sheet:{removed}'}
+    
+        obj.apply_structural_op({'op': 'remove', 'target': f'sheet:{removed}'})
+        obj.write_cell(1, 1, 'AFTER DELETE')
+    
+>       assert f'set ws to worksheet {expected} of ownedBook' in scripts[-1]
+E       assert 'set ws to worksheet 2 of ownedBook' in 'set ws to worksheet 3 of ownedBook\nactivate object ws\nset obj to range "A1" of ws\nset acceptedKeys to {}\nset reje...e"\ncalculate obj\nreturn "{" & "\\"accepted\\":" & my j(acceptedKeys) & ",\\"rejected\\":" & my j(rejectedKeys) & "}"'
+
+tests/msoffice/test_macos_excel_session.py:545: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_excel_session.py::test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet[3-2-2]
+FAILED tests/msoffice/test_macos_excel_session.py::test_remove_empty_sheet_keeps_followup_write_on_valid_logical_sheet[3-3-2]
+2 failed, 2 passed, 65 deselected in 0.08s

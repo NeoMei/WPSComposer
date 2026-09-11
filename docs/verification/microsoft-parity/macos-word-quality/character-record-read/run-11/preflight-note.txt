@@ -1,0 +1,1 @@
+A prefix-only fixture match was ambiguous (two matches). Preparation stopped before native calls. Corrected to exact first-run text; all original XML namespaces retained.

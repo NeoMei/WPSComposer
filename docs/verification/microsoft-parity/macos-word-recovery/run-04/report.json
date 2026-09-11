@@ -1,0 +1,102 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_recovery.py": "5efad969d6acb04875c5bf86a2ffd9a6e36e0d1ba30bfe34d4f632a5d80eb7f7",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "ee86d43761c7e503b999bddc09b25d583cd4ca494a04e83b2c6722f5c3c6fa7c",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/longform/windows_executor.py": "9dc03d2b59271c434156b8ee096a652f5ec654ef96a8e2d7b731eb36af457148"
+  },
+  "steps": [
+    {
+      "label": "starting-inventory",
+      "rows": []
+    },
+    {
+      "label": "sentinel-created",
+      "rows": [
+        [
+          "文档2"
+        ]
+      ]
+    },
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "seed-target",
+      "rows": [
+        [
+          "seed-ack"
+        ]
+      ]
+    },
+    {
+      "label": "partial-native-ack",
+      "rows": [
+        [
+          "partial-native-ack",
+          7,
+          1
+        ]
+      ]
+    },
+    {
+      "label": "body",
+      "rows": [
+        [
+          "Recovery prefix 中文😀\rChapter\rContents\rChapter\t1\r\r\f\rExisting Recovery\rFALLBACK-ONCE\r\r",
+          0
+        ]
+      ]
+    },
+    {
+      "label": "sentinel-close",
+      "rows": [
+        [
+          "closed"
+        ]
+      ]
+    }
+  ],
+  "checks": {
+    "empty_and_repeated_noop": true,
+    "actual_controller_checkpoint_partial_native_rollback_fallback_once_issue_once": true,
+    "original_ref_index_handle_instances_preserved": true,
+    "field_snapshot_after_rollback_and_fallback": true,
+    "invalid_bounds_no_mutation_and_repeat": true,
+    "native_docx_save_and_pdf_export": true,
+    "unsaved_sentinel_exact_hash_unchanged": true
+  },
+  "sentinel_before": [
+    "文档2",
+    "文档2",
+    false,
+    "b65b8634874235e8ea89bc407554e0de45cc70ba4be5e381d967481a693565c5"
+  ],
+  "issues": [
+    {
+      "code": "CROSS_REFERENCE_FAILED",
+      "message": "writer.add_cross_reference used its declared native fallback",
+      "placement": "inline",
+      "node_id": "recovery-partial",
+      "stage": "native",
+      "fallback": "inline-fallback",
+      "recoverable": true
+    }
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu/886baffb122a4c0c8665d541be9f0801.log",
+    "quarantined": true
+  }
+}

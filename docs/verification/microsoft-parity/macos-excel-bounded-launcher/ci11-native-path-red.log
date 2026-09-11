@@ -1,0 +1,80 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_native_process_lookup_uses_supplied_retained_application_handle[windows] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1086028e0>
+host_paths = 'windows'
+
+    @pytest.mark.parametrize("host_paths", ["native", "windows"])
+    def test_native_process_lookup_uses_supplied_retained_application_handle(monkeypatch, host_paths):
+        mod = api()
+        if host_paths == "windows":
+            import ntpath
+            from types import SimpleNamespace
+            monkeypatch.setattr(mod, "os", SimpleNamespace(path=ntpath))
+    
+        class Runtime:
+            def __init__(self):
+                self.process_reads = 0
+                self.messages = []
+    
+            def proc_pidinfo(self, pid, flavor, arg, output, size):
+                self.process_reads += 1
+                info = C.cast(output, C.POINTER(mod._ProcBSDInfo)).contents
+                info.pid = pid
+                info.start_seconds = 100
+                info.start_microseconds = 250
+                return C.sizeof(mod._ProcBSDInfo)
+    
+            def proc_pidpath(self, pid, output, size):
+                value = identity().executable.encode() + b"\0"
+                C.memmove(output, value, len(value))
+                return len(value) - 1
+    
+            def objc_class(self, name):
+                pytest.fail("a retained application must not be rediscovered by PID")
+    
+            def message(self, receiver, name, args=(), types=(), result=None):
+                self.messages.append((receiver, name))
+                return {
+                    ("retained-app", "processIdentifier"): 4242,
+                    ("retained-app", "bundleIdentifier"): "bundle",
+                    ("retained-app", "executableURL"): "url",
+                    ("url", "path"): "path",
+                }[(receiver, name)]
+    
+            def object_text(self, value):
+                return {
+                    "bundle": "com.microsoft.Excel",
+                    "path": identity().executable,
+                }[value]
+    
+        runtime = Runtime()
+>       observed = mod._DarwinProcessLookup(runtime).snapshot(
+            4242, application="retained-app"
+        )
+
+tests/msoffice/test_macos_osa_transport.py:314: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_osa_transport.py:706: in snapshot
+    return ExcelProcessIdentity(
+<string>:8: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ExcelProcessIdentity(pid=4242, start_seconds=100, start_microseconds=250, executable='\\Applications\\Microsoft Excel.app\\Contents\\MacOS\\Microsoft Excel', bundle_id='com.microsoft.Excel')
+
+    def __post_init__(self) -> None:
+        _strict_int(self.pid, "pid", minimum=1)
+        _strict_int(self.start_seconds, "process start seconds")
+        micros = _strict_int(self.start_microseconds, "process start microseconds")
+        if micros >= 1_000_000:
+            raise ValueError("Invalid process start microseconds")
+        if not isinstance(self.executable, str) or not PurePosixPath(self.executable).is_absolute():
+>           raise ValueError("Process executable must be absolute")
+E           ValueError: Process executable must be absolute
+
+skills/WPSComposer/scripts/msoffice/macos_osa_transport.py:90: ValueError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_osa_transport.py::test_native_process_lookup_uses_supplied_retained_application_handle[windows]
+1 failed, 1 passed, 32 deselected in 0.08s

@@ -1,0 +1,40 @@
+{
+  "after" : [
+    {
+      "name" : "工作簿5",
+      "path" : "工作簿5",
+      "saved" : false,
+      "sheets" : [
+        "Sheet1"
+      ]
+    },
+    {
+      "name" : "工作簿7",
+      "path" : "工作簿7",
+      "saved" : false,
+      "sheets" : [
+        "Sheet1"
+      ]
+    }
+  ],
+  "alerts" : true,
+  "before" : [
+    {
+      "name" : "工作簿5",
+      "path" : "工作簿5",
+      "saved" : false,
+      "sheets" : [
+        "Sheet1"
+      ]
+    },
+    {
+      "name" : "工作簿7",
+      "path" : "工作簿7",
+      "saved" : false,
+      "sheets" : [
+        "Sheet1"
+      ]
+    }
+  ],
+  "pid" : 9212
+}

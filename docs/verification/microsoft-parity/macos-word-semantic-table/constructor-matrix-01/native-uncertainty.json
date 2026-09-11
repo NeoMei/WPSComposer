@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "stage": "D-replacement-active-one-constructor",
+  "error": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf/15bd5ecf406c4b3983b7dae1f938abc3.log",
+  "action": "Stop native calls; root must independently reconcile this task before another native run.",
+  "owned_document": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf/document-798995b924bf4696abfc488e45e139b6.docx",
+    "closed": false,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-g6k8gzpf"
+  },
+  "sentinel": {
+    "name": "文档92",
+    "preimage": [
+      "文档92",
+      "文档92",
+      false,
+      "07bd08d93e3d7b5b976bf438fd7927768e55cf7eea170e16b2b1216b4b4bbc27"
+    ],
+    "state": "unknown",
+    "close_script": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-semantic-table/constructor-matrix-01/sentinel-close.applescript"
+  }
+}

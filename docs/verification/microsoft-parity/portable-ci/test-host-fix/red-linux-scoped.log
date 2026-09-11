@@ -1,0 +1,89 @@
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+________________ test_docx_defaults_to_longform_private_outcome ________________
+tests/longform_m5/test_public_routing.py:21: in test_docx_defaults_to_longform_private_outcome
+    result = orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+______ test_pdf_defaults_to_longform_and_returns_only_requested_artifact _______
+tests/longform_m5/test_public_routing.py:37: in test_pdf_defaults_to_longform_and_returns_only_requested_artifact
+    assert orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+______________ test_public_preset_override_reaches_longform_plan _______________
+tests/longform_m5/test_public_routing.py:78: in test_public_preset_override_reaches_longform_plan
+    orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+___________________ test_run_longform_m2_evidence_with_mocks ___________________
+tests/macos_probe/test_longform_evidence.py:158: in test_run_longform_m2_evidence_with_mocks
+    assert report["status"] == "passed"
+E   AssertionError: assert 'failed' == 'passed'
+E     
+E     - passed
+E     + failed
+_____________ test_run_longform_m2_evidence_records_pdf_conversion _____________
+tests/macos_probe/test_longform_evidence.py:210: in test_run_longform_m2_evidence_records_pdf_conversion
+    assert report["status"] == "passed"
+E   AssertionError: assert 'failed' == 'passed'
+E     
+E     - passed
+E     + failed
+____________ test_generate_default_does_not_present_final_artifact _____________
+tests/test_generation.py:524: in test_generate_default_does_not_present_final_artifact
+    assert orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+_________________ test_generate_failure_never_presents_output __________________
+tests/test_generation.py:552: in test_generate_failure_never_presents_output
+    orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+
+During handling of the above exception, another exception occurred:
+tests/test_generation.py:552: in test_generate_failure_never_presents_output
+    orchestrator.generate(
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'backend failed'
+E    Input: 'WPS long-form generation is unavailable on platform linux'
+______ test_generate_opener_failure_warns_and_returns_published_artifact _______
+tests/test_generation.py:578: in test_generate_opener_failure_warns_and_returns_published_artifact
+    result = orchestrator.generate(
+skills/WPSComposer/scripts/orchestrator.py:191: in generate
+    raise GenerationError(
+E   skills.WPSComposer.scripts.macos_probe.generation.GenerationError: WPS long-form generation is unavailable on platform linux
+
+During handling of the above exception, another exception occurred:
+tests/test_generation.py:578: in test_generate_opener_failure_warns_and_returns_published_artifact
+    result = orchestrator.generate(
+E   Failed: DID NOT WARN. No warnings of type (<class 'RuntimeWarning'>,) were emitted.
+E    Emitted warnings: [].
+______________ test_generated_rule_script_compiles_without_launch ______________
+tests/msoffice/test_macos_word_rules.py:139: in test_generated_rule_script_compiles_without_launch
+    result = subprocess.run(['/usr/bin/osacompile', '-o', str(tmp_path / 'rule.scpt'), str(script)], capture_output=True, text=True, timeout=20)
+docs/verification/microsoft-parity/portable-ci/test-host-fix/reproduce_host.py:41: in missing_compiler
+    raise FileNotFoundError("simulated host has no /usr/bin/osacompile")
+E   FileNotFoundError: simulated host has no /usr/bin/osacompile
+_______ test_fixture_native_style_readback_uses_exact_names_and_compiles _______
+tests/msoffice/test_macos_word_rules.py:276: in test_fixture_native_style_readback_uses_exact_names_and_compiles
+    result = subprocess.run(['/usr/bin/osacompile','-o',str(tmp_path/'fixture-style.scpt'),str(script)],capture_output=True,text=True,timeout=20)
+docs/verification/microsoft-parity/portable-ci/test-host-fix/reproduce_host.py:41: in missing_compiler
+    raise FileNotFoundError("simulated host has no /usr/bin/osacompile")
+E   FileNotFoundError: simulated host has no /usr/bin/osacompile
+=========================== short test summary info ============================
+FAILED tests/longform_m5/test_public_routing.py::test_docx_defaults_to_longform_private_outcome
+FAILED tests/longform_m5/test_public_routing.py::test_pdf_defaults_to_longform_and_returns_only_requested_artifact
+FAILED tests/longform_m5/test_public_routing.py::test_public_preset_override_reaches_longform_plan
+FAILED tests/macos_probe/test_longform_evidence.py::test_run_longform_m2_evidence_with_mocks
+FAILED tests/macos_probe/test_longform_evidence.py::test_run_longform_m2_evidence_records_pdf_conversion
+FAILED tests/test_generation.py::test_generate_default_does_not_present_final_artifact
+FAILED tests/test_generation.py::test_generate_failure_never_presents_output
+FAILED tests/test_generation.py::test_generate_opener_failure_warns_and_returns_published_artifact
+FAILED tests/msoffice/test_macos_word_rules.py::test_generated_rule_script_compiles_without_launch
+FAILED tests/msoffice/test_macos_word_rules.py::test_fixture_native_style_readback_uses_exact_names_and_compiles
+10 failed, 119 deselected in 0.22s

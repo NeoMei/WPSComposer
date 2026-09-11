@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-probe-01/probe.py", line 72, in <module>
+    read_block(label,corrected[indexes[i]:indexes[i+1]])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-probe-01/probe.py", line 39, in read_block
+    rows=s._execute(commands);report['steps'].append({'label':label,'rows':rows});flush();return rows
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-probe-01/probe.py", line 46, in <lambda>
+    s._execute=lambda lines,**kw:original_execute(q._guard(s)+list(lines),**kw)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 371, in _execute
+    raise (cls(**kw) if cls is NativeWordTimeoutError else cls('NATIVE_WORD_QUARANTINED', **kw)) from None
+skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError: Native Word timed out; uncertain task files are retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-crg8k8ws/1b41e4cfae8748f08b19d58308b96b54.log quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine

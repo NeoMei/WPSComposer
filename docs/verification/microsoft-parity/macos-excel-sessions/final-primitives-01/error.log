@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/wps-excel-final-probe.py", line 21, in <module>
+    report['remove_nonempty_sheet']=session.apply_structural_op({'op':'remove','target':'sheet:2'})
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 503, in apply_structural_op
+    return self._run(prefix+'\n'+command+'\nreturn '+_object({'removed':_quote(target)}))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 235, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

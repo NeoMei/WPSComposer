@@ -1,0 +1,673 @@
+{
+  "run_id": 34488660705,
+  "head_sha": "70d3d86ff6b03945dacccffd1688922830ad6879",
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "job": "pytest-ubuntu-24.04-python-3.12",
+      "tests": 5182,
+      "failed": 0,
+      "skipped": 44,
+      "passed": 5138,
+      "failures": []
+    },
+    {
+      "job": "pytest-ubuntu-24.04-python-3.9",
+      "tests": 5182,
+      "failed": 0,
+      "skipped": 44,
+      "passed": 5138,
+      "failures": []
+    },
+    {
+      "job": "pytest-windows-2022-python-3.12",
+      "tests": 5182,
+      "failed": 79,
+      "skipped": 75,
+      "passed": 5028,
+      "failures": [
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_while_exact_owned_process_is_alive",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_clears_only_marker_after_owned_process_is_dead",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_treats_reused_pid_as_old_process_gone",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_same_birth_with_wrong_executable",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_propagates_cancellation_from_identity_reader",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[None]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[permission]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[unreadable]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_active_pid_bound_helper_for_stage",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_rejects_stage_mismatch_before_process_checks",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_start_binds_returned_instance_and_requires_empty_inventory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_reused_existing_process_is_never_contacted_or_quit",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_readiness_waits_by_deadline_and_records_recovery_without_guessing_process",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change0]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change1]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change2]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books0]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books1]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books2]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_only_pristine_initial_book_is_normalized_and_empty_inventory_rechecked",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_bad_readiness_nonce_quarantines_without_normalization",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_close_exact_owned_path_then_quit_and_acknowledge_birth_disappearance",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_book_after_close_blocks_quit_and_keeps_recovery_path",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_quit_timeout_quarantines_and_does_not_kill_or_retry",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_pid_lookup_failure_is_not_exit_acknowledgment",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_uncertain_transport_error_retains_owned_path_and_prevents_further_commands",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_reserved_path_survives_failure_before_workbook_claim",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ambiguous_launch_date_is_rejected_before_any_command[None]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ambiguous_launch_date_is_rejected_before_any_command[nan]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_partial_native_launch_failure_preserves_returned_pid_without_adopting_it",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_replaced_after_successful_event_quarantines_session",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_quit_pid_replacement_acknowledges_old_exit_without_targeting_replacement",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_launch_uses_returned_handle_new_instance_async_and_allows_activation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_nil_result_fails_without_pid_discovery_and_drains_pool",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_partial_lookup_failure_keeps_bundle_executable_and_pid_for_recovery",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_nonzero_helper_reply_quarantines_even_when_it_contains_json",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_process_drift_during_readiness_reply_never_becomes_owned",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launch_date_is_independent_observation_not_libproc_birth_equality",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_claim_without_reservation_cannot_adopt_existing_workbook",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ready_run_without_reservation_never_dispatches",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_claim_requires_saved_workbook_after_reservation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_native_command_failure_retains_evidence_in_requested_directory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_internal_commands_remain_in_private_evidence_directory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_bad_ack_is_recorded_with_raw_reply_and_retained_script",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[stdout.txt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[stderr.txt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[diagnostic.json]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_all_diagnostic_writes_fail_after_native_success_quarantines_with_reply_in_memory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_cancellation_cannot_mask_existing_native_primary",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_native_command_preserves_diagnostic_cancellation_after_all_writes[cancellation0-KeyboardInterrupt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_native_command_preserves_diagnostic_cancellation_after_all_writes[cancellation1-7]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_post_command_identity_failure_preserves_successful_native_reply",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_validates_retained_launch_handle_after_pid_rediscovery_becomes_nil",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_does_not_offer_owned_handle_when_inspecting_another_pid",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_retained_handle_never_bypasses_birth_identity_revalidation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_identity_rejects_pid_reuse_and_executable_mismatch",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_current_helper_event_is_forwarded_without_retargeting",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_excel_pid_target_is_rewritten_only_after_both_processes_validate",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_excel_bundle_target_is_rewritten_to_validated_owned_process",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[foreign-bundle]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[missing-pid]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[unknown-kind]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_owned_pid_reuse_is_rejected_before_event_copy",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_rejects_reuse_during_identity_read",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_uses_supplied_retained_application_handle",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_rejects_retained_application_for_another_pid",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[decode_target]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[duplicate]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[replace]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_failure_does_not_mask_primary_routing_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_callback_bridge_retains_nonzero_native_send_status_and_stops_later_sends",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_callback_bridge_leaves_application_reply_errors_to_native_semantics",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_translates_caller_deadline_to_shared_helper_clock_without_extension",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_converts_outer_timeout_to_structured_uncertain_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_converts_helper_spawn_failure_to_structured_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_transport_rejects_non_excel_identity_before_spawning",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_rejects_missing_script_and_elapsed_deadline_without_spawning",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_helper_request_round_trip_preserves_shared_absolute_deadline",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_helper_router_uses_shared_clock_even_when_process_monotonic_epochs_differ",
+          "message": "ValueError: Process executable must be absolute"
+        }
+      ]
+    },
+    {
+      "job": "pytest-windows-2022-python-3.9",
+      "tests": 5182,
+      "failed": 79,
+      "skipped": 75,
+      "passed": 5028,
+      "failures": [
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_while_exact_owned_process_is_alive",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_clears_only_marker_after_owned_process_is_dead",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_treats_reused_pid_as_old_process_gone",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_same_birth_with_wrong_executable",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_propagates_cancellation_from_identity_reader",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[None]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[permission]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_unknown_process_state[unreadable]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_refuses_active_pid_bound_helper_for_stage",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_excel_private_recovery.test_private_recovery_rejects_stage_mismatch_before_process_checks",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_start_binds_returned_instance_and_requires_empty_inventory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_reused_existing_process_is_never_contacted_or_quit",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_readiness_waits_by_deadline_and_records_recovery_without_guessing_process",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change0]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change1]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_drift_before_readiness_never_sends[change2]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books0]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books1]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_or_unproven_bootstrap_inventory_is_not_closed[books2]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_only_pristine_initial_book_is_normalized_and_empty_inventory_rechecked",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_bad_readiness_nonce_quarantines_without_normalization",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_close_exact_owned_path_then_quit_and_acknowledge_birth_disappearance",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_foreign_book_after_close_blocks_quit_and_keeps_recovery_path",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_quit_timeout_quarantines_and_does_not_kill_or_retry",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_pid_lookup_failure_is_not_exit_acknowledgment",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_uncertain_transport_error_retains_owned_path_and_prevents_further_commands",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_reserved_path_survives_failure_before_workbook_claim",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ambiguous_launch_date_is_rejected_before_any_command[None]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ambiguous_launch_date_is_rejected_before_any_command[nan]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_partial_native_launch_failure_preserves_returned_pid_without_adopting_it",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_identity_replaced_after_successful_event_quarantines_session",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_quit_pid_replacement_acknowledges_old_exit_without_targeting_replacement",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_launch_uses_returned_handle_new_instance_async_and_allows_activation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_nil_result_fails_without_pid_discovery_and_drains_pool",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_appkit_partial_lookup_failure_keeps_bundle_executable_and_pid_for_recovery",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_nonzero_helper_reply_quarantines_even_when_it_contains_json",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_process_drift_during_readiness_reply_never_becomes_owned",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launch_date_is_independent_observation_not_libproc_birth_equality",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_claim_without_reservation_cannot_adopt_existing_workbook",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_ready_run_without_reservation_never_dispatches",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_claim_requires_saved_workbook_after_reservation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_native_command_failure_retains_evidence_in_requested_directory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_internal_commands_remain_in_private_evidence_directory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_bad_ack_is_recorded_with_raw_reply_and_retained_script",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[stdout.txt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[stderr.txt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_failure_does_not_mask_native_error_and_attempts_every_file[diagnostic.json]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_all_diagnostic_writes_fail_after_native_success_quarantines_with_reply_in_memory",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_diagnostic_cancellation_cannot_mask_existing_native_primary",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_native_command_preserves_diagnostic_cancellation_after_all_writes[cancellation0-KeyboardInterrupt]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_successful_native_command_preserves_diagnostic_cancellation_after_all_writes[cancellation1-7]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_post_command_identity_failure_preserves_successful_native_reply",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_validates_retained_launch_handle_after_pid_rediscovery_becomes_nil",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_does_not_offer_owned_handle_when_inspecting_another_pid",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_excel_process.test_launcher_retained_handle_never_bypasses_birth_identity_revalidation",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_identity_rejects_pid_reuse_and_executable_mismatch",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_current_helper_event_is_forwarded_without_retargeting",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_excel_pid_target_is_rewritten_only_after_both_processes_validate",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_excel_bundle_target_is_rewritten_to_validated_owned_process",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[foreign-bundle]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[missing-pid]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_unknown_or_foreign_external_target_is_rejected_and_disposed[unknown-kind]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_owned_pid_reuse_is_rejected_before_event_copy",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_rejects_reuse_during_identity_read",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_uses_supplied_retained_application_handle",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_native_process_lookup_rejects_retained_application_for_another_pid",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[decode_target]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[duplicate]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_survives_adapter_errors[replace]",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_descriptor_cleanup_failure_does_not_mask_primary_routing_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_callback_bridge_retains_nonzero_native_send_status_and_stops_later_sends",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_callback_bridge_leaves_application_reply_errors_to_native_semantics",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_translates_caller_deadline_to_shared_helper_clock_without_extension",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_converts_outer_timeout_to_structured_uncertain_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_converts_helper_spawn_failure_to_structured_error",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_transport_rejects_non_excel_identity_before_spawning",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_run_rejects_missing_script_and_elapsed_deadline_without_spawning",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_helper_request_round_trip_preserves_shared_absolute_deadline",
+          "message": "ValueError: Process executable must be absolute"
+        },
+        {
+          "name": "tests.msoffice.test_macos_osa_transport.test_helper_router_uses_shared_clock_even_when_process_monotonic_epochs_differ",
+          "message": "ValueError: Process executable must be absolute"
+        }
+      ]
+    }
+  ]
+}

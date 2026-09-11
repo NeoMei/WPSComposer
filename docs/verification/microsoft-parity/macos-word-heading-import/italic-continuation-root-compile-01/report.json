@@ -1,0 +1,12 @@
+[
+  {
+    "file": "restore.applescript",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "file": "state.applescript",
+    "returncode": 0,
+    "stderr": ""
+  }
+]

@@ -1,0 +1,150 @@
+{
+  "passed": true,
+  "modes": {
+    "empty": {
+      "sentinel_before": [
+        "文档18",
+        "文档18",
+        false,
+        "818526a60c9ff0f39bcc830f12e31887a59025294a9d2c0b5ac178060bef5def"
+      ],
+      "native": [
+        [
+          "degradation-table",
+          0,
+          0,
+          24,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007",
+          1,
+          25,
+          0,
+          1,
+          1,
+          1,
+          0,
+          22,
+          "[GEOMETRY_NOTICE] 中文😀"
+        ],
+        [
+          "degradation-style",
+          true,
+          true,
+          true
+        ],
+        [
+          "degradation-paragraph",
+          0,
+          3,
+          true,
+          true
+        ],
+        [
+          "degradation-row",
+          false
+        ],
+        [
+          "full-body",
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007\r",
+          25,
+          1
+        ],
+        [
+          "table",
+          0,
+          24,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007"
+        ],
+        [
+          "cell",
+          0,
+          23,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007"
+        ]
+      ],
+      "owned_closed": true,
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档18"
+        ]
+      ],
+      "after": [],
+      "cleanup_verified": true
+    },
+    "nonempty": {
+      "sentinel_before": [
+        "文档20",
+        "文档20",
+        false,
+        "5c7bc168ee12b2060884435363ace12aa00686a8c5881fe4b834dd850b9c9333"
+      ],
+      "native": [
+        [
+          "degradation-table",
+          11,
+          12,
+          36,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007",
+          12,
+          37,
+          0,
+          1,
+          1,
+          1,
+          12,
+          34,
+          "[GEOMETRY_NOTICE] 中文😀"
+        ],
+        [
+          "degradation-style",
+          true,
+          true,
+          true
+        ],
+        [
+          "degradation-paragraph",
+          0,
+          3,
+          true,
+          true
+        ],
+        [
+          "degradation-row",
+          false
+        ],
+        [
+          "full-body",
+          "PREFIX 中文😀\r[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007\r",
+          37,
+          1
+        ],
+        [
+          "table",
+          12,
+          36,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007\r\u0007"
+        ],
+        [
+          "cell",
+          12,
+          35,
+          "[GEOMETRY_NOTICE] 中文😀\r\u0007"
+        ]
+      ],
+      "owned_closed": true,
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档20"
+        ]
+      ],
+      "after": [],
+      "cleanup_verified": true
+    }
+  },
+  "source_hashes": {
+    "macos_word_session.py": "a6f39d1191a7df557a7c911904e598bb5fa538430314a84afc9aeef711e0d534",
+    "macos_word_degradation.py": "d3c158c7fcee25a448f1f0693f306d5c2792100b8ea2074c2bc4ed665a903d05",
+    "macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f"
+  }
+}

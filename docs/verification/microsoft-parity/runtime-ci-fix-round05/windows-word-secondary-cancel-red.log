@@ -1,0 +1,52 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-KeyboardInterrupt-timeout] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:320: in test_secondary_evidence_cancellation_preserves_primary
+    assert isinstance(error, runtime.NativeWordTimeoutError)
+E   AssertionError: assert False
+E    +  where False = isinstance(KeyboardInterrupt('secondary metadata cancellation'), <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'>)
+E    +    where <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'> = runtime.NativeWordTimeoutError
+_ test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-KeyboardInterrupt-cancel] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:318: in test_secondary_evidence_cancellation_preserves_primary
+    assert error is primary_cancel
+E   AssertionError: assert KeyboardInterrupt('secondary metadata cancellation') is KeyboardInterrupt('original wait cancellation')
+_ test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-SystemExit-timeout] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:320: in test_secondary_evidence_cancellation_preserves_primary
+    assert isinstance(error, runtime.NativeWordTimeoutError)
+E   AssertionError: assert False
+E    +  where False = isinstance(SystemExit('secondary metadata cancellation'), <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'>)
+E    +    where <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'> = runtime.NativeWordTimeoutError
+_ test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-SystemExit-cancel] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:318: in test_secondary_evidence_cancellation_preserves_primary
+    assert error is primary_cancel
+E   AssertionError: assert SystemExit('secondary metadata cancellation') is KeyboardInterrupt('original wait cancellation')
+_ test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-KeyboardInterrupt-timeout] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:320: in test_secondary_evidence_cancellation_preserves_primary
+    assert isinstance(error, runtime.NativeWordTimeoutError)
+E   AssertionError: assert False
+E    +  where False = isinstance(KeyboardInterrupt('secondary metadata cancellation'), <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'>)
+E    +    where <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'> = runtime.NativeWordTimeoutError
+_ test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-KeyboardInterrupt-cancel] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:318: in test_secondary_evidence_cancellation_preserves_primary
+    assert error is primary_cancel
+E   AssertionError: assert KeyboardInterrupt('secondary metadata cancellation') is KeyboardInterrupt('original wait cancellation')
+_ test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-SystemExit-timeout] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:320: in test_secondary_evidence_cancellation_preserves_primary
+    assert isinstance(error, runtime.NativeWordTimeoutError)
+E   AssertionError: assert False
+E    +  where False = isinstance(SystemExit('secondary metadata cancellation'), <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'>)
+E    +    where <class 'skills.WPSComposer.scripts.msoffice.errors.NativeWordTimeoutError'> = runtime.NativeWordTimeoutError
+_ test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-SystemExit-cancel] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:318: in test_secondary_evidence_cancellation_preserves_primary
+    assert error is primary_cancel
+E   AssertionError: assert SystemExit('secondary metadata cancellation') is KeyboardInterrupt('original wait cancellation')
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-KeyboardInterrupt-timeout]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-KeyboardInterrupt-cancel]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-SystemExit-timeout]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[diagnostics.json-SystemExit-cancel]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-KeyboardInterrupt-timeout]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-KeyboardInterrupt-cancel]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-SystemExit-timeout]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_secondary_evidence_cancellation_preserves_primary[native-office.quarantine.json-SystemExit-cancel]
+8 failed, 21 deselected in 0.48s

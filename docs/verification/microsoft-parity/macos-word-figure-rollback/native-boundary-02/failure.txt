@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py", line 310, in run
+    creator.save_docx(source_document)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 1653, in save_docx
+    return self.save(path, 12)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 777, in save
+    return self._save_to(destination, replace_source=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 801, in _save_to
+    publish_artifact(
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 532, in publish_artifact
+    validator(source)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 803, in <lambda>
+    validator=lambda p: validate_before_deadline(validator, p, self._deadline),
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 390, in validate_before_deadline
+    raise RuntimeError("Artifact validator worker exited without a result") from None
+RuntimeError: Artifact validator worker exited without a result

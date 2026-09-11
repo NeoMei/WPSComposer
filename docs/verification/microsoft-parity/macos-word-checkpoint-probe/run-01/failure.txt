@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 115, in run
+    report["cases"].append(run_case(session, "partial-table", "table-prefix\r", partial_table))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 82, in run_case
+    mutator(s)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_checkpoint_probe.py", line 114, in partial_table
+    s._execute(["set p to (end of content of text object of boundDoc) - 1", "set r to create range boundDoc start p end p", "set t to make new table at boundDoc with properties {text object:r,number of rows:2,number of columns:2}", 'set content of text object of cell 1 of row 1 of t to "T1"', 'set content of text object of cell 2 of row 1 of t to "表😀"', 'set nativeRows to {{"ok"}}'])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 339, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=log)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_n16em74 diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_n16em74/dd4404773caf4245a7f80dad0b52eb73.log

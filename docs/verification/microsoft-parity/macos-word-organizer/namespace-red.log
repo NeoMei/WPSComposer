@@ -1,0 +1,23 @@
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_donor_preserves_namespace_bindings_used_by_mc_ignorable _________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1639/test_donor_preserves_namespace0')
+
+    def test_donor_preserves_namespace_bindings_used_by_mc_ignorable(tmp_path):
+        from io import BytesIO
+        m=fixture();target=tmp_path/'donor.docx';m.make_input(m.SOURCE,target,17)
+        with ZipFile(target) as z: raw=z.read('word/styles.xml')
+        namespaces=dict(ET.iterparse(BytesIO(raw),events=['start-ns']))
+        # iterparse emits ('start-ns', (prefix, uri)); collect actual namespace pairs.
+        namespaces=dict(value for event,value in ET.iterparse(BytesIO(raw),events=['start-ns']))
+        root=ET.fromstring(raw)
+        mc='{http://schemas.openxmlformats.org/markup-compatibility/2006}'
+>       assert all(prefix in namespaces for prefix in root.get(mc+'Ignorable','').split())
+E       assert False
+E        +  where False = all(<generator object test_donor_preserves_namespace_bindings_used_by_mc_ignorable.<locals>.<genexpr> at 0x10ba5af20>)
+
+build/word-organizer-20260911/test_organizer_probe.py:52: AssertionError
+=========================== short test summary info ============================
+FAILED build/word-organizer-20260911/test_organizer_probe.py::test_donor_preserves_namespace_bindings_used_by_mc_ignorable
+1 failed, 3 passed in 0.36s

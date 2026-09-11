@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_rollback_failure.py", line 199, in run
+    report['owned_before_failure'] = independent_snapshot(output, 'owned-before-failure', session._bound_path, session._window_id, checkpoint)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_rollback_failure.py", line 114, in independent_snapshot
+    path.write_text(snapshot_source(bound_path, window_id, checkpoint), encoding='utf-8')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_rollback_failure.py", line 74, in snapshot_source
+    raise ValueError('Exact owned path, window ID and checkpoint are required')
+ValueError: Exact owned path, window ID and checkpoint are required

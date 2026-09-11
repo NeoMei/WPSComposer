@@ -506,6 +506,7 @@ def test_generate_open_result_presents_each_final_artifact_once_after_backend_re
 
 
 def test_generate_default_does_not_present_final_artifact(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
 
     def fake_longform(build, format_name, routed_output, timeout, overwrite):
@@ -528,6 +529,7 @@ def test_generate_default_does_not_present_final_artifact(monkeypatch, tmp_path)
 
 
 def test_generate_failure_never_presents_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
     presented = []
 
@@ -562,6 +564,7 @@ def test_generate_failure_never_presents_output(monkeypatch, tmp_path):
 def test_generate_opener_failure_warns_and_returns_published_artifact(
     monkeypatch, tmp_path
 ):
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
     output = tmp_path / "report.docx"
 
     def fake_longform(build, format_name, routed_output, timeout, overwrite):
@@ -630,6 +633,28 @@ def test_generate_uses_resolved_safe_default_output(monkeypatch, tmp_path):
     assert result == str((tmp_path / "document.pptx").resolve())
     assert calls == [((tmp_path / "document.pptx").resolve(), 600, False)]
 
+
+
+def test_generate_default_output_survives_legacy_missing_path_resolution(monkeypatch, tmp_path):
+    """Python 3.9 Windows resolve can leave a missing relative path unchanged."""
+    class LegacyMissingPath(type(tmp_path)):
+        def resolve(self, strict=False):
+            if not self.is_absolute() and not self.exists():
+                return self
+            return super().resolve(strict=strict)
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(orchestrator, "Path", LegacyMissingPath)
+    monkeypatch.setattr(orchestrator, "sys", SimpleNamespace(platform="darwin"))
+    outputs = []
+    monkeypatch.setattr(
+        orchestrator, "generate_macos",
+        lambda doc, format_name, output, preset, **kwargs: outputs.append(output) or output,
+    )
+    result = orchestrator.generate("# Report", format="pptx", source_is_text=True)
+    expected = tmp_path / "document.pptx"
+    assert result == str(expected)
+    assert outputs == [expected]
 
 def test_generate_refuses_existing_output_before_backend(monkeypatch, tmp_path):
     output = tmp_path / "report.docx"

@@ -1,0 +1,14 @@
+{
+  "recovered": true,
+  "marker_removed": true,
+  "stage_preserved": true,
+  "stage_hashes": {
+    "recovery.json": "cd98253e1b67ab5200b63e3a44850303583c65c3b17eda18a42c3f52d824a8bb",
+    "owned-d967c70396394dc8ac308c88a839b1b2.xlsx": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+    "owner/inventory-abea3662317b4404a92b8618a39889ec/stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "owner/inventory-abea3662317b4404a92b8618a39889ec/owner.applescript": "85c3964a349c42558449580f2a34edb4ad534180dc6b3978ce64bcd8a8f74c43",
+    "owner/inventory-abea3662317b4404a92b8618a39889ec/stderr.txt": "c4393cadc3d996e88b54dfced90f17d001d645cb6f1bd2357769b8fc67793cfa",
+    "owner/inventory-abea3662317b4404a92b8618a39889ec/diagnostic.json": "8838854aedd566ce111f95bc7657c7f5a5baa4e33d1242d1c62689da9412ada6"
+  },
+  "runtime_sha256": "c94b276f143de237a5b93893cbf654a62fa851baa4a871f41f32a6db102248b6"
+}

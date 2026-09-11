@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/style-install-refresh.py", line 151, in run
+    styles,xml=base.package(output/'setup.docx');signature=document_signature(xml);body='\r'.join(''.join(t.text or '' for t in p.iter(W+'t')) for p in ET.fromstring(xml).find(W+'body').findall(W+'p'))+'\r';report['body']=body;check('source_inherited_case',expected_clone(styles) is not None)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/style-install-refresh.py", line 30, in expected_clone
+    if source.find(W+'basedOn').get(W+'val')!=parent.get(W+'styleId') or parent.find(W+'basedOn').get(W+'val')!=normal.get(W+'styleId'):raise ValueError('Unsupported source chain')
+ValueError: Unsupported source chain

@@ -1,0 +1,143 @@
+...................FFFF                                                  [100%]
+=================================== FAILURES ===================================
+_ test_secondary_diagnostic_cancel_does_not_replace_primary[KeyboardInterrupt-timeout] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1084dbe80>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1334/test_secondary_diagnostic_canc0')
+outcome = 'timeout', secondary_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel'])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    def test_secondary_diagnostic_cancel_does_not_replace_primary(monkeypatch, tmp_path, outcome, secondary_type):
+        primary = KeyboardInterrupt('initial cancellation')
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel':
+                        raise primary
+                    raise subprocess.TimeoutExpired('synthetic-child', timeout)
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        is_file = Path.is_file
+        def interrupted(path):
+            if path == tmp_path / 'diagnostics.json':
+                raise secondary_type('secondary diagnostic interruption')
+            return is_file(path)
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        if outcome == 'timeout':
+>           assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+E           AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E            +  where None = getattr(KeyboardInterrupt('secondary diagnostic interruption'), 'code', None)
+E            +    where KeyboardInterrupt('secondary diagnostic interruption') = <ExceptionInfo KeyboardInterrupt('secondary diagnostic interruption') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:294: AssertionError
+_ test_secondary_diagnostic_cancel_does_not_replace_primary[KeyboardInterrupt-cancel] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1084bf100>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1334/test_secondary_diagnostic_canc1')
+outcome = 'cancel', secondary_type = <class 'KeyboardInterrupt'>
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel'])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    def test_secondary_diagnostic_cancel_does_not_replace_primary(monkeypatch, tmp_path, outcome, secondary_type):
+        primary = KeyboardInterrupt('initial cancellation')
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel':
+                        raise primary
+                    raise subprocess.TimeoutExpired('synthetic-child', timeout)
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        is_file = Path.is_file
+        def interrupted(path):
+            if path == tmp_path / 'diagnostics.json':
+                raise secondary_type('secondary diagnostic interruption')
+            return is_file(path)
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        if outcome == 'timeout':
+            assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+        else:
+>           assert caught.value is primary
+E           AssertionError: assert KeyboardInterrupt('secondary diagnostic interruption') is KeyboardInterrupt('initial cancellation')
+E            +  where KeyboardInterrupt('secondary diagnostic interruption') = <ExceptionInfo KeyboardInterrupt('secondary diagnostic interruption') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:296: AssertionError
+_ test_secondary_diagnostic_cancel_does_not_replace_primary[SystemExit-timeout] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1084b2520>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1334/test_secondary_diagnostic_canc2')
+outcome = 'timeout', secondary_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel'])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    def test_secondary_diagnostic_cancel_does_not_replace_primary(monkeypatch, tmp_path, outcome, secondary_type):
+        primary = KeyboardInterrupt('initial cancellation')
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel':
+                        raise primary
+                    raise subprocess.TimeoutExpired('synthetic-child', timeout)
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        is_file = Path.is_file
+        def interrupted(path):
+            if path == tmp_path / 'diagnostics.json':
+                raise secondary_type('secondary diagnostic interruption')
+            return is_file(path)
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        if outcome == 'timeout':
+>           assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+E           AssertionError: assert 'secondary di... interruption' == 'NATIVE_OFFICE_TIMEOUT'
+E             
+E             - NATIVE_OFFICE_TIMEOUT
+E             + secondary diagnostic interruption
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:294: AssertionError
+_ test_secondary_diagnostic_cancel_does_not_replace_primary[SystemExit-cancel] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1086faee0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1334/test_secondary_diagnostic_canc3')
+outcome = 'cancel', secondary_type = <class 'SystemExit'>
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel'])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    def test_secondary_diagnostic_cancel_does_not_replace_primary(monkeypatch, tmp_path, outcome, secondary_type):
+        primary = KeyboardInterrupt('initial cancellation')
+        class Child(TimedOutChild):
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel':
+                        raise primary
+                    raise subprocess.TimeoutExpired('synthetic-child', timeout)
+        child = Child()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        is_file = Path.is_file
+        def interrupted(path):
+            if path == tmp_path / 'diagnostics.json':
+                raise secondary_type('secondary diagnostic interruption')
+            return is_file(path)
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        if outcome == 'timeout':
+            assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+        else:
+>           assert caught.value is primary
+E           AssertionError: assert SystemExit('secondary diagnostic interruption') is KeyboardInterrupt('initial cancellation')
+E            +  where SystemExit('secondary diagnostic interruption') = <ExceptionInfo SystemExit('secondary diagnostic interruption') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:296: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_secondary_diagnostic_cancel_does_not_replace_primary[KeyboardInterrupt-timeout]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_secondary_diagnostic_cancel_does_not_replace_primary[KeyboardInterrupt-cancel]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_secondary_diagnostic_cancel_does_not_replace_primary[SystemExit-timeout]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_secondary_diagnostic_cancel_does_not_replace_primary[SystemExit-cancel]
+4 failed, 19 passed in 0.10s

@@ -1,0 +1,13 @@
+✔ express: bracket comma arrays obey configured limits (1.108084ms)
+✔ express: parsed constructor.isBuffer is data when serialized (0.561083ms)
+✔ body-parser: bracket comma arrays obey configured limits (0.13625ms)
+✔ body-parser: parsed constructor.isBuffer is data when serialized (0.112584ms)
+✔ Express query and urlencoded requests preserve nested fields, arrays and Unicode (46.591417ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89.799666

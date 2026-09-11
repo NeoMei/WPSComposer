@@ -1,0 +1,67 @@
+{
+  "native-run-01": {
+    "raw_status": "FAIL",
+    "raw_report_sha256": "b77df4092a0962af5bfb337bbac1b6af692fc4fb072161b3a7866ab5f825cc05",
+    "source_copies_equal": {
+      "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py": true,
+      "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_fields.py": true,
+      "fixtures/microsoft_parity/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+      "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true
+    },
+    "artifact_hashes_equal": {
+      "figure-rollback-source.docx": true,
+      "probe.png": true
+    },
+    "source_current_step": "one-image-success-then-exact-rollback",
+    "remaining_sentinel": null,
+    "raw_inventory_final": []
+  },
+  "native-boundary-02": {
+    "raw_status": "FAIL",
+    "raw_report_sha256": "ff3296f55073410fefeb2ddb2baf17d1090041c3a77428a611bb4a4ce62830a6",
+    "source_copies_equal": {
+      "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py": true,
+      "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_fields.py": true,
+      "fixtures/microsoft_parity/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+      "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true,
+      "build/word-figure-rollback-20260911/diagnose-boundary.py": true
+    },
+    "artifact_hashes_equal": {
+      "probe.png": true
+    },
+    "source_current_step": "create-owned-source-preimage",
+    "remaining_sentinel": null,
+    "raw_inventory_final": []
+  },
+  "native-boundary-03": {
+    "raw_status": "FAIL",
+    "raw_report_sha256": "ba54a537f630f1df0bf312fe3563ca4d191f3789203142bca929385ac307cbf2",
+    "source_copies_equal": {
+      "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py": true,
+      "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+      "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_fields.py": true,
+      "fixtures/microsoft_parity/macos_word_recovery.py": true,
+      "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+      "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true,
+      "build/word-figure-rollback-20260911/diagnose-boundary.py": true
+    },
+    "artifact_hashes_equal": {
+      "figure-rollback-source.docx": true,
+      "probe.png": true
+    },
+    "source_current_step": "one-image-success-then-exact-rollback",
+    "remaining_sentinel": null,
+    "raw_inventory_final": []
+  },
+  "inventory_final": []
+}

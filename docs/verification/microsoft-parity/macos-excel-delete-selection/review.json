@@ -1,0 +1,20 @@
+{
+  "scope": "Excel sheet deletion logical selection only",
+  "findings": [],
+  "implementation_sha256": "6575093babf407a5327b115effecb6d780376ecc7c68ef63eb40d94abe441fb1",
+  "tests_sha256": "2e8de6555262b56850b2b10a4303ae8bc7e3cf7c4d4d30b92f258ace21bc770e",
+  "session_tests_passed": 69,
+  "excel_script_session_tests_passed": 94,
+  "index_model_combinations_passed": 196,
+  "reviewer_native_or_UI_execution": false,
+  "fixture_review": {
+    "initial_findings": [
+      "P2: assert exact sheet identity/order",
+      "P3: reconcile unacknowledged sentinel creation"
+    ],
+    "resolution": "Both repaired and independently re-reviewed; no remaining scoped findings",
+    "fixture_sha256": "55b53a0145f60e0ca9c788c858c1c55b7a28715fce8c4c89b8ca25834ccfe4fd",
+    "fixture_test_sha256": "07087040a44d70f0b78e59ff0382ffdc5bd01dd908736b578e25c08ec8c44d8a",
+    "related_tests_passed": 96
+  }
+}

@@ -12,6 +12,7 @@ from skills.WPSComposer.scripts.document_model import (
     FigureBlock,
     FormulaBlock,
     KeywordsBlock,
+    MathBlock,
     PageBreakBlock,
     Paragraph,
     ReferenceListBlock,
@@ -497,3 +498,16 @@ def test_to_json_reference_mapping_is_sorted_by_key() -> None:
     result = normalize_longform_document(_doc_from_markdown(md))
     refs = result.to_json()["references"]
     assert list(refs.keys()) == sorted(refs.keys())
+
+
+@pytest.mark.parametrize('element', [
+    MathBlock(latex='x^2'),
+    FormulaBlock(source=''),
+])
+def test_display_math_normalization_preserves_document_without_attribute_fallback(element):
+    document = StructuredDocument(sections=[Section(heading='Math', level=1, elements=[element]),
+                                           Section(heading='Second', level=1),
+                                           Section(heading='Third', level=1)])
+    result = normalize_longform_document(document)
+    assert not any(issue.code == 'LONGFORM_NORMALIZATION_ERROR' for issue in result.issues)
+    assert result.document.sections

@@ -1,0 +1,17 @@
+{
+  "baseline_rows": 80,
+  "declared_names": 71,
+  "missing": [
+    "add_captioned_figure_fallback",
+    "add_captioned_figure_native",
+    "add_equation_native",
+    "add_equation_native_fallback",
+    "add_heading_level_native",
+    "add_horizontal_line",
+    "add_semantic_table_fallback",
+    "add_semantic_table_native",
+    "add_wordart"
+  ],
+  "session_sha256": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+  "note": "AST declaration check only; does not certify native implementation or all arguments."
+}

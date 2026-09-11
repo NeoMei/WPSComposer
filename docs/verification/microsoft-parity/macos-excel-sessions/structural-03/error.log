@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 248, in run_structure
+    report['cases'].append({'axis':axis,'verb':verb,'result':result,'cells':cells})
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 196, in __exit__
+    def __exit__(self,*args): self.close(save_changes=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 690, in close
+    self._run('close ownedBook saving no\nreturn "{}"')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 236, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

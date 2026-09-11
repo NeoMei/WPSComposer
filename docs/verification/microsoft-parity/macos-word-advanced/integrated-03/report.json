@@ -1,0 +1,11 @@
+{
+  "passed": false,
+  "checks": {
+    "unsaved_sentinel_preserved": true
+  },
+  "issues": [],
+  "runtime_staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-aj4dmxvd",
+  "error": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-aj4dmxvd diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-aj4dmxvd/operation-18fb61f97cd1477aaa6ecb12d329d803.log",
+  "source_sha256": "0a28f8fe0c2ff79fc495ad29e122eebc62a99fbec19fddd558f2d92745f93df6",
+  "compiler_sha256": "f7f1d9301f04fa09d4cac9f5aace07495ee6c84a68d58d0d1be285e5df2aaa76"
+}

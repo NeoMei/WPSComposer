@@ -566,3 +566,30 @@ def test_title_style_clears_inherited_heading_outline_level(key):
     style = SimpleNamespace(Font=SimpleNamespace(), ParagraphFormat=SimpleNamespace(OutlineLevel=1))
     composer._configure_style(style, {key: 10})
     assert style.ParagraphFormat.OutlineLevel == 10
+
+
+def test_degradation_text_fallback_styles_exact_utf16_range():
+    from types import SimpleNamespace
+
+    display = '[FALLBACK] \U0001f600TAIL'
+    ranges = []
+    target = SimpleNamespace(Start=7, InsertAfter=lambda text: None)
+
+    def native_range(start, end):
+        ranges.append((start, end))
+        return SimpleNamespace(
+            Font=SimpleNamespace(),
+            Shading=SimpleNamespace(),
+            ParagraphFormat=SimpleNamespace(),
+        )
+
+    class Tables:
+        def Add(self, *args):
+            raise RuntimeError('native table unavailable')
+
+    writer = object.__new__(WriterComposer)
+    writer._doc = SimpleNamespace(Tables=Tables(), Range=native_range)
+    result = writer._insert_degradation_box(display, target)
+
+    assert ranges[-1] == (7, 7 + len(display.encode('utf-16-le')) // 2)
+    assert result.Range is not None

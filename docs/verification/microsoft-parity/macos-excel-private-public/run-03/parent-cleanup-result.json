@@ -1,0 +1,1 @@
+{"cleanup_ack": true, "identity": {"pid": 34338, "start_seconds": 1789048885, "start_microseconds": 2111, "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel", "bundle_id": "com.microsoft.Excel"}, "exact_pid_gone": true, "recovered": true, "runner_sha256": "d69edd356c49025d92e89e14b7a5fe65dcb1e7846a0c711a182bbff2cf0c00a2"}

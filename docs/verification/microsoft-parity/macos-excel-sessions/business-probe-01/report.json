@@ -1,0 +1,29 @@
+{
+  "verified": false,
+  "steps": {
+    "freeze": {
+      "ok": true,
+      "result": "{\"freeze_panes\":true,\"split_column\":1,\"split_row\":1}"
+    },
+    "conditional": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    },
+    "chart": {
+      "ok": false,
+      "message": "“Microsoft Excel”遇到一个错误：参数错误。",
+      "code": -50
+    },
+    "table": {
+      "ok": true,
+      "result": "{}"
+    },
+    "header": {
+      "ok": true,
+      "result": "{}"
+    }
+  },
+  "job": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-xshcsl05",
+  "error": "Native Excel session failed; owned recovery files retained"
+}

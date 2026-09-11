@@ -1,0 +1,18 @@
+........................................................................ [ 40%]
+........................................................................ [ 81%]
+.................................                                        [100%]
+=============================== warnings summary ===============================
+tests/msoffice/test_macos_word_rules.py::test_fixture_accepts_retained_run02_pdf_rule_offline
+tests/msoffice/test_macos_word_rules.py::test_fixture_accepts_retained_run02_pdf_rule_offline
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/msoffice/test_macos_word_rules.py::test_fixture_accepts_retained_run02_pdf_rule_offline
+tests/msoffice/test_macos_word_rules.py::test_fixture_accepts_retained_run02_pdf_rule_offline
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/msoffice/test_macos_word_rules.py::test_fixture_accepts_retained_run02_pdf_rule_offline
+  <frozen importlib._bootstrap>:228: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+177 passed, 6 deselected, 5 warnings in 1.13s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

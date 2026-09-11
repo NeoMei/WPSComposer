@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_excel_sessions.py", line 184, in run_business
+    report['conditional']=session.conditional_format('B2:B3',formula='15')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 626, in conditional_format
+    return self._run(prefix+'\ndelete format conditions of obj\nmake new format condition at obj with properties {format condition type:'+rule+', condition operator:'+operator+', formula 1:'+formula+'}\nset color of interior object of format condition 1 of obj to '+color+'\nreturn '+_object({'condition_count':'count of format conditions of obj'}))
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_excel_session.py", line 236, in _run
+    raise error from None
+RuntimeError: Native Excel session failed; owned recovery files retained

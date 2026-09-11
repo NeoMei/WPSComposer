@@ -1,0 +1,19 @@
+{
+  "owned_exact_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-glg0bgrl/document-14d4fd91b1ce4cf3aa46a244cf2d6584.docx",
+  "owned_ui_save_prompt": true,
+  "owned_ui_discard": true,
+  "sentinel_name": "\u6587\u686396",
+  "sentinel_exact_text_verified": true,
+  "sentinel_ui_delete": true,
+  "inventory": [],
+  "quarantine_recovered": true,
+  "final_inventory": [],
+  "reconciled_table_count": 1,
+  "grid_text_remains": true,
+  "old_table_range": [
+    154,
+    173
+  ],
+  "body_end": 175,
+  "original_result": "FAIL -1708 after grid prefill; no new table observed"
+}

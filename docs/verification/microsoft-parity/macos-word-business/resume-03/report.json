@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "checks": {
+    "unsupported_hyperlink_preflight": true,
+    "unrelated_bindings_saved_state_unchanged": true,
+    "exact_owned_close": true,
+    "native_reopen_preserves_source_hash": true,
+    "native_reopen_text_and_list_prefixes": true,
+    "native_page_break": true,
+    "native_header_footer_pdf": true,
+    "native_heading_font_indent_span_list_border": true,
+    "native_pdf_font_and_wrapped_list_geometry": true
+  },
+  "limitations": [
+    "Rich hyperlink spans are explicitly unsupported.",
+    "Two-section header linkage is covered separately by the followup fixture.",
+    "Consolas uses Latin slots; its CJK glyphs retain the inherited East Asian font."
+  ],
+  "hashes": {
+    "direct.docx": "f3ce987561106be5cc8e8bc8046d81c1caf937d660bdce512be5cd3dc7286337",
+    "direct.pdf": "2f01e002b2e85b8dca89152bd28a8309919c26c844d6bee295eaa50a4266f77b"
+  },
+  "requires_manual_artifact_checks": [
+    "Two-section header/footer linkage"
+  ],
+  "acceptance_status": "NATIVE_ARTIFACT_CHECKS_PASSED_WITH_EXPLICIT_LIMITS"
+}

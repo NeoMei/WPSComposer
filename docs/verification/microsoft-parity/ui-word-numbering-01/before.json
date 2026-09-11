@@ -1,0 +1,7 @@
+{
+  "source": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-numbering/run-01/numbering.docx",
+  "target": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/build/parity-ui-numbering-20260909/numbering-ui.docx",
+  "source_sha256": "916ec6b379b179a8a11cca9c9d5c0d5aec076b281259e21b46dd27130513c3f6",
+  "target_sha256": "916ec6b379b179a8a11cca9c9d5c0d5aec076b281259e21b46dd27130513c3f6",
+  "source_scope": "native numbering run01 reviewed slice"
+}

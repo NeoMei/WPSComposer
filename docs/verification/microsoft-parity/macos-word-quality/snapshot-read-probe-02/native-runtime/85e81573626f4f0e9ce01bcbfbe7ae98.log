@@ -1,0 +1,88 @@
+complete-snapshot-candidate:0: set qe to end of content of text object of boundDoc
+complete-snapshot-candidate:1: set qp to create range boundDoc start 0 end qualityPoint
+complete-snapshot-candidate:2: set qs to create range boundDoc start (qualityPoint + qualityDelta) end qe
+complete-snapshot-candidate:3: set recoveryTask to current application's NSTask's alloc()'s init()
+complete-snapshot-candidate:4: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+complete-snapshot-candidate:5: recoveryTask's setArguments:{"-a", "256"}
+complete-snapshot-candidate:6: set recoveryInput to current application's NSPipe's pipe()
+complete-snapshot-candidate:7: set recoveryOutput to current application's NSPipe's pipe()
+complete-snapshot-candidate:8: recoveryTask's setStandardInput:recoveryInput
+complete-snapshot-candidate:9: recoveryTask's setStandardOutput:recoveryOutput
+complete-snapshot-candidate:10: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+complete-snapshot-candidate:11: set recoveryData to (current application's NSString's stringWithString:(content of qp as text))'s dataUsingEncoding:4
+complete-snapshot-candidate:12: recoveryTask's |launch|()
+complete-snapshot-candidate:13: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+complete-snapshot-candidate:14: (recoveryInput's fileHandleForWriting())'s closeFile()
+complete-snapshot-candidate:15: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+complete-snapshot-candidate:16: recoveryTask's waitUntilExit()
+complete-snapshot-candidate:17: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:18: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+complete-snapshot-candidate:19: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:20: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:21: set qualityPrefixHash to text 1 thru 64 of recoveryDigestText
+complete-snapshot-candidate:22: set recoveryTask to current application's NSTask's alloc()'s init()
+complete-snapshot-candidate:23: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+complete-snapshot-candidate:24: recoveryTask's setArguments:{"-a", "256"}
+complete-snapshot-candidate:25: set recoveryInput to current application's NSPipe's pipe()
+complete-snapshot-candidate:26: set recoveryOutput to current application's NSPipe's pipe()
+complete-snapshot-candidate:27: recoveryTask's setStandardInput:recoveryInput
+complete-snapshot-candidate:28: recoveryTask's setStandardOutput:recoveryOutput
+complete-snapshot-candidate:29: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+complete-snapshot-candidate:30: set recoveryData to (current application's NSString's stringWithString:(content of qs as text))'s dataUsingEncoding:4
+complete-snapshot-candidate:31: recoveryTask's |launch|()
+complete-snapshot-candidate:32: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+complete-snapshot-candidate:33: (recoveryInput's fileHandleForWriting())'s closeFile()
+complete-snapshot-candidate:34: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+complete-snapshot-candidate:35: recoveryTask's waitUntilExit()
+complete-snapshot-candidate:36: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:37: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+complete-snapshot-candidate:38: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:39: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-candidate:40: set qualitySuffixHash to text 1 thru 64 of recoveryDigestText
+complete-snapshot-candidate:41: set qualityState to {{"quality-state",qe - qualityDelta,qualityPrefixHash,qualitySuffixHash}}
+complete-snapshot-candidate:42: set qualityLayout to {}
+complete-snapshot-candidate:43: repeat with qi from 1 to count sections of boundDoc
+complete-snapshot-candidate:44: set qsection to section qi of boundDoc
+complete-snapshot-candidate:45: set qsetup to page setup of qsection
+complete-snapshot-candidate:46: set end of qualityLayout to {"section",qi as integer,orientation of qsetup as text,page width of qsetup,page height of qsetup,top margin of 
+complete-snapshot-candidate:47: repeat with qindex in {header footer primary,header footer first page,header footer even pages}
+complete-snapshot-candidate:48: set qheader to get header qsection index qindex
+complete-snapshot-candidate:49: set qfooter to get footer qsection index qindex
+complete-snapshot-candidate:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:48: set qheader to get header qsection index qindex
+complete-snapshot-candidate:49: set qfooter to get footer qsection index qindex
+complete-snapshot-candidate:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:48: set qheader to get header qsection index qindex
+complete-snapshot-candidate:49: set qfooter to get footer qsection index qindex
+complete-snapshot-candidate:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-candidate:52: set qr to text object of qpart
+complete-snapshot-candidate:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-candidate:54: repeat with qfield in fields of qr
+complete-snapshot-candidate:60: repeat with qi from 1 to count list templates of boundDoc
+complete-snapshot-candidate:61: set qtemplate to list template qi of boundDoc
+complete-snapshot-candidate:62: set end of qualityLayout to {"list-template",qi as integer,name of qtemplate as text,outline numbered of qtemplate}
+complete-snapshot-candidate:63: repeat with qlevel in list levels of qtemplate
+complete-snapshot-candidate:63: repeat with qlevel in list levels of qtemplate, -1708
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","complete-snapshot-candidate:63: repeat with qlevel in list levels of qtemplate",-1708,"“Microsoft Word”遇到一个错误：“every list level of list template 1 of document \"document-0c387546be794533b90eb09d73ac5b59.docx\"”不理解“count”信息。"]]]

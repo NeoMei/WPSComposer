@@ -1,0 +1,28 @@
+{
+  "status": "FAIL",
+  "checks": {},
+  "scope": "single named style install and same-name update on owned native DOCX only",
+  "source_hashes": {
+    "build/word-organizer-20260911/organizer_probe.py": "011d3fe3c545dbbdfad494e803f9e8e3861d7dc302788c0ef5e56e5212758b00",
+    "build/word-organizer-20260911/test_organizer_probe.py": "1667984ee34ec446e9010eb71a8090db17d7b76f17346d5b161d49c5f995f9df",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "input_source_sha256": "2edaecf1e398885e46e0943632640cb60c5fcbd2beef94082469571e9f601f01",
+  "inventory_before": [],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-rr9zordr diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-rr9zordr/8617dc27f6ae4ca0bf9ce01de4ca68bd.log"
+  },
+  "remaining_sentinel": null,
+  "source_unchanged": true,
+  "input_source_unchanged": true,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "input-17.docx": "ae83dcb0b2bc10609ab14cc07cc9cf9f9849841ef8e61f2854882bd36e651015"
+  },
+  "root_ui_cleanup_check": "Word DocStage, no open document window; native inventory empty. No UI action needed."
+}

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_degradation.py", line 270, in _case
+    case['ooxml'] = inspect_ooxml(output/'notices.docx', display, following,
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_degradation.py", line 76, in inspect_ooxml
+    assert shading is not None and shading.get(W+'fill', '').upper() == 'FCE8E6', 'Notice shading missing'
+AssertionError: Notice shading missing

@@ -1,0 +1,290 @@
+[
+  [
+    "native.pptx",
+    "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-5gbd1n6t/native.pptx",
+    true,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    720,
+    "horizontal orientation"
+  ],
+  [
+    "native.pptx",
+    "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-06/native.pptx",
+    true,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "native.pptx",
+    "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-07/native.pptx",
+    true,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "native.pptx",
+    "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-10/native.pptx",
+    true,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    720,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿1",
+    "演示文稿1",
+    false,
+    0,
+    {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "has_text": false
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿10",
+    "演示文稿10",
+    false,
+    1,
+    {
+      "sha256": "b511089b5293ed7bd96a8f14ef2947117ddce97df9c9d7a810df2260412be5af",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿12",
+    "演示文稿12",
+    false,
+    1,
+    {
+      "sha256": "54b8a3b57e234a151fdff3a76da092e3f6eb1cc30c0fbeca67f8a19ede3e2f37",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿13",
+    "演示文稿13",
+    false,
+    0,
+    {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "has_text": false
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿14",
+    "演示文稿14",
+    false,
+    1,
+    {
+      "sha256": "7587e005ec241472a726a392595667e7df1c46195736378875b4ed273072ce7a",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿16",
+    "演示文稿16",
+    false,
+    1,
+    {
+      "sha256": "04282d2bf590f2e6b9ff553aa83a306d46309ed359b3e40fad34bcf7af2e444b",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿18",
+    "演示文稿18",
+    false,
+    1,
+    {
+      "sha256": "83acfeaa5cf3a4d63ea7e74aa84dde51a93c2dc76269c2584e72976e70795d7e",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿2",
+    "演示文稿2",
+    false,
+    1,
+    {
+      "sha256": "51adeee9151477b8ecf93f5fec699da5d877386e27ac3d7c83603664d02b73d3",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿20",
+    "演示文稿20",
+    false,
+    1,
+    {
+      "sha256": "e17ba48da249be7cba2fcdda46657fb6fdee1e91a7c9c5d797ac5ee5a204ab63",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿22",
+    "演示文稿22",
+    false,
+    1,
+    {
+      "sha256": "3867653c6f016b883ddf0a519756e0d1d701d23d5843caa078b4fc92528c70b7",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿24",
+    "演示文稿24",
+    false,
+    1,
+    {
+      "sha256": "a6c00a4f1803c4d9122c68a3207b91d3020b94e34b2a624ea3d01383ac428fdf",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿27",
+    "演示文稿27",
+    false,
+    1,
+    {
+      "sha256": "51999132eba274fe7cedebee11da59626bc58c13375f46bed196c9fb24d37daf",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿29",
+    "演示文稿29",
+    false,
+    1,
+    {
+      "sha256": "9e176000ed2a28aa0d68fcccb1ee908b40d93929d572d3890f49fe42599a4204",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿3",
+    "演示文稿3",
+    false,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿31",
+    "演示文稿31",
+    false,
+    1,
+    {
+      "sha256": "1f2a90f4684c7a0f99009e51bd068c34fa0101deca785dad2cc9f711eae9054a",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿33",
+    "演示文稿33",
+    false,
+    1,
+    {
+      "sha256": "d1125c56c81222ca0d6aebddbb1397da62709f83b1762eb85b7374e789555d73",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿4",
+    "演示文稿4",
+    false,
+    1,
+    {
+      "sha256": "ec44fa2e70a38269135444db1f609c7ce16d21118bdc38499800438e081fd161",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿5",
+    "演示文稿5",
+    false,
+    2,
+    {
+      "sha256": "1474b21811a5dc1bbbb633560ffc916c9e52430b468c5a7949728d6847653805",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿6",
+    "演示文稿6",
+    false,
+    1,
+    {
+      "sha256": "720d0e1c382a96d4fc909a9252e41695d76fc8910e4e9e98ee37d31e1602ffff",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ],
+  [
+    "演示文稿8",
+    "演示文稿8",
+    false,
+    1,
+    {
+      "sha256": "825f73295356eb8ca4b20f4012a0af94054d005a6c11ecf111c66f955f31ce1a",
+      "has_text": true
+    },
+    960,
+    "horizontal orientation"
+  ]
+]

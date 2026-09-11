@@ -1,0 +1,12 @@
+{
+  "production_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_semantic_table.py": "9655e9af00366228bcca63063d2341d9687348fa2cd9e9663632ddee9c2d65ec",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e"
+  },
+  "quarantine_present": false,
+  "script_identical_to_approved": true,
+  "script_sha256": "bfcf1d24ba8c0b9a7cdb29a564b0e9713464fa44471955dd44318793b4132ade",
+  "compile_exit_code": 0,
+  "seed_sha256": "aef76d37441bf3cbe86ace1724c24fa253cd8e6ccf4e6cefadd0f39ec2aca4c7",
+  "xml_preservation_helpers_ast_identical_to_frozen_fixture": true
+}

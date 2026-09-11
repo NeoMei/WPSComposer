@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "scope": "Actual Word UI list edit/Undo/explicit save/close/exact-path reopen; source and private copy preserved",
+  "observations": [
+    "Opened exact list-arguments-ui.docx with Word open dialog; AX URL matched private path.",
+    "An initial coordinate attempt inserted the marker in the title; two Undo actions restored the original title and disabled Undo. This was not counted as list editing.",
+    "Keyboard Home/Down selection visibly selected the custom arrow/CUSTOM ITEM paragraph and ribbon List Paragraph style.",
+    "Typed UI-LIST-CHECK; screenshot visibly showed replacement text in that existing list paragraph.",
+    "One Undo restored the arrow, tab, CUSTOM ITEM and following empty/ordered/body paragraphs. Undo became disabled.",
+    "Explicit Cmd+S then Cmd+W returned DocStage.",
+    "Reopened exact private URL through native open action; AX confirmed list-arguments-ui window and saved local filename.",
+    "Final screenshot call returned noWindowsAvailable; no reopened screenshot is claimed. Independent final Word inventory was empty."
+  ],
+  "checks": {
+    "actual_list_edit_observed": true,
+    "actual_undo_observed": true,
+    "explicit_save_and_close": true,
+    "exact_path_reopen_ax_observed": true,
+    "final_native_inventory_empty": true,
+    "source_bytes_preserved": true,
+    "ui_bytes_preserved": true
+  },
+  "artifact_sha256": "50fc1f235e66b4e26443d69fe61c536ab667a1dda6659f273a143c77dff1729e"
+}

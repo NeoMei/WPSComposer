@@ -1,0 +1,27 @@
+{
+  "status": "FAIL",
+  "checks": {},
+  "scope": "single named style install and same-name update on owned native DOCX only",
+  "source_hashes": {
+    "build/word-organizer-20260911/organizer_probe.py": "c75873a44fef41c83fa5d29c227cc8faa8307c5d46e352cd5ac80289af0b2bdd",
+    "build/word-organizer-20260911/test_organizer_probe.py": "50ebbcd8b0f51e066e5ec8c35314d1725a28d9d5ce012f579e4e6b1434913bc9",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "input_source_sha256": "2edaecf1e398885e46e0943632640cb60c5fcbd2beef94082469571e9f601f01",
+  "inventory_before": [],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word cleanup is unverified; task files are retained and recovery is required. quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine"
+  },
+  "remaining_sentinel": null,
+  "source_unchanged": true,
+  "input_source_unchanged": true,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "input-17.docx": "2e64927d90964adb6258f2df9e64239a1cfe23510ab12c615ef753f78b57475f"
+  }
+}

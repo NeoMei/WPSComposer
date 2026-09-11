@@ -1,0 +1,12 @@
+{
+  "returncode": 0,
+  "plugin": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-caption-pjtpdirq/codex/plugins/wps-composer",
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/python3",
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/install.py",
+    "--codex-home",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-caption-pjtpdirq/codex",
+    "--marketplace-root",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-installed-caption-pjtpdirq"
+  ]
+}

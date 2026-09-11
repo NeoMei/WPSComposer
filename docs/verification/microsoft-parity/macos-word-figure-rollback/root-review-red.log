@@ -1,0 +1,38 @@
+........FF....                                                           [100%]
+=================================== FAILURES ===================================
+____________ test_probe_rejects_nonfinite_picture_dimensions[nan-7] ____________
+
+column = 7, value = nan
+
+    @pytest.mark.parametrize('column', [7, 8])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf')])
+    def test_probe_rejects_nonfinite_picture_dimensions(column, value):
+        module = fixture()
+        rows = scenario_rows(module, 'one-image', False)
+        rows[0][column] = value
+>       assert not module.validate_scenario(rows, 'one-image', failed=False)
+E       AssertionError: assert not True
+E        +  where True = <function validate_scenario at 0x1080fae50>([['inserted', 'one-image', 10, 11, 1, 0, ...], ['body', 'HEAD\rleft REPLACE-长😀 right\rTAIL\r\r'], ['selection', 10, 21...', 10, 21, 'REPLACE-长😀'], ['bookmark', 'figure_probe_suffix', 21, 27, ' right'], ['format', 17, 3, 5, 11, 7, ...], ...], 'one-image', failed=False)
+E        +    where <function validate_scenario at 0x1080fae50> = <module 'build_only_macos_word_figure_rollback_probe' from '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py'>.validate_scenario
+
+build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py:147: AssertionError
+____________ test_probe_rejects_nonfinite_picture_dimensions[nan-8] ____________
+
+column = 8, value = nan
+
+    @pytest.mark.parametrize('column', [7, 8])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf')])
+    def test_probe_rejects_nonfinite_picture_dimensions(column, value):
+        module = fixture()
+        rows = scenario_rows(module, 'one-image', False)
+        rows[0][column] = value
+>       assert not module.validate_scenario(rows, 'one-image', failed=False)
+E       AssertionError: assert not True
+E        +  where True = <function validate_scenario at 0x1080f1a60>([['inserted', 'one-image', 10, 11, 1, 0, ...], ['body', 'HEAD\rleft REPLACE-长😀 right\rTAIL\r\r'], ['selection', 10, 21...', 10, 21, 'REPLACE-长😀'], ['bookmark', 'figure_probe_suffix', 21, 27, ' right'], ['format', 17, 3, 5, 11, 7, ...], ...], 'one-image', failed=False)
+E        +    where <function validate_scenario at 0x1080f1a60> = <module 'build_only_macos_word_figure_rollback_probe' from '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-figure-rollback-20260911/macos_word_figure_rollback_probe.py'>.validate_scenario
+
+build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py:147: AssertionError
+=========================== short test summary info ============================
+FAILED build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py::test_probe_rejects_nonfinite_picture_dimensions[nan-7]
+FAILED build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe.py::test_probe_rejects_nonfinite_picture_dimensions[nan-8]
+2 failed, 12 passed in 0.73s

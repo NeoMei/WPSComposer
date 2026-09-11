@@ -10,6 +10,7 @@
     "wps-jsapi-declare": "2.2.0"
   },
   "overrides": {
-    "tmp": "0.2.7"
+    "tmp": "0.2.7",
+    "qs": "6.16.0"
   }
 }

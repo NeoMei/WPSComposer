@@ -1,0 +1,10 @@
+{
+  "hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_semantic_table.py": "9655e9af00366228bcca63063d2341d9687348fa2cd9e9663632ddee9c2d65ec",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "fixtures/microsoft_parity/macos_word_semantic_table.py": "46a275cda25eec64c664713564f6d9cde2f7cd6d402a697bad30060580e62871",
+    "fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c"
+  },
+  "quarantine_present": false,
+  "source_sha256": "aef76d37441bf3cbe86ace1724c24fa253cd8e6ccf4e6cefadd0f39ec2aca4c7"
+}

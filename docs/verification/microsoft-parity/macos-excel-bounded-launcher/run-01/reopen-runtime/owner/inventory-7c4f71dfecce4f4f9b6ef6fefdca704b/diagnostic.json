@@ -1,0 +1,12 @@
+{
+  "operation": "inventory",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/inventory-7c4f71dfecce4f4f9b6ef6fefdca704b/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/inventory-7c4f71dfecce4f4f9b6ef6fefdca704b/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/inventory-7c4f71dfecce4f4f9b6ef6fefdca704b/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-kyzdef5y/owner/inventory-7c4f71dfecce4f4f9b6ef6fefdca704b/diagnostic.json",
+  "stdout": "{\"nonce\":\"7c4f71dfecce4f4f9b6ef6fefdca704b\",\"version\":\"16.112.3\",\"workbooks\":[{\"name\":\"工作簿1\",\"path\":\"\",\"full_name\":\"工作簿1\",\"saved\":true,\"pristine\":true}]}\n",
+  "stderr": "",
+  "returncode": 0,
+  "error": null,
+  "diagnostic_errors": []
+}

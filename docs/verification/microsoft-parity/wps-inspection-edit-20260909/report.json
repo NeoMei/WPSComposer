@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "source_sha256": "cdb6b88cb98ce2d419286032ed8cb1aa34b94b2be51e416695546cb45a874312",
+  "edit": {
+    "ok": true,
+    "saved": true,
+    "saved_path": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/wps-shared-save-regression-20260909-fixed02/edited.pptx",
+    "pdf_path": null,
+    "ops": [
+      {
+        "target": "slide:1/shape:1",
+        "accepted": [
+          "text"
+        ],
+        "rejected": [],
+        "ok": true,
+        "index": 0,
+        "op": "set"
+      }
+    ],
+    "patches": [
+      {
+        "target": "slide:1/shape:1",
+        "accepted": [
+          "text"
+        ],
+        "rejected": [],
+        "ok": true,
+        "index": 0,
+        "op": "set"
+      }
+    ],
+    "errors": [],
+    "warnings": [],
+    "before": null,
+    "after": null
+  },
+  "conversion": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/wps-shared-save-regression-20260909-fixed02/edited.pdf",
+  "pages": 5
+}

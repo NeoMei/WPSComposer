@@ -1,0 +1,12 @@
+sha256 Fingerprint=3F:47:F0:E7:03:6D:89:74:F3:70:8E:90:E1:5A:07:E6:5D:5F:14:47:FE:F3:C1:D3:64:EB:F6:86:50:34:C8:72
+notBefore=Sep  9 13:57:34 2026 GMT
+notAfter=Sep 16 13:57:34 2026 GMT
+subject=CN=localhost, O=WPSComposer task-only Word probe
+X509v3 Subject Alternative Name: 
+    DNS:localhost
+X509v3 Basic Constraints: critical
+    CA:FALSE
+X509v3 Key Usage: critical
+    Digital Signature, Key Encipherment
+X509v3 Extended Key Usage: 
+    TLS Web Server Authentication

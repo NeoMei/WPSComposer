@@ -1,0 +1,557 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF                                        [100%]
+=================================== FAILURES ===================================
+________ test_direct_signatures_are_compatible[add_bibliography_native] ________
+
+name = 'add_bibliography_native'
+
+    @pytest.mark.parametrize('name', METHODS)
+    def test_direct_signatures_are_compatible(name):
+>       assert hasattr(MacWordSession, name)
+E       AssertionError: assert False
+E        +  where False = hasattr(MacWordSession, 'add_bibliography_native')
+
+tests/msoffice/test_macos_word_references.py:28: AssertionError
+________ test_direct_signatures_are_compatible[add_bibliography_legacy] ________
+
+name = 'add_bibliography_legacy'
+
+    @pytest.mark.parametrize('name', METHODS)
+    def test_direct_signatures_are_compatible(name):
+>       assert hasattr(MacWordSession, name)
+E       AssertionError: assert False
+E        +  where False = hasattr(MacWordSession, 'add_bibliography_legacy')
+
+tests/msoffice/test_macos_word_references.py:28: AssertionError
+_____ test_direct_signatures_are_compatible[add_cross_reference_paragraph] _____
+
+name = 'add_cross_reference_paragraph'
+
+    @pytest.mark.parametrize('name', METHODS)
+    def test_direct_signatures_are_compatible(name):
+>       assert hasattr(MacWordSession, name)
+E       AssertionError: assert False
+E        +  where False = hasattr(MacWordSession, 'add_cross_reference_paragraph')
+
+tests/msoffice/test_macos_word_references.py:28: AssertionError
+________ test_direct_signatures_are_compatible[add_citation_paragraph] _________
+
+name = 'add_citation_paragraph'
+
+    @pytest.mark.parametrize('name', METHODS)
+    def test_direct_signatures_are_compatible(name):
+>       assert hasattr(MacWordSession, name)
+E       AssertionError: assert False
+E        +  where False = hasattr(MacWordSession, 'add_citation_paragraph')
+
+tests/msoffice/test_macos_word_references.py:28: AssertionError
+_____ test_direct_signatures_are_compatible[add_cross_reference_fallback] ______
+
+name = 'add_cross_reference_fallback'
+
+    @pytest.mark.parametrize('name', METHODS)
+    def test_direct_signatures_are_compatible(name):
+>       assert hasattr(MacWordSession, name)
+E       AssertionError: assert False
+E        +  where False = hasattr(MacWordSession, 'add_cross_reference_fallback')
+
+tests/msoffice/test_macos_word_references.py:28: AssertionError
+_ test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs0] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c2d9850>, [])
+method = 'add_bibliography_native'
+kwargs = {'entries': [{'number': 1}], 'hangingIndentPt': 18, 'leftIndentPt': 18, 'spaceAfterPt': 6, ...}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs1] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c37e670>, [])
+method = 'add_bibliography_native'
+kwargs = {'entries': [], 'hangingIndentPt': nan, 'leftIndentPt': 18, 'spaceAfterPt': 6, ...}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs2] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c36e400>, [])
+method = 'add_bibliography_native'
+kwargs = {'entries': [], 'hangingIndentPt': 18, 'leftIndentPt': 18, 'spaceAfterPt': 6, ...}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_bibliography_legacy-kwargs3] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c37ef10>, [])
+method = 'add_bibliography_legacy'
+kwargs = {'entries': 'not a sequence of entries'}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_legacy'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_cross_reference_paragraph-kwargs4] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c387940>, [])
+method = 'add_cross_reference_paragraph'
+kwargs = {'runs': [{'bookmarkName': 'bad', 'fallbackText': '静态', 'prefix': '见😀(', 'suffix': ')尾', ...}]}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_paragraph'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_citation_paragraph-kwargs5] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a8070>, [])
+method = 'add_citation_paragraph', kwargs = {'runs': [{'type': 'citation'}]}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_citation_paragraph'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_citation_paragraph-kwargs6] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c354340>, [])
+method = 'add_citation_paragraph'
+kwargs = {'runs': [{'code': 'X', 'fallbackText': 'x', 'type': 'degradation'}]}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_citation_paragraph'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_cross_reference_fallback-kwargs7] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c37e550>, [])
+method = 'add_cross_reference_fallback'
+kwargs = {'listFormatting': {'indentPt': inf}, 'runs': [{'bookmarkName': 'wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa', 'fallbackText': '静态', 'prefix': '见😀(', 'suffix': ')尾', ...}]}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_fallback'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+_ test_whole_call_validation_precedes_mutation[add_cross_reference_paragraph-kwargs8] _
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c379640>, [])
+method = 'add_cross_reference_paragraph'
+kwargs = {'runs': [{'bookmarkName': 'wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa', 'fallbackText': '静态', 'prefix': '见😀(', 'suffix': ')尾',...'bookmarkName': 'wpsc_fig_aaaaaaaaaaaaaaaaaaaaaaaa', 'fallbackText': '静态', 'prefix': '见😀(', 'suffix': ')尾', ...}, ...]}
+
+    @pytest.mark.parametrize('method,kwargs', [
+        ('add_bibliography_native', dict(entries=[{'number':1}], style='numeric', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='numeric', hangingIndentPt=float('nan'),leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_native', dict(entries=[], style='other', hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)),
+        ('add_bibliography_legacy', dict(entries='not a sequence of entries')),
+        ('add_cross_reference_paragraph', dict(runs=[dict(REF, bookmarkName='bad')])),
+        ('add_citation_paragraph', dict(runs=[{'type':'citation'}])),
+        ('add_citation_paragraph', dict(runs=[{'type':'degradation','fallbackText':'x','code':'X'}])),
+        ('add_cross_reference_fallback', dict(runs=[REF], listFormatting={'indentPt':float('inf')})),
+        ('add_cross_reference_paragraph', dict(runs=[REF] * 10001)),
+    ])
+    def test_whole_call_validation_precedes_mutation(session, method, kwargs):
+        s,calls=session
+        before=s.__dict__.copy()
+>       with pytest.raises(ValueError):getattr(s,method)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_paragraph'
+
+tests/msoffice/test_macos_word_references.py:45: AttributeError
+____ test_closed_readonly_never_submit[_read_only-add_bibliography_native] _____
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c327760>, [])
+name = 'add_bibliography_native', state = '_read_only'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+____ test_closed_readonly_never_submit[_read_only-add_bibliography_legacy] _____
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a8190>, [])
+name = 'add_bibliography_legacy', state = '_read_only'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_legacy'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+_ test_closed_readonly_never_submit[_read_only-add_cross_reference_paragraph] __
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3bbc40>, [])
+name = 'add_cross_reference_paragraph', state = '_read_only'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_paragraph'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+_____ test_closed_readonly_never_submit[_read_only-add_citation_paragraph] _____
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c379820>, [])
+name = 'add_citation_paragraph', state = '_read_only'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_citation_paragraph'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+__ test_closed_readonly_never_submit[_read_only-add_cross_reference_fallback] __
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a0eb0>, [])
+name = 'add_cross_reference_fallback', state = '_read_only'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_fallback'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+______ test_closed_readonly_never_submit[_closed-add_bibliography_native] ______
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a8d00>, [])
+name = 'add_bibliography_native', state = '_closed'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+______ test_closed_readonly_never_submit[_closed-add_bibliography_legacy] ______
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c379760>, [])
+name = 'add_bibliography_legacy', state = '_closed'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_legacy'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+___ test_closed_readonly_never_submit[_closed-add_cross_reference_paragraph] ___
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c32c970>, [])
+name = 'add_cross_reference_paragraph', state = '_closed'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_paragraph'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+______ test_closed_readonly_never_submit[_closed-add_citation_paragraph] _______
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a0520>, [])
+name = 'add_citation_paragraph', state = '_closed'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_citation_paragraph'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+___ test_closed_readonly_never_submit[_closed-add_cross_reference_fallback] ____
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a0190>, [])
+name = 'add_cross_reference_fallback', state = '_closed'
+
+    @pytest.mark.parametrize('name', METHODS)
+    @pytest.mark.parametrize('state', ['_read_only','_closed'])
+    def test_closed_readonly_never_submit(session,name,state):
+        s,calls=session;setattr(s,state,True)
+        kwargs = dict(entries=[]) if 'bibliography' in name else dict(runs=[])
+        if name.endswith('_native'):kwargs.update(style='numeric',hangingIndentPt=18,leftIndentPt=18,spaceAfterPt=6)
+>       with pytest.raises(ValueError):getattr(s,name)(**kwargs)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_fallback'
+
+tests/msoffice/test_macos_word_references.py:54: AttributeError
+____________ test_native_bibliography_direct_order_geometry_unicode ____________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3c0d00>, [])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c3c0eb0>
+
+    def test_native_bibliography_direct_order_geometry_unicode(session,monkeypatch):
+        s,calls=session
+        def execute(lines):
+            calls.append(lines)
+            return [['paragraph',0,0,10,'[9] 中文😀\r',0,21.5,-12.25,0,4.5,True],
+                    ['paragraph',1,10,17,'[2] 7\r',0,21.5,-12.25,0,4.5,True],['complete',1,3,0,17]]
+        # Deliberately hand-derived bounds: first string is 10 UTF-16 units, second 6.
+        def corrected(lines):
+            rows=execute(lines);rows[1][3]=16;rows[2][4]=16;return rows
+        monkeypatch.setattr(s,'_execute',corrected)
+>       result=s.add_bibliography_native(entries=[{'number':'9','text':'中文😀','extra':object()},{'number':2,'text':7}],style='numeric',hangingIndentPt=12.25,leftIndentPt=21.5,spaceAfterPt=4.5,owner_node_id=object(),controller_owned=object())
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:68: AttributeError
+_____________ test_legacy_literals_and_precomputed_scalar_coercion _____________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c3a8160>, [])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c3a8c40>
+
+    def test_legacy_literals_and_precomputed_scalar_coercion(session,monkeypatch):
+        s,calls=session
+        rows=[['paragraph',0,0,10,'[7] 中文😀\r'],['paragraph',1,10,12,'7\r'],['paragraph',2,12,18,'False\r'],['paragraph',3,18,23,'None\r'],['complete',1,5,0,23]]
+        monkeypatch.setattr(s,'_execute',lambda lines: calls.append(lines) or rows)
+>       assert s.add_bibliography_legacy(entries=['[7] 中文😀',7,False,None],style=object())=={'issues':[]}
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_legacy'
+
+tests/msoffice/test_macos_word_references.py:78: AttributeError
+_____________________ test_late_conversion_failure_is_pure _____________________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c39a430>, [])
+
+    def test_late_conversion_failure_is_pure(session):
+        class Bad:
+            def __str__(self):raise RuntimeError('private conversion')
+        s,calls=session
+>       with pytest.raises(ValueError):s.add_bibliography_legacy(entries=['first',Bad()])
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_legacy'
+
+tests/msoffice/test_macos_word_references.py:86: AttributeError
+_______________________ test_empty_bibliography_is_noop ________________________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10aacd790>, [])
+
+    def test_empty_bibliography_is_noop(session):
+        s,calls=session
+>       assert s.add_bibliography_native(entries=[],style='numeric',hangingIndentPt=9,leftIndentPt=22,spaceAfterPt=2)=={'issues':[]}
+E       AttributeError: 'MacWordSession' object has no attribute 'add_bibliography_native'
+
+tests/msoffice/test_macos_word_references.py:92: AttributeError
+____________ test_mixed_direct_normalization_ignores_plan_metadata _____________
+
+    def test_mixed_direct_normalization_ignores_plan_metadata():
+>       from skills.WPSComposer.scripts.msoffice.macos_word_references import normalize_runs
+E       ModuleNotFoundError: No module named 'skills.WPSComposer.scripts.msoffice.macos_word_references'
+
+tests/msoffice/test_macos_word_references.py:98: ModuleNotFoundError
+___________________ test_bad_ack_quarantines_and_invalidates ___________________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10aaa66d0>, [])
+
+    def test_bad_ack_quarantines_and_invalidates(session):
+        s,calls=session
+>       with pytest.raises(NativeWordError):s.add_citation_paragraph(runs=[{'type':'citation','fallbackText':'[1]'}])
+E       AttributeError: 'MacWordSession' object has no attribute 'add_citation_paragraph'
+
+tests/msoffice/test_macos_word_references.py:107: AttributeError
+_________ test_controller_failure_is_controlled_without_local_fallback _________
+
+session = (<skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10c32cb50>, [])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c32c880>
+
+    def test_controller_failure_is_controlled_without_local_fallback(session,monkeypatch):
+        s,calls=session
+        monkeypatch.setattr(s,'_execute',lambda lines:calls.append(lines) or [['reference_failure',0,3,3]])
+>       with pytest.raises(NativeWriterObjectError) as e:s.add_cross_reference_paragraph(runs=[REF],controller_owned=True)
+E       AttributeError: 'MacWordSession' object has no attribute 'add_cross_reference_paragraph'
+
+tests/msoffice/test_macos_word_references.py:114: AttributeError
+_______________ test_pure_commands_cover_native_and_static_modes _______________
+
+    def test_pure_commands_cover_native_and_static_modes():
+>       from skills.WPSComposer.scripts.msoffice.macos_word_references import normalize_runs, paragraph_commands
+E       ModuleNotFoundError: No module named 'skills.WPSComposer.scripts.msoffice.macos_word_references'
+
+tests/msoffice/test_macos_word_references.py:120: ModuleNotFoundError
+_______________ test_all_reference_applescript_branches_compile ________________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-910/test_all_reference_applescript0')
+
+    @pytest.mark.skipif(sys.platform!='darwin',reason='Word dictionary syntax check only')
+    def test_all_reference_applescript_branches_compile(tmp_path):
+>       from skills.WPSComposer.scripts.msoffice.macos_word_references import normalize_runs, paragraph_commands, bibliography_commands
+E       ModuleNotFoundError: No module named 'skills.WPSComposer.scripts.msoffice.macos_word_references'
+
+tests/msoffice/test_macos_word_references.py:138: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_word_references.py::test_direct_signatures_are_compatible[add_bibliography_native]
+FAILED tests/msoffice/test_macos_word_references.py::test_direct_signatures_are_compatible[add_bibliography_legacy]
+FAILED tests/msoffice/test_macos_word_references.py::test_direct_signatures_are_compatible[add_cross_reference_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_direct_signatures_are_compatible[add_citation_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_direct_signatures_are_compatible[add_cross_reference_fallback]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs0]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs1]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_bibliography_native-kwargs2]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_bibliography_legacy-kwargs3]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_cross_reference_paragraph-kwargs4]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_citation_paragraph-kwargs5]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_citation_paragraph-kwargs6]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_cross_reference_fallback-kwargs7]
+FAILED tests/msoffice/test_macos_word_references.py::test_whole_call_validation_precedes_mutation[add_cross_reference_paragraph-kwargs8]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_read_only-add_bibliography_native]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_read_only-add_bibliography_legacy]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_read_only-add_cross_reference_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_read_only-add_citation_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_read_only-add_cross_reference_fallback]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_closed-add_bibliography_native]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_closed-add_bibliography_legacy]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_closed-add_cross_reference_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_closed-add_citation_paragraph]
+FAILED tests/msoffice/test_macos_word_references.py::test_closed_readonly_never_submit[_closed-add_cross_reference_fallback]
+FAILED tests/msoffice/test_macos_word_references.py::test_native_bibliography_direct_order_geometry_unicode
+FAILED tests/msoffice/test_macos_word_references.py::test_legacy_literals_and_precomputed_scalar_coercion
+FAILED tests/msoffice/test_macos_word_references.py::test_late_conversion_failure_is_pure
+FAILED tests/msoffice/test_macos_word_references.py::test_empty_bibliography_is_noop
+FAILED tests/msoffice/test_macos_word_references.py::test_mixed_direct_normalization_ignores_plan_metadata
+FAILED tests/msoffice/test_macos_word_references.py::test_bad_ack_quarantines_and_invalidates
+FAILED tests/msoffice/test_macos_word_references.py::test_controller_failure_is_controlled_without_local_fallback
+FAILED tests/msoffice/test_macos_word_references.py::test_pure_commands_cover_native_and_static_modes
+FAILED tests/msoffice/test_macos_word_references.py::test_all_reference_applescript_branches_compile
+33 failed in 0.36s

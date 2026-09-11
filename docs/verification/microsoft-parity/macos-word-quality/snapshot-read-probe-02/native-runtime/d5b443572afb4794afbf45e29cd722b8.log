@@ -1,0 +1,4 @@
+table-1-dimensions:0: set qt to table 1 of boundDoc
+table-1-dimensions:1: set probeRows to {{"dimensions",(count rows of qt) as integer,(count columns of qt) as integer}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["dimensions",1,1]]]]]

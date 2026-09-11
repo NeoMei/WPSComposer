@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "checks": {
+    "new_save_as_copy_pdf_then_current": true,
+    "new_exact_close": true,
+    "open_save_as_copy_then_current": true,
+    "open_exact_close": true,
+    "native_reopen_A_B_C_new_B_new_C": true,
+    "original_A_preserved": true,
+    "conflict_before_native_preserves_changed_bytes": true,
+    "conflict_after_staging_preserves_changed_bytes_and_recovery": true,
+    "nonempty_unsaved_sentinel_and_unrelated_docs_preserved": true,
+    "conflict_exact_close": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_logical_save.py": "9c2adff090599a373da95f03498653a09f0cd42b418b4e7e85078216efb622b2",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "b18905ec2165e5e7b0fae2eee5b52707b752501d9050bee396d1c5165ad4c96f",
+    "skills/WPSComposer/scripts/artifact_transport.py": "a7d3352e2d54fa90829acb0a32da42c0db619a58eb4ad5ffeeaefbd1953f655e",
+    "fixtures/microsoft_parity/macos_word_sections.py": "93aedc946c725bafc1b15cf9ee48ad4f91a4a38dcf09d94af7fd5a959d1b2551"
+  },
+  "inventory_before": [
+    [
+      "文档172",
+      "文档172",
+      false,
+      "d150113ec64d6f353438bd134a5d5c862163ec48955b343a2a1a8b8ad2de7905  -"
+    ]
+  ],
+  "reopen_text": {
+    "A.docx": [
+      "NEW INITIAL 😀",
+      "NEW LATER EDIT"
+    ],
+    "B.docx": [
+      "NEW INITIAL 😀",
+      "NEW LATER EDIT",
+      "OPEN LATER EDIT"
+    ],
+    "C.docx": [
+      "NEW INITIAL 😀",
+      "NEW LATER EDIT"
+    ],
+    "new-B.docx": [
+      "NEW INITIAL 😀",
+      "NEW LATER EDIT"
+    ],
+    "new-C.docx": [
+      "NEW INITIAL 😀"
+    ]
+  },
+  "artifact_hashes": {
+    "conflict-B.docx": "f11880f6d7069648bd1e12b030b5a2ef99be649f6b3f595f529c33f99a7bcb95",
+    "new-C.docx": "f11880f6d7069648bd1e12b030b5a2ef99be649f6b3f595f529c33f99a7bcb95",
+    "new-B.docx": "b8d81638207fa46816f5e5a2de8c99a02deb722f2333346a491c33bee7c6d456",
+    "A.docx": "b8d81638207fa46816f5e5a2de8c99a02deb722f2333346a491c33bee7c6d456",
+    "B.docx": "ebc2ed0b52e93275614fdf6a6fd4c702c927365d3b898f207dbe5518cc222083",
+    "race-B.docx": "f11880f6d7069648bd1e12b030b5a2ef99be649f6b3f595f529c33f99a7bcb95",
+    "C.docx": "b8d81638207fa46816f5e5a2de8c99a02deb722f2333346a491c33bee7c6d456",
+    "copy.pdf": "01c9eaac99fb3a56a4a1ebea1c8b2ecd7617400ac3ec85091a6ceaef8f2e782f"
+  }
+}

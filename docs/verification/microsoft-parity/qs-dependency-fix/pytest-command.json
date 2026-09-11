@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/macos_probe"
+  ],
+  "exit_code": 1
+}

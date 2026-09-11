@@ -1,0 +1,377 @@
+FFFFF.........FFFF                                                       [100%]
+=================================== FAILURES ===================================
+________ test_rejection_flushes_then_half_closes_and_caps_discard[None] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ab5b2e0>
+length = None
+
+    @pytest.mark.parametrize("length", [None, "-1", "invalid", "999999999"])
+    def test_rejection_flushes_then_half_closes_and_caps_discard(monkeypatch, length):
+        handler, events = handler_double(monkeypatch, length=length)
+        handler._send_error_json(403, "ORIGIN_REJECTED", "Origin is not allowed")
+        handler.finish()
+    
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x10adfa520>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:73: AssertionError
+_________ test_rejection_flushes_then_half_closes_and_caps_discard[-1] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae25ca0>
+length = '-1'
+
+    @pytest.mark.parametrize("length", [None, "-1", "invalid", "999999999"])
+    def test_rejection_flushes_then_half_closes_and_caps_discard(monkeypatch, length):
+        handler, events = handler_double(monkeypatch, length=length)
+        handler._send_error_json(403, "ORIGIN_REJECTED", "Origin is not allowed")
+        handler.finish()
+    
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x10ae25610>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:73: AssertionError
+______ test_rejection_flushes_then_half_closes_and_caps_discard[invalid] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae34d60>
+length = 'invalid'
+
+    @pytest.mark.parametrize("length", [None, "-1", "invalid", "999999999"])
+    def test_rejection_flushes_then_half_closes_and_caps_discard(monkeypatch, length):
+        handler, events = handler_double(monkeypatch, length=length)
+        handler._send_error_json(403, "ORIGIN_REJECTED", "Origin is not allowed")
+        handler.finish()
+    
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x10ae346a0>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:73: AssertionError
+_____ test_rejection_flushes_then_half_closes_and_caps_discard[999999999] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae4be20>
+length = '999999999'
+
+    @pytest.mark.parametrize("length", [None, "-1", "invalid", "999999999"])
+    def test_rejection_flushes_then_half_closes_and_caps_discard(monkeypatch, length):
+        handler, events = handler_double(monkeypatch, length=length)
+        handler._send_error_json(403, "ORIGIN_REJECTED", "Origin is not allowed")
+        handler.finish()
+    
+>       assert handler.close_connection
+E       assert False
+E        +  where False = <skills.WPSComposer.scripts.macos_probe.bridge._handler_class.<locals>.BridgeHandler object at 0x10ae4b790>.close_connection
+
+tests/macos_probe/test_bridge_rejection_teardown.py:73: AssertionError
+__________________ test_slow_body_uses_one_absolute_deadline ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ab5b640>
+
+    def test_slow_body_uses_one_absolute_deadline(monkeypatch):
+        handler, events = handler_double(monkeypatch)
+        clock = iter([0, 0, 0.08, 0.16, 0.24])
+        monkeypatch.setattr(module, "monotonic", lambda: next(clock))
+    
+        def trickle(count):
+            events.append(("read", 1))
+            return b"x"
+    
+        handler.rfile.read1 = trickle
+        handler._send_error_json(401, "UNAUTHORIZED", "Denied")
+        handler.finish()
+        timeouts = [value for kind, value in events if kind == "timeout"]
+>       assert timeouts == pytest.approx([0.2, 0.12, 0.04])
+E       assert [] == approx([0.2 ±...04 ± 4.0e-08])
+E         
+E         Impossible to compare lists with different sizes.
+E         Lengths: 3 and 0
+
+tests/macos_probe/test_bridge_rejection_teardown.py:99: AssertionError
+_ test_large_rejected_post_delivers_exact_error_without_parsing[/v1/register-True-https://forbidden.example-403-ORIGIN_REJECTED] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae6cbe0>
+path = '/v1/register', authenticated = True
+origin = 'https://forbidden.example', status = 403, code = 'ORIGIN_REJECTED'
+
+    @pytest.mark.parametrize("path,authenticated,origin,status,code", [
+        ("/v1/register", True, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+        ("/v1/register", False, ORIGIN, 401, "UNAUTHORIZED"),
+        ("/v1/session", False, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+    ])
+    def test_large_rejected_post_delivers_exact_error_without_parsing(monkeypatch, path, authenticated, origin, status, code):
+        original_factory = module._handler_class
+    
+        def factory(state, origins):
+            class Handler(original_factory(state, origins)):
+                def _read_json(self):
+                    pytest.fail("rejected body must not be parsed")
+            return Handler
+    
+        monkeypatch.setattr(module, "_handler_class", factory)
+        body = b'{"padding":"' + b"x" * (module.MAX_BODY_BYTES - 14) + b'"}'
+        assert len(body) == module.MAX_BODY_BYTES
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            headers = {"Origin": origin, "Content-Type": "application/json"}
+            if authenticated:
+                headers["Authorization"] = "Bearer " + token
+            for _ in range(5):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", path, body, headers)
+
+tests/macos_probe/test_bridge_rejection_teardown.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x10ae6c700>
+data = b'{"padding":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           BrokenPipeError: [Errno 32] Broken pipe
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: BrokenPipeError
+_ test_large_rejected_post_delivers_exact_error_without_parsing[/v1/register-False-https://allowed.example-401-UNAUTHORIZED] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ae34d00>
+path = '/v1/register', authenticated = False, origin = 'https://allowed.example'
+status = 401, code = 'UNAUTHORIZED'
+
+    @pytest.mark.parametrize("path,authenticated,origin,status,code", [
+        ("/v1/register", True, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+        ("/v1/register", False, ORIGIN, 401, "UNAUTHORIZED"),
+        ("/v1/session", False, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+    ])
+    def test_large_rejected_post_delivers_exact_error_without_parsing(monkeypatch, path, authenticated, origin, status, code):
+        original_factory = module._handler_class
+    
+        def factory(state, origins):
+            class Handler(original_factory(state, origins)):
+                def _read_json(self):
+                    pytest.fail("rejected body must not be parsed")
+            return Handler
+    
+        monkeypatch.setattr(module, "_handler_class", factory)
+        body = b'{"padding":"' + b"x" * (module.MAX_BODY_BYTES - 14) + b'"}'
+        assert len(body) == module.MAX_BODY_BYTES
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            headers = {"Origin": origin, "Content-Type": "application/json"}
+            if authenticated:
+                headers["Authorization"] = "Bearer " + token
+            for _ in range(5):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", path, body, headers)
+
+tests/macos_probe/test_bridge_rejection_teardown.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x10ae4bee0>
+data = b'{"padding":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           BrokenPipeError: [Errno 32] Broken pipe
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: BrokenPipeError
+_ test_large_rejected_post_delivers_exact_error_without_parsing[/v1/session-False-https://forbidden.example-403-ORIGIN_REJECTED] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10addfe80>
+path = '/v1/session', authenticated = False
+origin = 'https://forbidden.example', status = 403, code = 'ORIGIN_REJECTED'
+
+    @pytest.mark.parametrize("path,authenticated,origin,status,code", [
+        ("/v1/register", True, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+        ("/v1/register", False, ORIGIN, 401, "UNAUTHORIZED"),
+        ("/v1/session", False, "https://forbidden.example", 403, "ORIGIN_REJECTED"),
+    ])
+    def test_large_rejected_post_delivers_exact_error_without_parsing(monkeypatch, path, authenticated, origin, status, code):
+        original_factory = module._handler_class
+    
+        def factory(state, origins):
+            class Handler(original_factory(state, origins)):
+                def _read_json(self):
+                    pytest.fail("rejected body must not be parsed")
+            return Handler
+    
+        monkeypatch.setattr(module, "_handler_class", factory)
+        body = b'{"padding":"' + b"x" * (module.MAX_BODY_BYTES - 14) + b'"}'
+        assert len(body) == module.MAX_BODY_BYTES
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            credentials = bridge.bootstrap_credentials("writer")
+            token = bridge.state.claim_session("writer", credentials["clientId"], credentials["capability"])
+            headers = {"Origin": origin, "Content-Type": "application/json"}
+            if authenticated:
+                headers["Authorization"] = "Bearer " + token
+            for _ in range(5):
+                connection = HTTPConnection(*bridge._server.server_address, timeout=2)
+                try:
+>                   connection.request("POST", path, body, headers)
+
+tests/macos_probe/test_bridge_rejection_teardown.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1257: in request
+    self._send_request(method, url, body, headers, encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1303: in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1252: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:1051: in _send_output
+    self.send(chunk)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <http.client.HTTPConnection object at 0x10ab4fb20>
+data = b'{"padding":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'
+
+    def send(self, data):
+        """Send `data' to the server.
+        ``data`` can be a string object, a bytes object, an array object, a
+        file-like object that supports a .read() method, or an iterable object.
+        """
+    
+        if self.sock is None:
+            if self.auto_open:
+                self.connect()
+            else:
+                raise NotConnected()
+    
+        if self.debuglevel > 0:
+            print("send:", repr(data))
+        if hasattr(data, "read") :
+            if self.debuglevel > 0:
+                print("sendIng a read()able")
+            encode = self._is_textIO(data)
+            if encode and self.debuglevel > 0:
+                print("encoding file using iso-8859-1")
+            while 1:
+                datablock = data.read(self.blocksize)
+                if not datablock:
+                    break
+                if encode:
+                    datablock = datablock.encode("iso-8859-1")
+                self.sock.sendall(datablock)
+            return
+        try:
+>           self.sock.sendall(data)
+E           BrokenPipeError: [Errno 32] Broken pipe
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/client.py:973: BrokenPipeError
+____________ test_missing_body_gets_response_before_bounded_finish _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10adfa190>
+
+    def test_missing_body_gets_response_before_bounded_finish(monkeypatch):
+        finished = Event()
+        original_factory = module._handler_class
+    
+        def factory(state, origins):
+            class Handler(original_factory(state, origins)):
+                def finish(self):
+                    try:
+                        super().finish()
+                    finally:
+                        finished.set()
+            return Handler
+    
+        monkeypatch.setattr(module, "_handler_class", factory)
+        with module.LoopbackBridge({ORIGIN}) as bridge:
+            with socket.create_connection(bridge._server.server_address, timeout=2) as connection:
+                connection.sendall(b"POST /v1/register HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1048576\r\n\r\n")
+                response = HTTPResponse(connection)
+                response.begin()
+                assert response.status == 401
+>               assert response.getheader("Connection") == "close"
+E               AssertionError: assert None == 'close'
+E                +  where None = getheader('Connection')
+E                +    where getheader = <http.client.HTTPResponse object at 0x10ae1e520>.getheader
+
+tests/macos_probe/test_bridge_rejection_teardown.py:178: AssertionError
+=========================== short test summary info ============================
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_rejection_flushes_then_half_closes_and_caps_discard[None]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_rejection_flushes_then_half_closes_and_caps_discard[-1]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_rejection_flushes_then_half_closes_and_caps_discard[invalid]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_rejection_flushes_then_half_closes_and_caps_discard[999999999]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_slow_body_uses_one_absolute_deadline
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_large_rejected_post_delivers_exact_error_without_parsing[/v1/register-True-https://forbidden.example-403-ORIGIN_REJECTED]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_large_rejected_post_delivers_exact_error_without_parsing[/v1/register-False-https://allowed.example-401-UNAUTHORIZED]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_large_rejected_post_delivers_exact_error_without_parsing[/v1/session-False-https://forbidden.example-403-ORIGIN_REJECTED]
+FAILED tests/macos_probe/test_bridge_rejection_teardown.py::test_missing_body_gets_response_before_bounded_finish
+9 failed, 9 passed in 3.09s

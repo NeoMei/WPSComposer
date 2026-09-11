@@ -1,0 +1,15 @@
+{
+  "ssl_version": "LibreSSL 2.8.3",
+  "certificate_trust": "explicit process-local CA file only; OS/Word trust unchanged",
+  "hostname_verification": true,
+  "certificate_required": true,
+  "bound_host": "127.0.0.1",
+  "port": 3443,
+  "server_stopped": true,
+  "checks": [],
+  "native_word_executed": false,
+  "error": {
+    "type": "SSLCertVerificationError",
+    "message": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1129)"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "target_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "owned_pid_remaining": "",
+  "zip_integrity_error": null,
+  "sheets": [
+    "Data",
+    "Results",
+    "Business report"
+  ],
+  "marker_persisted": false
+}

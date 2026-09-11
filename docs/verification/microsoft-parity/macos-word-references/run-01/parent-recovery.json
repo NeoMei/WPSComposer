@@ -1,0 +1,8 @@
+{
+  "owned_document": "document-e099edb5171c4eca8b004158045dc5e3.docx",
+  "synthetic_sentinel": "\u6587\u6863174",
+  "cleanup": "CUA exact document close and explicit discard; sentinel hash verified in read-only diagnostic before closing",
+  "quarantine_cleared_by_guarded_recovery": true,
+  "remaining_word_documents": 0,
+  "prior_script_running": false
+}

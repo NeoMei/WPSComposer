@@ -1,0 +1,49 @@
+{
+  "status": "FAIL",
+  "scope": "Explicit converter materialization only; no import or product parity",
+  "checks": {
+    "immutable_inputs": true,
+    "empty_inventory": true
+  },
+  "journal": [
+    {
+      "operation": "open",
+      "expected_before": [],
+      "expected_after": [
+        "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc/flatopc-cb3517cb107e4c829550552f87805f6c.xml"
+      ],
+      "status": "submitted"
+    }
+  ],
+  "raw_rows": {},
+  "source_hashes": {
+    "build/word-heading-import-20260910/flatopc-open-control.py": "8af7458f1b73edf1490df28a433319fb5592b5bd87ad4ef1e304b0ce898cc2bd",
+    "build/word-heading-import-20260910/test_flatopc_open_control.py": "92c4e9dc2b78c5e680f756839aa94dfc915567e52e1aabee4e5adac33b37fd8e",
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "de3ea54b2a7366ae6404b166f8c71513b75e075755dc5c6751dd09a564999597",
+    "tests/msoffice/test_macos_word_heading_import.py": "cabade85ca8023b0b2bc35ed3fc5fc94af6786fb435aef40756b03e5dcbb08ac",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "inventory_before": [],
+  "native_paths": {
+    "input": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc/flatopc-cb3517cb107e4c829550552f87805f6c.xml",
+    "docx": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc/converted-0507ba1ae22e4f9ca7155e16e5cb4aa5.docx"
+  },
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "current_phase": "explicit_converter_open",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc/9eb9dd5298814edaad64ed779eff94ae.log"
+  },
+  "cleanup_failure": "Traceback (most recent call last):\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/flatopc-open-control.py\", line 175, in run\n    try:owner.close()\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py\", line 868, in close\n    raise NativeWordError('NATIVE_WORD_QUARANTINED', staging_path=self.staging_root, quarantine_path=self._quarantine_location())\nskills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word cleanup is unverified; task files are retained and recovery is required. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc quarantine_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine\n",
+  "identity_uncertain": true,
+  "artifact_hashes": {}
+}

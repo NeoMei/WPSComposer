@@ -1,0 +1,7 @@
+{
+  "passed": false,
+  "source_sha256": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "helper_sha256": "b9d2beace9b9f267d5a38998e3b31a848447ae7d44620353fa09d20c774bf4ad",
+  "steps": [],
+  "error": "Command '['/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-git-export-round25-lgf9jekp/clean-dev-venv/bin/python', '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/osakit-instance-ctypes.py', '9212', '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/private-json-roundtrip/original-before.applescript']' timed out after 30 seconds"
+}

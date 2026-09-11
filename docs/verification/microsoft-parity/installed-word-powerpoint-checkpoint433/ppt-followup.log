@@ -1,0 +1,1 @@
+{"passed": true, "runs": {"slide": {"code": 0, "checks": {"create_session_close_completed": true, "public_native_created": true, "public_native_edit_saved": true, "source_preserved": true, "edited_value_after_native_reopen": true, "native_pdf_contents": true}, "error": null}}}

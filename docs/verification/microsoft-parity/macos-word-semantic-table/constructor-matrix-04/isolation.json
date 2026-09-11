@@ -1,0 +1,16 @@
+{
+  "source_root": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-semantic-matrix04-g601dut3/checkout",
+  "base_head": "415c9d04f38e5d4a744baadce75a39bf76dc8cca",
+  "overlay_hashes": {
+    "fixtures/microsoft_parity/macos_word_semantic_table.py": "46a275cda25eec64c664713564f6d9cde2f7cd6d402a697bad30060580e62871",
+    "tests/msoffice/test_macos_word_semantic_table_fixture.py": "363a02672c9b8a8d61e4290f95e9d1fa0157e064832234f4dc40012c5a59c7cc",
+    "fixtures/microsoft_parity/macos_word_semantic_table_matrix02.py": "bc944340eafdeb60a086a3435d8543adac4c9b0e1601cfa2125b6c28a11bff6c",
+    "tests/msoffice/test_semantic_table_matrix02_preparation.py": "ef69bf101854d27363b0b52ca7e22d7509ad2affcb0ea4c5d7f31de7a3a327e3",
+    "fixtures/microsoft_parity/macos_word_semantic_table_conversion_probe.py": "dcb3d96039671729d0bd3f2a7071c984d695bf23b898084a43ce4f38de339a01",
+    "tests/msoffice/test_semantic_table_conversion_preparation.py": "9bf68bb936d0cfa3ae7809ae22388d0290968e41843e89e1587e78987cecd9b3",
+    "fixtures/microsoft_parity/macos_word_semantic_table_explicit_range_probe.py": "6de2096ded13672a525a2d4619309a85c32027a6c4ecc56b96dd7198a942c9f2",
+    "tests/msoffice/test_semantic_table_explicit_range_preparation.py": "fd84a8f3fb28a19631ecc444e4eeb913c35625e1aa55b556b279cc6a5b01395d",
+    "fixtures/microsoft_parity/macos_word_semantic_table_matrix04.py": "e3449b8f2998055a7e291b5149cfe377ca664e61311d1ff976b41aa36a351864"
+  },
+  "native_executed": false
+}

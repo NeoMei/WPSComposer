@@ -54,13 +54,22 @@ WPSComposer/
 
 ## Build, Test, and Development Commands
 
-Create the development environment and run the platform-independent suite:
+Use a full Git clone containing baseline commit
+`6dd3a00dff226096ad963cc68a65088865541c25`; capability baseline tests read that
+history, so a shallow clone or source ZIP is insufficient. Create the development
+environment and prepare the locked JSAPI template resources before running tests:
 
 ```bash
+git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
 python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -e '.[dev]'
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
 .venv/bin/python -m pytest -v
 ```
+
+The dev extra includes PyMuPDF for PDF drawing checks. Tests do not require
+installing the plugin into the personal marketplace.
 
 Install the local plugin through the Codex personal marketplace:
 

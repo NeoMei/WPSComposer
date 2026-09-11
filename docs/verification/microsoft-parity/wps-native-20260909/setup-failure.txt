@@ -1,0 +1,19 @@
+E                                                                        [100%]
+==================================== ERRORS ====================================
+______ ERROR at setup of test_real_macos_m5_six_fixtures_and_performance _______
+
+self = PosixPath('/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/microsoft-parity-wps-native-20260909-01')
+mode = 448, parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           self._accessor.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/microsoft-parity-wps-native-20260909-01'
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py:1313: FileNotFoundError
+=========================== short test summary info ============================
+ERROR tests/longform_m5/test_macos_real_wps_m5.py::test_real_macos_m5_six_fixtures_and_performance
+1 error in 0.19s

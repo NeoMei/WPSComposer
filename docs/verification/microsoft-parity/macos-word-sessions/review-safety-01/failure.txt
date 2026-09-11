@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-sessions/review-safety-01/run.py", line 25, in <module>
+    s.save(out/'source.docx');s.export_pdf(out/'terminal.pdf')
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 712, in save
+    return self._save_to(destination, replace_source=False)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 725, in _save_to
+    publish_artifact(Path(self._bound_path), destination, overwrite=replace_source, validator=validate, deadline=self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 368, in publish_artifact
+    validator(source)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 718, in validate
+    validate_before_deadline(validator, path, self._deadline)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/artifact_transport.py", line 236, in validate_before_deadline
+    raise RuntimeError("Artifact validator worker exited without a result") from None
+RuntimeError: Artifact validator worker exited without a result

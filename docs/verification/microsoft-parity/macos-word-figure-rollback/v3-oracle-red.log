@@ -1,0 +1,42 @@
+..............FF                                                         [100%]
+=================================== FAILURES ===================================
+______ test_full_document_oracle_rejects_actual_native_v2_proofing_drift _______
+
+    def test_full_document_oracle_rejects_actual_native_v2_proofing_drift():
+        module = fixture()
+        evidence = PROBE.parent / 'native-v2-01'
+        source = evidence / 'figure-rollback-source.docx'
+        restored = evidence / 'figure-rollback.docx'
+>       assert module.document_signature(source) == module.document_signature(source)
+E       AttributeError: module 'build_only_macos_word_figure_rollback_probe' has no attribute 'document_signature'
+
+build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v3.py:155: AttributeError
+__________ test_full_document_oracle_ignores_only_known_edit_metadata __________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1631/test_full_document_oracle_igno0')
+
+    def test_full_document_oracle_ignores_only_known_edit_metadata(tmp_path):
+        import zipfile
+        from xml.etree import ElementTree as ET
+        module = fixture()
+        source = PROBE.parent / 'native-v2-01/figure-rollback-source.docx'
+        W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+        W14 = '{http://schemas.microsoft.com/office/word/2010/wordml}'
+        with zipfile.ZipFile(source) as archive:
+            parts = {name: archive.read(name) for name in archive.namelist()}
+        def altered(name, mutate):
+            doc = ET.fromstring(parts['word/document.xml'])
+            mutate(doc)
+            path = tmp_path / name
+            with zipfile.ZipFile(path, 'w') as archive:
+                for key, value in parts.items():
+                    archive.writestr(key, ET.tostring(doc) if key == 'word/document.xml' else value)
+            return module.document_signature(path)
+>       expected = module.document_signature(source)
+E       AttributeError: module 'build_only_macos_word_figure_rollback_probe' has no attribute 'document_signature'
+
+build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v3.py:176: AttributeError
+=========================== short test summary info ============================
+FAILED build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v3.py::test_full_document_oracle_rejects_actual_native_v2_proofing_drift
+FAILED build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v3.py::test_full_document_oracle_ignores_only_known_edit_metadata
+2 failed, 14 passed in 0.74s

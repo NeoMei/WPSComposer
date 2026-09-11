@@ -1,0 +1,29 @@
+✔ pane identity is ephemeral, unique, and retired explicitly (1.1785ms)
+✔ no secure randomness fails closed (0.361959ms)
+✔ requirement false/missing/error is distinct and never fabricated (0.579958ms)
+✔ nine gaps remain unproven and snapshot is not executed (1.543834ms)
+✔ saved flag and optional coordinates are acknowledged reads only (1.069542ms)
+✔ non-desktop and wrong host never call Word.run (0.349625ms)
+✔ false baseline and missing Word.run fail closed (0.187084ms)
+✔ unsupported desktop coordinates do not access range (0.207791ms)
+✔ sync failure exposes code but not message/document data (0.304375ms)
+✔ mistyped native saved value is not accepted (0.284958ms)
+✔ pane retirement rejects late read result and stale reuse (0.265625ms)
+✔ timeout retires pane; late resolution cannot become an ACK (5.687667ms)
+✔ one pending read per pane (0.447708ms)
+✔ no Office context remains explicitly unavailable (0.216292ms)
+✔ non-boolean requirement result remains invalid rather than true (0.174042ms)
+✔ readOnly mode is reported without declaring protection semantics (0.169417ms)
+✔ invalid range scalar causes error rather than acceptance (0.23225ms)
+✔ gap keys match the frozen nine-method contract exactly (0.293417ms)
+✔ initialization never auto-submits a document read (5.77325ms)
+✔ wrong host has no enabled document read (0.929625ms)
+✔ pagehide retires pane and rejects further read clicks (1.209167ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.628125

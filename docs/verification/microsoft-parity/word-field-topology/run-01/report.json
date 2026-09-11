@@ -1,0 +1,14 @@
+{
+  "passed": false,
+  "source_hashes": {
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3adf63eca94711841118b1d400a6b15187c07af875dc835ba1a03497d6040495",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb"
+  },
+  "checks": {},
+  "error": {
+    "type": "ValueError",
+    "message": "invalid native bookmark"
+  },
+  "retained_sentinel_name": "文档201",
+  "final_inventory": "session-closed-or-quarantined"
+}

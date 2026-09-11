@@ -1,0 +1,14 @@
+{
+  "native_status": "DIAGNOSTIC_COMPLETE",
+  "native_checks": 26,
+  "all_native_checks": true,
+  "source_hashes_equal": true,
+  "artifact_hashes_equal": true,
+  "full_restore_bytes": {
+    "word/styles.xml": true,
+    "word/theme/theme1.xml": true
+  },
+  "final_inventory": [],
+  "visual_observation": "Off PDF source Arabic renders connected letters; imported and clone remain seven boxes each. Restored source returns seven boxes. No production fallback or full visual parity.",
+  "rendered_artifact_gate": "FAIL remains for italic fixture"
+}

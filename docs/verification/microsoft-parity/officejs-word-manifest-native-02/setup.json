@@ -1,0 +1,9 @@
+{
+  "scope": "manifest parse/activation diagnosis with service stopped; no certificate changes or Office.js reads",
+  "runtime_log": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/wpscomposer-manifest-20260910-5622.log",
+  "preexisting_logging_setting": null,
+  "manifest": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/Documents/wef/wpscomposer-word-probe-8abccf20.xml",
+  "manifest_sha256": "2682cf7e82d7262f17ce8e4affb900b6dbb5bd0d26418f05475ef3c28a777003",
+  "fixture": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/build/officejs-word-manifest-native-02/WPSComposer-OfficeJS-owned-probe.docx",
+  "fixture_sha256": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d"
+}

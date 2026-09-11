@@ -1,0 +1,20 @@
+{
+  "status": "UNCERTAIN_TIMEOUT",
+  "token": "fd030ffb33374c84a2eebeceaa430109",
+  "source_sha256": "43e4ac5c6509c9675e65e327ef87521492a16bfa3dd5b21d9234bc1884120126",
+  "native_ui_acceptance": "NOT_RUN",
+  "recovery": {
+    "may_have_open_owned_documents": true
+  },
+  "application": "/Applications/Microsoft PowerPoint.app",
+  "timeout_seconds": 30.0,
+  "dictionary_sha256": "db0fa15f433e44667f075c2b7249a1687b8d0642961dd800ce65a4d78c60ee7b",
+  "application_version": "16.112.3",
+  "elapsed_seconds": 30.005705084,
+  "checksums": {
+    "native.stderr.txt": "59686c7c26bdf56721f9860ce72b758b5c405ea21c0c6a241fcbdc33fdf892aa",
+    "native.applescript": "149a64349c61c31622bdc902cb0f1a4835f024caefd998c7b9e08d7493baf18f",
+    "native.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source.png": "192f47cdf863d62d0e68055101a3dc469d6e69f9fe7315390e8a352d3fb83b92"
+  }
+}

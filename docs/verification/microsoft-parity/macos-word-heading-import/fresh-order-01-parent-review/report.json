@@ -1,0 +1,17 @@
+{
+  "scope": "Independent post-failure cleanup and exact style difference; no A/B acceptance",
+  "final_inventory": [],
+  "source_sha256": "52d724bb135c5f1cf7e4d4d41472341010a8e6e8b91cca4a17d13a4c75e63c39",
+  "output_sha256": "da2b9e295eb8c3126c881e77cfb1f1e5f34de51b98f76088ab96c860c59490ab",
+  "added": [],
+  "removed": [],
+  "changed": [
+    {
+      "style_id": "a0",
+      "before": "<ns0:style xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns0:type=\"character\" ns0:default=\"1\" ns0:styleId=\"a0\"><ns0:name ns0:val=\"Default Paragraph Font\" /><ns0:uiPriority ns0:val=\"1\" /><ns0:semiHidden /><ns0:unhideWhenUsed /></ns0:style>",
+      "after": "<ns0:style xmlns:ns0=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" ns0:type=\"character\" ns0:default=\"1\" ns0:styleId=\"a0\"><ns0:name ns0:val=\"Default Paragraph Font\" /><ns0:uiPriority ns0:val=\"1\" /><ns0:unhideWhenUsed /></ns0:style>"
+    }
+  ],
+  "quarantine_absent": true,
+  "cleanup_verified": true
+}

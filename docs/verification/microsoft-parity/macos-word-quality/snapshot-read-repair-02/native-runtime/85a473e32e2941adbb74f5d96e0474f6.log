@@ -1,0 +1,5 @@
+story-types:0: set probeTypes to get story type of every story range of boundDoc
+story-types:1: set probeRows to {{"story-types",probeTypes}}
+story-types:1: set probeRows to {{"story-types",probeTypes}}, -2753
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","story-types:1: set probeRows to {{\"story-types\",probeTypes}}",-2753,"变量“probeTypes”没有定义。"]]]

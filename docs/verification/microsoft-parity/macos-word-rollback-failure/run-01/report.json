@@ -1,0 +1,57 @@
+{
+  "status": "FAIL_RETAINED",
+  "checks": {
+    "sentinel_initial_identity": true,
+    "one_field_and_one_table_appended": true,
+    "field_cache_observed_before_rollback": true,
+    "full_source_digest_unchanged": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_rollback_failure.py": "5f2e3621470c874639cbc767d01005f9c7460627409bc3dc546442afb3536f0a",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/evidence_gate.py": "cece4c98a79e2a6bc05b0b4e5c5f2593b2fc25ceeb0ceec8a46daf6a1ab599e0",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "20721fb271df8aa7baed94036251cef1787ec96ae1372439cb95239602b7b756",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "source_digest_before": "e3161f3ce0b894d1b1d00edfac84d63199fd8f74e85bfc1ae4532b1c3eb69361",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "scope": "Injected ordinary error after real field deletion; manual UI discard and guarded recovery required",
+  "inventory_before": [],
+  "owned_binding": {
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_n9p8z7k/document-df9f2ab3e7e6463aa2d49220e7c31d91.docx",
+    "window_id": null,
+    "staging_root": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-_n9p8z7k",
+    "quarantine_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-word.lock.quarantine"
+  },
+  "sentinel_token": "Rollback failure sentinel 中文😀 4dc29b7bf60949e7ba0971d52cd0eba6",
+  "sentinel_name": "文档64",
+  "sentinel_before": [
+    "文档64",
+    "文档64",
+    false,
+    "6b579804f213ee6449cacf9d6517a115fac35d369da475f781c4525c02aaa3aa"
+  ],
+  "checkpoint": 30,
+  "checkpoint_prefix_sha256": "d4fcc7f16249392bbd72bc79723ded8a2dbf2b0bbdc4ed02dd8f0ba3ad68550c",
+  "append_ack": [
+    [
+      "appended",
+      1,
+      1
+    ]
+  ],
+  "error": {
+    "type": "ValueError",
+    "message": "Exact owned path, window ID and checkpoint are required"
+  },
+  "source_digest_after": "e3161f3ce0b894d1b1d00edfac84d63199fd8f74e85bfc1ae4532b1c3eb69361",
+  "quarantined": true,
+  "closed": false,
+  "quarantine_marker_sha256": "b7d6624bcdab2aafe4714c8fa8d24f1347e1855c91d2837cb983b9a2b1f392b3"
+}

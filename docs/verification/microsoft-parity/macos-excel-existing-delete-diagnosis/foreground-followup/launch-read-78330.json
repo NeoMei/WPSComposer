@@ -1,0 +1,14 @@
+{
+  "alerts" : true,
+  "bundle" : "com.microsoft.Excel",
+  "name" : "Microsoft Excel",
+  "pid" : 78330,
+  "running" : true,
+  "workbooks" : [
+    {
+      "name" : "isolated-launch.xlsx",
+      "path" : "\/Users\/neomei\/Library\/Containers\/com.microsoft.Excel\/Data\/tmp\/wpscomposer\/excel-command-boundary-20260910\/isolated-launch.xlsx",
+      "saved" : true
+    }
+  ]
+}

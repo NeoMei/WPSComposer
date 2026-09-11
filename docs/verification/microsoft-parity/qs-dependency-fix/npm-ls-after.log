@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "name": "wpscomposer-macos-jsapi-probe",
+  "dependencies": {
+    "wpsjs": {
+      "version": "2.2.3",
+      "resolved": "https://registry.npmjs.org/wpsjs/-/wpsjs-2.2.3.tgz",
+      "overridden": false,
+      "dependencies": {
+        "express": {
+          "version": "4.22.2",
+          "resolved": "https://registry.npmjs.org/express/-/express-4.22.2.tgz",
+          "overridden": false,
+          "dependencies": {
+            "body-parser": {
+              "version": "1.20.6",
+              "resolved": "https://registry.npmjs.org/body-parser/-/body-parser-1.20.6.tgz",
+              "overridden": false,
+              "dependencies": {
+                "qs": {
+                  "version": "6.16.0"
+                }
+              }
+            },
+            "qs": {
+              "version": "6.16.0",
+              "resolved": "https://registry.npmjs.org/qs/-/qs-6.16.0.tgz",
+              "overridden": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

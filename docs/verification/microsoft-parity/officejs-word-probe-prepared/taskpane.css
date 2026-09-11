@@ -1,0 +1,8 @@
+:root { font: 14px/1.5 system-ui, sans-serif; color-scheme: light dark; }
+body { margin: 18px; max-width: 52rem; }
+h1 { font-size: 1.4rem; }
+label, input, textarea { display: block; }
+input, textarea { box-sizing: border-box; width: 100%; margin: 6px 0 14px; }
+textarea { font: 12px/1.5 ui-monospace, monospace; }
+button { margin: 4px 0; padding: 8px; }
+#identity { overflow-wrap: anywhere; }

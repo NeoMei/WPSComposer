@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "status": "FAIL",
+  "engine": "msoffice",
+  "checks": {},
+  "targets": {},
+  "method_to_checks": {
+    "add_table": [
+      "reopen_table",
+      "reopen_cell_utf16_format",
+      "ooxml_tables_merges"
+    ],
+    "add_merged_table": [
+      "ooxml_tables_merges"
+    ],
+    "add_image": [
+      "reopen_inline_width",
+      "reopen_inline_height",
+      "reopen_inline_bounded_aspect",
+      "reopen_inline_max",
+      "reopen_floating",
+      "ooxml_embedded_only"
+    ],
+    "add_image_block": [
+      "reopen_block_format",
+      "ooxml_following_paragraph"
+    ],
+    "add_floating_textbox": [
+      "reopen_textbox",
+      "pdf_visible_objects"
+    ]
+  },
+  "limitations": [
+    "Floating image alt text remains a preflight-rejected unsupported branch; see Probe A run-02."
+  ],
+  "source_hashes": {
+    "fixture": "21d79de5b230f19095a6c8a76a36647aa9ca80b157962a94fa6e06e7232cde8f",
+    "macos_word_session": "3fcfa92439d602f0db5a6d65f39c29665376eee958f24da1bd31436bf5292d67",
+    "image": "60e3729901e22a83648c8e6fa5ebe653203352e71c17417658917f99ba114f41"
+  },
+  "sentinel_before": [
+    "sentinel",
+    "文档104",
+    "文档104",
+    false,
+    "WPSC-OBJECT-SENTINEL-3aa1593038d147fbaac1f868d350952d\r",
+    null
+  ],
+  "sentinel_token_sha256": "5186242fe4b1e8137c0dc8427f4ce8cf6a862c75d3982ac4eba48fb4f093e748",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-uu4lbpg_ diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-uu4lbpg_/16af7a5498504f87ba86056b67446e3c.log"
+  },
+  "cleanup_error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-svtzt1kj diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-svtzt1kj/0059b2932eb14095811110b4a41c366e.log"
+  }
+}

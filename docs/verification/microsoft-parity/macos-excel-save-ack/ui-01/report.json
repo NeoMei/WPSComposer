@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "scope": "actual Excel UI editing of a copy of current ACK native output",
+  "ui_open_panel": "selected exact file but Open disabled; cancelled; native Launch Services open succeeded",
+  "steps": [
+    "exact path opened, DeleteProbeB!A1 original value visible",
+    "typed UI-ACK-CHECK and Return; observed new value",
+    "Cmd+Z; observed original AFTER DELETE before-selected",
+    "Cmd+S then Cmd+W; original sentinel window visible",
+    "same-path Launch Services reopen; exact URL, four sheets and original A1 value visible; screenshot inspected in CUA",
+    "Cmd+W; original sentinel window visible"
+  ],
+  "saved_sheet_names": [
+    "Data",
+    "Results",
+    "Business report",
+    "DeleteProbeB"
+  ],
+  "saved_A1": "AFTER DELETE before-selected",
+  "source_preserved": true,
+  "final_copy_sha256": "a098441548b5a845c7804c28e2f40650ebd03d0fc8c731a3833f7bb24450ddfc",
+  "original_inventory_preserved": true,
+  "inventory": {
+    "books": [
+      [
+        "工作簿5",
+        "工作簿5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "工作簿7",
+        "工作簿7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  }
+}

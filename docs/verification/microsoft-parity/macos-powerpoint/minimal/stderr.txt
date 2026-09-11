@@ -1,0 +1,4 @@
+SAVED|/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-po3pfvrf/minimal-aea22733cf3147b2904e9d55506bb498.pptx
+PDF_SAVED
+CLOSED
+docs/verification/microsoft-parity/macos-powerpoint/minimal/native.applescript:1043:1049: execution error: “Microsoft PowerPoint”遇到一个错误：发生“-9074”类型错误。 (-9074)

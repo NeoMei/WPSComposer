@@ -727,6 +727,141 @@ def test_file_edit_closes_composer_before_publish_and_stage_cleanup(
     assert events == ["close", "publish", "cleanup"]
 
 
+def test_in_place_edit_preserves_source_changed_while_native_session_closes(
+    tmp_path: Path,
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"original source")
+    concurrent = b"USER SAVED NEW VERSION"
+    composer = PackageWriterComposer()
+    original_close = composer.close
+
+    def close(save_changes=False):
+        source.write_bytes(concurrent)
+        original_close(save_changes)
+
+    composer.close = close
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(RuntimeError) as caught:
+            api.edit(
+                source,
+                engine="msoffice",
+                patches=[{"target": "paragraph:1", "text": "edited old version"}],
+            )
+
+    assert source.read_bytes() == concurrent
+    assert caught.value.recovery_paths == (str(composer.save_calls[0]),)
+
+
+def test_group_edit_preserves_source_changed_before_publication(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"original source")
+    pdf = tmp_path / "edited.pdf"
+    concurrent = b"USER SAVED GROUP VERSION"
+    composer = PackageAndPdfWriterComposer()
+    original_close = composer.close
+
+    def close(save_changes=False):
+        source.write_bytes(concurrent)
+        original_close(save_changes)
+
+    composer.close = close
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(RuntimeError) as caught:
+            api.edit(
+                source,
+                engine="msoffice",
+                export_pdf=pdf,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert source.read_bytes() == concurrent
+    assert not pdf.exists()
+    assert caught.value.recovery_paths == tuple(
+        str(path) for path in (*composer.save_calls, *composer.export_calls)
+    )
+
+
+def test_distinct_overwrite_preserves_output_changed_after_preflight(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"source")
+    output = tmp_path / "output.docx"
+    output.write_bytes(b"approved original")
+    concurrent = b"CONCURRENT OUTPUT"
+    composer = PackageWriterComposer()
+    original_close = composer.close
+
+    def close(save_changes=False):
+        output.write_bytes(concurrent)
+        original_close(save_changes)
+
+    composer.close = close
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(RuntimeError):
+            api.edit(
+                source,
+                output=output,
+                overwrite=True,
+                patches=[{"target": "paragraph:1", "font": {"bold": True}}],
+            )
+
+    assert output.read_bytes() == concurrent
+
+
+@pytest.mark.parametrize("change", ["delete", "symlink"])
+def test_in_place_edit_rejects_disappeared_or_retargeted_source(
+    tmp_path: Path, change: str,
+):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"original source")
+    other = tmp_path / "other.docx"
+    other.write_bytes(b"other source")
+    composer = PackageWriterComposer()
+    original_close = composer.close
+
+    def close(save_changes=False):
+        source.unlink()
+        if change == "symlink":
+            source.symlink_to(other)
+        original_close(save_changes)
+
+    composer.close = close
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        with pytest.raises(RuntimeError):
+            api.edit(source, patches=[{"target": "paragraph:1", "text": "edited"}])
+
+    if change == "delete":
+        assert not source.exists()
+    else:
+        assert source.is_symlink()
+        assert other.read_bytes() == b"other source"
+
+
+def test_distinct_output_allows_source_change_and_preserves_both_versions(tmp_path: Path):
+    source = tmp_path / "source.docx"
+    source.write_bytes(b"original source")
+    output = tmp_path / "output.docx"
+    concurrent = b"new source version"
+    composer = PackageWriterComposer()
+    original_close = composer.close
+
+    def close(save_changes=False):
+        source.write_bytes(concurrent)
+        original_close(save_changes)
+
+    composer.close = close
+    with _Monkey(api, "open_document", lambda *args, **kwargs: composer):
+        result = api.edit(
+            source,
+            output=output,
+            patches=[{"target": "paragraph:1", "text": "edited old version"}],
+        )
+
+    assert result["saved_path"] == str(output.resolve())
+    assert source.read_bytes() == concurrent
+    assert output.is_file()
+
+
 def test_file_edit_closes_composer_before_group_publish_and_cleanup(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

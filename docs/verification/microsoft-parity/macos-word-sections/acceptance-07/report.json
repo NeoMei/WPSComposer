@@ -1,0 +1,211 @@
+{
+  "passed": true,
+  "engine": "msoffice",
+  "platform": "darwin",
+  "component": "writer",
+  "mode": "acceptance",
+  "checks": {
+    "configure_three_sections_and_pending_fourth": true,
+    "none_preserves_plain_text_and_numpages": true,
+    "intervening_content_invalidates_pending_without_section_change": true,
+    "unsaved_sentinel_and_unrelated_documents_preserved": true,
+    "exact_owned_document_close": true,
+    "rendered_PAGE_results_iii_V_7_8_and_NUMPAGES_4": true,
+    "native_reopen_metadata_roles_numbering_dimensions": true,
+    "saved_footer_true_PAGE_and_NUMPAGES": true,
+    "pending_heading_and_table_same_landscape_section": true,
+    "four_page_pdf_orientation_and_text": true,
+    "native_reopen_source_preserved": true,
+    "exact_owned_reopen_close": true,
+    "scalar_metadata_7_false_saved_native_reopen_and_source_preserved": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_sections.py": "93aedc946c725bafc1b15cf9ee48ad4f91a4a38dcf09d94af7fd5a959d1b2551",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "55d3f4275fe3644151b09a534413e6eee3bf8517e877fada08af43d8df050fbe"
+  },
+  "inventory_before": [
+    [
+      "文档137",
+      "文档137",
+      false,
+      "8271b7a55d14b59ec27c89c126c2a3518982f2ce7feacda2d36147f39f24cfc5  -"
+    ]
+  ],
+  "metadata_scalar_readback": [
+    [
+      "7",
+      ""
+    ]
+  ],
+  "none_readback": [
+    [
+      "Keep footer 3 PAGE NUMPAGES PAGEREF 1\r",
+      1,
+      "field num pages"
+    ]
+  ],
+  "pending_native_position": [
+    126,
+    133,
+    2
+  ],
+  "method_checks": {
+    "configure_section": [
+      "first call has one section",
+      "two later calls each add one next-page section",
+      "a4/letter dimensions and portrait-landscape-portrait geometry",
+      "margins and detached header/footer"
+    ],
+    "set_page_numbering": [
+      "roman lower/upper/arabic",
+      "restart true with 3/5/7 start",
+      "none retains NUMPAGES and plain PAGE text",
+      "repeated calls maintain one PAGE"
+    ],
+    "set_page_role": [
+      "create/update document-local section variables",
+      "Chinese emoji after reopen"
+    ],
+    "set_document_metadata": [
+      "Title Author Chinese emoji after reopen",
+      "title=7 and author=False produce 7 and empty with saved native reopen"
+    ],
+    "add_landscape_section_before_pending_heading": [
+      "native UTF16 start",
+      "duplicate heading second occurrence only",
+      "intervening-content negative"
+    ]
+  },
+  "inventory_after": [
+    [
+      "文档137",
+      "文档137",
+      false,
+      "8271b7a55d14b59ec27c89c126c2a3518982f2ce7feacda2d36147f39f24cfc5  -"
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "version",
+      "16.112.3"
+    ],
+    [
+      "role",
+      "正文😀"
+    ],
+    [
+      "title",
+      "标题😀"
+    ],
+    [
+      "author",
+      "作者😀"
+    ],
+    [
+      "footer",
+      "Keep footer 1  \r"
+    ],
+    [
+      "number",
+      "page number style lowercase roman",
+      true,
+      3
+    ],
+    [
+      "field",
+      "field page",
+      " PAGE  \\* MERGEFORMAT "
+    ]
+  ],
+  "section_reopen_rows": [
+    [
+      1,
+      "orient portrait",
+      595.2999877929688,
+      841.9000244140625,
+      60,
+      60,
+      66,
+      66,
+      false,
+      false,
+      "page number style lowercase roman",
+      true,
+      3,
+      "正文😀"
+    ],
+    [
+      2,
+      "orient landscape",
+      792,
+      612,
+      54,
+      54,
+      60,
+      60,
+      false,
+      false,
+      "page number style uppercase roman",
+      true,
+      5,
+      "landscape😀"
+    ],
+    [
+      3,
+      "orient portrait",
+      595.2999877929688,
+      841.9000244140625,
+      60,
+      60,
+      54,
+      54,
+      false,
+      false,
+      "page number style arabic",
+      true,
+      7,
+      "body😀"
+    ],
+    [
+      4,
+      "orient landscape",
+      841.9000244140625,
+      595.2999877929688,
+      54,
+      54,
+      60,
+      60,
+      true,
+      true,
+      "page number style arabic",
+      false,
+      0,
+      "media😀"
+    ]
+  ],
+  "pdf_text": [
+    "Section One \nKeep footer 1 iii \n重复标题😀 \nFirst duplicate remains portrait 中⽂😀 \n",
+    "Section Two \nKeep footer 2 V \n \nLandscape configured section 中⽂😀 \n",
+    "Section Three \nKeep footer 3 PAGE NUMPAGES PAGEREF 47 \n \nThird portrait before pending heading 中⽂😀 \n",
+    "Section Three \nKeep footer 3 PAGE NUMPAGES PAGEREF 48 \n重复标题😀 \nLandscape object 中文😀 \nValue \nTail \n42 \n \nInvalidated pending 😀 \nIntervening body invalidates pending 中⽂😀 \n \n"
+  ],
+  "source_docx_sha256_before_reopen": "7f00e003023ebdcbee3809ab98ac650b080ca3542b0d7017b0c3b7b5ea0b0453",
+  "source_docx_sha256_after_reopen": "7f00e003023ebdcbee3809ab98ac650b080ca3542b0d7017b0c3b7b5ea0b0453",
+  "artifact_hashes": {
+    "sections.docx": "7f00e003023ebdcbee3809ab98ac650b080ca3542b0d7017b0c3b7b5ea0b0453",
+    "sections.pdf": "c3b585cc6fe75fc3b648aa5ff7bf7ffaffb504a8c1d3262eebc8412a60f2bc4e"
+  },
+  "limitations": [
+    "Representative checks are listed per mode; separate acceptance and variants reports are required for the complete exercised branch set.",
+    "No attached session or user UI edit/Undo acceptance is claimed.",
+    "Runtime timeout/quarantine checks are separate unit tests; this fixture does not deliberately cause uncertain native completion."
+  ],
+  "metadata_scalar_reopen_rows": [
+    [
+      "7",
+      ""
+    ]
+  ],
+  "scalar_metadata_sha256_before_reopen": "c35e5094c1df96c2f2603500c339a62c8bf9b565c1c6412a32d85498ea76bb5c",
+  "scalar_metadata_sha256_after_reopen": "c35e5094c1df96c2f2603500c339a62c8bf9b565c1c6412a32d85498ea76bb5c"
+}

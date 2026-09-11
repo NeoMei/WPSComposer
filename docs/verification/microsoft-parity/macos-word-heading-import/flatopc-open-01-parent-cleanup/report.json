@@ -1,0 +1,19 @@
+{
+  "scope": "Independent post-failure reconciliation; original FAIL unchanged",
+  "inventory_before": [],
+  "ui_observation": "CUA Word DocStage; no document window",
+  "quarantine_before": {
+    "schema": 1,
+    "stagingRoot": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-nzd55ugc",
+    "reason": "Flat OPC open or SaveAs identity unverified; inspect journal before cleanup",
+    "windowId": null,
+    "documentPath": null
+  },
+  "inventory_pre_recovery": [],
+  "input_sha256": "56d2c52396c7ce74bbdcb201a31d7cb18f17e62b6edee77b3a59fe0125dce4b4",
+  "converted_output_exists": false,
+  "quarantine_recovered": true,
+  "inventory_final": [],
+  "quarantine_absent": true,
+  "status": "PASS"
+}

@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "D:\wpsc70-evidence\preflight.py", line 24, in main
+    session=api.create_document(kind,engine='msoffice')
+  File "D:\wpsc70\skills\WPSComposer\scripts\document_api.py", line 116, in create_document
+    return new_session(kind=_normalize_kind(kind), visible=visible)
+  File "D:\wpsc70\skills\WPSComposer\scripts\document_sessions.py", line 40, in new_session
+    return _session_class(kind).new_document(visible=visible)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "D:\wpsc70\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 110, in new_document
+    return cls._start('new_document', [], {'visible': visible})
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc70\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 138, in _start
+    self._lock.acquire(self._deadline)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "D:\wpsc70\skills\WPSComposer\scripts\msoffice\windows_office_runtime.py", line 81, in acquire
+    raise NativeOfficeError('NATIVE_OFFICE_QUARANTINED', quarantine_path=self.quarantine_path)
+skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError: Native Office cleanup is unverified; explicit recovery is required.

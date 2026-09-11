@@ -1,0 +1,897 @@
+{
+  "status": "FAIL",
+  "scope": "Native file-import hypothesis only; public method remains absent",
+  "checks": {
+    "seed_ack": true,
+    "source_font_preimage_valid": true
+  },
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_heading_import.py": "5d300e46d97b2d81a7a7b9c4cdcaf09304aed4b8927d565773686a59929b355c",
+    "tests/msoffice/test_macos_word_heading_import.py": "7a2a6bf00a0314ed5a18531e1ac1d7af3884b4f5bf49191cc2b98355b070d9a6",
+    "fixtures/microsoft_parity/macos_word_heading_feasibility.py": "67b383643395268d9a937f19c75208ba2abd923f5f5452f3bedb6c6683a22f33",
+    "tests/msoffice/test_macos_word_heading_feasibility.py": "49cc7e5da6428319687ea3b202db52678c88392c0a196c4c3cd1958aca679fda",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "47b40d4eabc360fdfcb29244f072b00aa7b286586e95abf5dd848bfa1b83c59e",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "45f81ec2422de455ca5841e116057246b4522236e018e1d20c1d50f2842e2912",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "01c4acbfda5dfd9294517d681c8673bba7c55e617fedda14f1670e14277decc5",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205"
+  },
+  "dictionary_sha256": "7cb51b924cab566320cc3019e92c1516302ae11220a81ae6279f1930c26320e7",
+  "inventory_before": [],
+  "current_phase": "native_import",
+  "raw_rows": {
+    "sentinel": [
+      [
+        "文档5"
+      ]
+    ],
+    "version": [
+      [
+        "16.112.3"
+      ]
+    ],
+    "seed": [
+      [
+        "stage",
+        true
+      ]
+    ],
+    "source_font_preimage": [
+      [
+        "font:all caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:animation",
+        [
+          "native-enum",
+          "animation none"
+        ],
+        [
+          "native-enum",
+          "animation none"
+        ],
+        true
+      ],
+      [
+        "font:ascii name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:bold",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:bold bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:color",
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        [
+          "number-list",
+          [
+            40092,
+            0,
+            1542
+          ]
+        ],
+        true
+      ],
+      [
+        "font:color index",
+        [
+          "native-enum",
+          "violet"
+        ],
+        [
+          "native-enum",
+          "violet"
+        ],
+        true
+      ],
+      [
+        "font:color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font:complex script name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:disable character space grid",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:double strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:east asian name",
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        [
+          "text",
+          "+中文标题 ()"
+        ],
+        true
+      ],
+      [
+        "font:emboss",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:emphasis mark",
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        [
+          "native-enum",
+          "emphasis mark none"
+        ],
+        true
+      ],
+      [
+        "font:engrave",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:font position",
+        [
+          "number",
+          0
+        ],
+        [
+          "number",
+          0
+        ],
+        true
+      ],
+      [
+        "font:font size",
+        [
+          "number",
+          17
+        ],
+        [
+          "number",
+          17
+        ],
+        true
+      ],
+      [
+        "font:hidden",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:italic",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font:italic bi",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:kerning",
+        [
+          "number",
+          12
+        ],
+        [
+          "number",
+          12
+        ],
+        true
+      ],
+      [
+        "font:name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:other name",
+        [
+          "text",
+          "Arial"
+        ],
+        [
+          "text",
+          "Arial"
+        ],
+        true
+      ],
+      [
+        "font:outline",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:scaling",
+        [
+          "number",
+          110
+        ],
+        [
+          "number",
+          110
+        ],
+        true
+      ],
+      [
+        "font:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:small caps",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:spacing",
+        [
+          "number",
+          1.25
+        ],
+        [
+          "number",
+          1.25
+        ],
+        true
+      ],
+      [
+        "font:strike through",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:subscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:superscript",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font:underline",
+        [
+          "native-enum",
+          "underline none"
+        ],
+        [
+          "native-enum",
+          "underline none"
+        ],
+        true
+      ],
+      [
+        "font:underline color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font:underline color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color",
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        [
+          "number-list",
+          [
+            64764,
+            59624,
+            59110
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color index",
+        [
+          "native-enum",
+          "red"
+        ],
+        [
+          "native-enum",
+          "red"
+        ],
+        true
+      ],
+      [
+        "font-shading:background pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-shading:foreground pattern color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-shading:texture",
+        [
+          "native-enum",
+          "texture none"
+        ],
+        [
+          "native-enum",
+          "texture none"
+        ],
+        true
+      ],
+      [
+        "font-borders:always in front",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from",
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        [
+          "native-enum",
+          "border distance from text"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from bottom",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from left",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from right",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:distance from top",
+        [
+          "native-enum",
+          "missing value"
+        ],
+        [
+          "native-enum",
+          "missing value"
+        ],
+        true
+      ],
+      [
+        "font-borders:enable borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:enable first page in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:enable other pages in section",
+        [
+          "boolean",
+          true
+        ],
+        [
+          "boolean",
+          true
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color",
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            2056,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:inside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:join borders",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color",
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        [
+          "number-list",
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color index",
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        [
+          "native-enum",
+          "no highlight"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside color theme index",
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        [
+          "native-enum",
+          "no theme color"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line style",
+        [
+          "native-enum",
+          "line style none"
+        ],
+        [
+          "native-enum",
+          "line style none"
+        ],
+        true
+      ],
+      [
+        "font-borders:outside line width",
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        [
+          "native-enum",
+          "«constant ****\u00028\u0000\u0000»"
+        ],
+        true
+      ],
+      [
+        "font-borders:shadow",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround footer",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "font-borders:surround header",
+        [
+          "boolean",
+          false
+        ],
+        [
+          "boolean",
+          false
+        ],
+        true
+      ],
+      [
+        "clone-base-normal",
+        [
+          "text",
+          "正文"
+        ],
+        [
+          "text",
+          "正文"
+        ],
+        true
+      ]
+    ]
+  },
+  "sentinel_name": "文档5",
+  "sentinel_before": [
+    "文档5",
+    "文档5",
+    false,
+    "207d42fc2af11f9b09457741bdeb38d7d8c1e8a70fb2bf85d0b7dbd37a3217b5"
+  ],
+  "word_version": [
+    [
+      "16.112.3"
+    ]
+  ],
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-b03g3kic diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-b03g3kic/75a0a594b3c94d9c8d859f8c83a2e5e8.log"
+  },
+  "sentinel_cleanup_attempted": true,
+  "cleanup_failure": "Traceback (most recent call last):\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_heading_import.py\", line 267, in run\n    close_after_owned(session, output, report, sentinel_name, token)\n  File \"/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_paragraph_rule.py\", line 173, in close_after_owned\n    raise RuntimeError('Owned document close is unverified; sentinel retained')\nRuntimeError: Owned document close is unverified; sentinel retained\n",
+  "remaining_sentinel": "文档5",
+  "artifact_hashes": {
+    "source-styles.xml": "365a3b1103c9194f22b3b1ba9b7b22e5a3386c7b6421da00f5645c117eb02852",
+    "fragment.xml": "56d2c52396c7ce74bbdcb201a31d7cb18f17e62b6edee77b3a59fe0125dce4b4",
+    "source-preimage.docx": "f9ee14d8d6cd790c4aefbd81e8b4a98117b36151a570970483e3a47fbc2d5767"
+  }
+}

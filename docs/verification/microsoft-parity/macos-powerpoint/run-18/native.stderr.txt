@@ -1,0 +1,23 @@
+PROBE|baseline|23
+PROBE|version|16.112.3
+PROBE|sentinel_name|演示文稿31
+PROBE|owned_name|演示文稿32
+PROBE|shape|PASS
+PROBE|fill|PASS
+PROBE|picture|PASS
+PROBE|table_created|PASS
+PROBE|page_width|720.0
+PROBE|slide_clone_remove|FAIL|-50|“Microsoft PowerPoint”遇到一个错误：参数错误。
+PROBE|slide_move|PASS
+PROBE|shape_clone_remove|PASS
+PROBE|shape_geometry_edit|PASS
+PROBE|undo|BLOCKED_PRIOR_DESTRUCTIVE_UNDO
+PROBE|selection_type|selection type none
+PROBE|generation|PASS
+PROBE|saved_path|/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-parity-8a7p2hb2/native-9fc0aaad1d814d1dbf7ad14b2756b6df.pptx
+PROBE|pdf_before_reopen|PASS
+PROBE|sentinel_unsaved_before_reopen|PASS
+PROBE|reopened_count|2
+PROBE|reopened_text|Native editable PowerPoint
+PROBE|pdf|PASS
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-18/native.applescript:6543:6575: execution error: Unrelated presentation changed (-2700)

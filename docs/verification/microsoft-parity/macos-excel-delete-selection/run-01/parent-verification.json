@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "independent_saved_OOXML_marker_mapping": [
+    {
+      "artifact": "after-selected.xlsx",
+      "sha256": "89b4c01dac810052ca8d5e3f4c916f52372e0e6a33d11c82ea15b34e428dd788",
+      "marker": [
+        {
+          "sheet": "Data",
+          "value": "AFTER DELETE after-selected"
+        }
+      ]
+    },
+    {
+      "artifact": "before-selected.xlsx",
+      "sha256": "0e23ff07340cf71eda0d7009abe296cab6a975d299e09c62971c771e24edd4c4",
+      "marker": [
+        {
+          "sheet": "DeleteProbeB",
+          "value": "AFTER DELETE before-selected"
+        }
+      ]
+    },
+    {
+      "artifact": "selected.xlsx",
+      "sha256": "d3f4a270599d53e9b66718587ff245a43691dc13b8fc28a725664e0af3a91ef7",
+      "marker": [
+        {
+          "sheet": "DeleteProbeA",
+          "value": "AFTER DELETE selected"
+        }
+      ]
+    }
+  ],
+  "all_recorded_source_hashes_match_live": true,
+  "native_report_sha256": "d15522c78d372f04cd5beddbd3dfab7b11ba89e4c8084c9e989f9e05fd1ddcf4"
+}

@@ -1,0 +1,4 @@
+Command: PYTHONPATH=.:/tmp/wps-spike-validator-audit-deps ../wps-task-session-startup/.venv/bin/python -m pytest tests/msoffice/test_macos_word_objects_probe.py tests/msoffice/test_macos_word_business_objects.py tests/msoffice/test_edit_preflight.py tests/msoffice/test_windows_document_api.py -q
+Result: 225 passed, 5 warnings in 5.50s; exit 0.
+Warnings: PyMuPDF/SWIG DeprecationWarning only.
+Scope: final checker negative test after full round12, production unchanged.

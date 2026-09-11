@@ -1,0 +1,9 @@
+{
+  "source": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/tmp/wpscomposer-parity-po3pfvrf/minimal-aea22733cf3147b2904e9d55506bb498.pptx",
+  "target": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer-parity-x9mtdtv9/minimal-aea22733cf3147b2904e9d55506bb498.pptx",
+  "quarantine_before_open": "0086;6aa00f80;Microsoft PowerPoint;",
+  "bytes_preserved": true,
+  "returncode": 0,
+  "stdout": "1\n",
+  "stderr": ""
+}

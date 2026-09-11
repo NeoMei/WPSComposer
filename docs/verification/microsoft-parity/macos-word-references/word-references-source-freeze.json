@@ -1,0 +1,7 @@
+{
+  "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+  "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "39129d22315eb5701dde8f1f5cfe305de404d07ce538d10d44b2fa1f562d502a",
+  "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "c390342553fa4f9c30f77dc751da99e97ffd0abc1ff0e20822f9c5c974fa776d",
+  "tests/msoffice/test_macos_word_references.py": "b3afaab28d4d7288ddda3cb7073dac1d9de5a74153e54af82e65c8c08bbf0d6c",
+  "fixtures/microsoft_parity/macos_word_references.py": "6b429c1caf7be8305706a054d9312fbfc241311794c04f1d925c459ffa63a1b0"
+}

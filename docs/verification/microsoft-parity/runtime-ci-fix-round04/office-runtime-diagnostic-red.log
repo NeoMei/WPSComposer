@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_postlaunch_recovery_json_enospc_preserves_native_error_and_quarantine __
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1284/test_postlaunch_recovery_json_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a4c4340>
+
+    def test_postlaunch_recovery_json_enospc_preserves_native_error_and_quarantine(tmp_path, monkeypatch):
+        monkeypatch.setattr(runtime.sys, 'platform', 'darwin')
+        monkeypatch.setattr(runtime, 'engine_executable', lambda *args: '/fake/Excel')
+        monkeypatch.setattr(runtime, '_container_root', lambda component: tmp_path)
+        monkeypatch.setattr(runtime.subprocess, 'run', lambda *args, **kwargs: SimpleNamespace(
+            returncode=1, stdout='', stderr='native operation failed'))
+        write_text = Path.write_text
+    
+        def failing_diagnostic(path, *args, **kwargs):
+            if path.name == 'recovery.json':
+                raise OSError(errno.ENOSPC, 'simulated diagnostic storage exhausted')
+            return write_text(path, *args, **kwargs)
+    
+        monkeypatch.setattr(Path, 'write_text', failing_diagnostic)
+        try:
+            runtime._execute('spreadsheet', tmp_path / 'out.xlsx', overwrite=False,
+                             deadline=time.monotonic() + 3,
+                             prepare=lambda job, deadline: ('synthetic script', job / 'owned.xlsx'))
+        except BaseException as exc:
+            observed = (type(exc).__name__, getattr(exc, 'code', None),
+                        (tmp_path / 'native-office.quarantine.json').exists())
+        else:
+            raise AssertionError('Uncertain native completion was accepted')
+>       assert observed == ('NativeOfficeError', 'NATIVE_OFFICE_EXECUTION_FAILED', True)
+E       AssertionError: assert ('OSError', None, False) == ('NativeOffic...FAILED', True)
+E         
+E         At index 0 diff: 'OSError' != 'NativeOfficeError'
+E         Use -v to get more diff
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_diagnostic_red.py:33: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/test_office_runtime_diagnostic_red.py::test_postlaunch_recovery_json_enospc_preserves_native_error_and_quarantine
+1 failed in 0.07s

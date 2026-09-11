@@ -1,0 +1,6 @@
+primary-header-text-object:0: set qsection to section 1 of boundDoc
+primary-header-text-object:1: set qpart to get header qsection index header footer primary
+primary-header-text-object:2: set qr to text object of qpart
+primary-header-text-object:3: set probeRows to {{"text-reference-resolved"}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["text-reference-resolved"]]]]]

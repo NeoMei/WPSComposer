@@ -1,0 +1,14 @@
+{"label": "character-count", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.415, "list_templates": [0, 0]}
+{"label": "bulk-start", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.499, "list_templates": [0, 0]}
+{"label": "bulk-end", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.498, "list_templates": [0, 0]}
+{"label": "bulk-font-name", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.495, "list_templates": [0, 0]}
+{"label": "bulk-font-size", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.512, "list_templates": [0, 0]}
+{"label": "bulk-bold", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.495, "list_templates": [0, 0]}
+{"label": "bulk-italic", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.5, "list_templates": [0, 0]}
+{"label": "bulk-underline", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.5, "list_templates": [0, 0]}
+{"label": "bulk-color", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.559, "list_templates": [0, 0]}
+{"label": "bulk-shading", "row_kind": "ordinary-read-error", "saved": [true, true], "seconds": 0.597, "list_templates": [0, 0]}
+{"label": "font-record-0", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.496, "list_templates": [0, 0]}
+{"label": "font-record-59", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.495, "list_templates": [0, 0]}
+{"label": "font-record-110", "row_kind": "read-ok", "saved": [true, true], "seconds": 0.53, "list_templates": [0, 0]}
+{"status": "DIAGNOSED", "checks": {"body_unchanged": true, "private_file_unchanged": true, "inventory_empty": true, "sources_unchanged": true}, "blocker": null, "error": null, "remaining_owned_path": null}

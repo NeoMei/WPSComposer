@@ -1,0 +1,14 @@
+{
+  "artifact-metadata.json": "e55814784eeaf2b2987bef9720b08aecde36c70a6a0fee0d181e707fe8bd04dd",
+  "artifacts/pytest-ubuntu-24.04-python-3.12/pytest.log": "9c731949e9aea1e355d2d6410984e64a86bdce9694592d5d3ff2ebd5e45142bb",
+  "artifacts/pytest-ubuntu-24.04-python-3.12/pytest.xml": "06f5f288b23e2cb35fec9b59eb0ae654babfe48887a468156904170593f9f3ef",
+  "artifacts/pytest-ubuntu-24.04-python-3.9/pytest.log": "8e3f59545a978ff69384a2880eea0a3b3751149701bb82aae181b6a382ca3bcc",
+  "artifacts/pytest-ubuntu-24.04-python-3.9/pytest.xml": "5f304693b818c260100bc4d27c51e3a0fcad973a7e1d0141cc537ed7091c4fa6",
+  "artifacts/pytest-windows-2022-python-3.12/pytest.log": "0207be9b4695acb56837128d33944484685b796096ddb302b73a420c3d441b19",
+  "artifacts/pytest-windows-2022-python-3.12/pytest.xml": "f8370256016eb4dc23b53d84da816f0018c6f29f32fa2b82160fd217c815783b",
+  "artifacts/pytest-windows-2022-python-3.9/pytest.log": "59e85f78cf42d2e42cb7648166fc7c753301634cdaa1e9c570ba6f92ab349d7b",
+  "artifacts/pytest-windows-2022-python-3.9/pytest.xml": "6d7d7db919fb1c0abd052241a85c49282474bd1bb529a3cce74c43d3e44ec435",
+  "cancelled-push-run.json": "78f0af248deedddd1d928534daf928b1c4758b0b3462c39d4d9b0bfaab17883c",
+  "metadata.json": "1cb0ede025051236712c3047e32e5a7f099c5bce3429a7934a54f23984785f89",
+  "result-summary.json": "b11cbc69d8949f282dbf4c33b42164ffb8504fe1a41b973fdc87f1e5c231c51e"
+}

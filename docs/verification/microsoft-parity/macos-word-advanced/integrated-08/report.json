@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "checks": {
+    "native_math": true,
+    "native_superscript": true,
+    "native_fraction": true,
+    "math_did_not_absorb_following_text": true,
+    "merged_grid_span": true,
+    "merge_outside_retained": true,
+    "landscape": true,
+    "portrait_restored": true,
+    "pictures_in_two_real_cells": true,
+    "embedded_images": true,
+    "colored_style": true,
+    "document_tail": true,
+    "footer_text_and_page": true,
+    "no_unexpected_issues": true,
+    "pdf_tail_retained": true,
+    "unsaved_sentinel_preserved": true
+  },
+  "issues": [
+    {
+      "code": "REFERENCE_UNRESOLVED",
+      "message": "[REFERENCE_UNRESOLVED 引用目标未解析]",
+      "placement": "inline",
+      "nodeId": "__wpsc_tab:3:1"
+    }
+  ],
+  "runtime_staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-21wxtxwe",
+  "pagination_nodes": 13,
+  "pdf_pages": 3,
+  "source_sha256": "7abb4c36c038f461bce889e7e0c5721e4f73eadc2bdce94c2dadb7dd6bb85216",
+  "compiler_sha256": "961e35aa26f48177fb14331c4688115dd50d0358ed2ce4800a0fefc2d4dbe29c"
+}

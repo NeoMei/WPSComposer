@@ -1,0 +1,7 @@
+{
+  "scenario": "successful Excel native result followed by log write failure",
+  "error": "OSError",
+  "submissions": 1,
+  "failed_flag": false,
+  "bug_reproduced": true
+}

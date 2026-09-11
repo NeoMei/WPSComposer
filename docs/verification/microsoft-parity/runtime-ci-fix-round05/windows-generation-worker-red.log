@@ -1,0 +1,75 @@
+......FFF                                                                [100%]
+=================================== FAILURES ===================================
+__________ test_worker_timeout_diagnostic_failure_keeps_typed_timeout __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ad123a0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_worker_timeout_diagnostic0')
+
+    def test_worker_timeout_diagnostic_failure_keeps_typed_timeout(monkeypatch, tmp_path):
+        child = TimedOutChild()
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: child)
+        write = runtime._write_json
+        def diagnostic_failure(path, value):
+            if path.name == 'diagnostics.json':
+                raise OSError(errno.ENOSPC, 'injected diagnostic write failure')
+            return write(path, value)
+        monkeypatch.setattr(runtime, '_write_json', diagnostic_failure)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic() + 3)
+        assert child.returncode == -9
+>       assert getattr(caught.value, 'code', None) == 'NATIVE_OFFICE_TIMEOUT'
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(OSError(28, 'injected diagnostic write failure'), 'code', None)
+E        +    where OSError(28, 'injected diagnostic write failure') = <ExceptionInfo OSError(28, 'injected diagnostic write failure') tblen=3>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:159: AssertionError
+____ test_failed_python_launch_with_diagnostic_failure_does_not_quarantine _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ad4e9d0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_failed_python_launch_with0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_failed_python_launch_with0/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+
+    def test_failed_python_launch_with_diagnostic_failure_does_not_quarantine(monkeypatch, tmp_path, isolated):
+        root, _, _ = isolated
+        def launch(*args, **kwargs):
+            raise OSError(errno.EACCES, 'synthetic child launch refused')
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        write = runtime._write_json
+        def diagnostic_failure(path, value):
+            if path.name == 'diagnostics.json':
+                raise OSError(errno.ENOSPC, 'injected diagnostic write failure')
+            return write(path, value)
+        monkeypatch.setattr(runtime, '_write_json', diagnostic_failure)
+        with pytest.raises(BaseException) as caught:
+            execute(tmp_path)
+>       assert not (root / 'quarantine.json').exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_failed_python_launch_with0/private') / 'quarantine.json').exists
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:175: AssertionError
+____________ test_abrupt_worker_exit_reports_existing_recovery_path ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10adb6a90>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_abrupt_worker_exit_report0')
+isolated = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1317/test_abrupt_worker_exit_report0/private'), ['quarantine', 'close'], <class 'test_windows_office_runtime_diagnostics.isolated.<locals>.Lock'>)
+
+    def test_abrupt_worker_exit_reports_existing_recovery_path(monkeypatch, tmp_path, isolated):
+        class FailedChild:
+            pid = 812
+            returncode = 1
+            def wait(self, timeout):
+                return 1
+        monkeypatch.setattr(runtime.subprocess, 'Popen', lambda *a, **k: FailedChild())
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+            execute(tmp_path)
+        path = caught.value.diagnostic_path
+>       assert path is None or Path(path).is_file(), path
+E       NameError: name 'Path' is not defined
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:189: NameError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_worker_timeout_diagnostic_failure_keeps_typed_timeout
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_failed_python_launch_with_diagnostic_failure_does_not_quarantine
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_abrupt_worker_exit_reports_existing_recovery_path
+3 failed, 6 passed in 0.07s

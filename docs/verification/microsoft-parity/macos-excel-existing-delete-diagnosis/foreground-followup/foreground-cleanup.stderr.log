@@ -1,0 +1,3 @@
+send <NSAppleEventDescriptor: 'core'\'cnte'{ 'kocl':'X141', '----':null(), &'subj':null(), &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1238', 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'aevt'\'quit'{ 'savo':'no  ', &'subj':null(), &'csig':65536 }>

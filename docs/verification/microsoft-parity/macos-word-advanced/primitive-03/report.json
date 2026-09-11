@@ -1,0 +1,6 @@
+{
+  "overall": "failed",
+  "error": "CalledProcessError(1, ['osacompile', '-o', 'docs/verification/microsoft-parity/macos-word-advanced/primitive-03/probe.scpt', 'docs/verification/microsoft-parity/macos-word-advanced/primitive-03/probe.applescript'], '', 'docs/verification/microsoft-parity/macos-word-advanced/primitive-03/probe.applescript:36: error: Expected \u201cgiven\u201d, \u201cwith\u201d, \u201cwithout\u201d, other parameter name, etc. but found \u201cof\u201d. (-2741)\\n')",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 8, in <module>\n  File \"/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py\", line 460, in check_returncode\n    raise CalledProcessError(self.returncode, self.args, self.stdout,\nsubprocess.CalledProcessError: Command '['osacompile', '-o', 'docs/verification/microsoft-parity/macos-word-advanced/primitive-03/probe.scpt', 'docs/verification/microsoft-parity/macos-word-advanced/primitive-03/probe.applescript']' returned non-zero exit status 1.\n",
+  "staging": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-native-jvs917fb"
+}

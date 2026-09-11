@@ -1,0 +1,8 @@
+{
+  "native_attempts": "saved/content guard passed; close returned -1708. Original log retained.",
+  "ui_cleanup": "Exact owned URL confirmed, Cmd+W closed saved owned doc; exact sentinel 文档5 discarded via own save prompt.",
+  "after_ui": [],
+  "recovered": true,
+  "final": [],
+  "passed": true
+}

@@ -1,0 +1,23 @@
+{
+  "component": "spreadsheet",
+  "platform": "darwin",
+  "engine": "msoffice",
+  "token": "58d9ceb7df8e",
+  "app_path": "/Applications/Microsoft Excel.app",
+  "source_sha256": "23ff8ebf818a6bfab8386c75b603af9d917e6e2cd717646a1e5ab8ffa05c3937",
+  "status": "timeout",
+  "verified": false,
+  "recovery_required": true,
+  "timeout": 60,
+  "app_version": "16.112.3",
+  "bundle_id": "com.microsoft.Excel",
+  "dictionary_sha256": "65791dab8b9f94a66e22dbd582ed49acc70f1d9f8e9efe3bcfee7434fe76c0f9",
+  "error": "Command '['/usr/bin/osascript', '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/run-03/probe.applescript']' timed out after 60 seconds",
+  "elapsed_seconds": 60.007,
+  "checksums": {
+    "stderr.log": "db6d400f2e8248a6fbc02456941b33f30bcd4294a592dc55160be3da9c0dd1d5",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "~$native.xlsx": "4c9f7e85ca8b0a00ab29ad1d62563d9a764b747074f5d070ad3b81c8fde17dd0",
+    "probe.applescript": "d6218cb2195dbd1a456a286486f27b86b2fcf032b915ffa337bcfdf9f41139f6"
+  }
+}

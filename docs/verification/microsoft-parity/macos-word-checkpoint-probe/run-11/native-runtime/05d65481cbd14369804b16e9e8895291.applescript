@@ -1,0 +1,25 @@
+use framework "Foundation"
+use scripting additions
+on jsonRows(rows)
+  set dataValue to current application's NSJSONSerialization's dataWithJSONObject:rows options:0 |error|:(missing value)
+  return (current application's NSString's alloc()'s initWithData:dataValue encoding:4) as text
+end jsonRows
+on enumIndex(v, choices)
+  repeat with i from 1 to count choices
+    if v is item i of choices then return i - 1
+  end repeat
+  return -1
+end enumIndex
+with timeout of 60 seconds
+tell application "/Applications/Microsoft Word.app"
+set nativeRows to {}
+set boundDoc to document "document-683e044558c6472eb7e83448578b7a8d.docx"
+set boundWindow to active window of boundDoc
+if (posix full name of boundDoc as text) is not "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-u_zhxy14/document-683e044558c6472eb7e83448578b7a8d.docx" then error "WPSC_STALE_DOCUMENT"
+set p to (end of content of text object of boundDoc) - 1
+set r to create range boundDoc start p end p
+set content of r to " tail "
+set nativeRows to {{"append-text-ack"}}
+end tell
+end timeout
+return my jsonRows({"WPSCOMPOSER_WORD_SESSION_OK", nativeRows})

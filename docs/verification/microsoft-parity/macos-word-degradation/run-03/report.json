@@ -1,0 +1,573 @@
+{
+  "passed": true,
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_degradation.py": "8125aa442ddae81d7daed4b8421058d5f50de6953d12b63e346dafc525a7c7ed",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_fields.py": "7f753cb4bd829e3ee889b68ebb45d9797dd313c074d8f53a07428fcf70e661a6",
+    "skills/WPSComposer/__init__.py": "10600b03b8a45c32c16091075f2c6482935f9e9d088bb6ecb30078d9c0674ba8",
+    "skills/WPSComposer/scripts/msoffice/macos_word_degradation.py": "8594af7ba2c3f78bf126f17a984a52ce19374491646a43f289595ac037b6fcb7",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "5ee6b2e65e4e13c6a963bd68d0d576fc24ab31cf6fe18fc586ff13356da9090f",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "3ab747a06c63deabc9e0dbf1de51857d8b7dfa843d6ea8e0822915e91e44f205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_fields.py": "446e8c9f75ce66e93f55b1d8080aa80db6bf5abd4886c75148d8264a8cc50aeb",
+    "skills/WPSComposer/scripts/msoffice/macos_word_references.py": "f2243a6ce644f6a196db087756b8dba51d6d9bb713c586a9f0175819511200f6",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb",
+    "skills/WPSComposer/scripts/msoffice/macos_script.py": "3f178583742135069f03a6b885495eccb86e957588157b076ad2fc1b8f5f08bc",
+    "skills/WPSComposer/scripts/msoffice/errors.py": "c81f25823f8b42d11b0efc5def3f3cbe33cbf3b4c2ae9fafbd27ff3aec852c7b",
+    "skills/WPSComposer/scripts/artifact_transport.py": "4a5740a2943eae5ccb875da6eae31ddeeddb3b5d9f9b815b1e68250215329ef7",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/longform/privacy.py": "c27c111fa58b3380cc7ec41d38c5a445a33e3fff707d95c8086656611cddf9ee"
+  },
+  "checks": {
+    "inline-empty/native_notice_utf16_format_and_semantic_handle": true,
+    "inline-empty/following_normal_text_has_no_notice_style": true,
+    "inline-empty/native_save_pdf_and_persisted_ooxml_style": true,
+    "inline-empty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "inline-empty/owned_create_context_closed_before_sentinel": true,
+    "inline-empty/reopen_native_style_real_edit_and_rollback": true,
+    "inline-empty/source_unchanged_and_reopen_context_closed": true,
+    "inline-empty/independent_exact_sentinel_close_and_original_inventory": true,
+    "inline-empty/pdf_visible_notice_once_and_normal_tail": true,
+    "inline-nonempty/native_notice_utf16_format_and_semantic_handle": true,
+    "inline-nonempty/following_normal_text_has_no_notice_style": true,
+    "inline-nonempty/native_save_pdf_and_persisted_ooxml_style": true,
+    "inline-nonempty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "inline-nonempty/owned_create_context_closed_before_sentinel": true,
+    "inline-nonempty/reopen_native_style_real_edit_and_rollback": true,
+    "inline-nonempty/source_unchanged_and_reopen_context_closed": true,
+    "inline-nonempty/independent_exact_sentinel_close_and_original_inventory": true,
+    "inline-nonempty/pdf_visible_notice_once_and_normal_tail": true,
+    "block-empty/native_notice_utf16_format_and_semantic_handle": true,
+    "block-empty/following_normal_text_has_no_notice_style": true,
+    "block-empty/native_save_pdf_and_persisted_ooxml_style": true,
+    "block-empty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "block-empty/owned_create_context_closed_before_sentinel": true,
+    "block-empty/reopen_native_style_real_edit_and_rollback": true,
+    "block-empty/source_unchanged_and_reopen_context_closed": true,
+    "block-empty/independent_exact_sentinel_close_and_original_inventory": true,
+    "block-empty/pdf_visible_notice_once_and_normal_tail": true,
+    "block-nonempty/native_notice_utf16_format_and_semantic_handle": true,
+    "block-nonempty/following_normal_text_has_no_notice_style": true,
+    "block-nonempty/native_save_pdf_and_persisted_ooxml_style": true,
+    "block-nonempty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "block-nonempty/owned_create_context_closed_before_sentinel": true,
+    "block-nonempty/reopen_native_style_real_edit_and_rollback": true,
+    "block-nonempty/source_unchanged_and_reopen_context_closed": true,
+    "block-nonempty/independent_exact_sentinel_close_and_original_inventory": true,
+    "block-nonempty/pdf_visible_notice_once_and_normal_tail": true,
+    "table-failure-empty/actual_partial_table_rollback_before_fallback_once": true,
+    "table-failure-empty/native_notice_utf16_format_and_semantic_handle": true,
+    "table-failure-empty/following_normal_text_has_no_notice_style": true,
+    "table-failure-empty/native_save_pdf_and_persisted_ooxml_style": true,
+    "table-failure-empty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "table-failure-empty/owned_create_context_closed_before_sentinel": true,
+    "table-failure-empty/reopen_native_style_real_edit_and_rollback": true,
+    "table-failure-empty/source_unchanged_and_reopen_context_closed": true,
+    "table-failure-empty/independent_exact_sentinel_close_and_original_inventory": true,
+    "table-failure-empty/pdf_visible_notice_once_and_normal_tail": true,
+    "table-failure-nonempty/actual_partial_table_rollback_before_fallback_once": true,
+    "table-failure-nonempty/native_notice_utf16_format_and_semantic_handle": true,
+    "table-failure-nonempty/following_normal_text_has_no_notice_style": true,
+    "table-failure-nonempty/native_save_pdf_and_persisted_ooxml_style": true,
+    "table-failure-nonempty/unsaved_sentinel_hash_and_saved_state_unchanged": true,
+    "table-failure-nonempty/owned_create_context_closed_before_sentinel": true,
+    "table-failure-nonempty/reopen_native_style_real_edit_and_rollback": true,
+    "table-failure-nonempty/source_unchanged_and_reopen_context_closed": true,
+    "table-failure-nonempty/independent_exact_sentinel_close_and_original_inventory": true,
+    "table-failure-nonempty/pdf_visible_notice_once_and_normal_tail": true,
+    "sources_unchanged_during_run": true
+  },
+  "cases": {
+    "inline-empty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档28",
+        "文档28",
+        false,
+        "27dc6c7fdb3f6d991acd0f0f32180ac87ba76a49a7e4f9ad31b7728d965184a5"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "\r",
+          1,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "session_id": "30dc3be9f93a43e59fa813c536d9efe6",
+        "Start": 0,
+        "End": 27,
+        "Text": "[NOTICE_INLINE_EMPTY: 中文😀]"
+      },
+      "after_notice": [
+        [
+          "[NOTICE_INLINE_EMPTY: 中文😀]\r",
+          28,
+          1,
+          0
+        ]
+      ],
+      "native_notice_format": [
+        [
+          0,
+          27,
+          "[NOTICE_INLINE_EMPTY: 中文😀]",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "[NOTICE_INLINE_EMPTY: 中文😀]\rFOLLOWING-NORMAL-inline-empty\r\r",
+          59,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          28,
+          57,
+          "FOLLOWING-NORMAL-inline-empty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 26,
+        "normal_tail": "FOLLOWING-NORMAL-inline-empty",
+        "block_paragraph_verified": false
+      },
+      "docx_sha256": "4a1fe22d3257344c652bfa8662ec8a7b53698b453b1b5946738a36d84946a03b",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档28"
+        ]
+      ],
+      "pdf_text": "[NOTICE_INLINE_EMPTY: 中⽂ ]\n😀\nFOLLOWING-NORMAL-inline-empty"
+    },
+    "inline-nonempty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档30",
+        "文档30",
+        false,
+        "6f78f5ee01e573e12e6f8f42131a4ae6b22ff2713ff877d1ce85e12088dfd1bf"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "PREFIX 中文😀\r",
+          12,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "session_id": "e710fc3ab06d4fd5a7e2557d4ca12768",
+        "Start": 11,
+        "End": 41,
+        "Text": "[NOTICE_INLINE_NONEMPTY: 中文😀]"
+      },
+      "after_notice": [
+        [
+          "PREFIX 中文😀[NOTICE_INLINE_NONEMPTY: 中文😀]\r",
+          42,
+          1,
+          0
+        ]
+      ],
+      "native_notice_format": [
+        [
+          11,
+          41,
+          "[NOTICE_INLINE_NONEMPTY: 中文😀]",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "PREFIX 中文😀[NOTICE_INLINE_NONEMPTY: 中文😀]\rFOLLOWING-NORMAL-inline-nonempty\r\r",
+          76,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          42,
+          74,
+          "FOLLOWING-NORMAL-inline-nonempty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 29,
+        "normal_tail": "FOLLOWING-NORMAL-inline-nonempty",
+        "block_paragraph_verified": false
+      },
+      "docx_sha256": "150d66fa31592f6167bdbe4bfbf93556667cad05b0842feec34dc4f26670680d",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档30"
+        ]
+      ],
+      "pdf_text": "PREFIX 中⽂😀[NOTICE_INLINE_NONEMPTY: 中⽂ ]\n😀\nFOLLOWING-NORMAL-inline-nonempty"
+    },
+    "block-empty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档32",
+        "文档32",
+        false,
+        "53278a238e02705cf52bfb6ec4fbada4ed8d8a6178ed30a44f5cfc822c0fdb2b"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "\r",
+          1,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "Range": {
+          "session_id": "a7565645d45e49a285e3dede219b656e",
+          "Start": 0,
+          "End": 27,
+          "Text": "[NOTICE_BLOCK_EMPTY] 中文😀\r\u0007\r\u0007"
+        },
+        "table_index": 1
+      },
+      "after_notice": [
+        [
+          "[NOTICE_BLOCK_EMPTY] 中文😀\r\u0007\r\u0007\r",
+          28,
+          3,
+          1
+        ]
+      ],
+      "native_notice_format": [
+        [
+          0,
+          25,
+          "[NOTICE_BLOCK_EMPTY] 中文😀",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "[NOTICE_BLOCK_EMPTY] 中文😀\r\u0007\r\u0007\rFOLLOWING-NORMAL-block-empty\r\r",
+          58,
+          5,
+          1
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          28,
+          56,
+          "FOLLOWING-NORMAL-block-empty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 1,
+        "notice_characters": 24,
+        "normal_tail": "FOLLOWING-NORMAL-block-empty",
+        "block_paragraph_verified": true
+      },
+      "docx_sha256": "cc4cf9c61d3b15219e134ab1d94717a55eeb61e2fc01fbde706921d9c91fa2e5",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档32"
+        ]
+      ],
+      "pdf_text": "[NOTICE_BLOCK_EMPTY] 中⽂\n😀\nFOLLOWING-NORMAL-block-empty"
+    },
+    "block-nonempty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档34",
+        "文档34",
+        false,
+        "09ff86fc4ec38b51da08c40128613da2423577282411b34e78e424bc584b7218"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "PREFIX 中文😀\r",
+          12,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "Range": {
+          "session_id": "e6b7e155a5ca476daef070e6613c11bb",
+          "Start": 12,
+          "End": 42,
+          "Text": "[NOTICE_BLOCK_NONEMPTY] 中文😀\r\u0007\r\u0007"
+        },
+        "table_index": 1
+      },
+      "after_notice": [
+        [
+          "PREFIX 中文😀\r[NOTICE_BLOCK_NONEMPTY] 中文😀\r\u0007\r\u0007\r",
+          43,
+          4,
+          1
+        ]
+      ],
+      "native_notice_format": [
+        [
+          12,
+          40,
+          "[NOTICE_BLOCK_NONEMPTY] 中文😀",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "PREFIX 中文😀\r[NOTICE_BLOCK_NONEMPTY] 中文😀\r\u0007\r\u0007\rFOLLOWING-NORMAL-block-nonempty\r\r",
+          76,
+          6,
+          1
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          43,
+          74,
+          "FOLLOWING-NORMAL-block-nonempty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 1,
+        "notice_characters": 27,
+        "normal_tail": "FOLLOWING-NORMAL-block-nonempty",
+        "block_paragraph_verified": true
+      },
+      "docx_sha256": "58e68641d490d3b4495f746b0c5ca7ea2a8f990f3294066ace627eb7db4ac1bc",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档34"
+        ]
+      ],
+      "pdf_text": "PREFIX 中⽂😀\n[NOTICE_BLOCK_NONEMPTY] 中⽂\n😀\nFOLLOWING-NORMAL-block-nonempty"
+    },
+    "table-failure-empty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档36",
+        "文档36",
+        false,
+        "e82e3f98c6acbeccc4013be1b3a39eedcb98670e2e7e69d2ba3c38b39a605d05"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "\r",
+          1,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "Range": {
+          "session_id": "4e7eb18ff1944058bc9e6ad627528cbc",
+          "Start": 0,
+          "End": 33,
+          "Text": "[NOTICE_TABLE_FAILURE_EMPTY] 中文😀"
+        },
+        "table_index": null
+      },
+      "after_notice": [
+        [
+          "[NOTICE_TABLE_FAILURE_EMPTY] 中文😀\r",
+          34,
+          1,
+          0
+        ]
+      ],
+      "recovery_events": [
+        "partial-table-submitted",
+        "table-failed-ack",
+        "rollback-ack",
+        "fallback-submitted"
+      ],
+      "native_notice_format": [
+        [
+          0,
+          33,
+          "[NOTICE_TABLE_FAILURE_EMPTY] 中文😀",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "[NOTICE_TABLE_FAILURE_EMPTY] 中文😀\rFOLLOWING-NORMAL-table-failure-empty\r\r",
+          72,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          34,
+          70,
+          "FOLLOWING-NORMAL-table-failure-empty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 32,
+        "normal_tail": "FOLLOWING-NORMAL-table-failure-empty",
+        "block_paragraph_verified": true
+      },
+      "docx_sha256": "500117505ac690ea89e6beba4bc034fc1b85c94712aec980a26c2ef2f65cb39a",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档36"
+        ]
+      ],
+      "pdf_text": "[NOTICE_TABLE_FAILURE_EMPTY] 中⽂\n😀\nFOLLOWING-NORMAL-table-failure-empty"
+    },
+    "table-failure-nonempty": {
+      "passed": true,
+      "sentinel_before": [
+        "文档38",
+        "文档38",
+        false,
+        "3809597a5430d83f6acd389691a557a77d0349d43da81ac947739fe67ac3f4ef"
+      ],
+      "word_version": [
+        [
+          "16.112.3"
+        ]
+      ],
+      "before": [
+        [
+          "PREFIX 中文😀\r",
+          12,
+          1,
+          0
+        ]
+      ],
+      "handle": {
+        "Range": {
+          "session_id": "52412c28cbb94df8aa8c775249818e69",
+          "Start": 11,
+          "End": 47,
+          "Text": "[NOTICE_TABLE_FAILURE_NONEMPTY] 中文😀"
+        },
+        "table_index": null
+      },
+      "after_notice": [
+        [
+          "PREFIX 中文😀[NOTICE_TABLE_FAILURE_NONEMPTY] 中文😀\r",
+          48,
+          1,
+          0
+        ]
+      ],
+      "recovery_events": [
+        "partial-table-submitted",
+        "table-failed-ack",
+        "rollback-ack",
+        "fallback-submitted"
+      ],
+      "native_notice_format": [
+        [
+          11,
+          47,
+          "[NOTICE_TABLE_FAILURE_NONEMPTY] 中文😀",
+          true,
+          true,
+          true
+        ]
+      ],
+      "saved_body": [
+        [
+          "PREFIX 中文😀[NOTICE_TABLE_FAILURE_NONEMPTY] 中文😀\rFOLLOWING-NORMAL-table-failure-nonempty\r\r",
+          89,
+          3,
+          0
+        ]
+      ],
+      "native_normal_tail": [
+        [
+          48,
+          87,
+          "FOLLOWING-NORMAL-table-failure-nonempty",
+          false,
+          false,
+          false
+        ]
+      ],
+      "ooxml": {
+        "table_count": 0,
+        "notice_characters": 35,
+        "normal_tail": "FOLLOWING-NORMAL-table-failure-nonempty",
+        "block_paragraph_verified": true
+      },
+      "docx_sha256": "fb4d5839f3f56d9c4244ee88476359a5bb2294e17a574624c2edbef6928cbb22",
+      "sentinel_close": [
+        [
+          "sentinel-closed",
+          "文档38"
+        ]
+      ],
+      "pdf_text": "PREFIX 中⽂😀[NOTICE_TABLE_FAILURE_NONEMPTY] 中⽂\n😀\nFOLLOWING-NORMAL-table-failure-nonempty"
+    }
+  }
+}

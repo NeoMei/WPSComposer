@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "exact_sheet_sequence_and_markers": [
+    {
+      "file": "after-selected.xlsx",
+      "sha256": "419e07acce6453f36714dc6828b47f4c98984ba7884f47b3ca10cf9427ad1bf2",
+      "sheets": [
+        {
+          "name": "Data",
+          "A1": "AFTER DELETE after-selected"
+        },
+        {
+          "name": "Results",
+          "A1": "Item"
+        },
+        {
+          "name": "Business report",
+          "A1": "Native third sheet"
+        },
+        {
+          "name": "DeleteProbeA",
+          "A1": ""
+        }
+      ]
+    },
+    {
+      "file": "before-selected.xlsx",
+      "sha256": "f3419f0eb397f251c5d991d94a170b1dc6e3b204651ed0db5479b9b4beb62ccf",
+      "sheets": [
+        {
+          "name": "Data",
+          "A1": "Metric"
+        },
+        {
+          "name": "Results",
+          "A1": "Item"
+        },
+        {
+          "name": "Business report",
+          "A1": "Native third sheet"
+        },
+        {
+          "name": "DeleteProbeB",
+          "A1": "AFTER DELETE before-selected"
+        }
+      ]
+    },
+    {
+      "file": "selected.xlsx",
+      "sha256": "d0c3130b651aef4268300e0a2a301121c58ede24ef43700c6819533a852a08d4",
+      "sheets": [
+        {
+          "name": "Data",
+          "A1": "Metric"
+        },
+        {
+          "name": "Results",
+          "A1": "Item"
+        },
+        {
+          "name": "Business report",
+          "A1": "Native third sheet"
+        },
+        {
+          "name": "DeleteProbeA",
+          "A1": "AFTER DELETE selected"
+        }
+      ]
+    }
+  ],
+  "all_recorded_source_hashes_match_live": true,
+  "native_report_sha256": "94f6d71a2588ff6c8dc2be21b9d501bbfa99d8bc7ba01fe4e70c3624544bfbc7"
+}

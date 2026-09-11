@@ -1,0 +1,14 @@
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1773', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'XwSH', 'seld':'abso'($206C6C61$), 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() } } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1238', 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'delo'{ '----':'obj '{ 'form':'name', 'want':'XwSH', 'seld':'utxt'("Business report"), 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'setd'{ 'data':'true'("true"), '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1238', 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'pnam', 'from':'obj '{ 'form':'indx', 'want':'XwSH', 'seld':'abso'($206C6C61$), 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() } } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'save'{ '----':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'prop', 'want':'prop', 'seld':'1842', 'from':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() } }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'clos'{ 'savo':'no  ', '----':'obj '{ 'form':'indx', 'want':'X141', 'seld':1, 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'getd'{ '----':'obj '{ 'form':'indx', 'want':'X141', 'seld':'abso'($206C6C61$), 'from':null() }, &'csig':65536 }>
+send <NSAppleEventDescriptor: 'core'\'cnte'{ 'kocl':'cobj', '----':'true'("true"), &'subj':null(), &'csig':65536 }>
+OSA error -1753

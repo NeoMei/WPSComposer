@@ -1,0 +1,1 @@
+Initial fixture assertion had mismatched Python bracket. py_compile caught it before any native call; corrected before launch.

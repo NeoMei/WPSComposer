@@ -1,0 +1,11 @@
+{
+  "returned_refs": [
+    "slide:5/shape:@name=wpscomposer-90e77f6b9ff240248d7f2cb80592ace3",
+    "slide:5/shape:@name=wpscomposer-cb5e387015834eaab1b325c509d8be2a",
+    "slide:5/shape:@name=wpscomposer-e63d92a101614cfd878d8dbd129eb91a",
+    "slide:5/shape:@name=wpscomposer-ce8f2b0def1141bbb24b38697dcbafaf",
+    "slide:5/shape:@name=wpscomposer-42969050703e40b194f857321fe4e7d4"
+  ],
+  "status": "PASS",
+  "preexisting_documents_unchanged": true
+}

@@ -1,0 +1,36 @@
+{
+  "raw_status": "FAIL",
+  "source_copies_equal": {
+    "fixtures/microsoft_parity/macos_word_caption.py": true,
+    "tests/msoffice/test_macos_word_numbering.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_numbering.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+    "skills/WPSComposer/scripts/writer.py": true,
+    "fixtures/microsoft_parity/macos_word_fields.py": true,
+    "fixtures/microsoft_parity/macos_word_recovery.py": true,
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true
+  },
+  "live_sources_equal": {
+    "fixtures/microsoft_parity/macos_word_caption.py": false,
+    "tests/msoffice/test_macos_word_numbering.py": false,
+    "skills/WPSComposer/scripts/msoffice/macos_word_numbering.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+    "skills/WPSComposer/scripts/writer.py": true,
+    "fixtures/microsoft_parity/macos_word_fields.py": true,
+    "fixtures/microsoft_parity/macos_word_recovery.py": true,
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true
+  },
+  "artifacts_equal": {
+    "document.xml": true,
+    "caption.docx": true,
+    "caption.pdf": true
+  },
+  "native_reopen_equal": true,
+  "unsaved_sentinel_preserved": true,
+  "missing_glyph_count": 0,
+  "page_count": 1,
+  "final_inventory": [],
+  "raw_report_sha256": "88bd0d08f1c6d1c9fd9100066fcc854115ae843e8dda01c2049917b61274be10"
+}

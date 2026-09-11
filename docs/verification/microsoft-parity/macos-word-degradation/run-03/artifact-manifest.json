@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "check_count": 57,
+  "cases": {
+    "inline-empty": {
+      "docx_sha256": "4a1fe22d3257344c652bfa8662ec8a7b53698b453b1b5946738a36d84946a03b",
+      "pdf_sha256": "a76bf5ed477feca4885a05ee9c4a98474c61f277927818cd4f0d75a3f5c3e44b",
+      "docx_bytes": 13894,
+      "pdf_bytes": 49237,
+      "final_inventory": [],
+      "recovery_events": null
+    },
+    "inline-nonempty": {
+      "docx_sha256": "150d66fa31592f6167bdbe4bfbf93556667cad05b0842feec34dc4f26670680d",
+      "pdf_sha256": "4a8669038dfe0ce78d00d0ad88ee59bec487f279ffcec0c5dfdfe60b7e50390e",
+      "docx_bytes": 13945,
+      "pdf_bytes": 52636,
+      "final_inventory": [],
+      "recovery_events": null
+    },
+    "block-empty": {
+      "docx_sha256": "cc4cf9c61d3b15219e134ab1d94717a55eeb61e2fc01fbde706921d9c91fa2e5",
+      "pdf_sha256": "7c34f19379306827cdec41a591436d58241f65b7159afa39b6c00e054a405fd6",
+      "docx_bytes": 14100,
+      "pdf_bytes": 49735,
+      "final_inventory": [],
+      "recovery_events": null
+    },
+    "block-nonempty": {
+      "docx_sha256": "58e68641d490d3b4495f746b0c5ca7ea2a8f990f3294066ace627eb7db4ac1bc",
+      "pdf_sha256": "8caa2744972447a5bdb17a9656225ded8a389d42ff49dba7fbb0c54ce777ab62",
+      "docx_bytes": 14146,
+      "pdf_bytes": 50070,
+      "final_inventory": [],
+      "recovery_events": null
+    },
+    "table-failure-empty": {
+      "docx_sha256": "500117505ac690ea89e6beba4bc034fc1b85c94712aec980a26c2ef2f65cb39a",
+      "pdf_sha256": "5a589b0ef189c69a3a6677e41fa644f92207eb224f70d0f4b53a6ea4af3a8497",
+      "docx_bytes": 13913,
+      "pdf_bytes": 50856,
+      "final_inventory": [],
+      "recovery_events": [
+        "partial-table-submitted",
+        "table-failed-ack",
+        "rollback-ack",
+        "fallback-submitted"
+      ]
+    },
+    "table-failure-nonempty": {
+      "docx_sha256": "fb4d5839f3f56d9c4244ee88476359a5bb2294e17a574624c2edbef6928cbb22",
+      "pdf_sha256": "6982670da647826253c87c5327cc9c806d4e6eb2c6763b35579e6834ff64fe91",
+      "docx_bytes": 13969,
+      "pdf_bytes": 53937,
+      "final_inventory": [],
+      "recovery_events": [
+        "partial-table-submitted",
+        "table-failed-ack",
+        "rollback-ack",
+        "fallback-submitted"
+      ]
+    }
+  },
+  "source_count": 15
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "manual UI recovery, not automatic acceptance",
+  "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-zqca0bbu/document-210ca8985c0942949d66360c6de56031.docx",
+  "observations": [
+    "CUA exact URL remained visible despite native missing-value lookups.",
+    "Screenshot showed Existing Recovery and FALLBACK-ONCE; no visible error prompt.",
+    "Raise left AX state unchanged and native lookup still failed."
+  ],
+  "actions": [
+    "Click exact private document close button 110.",
+    "Observed save prompt naming document-210ca8985c0942949d66360c6de56031.",
+    "Click explicit 不保存 button 127."
+  ],
+  "result": "Only Word DocStage new/recent window remained. Native inventory and guarded quarantine recovery are separately recorded by fixture owner.",
+  "production_fix_inferred": false,
+  "run04_passed": false
+}

@@ -1,0 +1,517 @@
+{
+  "kind": "writer",
+  "counts": {
+    "paragraphs": 15,
+    "tables": 0,
+    "shapes": 0,
+    "sections": 1,
+    "inline_shapes": 0,
+    "styles": 374
+  },
+  "paragraphs": [
+    {
+      "id": "paragraph:@paraId=0ED86E82",
+      "index": 1,
+      "start": 0,
+      "end": 19,
+      "text": "Direct Heading One",
+      "font": {
+        "name": "黑体",
+        "size": 16,
+        "bold": true,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#FFBF00"
+      },
+      "paragraph": {
+        "alignment": 1,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 16,
+        "space_after": 5,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": true,
+        "keep_with_next": true,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "标题 1",
+      "para_id": "0ED86E82"
+    },
+    {
+      "id": "paragraph:@paraId=6E4187E7",
+      "index": 2,
+      "start": 19,
+      "end": 38,
+      "text": "Direct Heading Two",
+      "font": {
+        "name": "黑体",
+        "size": 15,
+        "bold": true,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#FFBF00"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 14,
+        "space_after": 5,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": true,
+        "keep_with_next": true,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "标题 2",
+      "para_id": "6E4187E7"
+    },
+    {
+      "id": "paragraph:@paraId=25856A32",
+      "index": 3,
+      "start": 38,
+      "end": 57,
+      "text": "Direct Heading Six",
+      "font": {
+        "name": "黑体",
+        "size": 12,
+        "bold": true,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#FFBF00"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 6,
+        "space_after": 5,
+        "line_spacing": 12,
+        "line_spacing_rule": 0,
+        "keep_together": true,
+        "keep_with_next": true,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "标题 6",
+      "para_id": "25856A32"
+    },
+    {
+      "id": "paragraph:@paraId=4DAF5133",
+      "index": 4,
+      "start": 57,
+      "end": 80,
+      "text": "Direct paragraph 中文 😀",
+      "font": {
+        "name": "",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 24,
+        "space_before": 0,
+        "space_after": 4,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "4DAF5133"
+    },
+    {
+      "id": "paragraph:@paraId=77BE8748",
+      "index": 5,
+      "start": 80,
+      "end": 106,
+      "text": "Centered direct paragraph",
+      "font": {
+        "name": "DengXian",
+        "size": 24,
+        "bold": true,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 1,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "77BE8748"
+    },
+    {
+      "id": "paragraph:@paraId=3C25D32E",
+      "index": 6,
+      "start": 106,
+      "end": 130,
+      "text": "Styled normal paragraph",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "3C25D32E"
+    },
+    {
+      "id": "paragraph:@paraId=134BC398",
+      "index": 7,
+      "start": 130,
+      "end": 149,
+      "text": "Plain 😀 Bold Code",
+      "font": {
+        "name": "",
+        "size": null,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 3,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 24,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": true,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文文本",
+      "para_id": "134BC398"
+    },
+    {
+      "id": "paragraph:@paraId=70D3ECFB",
+      "index": 8,
+      "start": 149,
+      "end": 170,
+      "text": "First body paragraph",
+      "font": {
+        "name": "Times New Roman",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 3,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 24,
+        "space_before": 0,
+        "space_after": 0,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": true,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "First Paragraph",
+      "para_id": "70D3ECFB"
+    },
+    {
+      "id": "paragraph:@paraId=79FD1183",
+      "index": 9,
+      "start": 170,
+      "end": 193,
+      "text": "→\tFirst literal bullet",
+      "font": {
+        "name": "",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 24,
+        "right_indent": 0,
+        "first_line_indent": -24,
+        "space_before": 0,
+        "space_after": 3,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "列表段落",
+      "para_id": "79FD1183"
+    },
+    {
+      "id": "paragraph:@paraId=07329CDF",
+      "index": 10,
+      "start": 193,
+      "end": 346,
+      "text": "→\tSecond wrapped literal bullet Second wrapped literal bullet Second wrapped literal bullet Second wrapped literal bullet Second wrapped literal bullet ",
+      "font": {
+        "name": "",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 24,
+        "right_indent": 0,
+        "first_line_indent": -24,
+        "space_before": 0,
+        "space_after": 3,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "列表段落",
+      "para_id": "07329CDF"
+    },
+    {
+      "id": "paragraph:@paraId=1A8BB5B9",
+      "index": 11,
+      "start": 346,
+      "end": 370,
+      "text": "1.\tFirst literal number",
+      "font": {
+        "name": "Times New Roman",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 24,
+        "right_indent": 0,
+        "first_line_indent": -24,
+        "space_before": 0,
+        "space_after": 3,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "列表段落",
+      "para_id": "1A8BB5B9"
+    },
+    {
+      "id": "paragraph:@paraId=60C56699",
+      "index": 12,
+      "start": 370,
+      "end": 395,
+      "text": "2.\tSecond literal number",
+      "font": {
+        "name": "Times New Roman",
+        "size": 12,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 24,
+        "right_indent": 0,
+        "first_line_indent": -24,
+        "space_before": 0,
+        "space_after": 3,
+        "line_spacing": 18,
+        "line_spacing_rule": 1,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "列表段落",
+      "para_id": "60C56699"
+    },
+    {
+      "id": "paragraph:@paraId=03A60D8F",
+      "index": 13,
+      "start": 395,
+      "end": 397,
+      "text": "\f",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": true
+      },
+      "style": "正文",
+      "para_id": "03A60D8F"
+    },
+    {
+      "id": "paragraph:@paraId=198B044F",
+      "index": 14,
+      "start": 397,
+      "end": 421,
+      "text": "After direct page break",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "198B044F"
+    },
+    {
+      "id": "paragraph:@paraId=4026CB85",
+      "index": 15,
+      "start": 421,
+      "end": 422,
+      "text": "",
+      "font": {
+        "name": "DengXian",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": 0,
+        "strikethrough": false,
+        "color": "#000000"
+      },
+      "paragraph": {
+        "alignment": 0,
+        "left_indent": 0,
+        "right_indent": 0,
+        "first_line_indent": 0,
+        "space_before": 0,
+        "space_after": 8,
+        "line_spacing": 13.899999618530273,
+        "line_spacing_rule": 5,
+        "keep_together": false,
+        "keep_with_next": false,
+        "page_break_before": false,
+        "widow_control": false
+      },
+      "style": "正文",
+      "para_id": "4026CB85"
+    }
+  ],
+  "tables": [],
+  "shapes": [],
+  "sections": [
+    {
+      "id": "section:1",
+      "index": 1,
+      "page_setup": {
+        "orientation": 0,
+        "page_width": 595.2999877929688,
+        "page_height": 841.9000244140625,
+        "top_margin": 60,
+        "bottom_margin": 60,
+        "left_margin": 72,
+        "right_margin": 72,
+        "header_distance": 42.54999923706055,
+        "footer_distance": 49.599998474121094,
+        "gutter": 0
+      },
+      "columns": 1
+    }
+  ],
+  "name": "document-3128d05c23294200ae4f6f2ebdb8cde5.docx",
+  "saved": true,
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-kfhrkjqr/document-3128d05c23294200ae4f6f2ebdb8cde5.docx"
+}

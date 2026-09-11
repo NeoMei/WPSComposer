@@ -1,0 +1,50 @@
+[
+  {
+    "domain": "com.microsoft.office",
+    "key": "OfficeWebAddinDisableOMEXCatalog",
+    "value": null,
+    "present": false
+  },
+  {
+    "domain": "com.microsoft.office",
+    "key": "OptionalConnectedExperiencesPreference",
+    "value": "1",
+    "present": true
+  },
+  {
+    "domain": "com.microsoft.office",
+    "key": "ConnectedOfficeExperiencesPreference",
+    "value": "1",
+    "present": true
+  },
+  {
+    "domain": "com.microsoft.Word",
+    "key": "OfficeWebAddinDisableOMEXCatalog",
+    "value": null,
+    "present": false
+  },
+  {
+    "domain": "com.microsoft.Word",
+    "key": "OptionalConnectedExperiencesPreference",
+    "value": null,
+    "present": false
+  },
+  {
+    "domain": "com.microsoft.Word",
+    "key": "ConnectedOfficeExperiencesPreference",
+    "value": null,
+    "present": false
+  },
+  {
+    "domain": "com.microsoft.office",
+    "key": "OfficeWebAddinDisableAllCatalogs",
+    "value": null,
+    "present": false
+  },
+  {
+    "domain": "com.microsoft.office",
+    "key": "OfficeExperiencesDownloadingContentPreference",
+    "value": "1",
+    "present": true
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "skills/WPSComposer/scripts/msoffice/macos_office_runtime.py": "8836a0932e699ef72c3589ff9fe597f7cc3beb29d4f4f36677e0ed756b4a7a14",
+  "skills/WPSComposer/scripts/msoffice/macos_word_quality.py": "f3211eae27998d19e123894e54f620a3755c790cdbd23e6df66227151f37ff48",
+  "skills/WPSComposer/scripts/msoffice/macos_word_semantic_table.py": "9655e9af00366228bcca63063d2341d9687348fa2cd9e9663632ddee9c2d65ec",
+  "tests/msoffice/test_macos_office_runtime.py": "a29d606b13c56e11ac12ae9903127e5c48c9fc6ab8799b969193c1dfc3e4f9a4",
+  "tests/msoffice/test_macos_office_runtime_diagnostics.py": "d9381bd097aed5120d6bfd7737d326fbe410f239fe2d31b3d90cc4d3c6bdb235",
+  "tests/msoffice/test_office_job_lock_portable.py": "d641f8ed96402e8381edbacfc8e345a89d70635aba16e3dcfb7acc9e251a0c77",
+  "tests/msoffice/test_macos_word_quality_fixture.py": "57606b00f6197ed0f343952f1411eaab43463e4035f569f0660b1f34f01b321d",
+  "tests/msoffice/test_macos_word_quality_native.py": "b3713bbfd0e108a8e5025e85329ec1bc9ff9dbb749db62e3879b30d3942d8954",
+  "tests/msoffice/test_macos_word_session.py": "d539bee64f245e2936020fde1d40040539f348d1912ecf8a32b8b55fd93b0429",
+  "tests/msoffice/test_macos_word_semantic_table.py": "01282417b44e52c9652dee111c061a6ce7f1b199665b9f65095c48e5290f4c30"
+}

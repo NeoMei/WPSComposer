@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_heading_feasibility.py", line 327, in run
+    if not valid:raise AssertionError('Native phase acknowledgement failed: '+str(i))
+AssertionError: Native phase acknowledgement failed: 2

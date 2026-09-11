@@ -1,0 +1,334 @@
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+___ test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save] ___
+
+method_name = 'save', reply = {'saved': False}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1069272e0>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save_current] _
+
+method_name = 'save_current', reply = {'saved': False}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1069e7340>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save_copy] _
+
+method_name = 'save_copy', reply = {'saved': False}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ac9940>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+___ test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save] ___
+
+method_name = 'save', reply = {}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ac9c70>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save_current] _
+
+method_name = 'save_current', reply = {}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ad9460>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save_copy] _
+
+method_name = 'save_copy', reply = {}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ad9b80>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+___ test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save] ___
+
+method_name = 'save', reply = {'saved': 1}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ae8d60>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save_current] _
+
+method_name = 'save_current', reply = {'saved': 1}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ae8310>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_ test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save_copy] _
+
+method_name = 'save_copy', reply = {'saved': 1}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_sav8')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106ae8d90>
+
+    @pytest.mark.parametrize('method_name', ['save', 'save_current', 'save_copy'])
+    @pytest.mark.parametrize('reply', [{'saved': False}, {}, {'saved': 1}])
+    def test_unacknowledged_native_save_never_publishes_stale_bytes(
+        method_name, reply, tmp_path, monkeypatch
+    ):
+        import json
+        mod = module()
+        obj = session(tmp_path)
+        package(obj._source, 'source-must-stay')
+        package(obj._native, 'old-staging')
+        original = obj._source.read_bytes()
+        obj._logical_state = mod.snapshot_artifact_state(obj._source)
+        output = tmp_path / 'never-published.xlsx'
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+        monkeypatch.setattr(mod, 'validate_before_deadline', lambda *a, **k: None)
+    
+        with pytest.raises(RuntimeError):
+            if method_name == 'save_current':
+                obj.save_current()
+            else:
+>               getattr(obj, method_name)(output)
+E               Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:684: Failed
+_______ test_unacknowledged_native_close_retains_recovery_state[reply0] ________
+
+reply = {'closed': False}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_clo0')
+
+    @pytest.mark.parametrize('reply', [{'closed': False}, {}, {'closed': 'true'}])
+    def test_unacknowledged_native_close_retains_recovery_state(reply, tmp_path):
+        import json
+        obj = session(tmp_path)
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+    
+        with pytest.raises(RuntimeError):
+>           obj.close()
+E           Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:701: Failed
+_______ test_unacknowledged_native_close_retains_recovery_state[reply1] ________
+
+reply = {}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_clo1')
+
+    @pytest.mark.parametrize('reply', [{'closed': False}, {}, {'closed': 'true'}])
+    def test_unacknowledged_native_close_retains_recovery_state(reply, tmp_path):
+        import json
+        obj = session(tmp_path)
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+    
+        with pytest.raises(RuntimeError):
+>           obj.close()
+E           Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:701: Failed
+_______ test_unacknowledged_native_close_retains_recovery_state[reply2] ________
+
+reply = {'closed': 'true'}
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1375/test_unacknowledged_native_clo2')
+
+    @pytest.mark.parametrize('reply', [{'closed': False}, {}, {'closed': 'true'}])
+    def test_unacknowledged_native_close_retains_recovery_state(reply, tmp_path):
+        import json
+        obj = session(tmp_path)
+        obj._execute = lambda *a, **k: subprocess.CompletedProcess(a[0], 0, json.dumps(reply), '')
+    
+        with pytest.raises(RuntimeError):
+>           obj.close()
+E           Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/msoffice/test_macos_excel_session.py:701: Failed
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save_current]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply0-save_copy]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save_current]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply1-save_copy]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save_current]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_save_never_publishes_stale_bytes[reply2-save_copy]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_close_retains_recovery_state[reply0]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_close_retains_recovery_state[reply1]
+FAILED tests/msoffice/test_macos_excel_session.py::test_unacknowledged_native_close_retains_recovery_state[reply2]
+12 failed, 69 deselected in 0.19s

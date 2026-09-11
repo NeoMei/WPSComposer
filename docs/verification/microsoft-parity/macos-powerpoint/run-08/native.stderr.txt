@@ -1,0 +1,1 @@
+/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-powerpoint/run-08/native.applescript:2618:2620: script error: 预期是行的结尾等等，却找到数字。 (-2741)

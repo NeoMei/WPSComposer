@@ -1,0 +1,3 @@
+# Frozen bounded Excel and Word list regression — round 43
+
+Immutable snapshot `333437cfccd9f4d6df63915230df681391c46b55` passes **5,228 tests / 12 skips** in 218.30 seconds. All 399 source/configuration hashes remain unchanged before/after and match the live candidate. This includes the bounded Excel launcher with graceful helper release, POSIX process-path validation, isolated portable tests and Word list glyph/indent forwarding plus paragraph formatting resets. Native opt-in skips remain unexecuted gates. Native Excel acceptance is separate; new Word list native typography and hosted Windows repair verification remain pending at this checkpoint.

@@ -1,0 +1,25 @@
+{
+  "verified": true,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel/public-run-01/public.xlsx",
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-82dy8x6o",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-qrec8pvl"
+  ],
+  "session_source_sha256": "77c20c80a09048d0717903b7c84ccdb7db8ba04aa5fab76b69a236f2fca9fb9a",
+  "freeze": {
+    "freeze_panes": true,
+    "split_column": 1,
+    "split_row": 1
+  },
+  "chart": {
+    "path": "sheet:1/chart:1",
+    "name": "Chart 1"
+  },
+  "conditional": {
+    "condition_count": 1
+  },
+  "existing_sheet_delete_preflight_rejected": true,
+  "pdf_pages": 3,
+  "source_sha256_after": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd"
+}

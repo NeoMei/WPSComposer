@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/wps-task-session-startup/.venv/bin/python",
+    "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/install.py",
+    "--codex-home",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit11-aq8ntos_/codex",
+    "--marketplace-root",
+    "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit11-aq8ntos_"
+  ],
+  "plugin": "/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/wpscomposer-parity-installed-audit11-aq8ntos_/codex/plugins/wps-composer"
+}

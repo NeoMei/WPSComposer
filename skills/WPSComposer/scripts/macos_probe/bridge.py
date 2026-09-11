@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import secrets
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from queue import Empty, Queue
 from threading import Condition, Thread
@@ -21,6 +22,7 @@ from .models import (
 MAX_BODY_BYTES = 1024 * 1024
 CLEANUP_GRACE_SECONDS = 5.0
 BOOTSTRAP_TTL_SECONDS = 60.0
+REJECTED_POST_LINGER_SECONDS = 0.2
 
 
 def derive_client_credentials(root_token: str) -> dict[str, dict[str, str]]:
@@ -363,8 +365,10 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
             try:
                 length = int(raw_length)
             except ValueError as exc:
+                self._mark_rejected_post()
                 raise ValueError("Invalid Content-Length") from exc
             if length < 0 or length > MAX_BODY_BYTES:
+                self._mark_rejected_post()
                 raise ValueError("Request body is too large")
             raw = self.rfile.read(length)
             try:
@@ -375,9 +379,15 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
                 raise ValueError("Request body must be a JSON object")
             return body
 
+        def _mark_rejected_post(self) -> None:
+            self._rejected_post = True
+            self.close_connection = True
+
         def _send_error_json(
             self, status: int, code: str, message: str
         ) -> None:
+            if self.command == "POST" and status in (401, 403):
+                self._mark_rejected_post()
             self._send_json(
                 status, {"error": {"code": code, "message": message}}
             )
@@ -393,6 +403,8 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
             content_type: Optional[str] = None,
         ) -> None:
             self.send_response(status)
+            if getattr(self, "_rejected_post", False):
+                self.send_header("Connection", "close")
             origin = self.headers.get("Origin", "")
             if origin in allowed_origins:
                 self.send_header("Access-Control-Allow-Origin", origin)
@@ -410,6 +422,31 @@ def _handler_class(state: BridgeState, allowed_origins: frozenset[str]):
             self.end_headers()
             if data:
                 self.wfile.write(data)
+
+        def finish(self) -> None:
+            try:
+                if getattr(self, "_rejected_post", False):
+                    # Rejected POST bodies are deliberately not parsed. Flush the
+                    # response and half-close first, then discard pending input
+                    # so an immediate close does not reset the unread response.
+                    deadline = monotonic() + REJECTED_POST_LINGER_SECONDS
+                    self.wfile.flush()
+                    self.connection.shutdown(socket.SHUT_WR)
+                    remaining_bytes = MAX_BODY_BYTES + 1
+                    while remaining_bytes:
+                        remaining_time = deadline - monotonic()
+                        if remaining_time <= 0:
+                            break
+                        self.connection.settimeout(remaining_time)
+                        chunk = self.rfile.read1(min(65536, remaining_bytes))
+                        if not chunk:
+                            break
+                        remaining_bytes -= len(chunk)
+            except OSError:
+                # Timeout or a disconnected peer only ends the bounded discard.
+                pass
+            finally:
+                super().finish()
 
         def log_message(self, format: str, *args: Any) -> None:
             return

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_heading_feasibility.py", line 708, in run_formatted_candidate
+    for key,value in scalar_copy_verdict(before,after).items():check(key,value)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/fixtures/microsoft_parity/macos_word_heading_feasibility.py", line 684, in check
+    if not value:raise AssertionError('Formatted style check failed: '+label)
+AssertionError: Formatted style check failed: complete_font_appearance_equal

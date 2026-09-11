@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "native_content_across_font_runs": true,
+    "four_slides": true,
+    "page_960x540": true,
+    "native_image": true,
+    "native_table": true,
+    "pdf_four_pages": true,
+    "pdf_content": true
+  },
+  "passed": true,
+  "texts": [
+    "Compiler native title\nChinese 中文 subtitle",
+    "Section title",
+    "Native bullets\nAlpha\nBeta 中文",
+    "Name\nValue\nNative\n42"
+  ],
+  "explanation": "Join text runs within each native paragraph; original v1 inspector inserted artificial bars between font runs. No artifact was changed."
+}

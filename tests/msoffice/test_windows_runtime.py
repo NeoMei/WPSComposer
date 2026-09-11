@@ -206,3 +206,58 @@ def test_child_launch_cancellation_preserves_signal_and_diagnostic(monkeypatch, 
     diagnostic = json.loads(next(tmp_path.glob('*/diagnostics.json')).read_text())
     assert diagnostic['error_type'] == type(signal).__name__
     assert diagnostic['word_termination_attempted'] is False
+
+
+@pytest.fixture(autouse=True)
+def word_component_lock(monkeypatch, tmp_path):
+    class Lock:
+        instances = []
+        def __init__(self, root):
+            self.root = root
+            self.quarantine_path = root / 'native-office.quarantine.json'
+            self.acquired = self.closed = False
+            self.details = []
+            self.instances.append(self)
+        def acquire(self, deadline):
+            self.acquired = True
+        def quarantine(self, detail):
+            self.details.append(detail)
+        def close(self):
+            self.closed = True
+    monkeypatch.setattr(runtime, 'OfficeJobLock', Lock, raising=False)
+    monkeypatch.setattr(runtime, '_component_root', lambda component: tmp_path / component, raising=False)
+    return Lock
+
+
+def test_word_worker_uses_same_component_lock_as_sessions(monkeypatch, tmp_path, word_component_lock):
+    def worker(*args):
+        assert word_component_lock.instances[-1].acquired
+        return {'native': 'success'}
+    monkeypatch.setattr(runtime, '_run_worker_unlocked', worker, raising=False)
+    result = runtime._run_worker(tmp_path, {}, time.monotonic() + 10)
+    assert result == {'native': 'success'}
+    lock = word_component_lock.instances[-1]
+    assert lock.root == tmp_path / 'writer'
+    assert lock.closed and not lock.details
+
+
+def test_word_worker_uncertainty_quarantines_shared_component(monkeypatch, tmp_path, word_component_lock):
+    def worker(*args):
+        raise runtime.NativeWordTimeoutError(staging_path=tmp_path)
+    monkeypatch.setattr(runtime, '_run_worker_unlocked', worker, raising=False)
+    with pytest.raises(runtime.NativeWordTimeoutError):
+        runtime._run_worker(tmp_path, {}, time.monotonic() + 10)
+    lock = word_component_lock.instances[-1]
+    assert lock.closed
+    assert lock.details[0]['component'] == 'writer'
+    assert lock.details[0]['word_termination_attempted'] is False
+
+
+def test_launch_failure_does_not_quarantine_untouched_word(monkeypatch, tmp_path, word_component_lock):
+    def launch(*args, **kwargs):
+        raise OSError('unavailable')
+    monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+    with pytest.raises(runtime.NativeWordError):
+        runtime._run_worker(tmp_path, {}, time.monotonic() + 10)
+    assert word_component_lock.instances[-1].closed
+    assert word_component_lock.instances[-1].details == []

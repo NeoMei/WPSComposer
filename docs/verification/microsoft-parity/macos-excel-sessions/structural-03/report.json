@@ -1,0 +1,70 @@
+{
+  "verified": false,
+  "source_sha256_before": "9d1d898cb8bbe7fc5fd1bf443e81af04cd341aa5c8438f64a586e7ee215e74fd",
+  "cases": [
+    {
+      "axis": "row",
+      "verb": "clone",
+      "result": {
+        "type": "row",
+        "cloned": true,
+        "from": "sheet:1/range:B2:D4",
+        "row": 7,
+        "clipboard_changed": true,
+        "requested_index": 7
+      },
+      "cells": {
+        "A1": "C1",
+        "B1": "C2",
+        "C1": "C3",
+        "D1": "C4",
+        "E1": "C5",
+        "A2": "R2",
+        "B2": 22,
+        "C2": 23,
+        "D2": 24,
+        "E2": 25,
+        "A3": "R3",
+        "B3": 32,
+        "C3": 33,
+        "D3": 34,
+        "E3": 35,
+        "A4": "R4",
+        "B4": 42,
+        "C4": 43,
+        "D4": 44,
+        "E4": 45,
+        "A5": "R5",
+        "B5": 52,
+        "C5": 53,
+        "D5": 54,
+        "E5": 55,
+        "A6": "R6",
+        "B6": 62,
+        "C6": 63,
+        "D6": 64,
+        "E6": 65,
+        "A7": "R2",
+        "B7": 22,
+        "C7": 23,
+        "D7": 24,
+        "E7": 25,
+        "A8": "R7",
+        "B8": 72,
+        "C8": 73,
+        "D8": 74,
+        "E8": 75,
+        "A9": "R8",
+        "B9": 82,
+        "C9": 83,
+        "D9": 84,
+        "E9": 85
+      }
+    }
+  ],
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-v9wmm_ld"
+  ],
+  "session_source_sha256": "d368dd1c465f98dc76214a4c43c687a7dbd064c803879056e6c72dffd1bbdf9b",
+  "error": "Native Excel session failed; owned recovery files retained"
+}

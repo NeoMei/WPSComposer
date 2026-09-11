@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "checks": {},
+  "private_path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ldrxeyqu/document-1ba6b1f099f049db843ee66809bdd5ad.docx",
+  "error": {
+    "type": "NativeWordError",
+    "message": "Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ldrxeyqu diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-ldrxeyqu/fcb3bd3caecc4289976343773043df1a.log"
+  }
+}

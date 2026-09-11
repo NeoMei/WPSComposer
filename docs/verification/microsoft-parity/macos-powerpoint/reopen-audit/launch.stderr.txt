@@ -1,0 +1,1 @@
+docs/verification/microsoft-parity/macos-powerpoint/reopen-audit/launch.applescript:220:226: execution error: “Microsoft PowerPoint”遇到一个错误：发生“-9074”类型错误。 (-9074)

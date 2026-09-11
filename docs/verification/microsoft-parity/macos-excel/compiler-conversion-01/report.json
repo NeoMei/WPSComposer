@@ -1,0 +1,16 @@
+{
+  "returncode": 0,
+  "stdout": "WPSCOMPOSER_MS_OFFICE_OK:spreadsheet\n",
+  "stderr": "",
+  "source_sha256_before": "c7e3ff39de305bdc57d69bc69e566c229ed6efba38b9973adcdec0e158ad53e5",
+  "source_sha256_after": "c7e3ff39de305bdc57d69bc69e566c229ed6efba38b9973adcdec0e158ad53e5",
+  "pdf_pages": 2,
+  "verified": true,
+  "checksums": {
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "convert.applescript": "ec98b2511fb125deaf663db16a669cc736ec4dfd0b6d321a868890c951013d11",
+    "stdout.log": "e14832f72e5565d62867c82b0b40a0807da0a7172c9a50c731050928a9600e9a",
+    "converted.pdf": "893504ab394ac6660e3e6d801006514be635706178dc37579d27800cbe756a80",
+    "pdf-text.txt": "407d90ca517b1c5b17245e56344d4b96d8464fa090d59c0feb8dcca33c629846"
+  }
+}

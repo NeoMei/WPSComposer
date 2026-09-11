@@ -1,0 +1,14 @@
+{
+  "alerts" : true,
+  "bundle" : "com.microsoft.Excel",
+  "name" : "Microsoft Excel",
+  "pid" : 99513,
+  "running" : true,
+  "workbooks" : [
+    {
+      "name" : "existing-owned.xlsx",
+      "path" : "\/Users\/neomei\/Library\/Containers\/com.microsoft.Excel\/Data\/tmp\/wpscomposer\/excel-existing-delete-diagnosis\/existing-owned.xlsx",
+      "saved" : true
+    }
+  ]
+}

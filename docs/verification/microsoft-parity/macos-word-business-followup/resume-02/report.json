@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "checks": {
+    "refresh_return_contract": true,
+    "unrelated_bindings_saved_state_unchanged": true,
+    "exact_owned_close": true,
+    "native_reopen_text_sections": true,
+    "native_two_column_sections": true,
+    "native_field_story_and_named_style": true,
+    "native_pdf_text": true,
+    "native_style_columns_sections_compaction": true,
+    "native_page_field_results_and_header_linkage": true
+  },
+  "limitations": [
+    "Custom character styles remain unsupported.",
+    "Index refresh with nonempty TOC/TOF requires a separate native seeded fixture.",
+    "Fresh generation proof does not establish attached-session behavior."
+  ],
+  "field_snapshot": {
+    "stableKey": [
+      "doc:finalize",
+      "PAGE",
+      0
+    ],
+    "fieldCategory": "page",
+    "resultHash": "3-0",
+    "tocPageCount": 0,
+    "figureIndexPageCount": 0,
+    "tableIndexPageCount": 0,
+    "totalPages": 3
+  },
+  "pdf_pages": 3,
+  "hashes": {
+    "followup.docx": "705ff7714d51893939113749ff2249d18304d4ab0b68a86d256892c50a745ddd",
+    "followup.pdf": "a5632a11c3b92cc6f7e43bc5d872617847d1ec6fbe68a189d9aa2fc212210eef"
+  },
+  "acceptance_status": "NATIVE_ARTIFACT_CHECKS_PASSED_WITH_EXPLICIT_LIMITS",
+  "requires_artifact_review": [
+    "Nonempty TOC/TOF refresh requires a separate seeded document"
+  ]
+}

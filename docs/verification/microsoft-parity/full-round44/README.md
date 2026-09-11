@@ -1,0 +1,3 @@
+# Native heading import fixture regression — round 44
+
+Immutable snapshot `22f6c5095afdc36437f2feac22ed06e958be5dd8` passes **5,242 tests / 12 skips** in 225.20 seconds. All 401 recorded source/configuration hashes remain unchanged and match live at the end of this run. Production is unchanged from 433a199; this adds the source-only native import hypothesis fixture and its tests. The native import subsequently returns -1708 and does not establish heading support. An independently discovered extra-final-paragraph oracle gap in the opt-in runner requires a further correction; this green portable result does not override native failure or fixture gaps.

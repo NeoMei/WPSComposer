@@ -1,0 +1,294 @@
+{
+  "linked-multisection-01": {
+    "status": "STORY_MATRIX_DIAGNOSED",
+    "checks": {
+      "repeat_typed_rows_equal": true,
+      "private_bytes_equal_source": true,
+      "baseline_still_exact": true,
+      "probe_sources_unchanged": true,
+      "inventory_empty": true
+    },
+    "source_sha256": "c432c82d60b16ecbb7d310277de8e3e063050bb1f581016a606bba533d21473c",
+    "stories": [
+      {
+        "story": "primary-header",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "457a6cc312f9557d41697ed570325faa70e91f2b09f0d3d7e48ebd04d7ae1373"
+      },
+      {
+        "story": "first-header",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "905f0b06ddff75e066db78e9de1a1023d0322cc51a78ebcb748ab3cc35d2ced7"
+      },
+      {
+        "story": "even-header",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "b8c1c5e81ce77ebe00285705e280817c3a369a0ac9412233a825efd597af0e4a"
+      },
+      {
+        "story": "primary-footer",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "2c34397cba6ed44c4f8a32851632df038ce4357abefa9b43cdac7deda7a82a31"
+      },
+      {
+        "story": "first-footer",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "34ea0026d91c19cf710ffba200745a3035f9223c14100475919849521e99f762"
+      },
+      {
+        "story": "even-footer",
+        "summary": {
+          "nodes": 2,
+          "fields": 1,
+          "observations": 25,
+          "ordinary_errors": 1
+        },
+        "typed_json_sha256": "3007b0af95eb8da81dce42274e9a01614b12f4a71fdd0651494b3bce4a2ea665"
+      }
+    ]
+  },
+  "primary-01": {
+    "status": "STORY_MATRIX_DIAGNOSED",
+    "checks": {
+      "repeat_typed_rows_equal": true,
+      "private_bytes_equal_source": true,
+      "baseline_still_exact": true,
+      "probe_sources_unchanged": true,
+      "inventory_empty": true
+    },
+    "source_sha256": "99c74b0896bda48a2a8efe024ddb13b2c351d60e3f99d5e0a020ee441950bd6b",
+    "stories": [
+      {
+        "story": "primary-header",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "80bdc2d34c905055d32ad813a84ad94f13525b78de812716c6d6c00ec3d29775"
+      },
+      {
+        "story": "first-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "6c903784bc546c978be2bc1b414794596045f7c4fb39acca006998e1a30a0fdc"
+      },
+      {
+        "story": "even-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "b97856f99f3c2e0d07158139acfaafd19b7a7b599f17a174cb5b1cd70304058d"
+      },
+      {
+        "story": "primary-footer",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "83005425cea6b367ecb01017c975b8941987f688da0057e599103dc5ae8b7456"
+      },
+      {
+        "story": "first-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "c3756a432ffff58b2e951e1c4345835832fac3e134618667b240cb9c9ecdabd3"
+      },
+      {
+        "story": "even-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "a3208298284cf7e64a0657c6bd88609bb6a0a739925df5973011e015020aa96c"
+      }
+    ]
+  },
+  "absent-01": {
+    "status": "STORY_MATRIX_DIAGNOSED",
+    "checks": {
+      "repeat_typed_rows_equal": true,
+      "private_bytes_equal_source": true,
+      "baseline_still_exact": true,
+      "probe_sources_unchanged": true,
+      "inventory_empty": true
+    },
+    "source_sha256": "432658690c743533d5176e41d2226e0357a886413ded5bf687eab36a54870def",
+    "stories": [
+      {
+        "story": "primary-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "ceceb6ec06d02666bfee378676d2ea03ee4665d5e3d35c3cc06079e1c832524b"
+      },
+      {
+        "story": "first-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "6c903784bc546c978be2bc1b414794596045f7c4fb39acca006998e1a30a0fdc"
+      },
+      {
+        "story": "even-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "b97856f99f3c2e0d07158139acfaafd19b7a7b599f17a174cb5b1cd70304058d"
+      },
+      {
+        "story": "primary-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "efd9a9ca93dc0821f96d205ea3e2d5ece26a34f074d3f91665d3d38a84c8084e"
+      },
+      {
+        "story": "first-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "c3756a432ffff58b2e951e1c4345835832fac3e134618667b240cb9c9ecdabd3"
+      },
+      {
+        "story": "even-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "a3208298284cf7e64a0657c6bd88609bb6a0a739925df5973011e015020aa96c"
+      }
+    ]
+  },
+  "inactive-first-even-01": {
+    "status": "STORY_MATRIX_DIAGNOSED",
+    "checks": {
+      "repeat_typed_rows_equal": true,
+      "private_bytes_equal_source": true,
+      "baseline_still_exact": true,
+      "probe_sources_unchanged": true,
+      "inventory_empty": true
+    },
+    "source_sha256": "cdf622ba4bf4b10714fb86264c260f26a43fde6402eb81664ddd953e16a9d098",
+    "stories": [
+      {
+        "story": "primary-header",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "ceceb6ec06d02666bfee378676d2ea03ee4665d5e3d35c3cc06079e1c832524b"
+      },
+      {
+        "story": "first-header",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "60a426f0e488e5a0711516b9d12608eeee704987a1b6a7582c39f3e2561680fa"
+      },
+      {
+        "story": "even-header",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "4863c881ea8cef0db7e779ad1fef5fd047adb3790eb774a095c9397a5e4e9051"
+      },
+      {
+        "story": "primary-footer",
+        "summary": {
+          "nodes": 0,
+          "fields": 0,
+          "observations": 1,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "efd9a9ca93dc0821f96d205ea3e2d5ece26a34f074d3f91665d3d38a84c8084e"
+      },
+      {
+        "story": "first-footer",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "f06f5c2bbdb53d9b37849adff072cd89c45e54b59c7c7a2c2659ae273df50847"
+      },
+      {
+        "story": "even-footer",
+        "summary": {
+          "nodes": 1,
+          "fields": 1,
+          "observations": 17,
+          "ordinary_errors": 0
+        },
+        "typed_json_sha256": "1477d44eff47efd797e8a0ee9e17a28c2755a652222b388cbf1c30ecca233717"
+      }
+    ]
+  }
+}

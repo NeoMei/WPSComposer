@@ -1,0 +1,5 @@
+primary-header-scalar-type:0: set probeStoryRange to missing value
+primary-header-scalar-type:1: set probeStoryRange to get story range boundDoc story type primary header story
+primary-header-scalar-type:2: set probeRows to {{"value",story type of probeStoryRange as text}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["value",""]]]]]

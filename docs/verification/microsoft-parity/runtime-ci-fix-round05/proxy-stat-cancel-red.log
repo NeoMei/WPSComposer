@@ -1,0 +1,522 @@
+FFFFFFFFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b38aaf0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a9cfb20>
+name = 'ProxyWordSession', source = '/source.docx', code = 'NATIVE_WORD_TIMEOUT'
+secondary_type = <class 'KeyboardInterrupt'>, target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_WORD_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3b40d0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b39f730>
+name = 'ProxyExcelSession', source = '/source.xlsx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'KeyboardInterrupt'>
+target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3b41f0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3bac10>
+name = 'ProxyPowerPointSession', source = '/source.pptx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'KeyboardInterrupt'>
+target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3b44c0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3da2b0>
+name = 'ProxyWordSession', source = '/source.docx', code = 'NATIVE_WORD_TIMEOUT'
+secondary_type = <class 'SystemExit'>, target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_WORD_TIMEOUT'
+E         
+E         - NATIVE_WORD_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10abfd5e0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3eb8b0>
+name = 'ProxyExcelSession', source = '/source.xlsx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'SystemExit'>
+target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_OFFICE_TIMEOUT'
+E         
+E         - NATIVE_OFFICE_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3f4040>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3f13a0>
+name = 'ProxyPowerPointSession', source = '/source.pptx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'SystemExit'>
+target = 'recovery'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_OFFICE_TIMEOUT'
+E         
+E         - NATIVE_OFFICE_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3f4310>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b3e0cd0>
+name = 'ProxyWordSession', source = '/source.docx', code = 'NATIVE_WORD_TIMEOUT'
+secondary_type = <class 'KeyboardInterrupt'>, target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_WORD_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3b4550>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b49a280>
+name = 'ProxyExcelSession', source = '/source.xlsx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'KeyboardInterrupt'>
+target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b3f40d0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b496fd0>
+name = 'ProxyPowerPointSession', source = '/source.pptx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'KeyboardInterrupt'>
+target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E        +  where None = getattr(KeyboardInterrupt('secondary metadata cancellation'), 'code', None)
+E        +    where KeyboardInterrupt('secondary metadata cancellation') = <ExceptionInfo KeyboardInterrupt('secondary metadata cancellation') tblen=6>.value
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b4a6280>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b4b39d0>
+name = 'ProxyWordSession', source = '/source.docx', code = 'NATIVE_WORD_TIMEOUT'
+secondary_type = <class 'SystemExit'>, target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_WORD_TIMEOUT'
+E         
+E         - NATIVE_WORD_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b4a6700>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b4b8c10>
+name = 'ProxyExcelSession', source = '/source.xlsx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'SystemExit'>
+target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_OFFICE_TIMEOUT'
+E         
+E         - NATIVE_OFFICE_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+_ test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+
+transport = (<module 'skills.WPSComposer.scripts.msoffice.windows_session_proxy' from '/Users/neomei/项目/codexprojects/WpsComposer/...rt.<locals>.launch at 0x10b4cd0d0>, [<Popen: returncode: -9 args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw74...>])
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b4b9910>
+name = 'ProxyPowerPointSession', source = '/source.pptx'
+code = 'NATIVE_OFFICE_TIMEOUT', secondary_type = <class 'SystemExit'>
+target = 'quarantine'
+
+    @pytest.mark.parametrize('name,source,code', [
+        ('ProxyWordSession', '/source.docx', 'NATIVE_WORD_TIMEOUT'),
+        ('ProxyExcelSession', '/source.xlsx', 'NATIVE_OFFICE_TIMEOUT'),
+        ('ProxyPowerPointSession', '/source.pptx', 'NATIVE_OFFICE_TIMEOUT'),
+    ])
+    @pytest.mark.parametrize('secondary_type', [KeyboardInterrupt, SystemExit])
+    @pytest.mark.parametrize('target', ['recovery', 'quarantine'])
+    def test_timeout_keeps_public_code_during_secondary_evidence_cancel(
+        transport, monkeypatch, name, source, code, secondary_type, target,
+    ):
+        module, _, children = transport
+        session = getattr(module, name).open_document(source)
+        original_is_file = Path.is_file
+        failing_path = (session.staging_root / 'recovery.json' if target == 'recovery'
+                        else session._lock.quarantine_path)
+        secondary = secondary_type('secondary metadata cancellation')
+        def interrupted(path):
+            if path == failing_path:
+                raise secondary
+            return original_is_file(path)
+        def receive(*args, **kwargs):
+            raise queue.Empty()
+        monkeypatch.setattr(Path, 'is_file', interrupted)
+        monkeypatch.setattr(session._responses, 'get', receive)
+        with pytest.raises(BaseException) as caught:
+            session.inspect_document()
+        assert session._uncertain and session._lock.closed
+        assert children[0].poll() is not None
+>       assert getattr(caught.value, 'code', None) == code
+E       AssertionError: assert 'secondary me... cancellation' == 'NATIVE_OFFICE_TIMEOUT'
+E         
+E         - NATIVE_OFFICE_TIMEOUT
+E         + secondary metadata cancellation
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py:36: AssertionError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-KeyboardInterrupt-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[recovery-SystemExit-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-KeyboardInterrupt-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/checkpoint-integration-scratch/test_proxy_stat_cancel_integration.py::test_timeout_keeps_public_code_during_secondary_evidence_cancel[quarantine-SystemExit-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+12 failed in 1.41s

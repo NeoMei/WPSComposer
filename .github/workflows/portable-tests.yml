@@ -1,0 +1,88 @@
+name: Portable tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
+      - codex/microsoft-parity
+
+permissions:
+  contents: read
+
+# Share a group across push/PR events for the same source branch. A fork's
+# identically named branch must not cancel a run from this repository.
+concurrency:
+  group: portable-tests-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+        python: ['3.9', '3.12']
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+
+    steps:
+      # This must precede checkout: retained evidence uses exact byte hashes.
+      - name: Preserve LF bytes on Windows
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+
+      - name: Check out full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify capability baseline is available
+        run: git cat-file -e '6dd3a00dff226096ad963cc68a65088865541c25^{commit}'
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Install portable development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+          python -m pip check
+          npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
+
+      # No native-acceptance environment flags: these jobs exercise portable
+      # tests and retained artifacts, not an installed WPS or Microsoft Office.
+      - name: Run pytest
+        run: |
+          mkdir -p test-results
+          set -o pipefail
+          python -m pytest -v --junitxml=test-results/pytest.xml 2>&1 | tee test-results/pytest.log
+
+      - name: Retain pytest evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pytest-${{ matrix.os }}-python-${{ matrix.python }}
+          path: |
+            test-results/pytest.log
+            test-results/pytest.xml
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,23 @@
+{
+  "native_slide_count": 3,
+  "editable_table": true,
+  "slide_paragraphs": [
+    [
+      "Public PowerPoint parity",
+      ""
+    ],
+    [
+      "Native editable content",
+      "Alpha bullet",
+      "Beta 中文"
+    ],
+    [
+      "Native table",
+      "",
+      "Name",
+      "Value",
+      "Native",
+      "42"
+    ]
+  ]
+}

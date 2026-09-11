@@ -1,0 +1,779 @@
+{
+  "passed": true,
+  "checks": {
+    "format_readback": true,
+    "native_structural_objects": true,
+    "source_preserved": true,
+    "move_remove_and_text_boundary": true,
+    "reopen_persisted": true,
+    "unverifiable_attach_rejected": true,
+    "pdf_native_text": true,
+    "sentinel_preserved_and_closed": true
+  },
+  "limitations": [
+    "Attached non-rebinding save_copy and PDF export are unsupported.",
+    "Floating object move/clone is unsupported.",
+    "Native Word returned null window ID; active attachment fails before mutation."
+  ],
+  "source_sha256": "f202ab94da36437d9b322d6619bf7e99a5b36ba902742361d981ac564f135b27",
+  "before": {
+    "kind": "writer",
+    "counts": {
+      "paragraphs": 4,
+      "tables": 0,
+      "shapes": 0,
+      "sections": 1,
+      "inline_shapes": 0,
+      "styles": 373
+    },
+    "paragraphs": [
+      {
+        "id": "paragraph:1",
+        "index": 1,
+        "start": 0,
+        "end": 6,
+        "text": "Alpha",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:2",
+        "index": 2,
+        "start": 6,
+        "end": 11,
+        "text": "Beta",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:3",
+        "index": 3,
+        "start": 11,
+        "end": 17,
+        "text": "Gamma",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:4",
+        "index": 4,
+        "start": 17,
+        "end": 18,
+        "text": "",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      }
+    ],
+    "tables": [],
+    "shapes": [],
+    "sections": [
+      {
+        "id": "section:1",
+        "index": 1,
+        "page_setup": {
+          "orientation": 0,
+          "page_width": 595.2999877929688,
+          "page_height": 841.9000244140625,
+          "top_margin": 72,
+          "bottom_margin": 72,
+          "left_margin": 90,
+          "right_margin": 90,
+          "header_distance": 42.54999923706055,
+          "footer_distance": 49.599998474121094,
+          "gutter": 0
+        },
+        "columns": 1
+      }
+    ],
+    "name": "document-3000398a85c34cac95aa71af0ab5f1fe.docx",
+    "saved": true,
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-wx0y69hp/document-3000398a85c34cac95aa71af0ab5f1fe.docx"
+  },
+  "after": {
+    "kind": "writer",
+    "counts": {
+      "paragraphs": 12,
+      "tables": 1,
+      "shapes": 1,
+      "sections": 1,
+      "inline_shapes": 1,
+      "styles": 373
+    },
+    "paragraphs": [
+      {
+        "id": "paragraph:1",
+        "index": 1,
+        "start": 0,
+        "end": 6,
+        "text": "Alpha",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:2",
+        "index": 2,
+        "start": 6,
+        "end": 11,
+        "text": "Beta",
+        "font": {
+          "name": "Arial",
+          "size": 15,
+          "bold": true,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#123456"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 24,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:3",
+        "index": 3,
+        "start": 11,
+        "end": 23,
+        "text": "Inserted 中文",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:4",
+        "index": 4,
+        "start": 23,
+        "end": 29,
+        "text": "Gamma",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:5",
+        "index": 5,
+        "start": 29,
+        "end": 35,
+        "text": "Alpha",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:6",
+        "index": 6,
+        "start": 35,
+        "end": 44,
+        "text": "Header A",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:7",
+        "index": 7,
+        "start": 44,
+        "end": 53,
+        "text": "Header B",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:8",
+        "index": 8,
+        "start": 53,
+        "end": 54,
+        "text": "",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": true
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:9",
+        "index": 9,
+        "start": 54,
+        "end": 56,
+        "text": "甲",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:10",
+        "index": 10,
+        "start": 56,
+        "end": 58,
+        "text": "乙",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:11",
+        "index": 11,
+        "start": 58,
+        "end": 59,
+        "text": "",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": true
+        },
+        "style": "正文"
+      },
+      {
+        "id": "paragraph:12",
+        "index": 12,
+        "start": 59,
+        "end": 62,
+        "text": "/",
+        "font": {
+          "name": "DengXian",
+          "size": 11,
+          "bold": false,
+          "italic": false,
+          "underline": 0,
+          "strikethrough": false,
+          "color": "#000000"
+        },
+        "paragraph": {
+          "alignment": 0,
+          "left_indent": 0,
+          "right_indent": 0,
+          "first_line_indent": 0,
+          "space_before": 0,
+          "space_after": 8,
+          "line_spacing": 13.899999618530273,
+          "line_spacing_rule": 5,
+          "keep_together": false,
+          "keep_with_next": false,
+          "page_break_before": false,
+          "widow_control": false
+        },
+        "style": "正文"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table:1",
+        "index": 1,
+        "rows": 2,
+        "columns": 2,
+        "allow_autofit": false,
+        "cells": [
+          {
+            "id": "table:1/cell:1,1",
+            "row": 1,
+            "column": 1,
+            "start": 35,
+            "end": 44,
+            "text": "Header A",
+            "font": {
+              "name": "DengXian",
+              "size": 11,
+              "bold": false,
+              "italic": false,
+              "underline": 0,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "paragraph": {
+              "alignment": 0,
+              "left_indent": 0,
+              "right_indent": 0,
+              "first_line_indent": 0,
+              "space_before": 0,
+              "space_after": 8,
+              "line_spacing": 13.899999618530273,
+              "line_spacing_rule": 5,
+              "keep_together": false,
+              "keep_with_next": false,
+              "page_break_before": false,
+              "widow_control": false
+            },
+            "style": "正文",
+            "width": 207.64999389648438,
+            "fill": {
+              "color": "#000000"
+            },
+            "vertical_alignment": 0
+          },
+          {
+            "id": "table:1/cell:1,2",
+            "row": 1,
+            "column": 2,
+            "start": 44,
+            "end": 53,
+            "text": "Header B",
+            "font": {
+              "name": "DengXian",
+              "size": 11,
+              "bold": false,
+              "italic": false,
+              "underline": 0,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "paragraph": {
+              "alignment": 0,
+              "left_indent": 0,
+              "right_indent": 0,
+              "first_line_indent": 0,
+              "space_before": 0,
+              "space_after": 8,
+              "line_spacing": 13.899999618530273,
+              "line_spacing_rule": 5,
+              "keep_together": false,
+              "keep_with_next": false,
+              "page_break_before": false,
+              "widow_control": false
+            },
+            "style": "正文",
+            "width": 207.64999389648438,
+            "fill": {
+              "color": "#000000"
+            },
+            "vertical_alignment": 0
+          },
+          {
+            "id": "table:1/cell:2,1",
+            "row": 2,
+            "column": 1,
+            "start": 54,
+            "end": 56,
+            "text": "甲",
+            "font": {
+              "name": "DengXian",
+              "size": 11,
+              "bold": false,
+              "italic": false,
+              "underline": 0,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "paragraph": {
+              "alignment": 0,
+              "left_indent": 0,
+              "right_indent": 0,
+              "first_line_indent": 0,
+              "space_before": 0,
+              "space_after": 8,
+              "line_spacing": 13.899999618530273,
+              "line_spacing_rule": 5,
+              "keep_together": false,
+              "keep_with_next": false,
+              "page_break_before": false,
+              "widow_control": false
+            },
+            "style": "正文",
+            "width": 207.64999389648438,
+            "fill": {
+              "color": "#FF0000"
+            },
+            "vertical_alignment": 1
+          },
+          {
+            "id": "table:1/cell:2,2",
+            "row": 2,
+            "column": 2,
+            "start": 56,
+            "end": 58,
+            "text": "乙",
+            "font": {
+              "name": "DengXian",
+              "size": 11,
+              "bold": false,
+              "italic": false,
+              "underline": 0,
+              "strikethrough": false,
+              "color": "#000000"
+            },
+            "paragraph": {
+              "alignment": 0,
+              "left_indent": 0,
+              "right_indent": 0,
+              "first_line_indent": 0,
+              "space_before": 0,
+              "space_after": 8,
+              "line_spacing": 13.899999618530273,
+              "line_spacing_rule": 5,
+              "keep_together": false,
+              "keep_with_next": false,
+              "page_break_before": false,
+              "widow_control": false
+            },
+            "style": "正文",
+            "width": 207.64999389648438,
+            "fill": {
+              "color": "#000000"
+            },
+            "vertical_alignment": 0
+          }
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "id": "shape:1",
+        "index": 1,
+        "name": "文本框 1",
+        "type": 17,
+        "geometry": {
+          "left": 10,
+          "top": 82.4000015258789,
+          "width": 120,
+          "height": 40,
+          "rotation": 0
+        },
+        "wrap": 3,
+        "fill": {
+          "color": "#FFFFFF",
+          "back_color": [
+            65535,
+            65535,
+            65535
+          ],
+          "visible": false,
+          "transparency": 1
+        },
+        "line": {
+          "color": "#000000",
+          "weight": 0.5,
+          "visible": true,
+          "transparency": 0
+        },
+        "text": "Native Box"
+      }
+    ],
+    "sections": [
+      {
+        "id": "section:1",
+        "index": 1,
+        "page_setup": {
+          "orientation": 0,
+          "page_width": 595.2999877929688,
+          "page_height": 841.9000244140625,
+          "top_margin": 72,
+          "bottom_margin": 72,
+          "left_margin": 90,
+          "right_margin": 90,
+          "header_distance": 42.54999923706055,
+          "footer_distance": 49.599998474121094,
+          "gutter": 0
+        },
+        "columns": 1
+      }
+    ],
+    "name": "document-3000398a85c34cac95aa71af0ab5f1fe.docx",
+    "saved": false,
+    "path": "/Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-wx0y69hp/document-3000398a85c34cac95aa71af0ab5f1fe.docx"
+  }
+}

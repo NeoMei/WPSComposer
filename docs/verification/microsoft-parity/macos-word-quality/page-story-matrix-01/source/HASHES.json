@@ -1,0 +1,14 @@
+{
+  "generator": {
+    "file": "generate_word_story_matrix.py",
+    "sha256": "f3eaa1b31fec74ad638788a05cf3bdc2aa34c38af34e182b7f60e5e7a96991af"
+  },
+  "outputs": {
+    "absent.docx": "432658690c743533d5176e41d2226e0357a886413ded5bf687eab36a54870def",
+    "inactive-first-even.docx": "cdf622ba4bf4b10714fb86264c260f26a43fde6402eb81664ddd953e16a9d098",
+    "linked-multisection.docx": "c432c82d60b16ecbb7d310277de8e3e063050bb1f581016a606bba533d21473c",
+    "preflight.json": "9b7ff4107680d13381dedaaac246a50b8a44a977e1b9029ed99c6aa93e4240e5",
+    "primary.docx": "99c74b0896bda48a2a8efe024ddb13b2c351d60e3f99d5e0a020ee441950bd6b"
+  },
+  "schema": "wpscomposer-word-story-matrix-hashes-v1"
+}

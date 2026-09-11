@@ -1,0 +1,34 @@
+{
+  "verified": true,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/business-04/business.xlsx",
+  "source_sha256_before": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "logical_source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/review-fixwave-01/logical-source.xlsx",
+  "logical_source_sha256_before": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "jobs": [
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-ie8gpqua",
+    "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-5y1c8ifl"
+  ],
+  "session_source_sha256": "085c7e163a072a78e8d2ba4c9dbd9943e5c911513b6e8317e70d12badfc4965d",
+  "omitted_clone": {
+    "type": "sheet",
+    "cloned": true,
+    "from": "sheet:2",
+    "path": "sheet:3"
+  },
+  "explicit_end_clone": {
+    "type": "sheet",
+    "cloned": true,
+    "from": "sheet:2",
+    "path": "sheet:5"
+  },
+  "names_after": [
+    "Data",
+    "Results",
+    "Results (2)",
+    "Business report",
+    "Results (3)"
+  ],
+  "save_current": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/review-fixwave-01/logical-source.xlsx",
+  "source_sha256_after": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "logical_source_sha256_after": "113fdc4e8afbfe58849597434256f148d855d3a0344fc6052ca9117cf1420c83"
+}

@@ -1,0 +1,6 @@
+primary-header-evaluated-class:0: set probeStoryRange to missing value
+primary-header-evaluated-class:1: set probeStoryRange to get story range boundDoc story type primary header story
+primary-header-evaluated-class:2: set probeStoryRange to get probeStoryRange
+primary-header-evaluated-class:3: set probeRows to {{"class",(class of probeStoryRange) as text}}
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["read-ok",[["class",""]]]]]

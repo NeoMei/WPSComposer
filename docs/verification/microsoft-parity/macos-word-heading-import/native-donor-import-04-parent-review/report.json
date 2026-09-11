@@ -1,0 +1,55 @@
+{
+  "scope": "Independent observed spelling-marker/run-segmentation delta and cleanup; no restore/PDF/reopen acceptance",
+  "final_inventory": [],
+  "quarantine_absent": true,
+  "donor_preserved": true,
+  "source_preserved": true,
+  "same_character_formats": [
+    true,
+    true
+  ],
+  "proof_markers": {
+    "before-challenge.docx": [
+      [],
+      []
+    ],
+    "source-challenged.docx": [
+      [
+        {
+          "char_offset": 15,
+          "attributes": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "spellStart"
+          },
+          "child_count": 0
+        },
+        {
+          "char_offset": 22,
+          "attributes": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "spellEnd"
+          },
+          "child_count": 0
+        }
+      ],
+      [
+        {
+          "char_offset": 15,
+          "attributes": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "spellStart"
+          },
+          "child_count": 0
+        },
+        {
+          "char_offset": 22,
+          "attributes": {
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type": "spellEnd"
+          },
+          "child_count": 0
+        }
+      ]
+    ]
+  },
+  "remaining_sentinel": null,
+  "before_sha256": "45a66749f1309ac37689c825b4f893cea0b92bce1d07438a0bce1d3a1316d1d9",
+  "challenged_sha256": "b8c9125ed658b136f25dd605f7d07ea2bf3cef685ad982f452fc1f4508f2f3e6",
+  "cleanup_verified": true
+}

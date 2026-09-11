@@ -1,0 +1,151 @@
+.......................FFF                                               [100%]
+=================================== FAILURES ===================================
+__________________ test_log_close_preserves_primary[timeout] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a06b4f0>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1338/test_log_close_preserves_prima0')
+outcome = 'timeout'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+            assert caught.value is primary
+        else:
+>           assert getattr(caught.value, 'code', None) == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+E           AssertionError: assert None == 'NATIVE_OFFICE_TIMEOUT'
+E            +  where None = getattr(OSError(5, 'secondary log close failure'), 'code', None)
+E            +    where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:338: AssertionError
+___________________ test_log_close_preserves_primary[cancel] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a0a3e50>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1338/test_log_close_preserves_prima1')
+outcome = 'cancel'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+>           assert caught.value is primary
+E           AssertionError: assert OSError(5, 'secondary log close failure') is KeyboardInterrupt('initial cancellation')
+E            +  where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:336: AssertionError
+___________________ test_log_close_preserves_primary[launch] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a0b7820>
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1338/test_log_close_preserves_prima2')
+outcome = 'launch'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'cancel', 'launch'])
+    def test_log_close_preserves_primary(monkeypatch, tmp_path, outcome):
+        secondary = OSError(errno.EIO, 'secondary log close failure')
+        primary = KeyboardInterrupt('initial cancellation')
+        real_open = Path.open
+    
+        class Log:
+            def __init__(self, stream): self.stream = stream
+            def __enter__(self): return self
+            def __exit__(self, *args): self.close()
+            def close(self):
+                self.stream.close()
+                raise secondary
+    
+        class Child:
+            pid = 812
+            returncode = None
+            def wait(self, timeout):
+                if self.returncode is None:
+                    if outcome == 'cancel': raise primary
+                    raise subprocess.TimeoutExpired('exact owned Python', timeout)
+            def kill(self): self.returncode = -9
+    
+        child = Child()
+        def open_log(path, *args, **kwargs):
+            stream = real_open(path, *args, **kwargs)
+            return Log(stream) if path.name == 'worker.log' else stream
+        def launch(*args, **kwargs):
+            if outcome == 'launch': raise PermissionError('Python unavailable')
+            return child
+        monkeypatch.setattr(Path, 'open', open_log)
+        monkeypatch.setattr(runtime.subprocess, 'Popen', launch)
+        with pytest.raises(BaseException) as caught:
+            runtime._run_worker(tmp_path, {'component': 'spreadsheet'}, time.monotonic()+3)
+        if outcome == 'cancel':
+            assert caught.value is primary
+        else:
+>           assert getattr(caught.value, 'code', None) == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+E           AssertionError: assert None == 'NATIVE_OFFICE_EXECUTION_FAILED'
+E            +  where None = getattr(OSError(5, 'secondary log close failure'), 'code', None)
+E            +    where OSError(5, 'secondary log close failure') = <ExceptionInfo OSError(5, 'secondary log close failure') tblen=4>.value
+
+tests/msoffice/test_windows_office_runtime_diagnostics.py:338: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[timeout]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[cancel]
+FAILED tests/msoffice/test_windows_office_runtime_diagnostics.py::test_log_close_preserves_primary[launch]
+3 failed, 23 passed in 1.06s

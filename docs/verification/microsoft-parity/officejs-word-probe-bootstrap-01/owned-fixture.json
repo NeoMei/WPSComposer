@@ -1,0 +1,12 @@
+{
+  "source": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/ui-word-01/parity-word-ui.docx",
+  "path": "/Users/neomei/\u9879\u76ee/codexprojects/WpsComposer/.worktrees/office-description/build/officejs-word-probe-native-01/WPSComposer-OfficeJS-owned-probe.docx",
+  "sha256": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d",
+  "source_sha256": "798a452f6eabf2d921957703f86ad2988b7faf8cde72d87c26a819782972877d",
+  "owned_copy_of_retained_native_test_fixture": true,
+  "native_accepted_this_run": false,
+  "initial_ui": "Microsoft Word DocStage only; no document window visible via CUA",
+  "manifest_installed": false,
+  "server_started": false,
+  "trust_changed": false
+}

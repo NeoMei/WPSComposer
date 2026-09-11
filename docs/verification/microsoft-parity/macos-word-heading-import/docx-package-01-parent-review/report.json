@@ -1,0 +1,16 @@
+{
+  "scope": "Exact fixture theme equality only; no arbitrary-theme support",
+  "files": {
+    "source_preimage": {
+      "path": "build/word-heading-import-20260910/run-01/source-preimage.docx",
+      "file_sha256": "f9ee14d8d6cd790c4aefbd81e8b4a98117b36151a570970483e3a47fbc2d5767",
+      "theme_sha256": "7017cbe8b7512b56e04e6b3e3579aa862a35b6f9f31e0bf48328f6e5c074ebbd"
+    },
+    "native_materialized": {
+      "path": "build/word-heading-import-20260910/docx-package-01/native-materialized.docx",
+      "file_sha256": "fa7d6dd3060e67e6dedc61d37515ace3bd854624382378192e7cd59d8819ed7c",
+      "theme_sha256": "7017cbe8b7512b56e04e6b3e3579aa862a35b6f9f31e0bf48328f6e5c074ebbd"
+    }
+  },
+  "themes_equal": true
+}

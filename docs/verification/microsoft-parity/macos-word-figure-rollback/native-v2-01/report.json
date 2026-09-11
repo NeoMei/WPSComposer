@@ -1,0 +1,340 @@
+{
+  "status": "PASS",
+  "checks": {
+    "one_image_success_then_exact_local_rollback": true,
+    "second_image_failure_then_exact_local_rollback": true,
+    "resource_source_preserved": true,
+    "owned_document_source_preserved": true,
+    "exact_unsaved_sentinel_preserved": true,
+    "native_save_reopen_preserves_exact_preimage": true,
+    "owned_document_source_still_preserved_after_reopen": true,
+    "sources_unchanged": true,
+    "inventory_preserved": true
+  },
+  "scope": "build-only inline-picture rollback probe; no production method or capability enablement",
+  "source_hashes": {
+    "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe_v2.py": "4756bd3d2f7f60bc8dd241cc4126696996c5efa986a8f5c318515c0f0d5b6b54",
+    "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v2.py": "6150de9b9437f743593d334b4b7723f3d428d6af6cb27bcf063d7d22612e2909",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": "91d9a954ce7ae9210178998a972023f6bce4928ba4e602207ce63823981b5bdc",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "inventory_before": [],
+  "current_step": "owned-reopen-restored-preimage",
+  "source_preimage_rows": [
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "position_rows": [
+    [
+      "positioned",
+      true
+    ]
+  ],
+  "preimage_rows": [
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "sentinel_create_rows": [
+    [
+      "文档41"
+    ]
+  ],
+  "sentinel_name": "文档41",
+  "sentinel_before": [
+    "文档41",
+    "文档41",
+    false,
+    "4c171d97f2b5c2fd43ca94da0853c82965b5b692995699b3833b40ae1dbb3fcd"
+  ],
+  "one_image_rows": [
+    [
+      "inserted",
+      "one-image",
+      10,
+      11,
+      1,
+      0,
+      "figure:probe/one-image",
+      80,
+      50,
+      true,
+      true,
+      true,
+      12,
+      12,
+      false
+    ],
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "second_failure_rows": [
+    [
+      "inserted",
+      "second-failure",
+      10,
+      11,
+      1,
+      0,
+      "figure:probe/second-failure",
+      80,
+      50,
+      true,
+      true,
+      true,
+      12,
+      12,
+      true
+    ],
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "sentinel_after": [
+    "文档41",
+    "文档41",
+    false,
+    "4c171d97f2b5c2fd43ca94da0853c82965b5b692995699b3833b40ae1dbb3fcd"
+  ],
+  "sentinel_closed": true,
+  "reopen_position_rows": [
+    [
+      "positioned",
+      true
+    ]
+  ],
+  "reopen_rows": [
+    [
+      "body",
+      "HEAD\rleft REPLACE-长😀 right\rTAIL\r\r"
+    ],
+    [
+      "selection",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_target",
+      10,
+      21,
+      "REPLACE-长😀"
+    ],
+    [
+      "bookmark",
+      "figure_probe_suffix",
+      21,
+      27,
+      " right"
+    ],
+    [
+      "format",
+      17,
+      3,
+      5,
+      11,
+      7,
+      21,
+      true,
+      14,
+      true,
+      false,
+      false
+    ],
+    [
+      "counts",
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "remaining_sentinel": null,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "figure-rollback.docx": "cccba22cb04e7e6c30db35668d05ce3881a705c852435533a378bea04adbda4a",
+    "figure-rollback-source.docx": "b2742f9173c26b476de603e903379ac40d3b2990ead79618e3ab286ff3d35e03",
+    "figure-rollback.pdf": "547150d713d30da4be56123733198839f083b698030150673a1f674f32bce37e",
+    "probe.png": "0719a9872a654ef694527c5fd8df6428238c6ae5e186da0e2741f0bdc30dbc11"
+  }
+}

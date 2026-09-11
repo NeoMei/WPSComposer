@@ -1,0 +1,426 @@
+FFFFFFFFFFFFFFF.F                                                        [100%]
+=================================== FAILURES ===================================
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-timeout] _
+
+job_host = namespace(outcome='timeout', faults={'stdout.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'recovery.j...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060b7430>)
+outcome = 'timeout', fault = 'stdout.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-native] _
+
+job_host = namespace(outcome='native', faults={'stdout.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'recovery.js...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060b7dc0>)
+outcome = 'native', fault = 'stdout.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-cancel] _
+
+job_host = namespace(outcome='cancel', faults={'stdout.log'}, writes=['owned.xlsx', 'job.applescript', 'recovery.json', 'native-o...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060b7b80>)
+outcome = 'cancel', fault = 'stdout.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+            assert isinstance(exc, runtime.NativeOfficeError)
+            assert exc.code == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+            assert Path(exc.staging_path).is_dir()
+            if fault == 'recovery.json':
+                assert exc.diagnostic_path is None
+            else:
+                assert json.loads(Path(exc.diagnostic_path).read_text())['code'] == exc.code
+            if fault == 'native-office.quarantine.json':
+                assert exc.quarantine_path is None
+            else:
+                assert Path(exc.quarantine_path).is_file()
+>       assert exc.diagnostic_io_failures
+E       AttributeError: 'KeyboardInterrupt' object has no attribute 'diagnostic_io_failures'
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:103: AttributeError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-timeout] _
+
+job_host = namespace(outcome='timeout', faults={'stderr.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr.log...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x106055160>)
+outcome = 'timeout', fault = 'stderr.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-native] _
+
+job_host = namespace(outcome='native', faults={'stderr.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr.log'...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x106055700>)
+outcome = 'native', fault = 'stderr.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-cancel] _
+
+job_host = namespace(outcome='cancel', faults={'stderr.log'}, writes=['owned.xlsx', 'job.applescript', 'recovery.json', 'native-o...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060559d0>)
+outcome = 'cancel', fault = 'stderr.log'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+            assert isinstance(exc, runtime.NativeOfficeError)
+            assert exc.code == ('NATIVE_OFFICE_TIMEOUT' if outcome == 'timeout' else 'NATIVE_OFFICE_EXECUTION_FAILED')
+            assert Path(exc.staging_path).is_dir()
+            if fault == 'recovery.json':
+                assert exc.diagnostic_path is None
+            else:
+                assert json.loads(Path(exc.diagnostic_path).read_text())['code'] == exc.code
+            if fault == 'native-office.quarantine.json':
+                assert exc.quarantine_path is None
+            else:
+                assert Path(exc.quarantine_path).is_file()
+>       assert exc.diagnostic_io_failures
+E       AttributeError: 'KeyboardInterrupt' object has no attribute 'diagnostic_io_failures'
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:103: AttributeError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-timeout] _
+
+job_host = namespace(outcome='timeout', faults={'recovery.json'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr....'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x106055f70>)
+outcome = 'timeout', fault = 'recovery.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-native] _
+
+job_host = namespace(outcome='native', faults={'recovery.json'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr.l...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x106055430>)
+outcome = 'native', fault = 'recovery.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-cancel] _
+
+job_host = namespace(outcome='cancel', faults={'recovery.json'}, writes=['owned.xlsx', 'job.applescript', 'recovery.json'], calls...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10611df70>)
+outcome = 'cancel', fault = 'recovery.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+>           assert exc is state.cancelled
+E           AssertionError: assert OSError(28, 'diagnostic storage exhausted') is KeyboardInterrupt('original cancellation')
+E            +  where KeyboardInterrupt('original cancellation') = namespace(outcome='cancel', faults={'recovery.json'}, writes=['owned.xlsx', 'job.applescript', 'recovery.json'], calls...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x10611df70>).cancelled
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:90: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-timeout] _
+
+job_host = namespace(outcome='timeout', faults={'native-office.quarantine.json'}, writes=['owned.xlsx', 'job.applescript', 'stdou...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060b73a0>)
+outcome = 'timeout', fault = 'native-office.quarantine.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-native] _
+
+job_host = namespace(outcome='native', faults={'native-office.quarantine.json'}, writes=['owned.xlsx', 'job.applescript', 'stdout...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060b7dc0>)
+outcome = 'native', fault = 'native-office.quarantine.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+            assert exc is state.cancelled
+        else:
+>           assert isinstance(exc, runtime.NativeOfficeError)
+E           AssertionError: assert False
+E            +  where False = isinstance(OSError(28, 'diagnostic storage exhausted'), <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'>)
+E            +    where <class 'skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError'> = runtime.NativeOfficeError
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:92: AssertionError
+_ test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-cancel] _
+
+job_host = namespace(outcome='cancel', faults={'native-office.quarantine.json'}, writes=['owned.xlsx', 'job.applescript', 'recove...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060184c0>)
+outcome = 'cancel', fault = 'native-office.quarantine.json'
+
+    @pytest.mark.parametrize('outcome', ['timeout', 'native', 'cancel'])
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'])
+    def test_failed_native_job_preserves_primary_error_despite_diagnostic_io(job_host, outcome, fault):
+        state = job_host
+        state.outcome, state.faults = outcome, {fault}
+        with pytest.raises(BaseException) as caught:
+            state.execute()
+        exc = caught.value
+        if outcome == 'cancel':
+>           assert exc is state.cancelled
+E           AssertionError: assert OSError(28, 'diagnostic storage exhausted') is KeyboardInterrupt('original cancellation')
+E            +  where KeyboardInterrupt('original cancellation') = namespace(outcome='cancel', faults={'native-office.quarantine.json'}, writes=['owned.xlsx', 'job.applescript', 'recove...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060184c0>).cancelled
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:90: AssertionError
+_________ test_all_diagnostic_writes_can_fail_without_masking_timeout __________
+
+args = (['/usr/bin/osascript', '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_all_diagnostic_writes_can0/container/job-tjvklmkk/job.applescript'],)
+kwargs = {'capture_output': True, 'text': True, 'timeout': 2.999696625}
+
+    def run(*args, **kwargs):
+        calls.append('launch')
+        if state.outcome == 'timeout':
+>           raise subprocess.TimeoutExpired('osascript', 1, output=b'partial', stderr=b'failure')
+E           subprocess.TimeoutExpired: Command 'osascript' timed out after 1 seconds
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:33: TimeoutExpired
+
+During handling of the above exception, another exception occurred:
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_all_diagnostic_writes_can0/container/job-tjvklmkk/stdout.log')
+args = (b'partial',), kwargs = {}
+
+    def checked_bytes(path, *args, **kwargs):
+>       check(path)
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_all_diagnostic_writes_can0/container/job-tjvklmkk/stdout.log')
+
+    def check(path):
+        state.writes.append(path.name)
+        if path.name in state.faults:
+>           raise OSError(errno.ENOSPC, 'diagnostic storage exhausted')
+E           OSError: [Errno 28] diagnostic storage exhausted
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:46: OSError
+
+During handling of the above exception, another exception occurred:
+
+job_host = namespace(outcome='timeout', faults={'stderr.log', 'recovery.json', 'stdout.log', 'native-office.quarantine.json'}, wr...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x106055ee0>)
+
+    def test_all_diagnostic_writes_can_fail_without_masking_timeout(job_host):
+        state = job_host
+        state.outcome = 'timeout'
+        state.faults = {'stdout.log', 'stderr.log', 'recovery.json', 'native-office.quarantine.json'}
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+>           state.execute()
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/msoffice/test_macos_office_runtime_diagnostics.py:75: in <lambda>
+    state.execute = lambda **kwargs: runtime._execute(
+skills/WPSComposer/scripts/msoffice/macos_office_runtime.py:164: in _execute
+    (job / 'recovery.json').write_text(json.dumps(detail), encoding='utf-8')
+tests/msoffice/test_macos_office_runtime_diagnostics.py:49: in checked_text
+    check(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_all_diagnostic_writes_can0/container/job-tjvklmkk/recovery.json')
+
+    def check(path):
+        state.writes.append(path.name)
+        if path.name in state.faults:
+>           raise OSError(errno.ENOSPC, 'diagnostic storage exhausted')
+E           OSError: [Errno 28] diagnostic storage exhausted
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:46: OSError
+_ test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication[stdout.log] _
+
+job_host = namespace(outcome='closed', faults={'stdout.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'recovery.js...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a2790>)
+fault = 'stdout.log'
+
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log'])
+    def test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication(job_host, fault):
+        state = job_host
+        state.outcome, state.faults = 'closed', {fault}
+        with pytest.raises(OSError) as caught:
+            state.execute()
+        assert caught.value.errno == errno.ENOSPC
+        assert state.calls == ['launch']
+        assert state.output.read_bytes() == b'previous output'
+>       assert not (state.root / 'native-office.quarantine.json').exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_closed_ack_with_failed_lo0/container') / 'native-office.quarantine.json').exists
+E        +      where PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_closed_ack_with_failed_lo0/container') = namespace(outcome='closed', faults={'stdout.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'recovery.js...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a2790>).root
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:137: AssertionError
+_ test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication[stderr.log] _
+
+job_host = namespace(outcome='closed', faults={'stderr.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr.log'...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a2af0>)
+fault = 'stderr.log'
+
+    @pytest.mark.parametrize('fault', ['stdout.log', 'stderr.log'])
+    def test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication(job_host, fault):
+        state = job_host
+        state.outcome, state.faults = 'closed', {fault}
+        with pytest.raises(OSError) as caught:
+            state.execute()
+        assert caught.value.errno == errno.ENOSPC
+        assert state.calls == ['launch']
+        assert state.output.read_bytes() == b'previous output'
+>       assert not (state.root / 'native-office.quarantine.json').exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_closed_ack_with_failed_lo1/container') / 'native-office.quarantine.json').exists
+E        +      where PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_closed_ack_with_failed_lo1/container') = namespace(outcome='closed', faults={'stderr.log'}, writes=['owned.xlsx', 'job.applescript', 'stdout.log', 'stderr.log'...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a2af0>).root
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:137: AssertionError
+_ test_expired_deadline_before_transport_does_not_quarantine_or_report_deleted_paths _
+
+job_host = namespace(outcome='native', faults=set(), writes=['owned.xlsx', 'job.applescript', 'recovery.json', 'native-office.qua...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a29d0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10615fe80>
+
+    def test_expired_deadline_before_transport_does_not_quarantine_or_report_deleted_paths(job_host, monkeypatch):
+        state = job_host
+    
+        def expire_after_script(path, mode):
+            monkeypatch.setattr(runtime, '_remaining', lambda deadline: (_ for _ in ()).throw(
+                runtime.NativeOfficeError('NATIVE_OFFICE_TIMEOUT')))
+    
+        monkeypatch.setattr(runtime.os, 'chmod', expire_after_script)
+        with pytest.raises(runtime.NativeOfficeError) as caught:
+            state.execute()
+        assert caught.value.code == 'NATIVE_OFFICE_TIMEOUT'
+        assert state.calls == []
+>       assert not (state.root / 'native-office.quarantine.json').exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = (PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_expired_deadline_before_t0/container') / 'native-office.quarantine.json').exists
+E        +      where PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1287/test_expired_deadline_before_t0/container') = namespace(outcome='native', faults=set(), writes=['owned.xlsx', 'job.applescript', 'recovery.json', 'native-office.qua...'), cancelled=KeyboardInterrupt('original cancellation'), execute=<function job_host.<locals>.<lambda> at 0x1060a29d0>).root
+
+tests/msoffice/test_macos_office_runtime_diagnostics.py:164: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-timeout]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-native]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stdout.log-cancel]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-timeout]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-native]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[stderr.log-cancel]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-timeout]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-native]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[recovery.json-cancel]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-timeout]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-native]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_failed_native_job_preserves_primary_error_despite_diagnostic_io[native-office.quarantine.json-cancel]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_all_diagnostic_writes_can_fail_without_masking_timeout
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication[stdout.log]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_closed_ack_with_failed_logs_preserves_closed_state_and_refuses_publication[stderr.log]
+FAILED tests/msoffice/test_macos_office_runtime_diagnostics.py::test_expired_deadline_before_transport_does_not_quarantine_or_report_deleted_paths
+16 failed, 1 passed in 0.11s

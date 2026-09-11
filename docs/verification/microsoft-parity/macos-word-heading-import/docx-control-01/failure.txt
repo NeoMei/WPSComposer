@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-control.py", line 110, in run
+    owned_stage('recipient', recipient)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-control.py", line 66, in owned_stage
+    action(owner)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-control.py", line 107, in recipient
+    check('exact_docx_replacement', rows == [['import', start, end, expected]])
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-heading-import-20260910/docx-control.py", line 38, in check
+    raise AssertionError('DOCX control failed: '+key)
+AssertionError: DOCX control failed: exact_docx_replacement

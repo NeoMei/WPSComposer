@@ -1,0 +1,152 @@
+FFFFFFFFFFFFFFFFF.F                                                      [100%]
+=================================== FAILURES ===================================
+____ test_shared_lock_fault_preserves_primary_identity[quarantine-primary0] ____
+tests/msoffice/test_windows_word_runtime_diagnostics.py:61: in test_shared_lock_fault_preserves_primary_identity
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled lock failure') is NativeWordTimeoutError('Native Word timed out; uncertain task files are retained.')
+E    +  where OSError(5, 'controlled lock failure') = <ExceptionInfo OSError(5, 'controlled lock failure') tblen=4>.value
+____ test_shared_lock_fault_preserves_primary_identity[quarantine-primary1] ____
+tests/msoffice/test_windows_word_runtime_diagnostics.py:61: in test_shared_lock_fault_preserves_primary_identity
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled lock failure') is KeyboardInterrupt()
+E    +  where OSError(5, 'controlled lock failure') = <ExceptionInfo OSError(5, 'controlled lock failure') tblen=4>.value
+______ test_shared_lock_fault_preserves_primary_identity[close-primary0] _______
+tests/msoffice/test_windows_word_runtime_diagnostics.py:61: in test_shared_lock_fault_preserves_primary_identity
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled lock failure') is NativeWordTimeoutError('Native Word timed out; uncertain task files are retained.')
+E    +  where OSError(5, 'controlled lock failure') = <ExceptionInfo OSError(5, 'controlled lock failure') tblen=4>.value
+______ test_shared_lock_fault_preserves_primary_identity[close-primary1] _______
+tests/msoffice/test_windows_word_runtime_diagnostics.py:61: in test_shared_lock_fault_preserves_primary_identity
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled lock failure') is KeyboardInterrupt()
+E    +  where OSError(5, 'controlled lock failure') = <ExceptionInfo OSError(5, 'controlled lock failure') tblen=4>.value
+_____ test_timeout_diagnostic_failure_keeps_timeout_and_shared_quarantine ______
+tests/msoffice/test_windows_word_runtime_diagnostics.py:77: in wait
+    raise subprocess.TimeoutExpired('owned Python', timeout)
+E   subprocess.TimeoutExpired: Command 'owned Python' timed out after 2.9986061250000002 seconds
+
+During handling of the above exception, another exception occurred:
+tests/msoffice/test_windows_word_runtime_diagnostics.py:99: in test_timeout_diagnostic_failure_keeps_timeout_and_shared_quarantine
+    execute(tmp_path)
+tests/msoffice/test_windows_word_runtime_diagnostics.py:43: in execute
+    return runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 3)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:106: in _run_worker
+    return _run_worker_unlocked(root, payload, deadline)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:156: in _run_worker_unlocked
+    _write_json(diagnostic, {'status': 'timeout', 'python_pid': child.pid, 'word_termination_attempted': False})
+tests/msoffice/test_windows_word_runtime_diagnostics.py:88: in write
+    raise OSError(errno.ENOSPC, 'controlled diagnostic storage failure')
+E   OSError: [Errno 28] controlled diagnostic storage failure
+_ test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary0] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:120: in test_launch_failure_is_known_clean_even_when_diagnostic_write_fails
+    assert caught.value.code == 'NATIVE_WORD_EXECUTION_FAILED'
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary1] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:122: in test_launch_failure_is_known_clean_even_when_diagnostic_write_fails
+    assert caught.value is primary
+E   AssertionError: assert OSError(28, 'controlled diagnostic storage failure') is KeyboardInterrupt()
+E    +  where OSError(28, 'controlled diagnostic storage failure') = <ExceptionInfo OSError(28, 'controlled diagnostic storage failure') tblen=5>.value
+_ test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary2] _
+tests/msoffice/test_windows_word_runtime_diagnostics.py:122: in test_launch_failure_is_known_clean_even_when_diagnostic_write_fails
+    assert caught.value is primary
+E   AssertionError: assert OSError(28, 'controlled diagnostic storage failure') is SystemExit(7)
+E    +  where OSError(28, 'controlled diagnostic storage failure') = <ExceptionInfo OSError(28, 'controlled diagnostic storage failure') tblen=5>.value
+___________ test_request_write_failure_before_launch_is_known_clean ____________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:140: in test_request_write_failure_before_launch_is_known_clean
+    assert primary.cleanup_verified is True
+E   AttributeError: 'OSError' object has no attribute 'cleanup_verified'
+__ test_wait_cancellation_stops_owned_python_and_preserves_identity[primary0] __
+tests/msoffice/test_windows_word_runtime_diagnostics.py:156: in test_wait_cancellation_stops_owned_python_and_preserves_identity
+    assert child.returncode == -9
+E   assert None == -9
+E    +  where None = <test_windows_word_runtime_diagnostics.test_wait_cancellation_stops_owned_python_and_preserves_identity.<locals>.Child object at 0x107b0c640>.returncode
+__ test_wait_cancellation_stops_owned_python_and_preserves_identity[primary1] __
+tests/msoffice/test_windows_word_runtime_diagnostics.py:156: in test_wait_cancellation_stops_owned_python_and_preserves_identity
+    assert child.returncode == -9
+E   assert None == -9
+E    +  where None = <test_windows_word_runtime_diagnostics.test_wait_cancellation_stops_owned_python_and_preserves_identity.<locals>.Child object at 0x107b0cdc0>.returncode
+______________ test_timeout_cleanup_errors_do_not_replace_timeout ______________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:77: in wait
+    raise subprocess.TimeoutExpired('owned Python', timeout)
+E   subprocess.TimeoutExpired: Command 'owned Python' timed out after 2.996736875 seconds
+
+During handling of the above exception, another exception occurred:
+tests/msoffice/test_windows_word_runtime_diagnostics.py:167: in test_timeout_cleanup_errors_do_not_replace_timeout
+    execute(tmp_path)
+tests/msoffice/test_windows_word_runtime_diagnostics.py:43: in execute
+    return runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 3)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:106: in _run_worker
+    return _run_worker_unlocked(root, payload, deadline)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:153: in _run_worker_unlocked
+    child.kill()
+tests/msoffice/test_windows_word_runtime_diagnostics.py:163: in kill
+    raise OSError(errno.EACCES, 'owned Python signal refused')
+E   PermissionError: [Errno 13] owned Python signal refused
+__________ test_diagnostic_metadata_failure_cannot_skip_child_cleanup __________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:77: in wait
+    raise subprocess.TimeoutExpired('owned Python', timeout)
+E   subprocess.TimeoutExpired: Command 'owned Python' timed out after 2.996892083 seconds
+
+During handling of the above exception, another exception occurred:
+tests/msoffice/test_windows_word_runtime_diagnostics.py:185: in test_diagnostic_metadata_failure_cannot_skip_child_cleanup
+    execute(tmp_path)
+tests/msoffice/test_windows_word_runtime_diagnostics.py:43: in execute
+    return runtime._run_worker(tmp_path, {'action': 'export'}, time.monotonic() + 3)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:106: in _run_worker
+    return _run_worker_unlocked(root, payload, deadline)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:155: in _run_worker_unlocked
+    if not diagnostic.exists():
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py:1414: in exists
+    self.stat()
+tests/msoffice/test_windows_word_runtime_diagnostics.py:180: in fail_stat
+    raise OSError(errno.EACCES, 'diagnostic stat refused')
+E   PermissionError: [Errno 13] diagnostic stat refused
+__________ test_non_object_diagnostics_fall_back_to_typed_failure[[]] __________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:194: in test_non_object_diagnostics_fall_back_to_typed_failure
+    error = runtime._worker_failure(tmp_path)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:85: in _worker_failure
+    error.cleanup_verified = data.get('cleanup_verified') is True
+E   AttributeError: 'list' object has no attribute 'get'
+_________ test_non_object_diagnostics_fall_back_to_typed_failure[null] _________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:194: in test_non_object_diagnostics_fall_back_to_typed_failure
+    error = runtime._worker_failure(tmp_path)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:85: in _worker_failure
+    error.cleanup_verified = data.get('cleanup_verified') is True
+E   AttributeError: 'NoneType' object has no attribute 'get'
+________ test_non_object_diagnostics_fall_back_to_typed_failure[false] _________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:194: in test_non_object_diagnostics_fall_back_to_typed_failure
+    error = runtime._worker_failure(tmp_path)
+skills/WPSComposer/scripts/msoffice/windows_runtime.py:85: in _worker_failure
+    error.cleanup_verified = data.get('cleanup_verified') is True
+E   AttributeError: 'bool' object has no attribute 'get'
+_____________ test_worker_failure_never_advertises_absent_evidence _____________
+tests/msoffice/test_windows_word_runtime_diagnostics.py:202: in test_worker_failure_never_advertises_absent_evidence
+    assert error.diagnostic_path is None
+E   AssertionError: assert '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1330/test_worker_failure_never_adve0/worker.log' is None
+E    +  where '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1330/test_worker_failure_never_adve0/worker.log' = NativeWordError('Native Word execution failed; private evidence is retained. staging_path: /private/var/folders/0n/49q...r/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1330/test_worker_failure_never_adve0/worker.log').diagnostic_path
+_______ test_real_python_wait_cancellation_does_not_kill_unrelated_child _______
+tests/msoffice/test_windows_word_runtime_diagnostics.py:241: in test_real_python_wait_cancellation_does_not_kill_unrelated_child
+    assert children[0].poll() is not None
+E   AssertionError: assert None is not None
+E    +  where None = poll()
+E    +    where poll = <Popen: returncode: None args: ['/private/var/folders/0n/49qgdd8x7kgcvh719fw...>.poll
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_shared_lock_fault_preserves_primary_identity[quarantine-primary0]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_shared_lock_fault_preserves_primary_identity[quarantine-primary1]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_shared_lock_fault_preserves_primary_identity[close-primary0]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_shared_lock_fault_preserves_primary_identity[close-primary1]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_timeout_diagnostic_failure_keeps_timeout_and_shared_quarantine
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary0]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary1]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_launch_failure_is_known_clean_even_when_diagnostic_write_fails[primary2]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_request_write_failure_before_launch_is_known_clean
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_wait_cancellation_stops_owned_python_and_preserves_identity[primary0]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_wait_cancellation_stops_owned_python_and_preserves_identity[primary1]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_timeout_cleanup_errors_do_not_replace_timeout
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_diagnostic_metadata_failure_cannot_skip_child_cleanup
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_non_object_diagnostics_fall_back_to_typed_failure[[]]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_non_object_diagnostics_fall_back_to_typed_failure[null]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_non_object_diagnostics_fall_back_to_typed_failure[false]
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_worker_failure_never_advertises_absent_evidence
+FAILED tests/msoffice/test_windows_word_runtime_diagnostics.py::test_real_python_wait_cancellation_does_not_kill_unrelated_child
+18 failed, 1 passed in 1.81s

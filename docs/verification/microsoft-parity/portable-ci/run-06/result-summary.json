@@ -1,0 +1,26 @@
+{
+  "pytest-ubuntu-24.04-python-3.12": {
+    "passed": 4969,
+    "failed": 0,
+    "skipped": 44,
+    "failures": []
+  },
+  "pytest-ubuntu-24.04-python-3.9": {
+    "passed": 4969,
+    "failed": 0,
+    "skipped": 44,
+    "failures": []
+  },
+  "pytest-windows-2022-python-3.12": {
+    "passed": 4938,
+    "failed": 0,
+    "skipped": 75,
+    "failures": []
+  },
+  "pytest-windows-2022-python-3.9": {
+    "passed": 4938,
+    "failed": 0,
+    "skipped": 75,
+    "failures": []
+  }
+}

@@ -1,0 +1,34 @@
+F....                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_mac_process_identity_roundtrips_when_host_paths_are_windows _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106c4a4f0>
+
+    def test_mac_process_identity_roundtrips_when_host_paths_are_windows(monkeypatch):
+        monkeypatch.setattr(osa, 'Path', PureWindowsPath)
+>       value = osa.ExcelProcessIdentity(42, 10, 20,
+            '/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel',
+            'com.microsoft.Excel')
+
+tests/msoffice/test_macos_process_path_contract.py:11: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+<string>:8: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ExcelProcessIdentity(pid=42, start_seconds=10, start_microseconds=20, executable='/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel', bundle_id='com.microsoft.Excel')
+
+    def __post_init__(self) -> None:
+        _strict_int(self.pid, "pid", minimum=1)
+        _strict_int(self.start_seconds, "process start seconds")
+        micros = _strict_int(self.start_microseconds, "process start microseconds")
+        if micros >= 1_000_000:
+            raise ValueError("Invalid process start microseconds")
+        if not isinstance(self.executable, str) or not Path(self.executable).is_absolute():
+>           raise ValueError("Process executable must be absolute")
+E           ValueError: Process executable must be absolute
+
+skills/WPSComposer/scripts/msoffice/macos_osa_transport.py:89: ValueError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_process_path_contract.py::test_mac_process_identity_roundtrips_when_host_paths_are_windows
+1 failed, 4 passed in 0.05s

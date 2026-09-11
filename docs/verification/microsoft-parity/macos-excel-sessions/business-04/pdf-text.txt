@@ -1,0 +1,30 @@
+NATIVE HEADER
+1
+NATIVE RIGHT
+Metric
+Value
+Alpha
+15.00
+Beta
+20
+Total
+35
+Native business title
+Merged native row
+0.00
+5.00
+10.00
+15.00
+20.00
+25.00
+Alpha
+Beta
+Native revenue business
+Value
+
+Item
+Value
+Double
+70
+
+Native third sheet

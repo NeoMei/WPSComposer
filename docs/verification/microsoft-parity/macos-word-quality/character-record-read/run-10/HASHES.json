@@ -1,0 +1,15 @@
+{
+  "after-open-failure.applescript": "81f3e5f15f26fd3f8832634dbf7be44945a7711e8f7fd40df9172179804682a0",
+  "after-open-failure.log": "5239a7754876b9a70871c45e41f1bd9abbd91ed2de67af926c1cfcc9c9377d51",
+  "before.applescript": "81f3e5f15f26fd3f8832634dbf7be44945a7711e8f7fd40df9172179804682a0",
+  "before.log": "5239a7754876b9a70871c45e41f1bd9abbd91ed2de67af926c1cfcc9c9377d51",
+  "failure.txt": "bcbada94afdf9be991ccc266cdb239ff6ed70455fb0765f89f7893633742908d",
+  "format-variants.docx": "ab6070ba763281b446738ce829d2bfa3a8c3f75c6a859e2f9dfaf4c86bcd6db1",
+  "native-runtime/4afff948e4fb4022b06029111637eea6.applescript": "0d0ba24ed4b9b5caf253427b8e467c633d3c99ef9ce408884d2755dfe1fb66ba",
+  "native-runtime/4afff948e4fb4022b06029111637eea6.log": "d437359ceb14c07fdaadecd2a898ab2e065dc478271c14531f469c0ae5b570d6",
+  "native-runtime/document-30f20508a56d4690ac476c4337e3280e.docx": "ab6070ba763281b446738ce829d2bfa3a8c3f75c6a859e2f9dfaf4c86bcd6db1",
+  "parent-reconciliation.json": "d4929219a32ab4b1a58c9c47e753b16d0c9b5d561d8033703e5e6b98f5c06738",
+  "preflight-note.txt": "062c13502dbf487fc718bff37ece47575785743379f2f58f16bcd98de2c52cf3",
+  "probe.py": "ea28bbb1bc2e5e4bd8dca7bb95c31c0fe8ef525eb09c0347b58d75246e010e51",
+  "report.json": "f7ba60f902df4e9fb012ddab9479e390ba826903e45cc4cc22bfb154aafff78b"
+}

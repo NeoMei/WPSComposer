@@ -6,17 +6,28 @@
 
 `generate(..., engine="wps")` and `convert_to_pdf(..., engine="wps")` accept
 keyword-only `engine="wps" | "msoffice" | "auto"`. The default is WPS.
-`msoffice` uses installed desktop Microsoft Word for DOCX/PDF generation and
-DOC/DOCX-to-PDF conversion on Windows and macOS. Excel, PowerPoint and
-conversational document editing retain their existing WPS interfaces.
+Released 0.9.0 `msoffice` support uses desktop Microsoft Word for DOCX/PDF
+generation and DOC/DOCX-to-PDF conversion. This development candidate also
+implements native Excel/XLSX and PowerPoint/PPTX generation, modern
+XLSX/PPTX-to-PDF conversion, and engine-bound document inspection/editing.
+Representative macOS flows have native evidence; Windows candidate native
+acceptance, remaining methods, arguments and legacy formats are incomplete.
+The candidate session API below describes implementation scope, not full
+Microsoft/WPS parity or release approval.
+Mac Word structural `insert` operations for tables currently accept only an
+omitted position, `None`, or `"end"`. Other positions are rejected before a
+public edit opens the document, or before an existing-session batch performs
+any write. This interim guard prevents known misplaced tables; precise
+nonterminal insertion remains an unfinished required capability.
 The deprecated `layout_engine: legacy` route is not available with MS Office.
 
 `auto` detects installed applications without starting them, prefers WPS,
-then selects Word for writer documents. It pins that choice for the entire
+then selects the corresponding Microsoft application where the request's
+capability preflight permits it. It pins that choice for the entire
 task. An execution or content error never triggers a switch to another engine.
 Unsupported native operations fail explicitly; no alternate OOXML renderer is used.
-Windows requires `pywin32`; macOS requires desktop Word and macOS Automation
-permission for the launching terminal/application to control Microsoft Word.
+Windows requires `pywin32`; macOS requires the corresponding desktop Office
+application and macOS Automation permission for the launching terminal/app.
 DOCX results with `open_result=True` open in the selected WPS/Word application.
 On macOS, install WPS at `/Applications/wpsoffice.app` or Word at
 `/Applications/Microsoft Word.app`; automatic detection matches these runtime
@@ -317,14 +328,23 @@ validate_target("paragraf:3", "writer")
 #       "valid_forms": [...], "closest": "paragraph:N"}}
 ```
 
+Candidate implementation note: this branch adds explicit `engine` selection to
+the document entry points below, including native `create_document`. A Microsoft session retains its selected
+application and document through inspection, editing and close. Microsoft active
+attachment requires an explicit kind; save prerequisites are checked before a
+live edit. Unsupported native operations fail explicitly. Cross-platform parity
+acceptance is still in progress; these signatures do not claim every WPS
+operation has passed Microsoft native validation.
+
 Common functions:
 
 | Function | Purpose |
 |---|---|
-| `open_document(path, kind=None, read_only=False, visible=False)` | Open a supported existing file; returns a context-manageable composer |
-| `attach_active(kind=None)` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
-| `inspect(path=None, kind=None, selection=False, **options)` | Return a JSON-compatible document or selection snapshot |
-| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False)` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. Existing outputs require `overwrite=True`. With `export_pdf`, both artifacts are staged and validated before group publication with rollback; attached/macOS edit export is unsupported. |
+| `create_document(kind="writer", *, visible=False, engine="wps")` | Create a native document with an engine-bound context-managed session; save to an explicit destination |
+| `open_document(path, *, kind=None, read_only=False, visible=False, engine="wps")` | Open a supported existing file; returns a context-manageable composer |
+| `attach_active(kind=None, *, engine="wps")` | Attach to the user's active Writer/Sheet/Slide without closing it later; auto-detects when omitted |
+| `inspect(path=None, *, kind=None, selection=False, engine="wps", **options)` | Return a JSON-compatible document or selection snapshot |
+| `edit(path=None, kind=None, patches=None, ops=None, output=None, export_pdf=None, atomic=True, raise_on_error=False, overwrite=False, engine="wps")` | Apply patches and/or ops and save in place or to a copy. `patches` is sugar for `{"op":"set",...}` and runs before `ops`; one atomic transaction. Atomic by default: on any failure the document is **not** saved and a structured `{"ok": False, "errors": [...]}` result is returned. Existing outputs require `overwrite=True`. With `export_pdf`, both artifacts are staged and validated before group publication with rollback; attached/macOS edit export is unsupported. |
 | `apply_ops(composer, ops, atomic=True)` | Unified op executor (`set`/`insert`/`remove`/`move`/`clone`); raises `PatchError` in atomic mode |
 | `apply_patches(composer, patches, atomic=True)` | Back-compat wrapper: `set`-only patches, normalised to `apply_ops` |
 | `validate_op(op, kind=None)` | Validate one op dict against the schema; returns `{valid, error:{code,...}}` |
@@ -352,6 +372,39 @@ Each patch report is structured for agent consumption:
 
 Error codes: `missing_target`, `invalid_target`, `invalid_value`,
 `apply_failed`, `unsupported_kind`.
+
+### Mac Word candidate recovery and layout methods
+
+These methods are exposed by the candidate Microsoft Word session on macOS.
+Their presence does not certify all frozen Microsoft/WPS parity requirements.
+
+| Method | Contract |
+|---|---|
+| `degradation_checkpoint()` | Capture an append boundary and native state; return an integer native Word coordinate. Retain it within the same session. |
+| `rollback_degradation_checkpoint(checkpoint)` | Restore a captured append-only text/table/field boundary and verify the original prefix and tracked field/index state. Repeating an unchanged rollback is allowed. Added or changed drawing objects are rejected before deletion; this is not general document Undo or figure/equation recovery. |
+| `add_inline_degradation(code, message, fallback_text)` | Append the frozen code/fallback display with red italic text and a light-red background; return a range snapshot with `Start`, `End`, and `Text`. `message` does not replace the frozen display text. |
+| `add_degradation_notice(code, message, fallback_text, placement="block")` | With `placement="inline"`, use the inline method. Otherwise append a one-cell notice and return a box with `.Range`; an acknowledged table failure must finish verified rollback before one paragraph fallback. Uncertain execution does not trigger fallback. |
+| `add_paragraph_horizontal_line()` | Center the current paragraph, apply its 0.75-point silver bottom border, append a space and paragraph break, then clear the following paragraph's bottom border. Existing text in the current paragraph is preserved; that paragraph's formatting changes and the following paragraph inherits center alignment. |
+| `pagination_fragment_for_bookmark(node_id, bookmark_name)` | Read the bookmark's first paragraph, active-end page and available point bounds. Does not repaginate. |
+| `pagination_map_for_ranges(tracked_ranges)` | Repaginate and return page geometry for ranges exposing `Start`/`End`. Sample points are clamped to the document end while original offsets remain in the result. Read-only sessions are supported. |
+| `add_equation_number_native(*, source, numbering, bookmarkName, fallbackText, owner_node_id=None)` | Insert `str(source or fallbackText)` at the bound current selection, followed by a tab and native numbering fields; right-align the paragraph, keep it together and add a paragraph break. A selected span is replaced. Return `{"issues": []}`. The formula body is text; numbering uses SEQ and, in chapter mode, localized Heading 1 STYLEREF. |
+| `reserve_document_quality_anchor(title="生成质量提示", notices=())` | Reserve the actual bound selection End without replacing selected text, retain the first title and process notices serially. Empty reservation adds only the fixed bookmark. Return `None`. |
+| `upsert_document_quality_notice(issue)` | Require a same-session reservation; deduplicate by code, placement and redacted node identity. Insert at the numeric cursor and advance it only after verified insertion. Return `None`. |
+| `add_document_quality_notice(notices)` | Reserve if necessary, then process notices serially. A later failure preserves earlier confirmed notices. Return `None`. |
+| `add_quality_notice_at_bookmark(*, code, message, fallback, node_id, page, bookmark_name=None)` | Use the default bookmark Start or an explicit bookmark's first-paragraph End. Preserve the frozen page coercion and display; return a box snapshot. This operation does not deduplicate or move the document-notice cursor. |
+
+The four anchored quality methods are a staged implementation with native acceptance still open. Insertion currently accepts only nonterminal main-body paragraph starts away from existing tables, in documents of at most 10,000 native units without drawing objects. Paragraph interiors, table cells, crossing fields/bookmarks, adjacent tables and consecutive distinct upserts remain closed before insertion. The fixed bookmark and numeric cursor are separate. A table failure permits one range fallback only after exact local restoration and only when the original suffix paragraph already has the required paragraph formatting. Unsupported positions are not redirected to document end; unknown completion quarantines the session. These restrictions are outstanding parity requirements, not a complete four-method support claim.
+
+The numbering descriptor uses `sequenceId` (`WPSC_EQ`, `WPSC_FIG`, or `WPSC_TAB`), `mode` (`global` or `chapter`), and `prefix`/`suffix`. Chapter mode requires `chapterStyleLevel=1` and `resetLevel=1`; global mode leaves both unset or `None`. An optional `bookmarkName` matches `wpsc_eq_`, `wpsc_fig_`, or `wpsc_tab_` plus 24 lowercase hexadecimal characters and encloses only the number. Field snapshots retain the supplied owner and `numbering` category, with stable creation-order ordinals. Confirmed earlier inserts remain after a later argument error; uncertain native mutation quarantines the session. Append checkpoint recovery covers these fields; arbitrary middle-document replacement rollback remains outside that recovery contract.
+
+Notice range and box objects are immutable snapshots, not raw COM objects or
+live editing handles; positions can become stale after later edits. Pagination
+checks ownership for the defined notice range type but cannot prove the origin
+of arbitrary duck-typed ranges. Invalid native pagination results raise the
+privacy-safe `PAGINATION_SNAPSHOT_FAILED` error. These direct methods do not
+establish integration of the Windows long-form executor's COM range factory on
+macOS. Native acceptance status is tracked separately in the repository's
+`docs/verification/microsoft-parity/status.md`.
 
 ### Atomicity and the attach-active caveat
 

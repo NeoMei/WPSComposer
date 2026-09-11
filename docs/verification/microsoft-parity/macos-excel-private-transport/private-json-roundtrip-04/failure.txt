@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/excel-command-boundary-20260910/private-json-roundtrip-04.py", line 76, in main
+    assert got=={'names':['Data','Results'],'marker':'PRIVATE-JSON-ROUNDTRIP-04','alerts':True},got
+AssertionError: {'names': ['Data', 'Results'], 'marker': 'PRIVATE-JSON-ROUNDTRIP', 'alerts': True}

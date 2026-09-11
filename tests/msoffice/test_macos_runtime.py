@@ -30,7 +30,7 @@ def test_capability_rejection_precedes_staging(tmp_path, monkeypatch):
     from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
     from skills.WPSComposer.scripts.msoffice.macos_runtime import MacWordAdapter
     from skills.WPSComposer.scripts.msoffice.macos_script import MacWordCapabilityError
-    build=build_longform_generation('# Title\n\n$$\nx^2\n$$')
+    build=build_longform_generation('# Title\n\n$$\n\\unsupported{x}\n$$')
     adapter=MacWordAdapter(build)
     def forbidden(*args, **kwargs):
         pytest.fail('unsupported plan must not allocate native staging')

@@ -1,0 +1,7 @@
+<enumeration name="WdTableFieldSeparator" code="e177">
+			<enumerator name="separate by paragraphs" code="0x02410000" />
+			<enumerator name="separate by tabs" code="0x02410001" />
+			<enumerator name="separate by commas" code="0x02410002" />
+			<enumerator name="separate by default list separator" code="0x02410003" />
+		</enumeration>
+		

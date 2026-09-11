@@ -1,0 +1,113 @@
+FFFFFFFFFFFFFFFF.FF                                                      [100%]
+=================================== FAILURES ===================================
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:52: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error.code == timeout_code
+E   AttributeError: 'OSError' object has no attribute 'code'
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+_ test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:50: in test_abort_preserves_primary_and_truthful_paths_across_components
+    assert error is primary
+E   AssertionError: assert OSError(28, 'controlled private storage failure') is KeyboardInterrupt('original cancellation')
+___ test_initial_binding_error_retains_identity_when_abort_diagnostics_fail ____
+tests/msoffice/test_windows_session_proxy_diagnostics.py:75: in fail_binding
+    raise primary
+E   ValueError: original binding failure
+
+During handling of the above exception, another exception occurred:
+tests/msoffice/test_windows_session_proxy_diagnostics.py:87: in test_initial_binding_error_retains_identity_when_abort_diagnostics_fail
+    module.ProxyExcelSession.open_document('/source.xlsx')
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:101: in open_document
+    return cls._start('open_document', [str(Path(path).expanduser().resolve())],
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:147: in _start
+    self._abort('Initial document binding failed')
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:221: in _abort
+    (self.staging_root / 'recovery.json').write_text(json.dumps(detail, ensure_ascii=False), encoding='utf-8')
+tests/msoffice/test_windows_session_proxy_diagnostics.py:82: in write
+    raise OSError(errno.ENOSPC, 'controlled recovery failure')
+E   OSError: [Errno 28] controlled recovery failure
+_ test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[child.kill] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:115: in test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled cleanup failure') is KeyboardInterrupt('original cancellation')
+E    +  where OSError(5, 'controlled cleanup failure') = <ExceptionInfo OSError(5, 'controlled cleanup failure') tblen=5>.value
+_ test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[io.stop] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:115: in test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled cleanup failure') is KeyboardInterrupt('original cancellation')
+E    +  where OSError(5, 'controlled cleanup failure') = <ExceptionInfo OSError(5, 'controlled cleanup failure') tblen=5>.value
+_ test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[lock.close] _
+tests/msoffice/test_windows_session_proxy_diagnostics.py:115: in test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup
+    assert caught.value is primary
+E   AssertionError: assert OSError(5, 'controlled cleanup failure') is KeyboardInterrupt('original cancellation')
+E    +  where OSError(5, 'controlled cleanup failure') = <ExceptionInfo OSError(5, 'controlled cleanup failure') tblen=5>.value
+_____________ test_error_does_not_advertise_recovery_before_abort ______________
+tests/msoffice/test_windows_session_proxy_diagnostics.py:136: in test_error_does_not_advertise_recovery_before_abort
+    assert error.diagnostic_path is None and error.quarantine_path is None
+E   AssertionError: assert ('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1311/test_error_does_not_advertise_0/writer/session-q4rkpv9b/recovery.json' is None)
+E    +  where '/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1311/test_error_does_not_advertise_0/writer/session-q4rkpv9b/recovery.json' = NativeWordError('Native Word execution failed; private evidence is retained. staging_path: /private/var/folders/0n/49q...719fw743mh0000gn/T/pytest-of-neomei/pytest-1311/test_error_does_not_advertise_0/writer/session-q4rkpv9b/recovery.json').diagnostic_path
+________ test_cancel_during_close_is_not_replaced_with_quarantine_error ________
+tests/msoffice/test_windows_session_proxy_diagnostics.py:149: in test_cancel_during_close_is_not_replaced_with_quarantine_error
+    session.close()
+skills/WPSComposer/scripts/msoffice/windows_session_proxy.py:373: in close
+    raise self._error('QUARANTINED') from None
+E   skills.WPSComposer.scripts.msoffice.office_errors.NativeOfficeError: Native Office cleanup is unverified; explicit recovery is required.
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-recovery.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[timeout-native-office.quarantine.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-recovery.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyWordSession-/source.docx-NATIVE_WORD_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyExcelSession-/source.xlsx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_preserves_primary_and_truthful_paths_across_components[cancel-native-office.quarantine.json-ProxyPowerPointSession-/source.pptx-NATIVE_OFFICE_TIMEOUT]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_initial_binding_error_retains_identity_when_abort_diagnostics_fail
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[child.kill]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[io.stop]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_abort_cleanup_faults_preserve_cancellation_and_attempt_remaining_cleanup[lock.close]
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_error_does_not_advertise_recovery_before_abort
+FAILED tests/msoffice/test_windows_session_proxy_diagnostics.py::test_cancel_during_close_is_not_replaced_with_quarantine_error
+18 failed, 1 passed in 0.55s

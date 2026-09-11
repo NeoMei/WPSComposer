@@ -1,0 +1,124 @@
+{
+  "files": [
+    {
+      "path": "academic.pdf",
+      "sha256": "b1ed5164fbfebde6cdf4ed3fa6b093de1deecf292d93b75b3dcd8302d323db4d"
+    },
+    {
+      "path": "degradation.pdf",
+      "sha256": "a353f3e966e4d5011f29e90bf8e86fa8da06bdbfbd1d7ba975a660743a72525e"
+    },
+    {
+      "path": "evidence.json",
+      "sha256": "db86c20b69263cd1ac3ceccd8653640690cade3deab6f18b23527fdee2a9b550"
+    },
+    {
+      "path": "performance-60.pdf",
+      "sha256": "1c479401e0ade4e1e573e23aa77f98f08c1709b2e18c73fa23dcee5350ac22e4"
+    },
+    {
+      "path": "plain_short.pdf",
+      "sha256": "65b45bd2b20fc662da2d4e75863d69ad30fb7be4aa499b140dbccf849772b587"
+    },
+    {
+      "path": "screenshots/academic-1.png",
+      "sha256": "e904a654ffe742fc4f79e16a883a39c3b6c2edba6f0f10fc242bc39fbae54d55"
+    },
+    {
+      "path": "screenshots/academic-2.png",
+      "sha256": "38b5b7c81c5e7d69ee1972e5f8b7d3f546100d2fba412f1e59175e1199fd92ce"
+    },
+    {
+      "path": "screenshots/academic-3.png",
+      "sha256": "2fafa767c6e4ef88de33fae66e31443b7bff6d934755c38fc75c5d4a9cc22ec4"
+    },
+    {
+      "path": "screenshots/academic-4.png",
+      "sha256": "227cc71287803b725e845e39b759acf657c435f73080525d9196f0f3b746f856"
+    },
+    {
+      "path": "screenshots/degradation-1.png",
+      "sha256": "580c624798b8ec1c3a3af659c1e0bf03651c1a754f3aeb2ccd3f59a7ed6abeba"
+    },
+    {
+      "path": "screenshots/degradation-2.png",
+      "sha256": "065654bccfcb2b01447f84f814a0af3bb721a38b82af1899c6b9e7c396d37b08"
+    },
+    {
+      "path": "screenshots/degradation-3.png",
+      "sha256": "9e0933321a9b8118b21f621cff8d02e1d434c218acdf6d343a7a02772e4d65dc"
+    },
+    {
+      "path": "screenshots/performance-60-1.png",
+      "sha256": "afcc58dcd3feaaa1a59585e917cdd5e3f3bb0f8656e57a28b5febbc96ace19eb"
+    },
+    {
+      "path": "screenshots/performance-60-32.png",
+      "sha256": "2f99dc9763dd668b01d3b2ed5388b482991a616cda51c0b289cb3ceeb54fe106"
+    },
+    {
+      "path": "screenshots/performance-60-63.png",
+      "sha256": "6f6f54da11dcd62367b57e7d37765198b51476e1c6f6024f2b23b0556a064fc1"
+    },
+    {
+      "path": "screenshots/plain_short-1.png",
+      "sha256": "5ab22cc3e646ed3545298e98992014a00f3ba93360c476efdf7e63d513e83212"
+    },
+    {
+      "path": "screenshots/toc_dense-1.png",
+      "sha256": "b46a384a28f815bfa10d894c6ab1fa91995245ca4d8fec2b117081efa9d7b26b"
+    },
+    {
+      "path": "screenshots/toc_dense-2.png",
+      "sha256": "ea9b8d55c9a035569d9ae32c2ccb8c48d60e35321877b1f6f6d3ef2ca3a45f36"
+    },
+    {
+      "path": "screenshots/toc_dense-3.png",
+      "sha256": "7b4f44bb7c357a047e9e5a9f76b6f3c95e74369dec69d16ed9c8f5ca63a1eeb2"
+    },
+    {
+      "path": "screenshots/toc_dense-4.png",
+      "sha256": "b614ca7507591fc7a02f0f562b78d50e265ec9622d3a2ed6a7a7cb09a6f60d66"
+    },
+    {
+      "path": "screenshots/unicode-1.png",
+      "sha256": "e6f8ff2e696bf26bfc0b2a72ba23552cd176e094b96795421b4ec91fb598c0bf"
+    },
+    {
+      "path": "screenshots/unicode-2.png",
+      "sha256": "39006a84e2b904dd4c7b339576747de3aeeb366f2ed7e62ca2212666b5368a2c"
+    },
+    {
+      "path": "screenshots/wide_objects-1.png",
+      "sha256": "88a4f69138d00b147a61a3310e68917531b0c899fa8ab9904e9b24193339248f"
+    },
+    {
+      "path": "screenshots/wide_objects-2.png",
+      "sha256": "19a04a36faff93c7e44704d78268787d53925ffcbe6f67782e6b30873dde48f8"
+    },
+    {
+      "path": "screenshots/wide_objects-3.png",
+      "sha256": "bd4ee86b73c40771e7613e4a0dac23875625ea3f78545201b4846e92868ba3b9"
+    },
+    {
+      "path": "screenshots/wide_objects-4.png",
+      "sha256": "8bc12f97e7796aadf88ab36d660010cc47d5fba9cd41360c6f8d6c5380b38228"
+    },
+    {
+      "path": "screenshots/wide_objects-5.png",
+      "sha256": "b01449b4a4a4486a642a7e54d8d1643f56fe636bbd632e294b1176543d07031b"
+    },
+    {
+      "path": "toc_dense.pdf",
+      "sha256": "2c200ba49b89a29810202f20c718eef9853cda0e784ac588988f6e02e2a6a5d8"
+    },
+    {
+      "path": "unicode.pdf",
+      "sha256": "98f3dbb1d305de35552bcb3df100f52849f5b1ae32bc26dde7a72603c867830d"
+    },
+    {
+      "path": "wide_objects.pdf",
+      "sha256": "3766a3271e29b8eccd12c09c055f79f16c82e012ce90b9effa7ee2a2956a67e7"
+    }
+  ]
+}

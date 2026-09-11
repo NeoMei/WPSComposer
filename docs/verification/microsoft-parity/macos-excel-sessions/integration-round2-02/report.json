@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "source": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/business-04/business.xlsx",
+  "source_sha256_before": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+  "source_hashes": {
+    "skills/WPSComposer/scripts/artifact_transport.py": "4a5740a2943eae5ccb875da6eae31ddeeddb3b5d9f9b815b1e68250215329ef7",
+    "skills/WPSComposer/scripts/msoffice/macos_excel_session.py": "a052c08efd2fb68b1f1812edc91609fc89424a9570321b2b89e3f9aafa6c2b3b",
+    "fixtures/microsoft_parity/macos_excel_integration_round2.py": "dc44a70b63a336f0b04340203927c98bcd162d9dd2216f4a16d211803dd1567a"
+  },
+  "checks": {
+    "failed_save_close_kept_exact_owned_workbook_open": true,
+    "failed_save_close_kept_exclusive_lock": true,
+    "concurrent_destination_preserved": true,
+    "save_as_recovery_then_discard_closed_exactly_once": true,
+    "public_pdf_export_preserved_native_binding": true,
+    "native_reopen_separates_foreign_and_recovery_bytes": true,
+    "unrelated_unsaved_sentinel_preserved": true,
+    "original_source_preserved": true
+  },
+  "owned_name": "owned-5951a87cc4a74514adc685c14bd86a40.xlsx",
+  "owned_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-4f0jjs4s/owned-5951a87cc4a74514adc685c14bd86a40.xlsx",
+  "job": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-4f0jjs4s",
+  "failed_close": {
+    "type": "ArtifactTransportError",
+    "message": "Artifact destination changed since publication preflight: /Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-excel-sessions/integration-round2-02/bound.xlsx"
+  },
+  "native_calls_added_by_failed_close": 1,
+  "close_script": "step-0009.applescript",
+  "artifact_hashes": {
+    "logical.xlsx": "afa1135ef9ed62cd07e18cb337a8383f3f5af894cc7c833db32ea1a059012156",
+    "bound.xlsx": "228744115c815c41a0f9f811b9a13eb7d59b8cb0f82816a942ea8a7298371236",
+    "concurrent.xlsx": "228744115c815c41a0f9f811b9a13eb7d59b8cb0f82816a942ea8a7298371236",
+    "recovery.xlsx": "aeabf7da5547f43f7a7f9a31142fa11148e42af7782524dd14c92c948ede4015",
+    "recovery.pdf": "54a80e0b14ab0da59f84c86f428c6087a7ec0437ec7bcf18c1f3b6559c1a358e"
+  },
+  "sentinel_closed_exactly": true,
+  "inventory_restored": true
+}

@@ -1,0 +1,143 @@
+FFF..                                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_snapshot_accepts_reference_created_by_same_session ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109c73190>
+
+    def test_snapshot_accepts_reference_created_by_same_session(monkeypatch):
+        session = _session()
+        before = _existing_ref()
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(before))
+        original = session.snapshot_fields()
+    
+        def insert(lines):
+            identity = next(
+                line for line in lines if "make new bookmark" in line
+            ).split('name:"', 1)[1].split('"', 1)[0]
+            return [
+                ["literal", 0, 20, 24, "见😀("],
+                ["reference", 0, 1, 2, 25, 66, 67, REFERENCE_CODE, identity],
+                ["literal", 0, 68, 70, ")尾"],
+                ["literal", 1, 70, 71, "\r"],
+                ["complete", 1, 2, 20, 71],
+            ]
+    
+        monkeypatch.setattr(session, "_execute", insert)
+        session.add_cross_reference_paragraph(
+            runs=[REFERENCE_RUN], owner_node_id="owner:new"
+        )
+        handle, code = session._tracked_references[0]
+        after = _existing_ref() + [
+            ["identity", handle.bookmark, 25],
+            ["field", "main", 2, "REF", code, 25, "2", 0, 0, 1],
+        ]
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(after))
+    
+>       current = session.snapshot_fields()
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_word_session.py:2050: in snapshot_fields
+    return snapshot(self)
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:245: in snapshot
+    if len(observed)!=len(previous):_error(session)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+session = <skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10b620610>
+code = 'NATIVE_WORD_FIELD_IDENTITY_STALE'
+
+    def _error(session, code='NATIVE_WORD_FIELD_IDENTITY_STALE'):
+        session._retain_evidence = True
+>       raise NativeWordError(code, staging_path=session.staging_root)
+E       skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word field identity is stale; reopen the document to rebuild semantic tracking.
+
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:30: NativeWordError
+______________ test_snapshot_accepts_toc_created_by_same_session _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b861970>
+
+    def test_snapshot_accepts_toc_created_by_same_session(monkeypatch):
+        session = _session()
+        before = _existing_ref()
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(before))
+        original = session.snapshot_fields()
+    
+        toc_code = ' TOC \\o "1-3" \\h \\z \\* MERGEFORMAT '
+        monkeypatch.setattr(
+            session,
+            "_execute",
+            lambda _lines: [["index", 30, 60, toc_code]],
+        )
+        handle = session.insert_toc()
+        code = session._tracked_indexes[0][1]
+        after = _existing_ref() + [
+            ["identity", handle.bookmark, 30],
+            ["field", "main", 2, "INDEX", code, 30, "Heading\t1", 1, 1, 20],
+        ]
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(after))
+    
+>       current = session.snapshot_fields()
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_word_session.py:2050: in snapshot_fields
+    return snapshot(self)
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:245: in snapshot
+    if len(observed)!=len(previous):_error(session)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+session = <skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10b8615e0>
+code = 'NATIVE_WORD_FIELD_IDENTITY_STALE'
+
+    def _error(session, code='NATIVE_WORD_FIELD_IDENTITY_STALE'):
+        session._retain_evidence = True
+>       raise NativeWordError(code, staging_path=session.staging_root)
+E       skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word field identity is stale; reopen the document to rebuild semantic tracking.
+
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:30: NativeWordError
+__________ test_snapshot_rebases_after_same_session_structural_insert __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b862970>
+
+    def test_snapshot_rebases_after_same_session_structural_insert(monkeypatch):
+        session = _session()
+        before = _existing_ref(start=12)
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(before))
+        original = session.snapshot_fields()
+    
+        monkeypatch.setattr(session, "_execute", lambda _lines: [["ok"]])
+        session.apply_structural_op(
+            {
+                "op": "insert",
+                "type": "paragraph",
+                "position": "start",
+                "props": {"text": "prefix"},
+            }
+        )
+        after = _existing_ref(start=19)
+        monkeypatch.setattr(session, "_execute", lambda _lines: deepcopy(after))
+    
+>       current = session.snapshot_fields()
+
+.superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/WPSComposer/scripts/msoffice/macos_word_session.py:2050: in snapshot_fields
+    return snapshot(self)
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:250: in snapshot
+    if after[4]!=before[4]+shifts.get(story,0):_error(session)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+session = <skills.WPSComposer.scripts.msoffice.macos_word_session.MacWordSession object at 0x10b862700>
+code = 'NATIVE_WORD_FIELD_IDENTITY_STALE'
+
+    def _error(session, code='NATIVE_WORD_FIELD_IDENTITY_STALE'):
+        session._retain_evidence = True
+>       raise NativeWordError(code, staging_path=session.staging_root)
+E       skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word field identity is stale; reopen the document to rebuild semantic tracking.
+
+skills/WPSComposer/scripts/msoffice/macos_word_fields.py:30: NativeWordError
+=========================== short test summary info ============================
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py::test_snapshot_accepts_reference_created_by_same_session
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py::test_snapshot_accepts_toc_created_by_same_session
+FAILED .superpowers/sdd/2026-09-08-microsoft-wps-parity/word-field-topology-mutation-review-repros.py::test_snapshot_rebases_after_same_session_structural_insert
+3 failed, 2 passed in 0.38s

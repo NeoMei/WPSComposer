@@ -1,0 +1,525 @@
+[
+  {
+    "pid": 9212,
+    "at": 0.0780075,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 4349478368
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 4349574848
+      },
+      {
+        "selector": "path",
+        "result": 4349574944
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 9212,
+      "start_seconds": 1788873618,
+      "start_microseconds": 522715,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.784039833,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546666880
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542563520
+      },
+      {
+        "selector": "path",
+        "result": 49542563328
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.784864208,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546666880
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542563520
+      },
+      {
+        "selector": "path",
+        "result": 49542562848
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.7853025,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546666752
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542563616
+      },
+      {
+        "selector": "path",
+        "result": 49542563424
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.796666208,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667008
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542563904
+      },
+      {
+        "selector": "path",
+        "result": 49542563712
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.822232625,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667264
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542564192
+      },
+      {
+        "selector": "path",
+        "result": 49542564000
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.867395875,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667392
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542564480
+      },
+      {
+        "selector": "path",
+        "result": 49542564288
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 0.95226375,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667520
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542564768
+      },
+      {
+        "selector": "path",
+        "result": 49542564576
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 1.118015583,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667648
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542565056
+      },
+      {
+        "selector": "path",
+        "result": 49542564864
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 1.373870416,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667776
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542565344
+      },
+      {
+        "selector": "path",
+        "result": 49542565152
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 1.376220166,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": 49546667904
+      },
+      {
+        "selector": "bundleIdentifier",
+        "result": 8373593680
+      },
+      {
+        "selector": "executableURL",
+        "result": 49542565632
+      },
+      {
+        "selector": "path",
+        "result": 49542565440
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      },
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "selector": "UTF8String",
+        "result": "<class 'bytes'>"
+      }
+    ],
+    "identity": {
+      "pid": 34338,
+      "start_seconds": 1789048885,
+      "start_microseconds": 2111,
+      "executable": "/Applications/Microsoft Excel.app/Contents/MacOS/Microsoft Excel",
+      "bundle_id": "com.microsoft.Excel"
+    }
+  },
+  {
+    "pid": 34338,
+    "at": 2.658739833,
+    "calls": [
+      {
+        "proc_pidinfo_result": 136
+      },
+      {
+        "proc_pidpath_result": 64
+      },
+      {
+        "selector": "runningApplicationWithProcessIdentifier:",
+        "result": null
+      }
+    ],
+    "identity": null
+  }
+]

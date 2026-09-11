@@ -1,0 +1,505 @@
+{
+  "kind": "slide",
+  "engine": "msoffice",
+  "name": "bound-3dd07a50d6f64ef486c57a9ea2acaa55.pptx",
+  "path": "/Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-9_k5mn7l/bound-3dd07a50d6f64ef486c57a9ea2acaa55.pptx",
+  "saved": true,
+  "slide_count": 3,
+  "page_setup": {
+    "slide_width": 720
+  },
+  "shapes_truncated": false,
+  "slides": [
+    {
+      "id": "slide:1",
+      "index": 1,
+      "native_slide_id": 256,
+      "name": null,
+      "layout": 12,
+      "native_layout": "slide layout blank",
+      "notes": "Native speaker note",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 2,
+      "shapes": [
+        {
+          "id": "slide:1/shape:@name=parity-title",
+          "index": 1,
+          "shape_id": null,
+          "name": "parity-title",
+          "type": 17,
+          "native_type": "shape type text box",
+          "geometry": {
+            "left": 40,
+            "top": 40,
+            "width": 560,
+            "height": 41.19842529296875,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "等线",
+            "size": 28,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:1/shape:@name=parity-title/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:1/shape:@name=parity-title/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 28,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#000000",
+                    "strikethrough": false
+                  },
+                  "text": "Native editable PowerPoint"
+                }
+              ],
+              "text": "Native editable PowerPoint"
+            }
+          ],
+          "text": "Native editable PowerPoint",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:1/shape:@name=parity-shape",
+          "index": 2,
+          "shape_id": null,
+          "name": "parity-shape",
+          "type": 1,
+          "native_type": "shape type auto",
+          "geometry": {
+            "left": 60,
+            "top": 140,
+            "width": 200,
+            "height": 90,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#2060A0",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#FFFFFF"
+          },
+          "paragraphs": [],
+          "text": "",
+          "line": {
+            "color": "#172C51",
+            "weight": 1,
+            "visible": null,
+            "transparency": 0
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "slide:2",
+      "index": 2,
+      "native_slide_id": 257,
+      "name": null,
+      "layout": 12,
+      "native_layout": "slide layout blank",
+      "notes": "",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 3,
+      "shapes": [
+        {
+          "id": "slide:2/shape:@name=parity-table",
+          "index": 1,
+          "shape_id": null,
+          "name": "parity-table",
+          "type": 19,
+          "native_type": "shape type table",
+          "geometry": {
+            "left": 40,
+            "top": 100,
+            "width": 500,
+            "height": 120,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#000000",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": "",
+          "table": {
+            "rows": 2,
+            "columns": 2,
+            "cells": [
+              {
+                "id": "slide:2/shape:@name=parity-table/table/cell:1,1",
+                "row": 1,
+                "column": 1,
+                "text": "Native table"
+              },
+              {
+                "id": "slide:2/shape:@name=parity-table/table/cell:1,2",
+                "row": 1,
+                "column": 2,
+                "text": ""
+              },
+              {
+                "id": "slide:2/shape:@name=parity-table/table/cell:2,1",
+                "row": 2,
+                "column": 1,
+                "text": ""
+              },
+              {
+                "id": "slide:2/shape:@name=parity-table/table/cell:2,2",
+                "row": 2,
+                "column": 2,
+                "text": "42"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slide:2/shape:@name=parity-title",
+          "index": 2,
+          "shape_id": null,
+          "name": "parity-title",
+          "type": 17,
+          "native_type": "shape type text box",
+          "geometry": {
+            "left": 40,
+            "top": 40,
+            "width": 560,
+            "height": 41.19842529296875,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "等线",
+            "size": 28,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:2/shape:@name=parity-title/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:2/shape:@name=parity-title/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 28,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#000000",
+                    "strikethrough": false
+                  },
+                  "text": "Native editable PowerPoint"
+                }
+              ],
+              "text": "Native editable PowerPoint"
+            }
+          ],
+          "text": "Native editable PowerPoint",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:2/shape:@name=parity-image",
+          "index": 3,
+          "shape_id": null,
+          "name": "parity-image",
+          "type": 13,
+          "native_type": "shape type picture",
+          "geometry": {
+            "left": 280,
+            "top": 140,
+            "width": 100,
+            "height": 90,
+            "rotation": 0,
+            "z_order": 3
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "slide:3",
+      "index": 3,
+      "native_slide_id": 258,
+      "name": null,
+      "layout": 12,
+      "native_layout": "slide layout blank",
+      "notes": "Native speaker note",
+      "follow_master_background": true,
+      "background": {
+        "color": "#FFFFFF"
+      },
+      "shape_count": 3,
+      "shapes": [
+        {
+          "id": "slide:3/shape:@name=parity-title",
+          "index": 1,
+          "shape_id": null,
+          "name": "parity-title",
+          "type": 17,
+          "native_type": "shape type text box",
+          "geometry": {
+            "left": 40,
+            "top": 40,
+            "width": 560,
+            "height": 41.19842529296875,
+            "rotation": 0,
+            "z_order": 1
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "等线",
+            "size": 28,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [
+            {
+              "id": "slide:3/shape:@name=parity-title/paragraph:1",
+              "index": 1,
+              "runs": [
+                {
+                  "id": "slide:3/shape:@name=parity-title/paragraph:1/run:1",
+                  "index": 1,
+                  "font": {
+                    "name": "等线",
+                    "size": 28,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": "#000000",
+                    "strikethrough": false
+                  },
+                  "text": "Native editable PowerPoint"
+                }
+              ],
+              "text": "Native editable PowerPoint"
+            }
+          ],
+          "text": "Native editable PowerPoint",
+          "line": {
+            "color": "#FFFFFF",
+            "weight": null,
+            "visible": null,
+            "transparency": null
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 1,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:3/shape:@name=parity-shape",
+          "index": 2,
+          "shape_id": null,
+          "name": "parity-shape",
+          "type": 1,
+          "native_type": "shape type auto",
+          "geometry": {
+            "left": 60,
+            "top": 140,
+            "width": 200,
+            "height": 90,
+            "rotation": 0,
+            "z_order": 2
+          },
+          "fill": {
+            "color": "#2060A0",
+            "visible": true,
+            "transparency": 0
+          },
+          "font": {
+            "name": "等线",
+            "size": 18,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#FFFFFF"
+          },
+          "paragraphs": [],
+          "text": "",
+          "line": {
+            "color": "#172C51",
+            "weight": 1,
+            "visible": null,
+            "transparency": 0
+          },
+          "text_frame": {
+            "margin_left": 7.199999809265137,
+            "margin_right": 7.199999809265137,
+            "margin_top": 3.5999999046325684,
+            "margin_bottom": 3.5999999046325684,
+            "word_wrap": true
+          },
+          "paragraph": {
+            "alignment": 2,
+            "space_before": 0,
+            "space_after": 0,
+            "line_spacing": 1
+          }
+        },
+        {
+          "id": "slide:3/shape:@name=parity-image",
+          "index": 3,
+          "shape_id": null,
+          "name": "parity-image",
+          "type": 13,
+          "native_type": "shape type picture",
+          "geometry": {
+            "left": 280,
+            "top": 140,
+            "width": 100,
+            "height": 90,
+            "rotation": 0,
+            "z_order": 3
+          },
+          "fill": {
+            "color": "#FFFFFF",
+            "visible": false,
+            "transparency": 1
+          },
+          "font": {
+            "name": "",
+            "size": 0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": "#000000"
+          },
+          "paragraphs": [],
+          "text": ""
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Native numeric Shape.Id is not exposed by this adapter",
+    "Independent page height unavailable in native dictionary"
+  ]
+}

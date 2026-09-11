@@ -1,0 +1,117 @@
+[
+  {
+    "path": "bootstrap.log",
+    "bytes": 568,
+    "sha256": "549a6d9b9e05c9979c6ea671308845582710b0e6cb75320d65fd4c210829d541"
+  },
+  {
+    "path": "checkout.json",
+    "bytes": 345,
+    "sha256": "04bfa2d2087dffecc3650104dce4d1878f26bff0730411e2d126fd1d9e8c45d4"
+  },
+  {
+    "path": "preflight-console.log",
+    "bytes": 2105,
+    "sha256": "80d2bf16f03bad44eaae8e8583e4f7f23db8eac054485eef8bca5d78c7aa8123"
+  },
+  {
+    "path": "preflight-exit.txt",
+    "bytes": 3,
+    "sha256": "df4e26a04a444901b95afef44e4a96cfae34690fff2ad2c66389c70079cdff2b"
+  },
+  {
+    "path": "preflight-report.json",
+    "bytes": 2405,
+    "sha256": "8c6282175cd3b815226f471d7359318acb25351983546c6c02b78835087fc37b"
+  },
+  {
+    "path": "preflight.py",
+    "bytes": 2510,
+    "sha256": "49b2825997e40576905eb96228bfb97635065aab2df9de27fb50189d50e7bed0"
+  },
+  {
+    "path": "preservation.json",
+    "bytes": 338,
+    "sha256": "53cceb400f346d263a7caac0260b987fb2cc1baa44903dd9a3d358f38db67731"
+  },
+  {
+    "path": "pytest-console.log",
+    "bytes": 311956,
+    "sha256": "5af7fa73cfa53be12b1dc183d09321bc11b96663b44cd1366b360b21fa2e0428"
+  },
+  {
+    "path": "pytest-exit.txt",
+    "bytes": 120,
+    "sha256": "d69126f93814b4319dd42b103151d741499e15ec967753c0bb261ed60710a061"
+  },
+  {
+    "path": "pytest-first-failure-exit.txt",
+    "bytes": 3,
+    "sha256": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04"
+  },
+  {
+    "path": "pytest-first-failure.log",
+    "bytes": 10921,
+    "sha256": "6a77573a859df034e2009781f8ebb90ab52858620f65bac0dbebeb46849ea6bc"
+  },
+  {
+    "path": "pytest-hang-stack.txt",
+    "bytes": 2220,
+    "sha256": "49d124c490e4d5232ac13287174885835f6a6e78d2655a956eb1ef17ede028a6"
+  },
+  {
+    "path": "pytest-interruption.json",
+    "bytes": 340,
+    "sha256": "351d103324d0da0f1d2d4fa5edc9a2fbfb3f2863ec0e0f5bebb79a58e5d6c454"
+  },
+  {
+    "path": "sheet-preflight-error.txt",
+    "bytes": 1291,
+    "sha256": "0e24f3ba6fd6501ab5889e4b0a68aae5db1630726f9c89b70697fff969399ddd"
+  },
+  {
+    "path": "slide-preflight-error.txt",
+    "bytes": 1291,
+    "sha256": "0e24f3ba6fd6501ab5889e4b0a68aae5db1630726f9c89b70697fff969399ddd"
+  },
+  {
+    "path": "source-verification.json",
+    "bytes": 90311,
+    "sha256": "21b65a3f4ce158dc714045eb75a57925d6ebae40de15bae3bd3926acd75eea54"
+  },
+  {
+    "path": "SUMMARY.md",
+    "bytes": 7766,
+    "sha256": "33e68296323c2f44b81e3456c3250fb760a9c01e72e19c70579256cd041926a6"
+  },
+  {
+    "path": "writer-preflight-error.txt",
+    "bytes": 1291,
+    "sha256": "0e24f3ba6fd6501ab5889e4b0a68aae5db1630726f9c89b70697fff969399ddd"
+  },
+  {
+    "path": "historical-6653e14/excel-failure.txt",
+    "bytes": 3173,
+    "sha256": "7e07a63093632636e42e39dce4935dd44021dcac0551eb0bde249aff1e4b72de"
+  },
+  {
+    "path": "historical-6653e14/excel-worker-stdout.log",
+    "bytes": 2878,
+    "sha256": "6a07704a4f34bb6c21d07fe5249db42453a06f7c7f71f117cc26ba4141f5d97b"
+  },
+  {
+    "path": "historical-6653e14/powerpoint-failure.txt",
+    "bytes": 928,
+    "sha256": "10592937ccb594e79edf946e53221eb0c238927086d04ef244f67560d916cf9e"
+  },
+  {
+    "path": "historical-6653e14/word-failure.txt",
+    "bytes": 1078,
+    "sha256": "5573e24be6892e02c6a16753572453dfe925b92d407ee8b61a1aa78a53e438a6"
+  },
+  {
+    "path": "historical-6653e14/word-worker-stdout.log",
+    "bytes": 1302,
+    "sha256": "9d0fd948d60156765867d4e02b9bbb32c00a163db6e7e9b5454ae18e1112167c"
+  }
+]

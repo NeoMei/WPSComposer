@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_tab_readback_uses_native_indexed_collection_not_every_iteration _____
+
+    def test_tab_readback_uses_native_indexed_collection_not_every_iteration():
+        from skills.WPSComposer.scripts.msoffice.macos_word_references import _list_commands
+        code='\n'.join(_list_commands(24.0))
+>       assert 'repeat with tabIndex from 1 to count tab stops of paragraph 1 of paragraphRange' in code
+E       AssertionError: assert 'repeat with tabIndex from 1 to count tab stops of paragraph 1 of paragraphRange' in 'set paragraphRange to create range boundDoc start operationStart end insertionPoint\ntry\nset style of paragraphRange...et style of trailingRange to style normal\nreset font object of trailingRange\nreset paragraph format of trailingRange'
+
+tests/msoffice/test_macos_word_references.py:267: AssertionError
+=========================== short test summary info ============================
+FAILED tests/msoffice/test_macos_word_references.py::test_tab_readback_uses_native_indexed_collection_not_every_iteration
+1 failed in 0.35s

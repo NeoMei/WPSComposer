@@ -1,17 +1,46 @@
 ---
 name: WPSComposer
-description: 'Generate and edit rich-layout DOCX, PPTX, XLSX, and PDF documents by driving the real WPS Office layout engine — via COM on Windows (full generation + conversational editing) or the WPS JSAPI bridge on macOS (generation and Office-to-PDF conversion). Use when the user wants to create documents that need real layout control (multi-column, floating text boxes with text wrapping, WordArt, shaded/merged tables, charts, auto-updated TOC and fields) that python-docx or openpyxl cannot produce. Triggers on "WPS", "rich layout document", "排版文档", "用 WPS 生成", or when output quality requires a real layout engine rather than static OOXML. Covers all three WPS apps: Writer (docx), Spreadsheets (xlsx), Presentation (pptx). Also supports explicit Microsoft Word DOCX/PDF generation and DOC/DOCX-to-PDF conversion on Windows and macOS; use for requests mentioning Microsoft Word or MS Office document layout. Microsoft Excel, PowerPoint and active-document editing are outside this backend.'
+description: 'Use for rich document layout, pagination, TOC, fields, spreadsheet and presentation generation, native document editing, or PDF conversion/editing with desktop WPS Office or Microsoft Office. Includes WPS 排版, Word 排版 and Office 排版 requests. This development candidate adds Microsoft Excel/PowerPoint and document-session APIs; full parity and Windows native acceptance remain incomplete. Cloud Office is outside scope.'
 ---
 
 # WPS Composer
 
-Generate DOCX / PPTX / XLSX with full layout control by driving the WPS Office
-layout engine — COM on Windows, the JSAPI loopback bridge on macOS. WPS computes
-the layout (columns, wrapping, field results, chart rendering), so output
-matches what you'd see in the WPS GUI — no hand-rolled OOXML, no guessing about
-wrapping or page breaks. Conversational inspect/edit works on both platforms:
-Windows uses COM directly; macOS uses the JSAPI loopback bridge to read and
-edit PPT/DOCX/XLSX through the real WPS engine (no PDF extraction fallback).
+Use real desktop WPS Office or Microsoft Word, Excel and PowerPoint to compute
+document layout, pagination and field results. Public APIs default to WPS.
+This is the Microsoft parity development candidate, not a new release.
+Released 0.9.0 Microsoft support covers Word generation/conversion; this
+candidate also implements Excel/XLSX and PowerPoint/PPTX generation/conversion and engine-bound
+document sessions. Representative macOS flows have native evidence; Windows
+candidate native acceptance and full method/argument parity remain incomplete.
+
+Windows uses COM for both engines. macOS uses the JSAPI loopback bridge for
+WPS and AppleScript for Microsoft Office. The macOS WPS edit route supports
+PPTX formatting patches; Microsoft sessions have separate, limited native
+inspection, formatting and structural operations. Active attachment and
+save-copy support vary by application and platform; unsupported operations
+raise explicit errors. Advanced layout capabilities vary by engine; check
+[the native Word capability limits](references/native-word.md) before choosing it.
+
+## Candidate document-session API
+
+This development branch adds keyword-only `engine="wps" | "msoffice" | "auto"`
+to `open_document`, `attach_active`, `inspect` and `edit`. It also adds
+`create_document(kind="writer", *, visible=False, engine="wps")` for an engine-bound
+new native document; use it as a context manager and save to an explicit destination. The default stays WPS.
+Microsoft sessions bind one native application/document and reject unsupported
+operations explicitly; active attachment requires `kind`. Full parity/native
+acceptance is in progress, so do not treat these candidate APIs as a completed
+cross-platform capability claim. See the [API reference](references/api.md).
+
+Mac Word candidate sessions also expose append-only degradation recovery,
+inline/block notices, paragraph rules, pagination snapshots, and formula text
+with native numbering fields at the bound current selection. Check the
+[direct-method contracts](references/api.md#mac-word-candidate-recovery-and-layout-methods)
+before using them: changed drawing objects cannot be rolled back, notice ranges
+are snapshots, and a paragraph rule changes the current paragraph's formatting.
+Four anchored quality-notice methods are also present as a staged candidate;
+their position, document-size and object restrictions remain explicit, and
+their full native/UI acceptance is unfinished.
 
 ## Quick start -- Markdown to document
 
@@ -19,9 +48,12 @@ For native Microsoft Word on Windows/macOS, use public `generate(...,
 engine="msoffice")` for DOCX/PDF and `convert_to_pdf(..., engine="msoffice")`
 for DOC/DOCX conversion. The default `engine="wps"` keeps WPS selected;
 `engine="auto"` selects an installed engine once, preferring WPS, and never
-switches after a native task begins. MS Excel/PowerPoint and MS conversational
-editing are not supported by this interface. Word requires `pywin32` on Windows
-or macOS Automation permission to control desktop Microsoft Word.
+switches after a native task begins. In this candidate, `generate(...,
+format="xlsx" | "pptx", engine="msoffice")` selects Excel or PowerPoint;
+their PDF conversion currently accepts modern `.xlsx`/`.pptx` inputs.
+Microsoft Office requires `pywin32` on Windows or macOS Automation permission
+to control the corresponding desktop application. Candidate methods and
+parameter restrictions must not be presented as full cross-platform parity.
 See [API reference](references/api.md#native-engine-selection) for scope and
 failure behavior, and [native Word setup and recovery](references/native-word.md).
 Do not bypass an unsupported-operation error with a custom
@@ -105,8 +137,11 @@ the output must remain in the source document family. File-backed results are
 validated and atomically published. In attach-active atomic mode, only one
 `set` operation containing at most one leaf property is accepted; composite
 patches and structural operations are rejected before mutation because the
-live host has no reliable rollback boundary. macOS editing currently supports
-verified `.pptx` input/output only.
+live host has no reliable rollback boundary. The macOS WPS editing route
+supports `.pptx` formatting patches. Candidate Microsoft sessions support
+separate native DOCX/XLSX/PPTX operations with the restrictions documented in
+`references/api.md`; method availability does not imply every target or argument
+is supported.
 
 For **structural editing** (insert/remove/move/clone), pass `ops=` instead of
 (or alongside) `patches`. Each op carries a verb: `set` (formatting, == a
@@ -122,9 +157,10 @@ edit("deck.pptx", output="deck2.pptx", ops=[
 ])
 ```
 
-The COM-coupled parts of this work (real `inspect`/`edit`/structural ops
-against a live WPS host, native stable IDs) are written but need Windows
-verification — tracked in `docs/windows-verification.md`.
+The original WPS Windows COM inspection and structural-edit acceptance is
+recorded in `docs/windows-verification.md`. The Microsoft parity candidate
+requires separate current Windows native acceptance, tracked in
+`docs/verification/microsoft-parity/status.md`.
 
 ## When to use
 

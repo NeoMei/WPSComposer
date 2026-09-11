@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "<stdin>", line 8, in <module>
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 344, in inspect_document
+    return parse_snapshot(json.loads(self._run(_SNAPSHOT)),include_text=include_text,max_shapes=max_shapes)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_powerpoint_session.py", line 327, in _run
+    if result.returncode:raise RuntimeError(result.stderr.strip())
+RuntimeError: /Users/neomei/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wpscomposer/session-1n5d7z76/002.applescript:137:199: execution error: Invalid type in JSON write (NSAppleEventDescriptor) (-10000)

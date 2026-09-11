@@ -1,0 +1,22 @@
+{
+  "exact_bootstrap_cleanup": true,
+  "exact_birth_gone": true,
+  "original_preserved": true,
+  "original_state": {
+    "books": [
+      [
+        "\u5de5\u4f5c\u7c3f5",
+        "\u5de5\u4f5c\u7c3f5",
+        false,
+        "sentinel-58d9ceb7df8e"
+      ],
+      [
+        "\u5de5\u4f5c\u7c3f7",
+        "\u5de5\u4f5c\u7c3f7",
+        false,
+        "sentinel-e9a7d3dce1ad"
+      ]
+    ],
+    "alerts": true
+  }
+}

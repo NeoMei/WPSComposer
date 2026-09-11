@@ -1,0 +1,12 @@
+[
+  {
+    "case": "A-reselect-document-location",
+    "exit_code": 0,
+    "script_sha256": "0463d2669a497543d2fe3099a4f8db0fc704b2f26b3e21d5ad0e0c1b26238e2f"
+  },
+  {
+    "case": "B-reselect-range-location",
+    "exit_code": 0,
+    "script_sha256": "818fd1444d31f4a89ec204377130807465ce6329cfe42975b6a38981dfb88f6a"
+  }
+]

@@ -1,0 +1,98 @@
+complete-snapshot-defined-styles:0: set qe to end of content of text object of boundDoc
+complete-snapshot-defined-styles:1: set qp to create range boundDoc start 0 end qualityPoint
+complete-snapshot-defined-styles:2: set qs to create range boundDoc start (qualityPoint + qualityDelta) end qe
+complete-snapshot-defined-styles:3: set recoveryTask to current application's NSTask's alloc()'s init()
+complete-snapshot-defined-styles:4: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+complete-snapshot-defined-styles:5: recoveryTask's setArguments:{"-a", "256"}
+complete-snapshot-defined-styles:6: set recoveryInput to current application's NSPipe's pipe()
+complete-snapshot-defined-styles:7: set recoveryOutput to current application's NSPipe's pipe()
+complete-snapshot-defined-styles:8: recoveryTask's setStandardInput:recoveryInput
+complete-snapshot-defined-styles:9: recoveryTask's setStandardOutput:recoveryOutput
+complete-snapshot-defined-styles:10: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+complete-snapshot-defined-styles:11: set recoveryData to (current application's NSString's stringWithString:(content of qp as text))'s dataUsingEncoding:4
+complete-snapshot-defined-styles:12: recoveryTask's |launch|()
+complete-snapshot-defined-styles:13: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+complete-snapshot-defined-styles:14: (recoveryInput's fileHandleForWriting())'s closeFile()
+complete-snapshot-defined-styles:15: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+complete-snapshot-defined-styles:16: recoveryTask's waitUntilExit()
+complete-snapshot-defined-styles:17: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:18: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+complete-snapshot-defined-styles:19: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:20: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:21: set qualityPrefixHash to text 1 thru 64 of recoveryDigestText
+complete-snapshot-defined-styles:22: set recoveryTask to current application's NSTask's alloc()'s init()
+complete-snapshot-defined-styles:23: recoveryTask's setLaunchPath:"/usr/bin/shasum"
+complete-snapshot-defined-styles:24: recoveryTask's setArguments:{"-a", "256"}
+complete-snapshot-defined-styles:25: set recoveryInput to current application's NSPipe's pipe()
+complete-snapshot-defined-styles:26: set recoveryOutput to current application's NSPipe's pipe()
+complete-snapshot-defined-styles:27: recoveryTask's setStandardInput:recoveryInput
+complete-snapshot-defined-styles:28: recoveryTask's setStandardOutput:recoveryOutput
+complete-snapshot-defined-styles:29: recoveryTask's setStandardError:(current application's NSFileHandle's fileHandleWithNullDevice())
+complete-snapshot-defined-styles:30: set recoveryData to (current application's NSString's stringWithString:(content of qs as text))'s dataUsingEncoding:4
+complete-snapshot-defined-styles:31: recoveryTask's |launch|()
+complete-snapshot-defined-styles:32: (recoveryInput's fileHandleForWriting())'s writeData:recoveryData
+complete-snapshot-defined-styles:33: (recoveryInput's fileHandleForWriting())'s closeFile()
+complete-snapshot-defined-styles:34: set recoveryDigestData to (recoveryOutput's fileHandleForReading())'s readDataToEndOfFile()
+complete-snapshot-defined-styles:35: recoveryTask's waitUntilExit()
+complete-snapshot-defined-styles:36: if (recoveryTask's terminationStatus() as integer) is not 0 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:37: set recoveryDigestText to (current application's NSString's alloc()'s initWithData:recoveryDigestData |encoding|:4) as text
+complete-snapshot-defined-styles:38: if (length of recoveryDigestText) is not 68 then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:39: if text 65 thru 68 of recoveryDigestText is not "  -" & linefeed then error "WPSC_CHECKPOINT_HASH_FAILED"
+complete-snapshot-defined-styles:40: set qualitySuffixHash to text 1 thru 64 of recoveryDigestText
+complete-snapshot-defined-styles:41: set qualityState to {{"quality-state",qe - qualityDelta,qualityPrefixHash,qualitySuffixHash}}
+complete-snapshot-defined-styles:42: set qualityLayout to {}
+complete-snapshot-defined-styles:43: repeat with qi from 1 to count sections of boundDoc
+complete-snapshot-defined-styles:44: set qsection to section qi of boundDoc
+complete-snapshot-defined-styles:45: set qsetup to page setup of qsection
+complete-snapshot-defined-styles:46: set end of qualityLayout to {"section",qi as integer,orientation of qsetup as text,page width of qsetup,page height of qsetup,top margin of 
+complete-snapshot-defined-styles:47: repeat with qindex in {header footer primary,header footer first page,header footer even pages}
+complete-snapshot-defined-styles:48: set qheader to get header qsection index qindex
+complete-snapshot-defined-styles:49: set qfooter to get footer qsection index qindex
+complete-snapshot-defined-styles:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:48: set qheader to get header qsection index qindex
+complete-snapshot-defined-styles:49: set qfooter to get footer qsection index qindex
+complete-snapshot-defined-styles:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:48: set qheader to get header qsection index qindex
+complete-snapshot-defined-styles:49: set qfooter to get footer qsection index qindex
+complete-snapshot-defined-styles:50: repeat with qpart in {qheader,qfooter}
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:51: if (count shapes of qpart) is not 0 then error "WPSC_QUALITY_DRAWING_UNVERIFIED"
+complete-snapshot-defined-styles:52: set qr to text object of qpart
+complete-snapshot-defined-styles:53: set end of qualityLayout to {"page-part",header footer index of qpart as text,is header of qpart,link to previous of qpart,content of qr as 
+complete-snapshot-defined-styles:54: repeat with qfield in fields of qr
+complete-snapshot-defined-styles:60: repeat with qi from 1 to count list templates of boundDoc
+complete-snapshot-defined-styles:67: set qualityStyleNames to get name local of every Word style of boundDoc
+complete-snapshot-defined-styles:68: set qualityStyleInUse to get in use of every Word style of boundDoc
+complete-snapshot-defined-styles:69: set qualityStyleBuiltIn to get built in of every Word style of boundDoc
+complete-snapshot-defined-styles:70: if (count qualityStyleNames) is not (count qualityStyleInUse) or (count qualityStyleNames) is not (count qualityStyleBuiltIn) then error "WP
+complete-snapshot-defined-styles:71: repeat with qualityStyleOrdinal from 1 to count qualityStyleNames
+complete-snapshot-defined-styles:72: set qualityStyleName to item qualityStyleOrdinal of qualityStyleNames as text
+complete-snapshot-defined-styles:73: set qualityStyleUsed to item qualityStyleOrdinal of qualityStyleInUse
+complete-snapshot-defined-styles:74: set qualityStyleBuiltin to item qualityStyleOrdinal of qualityStyleBuiltIn
+complete-snapshot-defined-styles:75: set end of qualityLayout to {"style-state",qualityStyleName,qualityStyleUsed,qualityStyleBuiltin}
+complete-snapshot-defined-styles:76: if qualityStyleUsed or not qualityStyleBuiltin then
+complete-snapshot-defined-styles:72: set qualityStyleName to item qualityStyleOrdinal of qualityStyleNames as text
+complete-snapshot-defined-styles:73: set qualityStyleUsed to item qualityStyleOrdinal of qualityStyleInUse
+complete-snapshot-defined-styles:74: set qualityStyleBuiltin to item qualityStyleOrdinal of qualityStyleBuiltIn
+complete-snapshot-defined-styles:74: set qualityStyleBuiltin to item qualityStyleOrdinal of qualityStyleBuiltIn, -1728
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","complete-snapshot-defined-styles:74: set qualityStyleBuiltin to item qualityStyleOrdinal of qualityStyleBuiltIn",-1728,"不能获得“item 2 of true”。"]]]

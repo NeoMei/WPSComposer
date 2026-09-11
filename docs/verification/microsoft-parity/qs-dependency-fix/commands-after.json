@@ -1,0 +1,57 @@
+{
+  "npm-ci-after": {
+    "command": [
+      "npm",
+      "ci",
+      "--prefix",
+      "macos/wps-jsapi-probe",
+      "--ignore-scripts"
+    ],
+    "exit_code": 0
+  },
+  "audit-after": {
+    "command": [
+      "npm",
+      "audit",
+      "--prefix",
+      "macos/wps-jsapi-probe",
+      "--json"
+    ],
+    "exit_code": 0
+  },
+  "node-regressions-green": {
+    "command": [
+      "node",
+      "--test",
+      "tests/macos_probe/qs_dependency_regressions.cjs"
+    ],
+    "initial_exit_code": 1,
+    "initial_log": "node-regressions-initial-encoded-comma-expectation-error.log",
+    "exit_code": 0,
+    "pass": 5
+  },
+  "npm-ls-after": {
+    "command": [
+      "npm",
+      "ls",
+      "--prefix",
+      "macos/wps-jsapi-probe",
+      "qs",
+      "express",
+      "body-parser",
+      "--json"
+    ],
+    "exit_code": 0
+  },
+  "node-regressions-red-final": {
+    "command": [
+      "node",
+      "--test",
+      "tests/macos_probe/qs_dependency_regressions.cjs"
+    ],
+    "context": "isolated temporary baseline, original HEAD package files installed with npm ci --ignore-scripts from package cwd",
+    "exit_code": 1,
+    "pass": 1,
+    "fail": 4
+  }
+}

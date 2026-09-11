@@ -1,0 +1,4 @@
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/docs/verification/microsoft-parity/macos-word-quality/snapshot-read-repair-08/probe.py", line 72
+    'set probeEqual to (current application's NSString's stringWithString:probeLegacyJson)'s isEqualToString:probeRecordJson',
+                                            ^
+SyntaxError: invalid syntax

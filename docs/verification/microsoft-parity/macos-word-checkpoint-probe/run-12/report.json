@@ -1,0 +1,451 @@
+{
+  "passed": true,
+  "mode": "field-object-content-clear",
+  "steps": [
+    {
+      "label": "word-version",
+      "rows": [
+        [
+          "16.112.3"
+        ]
+      ]
+    },
+    {
+      "label": "seed-text-ack",
+      "rows": [
+        [
+          "seed-text-ack"
+        ]
+      ]
+    },
+    {
+      "label": "seed-bookmark-ack",
+      "rows": [
+        [
+          "seed-bookmark-ack",
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ]
+      ]
+    },
+    {
+      "label": "seed-field-ack",
+      "rows": [
+        [
+          "seed-field-ack",
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          60,
+          66
+        ]
+      ]
+    },
+    {
+      "label": "before",
+      "rows": [
+        [
+          "document",
+          "targettarget\r",
+          67,
+          68,
+          13,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarget\r",
+          0,
+          68
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          60,
+          66
+        ]
+      ]
+    },
+    {
+      "label": "append-text-ack",
+      "rows": [
+        [
+          "append-text-ack"
+        ]
+      ]
+    },
+    {
+      "label": "append-field-ack",
+      "rows": [
+        [
+          "append-field-ack",
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          127,
+          133
+        ]
+      ]
+    },
+    {
+      "label": "before-delete",
+      "rows": [
+        [
+          "document",
+          "targettarget tail target\r",
+          134,
+          135,
+          25,
+          1,
+          0,
+          2
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarget tail target\r",
+          0,
+          135
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          60,
+          66
+        ],
+        [
+          "field",
+          2,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          127,
+          133
+        ]
+      ]
+    },
+    {
+      "label": "object-delete-ack",
+      "rows": [
+        [
+          "object-delete-ack",
+          [
+            [
+              "field",
+              2,
+              127,
+              133
+            ]
+          ],
+          73,
+          74,
+          1
+        ]
+      ]
+    },
+    {
+      "label": "after-object-delete",
+      "rows": [
+        [
+          "document",
+          "targettarget tail \r",
+          73,
+          74,
+          19,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarget tail \r",
+          0,
+          74
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          60,
+          66
+        ]
+      ]
+    },
+    {
+      "label": "residual-range-readback",
+      "rows": [
+        [
+          "residual-range",
+          " tail ",
+          67,
+          73,
+          73
+        ]
+      ]
+    },
+    {
+      "label": "content-clear-ack",
+      "rows": [
+        [
+          "content-clear-ack",
+          67,
+          68
+        ]
+      ]
+    },
+    {
+      "label": "after-content-clear",
+      "rows": [
+        [
+          "document",
+          "targettarget\r",
+          67,
+          68,
+          13,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarget\r",
+          0,
+          68
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          60,
+          66
+        ]
+      ]
+    },
+    {
+      "label": "repeat-object-delete-ack",
+      "rows": [
+        [
+          "object-delete-ack",
+          [],
+          67,
+          68,
+          1
+        ]
+      ]
+    },
+    {
+      "label": "repeat-content-clear-ack",
+      "rows": [
+        [
+          "repeat-content-clear-ack",
+          67,
+          68
+        ]
+      ]
+    },
+    {
+      "label": "after-repeat",
+      "rows": [
+        [
+          "document",
+          "targettarget\r",
+          67,
+          68,
+          13,
+          1,
+          0,
+          1
+        ],
+        [
+          "paragraph",
+          1,
+          "targettarget\r",
+          0,
+          68
+        ],
+        [
+          "bookmark",
+          1,
+          "wpsc_checkpoint_preexisting",
+          "target",
+          0,
+          6
+        ],
+        [
+          "field",
+          1,
+          " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+          "target",
+          60,
+          66
+        ]
+      ]
+    }
+  ],
+  "source_hashes": {
+    "fixtures/microsoft_parity/macos_word_checkpoint_followup.py": "d34707596a17961c2c7150ca24fdaaa1e2bba2f2843974ba25ee9a0ca25c61f9",
+    "skills/WPSComposer/scripts/writer.py": "b9dbcc140eb38ffa9b1a77dc0462645356eda720a184c1e4013f88fee9878205",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "532550b1fa7dbb10de1e9025307f406bfc69e6409cf5a056da1266808488a467",
+    "skills/WPSComposer/scripts/msoffice/macos_runtime.py": "fad6d9d8c5f9fb6bef50d8bca60144918818a4fc7fb116fb48be71326bfca0bb"
+  },
+  "starting_inventory": [],
+  "word_version": "16.112.3",
+  "checkpoint": 67,
+  "observations": {
+    "before": [
+      [
+        "document",
+        "targettarget\r",
+        67,
+        68,
+        13,
+        1,
+        0,
+        1
+      ],
+      [
+        "paragraph",
+        1,
+        "targettarget\r",
+        0,
+        68
+      ],
+      [
+        "bookmark",
+        1,
+        "wpsc_checkpoint_preexisting",
+        "target",
+        0,
+        6
+      ],
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "target",
+        60,
+        66
+      ]
+    ],
+    "residual_range": [
+      [
+        "residual-range",
+        " tail ",
+        67,
+        73,
+        73
+      ]
+    ],
+    "after": [
+      [
+        "document",
+        "targettarget\r",
+        67,
+        68,
+        13,
+        1,
+        0,
+        1
+      ],
+      [
+        "paragraph",
+        1,
+        "targettarget\r",
+        0,
+        68
+      ],
+      [
+        "bookmark",
+        1,
+        "wpsc_checkpoint_preexisting",
+        "target",
+        0,
+        6
+      ],
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "target",
+        60,
+        66
+      ]
+    ],
+    "repeated": [
+      [
+        "document",
+        "targettarget\r",
+        67,
+        68,
+        13,
+        1,
+        0,
+        1
+      ],
+      [
+        "paragraph",
+        1,
+        "targettarget\r",
+        0,
+        68
+      ],
+      [
+        "bookmark",
+        1,
+        "wpsc_checkpoint_preexisting",
+        "target",
+        0,
+        6
+      ],
+      [
+        "field",
+        1,
+        " REF wpsc_checkpoint_preexisting \\h \\* MERGEFORMAT ",
+        "target",
+        60,
+        66
+      ]
+    ]
+  },
+  "after_owned_close": []
+}

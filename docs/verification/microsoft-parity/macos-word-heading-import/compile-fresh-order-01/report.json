@@ -1,0 +1,9 @@
+{
+  "exit_codes": {
+    "A": 0,
+    "B": 0,
+    "state": 0
+  },
+  "executed": false,
+  "source_sha256": "9d0f0ad38b9b8a032de9ff272fdcf60dddd5dcd6afd2660067434a3f3cda7fa1"
+}

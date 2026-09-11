@@ -1,0 +1,12 @@
+{
+  "operation": "close",
+  "script_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gy717vms/owner/close-14671744fc5a48c8b639e377c6115891/owner.applescript",
+  "stdout_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gy717vms/owner/close-14671744fc5a48c8b639e377c6115891/stdout.txt",
+  "stderr_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gy717vms/owner/close-14671744fc5a48c8b639e377c6115891/stderr.txt",
+  "diagnostic_path": "/Users/neomei/Library/Containers/com.microsoft.Excel/Data/tmp/wpscomposer/session-gy717vms/owner/close-14671744fc5a48c8b639e377c6115891/diagnostic.json",
+  "stdout": "{\"nonce\":\"14671744fc5a48c8b639e377c6115891\",\"empty\":true}\n",
+  "stderr": "",
+  "returncode": 0,
+  "error": null,
+  "diagnostic_errors": []
+}

@@ -1,0 +1,27 @@
+{
+  "installed_snapshot_unchanged": true,
+  "copied_source_files": 193,
+  "live_source_changes_since_install": [
+    "fixtures/microsoft_parity/macos_word_recovery.py"
+  ],
+  "later_new_module": "skills/WPSComposer/scripts/msoffice/macos_word_degradation.py is not part of this earlier installed snapshot",
+  "native_results": {
+    "writer": {
+      "passed": true,
+      "named_checks": 6,
+      "artifact_hashes_verified": 4
+    },
+    "sheet": {
+      "passed": true,
+      "named_checks": 6,
+      "artifact_hashes_verified": 4
+    },
+    "slide": {
+      "passed": true,
+      "named_checks": 6,
+      "artifact_hashes_verified": 4
+    }
+  },
+  "word_native_inventory": [],
+  "scope": "Snapshot-bound acceptance, not final current-source full parity."
+}

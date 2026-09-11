@@ -1,0 +1,7 @@
+bulk-end:0: set probeValues to "unresolved-sentinel"
+bulk-end:1: set probeValues to get end of content of every character of text object of boundDoc
+bulk-end:2: set probeVectorClass to (class of probeValues) as text
+bulk-end:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST"
+bulk-end:3: if class of probeValues is not list then error "BULK_VALUES_NOT_LIST", -2700
+
+["WPSCOMPOSER_WORD_SESSION_OK",[["ordinary-read-error","bulk-end:3: if class of probeValues is not list then error \"BULK_VALUES_NOT_LIST\"",-2700,"BULK_VALUES_NOT_LIST"]]]

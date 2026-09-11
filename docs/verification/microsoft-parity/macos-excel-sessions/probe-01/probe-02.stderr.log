@@ -1,0 +1,7 @@
+"Month"
+true
+[0,0,0]
+underline=underline style none
+alignment=horizontal align general
+chart=column clustered
+used=$A$1:$D$20

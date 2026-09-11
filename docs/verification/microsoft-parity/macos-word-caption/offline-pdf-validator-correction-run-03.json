@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "scope": "offline PDF text-validator correction only; native-run-03 report and artifacts remain unchanged",
+  "source_report": "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-caption-20260911/native-run-03/report.json",
+  "source_report_sha256": "88bd0d08f1c6d1c9fd9100066fcc854115ae843e8dda01c2049917b61274be10",
+  "pdf_sha256": "3ffd7d1477b1d74f1ab2c63bb2733f40a24d813b2e2ff61693a79ddb9fcbbfe1",
+  "pdf_text": "1 Chapter\nleft 😀 图 (1)尾 说 😀 明\n😀表 [1-1]尾 True\nTAIL",
+  "visual_evidence": "Root inspected page 1: both centered italic captions render all three emoji with no missing boxes; PyMuPDF reports zero gid-zero glyphs."
+}

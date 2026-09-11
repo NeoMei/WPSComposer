@@ -1,7 +1,7 @@
 {
   "name": "wps-composer",
   "version": "0.9.0",
-  "description": "Native WPS Office document composition and inspection, plus Microsoft Word DOCX/PDF generation on Windows and macOS.",
+  "description": "Native WPS Office composition and editing, with Microsoft Word, Excel and PowerPoint adapters in this development candidate. Full Microsoft parity and Windows candidate native acceptance remain incomplete.",
   "license": "MIT",
   "repository": "https://github.com/NeoMei/WPSComposer",
   "keywords": [

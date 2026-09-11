@@ -16,7 +16,9 @@ convert_to_pdf("existing.docx", "existing.pdf", engine="msoffice", timeout=600)
 - `msoffice`：使用 Microsoft Word，支持 DOCX/PDF 生成及 DOC/DOCX 转 PDF。
 - `auto`：在开始任务前检测安装，优先 WPS，再选择支持该格式的 Word。任务开始后不会因排版、保存或质量检查失败而切换引擎。
 
-Excel、PowerPoint 生成继续使用 WPS。MS Word 的活动文档编辑、`layout_engine: legacy` 和 Excel/PowerPoint 后端不属于本接口。现有直接 Composer API 保持原有签名。
+已发布 0.9.0 的 Microsoft 范围限于上述 Word 生成/转换。当前开发候选还实现了 Excel、PowerPoint 生成/转换和三应用文档会话，详见 [候选 API](api.md)。Windows 候选原生验收、完整方法/参数覆盖及部分活动文档操作仍未完成。`layout_engine: legacy` 不适用于 Microsoft 后端；直接 Composer API 保持原有签名。
+
+当前 Mac Word 候选的结构性插表只接受省略位置、`None` 或 `end`。中间、开头和相对段落位置会在公共编辑打开文档前、或已打开会话的批次首次写入前被拒绝，防止插表位置错误。该保护不代表完整位置编辑已实现。
 
 ## 安装要求
 
@@ -30,7 +32,7 @@ PDF 质量检查沿用项目的 PDF 依赖。必须能读取并验证原生导�
 
 两端支持常规标题层级、正文、封面、目录、原生标题编号、原生表格和图片、页眉页脚及分页信息。编号方案包括 decimal、chinese-formal 和 hybrid-bid；hybrid-bid 使用中文章号与阿拉伯数字下级编号。Word 与 WPS 分别执行原生排版，页数、字体替代及未指定颜色的主题表现可以不同。
 
-macOS Word 会在启动原生任务前明确拒绝尚未实现的高级操作，例如原生公式、合并或带单元格引用的语义表格、横向媒体节、多列组合图、单个文档内混用不同编号方案，以及未实现的自定义页面/样式参数。不能用自定义 OOXML 渲染器绕过此错误；可调整输入或明确选择 WPS。可见的资源缺失等计划降级会保留到质量报告。
+当前候选在 macOS 已有原生公式、合并语义表格、横向媒体节和多列组合图的代表性生成验收；这些证据不代表同名直接方法和全部参数均已完成。单文档混用编号方案、字符样式、自定义列表符号、超链接富文本及部分资源/参数仍会明确拒绝。不能用自定义 OOXML 渲染器绕过此错误；可调整输入或明确选择 WPS。可见的资源缺失等计划降级会保留到质量报告。
 
 ## 文件与失败恢复
 
