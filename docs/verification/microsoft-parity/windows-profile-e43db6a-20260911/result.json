@@ -1,0 +1,66 @@
+{
+  "candidate": "e43db6a391bbf8a7f78e6d5f2da46c4e68b4ffea",
+  "python": "D:\\wpsc168-env\\Scripts\\python.exe",
+  "python_version": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+  "import_path": "D:\\wpsce43\\skills\\WPSComposer\\scripts\\macos_probe\\profile_server.py",
+  "handler_timeout": 5.0,
+  "test_run": {
+    "command": [
+      "D:/wpsc168-env/Scripts/python.exe",
+      "-m",
+      "pytest",
+      "tests/macos_probe/test_profile_server.py",
+      "-q"
+    ],
+    "cwd": "D:\\wpsce43",
+    "start": "2026-09-11T00:46:34.212488+00:00",
+    "end": "2026-09-11T00:47:11.116963+00:00",
+    "exit_code": 0
+  },
+  "pytest_result": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 35.81
+  },
+  "module": {
+    "path": "skills/WPSComposer/scripts/macos_probe/profile_server.py",
+    "sha256": "1d6b8ae437034a7ff9c22b2e5d10007186886b5db0331ccbedbccbbf33288402",
+    "git_blob": "7ba87bf05e57dbcfb792f6a5180630bc12685477",
+    "matches_commit": true
+  },
+  "test_file": {
+    "path": "tests/macos_probe/test_profile_server.py",
+    "sha256": "e356fefa9c8d1bc44496bc52978f88c613fd1fad3cf93423951f4edc85efe028",
+    "git_blob": "d86ac0dd9b3a31b97bf196b866e5d420335fc502",
+    "matches_commit": true
+  },
+  "source_files_verified": 500,
+  "source_files_unchanged": true,
+  "quarantines_unchanged": true,
+  "quarantines": {
+    "writer": {
+      "exists": true,
+      "sha256": "502fe12d0206d8ffc964c233bc3180b96841aea406c9179beecc27db8e5e04bc"
+    },
+    "spreadsheet": {
+      "exists": true,
+      "sha256": "21fab62c82ed0301bea1cbb58823de7c020f1a16bf695686172384a924bec3cd"
+    },
+    "presentation": {
+      "exists": true,
+      "sha256": "381a23a92c0445ff60027dda126bf5a9901866a95c21a8430ca1a9f8b3cf9076"
+    }
+  },
+  "office_process_inventory_unchanged": true,
+  "native_office_run": false,
+  "full_pytest_run": false,
+  "npm_or_plugin_install": false,
+  "parity_complete": false,
+  "original_checkout": {
+    "path": "D:/MyDocuments/codexprojects/WpsComposer",
+    "head": "f7e3ed72289c52b2aa8fd6c36129bf6f11f8f501",
+    "status": ""
+  },
+  "candidate_status": ""
+}

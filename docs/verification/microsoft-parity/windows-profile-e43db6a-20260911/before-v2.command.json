@@ -1,0 +1,11 @@
+{
+  "command": [
+    "D:/wpsc168-env/Scripts/python.exe",
+    "D:/wpsce43-evidence/provenance-v2.py",
+    "before"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer",
+  "start": "2026-09-11T00:46:28.279966+00:00",
+  "end": "2026-09-11T00:46:32.004500+00:00",
+  "exit_code": 0
+}

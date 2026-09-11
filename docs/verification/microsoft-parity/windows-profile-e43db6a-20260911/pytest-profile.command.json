@@ -1,0 +1,13 @@
+{
+  "command": [
+    "D:/wpsc168-env/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "tests/macos_probe/test_profile_server.py",
+    "-q"
+  ],
+  "cwd": "D:\\wpsce43",
+  "start": "2026-09-11T00:46:34.212488+00:00",
+  "end": "2026-09-11T00:47:11.116963+00:00",
+  "exit_code": 0
+}

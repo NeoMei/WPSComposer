@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "D:\wpsce43-evidence\provenance.py", line 25, in <module>
+    report={'time':datetime.datetime.now(datetime.timezone.utc).isoformat(),'python':sys.executable,'python_version':sys.version,'module_import_path':module.__file__,'handler_timeout':module.ProfileRequestHandler.timeout,'head':git('rev-parse','HEAD').strip(),'status':git('status','--short'),'files':files,'quarantines':markers,'office_processes':json.loads(p.stdout.decode('utf-8-sig') or '[]'),'process_query_exit_code':p.returncode}
+                                                                                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'skills.WPSComposer.scripts.macos_probe.profile_server' has no attribute 'ProfileRequestHandler'

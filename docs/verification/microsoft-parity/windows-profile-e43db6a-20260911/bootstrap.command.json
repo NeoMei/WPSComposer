@@ -1,0 +1,11 @@
+{
+  "command": [
+    "D:/wpsc168-env/Scripts/python.exe",
+    "-u",
+    "D:/wpsce43-evidence/bootstrap.py"
+  ],
+  "cwd": "D:\\MyDocuments\\codexprojects\\WpsComposer",
+  "start": "2026-09-11T00:44:18.473959+00:00",
+  "end": "2026-09-11T00:44:57.250989+00:00",
+  "exit_code": 0
+}

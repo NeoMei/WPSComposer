@@ -1,0 +1,9 @@
+{
+  "time": "2026-09-11T00:32:52.266513+00:00",
+  "checks": {
+    "markers_unchanged": true,
+    "old_input_evidence_unchanged": true,
+    "checkouts_unchanged": true
+  },
+  "exit_code": 0
+}

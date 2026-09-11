@@ -1,0 +1,257 @@
+{
+  "time": "2026-09-11T00:32:09.323361+00:00",
+  "source_files": [
+    {
+      "path": "skills/WPSComposer/scripts/msoffice/windows_session_worker.py",
+      "failure_commit_sha256": "0afc0de5c8f2a86c3d48bfaa6fbee4446ec82a9496c927e192699462117d88da",
+      "ce322_sha256": "0afc0de5c8f2a86c3d48bfaa6fbee4446ec82a9496c927e192699462117d88da",
+      "identical": true
+    },
+    {
+      "path": "skills/WPSComposer/scripts/msoffice/windows_document_api.py",
+      "failure_commit_sha256": "6ae35a3de8289437ba23e36c5bd2850502f0986d951d3b626d6005995f2a9b32",
+      "ce322_sha256": "6ae35a3de8289437ba23e36c5bd2850502f0986d951d3b626d6005995f2a9b32",
+      "identical": true
+    },
+    {
+      "path": "skills/WPSComposer/scripts/msoffice/windows_office_host.py",
+      "failure_commit_sha256": "fc63ed2d35122f8107ea85debf1f0cd6561ca351fbec9979fdf45dca877e0136",
+      "ce322_sha256": "fc63ed2d35122f8107ea85debf1f0cd6561ca351fbec9979fdf45dca877e0136",
+      "identical": true
+    },
+    {
+      "path": "fixtures/microsoft_parity/windows_native.py",
+      "failure_commit_sha256": "7861d22f47304dcfa570ccbe5153073cc871cc66c6fdc9721efca2721f7be041",
+      "ce322_sha256": "7861d22f47304dcfa570ccbe5153073cc871cc66c6fdc9721efca2721f7be041",
+      "identical": true
+    }
+  ],
+  "input_evidence": [
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-word-01\\writer\\proxy-evidence.json",
+      "sha256": "ca2425c95b2b8d4dcee74474ff509f915df57a92f899f29cdb3d0ae39eb69e6a"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-word-01\\writer\\observed-jobs.json",
+      "sha256": "ae393dd9c73a508000e457a7c961c9e1a355ea17c0d5c5dcd8c909b5b09aa282"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-word-01\\writer\\runtime\\1\\worker-stdout.log",
+      "sha256": "9d0fd948d60156765867d4e02b9bbb32c00a163db6e7e9b5454ae18e1112167c"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-word-01\\writer\\runtime\\1\\wpscomposer-ms-session-e26cx9nc\\failure-33835118de0a40deb863cd30f6de2acd.json",
+      "sha256": "c8b62c30b72ce068ea413a8676c819b8574ef54deac1de23cce3a4ac00fd84a9"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-excel-01\\sheet\\runtime\\1\\worker-stdout.log",
+      "sha256": "6a07704a4f34bb6c21d07fe5249db42453a06f7c7f71f117cc26ba4141f5d97b"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-excel-01\\sheet\\runtime\\1\\wpscomposer-ms-session-j012vn2k\\failure-7f9a579878ae41ddb6e593c057a308a9.json",
+      "sha256": "54055b5b155e6907769cd6313f85071e84a410aad1428e2a87469e1f502e89a2"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-powerpoint-01\\slide\\failure.txt",
+      "sha256": "10592937ccb594e79edf946e53221eb0c238927086d04ef244f67560d916cf9e"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-powerpoint-01\\slide\\case-report.json",
+      "sha256": "fd7ade500a460a1ea61059235e66aaa7e35acb8404521b96b72918ab6d8fa9f5"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-word-01\\writer\\sentinels-before.json",
+      "sha256": "77184fecb81b5d0f727dae811fa659217c30db74931e7dc9e22bc81e744e05d2"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\native-excel-01\\sheet\\sentinels-before.json",
+      "sha256": "39dc6b58dfacc586f7c9706b20bf3b3706792dfdddb11212e13041b7f5e6e344"
+    },
+    {
+      "path": "D:\\wpsc665-recovery-20260910-2107\\retained_inventory.json",
+      "sha256": "5f1d464db3d2ed22270d04337bff60ef114dec660ac327f3993c572c6eb2326c"
+    }
+  ],
+  "correlations": {
+    "word": {
+      "known": "Request 3 add_table returned from native method into encode_result/register; _location failed before UUID handle allocation. Request 4 close acknowledged; Python worker 26192 exited 0. Worker Office PID 12416, sentinel Office PID 8004 are distinct.",
+      "guard": "_location verifies session then compares IUnknown of returned object with each session._composer._doc.Tables.Item(i). Register allocates the opaque UUID only after a successful location check.",
+      "not_recorded": [
+        "Returned table IUnknown token",
+        "Session document token and returned table owning-document token",
+        "Tables.Count before/after and per-item identity/equality results"
+      ],
+      "limit": "Exception proves the membership scan found no matching item; it does not distinguish an empty/wrong collection, COM wrapper identity mismatch, or an actually foreign/stale returned object.",
+      "responses": [
+        {
+          "id": 1,
+          "status": "ok",
+          "value": {
+            "kind": "writer"
+          },
+          "native_identity": {
+            "office_pid": 12416,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 2,
+          "status": "ok",
+          "value": null,
+          "native_identity": {
+            "office_pid": 12416,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 3,
+          "status": "error",
+          "error": {
+            "type": "ValueError",
+            "message": "Native handle is stale or no longer belongs to this session",
+            "code": null
+          }
+        },
+        {
+          "id": 4,
+          "status": "ok",
+          "value": {
+            "closed": true
+          },
+          "native_identity": {
+            "office_pid": 12416,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+            "attached": false
+          }
+        }
+      ]
+    },
+    "excel": {
+      "known": "Request 6 first move succeeded from sheet:2 to sheet:1. Request 7 second move failed at Worksheets.Count != prior count. Request 8 close returned unrelated-documents-changed, not an ACK.",
+      "call_style": "First move uses source.Move(Before=anchor); second uses source.Move(After=anchor), via source.Move(**{key:anchor}). No positional None is passed on this Microsoft path.",
+      "counts": "The logged exception compares session workbook Worksheets.Count, NOT Application.Workbooks.Count. Exact before/after worksheet counts and application workbook counts were not logged.",
+      "not_recorded": [
+        "Application.Workbooks.Count before/after Move",
+        "Exact session Worksheets.Count before/after each Move",
+        "Source and anchor Parent workbook identity",
+        "Move dispatch argument COM types/DISPID and effective optional argument binding"
+      ],
+      "later_snapshot": "Retained worker application now has 1 workbook and 1 worksheet. This later observation cannot fill in counts at the failing Move.",
+      "responses": [
+        {
+          "id": 1,
+          "status": "ok",
+          "value": {
+            "kind": "sheet"
+          },
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 2,
+          "status": "ok",
+          "value": {
+            "__wpscomposer_handle__": {
+              "id": "6be0f3831bf04398b55e5c84391734c4",
+              "type": "sheet"
+            }
+          },
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 3,
+          "status": "ok",
+          "value": {
+            "__wpscomposer_handle__": {
+              "id": "d1ca44da56734376b468e1b7785052c3",
+              "type": "sheet"
+            }
+          },
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 4,
+          "status": "ok",
+          "value": {
+            "__wpscomposer_handle__": {
+              "id": "a3973edc10264dbbb29106395ef4012f",
+              "type": "sheet"
+            }
+          },
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 5,
+          "status": "ok",
+          "value": null,
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 6,
+          "status": "ok",
+          "value": {
+            "type": "sheet",
+            "moved": true,
+            "from": "sheet:2",
+            "path": "sheet:1"
+          },
+          "native_identity": {
+            "office_pid": 19360,
+            "office_executable": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE",
+            "attached": false
+          }
+        },
+        {
+          "id": 7,
+          "status": "error",
+          "error": {
+            "type": "RuntimeError",
+            "message": "Native worksheet move changed the workbook collection",
+            "code": null
+          }
+        },
+        {
+          "id": 8,
+          "status": "error",
+          "error": {
+            "type": "RuntimeError",
+            "message": "Unrelated Office documents changed; application left open",
+            "code": null
+          }
+        }
+      ]
+    },
+    "powerpoint": {
+      "known": "Sentinel startup failed inside _application_pid before presentation Add and before unique native identity was recorded.",
+      "guard": "Enumerate child paneClassDC HWNDs under POWERPNT.EXE; obtain native DocumentWindow; retain candidates whose window.Application IUnknown equals the dispatched app token; require exactly one distinct PID.",
+      "not_recorded": [
+        "Raw paneClassDC HWND candidate count",
+        "AccessibleObjectFromWindow successes/failures",
+        "Application identity equality per candidate",
+        "Matching distinct PID set"
+      ],
+      "limit": "Existing error proves len(matching_PID_set) != 1, not whether it was zero or greater than one. Current absence of POWERPNT.EXE does not prove historical candidate count zero."
+    }
+  }
+}
