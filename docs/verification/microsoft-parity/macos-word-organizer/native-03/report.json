@@ -1,0 +1,104 @@
+{
+  "status": "PASS",
+  "checks": {
+    "donor_17_native": true,
+    "donor_17_input_preserved": true,
+    "donor_23_native": true,
+    "donor_23_input_preserved": true,
+    "copy_17_live_style": true,
+    "copy_17_body_exact": true,
+    "copy_17_other_styles": true,
+    "copy_17_theme": true,
+    "copy_17_definition": true,
+    "copy_17_selection": true,
+    "copy_23_live_style": true,
+    "copy_23_body_exact": true,
+    "copy_23_other_styles": true,
+    "copy_23_theme": true,
+    "copy_23_definition": true,
+    "copy_23_selection": true,
+    "sentinel_preserved": true,
+    "reopen_style": true,
+    "source_preserved": true
+  },
+  "scope": "single named style install and same-name update on owned native DOCX only",
+  "source_hashes": {
+    "build/word-organizer-20260911/organizer_probe.py": "c75873a44fef41c83fa5d29c227cc8faa8307c5d46e352cd5ac80289af0b2bdd",
+    "build/word-organizer-20260911/test_organizer_probe.py": "50ebbcd8b0f51e066e5ec8c35314d1725a28d9d5ce012f579e4e6b1434913bc9",
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": "db2163572c5d8906076eec3832005f3698a771e4f80b9b64129e7c4002cce092",
+    "fixtures/microsoft_parity/macos_word_fields.py": "c3a5e5936ec3f278d2338984f0bfd135434b2b5b8150992e8a63dc1eead36a77",
+    "fixtures/microsoft_parity/macos_word_recovery.py": "7de1c9bb54f3d6fea6c6f90da049f7b74eb7a1ab8ceedb8846396f4e7de8900f",
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": "6e42887ea2c279ae1e2de6c97c9c7285ba75174c1e296834826251745179fef0",
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": "2eba17747945cc71136156823ae8fa30670425fb72ff8acb9c0c86146b42882c"
+  },
+  "input_source_sha256": "2edaecf1e398885e46e0943632640cb60c5fcbd2beef94082469571e9f601f01",
+  "inventory_before": [],
+  "donor_17_rows": [
+    [
+      "style",
+      "WPSC Organizer Heading",
+      17,
+      17,
+      8.5
+    ]
+  ],
+  "donor_23_rows": [
+    [
+      "style",
+      "WPSC Organizer Heading",
+      23,
+      17,
+      11.5
+    ]
+  ],
+  "sentinel_name": "文档44",
+  "sentinel_before": [
+    "文档44",
+    "文档44",
+    false,
+    "40b423e46acfe80a70939fe72b4422e00214c23f21272f8ac5d0ca1c83602606"
+  ],
+  "current_step": "organizer-23",
+  "copy_17_rows": [
+    [
+      "style",
+      "WPSC Organizer Heading",
+      17,
+      17,
+      8.5
+    ]
+  ],
+  "disk_before_save_17_has_style": false,
+  "copy_23_rows": [
+    [
+      "style",
+      "WPSC Organizer Heading",
+      23,
+      17,
+      11.5
+    ]
+  ],
+  "disk_before_save_23_has_style": true,
+  "sentinel_after": [
+    "文档44",
+    "文档44",
+    false,
+    "40b423e46acfe80a70939fe72b4422e00214c23f21272f8ac5d0ca1c83602606"
+  ],
+  "sentinel_closed": true,
+  "remaining_sentinel": null,
+  "source_unchanged": true,
+  "input_source_unchanged": true,
+  "inventory_final": [],
+  "artifact_hashes": {
+    "input-17.docx": "ca7e4bfb0878642e980afc194947655159a23bf97205fb0dc0588ff587cfe0ab",
+    "donor-17.docx": "ca7e4bfb0878642e980afc194947655159a23bf97205fb0dc0588ff587cfe0ab",
+    "recipient-17.docx": "9a372f6ae220b380fc139845ed8311ce2ef9ad3599901ef2ac02cb62d027f0ca",
+    "donor-23.docx": "01757ab3c4c64e28b52713fa97606ca6140953fa95cffd4002b9023cace6202e",
+    "recipient-17-before-save.docx": "2edaecf1e398885e46e0943632640cb60c5fcbd2beef94082469571e9f601f01",
+    "recipient-before.docx": "2edaecf1e398885e46e0943632640cb60c5fcbd2beef94082469571e9f601f01",
+    "recipient-23.docx": "432cc2516f4f4c1612756e01c4ee42115808bd325de69fadc064730acfb0fae1",
+    "input-23.docx": "01757ab3c4c64e28b52713fa97606ca6140953fa95cffd4002b9023cace6202e",
+    "recipient-23-before-save.docx": "9a372f6ae220b380fc139845ed8311ce2ef9ad3599901ef2ac02cb62d027f0ca"
+  }
+}

@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py", line 86, in run
+    with open_document(input_path,engine='msoffice',visible=False) as donor:
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_api.py", line 126, in open_document
+    return open_session(path, kind=_document_family(path, kind), read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/document_sessions.py", line 36, in open_session
+    return _session_class(kind).open_document(path, read_only=read_only, visible=visible)
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 198, in open_document
+    rows = self._execute([
+  File "/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/skills/WPSComposer/scripts/msoffice/macos_word_session.py", line 397, in _execute
+    raise NativeWordError('NATIVE_WORD_EXECUTION_FAILED', staging_path=self.staging_root, diagnostic_path=diagnostic)
+skills.WPSComposer.scripts.msoffice.errors.NativeWordError: Native Word execution failed; private evidence is retained. staging_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-rr9zordr diagnostic_path: /Users/neomei/Library/Containers/com.microsoft.Word/Data/tmp/wpscomposer-session-rr9zordr/8617dc27f6ae4ca0bf9ce01de4ca68bd.log

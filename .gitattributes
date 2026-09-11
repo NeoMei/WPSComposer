@@ -53,3 +53,5 @@ docs/verification/microsoft-parity/macos-excel-private-public/** -text
 # Preserve recovered Windows logs and the profile shutdown regression record.
 /docs/verification/microsoft-parity/windows-70d3d86-20260910/** -text whitespace=-blank-at-eof,-trailing-space
 /docs/verification/microsoft-parity/full-round49/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/macos-word-organizer/** -text whitespace=-blank-at-eof,-trailing-space
+/docs/verification/microsoft-parity/portable-ci/run-16/** -text whitespace=-blank-at-eof,-trailing-space

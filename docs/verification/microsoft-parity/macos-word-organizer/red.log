@@ -1,0 +1,79 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_donor_changes_only_one_custom_style_and_materializes_versions ______
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1637/test_donor_changes_only_one_cu0')
+
+    def test_donor_changes_only_one_custom_style_and_materializes_versions(tmp_path):
+>       m=fixture()
+
+build/word-organizer-20260911/test_organizer_probe.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+build/word-organizer-20260911/test_organizer_probe.py:10: in fixture
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+<frozen importlib._bootstrap_external>:846: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:982: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x10a8276d0>
+path = '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+<frozen importlib._bootstrap_external>:1039: FileNotFoundError
+_________ test_oracle_rejects_other_style_defaults_and_bookmark_change _________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1637/test_oracle_rejects_other_styl0')
+
+    def test_oracle_rejects_other_style_defaults_and_bookmark_change(tmp_path):
+>       m=fixture()
+
+build/word-organizer-20260911/test_organizer_probe.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+build/word-organizer-20260911/test_organizer_probe.py:10: in fixture
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+<frozen importlib._bootstrap_external>:846: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:982: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x10a7e5400>
+path = '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+<frozen importlib._bootstrap_external>:1039: FileNotFoundError
+__________ test_organizer_command_is_single_named_style_and_compiles ___________
+
+tmp_path = PosixPath('/private/var/folders/0n/49qgdd8x7kgcvh719fw743mh0000gn/T/pytest-of-neomei/pytest-1637/test_organizer_command_is_sing0')
+
+    def test_organizer_command_is_single_named_style_and_compiles(tmp_path):
+>       m=fixture()
+
+build/word-organizer-20260911/test_organizer_probe.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+build/word-organizer-20260911/test_organizer_probe.py:10: in fixture
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+<frozen importlib._bootstrap_external>:846: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:982: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x10a653370>
+path = '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/Users/neomei/项目/codexprojects/WpsComposer/.worktrees/office-description/build/word-organizer-20260911/organizer_probe.py'
+
+<frozen importlib._bootstrap_external>:1039: FileNotFoundError
+=========================== short test summary info ============================
+FAILED build/word-organizer-20260911/test_organizer_probe.py::test_donor_changes_only_one_custom_style_and_materializes_versions
+FAILED build/word-organizer-20260911/test_organizer_probe.py::test_oracle_rejects_other_style_defaults_and_bookmark_change
+FAILED build/word-organizer-20260911/test_organizer_probe.py::test_organizer_command_is_single_named_style_and_compiles
+3 failed in 0.04s

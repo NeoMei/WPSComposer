@@ -1,0 +1,25 @@
+{
+  "checks": {
+    "build/word-organizer-20260911/organizer_probe.py": true,
+    "build/word-organizer-20260911/test_organizer_probe.py": true,
+    "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+    "fixtures/microsoft_parity/macos_word_fields.py": true,
+    "fixtures/microsoft_parity/macos_word_recovery.py": true,
+    "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+    "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true,
+    "input-17.docx": true,
+    "donor-17.docx": true,
+    "recipient-17.docx": true,
+    "donor-23.docx": true,
+    "recipient-17-before-save.docx": true,
+    "recipient-before.docx": true,
+    "recipient-23.docx": true,
+    "input-23.docx": true,
+    "recipient-23-before-save.docx": true
+  },
+  "all_pass": true,
+  "native_status": "PASS",
+  "native_checks": 19,
+  "inventory_final": [],
+  "scope": "single custom style, exact body/bookmarks/selection, complete other styles and theme; not public heading method, inheritance flattening, native numbering or glyph acceptance"
+}

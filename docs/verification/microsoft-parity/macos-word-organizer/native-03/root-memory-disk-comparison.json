@@ -1,0 +1,9 @@
+{
+  "disk_sizes": {
+    "recipient-17-before-save.docx": null,
+    "recipient-17.docx": 17.0,
+    "recipient-23-before-save.docx": 17.0,
+    "recipient-23.docx": 23.0
+  },
+  "meaning": "Organizer changed live style first; explicit native save persisted creation/overwrite. Earlier file presence alone was not the live-style check."
+}
