@@ -202,3 +202,42 @@ def test_profile_server_close_releases_request_handler(
     finally:
         connection.close()
         server.close()
+
+
+@pytest.mark.parametrize('request_prefix', [b'', b'GET / HTTP/1.1\r\nHost: localhost'])
+def test_profile_server_close_finishes_when_socket_shutdown_does_not_wake_reader(
+    tmp_path: Path, monkeypatch, request_prefix: bytes,
+):
+    """Retained Windows failure: server_close joins a blocking request read.
+
+    Keep a real TCP client open, but simulate an ineffective socket shutdown.
+    The server must release its handler without needing the client to close.
+    """
+    from skills.WPSComposer.scripts.macos_probe.profile_server import _LoopbackHTTPServer
+
+    root = tmp_path / 'profile'
+    root.mkdir()
+    (root / 'index.html').write_text('ready', encoding='utf-8')
+    accepted = threading.Event()
+    original_process = _LoopbackHTTPServer.process_request
+    def track_accept(self, request, address):
+        original_process(self, request, address)
+        accepted.set()
+    monkeypatch.setattr(_LoopbackHTTPServer, 'process_request', track_accept)
+    monkeypatch.setattr(_LoopbackHTTPServer, 'close_connections', lambda self: None)
+    server = ProfileServer(root, 0).start()
+    client = socket.create_connection(server.address, timeout=2)
+    closer = threading.Thread(target=server.close, daemon=True)
+    try:
+        if request_prefix:
+            client.sendall(request_prefix)
+        assert accepted.wait(2), 'server did not accept the actual TCP connection'
+        closer.start()
+        closer.join(timeout=6)
+        assert not closer.is_alive(), 'profile close is waiting indefinitely for request bytes'
+        assert client.recv(1) == b''
+    finally:
+        client.close()
+        if closer.ident is not None:
+            closer.join(timeout=3)
+        server.close()

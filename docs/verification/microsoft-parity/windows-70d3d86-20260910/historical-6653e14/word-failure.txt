@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 585, in native_case
+    report['checks'].update(standard_case(api, output, kind, time.monotonic() + timeout - 20))
+                            ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 443, in standard_case
+    populate(session, kind)
+    ~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\wpsc665\fixtures\microsoft_parity\windows_native.py", line 406, in populate
+    table = session.add_table(2, 2, [['Header', 'Value'], ['Native Table', '42']])
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 391, in <lambda>
+    return lambda *args, **kwargs: self._call(name, *args, **kwargs)
+                                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\wpsc665\skills\WPSComposer\scripts\msoffice\windows_session_proxy.py", line 373, in _call
+    raise error
+ValueError: Native handle is stale or no longer belongs to this session

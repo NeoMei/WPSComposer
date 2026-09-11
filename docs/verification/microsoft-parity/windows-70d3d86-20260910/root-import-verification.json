@@ -1,0 +1,31 @@
+{
+  "source_commit": "d653ad0ebb2ccbf4ecf5c9db1c4459fa3c172d64",
+  "file_count": 24,
+  "checks": {
+    "bootstrap.log": true,
+    "checkout.json": true,
+    "preflight-console.log": true,
+    "preflight-exit.txt": true,
+    "preflight-report.json": true,
+    "preflight.py": true,
+    "preservation.json": true,
+    "pytest-console.log": true,
+    "pytest-exit.txt": true,
+    "pytest-first-failure-exit.txt": true,
+    "pytest-first-failure.log": true,
+    "pytest-hang-stack.txt": true,
+    "pytest-interruption.json": true,
+    "sheet-preflight-error.txt": true,
+    "slide-preflight-error.txt": true,
+    "source-verification.json": true,
+    "SUMMARY.md": true,
+    "writer-preflight-error.txt": true,
+    "historical-6653e14/excel-failure.txt": true,
+    "historical-6653e14/excel-worker-stdout.log": true,
+    "historical-6653e14/powerpoint-failure.txt": true,
+    "historical-6653e14/word-failure.txt": true,
+    "historical-6653e14/word-worker-stdout.log": true
+  },
+  "all_match": true,
+  "scope": "Historical 70d3d86 Windows checkpoint; not current candidate native certification"
+}

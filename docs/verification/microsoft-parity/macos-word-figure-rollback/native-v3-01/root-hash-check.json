@@ -1,0 +1,14 @@
+{
+  "build/word-figure-rollback-20260911/macos_word_figure_rollback_probe_v3.py": true,
+  "build/word-figure-rollback-20260911/test_macos_word_figure_rollback_probe_v3.py": true,
+  "skills/WPSComposer/scripts/msoffice/macos_word_session.py": true,
+  "skills/WPSComposer/scripts/msoffice/macos_word_recovery.py": true,
+  "fixtures/microsoft_parity/macos_word_fields.py": true,
+  "fixtures/microsoft_parity/macos_word_recovery.py": true,
+  "fixtures/microsoft_parity/macos_word_paragraph_rule.py": true,
+  "fixtures/microsoft_parity/macos_word_quality_feasibility.py": true,
+  "figure-rollback.docx": true,
+  "figure-rollback-source.docx": true,
+  "figure-rollback.pdf": true,
+  "probe.png": true
+}

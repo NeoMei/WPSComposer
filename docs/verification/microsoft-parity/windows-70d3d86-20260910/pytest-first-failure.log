@@ -1,0 +1,232 @@
+F
+================================== FAILURES ===================================
+_ test_generation_uses_only_staged_path_and_publishes_valid_package[writer-docx-generate_writer_document-plan0] _
+
+source = WindowsPath('D:/wpsc70/macos/wps-jsapi-probe/node_modules/wpsjs/src/lib/res/wpsDemo.docx')
+target = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-196/test_generation_uses_only_stag0/container/session-1/generated.docx')
+expected_sha256 = '95c2da9c75b65f7da18da345847a65ecab21512978c15e65c5b601512d52fd8e'
+format_name = 'docx', temporary_prefix = '.wpscomposer-template-'
+error_message = 'Pinned writer template digest mismatch'
+
+    def _clone_verified_file(
+        source: Path,
+        target: Path,
+        *,
+        expected_sha256: str,
+        format_name: str,
+        temporary_prefix: str,
+        error_message: str,
+    ) -> Path:
+        """Atomically publish one validated private copy with mode 0600."""
+    
+        temporary: Path | None = None
+        published = False
+        target_preexisted = target.exists() or target.is_symlink()
+        try:
+>           if _sha256(source) != expected_sha256:
+               ^^^^^^^^^^^^^^^
+
+skills\WPSComposer\scripts\macos_probe\templates.py:155: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+skills\WPSComposer\scripts\macos_probe\templates.py:76: in _sha256
+    with path.open("rb") as stream:
+         ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('D:/wpsc70/macos/wps-jsapi-probe/node_modules/wpsjs/src/lib/res/wpsDemo.docx')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'D:\\wpsc70\\macos\\wps-jsapi-probe\\node_modules\\wpsjs\\src\\lib\\res\\wpsDemo.docx'
+
+C:\Python314\Lib\pathlib\__init__.py:771: FileNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+request = GenerationRequest(output=WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-196/test_generation_uses_only_stag0/final.docx'), component='writer', format_name='docx', overwrite=False)
+recorded = RecordedGeneration(plan=GenerationPlan(component='writer', operations=(GenerationOperation(op='writer.reset', args=map...ocol_version=None, semantic_version=None, resource_manifest_version=None, resource_manifest_digest=None), resources=())
+method = 'generate_writer_document'
+bridge = <macos_probe.test_generation.FakeBridge object at 0x000002346AADD910>
+runtime = <macos_probe.test_generation.FakeRuntime object at 0x000002346A9ABCB0>
+probe_root = WindowsPath('D:/wpsc70/macos/wps-jsapi-probe')
+deadline = 114287.5718898, feasibility = True
+
+    def _run_generation(
+        request: GenerationRequest,
+        recorded: RecordedGeneration,
+        method: str,
+        bridge: LoopbackBridge,
+        runtime: ProbeRuntime,
+        probe_root: Path,
+        deadline: float,
+        feasibility: bool,
+    ) -> Path:
+        is_pdf = request.format_name == "pdf"
+        if runtime.staging_dir is None:
+            raise _error(
+                request,
+                "STAGING_UNAVAILABLE",
+                "WPS container staging session was not created",
+            )
+        require_remaining(deadline)
+        runtime.prepare_profiles()
+        require_remaining(deadline)
+        policy = PathPolicy((runtime.staging_dir,))
+        try:
+            staged = policy.require_allowed(
+>               clone_template(probe_root, runtime.staging_dir, request.component)
+            )
+
+skills\WPSComposer\scripts\macos_probe\generation.py:1250: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+skills\WPSComposer\scripts\macos_probe\templates.py:130: in clone_template
+    return _clone_verified_file(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+source = WindowsPath('D:/wpsc70/macos/wps-jsapi-probe/node_modules/wpsjs/src/lib/res/wpsDemo.docx')
+target = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-196/test_generation_uses_only_stag0/container/session-1/generated.docx')
+expected_sha256 = '95c2da9c75b65f7da18da345847a65ecab21512978c15e65c5b601512d52fd8e'
+format_name = 'docx', temporary_prefix = '.wpscomposer-template-'
+error_message = 'Pinned writer template digest mismatch'
+
+    def _clone_verified_file(
+        source: Path,
+        target: Path,
+        *,
+        expected_sha256: str,
+        format_name: str,
+        temporary_prefix: str,
+        error_message: str,
+    ) -> Path:
+        """Atomically publish one validated private copy with mode 0600."""
+    
+        temporary: Path | None = None
+        published = False
+        target_preexisted = target.exists() or target.is_symlink()
+        try:
+            if _sha256(source) != expected_sha256:
+                raise TemplateError(error_message)
+            descriptor, temporary_name = tempfile.mkstemp(
+                dir=target.parent,
+                prefix=temporary_prefix,
+                suffix=".tmp",
+            )
+            temporary = Path(temporary_name)
+            os.close(descriptor)
+            os.chmod(temporary, 0o600)
+            shutil.copyfile(source, temporary)
+            if _sha256(temporary) != expected_sha256:
+                raise TemplateError(error_message)
+            validate_office_package(temporary, format_name)
+            os.chmod(temporary, 0o600)
+            os.link(temporary, target)
+            temporary.unlink()
+            temporary = None
+            published = True
+            return target
+        except OSError as exc:
+>           raise TemplateError(error_message) from exc
+E           skills.WPSComposer.scripts.macos_probe.templates.TemplateError: Pinned writer template digest mismatch
+
+skills\WPSComposer\scripts\macos_probe\templates.py:176: TemplateError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-196/test_generation_uses_only_stag0')
+component = 'writer', format_name = 'docx', method = 'generate_writer_document'
+plan = GenerationPlan(component='writer', operations=(GenerationOperation(op='writer.reset', args=mappingproxy({}), node_id=N...cy=None)), protocol_version=None, semantic_version=None, resource_manifest_version=None, resource_manifest_digest=None)
+
+    @pytest.mark.parametrize(
+        ("component", "format_name", "method", "plan"),
+        [
+            ("writer", "docx", "generate_writer_document", WRITER_MARKER_PLAN),
+            (
+                "spreadsheet",
+                "xlsx",
+                "generate_spreadsheet_workbook",
+                SHEET_MARKER_PLAN,
+            ),
+            (
+                "presentation",
+                "pptx",
+                "generate_presentation_deck",
+                SLIDE_MARKER_PLAN,
+            ),
+        ],
+    )
+    def test_generation_uses_only_staged_path_and_publishes_valid_package(
+        tmp_path: Path,
+        component: str,
+        format_name: str,
+        method: str,
+        plan: GenerationPlan,
+    ):
+>       result, request, bridge, runtime, calls = _run_with_fakes(
+            tmp_path, component, format_name, plan
+        )
+
+tests\macos_probe\test_generation.py:367: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\macos_probe\test_generation.py:329: in _run_with_fakes
+    result = execute_feasibility_plan(
+skills\WPSComposer\scripts\macos_probe\generation.py:1583: in execute_feasibility_plan
+    return _execute_generation_plan(
+skills\WPSComposer\scripts\macos_probe\generation.py:1496: in _execute_generation_plan
+    return _run_generation(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = GenerationRequest(output=WindowsPath('C:/Users/1/AppData/Local/Temp/pytest-of-NeoMei/pytest-196/test_generation_uses_only_stag0/final.docx'), component='writer', format_name='docx', overwrite=False)
+recorded = RecordedGeneration(plan=GenerationPlan(component='writer', operations=(GenerationOperation(op='writer.reset', args=map...ocol_version=None, semantic_version=None, resource_manifest_version=None, resource_manifest_digest=None), resources=())
+method = 'generate_writer_document'
+bridge = <macos_probe.test_generation.FakeBridge object at 0x000002346AADD910>
+runtime = <macos_probe.test_generation.FakeRuntime object at 0x000002346A9ABCB0>
+probe_root = WindowsPath('D:/wpsc70/macos/wps-jsapi-probe')
+deadline = 114287.5718898, feasibility = True
+
+    def _run_generation(
+        request: GenerationRequest,
+        recorded: RecordedGeneration,
+        method: str,
+        bridge: LoopbackBridge,
+        runtime: ProbeRuntime,
+        probe_root: Path,
+        deadline: float,
+        feasibility: bool,
+    ) -> Path:
+        is_pdf = request.format_name == "pdf"
+        if runtime.staging_dir is None:
+            raise _error(
+                request,
+                "STAGING_UNAVAILABLE",
+                "WPS container staging session was not created",
+            )
+        require_remaining(deadline)
+        runtime.prepare_profiles()
+        require_remaining(deadline)
+        policy = PathPolicy((runtime.staging_dir,))
+        try:
+            staged = policy.require_allowed(
+                clone_template(probe_root, runtime.staging_dir, request.component)
+            )
+        except (ArtifactValidationError, OSError, TemplateError) as exc:
+>           raise _error(
+                request,
+                "STAGING_SAVE_FAILED",
+                "Pinned WPS generation template could not be staged",
+            ) from exc
+E           skills.WPSComposer.scripts.macos_probe.generation.GenerationError: Pinned WPS generation template could not be staged
+
+skills\WPSComposer\scripts\macos_probe\generation.py:1253: GenerationError
+=========================== short test summary info ===========================
+FAILED tests/macos_probe/test_generation.py::test_generation_uses_only_staged_path_and_publishes_valid_package[writer-docx-generate_writer_document-plan0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.35s

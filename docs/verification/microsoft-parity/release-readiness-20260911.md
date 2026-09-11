@@ -4,12 +4,12 @@
 
 | Gate | Current evidence | Remaining work |
 | --- | --- | --- |
-| Source regression | [Full48](full-round48/README.md): 5,281 passed / 12 skipped on immutable c454ac8d; all402 before/after/live hashes equal | Run affected checks after implementation changes; do not transfer results to changed sources |
+| Source regression | [Full49](full-round49/README.md):5,283 passed/12 skipped after profile timeout fix;380 before/after source hashes equal | Current hosted CI and native acceptance remain separate; full48 retained as earlier immutable evidence |
 | Hosted portability | [CI15](portable-ci/run-15/README.md) passed four jobs at a6bd0140: Linux each5,248 passed/45 skipped; Windows each5,194 passed/99 skipped | Hosted tests do not execute opt-in native Office scenarios |
 | Mac installed public paths | Current Word isolated install at a6bd0140:216 identical source files and six public checks. Earlier Excel/PowerPoint installed smoke retained separately | Complete argument, format, lifecycle and capability matrix; current all-app installation |
 | Mac Word direct API | 71/80 declared method names; declaration is not native certification | Nine absent methods below; complete native acceptance for implemented methods |
 | Word full-quality snapshot | Defined-style and page-story diagnostics preserve state on bounded cases | Complete linked story, character/style/layout coverage and repeated full snapshots without read side effects |
-| Windows desktop | Remote continuation accepted; latest refresh exposes old interrupted turn and notLoaded state | Fresh candidate Office/WPS native, UI and isolated-installed execution |
+| Windows desktop | GitHub evidence d653ad0e recovered: candidate70d3d86 startup blocked by three retained quarantines; UI/native not run; full pytest interrupted | Resolve retained exact-owned state, three older native defects, then current candidate Office/WPS native/UI/installed execution |
 | Final acceptance | Historical scoped reviews and native/UI evidence retained | Per-capability certification and final whole-branch review on the finished candidate |
 
 Nine absent methods: `add_captioned_figure_fallback`, `add_captioned_figure_native`, `add_equation_native`, `add_equation_native_fallback`, `add_heading_level_native`, `add_horizontal_line`, `add_semantic_table_fallback`, `add_semantic_table_native`, `add_wordart`. The existing paragraph-border method does not satisfy native inline-line semantics; equation numbering does not satisfy native equation creation.
@@ -26,8 +26,17 @@ Temporary localhost certificate trust, test private key and listener were remove
 
 The production-shaped heading-style setup now has two preserved native failures before import. The second run uses exact named style resolution and real typed readbacks; the custom parent still bases on Heading1 after requesting Normal. No style-refresh or custom-parent capability follows from these runs. A separate supported style-copy mechanism must be verified; no further setter normalization is assumed. [Current installed Word](installed-word-caption-checkpoint/README.md) passes six public checks with216 exact installed/source hashes and empty before/after document inventories.
 
-Current [figure rollback feasibility](macos-word-figure-rollback/README.md) fails safely before deletion: Word expands a suffix bookmark across the inserted picture/paragraph, so its start is not the unchanged-content boundary. A bounded diagnostic proves picture10:11 and expected12 versus bookmark10. Existing output/source preservation and empty final inventory are verified; second-image rollback and the figure family remain unaccepted.
+Current [figure rollback feasibility](macos-word-figure-rollback/README.md) v3 passes ten bounded native checks including one-image and second-image-failure rollback, complete body/style/theme preservation after save/reopen and empty final inventory. V2 scalar PASS missed changed no-proofing run properties; that raw failure and new regression oracle are retained. V3 restores the original native proofing value. The whole figure family and arbitrary rich-text rollback remain unaccepted.
 
-Execution availability: independent task-review agents stopped at the account usage limit. The alternate provider rejected the encrypted agent task before reading it. New build-only figure diagnostics have root review and pure/compile checks, but their required independent review remains open. The Windows task still exposes only its older interrupted turn; current remote native results are not available. These constraints do not remove any frozen parity requirements.
+Execution availability: independent task-review agents stopped at the account usage limit. The alternate provider rejected the encrypted agent task before reading it. New build-only figure diagnostics have root review and pure/compile checks, but their required independent review remains open. The Windows task still exposes its older interrupted turn, but [a GitHub evidence branch](windows-70d3d86-20260910/SUMMARY.md) now supplies a September10 checkpoint for older70d3d86. Root verified23 manifest hashes. It is explicitly BLOCKED, not a current native pass. It also supplies the profile-server shutdown stack and older Word handle/Excel move/PowerPoint window-binding failures. These constraints do not remove any frozen parity requirements.
 
 Next ordered work: (1) verify the documented single-style `organizer copy` command using only owned Word-saved DOCX donors and the exact private recipient; check live memory and saved definitions separately, then same-name overwrite and reopen; (2) repair figure-local rollback using exact object/preimage identities and verify restored bookmark/format graphs; (3) finish the remaining nine Word direct-method families and complete quality/argument/format rows; (4) run current Windows Office/WPS native/UI/installed acceptance and final independent whole-branch certification.
+
+
+September11 follow-up: the Windows profile-server shutdown failure was reproduced
+locally with real idle/partial-request TCP clients and ineffective-shutdown fault
+injection (two RED cases). The request handler now has a five-second socket
+read/write timeout, retaining joinable handlers and normal shutdown. All22 profile
+server tests pass. [Full49](full-round49/README.md) passes5,283/12 with380 unchanged source hashes; independent review and Windows
+retest remain pending. Missing node template dependencies in the older isolated
+Windows checkout are a separate setup failure, not proof of a generation defect.

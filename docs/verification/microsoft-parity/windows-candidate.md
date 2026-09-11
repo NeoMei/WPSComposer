@@ -1,7 +1,7 @@
 # Windows parity candidate handoff
 
 This is a new three-application candidate. The previous v0.9.0 Word acceptance
-does not validate these changes. No native result is recorded here yet.
+does not validate these changes. The [September10 checkpoint](windows-70d3d86-20260910/SUMMARY.md) records blocked startup on70d3d86 and older native failures, not a native pass. Recover the exact retained objects before any new Office run; the existing Excel instance may still contain an unsaved workbook. A completed remote task is not a completed acceptance matrix.
 
 Use a separate checkout of the reviewed `codex/microsoft-parity` candidate and
 record its exact commit with `git rev-parse HEAD`. Preserve the existing Windows
@@ -13,8 +13,16 @@ In that isolated checkout, create a private Python environment if needed:
 ```powershell
 py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e '.[dev,windows]'
+# Node.js22 and npm are also needed for the pinned fixture templates.
+node --version
+npm ci --prefix macos/wps-jsapi-probe --ignore-scripts
+.\.venv\Scripts\python.exe -m pytest tests/macos_probe/test_profile_server.py -q
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+Do not skip the npm setup: the older isolated Windows checkout lacked
+`wpsjs` template resources, producing setup failures during otherwise portable
+tests. Preserve the old raw log; a later successful setup does not rewrite it.
 
 Confirm Word, Excel and PowerPoint are installed and available in the interactive
 desktop. Run the guarded standard acceptance with a **new** output directory:

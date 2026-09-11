@@ -1,0 +1,6 @@
+{
+  "expected_full_restoration": true,
+  "actual_full_restoration": false,
+  "native_evidence": "native-v2-01",
+  "finding": "new w:noProof despite passing scalar oracle"
+}
