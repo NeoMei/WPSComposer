@@ -40,11 +40,20 @@ def _bool(value):
     return 'true' if value else 'false'
 
 
+def _word_rgb(value):
+    text = str(value).strip().lstrip('#')
+    if not re.fullmatch(r'[0-9a-fA-F]{6}', text):
+        raise MacWordCapabilityError('Mac native Word unsupported color: ' + str(value))
+    return '{%d, %d, %d}' % (int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16))
+
+
 def _style(name):
     if name == 'Body Text':
         return 'style body text'
     if name == 'Title':
         return 'style title'
+    if name == 'Normal':
+        return 'style normal'
     if re.fullmatch(r'Heading [1-6]', name):
         return 'style heading' + name[-1]
     raise MacWordCapabilityError('Unsupported native Word style: ' + str(name))
@@ -194,6 +203,8 @@ def _format(target, args):
             value = args[key]
             expression = apple_string(value) if isinstance(value, str) else _bool(value) if isinstance(value, bool) else _num(value)
             lines.append(f'set {prop} of font object of {target} to {expression}')
+    if 'color' in args:
+        lines.append(f'set color of font object of {target} to {_word_rgb(args["color"])}')
     for key, prop in paragraph_keys.items():
         if key in args:
             value = args[key]
@@ -273,7 +284,7 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
         if op == 'add_list' and operation.args.get('glyph','•') != '•':
             raise MacWordCapabilityError('Mac native Word unsupported custom bullet glyph')
         if op == 'ensure_styles':
-            allowed = {'name','type','fontName','fontNameAscii','fontSize','bold','italic','align','indentFirst','spaceBefore','spaceAfter','keepWithNext','keepTogether','outlineLevel','lineSpacing'}
+            allowed = {'name','type','fontName','fontNameAscii','fontSize','bold','italic','color','align','indentFirst','spaceBefore','spaceAfter','keepWithNext','keepTogether','outlineLevel','lineSpacing'}
             for style in operation.args['styles']:
                 extra = set(style) - allowed
                 if extra:
@@ -298,6 +309,10 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             raise MacWordCapabilityError('Mac native Word unsupported heading numbering scheme')
     lines, nodes = [], {}
     issues = []
+    # The document default font must be an explicit simplified Chinese face;
+    # Word's theme otherwise leaves unstyled runs on a viewer-dependent
+    # substitution path that can resolve to a traditional-looking face.
+    lines.append('set east asian name of font object of (Word style (style normal) of ownedDoc) to ' + apple_string('宋体'))
     section_seen, role = False, 'body'
     section_commands = []
     section_count = 0
@@ -352,6 +367,9 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             for level in range(1, toc_levels + 1):
                 lines.append(f'set ownStyle to Word style (style toc{level}) of ownedDoc')
                 lines += _format('ownStyle', {'fontSize':(a.get('minFontSizePt', {}).get('toc' + str(level), 10) if isinstance(a.get('minFontSizePt'), Mapping) else a.get('minFontSizePt', 10)), 'spaceBefore':(a.get('minSpaceBeforePt', {}).get('toc' + str(level), 0) if isinstance(a.get('minSpaceBeforePt'), Mapping) else a.get('minSpaceBeforePt', 0)), 'spaceAfter':(a.get('minSpaceAfterPt', {}).get('toc' + str(level), 0) if isinstance(a.get('minSpaceAfterPt'), Mapping) else a.get('minSpaceAfterPt', 0))})
+                # TOC paragraphs otherwise inherit the document theme font;
+                # pin them to the same explicit simplified face as the body.
+                lines.append('set east asian name of font object of ownStyle to ' + apple_string('宋体'))
         elif op == 'configure_section':
             role = a['role']
             if section_seen:
@@ -391,8 +409,17 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
                 lines.append('remove numbers (list format of r)')
         elif op == 'add_list':
             items = a['items']
-            text = '\r'.join(items) + '\r'
-            lines += [f'set r to my appendText(ownedDoc, {apple_string(text)})', 'set style of r to style body text', 'set first line indent of paragraph format of r to 0', ('apply number default' if a.get('ordered') else 'apply bullet default') + ' (list format of r)']
+            # Word applies the document's current list template for the default
+            # numbering commands; once the heading outline template is linked
+            # to the heading styles this can flip list paragraphs onto Heading 1
+            # with chapter numbers (observed as trailing-list corruption).
+            # Emit literal prefixes with a hanging indent instead, matching the
+            # WPS engine's stable rendering.
+            glyph = a.get('glyph', '•') or '•'
+            for index, item in enumerate(items):
+                prefix = (str(index + 1) + '.\t') if a.get('ordered') else (glyph + '\t')
+                lines.append(f'set r to my appendText(ownedDoc, {apple_string(prefix + item)} & return)')
+                lines += ['set style of r to style body text', 'set character unit left indent of paragraph format of r to 2', 'set character unit first line indent of paragraph format of r to -2']
         elif op == 'add_semantic_table':
             if a.get('caption'):
                 lines += _caption(a, before=True)

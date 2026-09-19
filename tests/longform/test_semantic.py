@@ -247,6 +247,44 @@ title_page: true
     assert not any(s.preface for s in sections)
 
 
+def test_leading_unprefixed_front_matter_section_does_not_consume_chapter_number() -> None:
+    """Regression: a front-matter section such as "## 文档修订记录" placed
+    before "## 1. 总论" must stay unnumbered instead of consuming chapter 1,
+    and "1. 总论" must strip its literal prefix instead of double-numbering."""
+    md = """---
+title: 报告
+title_page: true
+---
+# 报告
+
+## 文档修订记录
+
+正文。
+
+## 1. 总论
+
+### 1.1 项目概况
+
+正文。
+
+## 9. 结论与建议
+
+正文。
+"""
+    result = normalize_longform_document(_doc_from_markdown(md))
+    sections = [s for s in result.document.sections if s.has_heading]
+    assert [s.heading for s in sections] == [
+        "文档修订记录",
+        "总论",
+        "项目概况",
+        "结论与建议",
+    ]
+    assert sections[0].numbering == "none"
+    assert sections[0].numbering_scheme is None
+    assert [s.numbering for s in sections[1:]] == ["decimal", "decimal", "decimal"]
+    assert not any(s.preface for s in sections[1:])
+
+
 def test_explicit_scheme_removes_matching_prefixes() -> None:
     md = """---
 title: Report

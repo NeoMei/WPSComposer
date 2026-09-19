@@ -49,7 +49,12 @@ def test_tables_and_lists_compile_native_objects(tmp_path):
     c=compile_plan(b.plan, {}, tmp_path/'x.docx', timeout=30)
     assert 'make new table' in c.source
     assert 'heading format of row 1' in c.source
-    assert 'apply bullet default' in c.source
+    # Body lists must use literal prefixes with a hanging indent; the default
+    # list-numbering commands can inherit the heading-linked outline template
+    # and flip trailing list paragraphs onto Heading 1.
+    assert 'apply bullet default' not in c.source
+    assert 'apply number default' not in c.source
+    assert 'set left indent of paragraph format of r to 24' in c.source
 
 
 def test_figure_compiles_only_bound_normalized_image(tmp_path):
@@ -127,10 +132,10 @@ def test_unsupported_style_attribute_rejected(tmp_path):
     ops=[]
     for o in b.plan.operations:
         if o.op=='writer.ensure_styles':
-            styles=[dict(s) for s in o.args['styles']];styles[0]['color']='#ff0000'
+            styles=[dict(s) for s in o.args['styles']];styles[0]['underline']=True
             o=replace(o,args={'styles':styles})
         ops.append(o)
-    with pytest.raises(MacWordCapabilityError,match='color'):
+    with pytest.raises(MacWordCapabilityError,match='underline'):
         compile_plan(replace(b.plan,operations=tuple(ops)),{},tmp_path/'x.docx',timeout=20)
 
 

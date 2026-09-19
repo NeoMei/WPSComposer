@@ -237,7 +237,7 @@ def _scheme_level_match(heading: str, scheme: str) -> Optional[int]:
         if re.match(r"^（[零〇一二三四五六七八九十百千万两]+）", heading):
             return 4
     elif scheme == "decimal":
-        m = re.match(r"^(\d+)(?:\s+|$|[：:])", heading)
+        m = re.match(r"^(\d+)(?:\.(?!\d)\s*|[、．]\s*|\s+|$|[：:])", heading)
         if m and _decimal_segment_valid(m.group(1)):
             return 1
         m = re.match(r"^(\d+\.\d+)(?:\s+|$|[：:])", heading)
@@ -284,7 +284,7 @@ def _strip_prefix(heading: str, level: int, scheme: str) -> tuple[str, bool]:
         }
     elif scheme == "decimal":
         patterns = {
-            1: re.compile(r"^\d+\s+"),
+            1: re.compile(r"^\d+(?:\.(?!\d)\s*|[、．]\s*|\s+|[：:])"),
             2: re.compile(r"^\d+\.\d+\s+"),
             3: re.compile(r"^\d+(?:\.\d+){2}\s+"),
             4: re.compile(r"^\d+(?:\.\d+){3}\s+"),
@@ -397,6 +397,30 @@ def _apply_heading_numbering(
             if section.level >= 2:
                 section.level -= 1
 
+    # Front-matter sections that precede the first prefixed chapter heading
+    # (e.g. a revision-history table under its own "## 文档修订记录") must not
+    # consume a chapter number once the level shift turns them into level-1
+    # headings. Gate on the same prefix evidence the stripping step accepts so
+    # "01"-style and fully unprefixed documents keep their numbering.
+    first_prefixed = None
+    for index, section in enumerate(sections):
+        if (
+            1 <= section.level <= 4
+            and section.heading
+            and (
+                _strip_prefix(section.heading, section.level, selected_scheme)[1]
+                or _scheme_level_match(section.heading, selected_scheme) is not None
+            )
+        ):
+            first_prefixed = index
+            break
+    if first_prefixed is not None:
+        for section in sections[:first_prefixed]:
+            if section.level >= 1:
+                section.preface = True
+                section.numbering = "none"
+                section.numbering_scheme = None
+
     has_numbered_h1 = False
     # states: "absent" | "numbered" | "none_prefix" | "none_gap"
     state: dict[int, str] = {1: "absent", 2: "absent", 3: "absent", 4: "absent"}
@@ -407,6 +431,9 @@ def _apply_heading_numbering(
         if section.level >= 5:
             section.numbering = "none"
             section.numbering_scheme = None
+            continue
+
+        if section.preface:
             continue
 
         if (
