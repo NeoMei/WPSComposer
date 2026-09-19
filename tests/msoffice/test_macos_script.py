@@ -54,7 +54,8 @@ def test_tables_and_lists_compile_native_objects(tmp_path):
     # and flip trailing list paragraphs onto Heading 1.
     assert 'apply bullet default' not in c.source
     assert 'apply number default' not in c.source
-    assert 'set left indent of paragraph format of r to 24' in c.source
+    assert 'set character unit left indent of paragraph format of r to 2' in c.source
+    assert 'set character unit first line indent of paragraph format of r to -2' in c.source
 
 
 def test_figure_compiles_only_bound_normalized_image(tmp_path):
