@@ -8,6 +8,8 @@ WPSComposer 让 AI agent 通过真实 Office 排版引擎生成文档：WPS 支�
 
 > **0.8.1（2026-09-07）**：macOS Word 改用原生空白任务文档启动，首次生成直接复用；只启动所需组件服务，完整回收连接和独立 WPS 宿主。`open_result=True` 可在成功清理后打开最终文件。详见 [0.8.1 验证记录](docs/releases/0.8.1.md)。
 
+> **0.9.1（2026-09-19）：原生 Word 排版修复**：修复 macOS 原生 Word 生成中标题蓝字、章节双重编号、默认字体回退和文尾列表被写成标题的问题；正文列表改为字面前缀加悬挂缩进。参见 [0.9.1 发布说明](docs/releases/0.9.1.md)。
+
 > **0.9.0（2026-09-08）：Microsoft Word 原生支持**：新增 `engine="msoffice"` 的 DOCX/PDF 生成和 DOC/DOCX 转 PDF，默认仍为 WPS。Windows 和 macOS 原生验收均已通过。参见 [0.9.0 发布说明](docs/releases/0.9.0.md)、 [使用与恢复说明](skills/WPSComposer/references/native-word.md) 和 [验收记录](docs/verification/msoffice-production/README.md)。
 
 ## ✨ 核心特性
