@@ -429,6 +429,7 @@ def _render_section(
             "text": section.heading,
             "level": section.level,
             "bookmarkName": f"wpsc_head_{heading_digest}",
+            "keepWithNext": True,  # Prevent heading orphan at page bottom
         }
         if (
             section.level in {1, 2, 3, 4}

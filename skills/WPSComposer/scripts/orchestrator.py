@@ -202,6 +202,23 @@ def generate(
             outcome = _generate_longform_outcome(
                 longform_build, format, output_path, timeout, overwrite, **options
             )
+            # Apply native heading numbering for DOCX output on macOS
+            if (
+                sys.platform == "darwin"
+                and format == "docx"
+                and Path(outcome.path).exists()
+                and detect_numbering_scheme(longform_build.semantic.document.sections) == "chinese"
+            ):
+                try:
+                    from .numbering_native import apply_native_numbering
+
+                    apply_native_numbering(outcome.path)
+                except Exception as exc:  # never block a successful generation
+                    import warnings
+
+                    warnings.warn(
+                        f"Native heading numbering could not be applied: {exc}"
+                    )
             return _return_artifact(Path(outcome.path), open_result=open_result, engine=selected_engine)
 
     # Route to renderer

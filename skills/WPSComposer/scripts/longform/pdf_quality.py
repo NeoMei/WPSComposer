@@ -373,7 +373,7 @@ def analyze_pages(
             )
         )
 
-    if policy.header_display_units is not None and policy.header_display_units > 32:
+    if policy.header_display_units is not None and policy.header_display_units > 64:
         findings.append(
             _finding(
                 "HEADER_OVERFLOW",

@@ -30,18 +30,72 @@ _CHINESE_PATTERNS = {
     "Heading 2": re.compile(r"^第[一二三四五六七八九十百]+节\s*"),
     "Heading 3": re.compile(r"^[一二三四五六七八九十]+、\s*"),
     "Heading 4": re.compile(r"^（[一二三四五六七八九十]+）\s*"),
+    # Longform engine uses these custom unnumbered heading styles
+    # Match any common numbering prefix (Chinese or decimal, any level)
+    "WPSC Unnumbered Heading 1": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+章\s*|\d+[\.\s、]\s*)"
+    ),
+    "WPSC Unnumbered Heading 2": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+节\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 3": re.compile(
+        r"^(?:[一二三四五六七八九十]+、\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 4": re.compile(
+        r"^(?:（[一二三四五六七八九十]+）\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
 }
 _HYBRID_PATTERNS = {
     "Heading 1": _CHINESE_PATTERNS["Heading 1"],
     "Heading 2": re.compile(r"^\d+\.\d+\s+"),
     "Heading 3": re.compile(r"^\d+\.\d+\.\d+\s+"),
     "Heading 4": re.compile(r"^关键工法\d{1,3}[：:]\s*"),
+    # Longform engine uses these custom unnumbered heading styles
+    # Match any common numbering prefix (Chinese or decimal, any level)
+    "WPSC Unnumbered Heading 1": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+章\s*|\d+[\.\s、]\s*)"
+    ),
+    "WPSC Unnumbered Heading 2": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+节\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 3": re.compile(
+        r"^(?:[一二三四五六七八九十]+、\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 4": re.compile(
+        r"^(?:（[一二三四五六七八九十]+）\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+}
+# 支持 1. / 1.1 / 1.1.1 格式（Heading 2/3/4）
+_DECIMAL_PATTERNS = {
+    "Heading 1": re.compile(r"^第[一二三四五六七八九十百]+章\s*"),
+    "Heading 2": re.compile(r"^\d+\.\s+"),
+    "Heading 3": re.compile(r"^\d+\.\d+\s+"),
+    "Heading 4": re.compile(r"^\d+\.\d+\.\d+\s+"),
+    # Longform engine uses these custom unnumbered heading styles
+    # Match any common numbering prefix (Chinese or decimal, any level)
+    "WPSC Unnumbered Heading 1": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+章\s*|\d+[\.\s、]\s*)"
+    ),
+    "WPSC Unnumbered Heading 2": re.compile(
+        r"^(?:第[一二三四五六七八九十百]+节\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 3": re.compile(
+        r"^(?:[一二三四五六七八九十]+、\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
+    "WPSC Unnumbered Heading 4": re.compile(
+        r"^(?:（[一二三四五六七八九十]+）\s*|\d+(?:\.\d+)*[\.\s]\s*)"
+    ),
 }
 _STYLE_LEVELS = {
     "Heading 1": "0",
     "Heading 2": "1",
     "Heading 3": "2",
     "Heading 4": "3",
+    # Longform engine uses these custom unnumbered heading styles
+    "WPSC Unnumbered Heading 1": "0",
+    "WPSC Unnumbered Heading 2": "1",
+    "WPSC Unnumbered Heading 3": "2",
+    "WPSC Unnumbered Heading 4": "3",
 }
 
 _NUMBERING_CHILD_ORDER = (
@@ -262,6 +316,14 @@ def _append_definition(
             "关键工法%4：",
             never_restart=True,
         )
+    elif scheme == "decimal":
+        # 支持 1. / 1.1 / 1.1.1 格式
+        # M5 引擎将 Markdown ## 映射为 Heading 1，### 映射为 Heading 2
+        # 所以 Heading 1 使用 %1.，Heading 2 使用 %1.%2，Heading 3 使用 %1.%2.%3
+        _add_level(abstract, 0, "decimal", "%1.")
+        _add_level(abstract, 1, "decimal", "%1.%2")
+        _add_level(abstract, 2, "decimal", "%1.%2.%3")
+        _add_level(abstract, 3, "decimal", "%1.%2.%3.%4")
     else:
         _add_level(abstract, 0, "chineseCounting", "第%1章")
         _add_level(abstract, 1, "chineseCounting", "第%2节")
@@ -292,6 +354,13 @@ def _owned_ids(numbering: ET.Element) -> tuple[str, str] | None:
 
 
 def _definition_scheme(numbering: ET.Element, abstract_id: str) -> str:
+    """Detect scheme from existing numbering definition.
+    
+    Returns:
+        - "hybrid": 第一章 / 1.1 / 1.1.1 / 关键工法01
+        - "decimal": 第一章 / 1. / 1.1 / 1.1.1
+        - "chinese": 第一章 / 第一节 / 一、/ （一）
+    """
     for abstract in numbering.findall(f"{{{W}}}abstractNum"):
         if abstract.get(_attr("abstractNumId")) != abstract_id:
             continue
@@ -299,6 +368,10 @@ def _definition_scheme(numbering: ET.Element, abstract_id: str) -> str:
             node.get(_attr("val"))
             for node in abstract.findall(f".//{{{W}}}lvlText")
         }
+        # 检查是否有 decimal 格式的特征（如 "%2." 或 "%2.%3"）
+        if "%2." in labels and "%2.%3" in labels:
+            return "decimal"
+        # 检查 hybrid 格式
         return "hybrid" if "%1.%2" in labels else "chinese"
     return "chinese"
 
@@ -322,6 +395,26 @@ def _style_names(styles: ET.Element) -> dict[str, str]:
 
 
 def _detect_scheme(document: ET.Element, names: dict[str, str]) -> str:
+    """Detect the numbering scheme from document headings.
+    
+    Returns:
+        - "hybrid": 第一章 / 1.1 / 1.1.1 / 关键工法01
+        - "decimal": 第一章 / 1. / 1.1 / 1.1.1
+        - "chinese": 第一章 / 第一节 / 一、/ （一）
+    """
+    # 先检查是否有 decimal 格式（1. / 1.1 / 1.1.1）
+    for paragraph in document.iter(f"{{{W}}}p"):
+        pstyle = paragraph.find(f"{{{W}}}pPr/{{{W}}}pStyle")
+        if pstyle is None:
+            continue
+        heading = names.get(pstyle.get(_attr("val")))
+        if heading == "Heading 2":
+            text = _full_text(paragraph)
+            # 检查是否是 "1. " 格式（单个数字+点）
+            if re.match(r"^\d+\.\s+", text):
+                return "decimal"
+    
+    # 再检查 hybrid 格式
     for paragraph in document.iter(f"{{{W}}}p"):
         pstyle = paragraph.find(f"{{{W}}}pPr/{{{W}}}pStyle")
         if pstyle is None:
@@ -333,8 +426,14 @@ def _detect_scheme(document: ET.Element, names: dict[str, str]) -> str:
     return "chinese"
 
 
-def apply_native_numbering(docx_path: str) -> bool:
-    """Apply or repair native multi-level heading numbering in *docx_path*."""
+def apply_native_numbering(docx_path: str, force_scheme: str | None = None) -> bool:
+    """Apply or repair native multi-level heading numbering in *docx_path*.
+    
+    Args:
+        docx_path: Path to the DOCX file.
+        force_scheme: Force a specific scheme ("decimal", "hybrid", or "chinese").
+                     If None, auto-detect from document content.
+    """
     path = os.fspath(docx_path)
     with zipfile.ZipFile(path) as source:
         members = {name: source.read(name) for name in source.namelist()}
@@ -356,19 +455,48 @@ def apply_native_numbering(docx_path: str) -> bool:
     names = _style_names(styles)
     owned = _owned_ids(numbering)
     changed = False
+    
+    # 检测文档中实际的编号格式，或使用强制指定的 scheme
+    detected_scheme = force_scheme if force_scheme else _detect_scheme(document, names)
+    
     if owned is None:
+        # 没有已有的 definition，创建新的
         abstract_id = _next_id(
             numbering, "abstractNum", "abstractNumId", _ABSTRACT_ID
         )
         num_id = _next_id(numbering, "num", "numId", _NUM_ID)
-        scheme = _detect_scheme(document, names)
+        scheme = detected_scheme
         _append_definition(numbering, abstract_id, num_id, scheme)
         changed = True
     else:
         abstract_id, num_id = owned
-        scheme = _definition_scheme(numbering, abstract_id)
+        def_scheme = _definition_scheme(numbering, abstract_id)
+        
+        # 如果检测到的格式与已有 definition 不一致，重新生成
+        if def_scheme != detected_scheme:
+            # 删除旧的 definition
+            for abstract in numbering.findall(f"{{{W}}}abstractNum"):
+                if abstract.get(_attr("abstractNumId")) == abstract_id:
+                    numbering.remove(abstract)
+                    break
+            for number in numbering.findall(f"{{{W}}}num"):
+                ref = number.find(f"{{{W}}}abstractNumId")
+                if ref is not None and ref.get(_attr("val")) == abstract_id:
+                    numbering.remove(number)
+                    break
+            
+            # 创建新的 definition
+            scheme = detected_scheme
+            _append_definition(numbering, abstract_id, num_id, scheme)
+            changed = True
+        else:
+            scheme = def_scheme
 
-    patterns = _HYBRID_PATTERNS if scheme == "hybrid" else _CHINESE_PATTERNS
+    patterns = (
+        _HYBRID_PATTERNS if scheme == "hybrid"
+        else _DECIMAL_PATTERNS if scheme == "decimal"
+        else _CHINESE_PATTERNS
+    )
 
     # Bind styles so newly inserted headings inherit the list. Paragraphs
     # intentionally outside the hierarchy get a direct numId=0 override.
@@ -391,13 +519,14 @@ def apply_native_numbering(docx_path: str) -> bool:
         already_owned = (
             existing is not None and existing.get(_attr("val")) == num_id
         )
-        if already_owned:
-            continue
+        # Always try to strip prefix, even if already owned (inherited from style)
         if _strip_prefix(paragraph, pattern):
             level = str(int(heading[-1]) - 1)
             changed |= _set_numpr(ppr, level, num_id)
             changed = True
-        else:
+        elif not already_owned and not force_scheme:
+            # 只有在没有强制指定 scheme 时，才禁用没有匹配前缀的标题编号
+            # 当使用 force_scheme 时，让段落继承样式级别的编号设置
             changed |= _set_numpr(ppr, "0", "0")
 
     if not any(
