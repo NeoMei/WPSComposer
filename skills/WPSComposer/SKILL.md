@@ -54,6 +54,20 @@ one requested format. Opening is asynchronous and best effort: DOCX uses the
 selected engine, while PDF uses the platform default reader. A launcher warning
 does not invalidate an artifact that was already published.
 
+For a report requiring a separate cover and contents page, set these Markdown
+frontmatter fields (in a generation-only copy if the source must stay unchanged):
+
+```yaml
+---
+title_page: true
+toc: true
+heading_numbering: auto
+---
+```
+
+A first H1 or `preset="proposal"` alone does not enable a cover. Verify the
+rendered cover, TOC and native heading links, not only the presence of text.
+
 Under the hood:
 1. ``md_parser.py`` parses Markdown into a ``StructuredDocument``
 2. A format-specific renderer drives the WPS Composer
@@ -411,20 +425,18 @@ long-form route enabled by default for DOCX/PDF. See `docs/longform-markdown.md`
 ## Native heading numbering (docx)
 
 Generated DOCX files carry **native Word/WPS multi-level heading numbering**
-instead of plain-text number prefixes. Both the formal Chinese hierarchy
-(`第一章` → `第一节` → `一、` → `（一）`) and the bid-document hybrid hierarchy
-(`第一章` → `1.1` → `1.1.1` → `关键工法01`) are preserved visually and linked
-to one native list. Reordering, inserting, or deleting headings in WPS
-renumbers the document automatically. The document title and intentionally
-unnumbered headings stay unnumbered.
+instead of plain-text number prefixes. Supported M5 schemes include decimal,
+formal Chinese (`第一章` → `第一节` → `一、` → `（一）`), compact Chinese outline
+(`一、` → `1.` → `1.1` → `1.1.1`, `chinese-outline`), and bid-document hybrid
+(`第一章` → `1.1` → `1.1.1` → `关键工法01`). The common `# Title / ## 一、章节 /
+### 1. 小节` structure is auto-detected after consuming the title. The document
+title and intentionally unnumbered headings stay outside the list.
 
-Implemented as a post-generation pass (`scripts/numbering_native.py`,
-`apply_native_numbering()`) hooked into `orchestrator.generate()` for the
-`docx` format. It strips plain-text prefixes from Heading 1-4 paragraphs,
-merges a WPSComposer-owned definition into `word/numbering.xml` without
-discarding existing list definitions, and binds the heading hierarchy with
-native `numPr` links. It accepts both `Heading 1` and `heading 1` built-in
-style names. Idempotent and never blocks a successful generation.
+M5 establishes shared native heading-list links in the selected Office engine,
+then refreshes fields and validates layout before publication. Do not run the
+legacy `apply_native_numbering()` post-pass on an M5 result: it can overwrite
+native links and invalidate the already-refreshed TOC. That post-pass remains
+part of the explicitly selected legacy route only.
 
 Writer tables have an explicit cell-format contract on both Windows and
 macOS: first-line, left, and right paragraph indents are zero; before/after
@@ -437,10 +449,10 @@ in their own landscape Writer section; the following content resumes in a
 portrait section. The rule is driven by the image header, not by a filename or
 project-specific figure number.
 
-Document title handling: the first H1 (the Markdown document title) is
-rendered on the cover page only — it does **not** appear in the body, is
-not collected by the TOC, and does not take part in numbering. The TOC
-title ("目  录") uses a non-outline style so the TOC does not list itself.
+Document title handling: with `title_page: true`, the first H1 is rendered
+on the cover only, not repeated in the body or collected by the TOC. Without
+a cover it is an unnumbered Title paragraph in the body. The TOC title
+("目  录") uses a non-outline style so the TOC does not list itself.
 
 Note: the TOC field cache keeps the pre-refresh entries; update fields
 (Ctrl+A → F9, or right-click TOC → Update Field) after opening to rebuild it.

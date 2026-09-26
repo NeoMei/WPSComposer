@@ -1,11 +1,63 @@
 from __future__ import annotations
 
 from pathlib import Path
+from zipfile import ZipFile
+import xml.etree.ElementTree as ET
 
 import pytest
 
 from skills.WPSComposer.scripts import orchestrator
 from skills.WPSComposer.scripts.longform.quality import GenerationOutcome
+
+
+def test_longform_preserves_native_numbering_after_validated_publication(monkeypatch, tmp_path):
+    """The legacy post-pass must not rewrite M5's already validated list links."""
+    native = tmp_path / "native.docx"
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    with ZipFile(native, "w") as archive:
+        archive.writestr(
+            "word/document.xml",
+            f'<w:document xmlns:w="{w}"><w:body><w:p>'
+            '<w:pPr><w:pStyle w:val="Heading1"/></w:pPr>'
+            '<w:r><w:t>方案定位</w:t></w:r></w:p></w:body></w:document>',
+        )
+        archive.writestr(
+            "word/styles.xml",
+            f'<w:styles xmlns:w="{w}"><w:style w:type="paragraph" w:styleId="Heading1">'
+            '<w:name w:val="Heading 1"/><w:pPr><w:numPr>'
+            '<w:ilvl w:val="0"/><w:numId w:val="7"/>'
+            '</w:numPr></w:pPr></w:style></w:styles>',
+        )
+        archive.writestr(
+            "word/numbering.xml",
+            f'<w:numbering xmlns:w="{w}"><w:abstractNum w:abstractNumId="3">'
+            '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="chineseCounting"/>'
+            '<w:lvlText w:val="%1、"/></w:lvl></w:abstractNum>'
+            '<w:num w:numId="7"><w:abstractNumId w:val="3"/></w:num></w:numbering>',
+        )
+        archive.writestr(
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>',
+        )
+    validated_bytes = native.read_bytes()
+
+    def native_generation(build, format_name, output, timeout, overwrite):
+        Path(output).write_bytes(validated_bytes)
+        return GenerationOutcome(str(output))
+
+    monkeypatch.setattr(orchestrator.sys, "platform", "darwin")
+    monkeypatch.setattr(orchestrator, "resolve_engine", lambda *args: "wps")
+    monkeypatch.setattr(orchestrator, "_generate_longform_outcome", native_generation)
+    output = tmp_path / "report.docx"
+    orchestrator.generate(
+        "# 方案\n\n## 一、方案定位\n\n正文。",
+        source_is_text=True,
+        output=str(output),
+    )
+    with ZipFile(output) as archive:
+        styles = ET.fromstring(archive.read("word/styles.xml"))
+    assert styles.find(f".//{{{w}}}numId").get(f"{{{w}}}val") == "7"
+    assert output.read_bytes() == validated_bytes
 
 
 def test_docx_defaults_to_longform_private_outcome(monkeypatch, tmp_path):

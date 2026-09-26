@@ -556,6 +556,11 @@
         formats: ["第%1章", "第%2节", "%3、", "（%4）"],
         numberStyles: [37, 37, 37, 37]
       },
+      "chinese-outline": {
+        // Lower levels reference only Arabic counters, excluding the Chinese chapter.
+        formats: ["%1、", "%2.", "%2.%3", "%2.%3.%4"],
+        numberStyles: [37, 0, 0, 0]
+      },
       "hybrid-bid": {
         formats: ["第%1章", "%1.%2", "%1.%2.%3", "关键工法%4："],
         // Legal numbering renders included Chinese ancestors as Arabic digits.

@@ -21,6 +21,7 @@ from skills.WPSComposer.scripts.document_model import (
     StructuredDocument,
 )
 from skills.WPSComposer.scripts.md_parser import parse_markdown
+from skills.WPSComposer.scripts.longform.pipeline import build_longform_generation
 from skills.WPSComposer.scripts.longform.semantic import (
     CONFIG_VALUE_INVALID,
     HEADER_SHORTENED,
@@ -245,6 +246,125 @@ title_page: true
     assert all(s.numbering == "decimal" for s in sections)
     assert all(s.numbering_scheme == "decimal" for s in sections)
     assert not any(s.preface for s in sections)
+
+
+@pytest.mark.parametrize("scheme", ["auto", "chinese-outline"])
+def test_chinese_outline_nine_chapters_and_22_subsections_reach_native_plan(scheme) -> None:
+    md = f"---\nheading_numbering: {scheme}\n---\n# 文档题名\n\n## 文档修订记录\n\n正文。\n"
+    expected = []
+    for chapter, numeral in enumerate("一二三四五六七八九", start=1):
+        md += f"\n## {numeral}、章标题{chapter}\n\n正文。\n"
+        expected.append((1, f"章标题{chapter}"))
+        for subsection in range(1, (3 if chapter <= 4 else 2) + 1):
+            md += f"\n### {subsection}. 小节标题{chapter}-{subsection}\n\n正文。\n"
+            expected.append((2, f"小节标题{chapter}-{subsection}"))
+
+    build = build_longform_generation(md)
+    assert build.semantic.config.heading_numbering == "chinese-outline"
+    assert not build.issues
+    sections = [s for s in build.semantic.document.sections if s.has_heading]
+    assert sections[0].heading == "文档修订记录"
+    assert sections[0].numbering == "none"
+    assert [(s.level, s.heading) for s in sections[1:]] == expected
+    assert len(sections[1:]) == 31
+    assert all(s.numbering == s.numbering_scheme == "chinese-outline" for s in sections[1:])
+    assert not any(s.preface for s in sections[1:])
+    headings = [op.args for op in build.plan.operations if op.op == "writer.add_heading"]
+    assert [(h["level"], h["text"]) for h in headings[1:]] == expected
+    assert all(h["numbering"] is True and h["numberingScheme"] == "chinese-outline" for h in headings[1:])
+
+
+@pytest.mark.parametrize("scheme", ["auto", "chinese-outline"])
+def test_chinese_outline_four_levels_strip_only_their_own_prefixes(scheme) -> None:
+    md = f"""---
+heading_numbering: {scheme}
+---
+# 文档题名
+## 一、章标题
+### 1. 小节标题
+#### 1.1 细节标题
+##### 1.1.1 末级标题
+## 二、第二章
+### 1. 重置小节
+"""
+    build = build_longform_generation(md)
+    assert not build.issues
+    headings = [op.args for op in build.plan.operations if op.op == "writer.add_heading"]
+    assert [(h["level"], h["text"]) for h in headings] == [
+        (1, "章标题"), (2, "小节标题"), (3, "细节标题"), (4, "末级标题"),
+        (1, "第二章"), (2, "重置小节"),
+    ]
+    assert all(h["numbering"] is True and h["numberingScheme"] == "chinese-outline" for h in headings)
+
+
+@pytest.mark.parametrize("title_anchor", [False, True])
+def test_chinese_formal_level_three_prefix_does_not_select_chinese_outline(title_anchor) -> None:
+    md = "# 文档题名\n" if title_anchor else "---\ntitle: 文档题名\n---\n"
+    shift = 1 if title_anchor else 0
+    for level, text in [(1, "第一章 章标题"), (2, "第一节 节标题"),
+                        (3, "一、细节甲"), (4, "（一）末级"),
+                        (3, "二、细节乙"), (3, "三、细节丙")]:
+        md += f"{'#' * (level + shift)} {text}\n\n"
+    result = normalize_longform_document(_doc_from_markdown(md))
+    assert result.config.heading_numbering == "chinese-formal"
+    assert not result.issues
+    sections = [s for s in result.document.sections if s.has_heading]
+    assert [s.heading for s in sections] == ["章标题", "节标题", "细节甲", "末级", "细节乙", "细节丙"]
+    assert all(s.numbering == "chinese-formal" for s in sections)
+
+
+@pytest.mark.parametrize("scheme, body", [
+    ("chinese-formal", "## 第一章 总则\n### 第一节 范围\n#### 一、目的\n"
+     "##### （一）约定\n## 第二章 实施\n### 第一节 安排\n"),
+    ("hybrid-bid", "## 第一章 总则\n### 1.1 范围\n#### 1.1.1 目的\n"
+     "##### 关键工法01：约定\n## 第二章 实施\n### 2.1 安排\n"),
+], ids=["formal", "hybrid"])
+def test_isolated_chinese_enumeration_does_not_override_formal_body(scheme, body) -> None:
+    build = build_longform_generation("# 文档题名\n## 一、编制说明\n" + body)
+    assert build.semantic.config.heading_numbering == scheme
+    sections = [s for s in build.semantic.document.sections if s.has_heading]
+    assert sections[0].heading == "一、编制说明"
+    assert sections[0].numbering == "none"
+    assert sections[0].numbering_scheme is None
+    assert [(s.level, s.heading) for s in sections[1:]] == [
+        (1, "总则"), (2, "范围"), (3, "目的"), (4, "约定"), (1, "实施"), (2, "安排"),
+    ]
+    assert all(s.numbering == s.numbering_scheme == scheme for s in sections[1:])
+    # Hybrid treats the leading note as preface; formal recognizes its L3
+    # prefix and reports a local mismatch. Neither may damage body numbering.
+    assert [i.code for i in build.issues] == (
+        [HEADING_PREFIX_AMBIGUOUS] if scheme == "chinese-formal" else []
+    )
+    headings = [op.args for op in build.plan.operations if op.op == "writer.add_heading"]
+    assert not headings[0].get("numbering")
+    assert all(h["numbering"] is True and h["numberingScheme"] == scheme for h in headings[1:])
+
+
+@pytest.mark.parametrize("prefixes", [("1.", "2."), ("01", "02")])
+@pytest.mark.parametrize("chapter_count", [1, 2])
+def test_isolated_chinese_enumeration_does_not_override_decimal_body(prefixes, chapter_count) -> None:
+    # One chapter ties the appendix; two chapters outvote it. Leading zero
+    # prefixes are accepted by stripping even though level matching rejects them.
+    md = f"# 文档题名\n## {prefixes[0]} 总则\n### 1.1 范围\n"
+    if chapter_count == 2:
+        md += f"## {prefixes[1]} 实施\n### 2.1 安排\n"
+        expected = [(1, "总则"), (2, "范围"), (1, "实施"), (2, "安排")]
+    else:
+        md += "### 1.2 安排\n"
+        expected = [(1, "总则"), (2, "范围"), (2, "安排")]
+    md += "## 一、附录说明\n"
+    build = build_longform_generation(md)
+    assert build.semantic.config.heading_numbering == "decimal"
+    sections = [s for s in build.semantic.document.sections if s.has_heading]
+    assert [(s.level, s.heading) for s in sections[:-1]] == expected
+    assert all(s.numbering == s.numbering_scheme == "decimal" for s in sections[:-1])
+    assert sections[-1].heading == "一、附录说明"
+    assert sections[-1].numbering == "none"
+    assert sections[-1].numbering_scheme is None
+    assert [i.code for i in build.issues] == [HEADING_PREFIX_AMBIGUOUS]
+    headings = [op.args for op in build.plan.operations if op.op == "writer.add_heading"]
+    assert all(h["numbering"] is True and h["numberingScheme"] == "decimal" for h in headings[:-1])
+    assert not headings[-1].get("numbering")
 
 
 def test_leading_unprefixed_front_matter_section_does_not_consume_chapter_number() -> None:

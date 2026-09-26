@@ -1505,6 +1505,11 @@ class WriterComposer(BaseComposer):
                         ("第%1章", "第%2节", "%3、", "（%4）"),
                         (37, 37, 37, 37),
                     ),
+                    "chinese-outline": (
+                        # Lower levels exclude the Chinese chapter counter.
+                        ("%1、", "%2.", "%2.%3", "%2.%3.%4"),
+                        (37, 0, 0, 0),
+                    ),
                     "hybrid-bid": (
                         ("第%1章", "%1.%2", "%1.%2.%3", "关键工法%4："),
                         # Legal numbering forces included Chinese ancestors to

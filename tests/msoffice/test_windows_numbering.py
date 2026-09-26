@@ -42,6 +42,7 @@ def test_wps_keeps_its_supported_style_binding_path():
 @pytest.mark.parametrize('scheme,formats,styles', [
     ('decimal', ['%1', '%1.%2', '%1.%2.%3', '%1.%2.%3.%4'], [0, 0, 0, 0]),
     ('chinese-formal', ['第%1章', '第%2节', '%3、', '（%4）'], [37, 37, 37, 37]),
+    ('chinese-outline', ['%1、', '%2.', '%2.%3', '%2.%3.%4'], [37, 0, 0, 0]),
     ('hybrid-bid', ['第%1章', '%1.%2', '%1.%2.%3', '关键工法%4：'], [37, 253, 253, 22]),
 ])
 def test_native_heading_scheme_contract(composer_type, scheme, formats, styles):

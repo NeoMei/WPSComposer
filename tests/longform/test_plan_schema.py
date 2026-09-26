@@ -271,7 +271,8 @@ class TestTocDensitySchema:
 class TestHeadingNumberingSchema:
     """Schema validation for writer.add_heading numbering fields."""
 
-    def test_add_heading_accepts_numbering_and_scheme(self):
+    @pytest.mark.parametrize("scheme", ["chinese-formal", "chinese-outline"])
+    def test_add_heading_accepts_numbering_and_scheme(self, scheme):
         raw = {
             "component": "writer",
             "operations": [
@@ -281,7 +282,7 @@ class TestHeadingNumberingSchema:
                         "text": "第一章",
                         "level": 1,
                         "numbering": True,
-                        "numberingScheme": "chinese-formal",
+                        "numberingScheme": scheme,
                     },
                 }
             ],
@@ -289,7 +290,7 @@ class TestHeadingNumberingSchema:
         plan = validate_generation_plan(raw, "writer")
         args = plan.operations[0].args
         assert args["numbering"] is True
-        assert args["numberingScheme"] == "chinese-formal"
+        assert args["numberingScheme"] == scheme
 
     def test_add_heading_rejects_unknown_numbering_scheme(self):
         raw = {

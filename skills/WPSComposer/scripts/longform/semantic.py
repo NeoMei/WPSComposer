@@ -80,6 +80,7 @@ _VALID_HEADING_NUMBERING = frozenset({
     "auto",
     "none",
     "chinese-formal",
+    "chinese-outline",
     "decimal",
     "hybrid-bid",
 })
@@ -236,6 +237,12 @@ def _scheme_level_match(heading: str, scheme: str) -> Optional[int]:
             return 3
         if re.match(r"^（[零〇一二三四五六七八九十百千万两]+）", heading):
             return 4
+    elif scheme == "chinese-outline":
+        if re.match(r"^[零〇一二三四五六七八九十百千万两]+、", heading):
+            return 1
+        decimal_level = _scheme_level_match(heading, "decimal")
+        if decimal_level in {1, 2, 3}:
+            return decimal_level + 1
     elif scheme == "decimal":
         m = re.match(r"^(\d+)(?:\.(?!\d)\s*|[、．]\s*|\s+|$|[：:])", heading)
         if m and _decimal_segment_valid(m.group(1)):
@@ -282,6 +289,12 @@ def _strip_prefix(heading: str, level: int, scheme: str) -> tuple[str, bool]:
             3: re.compile(r"^[零〇一二三四五六七八九十百千万两]+、\s*"),
             4: re.compile(r"^（[零〇一二三四五六七八九十百千万两]+）\s*"),
         }
+    elif scheme == "chinese-outline":
+        if level in {2, 3, 4}:
+            return _strip_prefix(heading, level - 1, "decimal")
+        patterns = {
+            1: re.compile(r"^[零〇一二三四五六七八九十百千万两]+、\s*"),
+        }
     elif scheme == "decimal":
         patterns = {
             1: re.compile(r"^\d+(?:\.(?!\d)\s*|[、．]\s*|\s+|[：:])"),
@@ -311,6 +324,17 @@ def _strip_prefix(heading: str, level: int, scheme: str) -> tuple[str, bool]:
 
 def _detect_heading_scheme(sections: list[Section]) -> str:
     """Select a heading numbering scheme from the document content."""
+    # Only a strict chapter-level lead selects outline before the old vote:
+    # isolated notes/appendices must not override another chapter scheme, while
+    # numerous subsections must not outvote consistent Chinese chapters.
+    # Use actual stripping rules so accepted decimal prefixes like "01" count.
+    chapters = [s.heading for s in sections if s.level == 1 and s.heading]
+    outline_count = sum(_strip_prefix(h, 1, "chinese-outline")[1] for h in chapters)
+    if outline_count > max(
+        sum(_strip_prefix(h, 1, scheme)[1] for h in chapters)
+        for scheme in ("chinese-formal", "decimal", "hybrid-bid")
+    ):
+        return "chinese-outline"
     headings = [s.heading for s in sections if s.level in {1, 2, 3, 4} and s.heading]
     if not headings:
         return "decimal"
@@ -379,12 +403,6 @@ def _apply_heading_numbering(
                 section.numbering_scheme = None
         return "none"
 
-    selected_scheme = (
-        heading_numbering
-        if heading_numbering != "auto"
-        else _detect_heading_scheme(sections)
-    )
-
     # Title-anchored documents ("# Title" consumed by the cover, body
     # chapters starting at "##") carry level-1 numbering prefixes such as
     # "01 " one markdown level down. Shift every body heading up one level
@@ -396,6 +414,12 @@ def _apply_heading_numbering(
         for section in sections:
             if section.level >= 2:
                 section.level -= 1
+
+    selected_scheme = (
+        heading_numbering
+        if heading_numbering != "auto"
+        else _detect_heading_scheme(sections)
+    )
 
     # Front-matter sections that precede the first prefixed chapter heading
     # (e.g. a revision-history table under its own "## 文档修订记录") must not

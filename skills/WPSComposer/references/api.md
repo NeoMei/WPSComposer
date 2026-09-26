@@ -64,6 +64,17 @@ platform default application: launch failure emits a warning while the
 published path is still returned, and the call never creates or returns an
 unrequested companion format.
 
+## Cover and native heading numbering
+
+To require a separate cover and contents page, include `title_page: true` and
+`toc: true` in source frontmatter. A title alone or the `proposal` design
+preset does not imply a cover. `heading_numbering` accepts `auto`, `none`,
+`decimal`, `chinese-formal`, `chinese-outline`, or `hybrid-bid`.
+`chinese-outline` preserves `一、 / 1. / 1.1 / 1.1.1`; auto detection recognizes
+`# Title / ## 一、章节 / ### 1. 小节` after consuming the document title.
+M5 binds the native heading list and refreshes fields before validation and
+publication; it does not apply legacy prefix rewriting to the published result.
+
 ## Long-form offline plan and optional native execution
 
 This Python API is for WPSComposer/SuperWriter orchestration code, plugin

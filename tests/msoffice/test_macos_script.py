@@ -236,3 +236,33 @@ def test_number_styles_preserve_arabic_ancestors_in_hybrid_subheadings(tmp_path,
     for level, style in enumerate(expected, 1):
         assert (f'set lvl to list level {level} of ownList\n'
                 f'set number style of lvl to list number style {style}\n') in source
+
+
+@pytest.mark.parametrize('scheme', ['auto', 'chinese-outline'])
+def test_chinese_outline_compiles_shared_native_counters_without_chinese_ancestors(tmp_path, scheme):
+    from skills.WPSComposer.scripts.msoffice.macos_script import compile_plan
+    build = build_longform_generation(
+        f'---\nheading_numbering: {scheme}\n---\n# 文档题名\n\n'
+        '## 一、章标题\n\n### 1. 小节标题\n\n#### 1.1 细节标题\n\n'
+        '##### 1.1.1 末级标题\n\n## 二、第二章\n\n### 1. 重置小节\n')
+    assert build.semantic.config.heading_numbering == 'chinese-outline'
+    assert not build.issues
+    source = compile_plan(build.plan, {}, tmp_path/'owned.docx', timeout=20).source
+    assert source.count('make new list template at ownedDoc') == 1
+    for level, style, pattern, reset in [
+        (1, 'simp chin num1', '%1、', 0),
+        (2, 'arabic', '%2.', 1),
+        (3, 'arabic', '%2.%3', 2),
+        (4, 'arabic', '%2.%3.%4', 3),
+    ]:
+        assert (f'set lvl to list level {level} of ownList\n'
+                f'set number style of lvl to list number style {style}\n'
+                'set start at of lvl to 1\n'
+                f'set reset on higher of lvl to {reset}\n'
+                f'set number format of lvl to "{pattern}"\n'
+                f'set headingName to (name local of (Word style (style heading{level}) of ownedDoc)) as text\n'
+                'set linked style of lvl to headingName') in source
+    for text in ['章标题', '小节标题', '细节标题', '末级标题', '第二章', '重置小节']:
+        assert f'my appendText(ownedDoc, "{text}" & return)' in source
+    assert 'link to list template (' not in source
+    assert 'apply list format template' not in source

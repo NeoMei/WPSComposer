@@ -305,7 +305,7 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
                     raise MacWordCapabilityError('Mac native Word unsupported native image resource type')
         if op == 'add_cross_reference' and operation.args.get('listFormatting'):
             raise MacWordCapabilityError('Mac native Word unsupported citation or reference list')
-        if op == 'add_heading' and operation.args.get('numbering') and operation.args.get('numberingScheme') not in ('decimal','chinese-formal','hybrid-bid'):
+        if op == 'add_heading' and operation.args.get('numbering') and operation.args.get('numberingScheme') not in ('decimal','chinese-formal','chinese-outline','hybrid-bid'):
             raise MacWordCapabilityError('Mac native Word unsupported heading numbering scheme')
     lines, nodes = [], {}
     issues = []
@@ -328,6 +328,9 @@ def compile_plan(plan: GenerationPlan, resources: Mapping[str, Path], target: Pa
             if scheme == 'chinese-formal':
                 pattern = {1:'第%1章', 2:'第%2节', 3:'%3、', 4:'（%4）'}[level]
                 number_style = 'simp chin num1'
+            elif scheme == 'chinese-outline':
+                pattern = {1:'%1、', 2:'%2.', 3:'%2.%3', 4:'%2.%3.%4'}[level]
+                number_style = 'simp chin num1' if level == 1 else 'arabic'
             elif scheme == 'hybrid-bid':
                 pattern = {1:'第%1章', 2:'%1.%2', 3:'%1.%2.%3', 4:'关键工法%4：'}[level]
                 # Legal numbering renders inherited chapter counters as Arabic

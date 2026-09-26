@@ -363,7 +363,7 @@ _NONNEGATIVE_NUMBER = _bounded_number(0)
 
 _PAGE_ROLES = frozenset({"cover", "front_matter", "body", "landscape", "bibliography"})
 _PAGE_NUMBER_FORMATS = frozenset({"none", "roman", "arabic", "continue"})
-_NUMBERING_SCHEMES = frozenset({"none", "chinese-formal", "decimal", "hybrid-bid"})
+_NUMBERING_SCHEMES = frozenset({"none", "chinese-formal", "chinese-outline", "decimal", "hybrid-bid"})
 _TOC_DENSITY_LEVELS = frozenset({"toc1", "toc2", "toc3"})
 _TOC_DENSITY_BOUNDS: dict[str, dict[str, float]] = {
     "minFontSizePt": {"toc1": 10.5, "toc2": 10.0, "toc3": 10.0},
