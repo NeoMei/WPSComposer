@@ -17,6 +17,7 @@ from .quality import (
     QualitySeverity,
 )
 from .relayout import RelayoutDirective, build_relayout_directives
+from ..artifact_transport import ArtifactValidationError
 from ..msoffice.errors import NativeWordError, RECOVERY_FIELDS
 
 
@@ -57,6 +58,9 @@ class LongformLifecycleAdapter(Protocol):
     ) -> None:
         ...
 
+    def validate_heading_numbering(self, docx: Path) -> None:
+        ...
+
     def publish(
         self,
         staged: Path,
@@ -93,6 +97,18 @@ def _call_stage(
         raise error from None
     except Exception:
         raise LongformLifecycleError(code, message) from None
+
+
+def _validate_native_numbering(adapter: LongformLifecycleAdapter, docx: Path) -> None:
+    """Run the optional generated-DOCX numbering gate before PDF or publish."""
+    validator = getattr(adapter, "validate_heading_numbering", None)
+    if callable(validator):
+        try:
+            validator(docx)
+        except ArtifactValidationError as exc:
+            raise LongformLifecycleError(
+                getattr(exc, "code", "FINAL_ARTIFACT_INVALID"), str(exc)
+            ) from None
 
 
 def _as_staged_path(outcome: ExecutionOutcome) -> Path:
@@ -242,6 +258,11 @@ def run_longform_lifecycle(
         current_outcome = execute(())
         if current_docx is None:  # defensive type narrowing
             raise LongformLifecycleError("FINAL_ARTIFACT_INVALID", "DOCX staging artifact is unavailable")
+        _call_stage(
+            "FINAL_ARTIFACT_INVALID",
+            "Native heading numbering validation failed",
+            lambda: _validate_native_numbering(adapter, current_docx),
+        )
         current_pdf = export(current_docx)
         final_report = analyze(current_pdf, current_outcome)
 
@@ -250,6 +271,11 @@ def run_longform_lifecycle(
             current_outcome = execute(decision.directives)
             if current_docx is None:
                 raise LongformLifecycleError("FINAL_ARTIFACT_INVALID", "DOCX staging artifact is unavailable")
+            _call_stage(
+                "FINAL_ARTIFACT_INVALID",
+                "Native heading numbering validation failed after relayout",
+                lambda: _validate_native_numbering(adapter, current_docx),
+            )
             current_pdf = export(current_docx)
             final_report = analyze(current_pdf, current_outcome)
             decision = build_relayout_directives(
@@ -264,6 +290,11 @@ def run_longform_lifecycle(
                 )
             if current_docx is None:
                 raise LongformLifecycleError("FINAL_ARTIFACT_INVALID", "DOCX staging artifact is unavailable")
+            _call_stage(
+                "FINAL_ARTIFACT_INVALID",
+                "Native heading numbering validation failed after notice patch",
+                lambda: _validate_native_numbering(adapter, current_docx),
+            )
             _check_deadline(deadline, clock)
             current_outcome = _call_stage(
                 "NOTICE_PATCH_FAILED",

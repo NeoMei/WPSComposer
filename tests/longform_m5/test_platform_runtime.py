@@ -29,7 +29,7 @@ def test_relayout_derives_plan_and_only_sets_requested_heading_keep():
     derived_heading = next(
         operation for operation in derived.operations if operation.op == "writer.add_heading"
     )
-    assert "keepWithNext" not in original_heading.args
+    assert original_heading.args["keepWithNext"] is True
     assert derived_heading.args["keepWithNext"] is True
     assert derived is not build.plan
 

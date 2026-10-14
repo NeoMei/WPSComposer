@@ -226,6 +226,12 @@ def _decimal_segment_valid(segment: str) -> bool:
     return segment.isdigit() and (segment == "0" or not segment.startswith("0"))
 
 
+# Decimal heading prefixes may be followed by whitespace or a colon.  Keep
+# recognition and stripping on the same boundary so ``1.1: Scope`` cannot be
+# detected as numbered and then emitted with its literal prefix still present.
+_DECIMAL_PREFIX_END = r"(?:\s+|$|[：:]\s*)"
+
+
 def _scheme_level_match(heading: str, scheme: str) -> Optional[int]:
     """Return the level (1-4) whose prefix pattern matches *heading*, if any."""
     if scheme == "chinese-formal":
@@ -247,17 +253,17 @@ def _scheme_level_match(heading: str, scheme: str) -> Optional[int]:
         m = re.match(r"^(\d+)(?:\.(?!\d)\s*|[、．]\s*|\s+|$|[：:])", heading)
         if m and _decimal_segment_valid(m.group(1)):
             return 1
-        m = re.match(r"^(\d+\.\d+)(?:\s+|$|[：:])", heading)
+        m = re.match(rf"^(\d+\.\d+){_DECIMAL_PREFIX_END}", heading)
         if m:
             parts = m.group(1).split(".")
             if all(_decimal_segment_valid(p) for p in parts):
                 return 2
-        m = re.match(r"^(\d+(?:\.\d+){2})(?:\s+|$|[：:])", heading)
+        m = re.match(rf"^(\d+(?:\.\d+){{2}}){_DECIMAL_PREFIX_END}", heading)
         if m:
             parts = m.group(1).split(".")
             if all(_decimal_segment_valid(p) for p in parts):
                 return 3
-        m = re.match(r"^(\d+(?:\.\d+){3})(?:\s+|$|[：:])", heading)
+        m = re.match(rf"^(\d+(?:\.\d+){{3}}){_DECIMAL_PREFIX_END}", heading)
         if m:
             parts = m.group(1).split(".")
             if all(_decimal_segment_valid(p) for p in parts):
@@ -265,12 +271,12 @@ def _scheme_level_match(heading: str, scheme: str) -> Optional[int]:
     elif scheme == "hybrid-bid":
         if re.match(r"^第[零〇一二三四五六七八九十百千万两]+章", heading):
             return 1
-        m = re.match(r"^(\d+\.\d+)(?:\s+|$|[：:])", heading)
+        m = re.match(rf"^(\d+\.\d+){_DECIMAL_PREFIX_END}", heading)
         if m:
             parts = m.group(1).split(".")
             if all(_decimal_segment_valid(p) for p in parts):
                 return 2
-        m = re.match(r"^(\d+(?:\.\d+){2})(?:\s+|$|[：:])", heading)
+        m = re.match(rf"^(\d+(?:\.\d+){{2}}){_DECIMAL_PREFIX_END}", heading)
         if m:
             parts = m.group(1).split(".")
             if all(_decimal_segment_valid(p) for p in parts):
@@ -298,15 +304,15 @@ def _strip_prefix(heading: str, level: int, scheme: str) -> tuple[str, bool]:
     elif scheme == "decimal":
         patterns = {
             1: re.compile(r"^\d+(?:\.(?!\d)\s*|[、．]\s*|\s+|[：:])"),
-            2: re.compile(r"^\d+\.\d+\s+"),
-            3: re.compile(r"^\d+(?:\.\d+){2}\s+"),
-            4: re.compile(r"^\d+(?:\.\d+){3}\s+"),
+            2: re.compile(rf"^\d+\.\d+{_DECIMAL_PREFIX_END}"),
+            3: re.compile(rf"^\d+(?:\.\d+){{2}}{_DECIMAL_PREFIX_END}"),
+            4: re.compile(rf"^\d+(?:\.\d+){{3}}{_DECIMAL_PREFIX_END}"),
         }
     elif scheme == "hybrid-bid":
         patterns = {
             1: re.compile(r"^第[零〇一二三四五六七八九十百千万两]+章\s*"),
-            2: re.compile(r"^\d+\.\d+\s+"),
-            3: re.compile(r"^\d+(?:\.\d+){2}\s+"),
+            2: re.compile(rf"^\d+\.\d+{_DECIMAL_PREFIX_END}"),
+            3: re.compile(rf"^\d+(?:\.\d+){{2}}{_DECIMAL_PREFIX_END}"),
             4: re.compile(r"^关键工法\d{1,3}[：:]\s*"),
         }
     else:

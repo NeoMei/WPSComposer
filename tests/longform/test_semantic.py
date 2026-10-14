@@ -426,6 +426,33 @@ heading_numbering: decimal
     assert sections[2].numbering == "decimal"
 
 
+@pytest.mark.parametrize("scheme", ["auto", "decimal"])
+@pytest.mark.parametrize("separator", ["：", ":"])
+def test_decimal_colon_prefixes_keep_native_heading_numbering(scheme, separator) -> None:
+    """Recognized dotted prefixes must also strip before native numbering."""
+    md = f"""---
+heading_numbering: {scheme}
+---
+# 文档题名
+## 1 总则
+### 1.1{separator}范围
+#### 1.1.1{separator}细节
+## 2 实施
+### 2.1{separator}安排
+#### 2.1.1{separator}步骤
+"""
+    build = build_longform_generation(md)
+    sections = [s for s in build.semantic.document.sections if s.has_heading]
+    assert [(s.level, s.heading) for s in sections] == [
+        (1, "总则"), (2, "范围"), (3, "细节"),
+        (1, "实施"), (2, "安排"), (3, "步骤"),
+    ]
+    assert not build.issues
+    assert all(s.numbering == s.numbering_scheme == "decimal" for s in sections)
+    headings = [op.args for op in build.plan.operations if op.op == "writer.add_heading"]
+    assert all(h["numbering"] is True and h["numberingScheme"] == "decimal" for h in headings)
+
+
 def test_explicit_scheme_preserves_mismatched_prefixes_as_text() -> None:
     md = """---
 title: Report

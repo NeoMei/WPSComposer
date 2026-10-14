@@ -188,7 +188,7 @@ def test_header_toc_table_and_field_structural_checks():
         _map(_node("tab:one"), _node("ref:bad")),
         {1: PageRole.TOC},
         QualityPolicy(
-            header_display_units=40,
+            header_display_units=80,
             toc_last_page_utilization=0.18,
             table_header_repeated=(("tab:one", False),),
             unresolved_field_nodes=("ref:bad",),

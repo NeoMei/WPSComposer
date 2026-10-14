@@ -13,6 +13,7 @@ from skills.WPSComposer.scripts.longform.executor import (
     PaginationMap,
     PaginationNode,
 )
+from skills.WPSComposer.scripts.artifact_transport import ArtifactValidationError
 from skills.WPSComposer.scripts.longform.lifecycle import (
     LongformLifecycleError,
     run_longform_lifecycle,
@@ -67,6 +68,7 @@ class _Adapter:
         self.export_calls = []
         self.patch_calls = []
         self.validate_patch_calls = []
+        self.validate_numbering_calls = []
         self.publish_calls = []
         self.cleanup_calls = []
         self.fail_at = None
@@ -97,6 +99,15 @@ class _Adapter:
         self.validate_patch_calls.append((str(docx), str(pdf), tuple(notices), outcome))
         if self.fail_at == "validate-patch":
             raise RuntimeError("patch validation failed")
+
+    def validate_heading_numbering(self, docx):
+        self.validate_numbering_calls.append(str(docx))
+        if self.fail_at == "validate-numbering":
+            raise RuntimeError("numbering contract failed")
+        if self.fail_at == "validate-numbering-contract":
+            error = ArtifactValidationError("WPSC_HEADING_NUMBERING_SHARED_SEQUENCE: split list")
+            error.code = "WPSC_HEADING_NUMBERING_SHARED_SEQUENCE"
+            raise error
 
     def publish(self, staged, output, overwrite, deadline):
         self.publish_calls.append((str(staged), str(output), overwrite, deadline))
@@ -146,7 +157,27 @@ def test_clean_first_pass_publishes_requested_docx_and_removes_internal_pdf(tmp_
     assert len(adapter.execute_calls) == 1
     assert len(adapter.export_calls) == 1
     assert adapter.patch_calls == []
+    assert len(adapter.validate_numbering_calls) == 1
     assert not (tmp_path / "export-1.pdf").exists()
+
+
+def test_numbering_validation_failure_blocks_export_and_publication(tmp_path):
+    adapter = _Adapter(tmp_path)
+    adapter.fail_at = "validate-numbering"
+    with pytest.raises(LongformLifecycleError) as raised:
+        _run(tmp_path, adapter, _Analyzer(QualityReport((), 1)))
+    assert raised.value.code == "FINAL_ARTIFACT_INVALID"
+    assert len(adapter.validate_numbering_calls) == 1
+    assert adapter.export_calls == []
+    assert adapter.publish_calls == []
+
+
+def test_numbering_contract_code_is_preserved(tmp_path):
+    adapter = _Adapter(tmp_path)
+    adapter.fail_at = "validate-numbering-contract"
+    with pytest.raises(LongformLifecycleError) as raised:
+        _run(tmp_path, adapter, _Analyzer(QualityReport((), 1)))
+    assert raised.value.code == "WPSC_HEADING_NUMBERING_SHARED_SEQUENCE"
 
 
 def test_requested_pdf_reuses_final_quality_pdf_without_extra_export(tmp_path):

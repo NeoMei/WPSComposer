@@ -52,6 +52,11 @@
 - `tests/longform_m2/snapshots/*_ops.json`（academic、degradation）
 - `tests/longform_m3/snapshots/*.json`（auto_boundary、chapter_native、degradation、global_media）
 
+长文生命周期在 PDF 导出和原子发布前都会检查暂存 DOCX 的编号契约
+（`longform/numbering_validation.py`）：稳定标题书签、有效 `numId` / `ilvl`、
+共享列表实例、abstract level、方案格式以及残留手写前缀。这个门禁只证明
+OOXML 结构；Word/WPS 的插章、删章、保存重开仍须独立原生验收。
+
 ## 更新前检查单
 
 1. **基线**：`python3 -m pytest tests/longform tests/longform_m2 tests/longform_m3 -q` 全绿再动手
